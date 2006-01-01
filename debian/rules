@@ -1,0 +1,139 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# Include dpatch stuff.
+include /usr/share/dpatch/dpatch.make
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+	# Add here commands to configure the package.
+
+	touch configure-stamp
+
+
+build: build-stamp
+
+build-stamp: patch-stamp configure-stamp 
+	dh_testdir
+
+	# Add here commands to compile the package.
+	#$(MAKE)
+	scons
+
+	# Build plugins by hand
+	install -d $(CURDIR)/release/plugins/include
+	install -m 644 source/blender/blenpluginapi/*.h $(CURDIR)/release/plugins/include
+	chmod +x $(CURDIR)/release/plugins/bmake
+	$(MAKE) -C $(CURDIR)/release/plugins
+
+	#/usr/bin/docbook-to-man debian/blender.sgml > blender.1
+
+	touch build-stamp
+
+clean: unpatch
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+
+	# Add here commands to clean up after the build process.
+	#-$(MAKE) clean
+	-scons --clean
+
+	# Remove *.pycs
+	rm -f tools/*.pyc
+	rm -f tools/scons/*.pyc
+	rm -f tools/scons/bs/*.pyc
+
+	dh_clean 
+
+	# Clean plugins
+	-$(MAKE) -C $(CURDIR)/release/plugins clean
+	rm -rf $(CURDIR)/release/plugins/include
+	rm -rf $(CURDIR)/build
+
+	rm -f $(CURDIR)/config.opts
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	dh_installdirs
+
+	# Add here commands to install the package into debian/blender.
+	#$(MAKE) install DESTDIR=$(CURDIR)/debian/blender
+	install -m 755 blender $(CURDIR)/debian/blender/usr/bin/blender-bin
+	install -m 755 $(CURDIR)/debian/blender-wrapper $(CURDIR)/debian/blender/usr/bin/blender
+	install -m 755 blenderplayer $(CURDIR)/debian/blender/usr/bin
+
+	# Install menus & icons
+	install -m 644 $(CURDIR)/debian/misc/blender.desktop $(CURDIR)/debian/blender/usr/share/applications
+	install -m 644 $(CURDIR)/debian/misc/blender.xpm $(CURDIR)/debian/blender/usr/share/pixmaps
+
+	# Install plugins
+	install -d $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
+	install -d $(CURDIR)/debian/blender/usr/lib/blender/plugins/texture
+	install -m 644 $(CURDIR)/release/plugins/sequence/*.so $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
+	install -m 644 $(CURDIR)/release/plugins/texture/*.so $(CURDIR)/debian/blender/usr/lib/blender/plugins/texture
+
+	# Install miscellaneous files under /usr/lib/blender
+	cp -a $(CURDIR)/release/scripts/bpydata $(CURDIR)/debian/blender/usr/lib/blender
+	cp -a $(CURDIR)/release/scripts $(CURDIR)/debian/blender/usr/lib/blender
+	cp -a $(CURDIR)/bin/.blender/locale $(CURDIR)/debian/blender/usr/lib/blender
+	install -m 644 $(CURDIR)/release/VERSION $(CURDIR)/debian/blender/usr/lib/blender
+	install -m 644 $(CURDIR)/bin/.blender/.Blanguages $(CURDIR)/debian/blender/usr/lib/blender
+	install -m 644 $(CURDIR)/bin/.blender/.bfont.ttf $(CURDIR)/debian/blender/usr/lib/blender
+
+# Build architecture-independent files here.
+binary-indep: build install
+# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs 
+	dh_installdocs
+	dh_installexamples
+#	dh_install
+	dh_installmenu
+#	dh_installdebconf	
+#	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+#	dh_installinit
+#	dh_installcron
+#	dh_installinfo
+	dh_installman $(CURDIR)/debian/blender.1
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+#	dh_perl
+#	dh_python
+#	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure

@@ -1,0 +1,40 @@
+#! /bin/sh -e
+## 02_insecure_writing_to_quit_blend.dpatch by Masayuki Hatta <mhatta@debian.org>
+##
+## All lines beginning with \`## DP:' are a description of the patch.
+## DP: Fixes insecure writing to /tmp/quit.blend
+
+if [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+        -patch) patch -f --no-backup-if-mismatch --dry-run -p1 < $0 && patch -f --no-backup-if-mismatch -p1 < $0
+;;
+        -unpatch) patch -f --no-backup-if-mismatch -R -p1 < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+diff -urN blender-2.36.orig/source/blender/blenkernel/intern/blender.c blender-2.36/source/blender/blenkernel/intern/blender.c
+--- blender-2.36.orig/source/blender/blenkernel/intern/blender.c	2005-03-11 01:54:56.000000000 +0900
++++ blender-2.36/source/blender/blenkernel/intern/blender.c	2005-03-11 01:57:26.000000000 +0900
+@@ -647,7 +647,7 @@
+ 		
+ 	BLI_make_file_string("/", str, U.tempdir, "quit.blend");
+ 
+-	file = open(str,O_BINARY+O_WRONLY+O_CREAT+O_TRUNC, 0666);
++	file = open(str,O_BINARY+O_WRONLY+O_CREAT+O_TRUNC+O_EXCL, 0666);
+ 	if(file == -1) {
+ 		printf("Unable to save %s\n", str);
+ 		return;
+
+
+
+
+
+
+

@@ -1,0 +1,339 @@
+blender (2.37a-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Split out parts of 01_SConstruct_debian.dpatch again: root_build_dir
+    really needs to get adjusted before the clean target runs - closes: #333958,
+    see #288882 for reference
+
+ -- Florian Ernst <florian@debian.org>  Sun,  6 Nov 2005 12:40:03 +0100
+
+blender (2.37a-1) unstable; urgency=low
+
+  * Works had been done at Codefest Asia 2005 in Colombo, Sri Lanka. 
+  * New upstream release - closes: #316524
+  * Bumped Standards-Version 3.6.2.1 (no physical changes).
+  * Now the package include blenderplayer - closes: #304567
+  * Now it should be built on amd64 with gcc-4.0 - closes: #285577, #319307
+  * Now quit.blend is created in the user's homedir - closes: #298167
+  * Fixed de.po - closes: #313676
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Tue,  6 Sep 2005 17:52:51 +0900
+
+blender (2.36-1) unstable; urgency=high
+
+  * The "Back From The Gig" release.
+  * Urgency is set to high, since this release fixes a security issue.  Woody doesn't have free Blender.
+  * [02_fix_insecure_writing_to_quit_blend] added a dpatch to prevent a symlinkattack - closes: #298167
+  * New upstream release - closes: #288883
+  * Acknowledged NMU, sorry for delay and thanks guys - closes: #288882
+  * Now fully updates the plugins every time blender is launched - closes: #285578
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Fri, 11 Mar 2005 00:55:14 +0900
+
+blender (2.35-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Split out parts of 01_SConstruct_debian.dpatch: root_build_dir
+    needs to get adjusted before the clean target runs - closes: #288882
+
+ -- Florian Ernst <florian@debian.org>  Thu, 10 Feb 2005 02:45:38 +0100
+
+blender (2.35-1) unstable; urgency=low
+
+  * The "Brief Return From The Hell, Pt. 2" release.
+  * New upstream release - closes: #282702
+  * Added MimeType field to .desktop - closes: #280925
+  * Fixed a typo in description - closes: #268498, #277229
+  * Changed the size of blender.xpm to 32x32.
+  * Now installs manpage, even if it's somewhat dated - closes: #277886
+  * Now installs blenderplayer.
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Wed,  8 Dec 2004 01:52:53 +0900
+
+blender (2.34-1) unstable; urgency=high
+
+  * The "Brief Return From The Hell" release.
+  * New upstream release.
+  * Put .desktop and .xpm into the right place - closes: #257935
+  * [patches/01_SConstruct_debian.dpatch] fixed pathes for FTGL stuff - closes: #262547
+  * [blender-wrapper]: now reinstall some files when the user's ~/.blender
+    came from the older versions.
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Sun,  8 Aug 2004 01:10:13 +0900
+
+blender (2.33a-1) unstable; urgency=low
+
+  * New upstream release
+  * Fixed a typo in /usr/bin/blender wrapper - closes: #248485
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Sat, 15 May 2004 00:32:02 +0900
+
+blender (2.33-3) unstable; urgency=low
+
+  * Fixed gettext dependency - closes: #247624
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Sun,  9 May 2004 13:26:44 +0900
+
+blender (2.33-2) unstable; urgency=low
+
+  * Oops, I messed menu entry up and also forgot to install it, Fixed...
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Mon,  3 May 2004 21:11:31 +0900
+
+blender (2.33-1) unstable; urgency=low
+
+  * New upstream release.
+  * Re-packaged.
+  * Now uses SCons-based build system.
+  * Sorted out build-dependencies.
+  * Fixed menu hint, uses "Modeler" - closes: #246201
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Mon,  3 May 2004 15:16:26 +0900
+
+blender (2.32-4) unstable; urgency=low
+
+  * Added a menu entry to run blender with -w - closes: #223602
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Mon, 23 Feb 2004 17:22:36 +0900
+
+blender (2.32-3) unstable; urgency=low
+
+  * Made bmake executable, so plugins should be built when built by buildd.
+  * 02_sparc_linux.dpatch: removed.
+  * 02_defs_for_debian.doatch: dpatch'd changes on nan_definitions.mk.
+  * Added Suggests: yafray
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Sat, 21 Feb 2004 16:03:02 +0900
+
+blender (2.32-2) unstable; urgency=low
+
+  * [control] changed Maintainer field.
+  * Fixed build on SPARC, thanks Petter Reinholdt - closes: #229420, #221802
+  * Now installs ~/.blender - closes: #232654
+      - I know this is a kludgy solution, but seems there is no better way to go for now...
+  * Now ships with plugins - closes: #221584
+  * Now ships with python scripts - closes: #221586
+  * Fixed SECTION of manpage - closes: #231847
+  * Listed povray(1) instead of too general X(1) in manpage - closes: #231843
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Wed, 18 Feb 2004 02:13:03 +0900
+
+blender (2.32-1) unstable; urgency=low
+
+  * New upstream release - closes: #231499
+
+ -- Masayuki Hatta (mhatta) <mhatta@debian.org>  Sat,  7 Feb 2004 16:29:18 +0900
+
+blender (2.30-1) unstable; urgency=low
+
+  * New upstream release - closes: #219531
+
+ -- Masayuki Hatta <mhatta@debian.org>  Fri, 14 Nov 2003 00:41:07 +0900
+
+blender (2.28c-1) unstable; urgency=low
+
+  * New upstream release - closes: #209913
+  * Added Build-Depends: libesd0-dev - closes: #207520
+
+ -- Masayuki Hatta <mhatta@debian.org>  Sun, 26 Oct 2003 14:31:01 +0900
+
+blender (2.28a-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Masayuki Hatta <mhatta@debian.org>  Thu, 21 Aug 2003 01:24:28 +0900
+
+blender (2.28-1) unstable; urgency=low
+
+  * New upstream release - closes: #203714, #204460
+  * Acknowledged NMU, thanks David and Paul - closes: #194373
+  * Removes tmp-makefile on clean - closes: #194374
+  * Now uses dpatch.
+  * Bumped Standards-Version to 3.5.10.
+  * Added some Build-Depends.
+  * Removed TODO.
+
+ -- Masayuki Hatta <mhatta@debian.org>  Sat,  9 Aug 2003 15:43:54 +0900
+
+blender (2.27-1.1) unstable; urgency=low
+
+  * Non Maintainer Upload
+  * Fix multi-line strings for gcc 3.3 (Closes: #194373)
+    Patch by Paul Hampson <Paul.Hampson@anu.edu.au>
+
+ -- David Pashley <david@davidpashley.com>  Tue, 15 Jul 2003 15:22:33 +0200
+
+blender (2.27-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Masayuki Hatta <mhatta@debian.org>  Fri, 16 May 2003 13:19:53 +0900
+
+blender (2.26-3) unstable; urgency=low
+
+  * Thanks again LarstiQ for preparing this release.
+  * Bumped to Standards-Version: 3.5.9.
+  * Tightened Build-Depends - closes: #185719
+  * Improved description - closes: #180358
+  * Now conflicts with blender-powerpc - closes: #183944
+  * Fixed upsteram URL in manpage - closes: #184919
+
+ -- Masayuki Hatta <mhatta@debian.org>  Sat, 22 Mar 2003 20:42:19 +0900
+
+blender (2.26-2) unstable; urgency=low
+
+  * Build-Depends: libpng12-0-dev, instead of libpng-dev.
+
+ -- Masayuki Hatta <mhatta@debian.org>  Wed,  5 Mar 2003 13:25:58 +0900
+
+blender (2.26-1) unstable; urgency=low
+
+  * Thanks Wouter van Heyst <larstiq@larstiq.dyndns.org> for preparing this release.
+  * New upstream release.
+  * Uses NaN makefiles instead of GNU Auto*.
+  * Removed post*.
+
+ -- Masayuki Hatta <mhatta@debian.org>  Mon, 24 Feb 2003 22:55:57 +0900
+
+blender (2.25b+cvs.2003.02.17-1) unstable; urgency=low
+
+  * New upstream release (CVS snapshot) - closes: #165581
+  * This is actually 2.26+, but I postpone to bump the version until 
+    LarstiQ send me his changes.
+
+ -- Masayuki Hatta <mhatta@debian.org>  Mon, 17 Feb 2003 20:44:43 +0900
+
+blender (2.25b+cvs.2003.02.05-1) unstable; urgency=low
+
+  * The "At Last We Are Free" release.
+  * Free Blender, finally!
+  * New upstream release (CVS snapshot).
+
+ -- Masayuki Hatta <mhatta@debian.org>  Wed,  5 Feb 2003 02:34:24 +0900
+
+blender (2.23-2) unstable; urgency=low
+
+  * Updated to Standards-Version: 3.5.6.
+
+ -- Masayuki Hatta <mhatta@debian.org>  Thu, 29 Aug 2002 18:01:57 +0900
+
+blender (2.23-1) unstable; urgency=low
+
+  * The "Waiting For Another $50k" release.
+  * New maintainer - no response from Daniel, hijacked.
+  * www.blender.nl -> www.blender3d.com
+  * Tweaked debian/rules.
+  * Moved /usr/lib/python2.0/* into /usr/lib/python2.2/blender and made it
+    recommend python2.2.  I'm not sure this is right, though...
+  * Acknowledged NMU fixed bugs - closes: #55376, #72018, #116063, #79934, #121989, #138301, #139249, #147421, #150390, #151542, #55495, #112040
+
+ -- Masayuki Hatta <mhatta@debian.org>  Tue, 30 Jul 2002 16:37:13 +0900
+
+blender (2.23-0.2) unstable; urgency=low
+
+  * NMU (Daniel seems to be an MIA, I guess someone should take this over).
+  * Fixed Python scripts (suggested by Thimo) - closes: #138301
+  * Added appropriate dependencies - closes: #139249, #147421, #150390, #151542
+  * Added Build-Depends.
+  * Updated to Standards-Version: 3.5.2.
+
+ -- Masayuki Hatta <mhatta@debian.org>  Wed, 24 Jul 2002 05:37:09 +0900
+
+blender (2.23-0.1) unstable; urgency=low
+
+  * NMU upload for bug fixes
+  * New upstream version. I had to get the static binary to fix the bug, but
+    all they had available was the latest version, which is 2.23.
+    Closes: #116063, #112040
+  * Install python libs into directory where blender expects it.
+    Closes: #121989
+
+ -- Ben Collins <bcollins@debian.org>  Sun, 10 Feb 2002 15:52:06 -0500
+
+blender (2.12-1) unstable; urgency=low
+
+  * NMU to bring package up-to-date. (closes: #79934)
+  * Blender now ships with headers and bmake (closes: #55495)
+
+ -- Sean 'Shaleh' Perry <shaleh@debian.org>  Tue, 10 Apr 2001 11:46:23 -0700
+
+blender (1.80-1) unstable; urgency=low
+
+  * New upstream release (everything is now free of charge) (closes: Bug#57315)
+  * Closing NMU-Fixed Bugs (closes: Bug# 55376, Bug#57319, Bug#59973)
+  * First own upload after I became official maintainer
+
+ -- Daniel Mester <mester@uni-bremen.de>  Wed,  5 Jul 2000 16:46:43 +0200
+
+blender (1.74-1) unstable; urgency=low
+
+  * Sponsor upload.
+  * Due a sponsor mistake Blender did not depend on libgl, 
+    hopefully it does now. (closes: Bug#59973, Bug#55376, Bug#57135)
+  * closing upstream fixed bugs (closes: Bug#57319)
+        
+ -- Daniel Mester <mester@uni-bremen.de>  Tue, 11 Apr 2000 12:56:49 +0200
+
+blender (1.73-1) unstable; urgency=low
+
+  * Sponsor upload.
+  * closing NMU-fixed bugs (closes: Bug#52349, Bug#51114, Bug#51240)
+  * Blender depends on libgl1 instead of mesag3 (closes: Bug#55815, Bug#55376)
+
+ -- Daniel Mester <mester@uni-bremen.de>  Mon, 21 Feb 2000 17:02:15 +0100
+
+blender (1.72-1) unstable; urgency=low
+
+  * Sources are i386 only (closes: Bug#52349)
+  * Sponsor upload
+  * New upstream version (closes: Bug#51114, Bug#51240)  
+
+ -- Daniel Mester <mester@uni-bremen.de>  Wed,  5 Jan 2000 10:38:38 +0100
+
+blender (1.71-2) unstable; urgency=low
+
+  * Sponsor upload.
+  * debian/control: Reformatted description.
+  * debian/rules: Moved plug-ins to /usr/lib instead of /usr/include (!?)
+  * debian/dirs: Patched to conform to previous change.
+  * debian/blender1.1: Removed as it was installed by debhelper and does 
+    not belong into the package.
+  * debian/blender.menu: Changed "needs=X11|text|..." to "needs=X11". 
+    Thanks again to the lintian maintainers :)
+
+ -- Torsten Landschoff <torsten@debian.org>  Tue,  4 Jan 2000 18:09:44 +0100
+
+blender (1.71-1) unstable; urgency=low
+
+  * Installed docs into /usr/share/doc/blender
+  * debian/blender.1: Wrote small manpage (not the best, but nice)
+  * Completely redone the package
+  * New maintainer
+  * New upstream version
+	
+ -- Daniel Mester <mester@uni-bremen.de>  Wed,  8 Dec 1999 14:17:58 +0100
+
+blender (1.61-1) unstable; urgency=low
+
+  * New upstream version.
+  * Removed wrapper script, it is no longer necessary.
+
+ -- Stephen Crowley <crow@debian.org>  Sun, 16 May 1999 16:02:39 -0500
+
+blender (1.58-1) unstable; urgency=low
+
+  * New upstream.
+
+ -- Stephen Crowley <crow@debian.org>  Wed, 17 Mar 1999 21:03:53 -0600
+
+blender (1.53a-2) unstable; urgency=low
+
+  * Fixed the wrapper script. It now exports BLENDERDIR
+
+ -- Stephen Crowley <crow@debian.org>  Fri,  1 Jan 1999 15:58:35 -0600
+
+blender (1.53a-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Stephen Crowley <crow@debian.org>  Fri,  1 Jan 1999 13:47:44 -0600

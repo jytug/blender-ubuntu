@@ -1,0 +1,38 @@
+#! /bin/sh -e
+## 04_de_po_fix.dpatch by Masayuki Hatta <mhatta@debian.org>
+##
+## All lines beginning with \`## DP:' are a description of the patch.
+## DP: A little fix for de.po
+
+if [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+        -patch) patch -f --no-backup-if-mismatch --dry-run -p1 < $0 && patch -f --no-backup-if-mismatch -p1 < $0
+;;
+        -unpatch) patch -f --no-backup-if-mismatch -R -p1 < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+diff -urN blender-2.37a.orig/po/de.po blender-2.37a/po/de.po
+--- blender-2.37a.orig/po/de.po	2005-09-07 14:21:32.000000000 +0900
++++ blender-2.37a/po/de.po	2005-09-07 14:22:31.000000000 +0900
+@@ -10,11 +10,11 @@
+ msgid "Start the rendering"
+ msgstr "Starte das rendern"
+ msgid "Display edge settings"
+-msgstr "Zeige Kanten Eintellungen"
++msgstr "Zeige Kanten-Eintellungen"
+ msgid "Enable shadow calculation"
+ msgstr "Rendere mit Schatten"
+ msgid "Start rendering a sequence"
+-msgstr "Starte das rendern einer Sequenz"
++msgstr "Starte das Rendern einer Sequenz"
+ 
+ 
+ ###########################################################

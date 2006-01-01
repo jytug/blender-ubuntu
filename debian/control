@@ -1,0 +1,23 @@
+Source: blender
+Section: graphics
+Priority: optional
+Maintainer: Masayuki Hatta (mhatta) <mhatta@debian.org>
+Build-Depends: debhelper (>= 4.0.0), dpatch, ftgl-dev (>= 2.0.9-1), gettext (>= 0.14.1), libglut-dev, libjpeg-dev, libopenal-dev (>= 0.2003011300-1), libpng-dev, libsdl-dev, libz-dev, python-dev, scons
+Standards-Version: 3.6.2.1
+
+Package: blender
+Architecture: any
+Depends: ${shlibs:Depends}, gettext (>= 0.14.1)
+Conflicts: blender-powerpc
+Replaces: blender-powerpc
+Suggests: yafray
+Description: Very fast and versatile 3D modeller/renderer
+ Blender is an integrated 3d suite for modelling, animation, rendering,
+ post-production, interactive creation and playback (games). Blender has its
+ own particular user interface, which is implemented entirely in OpenGL and
+ designed with speed in mind. Python bindings are available for scripting;
+ import/export features for popular file formats like 3D Studio
+ and Wavefront Obj are implemented as scripts by the  community.
+ Stills, animations, models for games or other third party engines
+ and interactive content in the form of a standalone binary and/or
+ a web plug-in are common products of Blender use.

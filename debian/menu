@@ -1,0 +1,9 @@
+?package(blender):needs="X11" section="Apps/Graphics" hints="Modeler"\
+  longtitle="Very fast and versatile 3D modeler / renderer"\
+  icon="/usr/share/pixmaps/blender.xpm"\
+  title="Blender (full screen)" command="/usr/bin/blender"
+
+?package(blender):needs="X11" section="Apps/Graphics" hints="Modeler"\
+  longtitle="Very fast and versatile 3D modeler / renderer"\
+  icon="/usr/share/pixmaps/blender.xpm"\
+  title="Blender (windowed)" command="/usr/bin/blender -w"

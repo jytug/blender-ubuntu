@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# A wrapper script for Blender
+#
+
+# In case user's home directory doesn't contain ~/.blender, copy it
+# from /usr/lib/blender
+
+if [ ! -d ~/.blender ]; then
+    install -d ~/.blender
+    ln -sf /usr/lib/blender/locale ~/.blender
+    ln -sf /usr/lib/blender/.Blanguages ~/.blender
+    ln -sf /usr/lib/blender/.bfont.ttf ~/.blender
+    cp -a /usr/lib/blender/bpydata ~/.blender
+    cp -a /usr/lib/blender/VERSION ~/.blender
+
+    install -d ~/.blender/plugins/sequence
+    install -d ~/.blender/plugins/texture
+
+    install -d ~/.blender/scripts
+    ln -sf /usr/lib/blender/scripts/* ~/.blender/scripts/
+fi
+
+# 
+# In case the user's ~/.blender came from older versions, some files 
+# should be reinstalled.
+#
+
+if [ $(cat ~/.blender/VERSION) != $(cat /usr/lib/blender/VERSION) ]; then
+    cp -a /usr/lib/blender/bpydata ~/.blender
+    ln -sf /usr/lib/blender/scripts/* ~/.blender/scripts/
+    cp -a /usr/lib/blender/VERSION ~/.blender
+fi
+
+#
+# Fully update the plugins every time blender is launched.
+#
+
+for s in /usr/lib/blender/scripts/* ; do
+    s=`basename $s`
+    if [ ! -e ~/.blender/scripts/$s ] ; then
+         ln -sf /usr/lib/blender/scripts/$s ~/.blender/scripts/
+    fi
+done
+
+blender-bin $@

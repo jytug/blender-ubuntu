@@ -1,0 +1,56 @@
+#! /bin/sh -e
+## 01_SConstruct_debian.dpatch by Masayuki Hatta <mhatta@debian.org>
+##
+## All lines beginning with \`## DP:' are a description of the patch.
+## DP: Modify SConstruct for the Debian environment
+
+if [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+        -patch) patch -f --no-backup-if-mismatch --dry-run -p1 < $0 && patch -f --no-backup-if-mismatch -p1 < $0
+;;
+        -unpatch) patch -f --no-backup-if-mismatch -R -p1 < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+diff -urN blender-2.37a.orig/SConstruct blender-2.37a/SConstruct
+--- blender-2.37a.orig/SConstruct	2005-06-14 05:56:19.000000000 +0900
++++ blender-2.37a/SConstruct	2005-09-07 12:30:41.000000000 +0900
+@@ -65,7 +65,7 @@
+ 	build_blender_dynamic = 'true'
+ 	build_blender_static = 'false'
+ 	build_blender_player = 'true'
+-	build_blender_plugin = 'false'
++	build_blender_plugin = 'true'
+ 	release_flags = ['-O2']
+ 	debug_flags = ['-O2', '-g']
+ 	extra_flags = ['-pipe', '-funsigned-char']
+@@ -117,16 +117,16 @@
+ 	python_include = [sysconfig.get_python_inc ()]
+ 	python_linkflags = Split (sysconfig.get_config_var('LINKFORSHARED'))
+ 	# International support information
+-	ftgl_lib = []
+-	ftgl_libpath = []
+-	ftgl_include = ['#extern/bFTGL/include']
++	ftgl_lib = ['ftgl']
++	ftgl_libpath = ['/usr/lib']
++	ftgl_include = ['/usr/include/FTGL']
+ 	freetype_env.ParseConfig ('pkg-config --cflags --libs freetype2 2>/dev/null || freetype-config --cflags --libs 2>/dev/null')
+ 	freetype_lib = freetype_env.Dictionary()['LIBS']
+ 	freetype_libpath = freetype_env.Dictionary()['LIBPATH']
+ 	freetype_include = freetype_env.Dictionary()['CPPPATH']
+-	gettext_lib = []
+-	gettext_libpath = []
+-	gettext_include = []
++	gettext_lib = ['gettextpo']
++	gettext_libpath = ['/usr/lib']
++	gettext_include = ['/usr/include']
+ 	# OpenAL library information
+ 	openal_lib = ['openal']
+ 	openal_libpath = ['/usr/lib']
