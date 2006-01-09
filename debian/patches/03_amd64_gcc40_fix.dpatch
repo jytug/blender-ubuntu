@@ -1,28 +1,14 @@
-#! /bin/sh -e
-## 03_amd64_gcc40_fix.dpatch by Masayuki Hatta <mhatta@debian.org>
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03_amd64_gcc40_fix.dpatch by Florian Ernst <florian@debian.org>
 ##
-## All lines beginning with \`## DP:' are a description of the patch.
-## DP: To build on amd64 with gcc-4.0.
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: To build on amd64 with gcc-4.0, apparently not needed anymore as of 2.40.
 
-if [ $# -ne 1 ]; then
-    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
-    exit 1
-fi
-case "$1" in
-        -patch) patch -f --no-backup-if-mismatch --dry-run -p1 < $0 && patch -f --no-backup-if-mismatch -p1 < $0
-;;
-        -unpatch) patch -f --no-backup-if-mismatch -R -p1 < $0;;
-        *)
-                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
-                exit 1;;
-esac
-
-exit 0
-
-diff -urN blender-2.37a.orig/source/blender/python/api2_2x/CurNurb.c blender-2.37a/source/blender/python/api2_2x/CurNurb.c
---- blender-2.37a.orig/source/blender/python/api2_2x/CurNurb.c	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/blender/python/api2_2x/CurNurb.c	2005-09-07 13:04:33.000000000 +0900
-@@ -107,7 +107,7 @@
+@DPATCH@
+diff -urNad blender-2.40~/source/blender/python/api2_2x/CurNurb.c blender-2.40/source/blender/python/api2_2x/CurNurb.c
+--- blender-2.40~/source/blender/python/api2_2x/CurNurb.c	2005-12-01 14:30:43.000000000 +0100
++++ blender-2.40/source/blender/python/api2_2x/CurNurb.c	2006-01-09 10:30:21.000000000 +0100
+@@ -105,7 +105,7 @@
   * these methods are invoked on an instance of the type.
  */
  
@@ -31,141 +17,3 @@ diff -urN blender-2.37a.orig/source/blender/python/api2_2x/CurNurb.c blender-2.3
  /*   name,     method,                    flags,         doc               */
  /*  {"method", (PyCFunction) CurNurb_method, METH_NOARGS, " () - doc string"} */
  	{"setMatIndex", ( PyCFunction ) CurNurb_setMatIndex, METH_VARARGS,
-diff -urN blender-2.37a.orig/source/gameengine/Expressions/KX_HashedPtr.cpp blender-2.37a/source/gameengine/Expressions/KX_HashedPtr.cpp
---- blender-2.37a.orig/source/gameengine/Expressions/KX_HashedPtr.cpp	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/gameengine/Expressions/KX_HashedPtr.cpp	2005-09-07 13:03:41.000000000 +0900
-@@ -55,7 +55,7 @@
- 
- 
- 
--unsigned int CHashedPtr::hash() const
-+unsigned long CHashedPtr::hash() const
- {
--	return KX_Hash((unsigned int) m_valptr);
-+	return KX_Hash((unsigned long) m_valptr);
- }
-diff -urN blender-2.37a.orig/source/gameengine/Expressions/KX_HashedPtr.h blender-2.37a/source/gameengine/Expressions/KX_HashedPtr.h
---- blender-2.37a.orig/source/gameengine/Expressions/KX_HashedPtr.h	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/gameengine/Expressions/KX_HashedPtr.h	2005-09-07 12:56:44.000000000 +0900
-@@ -41,7 +41,7 @@
- public:
- 	CHashedPtr(void* val);
- 
--	unsigned int hash() const;
-+	unsigned long hash() const;
- 
- 	inline friend bool operator ==( const CHashedPtr & rhs,const CHashedPtr & lhs)
- 	{
-diff -urN blender-2.37a.orig/source/gameengine/Ketsji/KX_CameraIpoSGController.cpp blender-2.37a/source/gameengine/Ketsji/KX_CameraIpoSGController.cpp
---- blender-2.37a.orig/source/gameengine/Ketsji/KX_CameraIpoSGController.cpp	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/gameengine/Ketsji/KX_CameraIpoSGController.cpp	2005-09-07 13:06:08.000000000 +0900
-@@ -92,10 +92,10 @@
- 		iporeplica->AddInterpolator(copyipo);
- 
- 		MT_Scalar* scaal = ((KX_ScalarInterpolator*)*i)->GetTarget();
--		int orgbase = (int)this;
--		int orgloc = (int)scaal;
-+		long orgbase = (long)this;
-+		long orgloc = (long)scaal;
- 		int offset = orgloc-orgbase;
--		int newaddrbase = (int)iporeplica + offset;
-+		long newaddrbase = (long)iporeplica + offset;
- 		MT_Scalar* blaptr = (MT_Scalar*) newaddrbase;
- 		copyipo->SetNewTarget((MT_Scalar*)blaptr);
- 	}
-diff -urN blender-2.37a.orig/source/gameengine/Ketsji/KX_GameObject.cpp blender-2.37a/source/gameengine/Ketsji/KX_GameObject.cpp
---- blender-2.37a.orig/source/gameengine/Ketsji/KX_GameObject.cpp	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/gameengine/Ketsji/KX_GameObject.cpp	2005-09-07 12:58:35.000000000 +0900
-@@ -1069,10 +1069,10 @@
- 											   PyObject* kwds)
- {
- 	KX_IPhysicsController* ctrl = GetPhysicsController();
--	int physid=0;
-+	long physid=0;
- 	if (ctrl)
- 	{
--		physid= (int)ctrl->GetUserData();
-+		physid= (long)ctrl->GetUserData();
- 	}
- 	return PyInt_FromLong(physid);
- }
-diff -urN blender-2.37a.orig/source/gameengine/Ketsji/KX_IPO_SGController.cpp blender-2.37a/source/gameengine/Ketsji/KX_IPO_SGController.cpp
---- blender-2.37a.orig/source/gameengine/Ketsji/KX_IPO_SGController.cpp	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/gameengine/Ketsji/KX_IPO_SGController.cpp	2005-09-07 13:08:05.000000000 +0900
-@@ -168,10 +168,10 @@
- 		iporeplica->AddInterpolator(copyipo);
- 
- 		MT_Scalar* scaal = ((KX_ScalarInterpolator*)*i)->GetTarget();
--		int orgbase = (int)&m_ipo_xform;
--		int orgloc = (int)scaal;
-+		long orgbase = (long)&m_ipo_xform;
-+		long orgloc = (long)scaal;
- 		int offset = orgloc-orgbase;
--		int newaddrbase = (int)&iporeplica->m_ipo_xform;
-+		long newaddrbase = (long)&iporeplica->m_ipo_xform;
- 		newaddrbase += offset;
- 		MT_Scalar* blaptr = (MT_Scalar*) newaddrbase;
- 		copyipo->SetNewTarget((MT_Scalar*)blaptr);
-diff -urN blender-2.37a.orig/source/gameengine/Ketsji/KX_LightIpoSGController.cpp blender-2.37a/source/gameengine/Ketsji/KX_LightIpoSGController.cpp
---- blender-2.37a.orig/source/gameengine/Ketsji/KX_LightIpoSGController.cpp	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/gameengine/Ketsji/KX_LightIpoSGController.cpp	2005-09-07 13:08:28.000000000 +0900
-@@ -97,10 +97,10 @@
- 		iporeplica->AddInterpolator(copyipo);
- 
- 		MT_Scalar* scaal = ((KX_ScalarInterpolator*)*i)->GetTarget();
--		int orgbase = (int)this;
--		int orgloc = (int)scaal;
-+		long orgbase = (long)this;
-+		long orgloc = (long)scaal;
- 		int offset = orgloc-orgbase;
--		int newaddrbase = (int)iporeplica + offset;
-+		long newaddrbase = (long)iporeplica + offset;
- 		MT_Scalar* blaptr = (MT_Scalar*) newaddrbase;
- 		copyipo->SetNewTarget((MT_Scalar*)blaptr);
- 	}
-diff -urN blender-2.37a.orig/source/gameengine/Ketsji/KX_ObColorIpoSGController.cpp blender-2.37a/source/gameengine/Ketsji/KX_ObColorIpoSGController.cpp
---- blender-2.37a.orig/source/gameengine/Ketsji/KX_ObColorIpoSGController.cpp	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/gameengine/Ketsji/KX_ObColorIpoSGController.cpp	2005-09-07 13:00:06.000000000 +0900
-@@ -87,10 +87,10 @@
- 		iporeplica->AddInterpolator(copyipo);
- 
- 		MT_Scalar* scaal = ((KX_ScalarInterpolator*)*i)->GetTarget();
--		int orgbase = (int)this;
--		int orgloc = (int)scaal;
-+		long orgbase = (long)this;
-+		long orgloc = (long)scaal;
- 		int offset = orgloc-orgbase;
--		int newaddrbase = (int)iporeplica + offset;
-+		long newaddrbase = (long)iporeplica + offset;
- 		MT_Scalar* blaptr = (MT_Scalar*) newaddrbase;
- 		copyipo->SetNewTarget((MT_Scalar*)blaptr);
- 	}
-diff -urN blender-2.37a.orig/source/gameengine/Ketsji/KX_WorldIpoController.cpp blender-2.37a/source/gameengine/Ketsji/KX_WorldIpoController.cpp
---- blender-2.37a.orig/source/gameengine/Ketsji/KX_WorldIpoController.cpp	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/gameengine/Ketsji/KX_WorldIpoController.cpp	2005-09-07 13:09:29.000000000 +0900
-@@ -92,10 +92,10 @@
- 		iporeplica->AddInterpolator(copyipo);
- 
- 		MT_Scalar* scaal = ((KX_ScalarInterpolator*)*i)->GetTarget();
--		int orgbase = (int)this;
--		int orgloc = (int)scaal;
-+		long orgbase = (long)this;
-+		long orgloc = (long)scaal;
- 		int offset = orgloc-orgbase;
--		int newaddrbase = (int)iporeplica + offset;
-+		long newaddrbase = (long)iporeplica + offset;
- 		MT_Scalar* blaptr = (MT_Scalar*) newaddrbase;
- 		copyipo->SetNewTarget((MT_Scalar*)blaptr);
- 	}
-diff -urN blender-2.37a.orig/source/kernel/gen_system/GEN_HashedPtr.h blender-2.37a/source/kernel/gen_system/GEN_HashedPtr.h
---- blender-2.37a.orig/source/kernel/gen_system/GEN_HashedPtr.h	2005-09-07 12:53:52.000000000 +0900
-+++ blender-2.37a/source/kernel/gen_system/GEN_HashedPtr.h	2005-09-07 13:14:01.000000000 +0900
-@@ -40,7 +40,7 @@
- 	void* m_valptr;
- public:
- 	GEN_HashedPtr(void* val) : m_valptr(val) {};
--	unsigned int hash() const { return GEN_Hash((unsigned int) m_valptr);};
-+	unsigned long hash() const { return GEN_Hash((unsigned long) m_valptr);};
- 	inline friend bool operator ==(const GEN_HashedPtr & rhs, const GEN_HashedPtr & lhs) { return rhs.m_valptr == lhs.m_valptr;};
- };
- 

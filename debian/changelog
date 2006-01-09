@@ -7,10 +7,13 @@ blender (2.40-1) unstable; urgency=low
   * Fix buffer overflow - closes: #344398
 
   [ Florian Ernst ]
+  * New upstream release includes own fixes for building on amd64/gcc4.0;
+    adjusting debian/patches/03_amd64_gcc40_fix.dpatch and then stop applying
+    it as it is apparently not needed anymore
   * Add debian/patches/SConstruct.diff as well as debian/README.Alioth-CVS
     explaining how to use it when building from upstream source + Alioth-CVS
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 10:21:54 +0100
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 10:46:38 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
