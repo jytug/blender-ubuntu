@@ -1,11 +1,16 @@
 blender (2.40-1) unstable; urgency=low
 
+  [ Wouter van Heyst ]
   * Switch to team based maintenance
   * New upstream release - closes: #345442
   * Acknowledge NMU - closes: #333958
   * Fix buffer overflow - closes: #344398
 
- -- Wouter van Heyst <larstiq@larstiq.dyndns.org>  Sun,  1 Jan 2006 21:18:14 +0100
+  [ Florian Ernst ]
+  * Add debian/patches/SConstruct.diff as well as debian/README.Alioth-CVS
+    explaining how to use it when building from upstream source + Alioth-CVS
+
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 10:21:54 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 

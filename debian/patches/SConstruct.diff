@@ -1,0 +1,15 @@
+--- blender-2.37a.orig/SConstruct
++++ blender-2.37a/SConstruct
+@@ -38,6 +38,12 @@
+ 
+ bs_config.parseOpts()
+ 
++# Setting build directory here so blender won't touch anything outside
++# its build environment, see Bug#288882. Thanks Frank!
++# Also see Bug#333958, so please don't remove or the package will FTBFS
++# on all archs using sudo instead of fakeroot.
++bs_globals.root_build_dir = '.' + os.sep + 'build' + os.sep + sys.platform + os.sep
++
+ # Create the build directory. SCons does this automatically, but since we
+ # don't want to put scons-generated .sconsign files in the source tree, but in
+ # the root_build_dir, we have to create that dir ourselves before SCons tries
