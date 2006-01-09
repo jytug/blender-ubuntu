@@ -9,8 +9,6 @@ Standards-Version: 3.6.2.1
 Package: blender
 Architecture: any
 Depends: ${shlibs:Depends}
-Conflicts: blender-powerpc
-Replaces: blender-powerpc
 Recommends: libtiff4
 Suggests: yafray
 Description: Very fast and versatile 3D modeller/renderer
