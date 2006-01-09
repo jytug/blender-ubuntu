@@ -2,7 +2,7 @@ blender (2.40-1) unstable; urgency=high
 
   [ Wouter van Heyst ]
   * Switch to team based maintenance
-  * New upstream release - closes: #345442
+  * New upstream release - closes: #345442, #346144
     + fixes CVE-2005-4470: Integer overhead in header parser for .blend import
       - closes: #344398, urgency=high
   * Acknowledge NMU - closes: #333958
@@ -18,7 +18,7 @@ blender (2.40-1) unstable; urgency=high
   * Add Build-Depends on libtiff4-dev for building and Recommends on libtiff4
     for dlopen()'ing
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 11:02:57 +0100
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 11:06:20 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
