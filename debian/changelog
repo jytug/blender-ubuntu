@@ -14,8 +14,10 @@ blender (2.40-1) unstable; urgency=low
     explaining how to use it when building from upstream source + Alioth-CVS
   * Add missing build-dependency on libgettextpo-dev, drop hardcoded Depends
     on gettext - closes: #307811
-
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 10:51:57 +0100
+  * Add Build-Depends on libtiff4-dev for building and Recommends on libtiff4
+    for dlopen()'ing
+  
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 10:55:16 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
