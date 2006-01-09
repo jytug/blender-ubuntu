@@ -15,7 +15,7 @@ blender (2.40-1) unstable; urgency=high
     explaining how to use it when building from upstream source + Alioth-CVS
   * Add missing build-dependency on libgettextpo-dev, drop hardcoded Depends
     on gettext - closes: #307811
-  * Add Build-Depends on libtiff4-dev for building and Recommends on libtiff4
+  * Add Build-Depends on libtiff4-dev for building and Suggests on libtiff4
     for dlopen()'ing
   * Add README.Debian explaining graphics issues such as random crashes and
     interface weirdness, this might eventually be sufficient for resolving
@@ -30,7 +30,7 @@ blender (2.40-1) unstable; urgency=high
   * Streamline debian/rules, removing some unneeded cruft
   * debian/control: add upstream homepage
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 14:37:18 +0100
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 14:51:43 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 

@@ -9,8 +9,7 @@ Standards-Version: 3.6.2.1
 Package: blender
 Architecture: any
 Depends: ${shlibs:Depends}
-Recommends: libtiff4
-Suggests: yafray
+Suggests: yafray, libtiff4
 Description: Very fast and versatile 3D modeller/renderer
  Blender is an integrated 3d suite for modelling, animation, rendering,
  post-production, interactive creation and playback (games). Blender has its
