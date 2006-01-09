@@ -12,8 +12,10 @@ blender (2.40-1) unstable; urgency=low
     it as it is apparently not needed anymore
   * Add debian/patches/SConstruct.diff as well as debian/README.Alioth-CVS
     explaining how to use it when building from upstream source + Alioth-CVS
+  * Add missing build-dependency on libgettextpo-dev, drop hardcoded Depends
+    on gettext - closes: #307811
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 10:46:38 +0100
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 10:51:57 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
