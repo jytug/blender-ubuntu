@@ -27,8 +27,9 @@ blender (2.40-1) unstable; urgency=high
   * Extend 04_de_po_fix.dpatch
   * Remove Conflicts/Replaces on blender-powerpc as this package only exists
     in oldstable
+  * Streamline debian/rules, removing some unneeded cruft
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 12:50:06 +0100
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 12:55:10 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
