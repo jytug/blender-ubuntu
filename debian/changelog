@@ -20,8 +20,12 @@ blender (2.40-1) unstable; urgency=high
   * Add README.Debian explaining graphics issues such as random crashes and
     interface weirdness, this might eventually be sufficient for resolving
     bugs like #299441 and friends...
+  * Substitute 02_quit.blend_in_.blender.dpatch for
+    02_quit_blend_in_homedir.dpatch to make sure quit.blend gets created,
+    saved and read in $HOME/.blender in order to avoid a symlink attack, see
+    bug#298167
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 11:40:59 +0100
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 12:31:42 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
