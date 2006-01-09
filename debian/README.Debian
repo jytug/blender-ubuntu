@@ -1,0 +1,14 @@
+blender (2.40-1) unstable; urgency=low
+
+ As blender is generally trying to get the most out of your graphics hardware
+ it might trigger bugs in the corresponding drivers without actually being
+ responsible for any malfunctioning.
+ If you experience strange crashes please always try checking your setup first
+ as outlined in
+  http://dri.freedesktop.org/wiki/TestingAndDebugging
+ as well as the Debian bugreport
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=273651
+ I.e., try running blender via "LIBGL_ALWAYS_INDIRECT=1 blender" and see whether
+ this will resolve the problem for you.
+
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 11:26:43 +0100
