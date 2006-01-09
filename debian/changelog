@@ -24,8 +24,9 @@ blender (2.40-1) unstable; urgency=high
     02_quit_blend_in_homedir.dpatch to make sure quit.blend gets created,
     saved and read in $HOME/.blender in order to avoid a symlink attack, see
     bug#298167
+  * Extend 04_de_po_fix.dpatch
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 12:31:42 +0100
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 12:45:21 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 

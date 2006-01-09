@@ -1,38 +1,174 @@
-#! /bin/sh -e
-## 04_de_po_fix.dpatch by Masayuki Hatta <mhatta@debian.org>
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 04_de_po_fix.dpatch by Florian Ernst <florian@debian.org>
 ##
-## All lines beginning with \`## DP:' are a description of the patch.
-## DP: A little fix for de.po
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: A little fix for de.po by Jens Seidel (bug#313676), extended by me
 
-if [ $# -ne 1 ]; then
-    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
-    exit 1
-fi
-case "$1" in
-        -patch) patch -f --no-backup-if-mismatch --dry-run -p1 < $0 && patch -f --no-backup-if-mismatch -p1 < $0
-;;
-        -unpatch) patch -f --no-backup-if-mismatch -R -p1 < $0;;
-        *)
-                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
-                exit 1;;
-esac
-
-exit 0
-
-diff -urN blender-2.37a.orig/po/de.po blender-2.37a/po/de.po
---- blender-2.37a.orig/po/de.po	2005-09-07 14:21:32.000000000 +0900
-+++ blender-2.37a/po/de.po	2005-09-07 14:22:31.000000000 +0900
-@@ -10,11 +10,11 @@
+@DPATCH@
+diff -urNad blender-2.40~/po/de.po blender-2.40/po/de.po
+--- blender-2.40~/po/de.po	2003-05-14 17:04:27.000000000 +0200
++++ blender-2.40/po/de.po	2006-01-09 12:40:43.000000000 +0100
+@@ -8,13 +8,13 @@
+ ###
+ ###########################################################
  msgid "Start the rendering"
- msgstr "Starte das rendern"
+-msgstr "Starte das rendern"
++msgstr "Starte das Rendern"
  msgid "Display edge settings"
 -msgstr "Zeige Kanten Eintellungen"
-+msgstr "Zeige Kanten-Eintellungen"
++msgstr "Zeige Kanten-Einstellungen"
  msgid "Enable shadow calculation"
  msgstr "Rendere mit Schatten"
  msgid "Start rendering a sequence"
 -msgstr "Starte das rendern einer Sequenz"
 +msgstr "Starte das Rendern einer Sequenz"
+ 
+ 
+ ###########################################################
+@@ -49,7 +49,7 @@
+ ###
+ ###########################################################
+ msgid "QUIT BLENDER"
+-msgstr "STOP BLENDER !"
++msgstr "STOP BLENDER"
+ msgid "Not allowed"
+ msgstr "Nicht erlaubt"
+ msgid "ERASE ALL"
+@@ -102,9 +102,9 @@
+ msgid "&gt;Cube"
+ msgstr "&gt;Würfel"
+ msgid "&gt;UVsphere"
+-msgstr "&gt;UV Kugel"
++msgstr "&gt;UV-Kugel"
+ msgid "&gt;Icosphere"
+-msgstr "&gt;Ico Kugel"
++msgstr "&gt;Ico-Kugel"
+ msgid "&gt;Cylinder"
+ msgstr "&gt;Zylinder"
+ msgid "&gt;Tube"
+@@ -123,13 +123,13 @@
+ ###
+ ###########################################################
+ msgid "&gt;Bezier Curve"
+-msgstr "&gt;Bezier Kurve"
++msgstr "&gt;Bezier-Kurve"
+ msgid "&gt;Bezier Circle"
+-msgstr "&gt;Bezier Kreis"
++msgstr "&gt;Bezier-Kreis"
+ msgid "&gt;Nurbs Curve"
+-msgstr "&gt;Nurbs Kurve"
++msgstr "&gt;Nurbs-Kurve"
+ msgid "&gt;Nurbs Circle"
+-msgstr "&gt;Nurbs Kreis"
++msgstr "&gt;Nurbs-Kreis"
+ msgid "&gt;Path"
+ msgstr "&gt;Pfad"
+ 
+@@ -179,7 +179,7 @@
+ msgid "Save VideoScape"
+ msgstr "Speichere VideoScape"
+ msgid "Save UserPrefs"
+-msgstr "Speichere Benutzer Einstellungen"
++msgstr "Speichere Benutzereinstellungen"
+ msgid "Quit"
+ msgstr "Beenden"
+ 
+@@ -202,7 +202,7 @@
+ msgid "Delete"
+ msgstr "Lösche"
+ msgid "Edit Mode"
+-msgstr "Bearbeitungs Modus"
++msgstr "Bearbeitungsmodus"
+ msgid "Grabber"
+ msgstr "Grabber"
+ msgid "Rotate"
+@@ -241,11 +241,11 @@
+ msgid "Clear Track"
+ msgstr "Lösche Spur"
+ msgid "Image Displist"
+-msgstr "Bild Displiste"
++msgstr "Bild-Displiste"
+ msgid "Image Aspect"
+-msgstr "Bild Aspekt"
++msgstr "Bild-Aspekt"
+ msgid "Vect Paint"
+-msgstr "Vektor Zeichnen"
++msgstr "Vektorzeichnen"
+ 
+ 
+ ###########################################################
+@@ -260,7 +260,7 @@
+ msgid "Apply Size/Rot"
+ msgstr "Wende Größe/Drehung an"
+ msgid "Apply Deform"
+-msgstr "Wende deformation an"
++msgstr "Wende Deformation an"
+ msgid "Join"
+ msgstr "Verbinde"
+ #msgid "Make Local"
+@@ -274,7 +274,7 @@
+ #msgid "Convert Menu"
+ #msgstr "Menü Konvertieren"
+ msgid "Boolean Op"
+-msgstr "Boolsche Operation"
++msgstr "Boole'sche Operation"
+ 
+ 
+ ###########################################################
+@@ -354,7 +354,7 @@
+ msgid "Set Border"
+ msgstr "Setze Rand"
+ msgid "Image Zoom"
+-msgstr "Bild Zoom"
++msgstr "Bild-Zoom"
+ 
+ 
+ ###########################################################
+@@ -431,9 +431,9 @@
+ msgid "Circle"
+ msgstr "Kreis"
+ msgid "UVsphere"
+-msgstr "UV Kugel"
++msgstr "UV-Kugel"
+ msgid "IcoSphere"
+-msgstr "Ico Kugel"
++msgstr "Ico-Kugel"
+ msgid "Cylinder"
+ msgstr "Zylinder"
+ msgid "Tube"
+@@ -450,13 +450,13 @@
+ ###
+ ###########################################################
+ msgid "Bezier Curve"
+-msgstr "Bezier Kurve"
++msgstr "Bezier-Kurve"
+ msgid "Bezier Circle"
+-msgstr "Bezier Kreis"
++msgstr "Bezier-Kreis"
+ msgid "NURBS Curve"
+-msgstr "NURBS Kurve"
++msgstr "NURBS-Kurve"
+ msgid "NURBS Circle"
+-msgstr "NURBS Kreis"
++msgstr "NURBS-Kreis"
+ msgid "Path"
+ msgstr "Pfad"
+ 
+@@ -467,13 +467,13 @@
+ ###
+ ###########################################################
+ msgid "NURBS Suface"
+-msgstr "NURBS Oberfläche"
++msgstr "NURBS-Oberfläche"
+ msgid "NURBS Tube"
+-msgstr "NURBS Rohr"
++msgstr "NURBS-Rohr"
+ msgid "NURBS Sphere"
+-msgstr "NURBS Kugel"
++msgstr "NURBS-Kugel"
+ msgid "NURBS Donut"
+-msgstr "NURBS Donut"
++msgstr "NURBS-Donut"
  
  
  ###########################################################
