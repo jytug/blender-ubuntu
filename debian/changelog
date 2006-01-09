@@ -28,8 +28,9 @@ blender (2.40-1) unstable; urgency=high
   * Remove Conflicts/Replaces on blender-powerpc as this package only exists
     in oldstable
   * Streamline debian/rules, removing some unneeded cruft
+  * debian/control: add upstream homepage
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 12:55:10 +0100
+ -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 14:37:18 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
