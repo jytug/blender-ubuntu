@@ -29,8 +29,10 @@ blender (2.40-1) unstable; urgency=high
     in oldstable
   * Streamline debian/rules, removing some unneeded cruft
   * debian/control: add upstream homepage
+  * README.Debian: added note about quit.blend now being found in
+    $HOME/.blender
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 14:51:43 +0100
+ -- Florian Ernst <florian@debian.org>  Tue, 10 Jan 2006 13:31:16 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 

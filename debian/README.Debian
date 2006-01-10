@@ -11,4 +11,8 @@ blender (2.40-1) unstable; urgency=low
  I.e., try running blender via "LIBGL_ALWAYS_INDIRECT=1 blender" and see whether
  this will resolve the problem for you.
 
- -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 11:26:43 +0100
+ Furthermore, please note that starting with the 2.40-1 release blender will
+ quit writing its autosave file "quit.blend" to /tmp but it will use
+ $HOME/.blender/quit.blend instead.
+ 
+ -- Florian Ernst <florian@debian.org>  Tue, 10 Jan 2006 13:26:43 +0100
