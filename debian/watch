@@ -1,0 +1,2 @@
+version=3
+http://download.blender.org/source/blender-([\.\d]+)\.tar\.gz
