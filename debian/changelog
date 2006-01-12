@@ -32,11 +32,11 @@ blender (2.40-1) unstable; urgency=high
   * README.Debian: added note about quit.blend now being found in
     $HOME/.blender
   * debian/watch: added
-  * Merge (and extend) Ubuntu adjustments courtesy of Daniel Holbach
+  * Merge (and extend) Ubuntu adjustments as applied by Daniel Holbach
     + ${python:Depends} and dh_python
     + auto-update config.guess via autotools-dev
 
- -- Florian Ernst <florian@debian.org>  Fri, 13 Jan 2006 00:12:44 +0100
+ -- Florian Ernst <florian@debian.org>  Fri, 13 Jan 2006 00:14:51 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
