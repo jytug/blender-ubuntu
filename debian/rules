@@ -21,6 +21,9 @@ build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
 
+	ln -sf /usr/share/misc/config.sub extern/bFTGL/unix/config.sub
+	ln -sf /usr/share/misc/config.guess extern/bFTGL/unix/config.guess
+	ln -sf /usr/share/misc/config.guess source/tools/guess/config.guess
 	# Add here commands to compile the package.
 	scons
 
@@ -48,7 +51,9 @@ clean: unpatch
 	rm -rf $(CURDIR)/release/plugins/include
 	rm -rf $(CURDIR)/build
 
-	rm -f $(CURDIR)/config.opts
+	rm -f $(CURDIR)/config.opts \
+		extern/bFTGL/unix/config.sub extern/bFTGL/unix/config.guess \
+		source/tools/guess/config.guess
 
 install: build
 	dh_testdir

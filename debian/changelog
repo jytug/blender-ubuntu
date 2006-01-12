@@ -34,8 +34,9 @@ blender (2.40-1) unstable; urgency=high
   * debian/watch: added
   * Merge (and extend) Ubuntu adjustments courtesy of Daniel Holbach
     + ${python:Depends} and dh_python
+    + auto-update config.{sub,guess} via autotools-dev
 
- -- Florian Ernst <florian@debian.org>  Thu, 12 Jan 2006 21:35:59 +0100
+ -- Florian Ernst <florian@debian.org>  Thu, 12 Jan 2006 23:56:59 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 

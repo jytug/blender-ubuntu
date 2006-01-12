@@ -3,7 +3,7 @@ Section: graphics
 Priority: optional
 Maintainer: Debian Blender Maintainers <pkg-blender-maintainers@lists.alioth.debian.org>
 Uploaders: Masayuki Hatta (mhatta) <mhatta@debian.org>, Florian Ernst <florian@debian.org>, Wouter van Heyst <larstiq@larstiq.dyndns.org>
-Build-Depends: debhelper (>= 4.0.0), dpatch, ftgl-dev (>= 2.0.9-1), gettext (>= 0.14.1), libgettextpo-dev, libglut-dev, libjpeg-dev, libopenal-dev (>= 0.2003011300-1), libpng-dev, libsdl-dev, libz-dev, python-dev, scons, libtiff4-dev
+Build-Depends: debhelper (>= 4.0.0), dpatch, ftgl-dev (>= 2.0.9-1), gettext (>= 0.14.1), libgettextpo-dev, libglut-dev, libjpeg-dev, libopenal-dev (>= 0.2003011300-1), libpng-dev, libsdl-dev, libz-dev, python-dev, scons, libtiff4-dev, autotools-dev
 Standards-Version: 3.6.2.1
 
 Package: blender
