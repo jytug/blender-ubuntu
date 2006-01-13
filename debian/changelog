@@ -35,8 +35,9 @@ blender (2.40-1) unstable; urgency=high
   * Merge (and extend) Ubuntu adjustments as applied by Daniel Holbach
     + ${python:Depends} and dh_python
     + auto-update config.guess via autotools-dev
+  * debian/source.lintian-overrides: added
 
- -- Florian Ernst <florian@debian.org>  Fri, 13 Jan 2006 00:14:51 +0100
+ -- Florian Ernst <florian@debian.org>  Fri, 13 Jan 2006 01:20:57 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
