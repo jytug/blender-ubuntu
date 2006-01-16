@@ -20,10 +20,9 @@ blender (2.40-1) unstable; urgency=high
   * Add README.Debian explaining graphics issues such as random crashes and
     interface weirdness, this might eventually be sufficient for resolving
     bugs like #299441 and friends...
-  * Substitute 02_quit.blend_in_.blender.dpatch for
-    02_quit_blend_in_homedir.dpatch to make sure quit.blend gets created,
-    saved and read in $HOME/.blender in order to avoid a symlink attack, see
-    bug#298167
+  * Substitute 02_tmp_in_HOME.dpatch for 02_quit_blend_in_homedir.dpatch to
+    make sure all temporary user data (such as e.g. autosave files) is put
+    in $HOME/.blender in order to avoid a symlink attack, see bug#298167
   * Extend 04_de_po_fix.dpatch
   * Remove Conflicts/Replaces on blender-powerpc as this package only exists
     in oldstable
@@ -38,7 +37,7 @@ blender (2.40-1) unstable; urgency=high
   * debian/source.lintian-overrides: added
   * debian/blender.1: escape hyphens where necessary
 
- -- Florian Ernst <florian@debian.org>  Fri, 13 Jan 2006 01:23:46 +0100
+ -- Florian Ernst <florian@debian.org>  Mon, 16 Jan 2006 16:44:39 +0100
 
 blender (2.37a-1.1) unstable; urgency=low
 
