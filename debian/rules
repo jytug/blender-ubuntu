@@ -39,7 +39,7 @@ clean: unpatch
 	rm -f build-stamp configure-stamp
 
 	# Add here commands to clean up after the build process.
-	-scons --clean
+	-scons clean
 
 	# Remove *.pycs
 	dh_clean tools/*.pyc tools/scons/*.pyc tools/scons/bs/*.pyc

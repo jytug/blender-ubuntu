@@ -2,8 +2,10 @@ blender (2.40-2) unstable; urgency=low
 
   * Lower optimization on mips{,el} only in order to avoid a compiler error,
     adjusting dpatch setup accordingly
+  * debian/rules: use "scons clean" to speed up clean target as recommended
+    by upstream
 
- -- Florian Ernst <florian@debian.org>  Tue, 17 Jan 2006 14:42:22 +0100
+ -- Florian Ernst <florian@debian.org>  Tue, 17 Jan 2006 14:45:33 +0100
 
 blender (2.40-1) unstable; urgency=high
 
