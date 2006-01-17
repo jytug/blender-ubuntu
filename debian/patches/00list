@@ -1,3 +1,7 @@
 01_SConstruct_debian
+#if defined(DEB_BUILD_ARCH_mips) || defined(DEB_BUILD_ARCH_mipsel)
+/* 2.40-1 triggered a compiler error on these archs, so let's lower optimization. */
+01_SConstruct_debian_mips_el
+#endif
 02_tmp_in_HOME
 04_de_po_fix
