@@ -6,8 +6,17 @@
 
 @DPATCH@
 diff -urNad blender-2.41~/SConstruct blender-2.41/SConstruct
---- blender-2.41~/SConstruct	2006-01-26 10:59:06.000000000 +0100
-+++ blender-2.41/SConstruct	2006-01-26 11:02:20.000000000 +0100
+--- blender-2.41~/SConstruct	2006-01-26 11:16:31.000000000 +0100
++++ blender-2.41/SConstruct	2006-01-26 11:40:08.000000000 +0100
+@@ -70,7 +70,7 @@
+ if sys.platform == 'linux2' or sys.platform == 'linux-i386':
+ 	use_international = 'true'
+ 	use_gameengine = 'true'
+-	use_openal = 'true'
++	use_openal = 'false'
+ 	use_fmod = 'false'
+ 	use_quicktime = 'false'
+ 	use_sumo = 'true'
 @@ -80,8 +80,8 @@
  	use_fluidsim = 'true'
  	build_blender_dynamic = 'true'

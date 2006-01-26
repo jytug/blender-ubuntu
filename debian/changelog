@@ -2,9 +2,10 @@ blender (2.41-1) unstable; urgency=low
 
   * New upstream release
     + adjust 01_SConstruct_debian.dpatch accordingly
+    + uses openal again, but we don't, see bug#323527
   * Remove mips{,el} patching from 2.40-2 as it didn't solve the FTBFS
 
- -- Florian Ernst <florian@debian.org>  Thu, 26 Jan 2006 11:12:42 +0100
+ -- Florian Ernst <florian@debian.org>  Thu, 26 Jan 2006 11:41:08 +0100
 
 blender (2.40-2) unstable; urgency=low
 
