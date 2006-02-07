@@ -1,11 +1,16 @@
 blender (2.41-1) unstable; urgency=low
 
+  [ Florian Ernst ]
   * New upstream release
     + adjust 01_SConstruct_debian.dpatch accordingly
     + uses openal again, but we don't, see bug#323527
   * Remove mips{,el} patching from 2.40-2 as it didn't solve the FTBFS
 
- -- Florian Ernst <florian@debian.org>  Thu, 26 Jan 2006 11:41:08 +0100
+  [ Antonio Ospite ]
+  * Fixed a Syntax Error in bevel_center.py script when using python 2.3,
+    see the file debian/patches/05_bevel_center.py_fix.dpatch
+
+ -- Florian Ernst <florian@debian.org>  Tue,  7 Feb 2006 11:36:11 +0100
 
 blender (2.40-2) unstable; urgency=low
 
