@@ -24,8 +24,9 @@ blender (2.42-0.1) unstable; urgency=low
   * New upstream
     + Finds libtiff easily (Closes: #364473)
     + lightwave_export.py works with newer Python (Closes: #348374)
+  * General cleanup to reflect new build system
 
- -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 20:11:10 +0200
+ -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 20:19:02 +0200
 
 blender (2.41-1) unstable; urgency=low
 

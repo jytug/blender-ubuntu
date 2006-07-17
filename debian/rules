@@ -21,7 +21,6 @@ build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
 
-	#ln -sf /usr/share/misc/config.guess source/tools/guess/config.guess
 	# Add user specific config (without patching)
 	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
 	# Add here commands to compile the package.
@@ -33,7 +32,7 @@ build-stamp: patch-stamp
 	chmod +x $(CURDIR)/install/linux2/plugins/bmake
 	$(MAKE) -C $(CURDIR)/install/linux2/plugins
 
-	touch build-stamp
+	touch $@
 
 clean: unpatch
 	dh_testdir
@@ -51,11 +50,6 @@ clean: unpatch
 	# Clean plugins (non needed? done by scons now ??)
 	#-$(MAKE) -C $(CURDIR)/install/linux2/plugins clean
 	rm -rf $(CURDIR)/install/linux2/plugins/include
-
-	#rm -rf $(CURDIR)/build
-
-	#rm -f $(CURDIR)/config.opts 
-	#rm -f $(CURDIR)/source/tools/guess/config.guess
 
 install: build
 	dh_testdir

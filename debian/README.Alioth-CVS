@@ -8,10 +8,6 @@ blender (2.40-1) unstable; urgency=low
   cvs -z3 -d:pserver:anonymous@cvs.alioth.debian.org:/cvsroot/pkg-blender co blender
 
  The "blender" module contains a "debian/" subdir, which should be all you
- need (plus an upstream tarball) to build a blender package. However, please
- note that you'll need to manually apply debian/patches/SConstruct.diff to your
- upstream sources if you intent to build the package using sudo (any Debian
- releases of blender will ship this patch pre-applied in the diff.gz, of
- course).
+ need (plus an upstream tarball) to build a blender package.
 
  -- Florian Ernst <florian@debian.org>  Mon,  9 Jan 2006 10:11:34 +0100
