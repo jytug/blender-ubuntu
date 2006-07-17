@@ -2,8 +2,10 @@
 Encoding=UTF-8
 Name=Blender 3D modeller
 Name[ru]=Редактор 3D-моделей Blender
+Name[fr]=Blender modeleur 3D
 Comment=Create and edit 3D models and animations
 Comment[ru]=Создание и редактирование трёхмерных моделей и анимаций
+Comment[fr]=Création et édition d'objets 3D et animations
 Exec=blender
 Icon=blender
 Terminal=false
