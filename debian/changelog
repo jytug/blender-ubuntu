@@ -1,5 +1,6 @@
 blender (2.42-0.1) unstable; urgency=low
 
+  [ Antonio Ospite ]
   * New upstream release
   * Adapt to use the refactored blender build system based on scons
   * Remove the build-dependecy on autotools-dev
@@ -15,7 +16,10 @@ blender (2.42-0.1) unstable; urgency=low
     2.3 (even if we build for 2.4, this make backporting easier), see the file
     patches/05_mesh_skin_py23.dpatch
 
- -- Antonio Ospite <ospite@studenti.unina.it>  Sun, 16 Jul 2006 10:01:03 +0200
+  [ Florian Ernst ]
+  * Drop 05_bevel_center.py_fix.dpatch, not needed anymore
+
+ -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 19:41:49 +0200
 
 blender (2.41-1) unstable; urgency=low
 
