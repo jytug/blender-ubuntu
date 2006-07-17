@@ -1,4 +1,4 @@
-blender (2.42-0.1) unstable; urgency=low
+blender (2.42-1) unstable; urgency=low
 
   [ Antonio Ospite ]
   * New upstream release
@@ -27,7 +27,7 @@ blender (2.42-0.1) unstable; urgency=low
   * General cleanup to reflect new build system
   * Drop old and unneeded patches
 
- -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 20:21:52 +0200
+ -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 20:32:26 +0200
 
 blender (2.41-1) unstable; urgency=low
 
