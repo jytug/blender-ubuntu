@@ -21,15 +21,17 @@ build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
 
-	ln -sf /usr/share/misc/config.guess source/tools/guess/config.guess
+	#ln -sf /usr/share/misc/config.guess source/tools/guess/config.guess
+	# Add user specific config (without patching)
+	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
 	# Add here commands to compile the package.
-	scons
+	scons WITH_BF_PLAYER=1 WITH_BF_OPENAL=0
 
 	# Build plugins by hand
-	install -d $(CURDIR)/release/plugins/include
-	install -m 644 source/blender/blenpluginapi/*.h $(CURDIR)/release/plugins/include
-	chmod +x $(CURDIR)/release/plugins/bmake
-	$(MAKE) -C $(CURDIR)/release/plugins
+	install -d $(CURDIR)/install/linux2/plugins/include
+	install -m 644 source/blender/blenpluginapi/*.h $(CURDIR)/install/linux2/plugins/include
+	chmod +x $(CURDIR)/install/linux2/plugins/bmake
+	$(MAKE) -C $(CURDIR)/install/linux2/plugins
 
 	touch build-stamp
 
@@ -39,17 +41,21 @@ clean: unpatch
 	rm -f build-stamp configure-stamp
 
 	# Add here commands to clean up after the build process.
+	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
 	-scons clean
+	rm -f $(CURDIR)/user-config.py
 
 	# Remove *.pycs
 	dh_clean tools/*.pyc tools/scons/*.pyc tools/scons/bs/*.pyc
 
-	# Clean plugins
-	-$(MAKE) -C $(CURDIR)/release/plugins clean
-	rm -rf $(CURDIR)/release/plugins/include
-	rm -rf $(CURDIR)/build
+	# Clean plugins (non needed? done by scons now ??)
+	#-$(MAKE) -C $(CURDIR)/install/linux2/plugins clean
+	rm -rf $(CURDIR)/install/linux2/plugins/include
 
-	rm -f $(CURDIR)/config.opts source/tools/guess/config.guess
+	#rm -rf $(CURDIR)/build
+
+	#rm -f $(CURDIR)/config.opts 
+	#rm -f $(CURDIR)/source/tools/guess/config.guess
 
 install: build
 	dh_testdir
@@ -58,9 +64,9 @@ install: build
 	dh_installdirs
 
 	# Add here commands to install the package into debian/blender.
-	install -m 755 blender $(CURDIR)/debian/blender/usr/bin/blender-bin
+	install -m 755 $(CURDIR)/install/linux2/blender $(CURDIR)/debian/blender/usr/bin/blender-bin
 	install -m 755 $(CURDIR)/debian/blender-wrapper $(CURDIR)/debian/blender/usr/bin/blender
-	install -m 755 blenderplayer $(CURDIR)/debian/blender/usr/bin
+	install -m 755 $(CURDIR)/install/linux2/blenderplayer $(CURDIR)/debian/blender/usr/bin/blenderplayer
 
 	# Install menus & icons
 	install -m 644 $(CURDIR)/debian/misc/blender.desktop $(CURDIR)/debian/blender/usr/share/applications
@@ -69,16 +75,30 @@ install: build
 	# Install plugins
 	install -d $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
 	install -d $(CURDIR)/debian/blender/usr/lib/blender/plugins/texture
-	install -m 644 $(CURDIR)/release/plugins/sequence/*.so $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
-	install -m 644 $(CURDIR)/release/plugins/texture/*.so $(CURDIR)/debian/blender/usr/lib/blender/plugins/texture
+	install -m 644 $(CURDIR)/install/linux2/plugins/sequence/*.so $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
+	install -m 644 $(CURDIR)/install/linux2/plugins/texture/*.so $(CURDIR)/debian/blender/usr/lib/blender/plugins/texture
 
 	# Install miscellaneous files under /usr/lib/blender
 	cp -a $(CURDIR)/release/scripts/bpydata $(CURDIR)/debian/blender/usr/lib/blender
 	cp -a $(CURDIR)/release/scripts $(CURDIR)/debian/blender/usr/lib/blender
-	cp -a $(CURDIR)/bin/.blender/locale $(CURDIR)/debian/blender/usr/lib/blender
+	cp -a $(CURDIR)/install/linux2/.blender/locale $(CURDIR)/debian/blender/usr/lib/blender
 	install -m 644 $(CURDIR)/release/VERSION $(CURDIR)/debian/blender/usr/lib/blender
-	install -m 644 $(CURDIR)/bin/.blender/.Blanguages $(CURDIR)/debian/blender/usr/lib/blender
-	install -m 644 $(CURDIR)/bin/.blender/.bfont.ttf $(CURDIR)/debian/blender/usr/lib/blender
+	install -m 644 $(CURDIR)/install/linux2/.blender/.Blanguages $(CURDIR)/debian/blender/usr/lib/blender
+	install -m 644 $(CURDIR)/install/linux2/.blender/.bfont.ttf $(CURDIR)/debian/blender/usr/lib/blender
+
+	# Fix permeissions for python scripts
+	find $(CURDIR)/debian/blender/usr/lib/blender/scripts/ -name "*.py" -exec chmod -R 644 '{}' \;
+
+	# Remove CVS dirs in package directory
+	-find $(CURDIR)/debian/blender -name CVS -type d -exec rm -rf '{}' \;
+
+	# Install lintian overrides file
+	cp $(CURDIR)/debian/blender.lintian-overrides \
+	   $(CURDIR)/debian/blender/usr/share/lintian/overrides/blender
+
+	cp $(CURDIR)/debian/blender.linda-overrides \
+	   $(CURDIR)/debian/blender/usr/share/linda/overrides/blender
+
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -96,6 +116,7 @@ binary-arch: build install
 	dh_strip
 	dh_compress
 	dh_fixperms
+	dh_pycentral
 	dh_python
 	dh_installdeb
 	dh_shlibdeps

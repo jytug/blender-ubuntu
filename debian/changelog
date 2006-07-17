@@ -1,3 +1,22 @@
+blender (2.42-0.1) unstable; urgency=low
+
+  * New upstream release
+  * Adapt to use the refactored blender build system based on scons
+  * Remove the build-dependecy on autotools-dev
+  * Build-Depend on libopenexr-dev to enable support for EXR output format
+  * Build-Depend on libavformat-dev to enable FFMPEG output format
+  * Add some lintian and linda overrides, for both source and binary package
+  * Update Standards-Versions to 3.7.2
+  * Build using python 2.4 (build-depends on python2.4-dev for now)
+  * Update to Build-Depend on debhelper (>= 5.0.37.2)
+  * Other updates to follow the python policy as asked in
+    http://wiki.debian.org/DebianPython/NewPolicy
+  * Fix a problem with mesh_skin.py script not being compatible with python
+    2.3 (even if we build for 2.4, this make backporting easier), see the file
+    patches/05_mesh_skin_py23.dpatch
+
+ -- Antonio Ospite <ospite@studenti.unina.it>  Sun, 16 Jul 2006 10:01:03 +0200
+
 blender (2.41-1) unstable; urgency=low
 
   [ Florian Ernst ]
