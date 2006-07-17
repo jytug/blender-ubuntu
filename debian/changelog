@@ -18,8 +18,9 @@ blender (2.42-0.1) unstable; urgency=low
 
   [ Florian Ernst ]
   * Drop 05_bevel_center.py_fix.dpatch, not needed anymore
+  * Upgrade debhelper compatiblity level to 5
 
- -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 19:41:49 +0200
+ -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 20:02:04 +0200
 
 blender (2.41-1) unstable; urgency=low
 
