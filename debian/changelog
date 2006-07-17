@@ -21,8 +21,9 @@ blender (2.42-0.1) unstable; urgency=low
   * Upgrade debhelper compatiblity level to 5
   * Add French translations in .desktop, thanks to VETSEL Patrice
     (Closes: #354936)
+  * New upstream finds libtiff easily (Closes: #364473)
 
- -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 20:08:08 +0200
+ -- Florian Ernst <florian@debian.org>  Mon, 17 Jul 2006 20:09:54 +0200
 
 blender (2.41-1) unstable; urgency=low
 
