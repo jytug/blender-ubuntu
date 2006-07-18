@@ -1,3 +1,9 @@
+blender (2.42-2) unstable; urgency=low
+
+  * Don't use fancy colours polluting build logs.
+
+ -- Wouter van Heyst <larstiq@larstiq.dyndns.org>  Tue, 18 Jul 2006 13:06:20 +0200
+
 blender (2.42-1) unstable; urgency=low
 
   [ Antonio Ospite ]

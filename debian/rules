@@ -24,7 +24,7 @@ build-stamp: patch-stamp
 	# Add user specific config (without patching)
 	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
 	# Add here commands to compile the package.
-	scons WITH_BF_PLAYER=1 WITH_BF_OPENAL=0
+	scons WITH_BF_PLAYER=1 WITH_BF_OPENAL=0 BF_FANCY=0
 
 	# Build plugins by hand
 	install -d $(CURDIR)/install/linux2/plugins/include
@@ -41,7 +41,7 @@ clean: unpatch
 
 	# Add here commands to clean up after the build process.
 	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
-	-scons clean
+	-scons clean BF_FANCY=0
 	rm -f $(CURDIR)/user-config.py
 
 	# Remove *.pycs
