@@ -1,8 +1,13 @@
 blender (2.42-2) unstable; urgency=low
 
+  [ Wouter van Heyst ]
   * Don't use fancy colours polluting build logs.
 
- -- Wouter van Heyst <larstiq@larstiq.dyndns.org>  Tue, 18 Jul 2006 13:06:20 +0200
+  [ Florian Ernst ]
+  * Link against libgettextpo, not libgettextlib. Thanks to Santiago Vila
+    for clarification (Closes: #381809, #382246)
+
+ -- Florian Ernst <florian@debian.org>  Fri, 11 Aug 2006 11:57:24 +0200
 
 blender (2.42-1) unstable; urgency=low
 

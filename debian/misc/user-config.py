@@ -46,7 +46,7 @@ WITH_BF_INTERNATIONAL = 'true'
 
 BF_GETTEXT = '/usr'
 BF_GETTEXT_INC = '${BF_GETTEXT}/include'
-BF_GETTEXT_LIB = 'gettextlib'
+BF_GETTEXT_LIB = 'gettextpo'
 BF_GETTEXT_LIBPATH = '${BF_GETTEXT}/lib'
 
 WITH_BF_FTGL = 'true'
