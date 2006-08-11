@@ -3,13 +3,20 @@ blender (2.42-2) unstable; urgency=low
   [ Wouter van Heyst ]
   * Don't use fancy colours polluting build logs.
 
+  [ Antonio Ospite ]
+  * New upstream release
+  * Drop 05_mesh_skin_py23.dpatch, not needed anymore
+  * Update regexp in debian/watch file and added the call to uupdate
+  * Add a source lintian override for outdated-autotools-helper-file, since we
+    do not use autotools at all
+
   [ Florian Ernst ]
   * Link against libgettextpo, not libgettextlib. Thanks to Santiago Vila
     for clarification (Closes: #381809, #382246)
   * Quote arguments properly in wrapper script, thanks to Wesley J. Landaker
     (Closes: #380580)
 
- -- Florian Ernst <florian@debian.org>  Fri, 11 Aug 2006 11:59:19 +0200
+ -- Florian Ernst <florian@debian.org>  Fri, 11 Aug 2006 17:48:08 +0200
 
 blender (2.42-1) unstable; urgency=low
 

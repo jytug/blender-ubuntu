@@ -1,2 +1,3 @@
 version=3
-http://download.blender.org/source/blender-([\.\d]+)\.tar\.gz
+http://download.blender.org/source/blender-([\.\d]+[a-z]{0,1})\.tar\.gz \
+  debian uupdate
