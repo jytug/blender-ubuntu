@@ -1,4 +1,4 @@
-blender (2.42-2) unstable; urgency=low
+blender (2.42a-1) unstable; urgency=low
 
   [ Wouter van Heyst ]
   * Don't use fancy colours polluting build logs.
@@ -16,7 +16,7 @@ blender (2.42-2) unstable; urgency=low
   * Quote arguments properly in wrapper script, thanks to Wesley J. Landaker
     (Closes: #380580)
 
- -- Florian Ernst <florian@debian.org>  Fri, 11 Aug 2006 17:48:08 +0200
+ -- Florian Ernst <florian@debian.org>  Fri, 11 Aug 2006 17:50:59 +0200
 
 blender (2.42-1) unstable; urgency=low
 
