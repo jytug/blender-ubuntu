@@ -6,8 +6,10 @@ blender (2.42-2) unstable; urgency=low
   [ Florian Ernst ]
   * Link against libgettextpo, not libgettextlib. Thanks to Santiago Vila
     for clarification (Closes: #381809, #382246)
+  * Quote arguments properly in wrapper script, thanks to Wesley J. Landaker
+    (Closes: #380580)
 
- -- Florian Ernst <florian@debian.org>  Fri, 11 Aug 2006 11:57:24 +0200
+ -- Florian Ernst <florian@debian.org>  Fri, 11 Aug 2006 11:59:19 +0200
 
 blender (2.42-1) unstable; urgency=low
 

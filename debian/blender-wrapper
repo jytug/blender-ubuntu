@@ -43,4 +43,4 @@ for s in /usr/lib/blender/scripts/* ; do
     fi
 done
 
-blender-bin $@
+blender-bin "$@"
