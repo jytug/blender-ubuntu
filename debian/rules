@@ -12,7 +12,7 @@ include /usr/share/dpatch/dpatch.make
 # Fall back to using gcc-3.4/g++-3.4 on mips and mispel in order to
 # circumvent ICE, see bug#354439.
 DEB_HOST_ARCH	?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
-ifneq (,$(findstring $(DEB_HOST_ARCH),i386 mips mipsel))
+ifneq (,$(findstring $(DEB_HOST_ARCH),mips mipsel))
 	COMPILER ?= CC=gcc-3.4 CXX=g++-3.4
 endif
 
