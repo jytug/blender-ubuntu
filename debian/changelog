@@ -1,5 +1,14 @@
 blender (2.42a-2) unstable; urgency=low
 
+  [ Cyril Brulebois ]
+  * Add support for GNU/kFreeBSD (kfreebsd-i386 at least, closes: #388349):
+    - Add 10_gnukfreebsd_support.dpatch to solve GNU/kFreeBSD detection in
+      SConstruct files and other #define's.
+    - Conditionalize the removal of "libdc1394" in debian/rules because it is
+      Linux-specific and used unconditionally. Should be more easy to maintain
+      this way than having multiple user-config.py files.
+
+  [ Florian Ernst ]
   * Fall back to using gcc-3.4/g++-3.4 on mips and mispel in order to
     circumvent ICE, see bug#354439.
   * Merge changes from Ubuntu:
@@ -10,7 +19,7 @@ blender (2.42a-2) unstable; urgency=low
       in the clean target.
     - Add a proper header to the generated PO template.
 
- -- Florian Ernst <florian@debian.org>  Fri, 15 Sep 2006 12:27:21 +0200
+ -- Florian Ernst <florian@debian.org>  Tue, 26 Sep 2006 20:38:13 +0200
 
 blender (2.42a-1) unstable; urgency=low
 

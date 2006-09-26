@@ -30,6 +30,12 @@ build-stamp: patch-stamp po/blender.pot
 
 	# Add user specific config (without patching)
 	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
+
+	# Remove libdc1394 on non-Linux arch
+ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
+	sed -i -e 's/libdc1394//' $(CURDIR)/user-config.py
+endif
+
 	# Add here commands to compile the package.
 	scons WITH_BF_PLAYER=1 WITH_BF_OPENAL=0 BF_FANCY=0 $(COMPILER)
 
