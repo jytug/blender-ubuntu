@@ -25,7 +25,7 @@ else
 endif
 
 build: build-stamp
-build-stamp: patch-stamp
+build-stamp: patch-stamp po/blender.pot
 	dh_testdir
 
 	# Add user specific config (without patching)
@@ -40,6 +40,12 @@ build-stamp: patch-stamp
 	$(MAKE) -C $(CURDIR)/install/linux2/plugins $(COMPILER)
 
 	touch $@
+
+po/blender.pot:
+	python debian/genpot/near_all_po.py
+	cp debian/pot-header.txt po/blender.pot
+	msguniq almost_all.po >> po/blender.pot
+	rm -f almost_all.po
 
 clean: unpatch
 	dh_testdir
@@ -57,6 +63,8 @@ clean: unpatch
 	# Clean plugins (non needed? done by scons now ??)
 	#-$(MAKE) -C $(CURDIR)/install/linux2/plugins clean
 	rm -rf $(CURDIR)/install/linux2/plugins/include
+
+	rm -f po/blender.pot
 
 install: build
 	dh_testdir

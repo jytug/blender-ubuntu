@@ -2,6 +2,13 @@ blender (2.42a-2) unstable; urgency=low
 
   * Fall back to using gcc-3.4/g++-3.4 on mips and mispel in order to
     circumvent ICE, see bug#354439.
+  * Merge changes from Ubuntu:
+    - debian/genpot: Add python scripts from Lee June <blender@eyou.com> to
+      generate a reasonable PO template from the sources. Since gettext is used
+      in a highly nonstandard way, xgettext does not work for this job.
+    - debian/rules: Call the scripts, generate po/blender.pot, and clean it up
+      in the clean target.
+    - Add a proper header to the generated PO template.
 
  -- Florian Ernst <florian@debian.org>  Fri, 15 Sep 2006 12:27:21 +0200
 
