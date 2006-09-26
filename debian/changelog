@@ -9,7 +9,7 @@ blender (2.42a-2) unstable; urgency=low
       this way than having multiple user-config.py files.
 
   [ Florian Ernst ]
-  * Fall back to using gcc-3.4/g++-3.4 on mips and mispel in order to
+  * Fall back to using gcc-3.4/g++-3.4 on mips and mipsel in order to
     circumvent ICE, see bug#354439.
   * Merge changes from Ubuntu:
     - debian/genpot: Add python scripts from Lee June <blender@eyou.com> to
@@ -18,8 +18,10 @@ blender (2.42a-2) unstable; urgency=low
     - debian/rules: Call the scripts, generate po/blender.pot, and clean it up
       in the clean target.
     - Add a proper header to the generated PO template.
+  * Readd B-D on autotools-dev for auto-updating of config.{sub,guess},
+    GNU/kFreeBSD seems to need it.
 
- -- Florian Ernst <florian@debian.org>  Tue, 26 Sep 2006 20:38:13 +0200
+ -- Florian Ernst <florian@debian.org>  Tue, 26 Sep 2006 20:58:09 +0200
 
 blender (2.42a-1) unstable; urgency=low
 

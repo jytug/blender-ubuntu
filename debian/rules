@@ -27,6 +27,9 @@ endif
 build: build-stamp
 build-stamp: patch-stamp po/blender.pot
 	dh_testdir
+	ln -sf /usr/share/misc/config.guess	source/tools/guess/config.guess
+	ln -sf /usr/share/misc/config.guess	extern/bFTGL/unix/config.guess
+	ln -sf /usr/share/misc/config.sub	extern/bFTGL/unix/config.sub
 
 	# Add user specific config (without patching)
 	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
