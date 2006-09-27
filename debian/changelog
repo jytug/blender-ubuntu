@@ -1,3 +1,9 @@
+blender (2.42a-3) UNRELEASED; urgency=low
+
+  * debian/rules: delete config.{guess,sub} in clean
+
+ -- Florian Ernst <florian@debian.org>  Wed, 27 Sep 2006 07:46:36 +0200
+
 blender (2.42a-2) unstable; urgency=low
 
   [ Cyril Brulebois ]

@@ -59,7 +59,10 @@ po/blender.pot:
 clean: unpatch
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp
+	rm -f build-stamp configure-stamp \
+		source/tools/guess/config.guess \
+		extern/bFTGL/unix/config.guess \
+		extern/bFTGL/unix/config.sub
 
 	# Add here commands to clean up after the build process.
 	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
