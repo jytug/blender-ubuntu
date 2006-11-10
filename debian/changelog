@@ -1,3 +1,9 @@
+blender (2.42a-5) unstable; urgency=low
+
+  * debian/rules: remove dh_python call as dh_pycentral should do the work
+
+ -- Florian Ernst <florian@debian.org>  Fri, 10 Nov 2006 17:38:59 +0100
+
 blender (2.42a-4) unstable; urgency=low
 
   * Well, instead of using a different compiler let's try lowering the
