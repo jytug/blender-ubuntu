@@ -8,8 +8,9 @@ blender (2.42a-5) unstable; urgency=high
   * debian/rules: remove dh_python call as dh_pycentral should do the work
   * debian/genpot/*.py: convert DOS to Unix line endings, thanks to Jens
     Seidel for the pointer
+  * debian/blender.1: update by Cyril Brulebois, many thanks (Closes: #394224)
 
- -- Florian Ernst <florian@debian.org>  Fri, 10 Nov 2006 20:38:18 +0100
+ -- Florian Ernst <florian@debian.org>  Fri, 10 Nov 2006 20:43:47 +0100
 
 blender (2.42a-4) unstable; urgency=low
 
