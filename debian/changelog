@@ -6,8 +6,10 @@ blender (2.42a-5) unstable; urgency=high
     resolving a FTBFS (Closes: #397560)
 
   * debian/rules: remove dh_python call as dh_pycentral should do the work
+  * debian/genpot/*.py: convert DOS to Unix line endings, thanks to Jens
+    Seidel for the pointer
 
- -- Florian Ernst <florian@debian.org>  Fri, 10 Nov 2006 20:27:53 +0100
+ -- Florian Ernst <florian@debian.org>  Fri, 10 Nov 2006 20:38:18 +0100
 
 blender (2.42a-4) unstable; urgency=low
 
