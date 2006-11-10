@@ -9,11 +9,11 @@
 # Include dpatch stuff.
 include /usr/share/dpatch/dpatch.make
 
-# Fall back to using gcc-3.4/g++-3.4 on mips and mispel in order to
+# Lower optimization on mips and mispel in order to
 # circumvent ICE, see bug#354439.
 DEB_HOST_ARCH	?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 ifneq (,$(findstring $(DEB_HOST_ARCH),mips mipsel))
-	COMPILER ?= CC=gcc-3.3 CXX=g++-3.3
+	COMPILER ?= REL_CFLAGS=-O1 REL_CCFLAGS=-O1
 endif
 
 CFLAGS = -Wall -g

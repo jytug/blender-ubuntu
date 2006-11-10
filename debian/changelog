@@ -1,3 +1,11 @@
+blender (2.42a-4) unstable; urgency=low
+
+  * Well, instead of using a different compiler let's try lowering the
+    optimization again on mips{,el}. Many thanks to Jens Seidel for all
+    his work!
+
+ -- Florian Ernst <florian@debian.org>  Tue, 10 Oct 2006 07:46:20 +0200
+
 blender (2.42a-3) unstable; urgency=low
 
   * Fall back to using gcc-3.3/g++-3.3 on mips and mipsel in order to
