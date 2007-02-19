@@ -78,6 +78,13 @@ clean: unpatch
 
 	rm -f po/blender.pot
 
+        # Ensure that the clean target does its job
+	rm -rf $(CURDIR)/build
+	rm -rf $(CURDIR)/install
+	rm -rf $(CURDIR)/intern/guardedalloc/intern/mallocn.o
+	rm -rf $(CURDIR)/linux2
+	rm -rf $(CURDIR)/obj/*
+
 install: build
 	dh_testdir
 	dh_testroot

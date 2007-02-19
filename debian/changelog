@@ -14,12 +14,12 @@ blender (2.43-1) UNRELEASED; urgency=low
     and #285946.
   * Added debian/patches/01_64bits_stupidity.dpatch to enable blender on
     64-bit systems. Please read the NEWS.Debian file for more info.
+  * Adjusted the clean target since many binary files remained after the
+    cleanup, reported by dpkg-buildpackage when trying to update the Debian
+    diff after a build.
 
   [TODO]
     * Adjust the copyright file, see #407917.
-    * Adjust the clean target, it looks like many binary files remain after
-      the cleanup, reported by dpkg-buildpackage when trying to update the
-      Debian diff after a build.
     * Adjust the overrides, are they (still) all needed?
     * Adjust the manpage, if needed.
     * Adjust the 10_gnukfreebsd_support patch to support kfreebsd 6 and
