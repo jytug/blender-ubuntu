@@ -12,6 +12,8 @@ blender (2.43-1) UNRELEASED; urgency=low
     package installed, a ``-lGL not found otherwise'' occurs, and without it,
     everything looks fine. That should also avoid situations like in #282071
     and #285946.
+  * Added debian/patches/01_64bits_stupidity.dpatch to enable blender on
+    64-bit systems. Please read the NEWS.Debian file for more info.
 
   [TODO]
     * Adjust the copyright file, see #407917.

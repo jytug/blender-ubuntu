@@ -1,0 +1,20 @@
+blender (2.43-1) UNRELEASED; urgency=low
+
+  * As of 2.43, one needs to use a ``YESIAMSTUPID'' (sigh...) macro in
+    source/creator/creator.c to be able to run Blender on a 64-bit system.
+    According to the developers hanging on #blendercoders/freenode (since
+    there is no release note about that on the website...), there
+    could be troubles with files exchanged between 32-bit and 64-bit systems.
+    See debian/patches/01_64bits_stupidity.dpatch for the diff.
+
+  * Also, the file format might change in further releases, so you might be
+    unable to reopen the files you saved with current Blender releases, with
+    later releases (once the 64-bit problems are solved).
+
+  * Apparently (seen in a comment on BlenderNation, and on IRC, but once
+    again, nothing on the website...), this problem won't be addressed until
+    2.50 release, since they don't look like caring much about 64-bit (I was
+    told that one needs several GB RAM to benefit from it, and also that not
+    much applications nor OSes run on 64-bit, so...).
+
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 19 Feb 2007 18:37:27 +0100

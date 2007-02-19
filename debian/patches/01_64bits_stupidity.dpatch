@@ -1,0 +1,41 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01_64bits_fix by Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Well, Blender coders (cf. #blendercoders/freenode) consider that 64 bits
+## DP: are not that important, and won't be releasing a 64 bits-safe version
+## DP: before 2.50. They want us to explicitly define that we are aware of
+## DP: possible problems with 64 bits. Further comments in NEWS.Debian.
+
+@DPATCH@
+
+--- blender-2.43~/source/creator/creator.c	2007-01-28 05:45:58.000000000 +0000
++++ blender-2.43/source/creator/creator.c	2007-02-19 18:35:34.000000000 +0000
+@@ -29,6 +29,9 @@
+  *
+  * ***** END GPL/BL DUAL LICENSE BLOCK *****
+  */
++
++#define BLENDERISNOTREADYFOR64BITSBUTIAMNOTSTUPID 1
++
+ #include <stdlib.h>
+ #include <string.h>
+ 
+@@ -235,7 +238,7 @@
+ 	int audio = 0;
+ #endif
+ 
+-#ifndef YESIAMSTUPID
++#ifndef BLENDERISNOTREADYFOR64BITSBUTIAMNOTSTUPID 
+ 	/* temporary: prevent people to make/use 64 bits versions without them knowing it might be
+ 		risky. I don't know for sure yet if we get problems, but I rather not get the burden of
+ 		having to fix all faulty saved 64 bits files (ton) */
+@@ -245,6 +248,8 @@
+ 	}
+ #else
+ 	if(sizeof(void *)==8) {
++		printf("The following messages come from the Blender coders. The Debian maintainers\n"
++		       "would like to point to /usr/share/doc/blender/NEWS.Debian.gz instead...\n\n");
+ 		printf("64 bits compiles will give incorrectly saved .blend files. Do not use it.\n\n"
+        "*** If you continue to run this executable, you really are quite stupid ***\n\n"); 
+ 
