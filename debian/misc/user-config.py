@@ -61,9 +61,10 @@ BF_ODE = LCGDIR + '/ode'
 BF_ODE_INC = BF_ODE + '/include'
 BF_ODE_LIB = BF_ODE + '/lib/libode.a'
 
+# Adjustments by Cyril Brulebois -- 2006/01/22
 WITH_BF_BULLET = 'true'
-BF_BULLET = '#extern/bullet'
-BF_BULLET_INC = '${BF_BULLET}/LinearMath ${BF_BULLET}/BulletDynamics ${BF_BULLET}/Bullet'
+BF_BULLET = '#extern/bullet2/src'
+BF_BULLET_INC = '${BF_BULLET}/LinearMath ${BF_BULLET}/BulletDynamics ${BF_BULLET}'
 BF_BULLET_LIB = 'extern_bullet'
 
 BF_SOLID = '#extern/solid'
@@ -100,7 +101,7 @@ BF_QUICKTIME_INC = '${BF_QUICKTIME}/include'
 WITH_BF_FFMPEG = 'true'  # -DWITH_FFMPEG
 BF_FFMPEG = '/usr'
 BF_FFMPEG_INC = '${BF_FFMPEG}/include'
-BF_FFMPEG_LIBPATH='$(BF_FFMPEG)/lib'
+BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
 import commands
 BF_FFMPEG_LIB = commands.getoutput('pkg-config libavformat vorbisenc libdc1394 --libs') + '-lgsm'
 
