@@ -6,188 +6,124 @@
 
 @DPATCH@
 
---- blender-2.42a~/SConstruct	2006-06-23 20:52:31.000000000 +0200
-+++ blender-2.42a/SConstruct	2006-09-14 21:00:38.000000000 +0200
-@@ -168,7 +168,7 @@
+--- blender-2.43.orig/SConstruct	2007-02-19 22:31:36.265969000 +0100
++++ blender-2.43/SConstruct	2007-02-19 22:38:03.000000000 +0100
+@@ -224,7 +224,7 @@
  
  # see if this linux distro has libalut
  
 -if env['OURPLATFORM'] == 'linux2' :
-+if env['OURPLATFORM'] == 'linux2' or env['OURPLATFORM'] == 'gnukfreebsd5' or env['OURPLATFORM'] == 'gnukfreebsd6':
++if env['OURPLATFORM'] == 'linux2' or env['OURPLATFORM'].startswith('gnukfreebsd'):
      if env['WITH_BF_OPENAL']:
          mylib_test_source_file = """
          #include "AL/alut.h"
---- blender-2.42a~/source/nan_compile.mk	2006-09-14 04:08:59.030526000 +0200
-+++ blender-2.42a/source/nan_compile.mk	2006-09-14 04:13:00.000000000 +0200
-@@ -155,6 +155,23 @@
-     ARFLAGSQUIET = ru
- endif
- 
-+# Copied from linux' one, without the alpha section
-+ifeq ($(OS),kfreebsd)
-+    CC	= gcc
-+    CCC	= g++
-+#    CFLAGS	+= -pipe
-+    CFLAGS	+= -pipe -fPIC 
-+    CCFLAGS	+= -pipe -fPIC
-+#    CCFLAGS	+= -pipe
-+    REL_CFLAGS	+= -O2
-+    REL_CCFLAGS	+= -O2
-+    NAN_DEPEND = true
-+    OPENGL_HEADERS = /usr/X11R6/include
-+    AR = ar
-+    ARFLAGS = ruv
-+    ARFLAGSQUIET = ru
-+endif
-+
- ifeq ($(OS),openbsd)
-     CC	= gcc
-     CCC = g++
---- blender-2.42a~/source/blender/imbuf/intern/Makefile	2006-09-14 04:30:05.284932000 +0200
-+++ blender-2.42a/source/blender/imbuf/intern/Makefile	2006-09-14 04:30:26.000000000 +0200
-@@ -47,7 +47,7 @@
- endif
- 
- 
--ifeq ($(OS),$(findstring $(OS), "beos darwin freebsd linux openbsd solaris windows"))
-+ifeq ($(OS),$(findstring $(OS), "beos darwin freebsd kfreebsd linux openbsd solaris windows"))
-     CFLAGS += -funsigned-char
- endif
- 
---- blender-2.42a~/source/blender/imbuf/intern/openexr/Makefile	2006-09-14 04:30:47.693949000 +0200
-+++ blender-2.42a/source/blender/imbuf/intern/openexr/Makefile	2006-09-14 04:30:58.000000000 +0200
-@@ -36,7 +36,7 @@
- 
- include nan_compile.mk
- 
--ifeq ($(OS),$(findstring $(OS), "beos darwin freebsd linux openbsd solaris windows"))
-+ifeq ($(OS),$(findstring $(OS), "beos darwin freebsd kfreebsd linux openbsd solaris windows"))
-     CFLAGS += -funsigned-char
- endif
- 
---- blender-2.42a~/intern/ghost/SConscript	2006-09-15 02:21:22.286248000 +0200
-+++ blender-2.42a/intern/ghost/SConscript	2006-09-15 02:21:44.000000000 +0200
-@@ -10,7 +10,7 @@
- 
- pf = ['GHOST_DisplayManager', 'GHOST_System', 'GHOST_Window']
- 
--if window_system == 'linux2':
-+if window_system == 'linux2' or window_system == 'gnukfreebsd5' or window_system == 'gnukfreebsd6':
-     for f in pf:
-         sources.remove('intern' + os.sep + f + 'Win32.cpp')
-         sources.remove('intern' + os.sep + f + 'Carbon.cpp')
---- blender-2.42a~/extern/bFTGL/src/FTVectoriser.cpp	2006-09-15 02:31:14.321975000 +0200
-+++ blender-2.42a/extern/bFTGL/src/FTVectoriser.cpp	2006-09-15 02:34:30.000000000 +0200
-@@ -7,7 +7,7 @@
- 
- #ifdef __APPLE_CC__    
-     typedef GLvoid (*GLUTesselatorFunction)(...);
--#elif defined( __mips ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined( __OpenBSD__ ) || defined( __sun ) || defined (__CYGWIN__)
-+#elif defined( __mips ) || defined( __linux__ ) || defined( __FreeBSD_kernel__ ) || defined( __FreeBSD__ ) || defined( __OpenBSD__ ) || defined( __sun ) || defined (__CYGWIN__)
-     typedef GLvoid (*GLUTesselatorFunction)();
- #elif defined ( WIN32)
-     typedef GLvoid (CALLBACK *GLUTesselatorFunction)( );
---- blender-2.42a~/source/blender/blenlib/intern/storage.c	2006-09-15 02:39:46.275255000 +0200
-+++ blender-2.42a/source/blender/blenlib/intern/storage.c	2006-09-15 02:40:06.000000000 +0200
-@@ -54,7 +54,7 @@
- #include <sys/statfs.h>
- #endif
- 
--#if defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__)
-+#if defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__FreeBSD_kernel__)
- #include <sys/param.h>
- #include <sys/mount.h>
- #endif
-
---- blender-2.42a~/extern/bullet/SConscript	2006-09-15 17:17:17.372645000 +0200
-+++ blender-2.42a/extern/bullet/SConscript	2006-09-15 17:18:00.000000000 +0200
+--- blender-2.43.orig/extern/bullet2/src/SConscript	2007-02-19 22:39:28.319537000 +0100
++++ blender-2.43/extern/bullet2/src/SConscript	2007-02-19 22:41:04.000000000 +0100
 @@ -14,7 +14,7 @@
  elif env['OURPLATFORM']=='win32-mingw':
      defs += ' NDEBUG'
      cflags += ['-O2']
--elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3':
-+elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3' or sys.platform=='gnukfreebsd5' or sys.platform=='gnukfreebsd6':
+-elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5':
++elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or env['OURPLATFORM'].startswith('gnukfreebsd'):
      defs += ' NDEBUG'
      cflags += ['-O2']
  elif sys.platform=='darwin':
---- blender-2.42a~/extern/solid/SConscript	2006-09-15 17:18:08.893165000 +0200
-+++ blender-2.42a/extern/solid/SConscript	2006-09-15 17:18:28.000000000 +0200
-@@ -12,7 +12,7 @@
- elif env['OURPLATFORM']=='win32-mingw':
-     defs += ' NDEBUG'
-     cflags += ['-O2']
--elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3':
-+elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3' or sys.platform=='gnukfreebsd5' or sys.platform=='gnukfreebsd6':
-     defs += ' NDEBUG'
-     cflags += ['-O2']
- elif sys.platform=='darwin' :
---- blender-2.42a~/tools/Blender.py	2006-09-15 17:23:14.682380000 +0200
-+++ blender-2.42a/tools/Blender.py	2006-09-15 21:41:04.000000000 +0200
-@@ -377,7 +378,7 @@
-         lenv = self.Copy()
-         if lenv['OURPLATFORM'] in ['win32-vc', 'cygwin']:
-             lenv.Append(LINKFLAGS = Split(lenv['PLATFORM_LINKFLAGS']))
--        if  lenv['OURPLATFORM']=='linux2':
-+        if  lenv['OURPLATFORM']=='linux2' or lenv['OURPLATFORM']=='gnukfreebsd5' or lenv['OURPLATFORM']=='gnukfreebsd6':
-             lenv.Append(LINKFLAGS = lenv['PLATFORM_LINKFLAGS'])
-             lenv.Append(LINKFLAGS = lenv['BF_PYTHON_LINKFLAGS'])
-         if  lenv['OURPLATFORM']=='darwin':
---- blender-2.42a~/extern/qhull/SConscript	2006-09-15 17:31:49.553060000 +0200
-+++ blender-2.42a/extern/qhull/SConscript	2006-09-15 17:32:00.000000000 +0200
+--- blender-2.43.orig/extern/qhull/SConscript	2007-02-19 22:39:28.537707000 +0100
++++ blender-2.43/extern/qhull/SConscript	2007-02-19 22:41:20.000000000 +0100
 @@ -5,7 +5,7 @@
  Import('env')
  defs = ''
  cflags = []
 -if sys.platform=='linux2' or sys.platform=='linux-i386':
-+if sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='gnukfreebsd5' or sys.platform=='gnukfreebsd6':
++if sys.platform=='linux2' or sys.platform=='linux-i386' or env['OURPLATFORM'].startswith('gnukfreebsd'):
     cflags += ['-O2','-ansi']
  elif env['OURPLATFORM']=='win32-vc':
     cflags += ['/O2']
---- blender-2.42a~/release/scripts/bpymodules/colladaImEx/cutils.py	2006-09-15 17:33:06.541922000 +0200
-+++ blender-2.42a/release/scripts/bpymodules/colladaImEx/cutils.py	2006-09-15 17:33:18.000000000 +0200
-@@ -233,7 +233,7 @@
- 	
- # Clear the console
- def ClearConsole():
--	if sys.platform == 'linux-i386' or sys.platform == 'linux2':
-+	if sys.platform == 'linux-i386' or sys.platform == 'linux2' or sys.platform == 'gnukfreebsd5' or sys.platform=='gnukfreebsd6':
- 		sysCommand = 'clear'
- 	elif sys.platform == 'win32' or sys.platform == 'dos' or sys.platform[0:5] == 'ms-dos' :
- 		sysCommand = 'cls'
---- blender-2.42a~/source/blender/blenlib/SConscript	2006-09-15 17:34:04.749860000 +0200
-+++ blender-2.42a/source/blender/blenlib/SConscript	2006-09-15 17:34:23.000000000 +0200
-@@ -13,7 +13,7 @@
- if env['WITH_BF_INTERNATIONAL'] == 1:
-     defs = 'WITH_FREETYPE2'
+--- blender-2.43.orig/extern/solid/SConscript	2007-02-19 22:39:28.753844000 +0100
++++ blender-2.43/extern/solid/SConscript	2007-02-19 22:41:33.000000000 +0100
+@@ -12,7 +12,7 @@
+ elif env['OURPLATFORM']=='win32-mingw':
+     defs += ' NDEBUG'
+     cflags += ['-O2']
+-elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3' or sys.platform=='sunos5':
++elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3' or sys.platform=='sunos5' or env['OURPLATFORM'].startswith('gnukfreebsd'):
+     defs += ' NDEBUG'
+     cflags += ['-O2']
+ elif sys.platform=='darwin' :
+--- blender-2.43.orig/extern/verse/dist/SConstruct	2007-02-19 22:39:28.976373000 +0100
++++ blender-2.43/extern/verse/dist/SConstruct	2007-02-19 22:41:51.000000000 +0100
+@@ -38,7 +38,7 @@
+ elif ourplatform == 'win32-mingw':
+     defines += ['_WIN32', 'WIN32']
+     platform_libs = ['shell32', 'kernel32', 'gdi32', 'user32', 'ws2_32']
+-elif ourplatform == 'linux2':
++elif ourplatform == 'linux2' or env['OURPLATFORM'].startswith('gnukfreebsd'):
+     print "Building on linux2"
+ elif ourplatform == 'openbsd3':
+     print "Building on openbsd3"
+--- blender-2.43.orig/intern/ghost/SConscript	2007-02-19 22:39:29.217443000 +0100
++++ blender-2.43/intern/ghost/SConscript	2007-02-19 22:42:28.000000000 +0100
+@@ -10,7 +10,7 @@
+ 
+ pf = ['GHOST_DisplayManager', 'GHOST_System', 'GHOST_Window']
+ 
+-if window_system in ('linux2', 'openbsd3', 'sunos5', 'freebsd6'):
++if window_system in ('linux2', 'openbsd3', 'sunos5', 'freebsd6') or window_system.startswith('gnukfreebsd'):
+     for f in pf:
+         sources.remove('intern' + os.sep + f + 'Win32.cpp')
+         sources.remove('intern' + os.sep + f + 'Carbon.cpp')
+--- blender-2.43.orig/source/blender/blenlib/SConscript	2007-02-19 22:39:29.439668000 +0100
++++ blender-2.43/source/blender/blenlib/SConscript	2007-02-19 22:42:37.000000000 +0100
+@@ -17,7 +17,7 @@
+ 	defs += ' WITH_VERSE'
+ 	incs += ' ' + env['BF_VERSE_INCLUDE']
  
 -if env['OURPLATFORM'] == 'linux2':
-+if env['OURPLATFORM'] == 'linux2' or env['OURPLATFORM'] == 'gnukfreebsd5' or env['OURPLATFORM']=='gnukfreebsd6':
++if env['OURPLATFORM'] == 'linux2' or env['OURPLATFORM'].startswith('gnukfreebsd'):
      cflags='-pthread'
  
  if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw'):
---- blender-2.42a~/source/blender/render/SConscript	2006-09-15 17:34:42.703432000 +0200
-+++ blender-2.42a/source/blender/render/SConscript	2006-09-15 17:35:00.000000000 +0200
-@@ -20,7 +20,7 @@
+--- blender-2.43.orig/source/blender/render/SConscript	2007-02-19 22:39:29.661686000 +0100
++++ blender-2.43/source/blender/render/SConscript	2007-02-19 22:42:45.000000000 +0100
+@@ -25,7 +25,7 @@
  if env['WITH_BF_OPENEXR']:
      defs.append('WITH_OPENEXR')
  
 -if env['OURPLATFORM']=='linux2':
-+if env['OURPLATFORM']=='linux2' or env['OURPLATFORM']=='gnukfreebsd5' or env['OURPLATFORM']=='gnukfreebsd6':
++if env['OURPLATFORM']=='linux2' or env['OURPLATFORM'].startswith('gnukfreebsd'):
      cflags='-pthread'
  
  env.BlenderLib ( libname = 'blender_render', sources = sources, includes = Split(incs), defines=defs, libtype='core', priority=45, compileflags=cflags )
---- blender-2.42a~/release/plugins/bmake	2006-09-15 23:03:40.674613000 +0200
-+++ blender-2.42a/release/plugins/bmake	2006-09-15 23:04:47.000000000 +0200
-@@ -64,6 +64,12 @@
+--- blender-2.43.orig/extern/bFTGL/src/FTVectoriser.cpp	2007-02-19 23:21:27.374524000 +0100
++++ blender-2.43/extern/bFTGL/src/FTVectoriser.cpp	2007-02-19 23:21:41.000000000 +0100
+@@ -7,7 +7,7 @@
+ 
+ #ifdef __APPLE_CC__    
+     typedef GLvoid (*GLUTesselatorFunction)(...);
+-#elif defined( __mips ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined( __OpenBSD__ ) || defined( __sun ) || defined (__CYGWIN__)
++#elif defined( __mips ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined( __OpenBSD__ ) || defined( __sun ) || defined (__CYGWIN__) || defined (__FreeBSD_kernel__)
+     typedef GLvoid (*GLUTesselatorFunction)();
+ #elif defined ( WIN32)
+     typedef GLvoid (CALLBACK *GLUTesselatorFunction)( );
+--- blender-2.43.orig/source/blender/blenlib/intern/storage.c	2007-02-19 23:43:09.787523000 +0100
++++ blender-2.43/source/blender/blenlib/intern/storage.c	2007-02-19 23:44:24.000000000 +0100
+@@ -54,7 +54,7 @@
+ #include <sys/statfs.h>
+ #endif
+ 
+-#if defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__)
++#if defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined(__FreeBSD_kernel__)
+ #include <sys/param.h>
+ #include <sys/mount.h>
+ #endif
+--- blender-2.43.orig/release/plugins/bmake	2007-02-20 13:51:37.206421000 +0100
++++ blender-2.43/release/plugins/bmake	2007-02-20 13:52:28.000000000 +0100
+@@ -58,7 +58,7 @@
  
  	LD="ld";
  	LDFLAGS="-Bshareable";
-+elif ( test $UNAME = "GNU/kFreeBSD" ) then
-+	CC="gcc";
-+	CFLAGS="-fPIC -funsigned-char -O2";
-+
-+	LD="ld";
-+	LDFLAGS="-Bshareable";
- elif ( test $UNAME = "SunOS" ) then
- 	CC="cc";
- 	CFLAGS="-O";
+-elif ( test $UNAME = "Linux" ) then
++elif ( test $UNAME = "Linux" -o $UNAME = "GNU/kFreeBSD" ) then
+ 	CC="gcc";
+ 	CFLAGS="-fPIC -funsigned-char -O2";
+ 

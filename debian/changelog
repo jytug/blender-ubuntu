@@ -2,9 +2,11 @@ blender (2.43-1) UNRELEASED; urgency=low
 
   * New upstream release.
   * Added myself to the Uploaders field.
-  * Disabled 10_gnukfreebsd_support patch since:
-     - it doesn't apply cleanly anymore;
-     - it needs an update to handle kfreebsd kernels > 5.
+  * Refreshed 10_gnukfreebsd_support.dpatch:
+     - it should now support each FreeBSD kernel version, using startswith()
+       instead of an hardcoded kernel version string;
+     - nan_compile.mk and some other files are no longer patched, although the
+       compilation is OK; adjustments might be needed.
   * Updated user-config.py:
      - fixed () vs {} for FFMPEG;
      - switched from 'bullet' to 'bullet2' and adjusted some paths.
@@ -22,8 +24,7 @@ blender (2.43-1) UNRELEASED; urgency=low
     * Adjust the copyright file, see #407917.
     * Adjust the overrides, are they (still) all needed?
     * Adjust the manpage, if needed.
-    * Adjust the 10_gnukfreebsd_support patch to support kfreebsd 6 and
-      possibly 5 too, beginswith() should help.
+    * Maybe merge README.Debian and NEWS together to keep things together.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Sun, 19 Feb 2007 05:55:58 +0100
 
