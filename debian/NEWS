@@ -1,20 +1,24 @@
 blender (2.43-1) UNRELEASED; urgency=low
 
-  * As of 2.43, one needs to use a ``YESIAMSTUPID'' (sigh...) macro in
-    source/creator/creator.c to be able to run Blender on a 64-bit system.
-    According to the developers hanging on #blendercoders/freenode (since
-    there is no release note about that on the website...), there
-    could be troubles with files exchanged between 32-bit and 64-bit systems.
-    See debian/patches/01_64bits_stupidity.dpatch for the diff.
+  * As of 2.43, one needs to use a ``YESIAMSTUPID'' macro in
+    source/creator/creator.c to be able to compile Blender on a 64-bit system.
+    This matter has not been advertised, but it mainly resides in the fact
+    that Blender is not 64-bit safe, in particular with respect to saved and
+    loaded files, especially when that happens between 32-bit and 64-bit
+    systems. Attention was paid to 64-bit systems, efforts were made, but not
+    enough to get a releasable version on those systems.
 
-  * Also, the file format might change in further releases, so you might be
-    unable to reopen the files you saved with current Blender releases, with
-    later releases (once the 64-bit problems are solved).
+  * So, be aware that there might be issues with files manipulated on 64-bit
+    systems, although everything could be or look fine. The file format might
+    also change in further releases to make it 64-bit safe, which might lead
+    to incompatibilities with the files saved with the current 64-bit builds.
 
-  * Apparently (seen in a comment on BlenderNation, and on IRC, but once
-    again, nothing on the website...), this problem won't be addressed until
-    2.50 release, since they don't look like caring much about 64-bit (I was
-    told that one needs several GB RAM to benefit from it, and also that not
-    much applications nor OSes run on 64-bit, so...).
+  * The lead developer also promised (on #blendercoders/Freenode):
+      ``We won't do another release without 64 bits blender!''
+    This problem is a priority, and it will be addressed in CVS as soon as
+    possible. Hopefully in some months, a 64-bit Blender will be released.
+
+  * Related code modifications are stored in Blender debianized sources, in
+    debian/patches/01_64bits_stupidity.dpatch.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 19 Feb 2007 18:37:27 +0100
