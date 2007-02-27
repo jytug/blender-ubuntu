@@ -1,18 +1,48 @@
+blender (2.43-1) UNRELEASED; urgency=low
+
+  * As of 2.43, one needs to use a ``YESIAMSTUPID'' macro in
+    source/creator/creator.c to be able to compile Blender on a 64-bit system.
+    This matter has not been advertised, but it mainly resides in the fact
+    that Blender is not 64-bit safe, in particular with respect to saved and
+    loaded files, especially when that happens between 32-bit and 64-bit
+    systems. Attention was paid to 64-bit systems, efforts were made, but not
+    enough to get a releasable version on those systems.
+
+  * So, be aware that there might be issues with files manipulated on 64-bit
+    systems, although everything could be or look fine. The file format might
+    also change in further releases to make it 64-bit safe, which might lead
+    to incompatibilities with the files saved with the current 64-bit builds.
+
+  * The lead developer also promised (on #blendercoders/Freenode):
+      ``We won't do another release without 64 bits blender!''
+    This problem is a priority, and it will be addressed in CVS as soon as
+    possible. Hopefully in some months, a 64-bit Blender will be released.
+
+  * Related code modifications are stored in Blender debianized sources, in
+    debian/patches/01_64bits_stupidity.dpatch.
+
+  * Interested readers might want to refer to the following thread on
+    upstream's bf-committers list:
+      http://projects.blender.org/pipermail/bf-committers/2007-January/017258.html
+
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 19 Feb 2007 18:37:27 +0100
+
 blender (2.40-1) unstable; urgency=low
 
- As blender is generally trying to get the most out of your graphics hardware
- it might trigger bugs in the corresponding drivers without actually being
- responsible for any malfunctioning.
- If you experience strange crashes please always try checking your setup first
- as outlined in
-  http://dri.freedesktop.org/wiki/TestingAndDebugging
- as well as the Debian bugreport
-  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=273651
- I.e., try running blender via "LIBGL_ALWAYS_INDIRECT=1 blender" and see whether
- this will resolve the problem for you.
+  * As blender is generally trying to get the most out of your graphics
+    hardware it might trigger bugs in the corresponding drivers without
+    actually being responsible for any malfunctioning.  If you experience
+    strange crashes please always try checking your setup first as outlined in
+      http://dri.freedesktop.org/wiki/TestingAndDebugging
 
- Furthermore, please note that starting with the 2.40-1 release blender will
- quit writing its autosave files to /tmp but it will use $HOME/.blender/
- instead by default.
+    as well as the Debian bugreport
+      http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=273651
+
+    I.e., try running blender via "LIBGL_ALWAYS_INDIRECT=1 blender" and see
+    whether this will resolve the problem for you.
+
+  * Furthermore, please note that starting with the 2.40-1 release blender
+    will quit writing its autosave files to /tmp but it will use
+    $HOME/.blender/ instead by default.
  
  -- Florian Ernst <florian@debian.org>  Tue, 10 Jan 2006 13:26:43 +0100

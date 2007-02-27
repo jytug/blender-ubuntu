@@ -15,24 +15,32 @@ blender (2.43-1) UNRELEASED; urgency=low
     everything looks fine. That should also avoid situations like in #282071
     and #285946.
   * Added debian/patches/01_64bits_stupidity.dpatch to enable blender on
-    64-bit systems. Please read the NEWS.Debian file for more info.
+    64-bit systems. Please read the README.Debian file for more info. A
+    NEWS.Debian file has been added to ensure that users don't miss this
+    point.
+  * Adjusted README.Debian file so that it has the very same structure as a
+    debian changelog file.
   * Adjusted the clean target since many binary files remained after the
     cleanup, reported by dpkg-buildpackage when trying to update the Debian
     diff after a build.
   * Adjusted the width of the lines in the long description to get a possibly
     beautiful paragraph.
 
-  [TODO]
+  [TODO before uploading]
     * Adjust the copyright file, see #407917.
+    * s/UNRELEASED/experimental/ in {changelog,NEWS,README.Debian}.
+    * Delete this section of the changelog.
+
+  [TODO]
     * Adjust the overrides, are they (still) all needed?
     * Adjust the manpage, if needed.
-    * Maybe merge README.Debian and NEWS together to keep things together. In
-      this case, debian/patches/01_64bits_stupidity.dpatch would need
-      adjustments.
     * Maybe add nvidia-glx-legacy as Build-Conflicts. Bartosz Feński has been
       mailed to get more info about the nvidia-glx problem. (Is there a less
       intrusive way to get the appropriate symbols without conflicting?)
     * Maybe use folding and several paragraphs in the long description.
+    * Add explanations about what to do when X crashes, and point to
+      HowToGetAnXBacktrace on wiki.debian.org once this part is updated to
+      Xorg.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Sun, 19 Feb 2007 05:55:58 +0100
 
