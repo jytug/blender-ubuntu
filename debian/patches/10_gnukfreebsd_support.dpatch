@@ -24,7 +24,7 @@
      defs += ' NDEBUG'
      cflags += ['-O2']
 -elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5':
-+elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or env['OURPLATFORM'].startswith('gnukfreebsd'):
++elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform.startswith('gnukfreebsd'):
      defs += ' NDEBUG'
      cflags += ['-O2']
  elif sys.platform=='darwin':
@@ -35,7 +35,7 @@
  defs = ''
  cflags = []
 -if sys.platform=='linux2' or sys.platform=='linux-i386':
-+if sys.platform=='linux2' or sys.platform=='linux-i386' or env['OURPLATFORM'].startswith('gnukfreebsd'):
++if sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform.startswith('gnukfreebsd'):
     cflags += ['-O2','-ansi']
  elif env['OURPLATFORM']=='win32-vc':
     cflags += ['/O2']
@@ -46,7 +46,7 @@
      defs += ' NDEBUG'
      cflags += ['-O2']
 -elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3' or sys.platform=='sunos5':
-+elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3' or sys.platform=='sunos5' or env['OURPLATFORM'].startswith('gnukfreebsd'):
++elif sys.platform=='linux2' or sys.platform=='linux-i386' or sys.platform=='freebsd4' or sys.platform=='freebsd5' or sys.platform=='openbsd3' or sys.platform=='sunos5' or sys.platform.startswith('gnukfreebsd'):
      defs += ' NDEBUG'
      cflags += ['-O2']
  elif sys.platform=='darwin' :
@@ -57,7 +57,7 @@
      defines += ['_WIN32', 'WIN32']
      platform_libs = ['shell32', 'kernel32', 'gdi32', 'user32', 'ws2_32']
 -elif ourplatform == 'linux2':
-+elif ourplatform == 'linux2' or env['OURPLATFORM'].startswith('gnukfreebsd'):
++elif ourplatform == 'linux2' or ourplatform.startswith('gnukfreebsd'):
      print "Building on linux2"
  elif ourplatform == 'openbsd3':
      print "Building on openbsd3"
