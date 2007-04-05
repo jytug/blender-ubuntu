@@ -26,7 +26,7 @@ blender (2.43-1) UNRELEASED; urgency=low
     beautiful paragraph.
   * Updated and improved desktop integration (Closes: #417901):
      - added the missing dh_desktop call;
-     - added the installation of an icon from release/freedesktop/icons;
+     - added the installation of the SVG icon from release/freedesktop/icons;
      - adapted the icon name in the .desktop file accordingly.
 
 
