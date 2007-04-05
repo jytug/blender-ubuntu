@@ -1,7 +1,6 @@
 blender (2.43-1) UNRELEASED; urgency=low
 
-  * New upstream release.
-  * Added myself to the Uploaders field.
+  * New upstream release (Closes: #414409).
   * Refreshed 10_gnukfreebsd_support.dpatch:
      - it should now support each FreeBSD kernel version, using startswith()
        instead of an hardcoded kernel version string;
@@ -25,11 +24,17 @@ blender (2.43-1) UNRELEASED; urgency=low
     diff after a build.
   * Adjusted the width of the lines in the long description to get a possibly
     beautiful paragraph.
+  * Updated and improved desktop integration (Closes: #417901):
+     - added the missing dh_desktop call;
+     - added the installation of an icon from release/freedesktop/icons;
+     - adapted the icon name in the .desktop file accordingly.
+
 
   [TODO before uploading]
     * Adjust the copyright file, see #407917.
     * s/UNRELEASED/experimental/ in {changelog,NEWS,README.Debian}.
     * Delete this section of the changelog.
+    * Adapt the changelog with the entries from latest 2.42a-* uploads.
 
   [TODO]
     * Adjust the overrides, are they (still) all needed?

@@ -99,6 +99,9 @@ install: build
 	# Install menus & icons
 	install -m 644 $(CURDIR)/debian/misc/blender.desktop $(CURDIR)/debian/blender/usr/share/applications
 	install -m 644 $(CURDIR)/debian/misc/blender.xpm $(CURDIR)/debian/blender/usr/share/pixmaps
+	
+	# A better one? SVG?
+	install -m 644 $(CURDIR)/release/freedesktop/icons/32x32/blender.png $(CURDIR)/debian/blender/usr/share/applications
 
 	# Install plugins
 	install -d $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
@@ -114,7 +117,7 @@ install: build
 	install -m 644 $(CURDIR)/install/linux2/.blender/.Blanguages $(CURDIR)/debian/blender/usr/lib/blender
 	install -m 644 $(CURDIR)/install/linux2/.blender/.bfont.ttf $(CURDIR)/debian/blender/usr/lib/blender
 
-	# Fix permeissions for python scripts
+	# Fix permissions for python scripts
 	find $(CURDIR)/debian/blender/usr/lib/blender/scripts/ -name "*.py" -exec chmod -R 644 '{}' \;
 
 	# Remove CVS dirs in package directory
@@ -140,6 +143,7 @@ binary-arch: build install
 	dh_installdocs
 	dh_installmenu
 	dh_installman $(CURDIR)/debian/blender.1
+	dh_desktop
 	dh_link
 	dh_strip
 	dh_compress
