@@ -49,6 +49,27 @@ blender (2.43-1) UNRELEASED; urgency=low
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Sun, 19 Feb 2007 05:55:58 +0100
 
+blender (2.42a-7) unstable; urgency=high
+
+  * Dropped the erroneous -lstdc++ and -lc linking options, which caused the
+    FTBFS on mips and sparc; let g++ do the job instead, using CXX. Many
+    thanks to Sam Hocevar <sam@zoy.org> for having found the cause of the
+    FTBFS and for the patch (Closes: #417889).
+  * Urgency set to high accordingly, since it is a serious bug.
+
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 05 Apr 2007 11:34:46 +0200
+
+blender (2.42a-6) unstable; urgency=high
+
+  * Security: No longer ship the kmz_ImportWithMesh.py script since it allows
+    user-assisted remote attackers to execute arbitrary Python code by
+    importing a crafted (1) KML or (2) KMZ file [CVE-2007-1253].
+  * Updated copyright to reflect the actual license (Closes: #407917).
+  * Added documentation (NEWS, README.Debian) about 64-bit related risks.
+  * Added myself to the Uploaders.
+
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Wed, 14 Mar 2007 11:06:13 +0100
+
 blender (2.42a-5) unstable; urgency=high
 
   * urgency=high due to RC bugfix targetted at testing

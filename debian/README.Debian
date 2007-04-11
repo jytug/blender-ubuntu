@@ -1,4 +1,4 @@
-blender (2.43-1) UNRELEASED; urgency=low
+blender (2.42a-6) unstable; urgency=high
 
   * As of 2.43, one needs to use a ``YESIAMSTUPID'' macro in
     source/creator/creator.c to be able to compile Blender on a 64-bit system.
@@ -13,19 +13,17 @@ blender (2.43-1) UNRELEASED; urgency=low
     also change in further releases to make it 64-bit safe, which might lead
     to incompatibilities with the files saved with the current 64-bit builds.
 
-  * The lead developer also promised (on #blendercoders/Freenode):
+  * After the 2.43 release, the lead developer also promised (on Freenode, on
+    the #blendercoders chan):
       ``We won't do another release without 64 bits blender!''
     This problem is a priority, and it will be addressed in CVS as soon as
-    possible. Hopefully in some months, a 64-bit Blender will be released.
-
-  * Related code modifications are stored in Blender debianized sources, in
-    debian/patches/01_64bits_stupidity.dpatch.
+    possible, possibly for 2.44.
 
   * Interested readers might want to refer to the following thread on
     upstream's bf-committers list:
       http://projects.blender.org/pipermail/bf-committers/2007-January/017258.html
 
- -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 19 Feb 2007 18:37:27 +0100
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 14 Mar 2007 11:46:00 +0100
 
 blender (2.40-1) unstable; urgency=low
 

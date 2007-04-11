@@ -1,4 +1,4 @@
-blender (2.43-1) UNRELEASED; urgency=low
+blender (2.42a-6) unstable; urgency=high
 
   * Blender is not 64-bit safe (yet), in particular with respect to saved and
     loaded files, especially when that happens between 32-bit and 64-bit
@@ -13,4 +13,4 @@ blender (2.43-1) UNRELEASED; urgency=low
   * More information is available in the README.Debian file, available under
     /usr/share/doc/blender/.
 
- -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 19 Feb 2007 18:37:27 +0100
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 14 Mar 2007 12:01:01 +0100

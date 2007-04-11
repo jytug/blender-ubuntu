@@ -132,6 +132,9 @@ install: build
 	cp $(CURDIR)/debian/blender.linda-overrides \
 	   $(CURDIR)/debian/blender/usr/share/linda/overrides/blender
 
+	# Needed removal, insecure script, see CVE-2007-1253
+	rm $(CURDIR)/debian/blender/usr/lib/blender/scripts/kmz_ImportWithMesh.py
+
 
 # Build architecture-independent files here.
 binary-indep: build install
