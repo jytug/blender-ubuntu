@@ -1,4 +1,4 @@
-blender (2.43-1) UNRELEASED; urgency=low
+blender (2.43-1) unstable; urgency=low
 
   [ Cyril Brulebois ]
   * New upstream release (Closes: #414409).
@@ -34,31 +34,14 @@ blender (2.43-1) UNRELEASED; urgency=low
      - adapted the icon name in the .desktop files accordingly.
   * Dropped insecure script removal introduced in 2.42a-6, since the insecure
     script is no longer shipped upstream.
-
-
-  [TODO before uploading]
-    * Adjust the copyright file, see #407917.
-    * s/UNRELEASED/experimental/ in {changelog,NEWS,README.Debian}.
-    * Delete this section of the changelog.
-    * Adapt the changelog with the entries from latest 2.42a-* uploads.
-
-  [TODO]
-    * Adjust the overrides, are they (still) all needed?
-    * Adjust the manpage, if needed.
-    * Maybe add nvidia-glx-legacy as Build-Conflicts. Bartosz Feński has been
-      mailed to get more info about the nvidia-glx problem. (Is there a less
-      intrusive way to get the appropriate symbols without conflicting?)
-    * Maybe use folding and several paragraphs in the long description.
-    * Add explanations about what to do when X crashes, and point to
-      HowToGetAnXBacktrace on wiki.debian.org once this part is updated to
-      Xorg.
+  * Added a TODO(.Debian) file to list items to work on for further revisions.
 
   [ Florian Ernst ]
   * debian/control:
     + drop g++-3.3 from B-D. Actually, we don't need it anymore.
     + bump B-D on python-central to 0.5 to make lintian happy.
 
- -- Florian Ernst <florian@debian.org>  Fri, 13 Apr 2007 16:39:07 +0200
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Fri, 13 Apr 2007 23:17:41 +0200
 
 blender (2.42a-7) unstable; urgency=high
 
