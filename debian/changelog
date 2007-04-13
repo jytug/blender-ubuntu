@@ -27,8 +27,10 @@ blender (2.43-1) UNRELEASED; urgency=low
     beautiful paragraph.
   * Updated and improved desktop integration (Closes: #417901):
      - added the missing dh_desktop call;
-     - added the installation of the SVG icon from release/freedesktop/icons;
+     - added the installation of all the icons in release/freedesktop/icons;
      - adapted the icon name in the .desktop file accordingly.
+  * Dropped insecure script removal introduced in 2.42a-6, since the insecure
+    script is no longer shipped upstream.
 
 
   [TODO before uploading]

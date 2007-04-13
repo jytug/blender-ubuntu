@@ -99,11 +99,17 @@ install: build
 	# Install menus & icons
 	install -m 644 $(CURDIR)/debian/misc/blender.desktop $(CURDIR)/debian/blender/usr/share/applications
 	install -m 644 $(CURDIR)/debian/misc/blender.xpm $(CURDIR)/debian/blender/usr/share/pixmaps
-	
-	# Only install the svg one
-	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/scalable/apps
-	install -m 644 $(CURDIR)/release/freedesktop/icons/scalable/blender.svg $(CURDIR)/debian/blender/usr/share/icons/hicolor/scalable/apps
 
+	# Install all (freedesktop) icon sizes
+	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/16x16/apps
+	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/22x22/apps
+	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/32x32/apps
+	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/scalable/apps
+	install -m 644 $(CURDIR)/release/freedesktop/icons/16x16/blender.png $(CURDIR)/debian/blender/usr/share/icons/hicolor/16x16/apps
+	install -m 644 $(CURDIR)/release/freedesktop/icons/22x22/blender.png $(CURDIR)/debian/blender/usr/share/icons/hicolor/22x22/apps
+	install -m 644 $(CURDIR)/release/freedesktop/icons/32x32/blender.png $(CURDIR)/debian/blender/usr/share/icons/hicolor/32x32/apps
+	install -m 644 $(CURDIR)/release/freedesktop/icons/32x32/blender.svg $(CURDIR)/debian/blender/usr/share/icons/hicolor/32x32/apps
+	install -m 644 $(CURDIR)/release/freedesktop/icons/scalable/blender.svg $(CURDIR)/debian/blender/usr/share/icons/hicolor/scalable/apps
 
 	# Install plugins
 	install -d $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
@@ -131,9 +137,6 @@ install: build
 
 	cp $(CURDIR)/debian/blender.linda-overrides \
 	   $(CURDIR)/debian/blender/usr/share/linda/overrides/blender
-
-	# Needed removal, insecure script, see CVE-2007-1253
-	rm $(CURDIR)/debian/blender/usr/lib/blender/scripts/kmz_ImportWithMesh.py
 
 
 # Build architecture-independent files here.
