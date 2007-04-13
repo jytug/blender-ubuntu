@@ -1,5 +1,6 @@
 blender (2.43-1) UNRELEASED; urgency=low
 
+  [ Cyril Brulebois ]
   * New upstream release (Closes: #414409).
   * Refreshed 10_gnukfreebsd_support.dpatch:
      - it should now support each FreeBSD kernel version, using startswith()
@@ -47,7 +48,12 @@ blender (2.43-1) UNRELEASED; urgency=low
       HowToGetAnXBacktrace on wiki.debian.org once this part is updated to
       Xorg.
 
- -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Sun, 19 Feb 2007 05:55:58 +0100
+  [ Florian Ernst ]
+  * debian/control:
+    + drop g++-3.3 from B-D. Actually, we don't need it anymore.
+    + bump B-D on python-central to 0.5 to make lintian happy.
+
+ -- Florian Ernst <florian@debian.org>  Fri, 13 Apr 2007 16:39:07 +0200
 
 blender (2.42a-7) unstable; urgency=high
 
