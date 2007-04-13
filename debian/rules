@@ -97,7 +97,7 @@ install: build
 	install -m 755 $(CURDIR)/install/linux2/blenderplayer $(CURDIR)/debian/blender/usr/bin/blenderplayer
 
 	# Install menus & icons
-	install -m 644 $(CURDIR)/debian/misc/blender.desktop $(CURDIR)/debian/blender/usr/share/applications
+	install -m 644 $(CURDIR)/debian/misc/blender-*.desktop $(CURDIR)/debian/blender/usr/share/applications
 	install -m 644 $(CURDIR)/debian/misc/blender.xpm $(CURDIR)/debian/blender/usr/share/pixmaps
 
 	# Install all (freedesktop) icon sizes

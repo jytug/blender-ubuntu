@@ -26,9 +26,12 @@ blender (2.43-1) UNRELEASED; urgency=low
   * Adjusted the width of the lines in the long description to get a possibly
     beautiful paragraph.
   * Updated and improved desktop integration (Closes: #417901):
+     - switched from a single desktop file to two versions: one for windowed
+       and one for fullscreen execution, thanks to Lukas Fittl for the
+       suggestion!
      - added the missing dh_desktop call;
      - added the installation of all the icons in release/freedesktop/icons;
-     - adapted the icon name in the .desktop file accordingly.
+     - adapted the icon name in the .desktop files accordingly.
   * Dropped insecure script removal introduced in 2.42a-6, since the insecure
     script is no longer shipped upstream.
 
