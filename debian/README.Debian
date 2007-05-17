@@ -1,3 +1,9 @@
+blender (2.44-1) unstable; urgency=low
+
+  * As of this version blender is 64 bits safe again.
+
+ -- Florian Ernst <florian@debian.org>  Thu, 17 May 2007 11:47:23 +0200
+
 blender (2.42a-6) unstable; urgency=high
 
   * As of 2.43, one needs to use a ``YESIAMSTUPID'' macro in
