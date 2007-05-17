@@ -1,4 +1,10 @@
-blender (2.43-1) unstable; urgency=low
+blender (2.44-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Florian Ernst <florian@debian.org>  Thu, 17 May 2007 11:18:52 +0200
+
+blender (2.43-1) UNRELEASED; urgency=low
 
   [ Cyril Brulebois ]
   * New upstream release (Closes: #414409).
