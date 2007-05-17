@@ -28,7 +28,7 @@ blender (2.43-1) UNRELEASED; urgency=low
     debian changelog file.
   * Adjusted the clean target since many binary files remained after the
     cleanup, reported by dpkg-buildpackage when trying to update the Debian
-    diff after a build.
+    diff after a build (Closes: #424145).
   * Adjusted the width of the lines in the long description to get a possibly
     beautiful paragraph.
   * Updated and improved desktop integration (Closes: #417901):
