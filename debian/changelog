@@ -1,4 +1,4 @@
-blender (2.44-2) UNRELEASED; urgency=low
+blender (2.44-2) unstable; urgency=low
 
   * Added debian/patches/20_gcc4.3_support.dpatch to fix FTBFS with GCC 4.3.
     Solves:
@@ -6,8 +6,10 @@ blender (2.44-2) UNRELEASED; urgency=low
      - one missing newline;
      - one redefinition.
     (Closes: #417491)
+  * Rebuild will turn libav{codec,format}0d Depends: into libav{codec,format}1d,
+    thus fixing the impossibility to install blender (Closes: #427567).
 
- -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Fri, 18 May 2007 13:12:46 +0200
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Tue, 05 Jun 2007 00:48:46 +0000
 
 blender (2.44-1) unstable; urgency=low
 
