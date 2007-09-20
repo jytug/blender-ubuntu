@@ -11,6 +11,8 @@ blender (2.45-1) unstable; urgency=low
     anymore, no .pyc file should appear, which fixes the double-build failure
     (Closes: #442511).
   * Added a “Homepage:” field, and deleted the URL from the long description.
+  * Modified debian/rules to detect when DEB_BUILD_OPTIONS contains
+    “ccache”, so as to speed up maintainer rebuilds.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 20 Sep 2007 19:14:58 +0200
 

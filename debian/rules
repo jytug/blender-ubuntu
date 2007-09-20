@@ -16,6 +16,12 @@ ifneq (,$(findstring $(DEB_HOST_ARCH),mips mipsel))
 	COMPILER ?= REL_CFLAGS=-O1 REL_CCFLAGS=-O1
 endif
 
+# Accept a "ccache" option to speed up maintainer rebuilds
+ifneq (,$(findstring $(DEB_BUILD_OPTIONS),ccache))
+	CC = "ccache gcc"
+	CXX = "ccache g++"
+endif
+
 CFLAGS = -Wall -g
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
@@ -40,7 +46,7 @@ ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
 endif
 
 	# Add here commands to compile the package.
-	scons WITH_BF_PLAYER=1 WITH_BF_OPENAL=0 BF_FANCY=0 $(COMPILER)
+	scons WITH_BF_PLAYER=1 WITH_BF_OPENAL=0 BF_FANCY=0 $(COMPILER) CC=$(CC) CXX=$(CXX)
 
 	# Build plugins by hand
 	install -d $(CURDIR)/install/linux2/plugins/include
