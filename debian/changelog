@@ -1,3 +1,9 @@
+blender (2.45-1) unstable; urgency=low
+
+  * New upstream release (Closes: #443278).
+
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 20 Sep 2007 19:14:58 +0200
+
 blender (2.44-2) unstable; urgency=low
 
   * Added debian/patches/20_gcc4.3_support.dpatch to fix FTBFS with GCC 4.3.
