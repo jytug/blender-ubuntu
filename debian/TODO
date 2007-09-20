@@ -5,7 +5,6 @@ Some items to work on:
    been mailed to get more info about the nvidia-glx problem. (Is there
    a less intrusive way to get the appropriate symbols without
    conflicting?)
- * Maybe use folding and several paragraphs in the long description.
  * Add explanations about what to do when X crashes, and point to
    HowToGetAnXBacktrace on wiki.debian.org once this part is updated to
    Xorg.

@@ -2,6 +2,15 @@ blender (2.45-1) unstable; urgency=low
 
   * New upstream release (Closes: #443278).
   * Menu transition: move from Apps/Graphics to Applications/Graphics.
+  * Dropped patch (merged upstream):
+     - 20_gcc4.3_support.dpatch.
+  * Disabled genpot in debian/rules. It is very time consuming, and apparently
+    not needed. If a regression happens, it should be fixed upstream, and not
+    using such a hack (that nobody knows about anymore). The genpot/ folder
+    hadn't be deleted (yet), just in case. Since these scripts aren't called
+    anymore, no .pyc file should appear, which fixes the double-build failure
+    (Closes: #442511).
+  * Added a “Homepage:” field, and deleted the URL from the long description.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 20 Sep 2007 19:14:58 +0200
 

@@ -25,7 +25,7 @@ else
 endif
 
 build: build-stamp
-build-stamp: patch-stamp po/blender.pot
+build-stamp: patch-stamp
 	dh_testdir
 	ln -sf /usr/share/misc/config.guess	source/tools/guess/config.guess
 	ln -sf /usr/share/misc/config.guess	extern/bFTGL/unix/config.guess
@@ -50,12 +50,6 @@ endif
 
 	touch $@
 
-po/blender.pot:
-	python debian/genpot/near_all_po.py
-	cp debian/pot-header.txt po/blender.pot
-	msguniq almost_all.po >> po/blender.pot
-	rm -f almost_all.po
-
 clean: unpatch
 	dh_testdir
 	dh_testroot
@@ -75,8 +69,6 @@ clean: unpatch
 	# Clean plugins (non needed? done by scons now ??)
 	#-$(MAKE) -C $(CURDIR)/install/linux2/plugins clean
 	rm -rf $(CURDIR)/install/linux2/plugins/include
-
-	rm -f po/blender.pot
 
         # Ensure that the clean target does its job
 	rm -rf $(CURDIR)/build
