@@ -1,6 +1,7 @@
 blender (2.45-1) unstable; urgency=low
 
   * New upstream release (Closes: #443278).
+  * Menu transition: move from Apps/Graphics to Applications/Graphics.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 20 Sep 2007 19:14:58 +0200
 
