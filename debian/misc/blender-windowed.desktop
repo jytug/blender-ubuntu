@@ -1,5 +1,4 @@
 [Desktop Entry]
-Encoding=UTF-8
 Name=Blender 3D modeller (windowed)
 Name[ru]=Редактор 3D-моделей Blender (windowed)
 Name[fr]=Blender - modeleur 3D (fenêtré)
@@ -10,6 +9,6 @@ Exec=blender -w
 Icon=blender.svg
 Terminal=false
 Type=Application
-Categories=Application;Graphics;
+Categories=Graphics;3DGraphics;
 StartupNotify=false
 MimeType=application/x-blender

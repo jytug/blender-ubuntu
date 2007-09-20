@@ -1,5 +1,4 @@
 Some items to work on:
- * Adjust the overrides, are they (still) all needed?
  * Adjust the manpage, if needed.
  * Maybe add nvidia-glx-legacy as Build-Conflicts. Bartosz Feński has
    been mailed to get more info about the nvidia-glx problem. (Is there

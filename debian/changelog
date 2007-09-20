@@ -14,9 +14,16 @@ blender (2.45-1) unstable; urgency=low
     until packages.debian.org, aptitude, and so on support this field.
   * Modified debian/rules to detect when DEB_BUILD_OPTIONS contains
     “ccache”, so as to speed up maintainer rebuilds.
-  * Updated source overrides so that only the following ones remain:
-     - unknown-field-in-dsc homepage (see above);
+  * Updated lintian source overrides so that only the following ones remain:
+     - “unknown-field-in-dsc homepage” (see above);
      - .svn files in the upstream source.
+  * Updated lintian binary overrides:
+     - deleted unused ones;
+     - added “unknown-field-in-control homepage”;
+  * Updated desktop files:
+     - removed unneeded “Encoding” field;
+     - updated “Category” field “Application;Graphics;” to
+       “Graphics;3DGraphics;”.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 20 Sep 2007 19:14:58 +0200
 

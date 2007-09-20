@@ -1,4 +1,7 @@
-blender: interpreter-not-absolute
-blender: unusual-interpreter
 blender: shared-lib-without-dependency-information
 blender: image-file-in-usr-lib usr/lib/blender/scripts/bpymodules/colladaImEx/logo.png
+
+
+# Homepage: is being accepted and implemented
+
+blender: unknown-field-in-control homepage
