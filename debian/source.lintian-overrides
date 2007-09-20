@@ -1,4 +1,54 @@
-blender source: source-contains-cvs-conflict-copy
-blender source: cvsignore-file-in-source
-blender source: source-contains-CVS-dir
-blender source: outdated-autotools-helper-file
+# Homepage: is being accepted and implemented
+
+blender source: unknown-field-in-dsc homepage
+
+
+# svn export...
+
+blender source: source-contains-svn-control-dir bin/.blender/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/nl/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/nl/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/sv/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/sv/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ru/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ru/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/bg/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/bg/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ca/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ca/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/it/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/it/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/fi/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/fi/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/pl/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/pl/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/sr/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/sr/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ja/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ja/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/zh_cn/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/zh_cn/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/cs/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/cs/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ro/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ro/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/hr_HR/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/hr_HR/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/es/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/es/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/pt_br/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/pt_br/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/hr/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/hr/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/fr/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/fr/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/uk/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/uk/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ar/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/ar/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/sr@Latn/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/sr@Latn/LC_MESSAGES/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/de/.svn
+blender source: source-contains-svn-control-dir bin/.blender/locale/de/LC_MESSAGES/.svn
+
