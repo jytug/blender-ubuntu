@@ -7,6 +7,9 @@ blender (2.45-2) unstable; urgency=low
         - Drop python-centralish additional fields: X{S,B}-Python-Version.
      - debian/rules:
         - Replace dh_pycentral with dh_pysupport.
+  * Remove the homepage from the long description.
+  * Remove the source override about the additional “Homepage” source
+    field, which is now official.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 

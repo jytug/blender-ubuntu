@@ -1,8 +1,3 @@
-# Homepage: is being accepted and implemented
-
-blender source: unknown-field-in-dsc homepage
-
-
 # svn export...
 
 blender source: source-contains-svn-control-dir bin/.blender/.svn
