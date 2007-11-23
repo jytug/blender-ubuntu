@@ -1,3 +1,15 @@
+blender (2.45-2) unstable; urgency=low
+
+  * Switch from python-central to python-support:
+     - debian/control:
+        - B-D: Replace python-central with python-support.
+        - B-D: Replace python2.4-dev with python-dev.
+        - Drop python-centralish additional fields: X{S,B}-Python-Version.
+     - debian/rules:
+        - Replace dh_pycentral with dh_pysupport.
+
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
+
 blender (2.45-1) unstable; urgency=low
 
   * New upstream release (Closes: #443278).
