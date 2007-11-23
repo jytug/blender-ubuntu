@@ -88,40 +88,13 @@ install: build
 	dh_testroot
 	dh_clean -k 
 	dh_installdirs
+	
+	dh_install
 
 	# Add here commands to install the package into debian/blender.
 	install -m 755 $(CURDIR)/install/linux2/blender $(CURDIR)/debian/blender/usr/bin/blender-bin
 	install -m 755 $(CURDIR)/debian/blender-wrapper $(CURDIR)/debian/blender/usr/bin/blender
 	install -m 755 $(CURDIR)/install/linux2/blenderplayer $(CURDIR)/debian/blender/usr/bin/blenderplayer
-
-	# Install menus & icons
-	install -m 644 $(CURDIR)/debian/misc/blender-*.desktop $(CURDIR)/debian/blender/usr/share/applications
-	install -m 644 $(CURDIR)/debian/misc/blender.xpm $(CURDIR)/debian/blender/usr/share/pixmaps
-
-	# Install all (freedesktop) icon sizes
-	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/16x16/apps
-	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/22x22/apps
-	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/32x32/apps
-	install -d $(CURDIR)/debian/blender/usr/share/icons/hicolor/scalable/apps
-	install -m 644 $(CURDIR)/release/freedesktop/icons/16x16/blender.png $(CURDIR)/debian/blender/usr/share/icons/hicolor/16x16/apps
-	install -m 644 $(CURDIR)/release/freedesktop/icons/22x22/blender.png $(CURDIR)/debian/blender/usr/share/icons/hicolor/22x22/apps
-	install -m 644 $(CURDIR)/release/freedesktop/icons/32x32/blender.png $(CURDIR)/debian/blender/usr/share/icons/hicolor/32x32/apps
-	install -m 644 $(CURDIR)/release/freedesktop/icons/32x32/blender.svg $(CURDIR)/debian/blender/usr/share/icons/hicolor/32x32/apps
-	install -m 644 $(CURDIR)/release/freedesktop/icons/scalable/blender.svg $(CURDIR)/debian/blender/usr/share/icons/hicolor/scalable/apps
-
-	# Install plugins
-	install -d $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
-	install -d $(CURDIR)/debian/blender/usr/lib/blender/plugins/texture
-	install -m 644 $(CURDIR)/install/linux2/plugins/sequence/*.so $(CURDIR)/debian/blender/usr/lib/blender/plugins/sequence
-	install -m 644 $(CURDIR)/install/linux2/plugins/texture/*.so $(CURDIR)/debian/blender/usr/lib/blender/plugins/texture
-
-	# Install miscellaneous files under /usr/lib/blender
-	cp -a $(CURDIR)/release/scripts/bpydata $(CURDIR)/debian/blender/usr/lib/blender
-	cp -a $(CURDIR)/release/scripts $(CURDIR)/debian/blender/usr/lib/blender
-	cp -a $(CURDIR)/install/linux2/.blender/locale $(CURDIR)/debian/blender/usr/lib/blender
-	install -m 644 $(CURDIR)/release/VERSION $(CURDIR)/debian/blender/usr/lib/blender
-	install -m 644 $(CURDIR)/install/linux2/.blender/.Blanguages $(CURDIR)/debian/blender/usr/lib/blender
-	install -m 644 $(CURDIR)/install/linux2/.blender/.bfont.ttf $(CURDIR)/debian/blender/usr/lib/blender
 
 	# Fix permissions for python scripts
 	find $(CURDIR)/debian/blender/usr/lib/blender/scripts/ -name "*.py" -exec chmod -R 644 '{}' \;
