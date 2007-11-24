@@ -19,6 +19,10 @@ blender (2.45-2) unstable; urgency=low
     so that they no longer appear as hidden. Also move them to /usr/share.
     Modify the wrapper accordingly, so that it symlinks to the new locations.
     Also add a TODO about a possible removal of the font symlink.
+  * Also move the scripts hierarchy and the VERSION file to /usr/share. Adapt
+    the wrapper for this purpose too. Remove the “chmod” call on the scripts,
+    which is no longer needed. Use a sed call instead to replace the “BPY”
+    shebangs by “/usr/bin/python” ones.
   * For the records, the patch containing fixes for the German tranlation has
     been submitted upstream, item #7823 of the patch tracking system.
 

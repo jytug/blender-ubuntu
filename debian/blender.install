@@ -20,9 +20,9 @@ install/linux2/plugins/sequence/*.so	/usr/lib/blender/plugins/sequence
 install/linux2/plugins/texture/*.so	/usr/lib/blender/plugins/texture
 
 ### Misc. files
-release/scripts/bpydata			/usr/lib/blender
-release/scripts				/usr/lib/blender
-release/VERSION				/usr/lib/blender
+release/scripts/bpydata			/usr/share/blender
+release/scripts				/usr/share/blender
+release/VERSION				/usr/share/blender
 install/linux2/.blender/locale		/usr/share
 install/linux2/.blender/.Blanguages	/usr/share/blender
 install/linux2/.blender/.bfont.ttf	/usr/share/blender
