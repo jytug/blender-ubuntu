@@ -75,9 +75,9 @@ clean: unpatch
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k 
+	dh_clean -k
 	dh_installdirs
-	
+
 	dh_install
 
 	# Add here commands to install the package into debian/blender.
@@ -112,7 +112,7 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs 
+	dh_installchangelogs
 	dh_installdocs
 	dh_installmenu
 	dh_installman $(CURDIR)/debian/blender.1
