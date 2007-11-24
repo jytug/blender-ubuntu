@@ -12,6 +12,9 @@ Some items to work on:
    Check the source and ask blendercoders to be sure.
  * Check that dropping the mips(el) test in debian/rules doesn't lead
    to FBTFS on these architectures.
+ * Check some steps in debian/rules, marked [CHECK]. Mostly:
+    - Check whether building the plugins by hand is still needed.
+    - Check the additional clean steps are still needed.
 
 More items have been mentioned on the list, see the thread beginning at:
   http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html

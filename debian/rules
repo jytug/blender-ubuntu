@@ -6,10 +6,10 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# Include dpatch stuff.
+# Include dpatch stuff
 include /usr/share/dpatch/dpatch.make
 
-BINARY = debian/blender
+BINARY = $(CURDIR)/debian/blender
 
 CFLAGS = -Wall -g
 
@@ -27,50 +27,51 @@ build-stamp: patch-stamp
 	ln -sf /usr/share/misc/config.sub	extern/bFTGL/unix/config.sub
 
 	# Add user specific config (without patching)
-	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
+	cp debian/misc/user-config.py .
 
 	# Remove libdc1394 on non-Linux arch
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
-	sed -i -e 's/libdc1394//' $(CURDIR)/user-config.py
+	sed -i -e 's/libdc1394//' user-config.py
 endif
 
-	# Add here commands to compile the package.
+	# Main build
 	scons WITH_BF_PLAYER=1 WITH_BF_OPENAL=0 BF_FANCY=0 $(COMPILER) CC=$(CC) CXX=$(CXX)
 
 	# Build plugins by hand
 	install -d $(CURDIR)/install/linux2/plugins/include
 	install -m 644 source/blender/blenpluginapi/*.h $(CURDIR)/install/linux2/plugins/include
-	chmod +x $(CURDIR)/install/linux2/plugins/bmake
-	$(MAKE) -C $(CURDIR)/install/linux2/plugins $(COMPILER)
+	chmod +x install/linux2/plugins/bmake
+	$(MAKE) -C install/linux2/plugins $(COMPILER)
 
 	touch $@
 
 clean: unpatch
 	dh_testdir
 	dh_testroot
+
+	# Remove stamps and config.* helpers [CHECK]
 	rm -f build-stamp configure-stamp \
 		source/tools/guess/config.guess \
 		extern/bFTGL/unix/config.guess \
 		extern/bFTGL/unix/config.sub
 
-	# Add here commands to clean up after the build process.
-	cp $(CURDIR)/debian/misc/user-config.py $(CURDIR)
+	# General cleanup
+	cp debian/misc/user-config.py .
 	-scons clean BF_FANCY=0
-	rm -f $(CURDIR)/user-config.py
+	rm -f user-config.py
 
 	# Remove *.pycs
-	dh_clean tools/*.pyc tools/scons/*.pyc tools/scons/bs/*.pyc
+	find -name '*.pyc' -exec rm {} ';'
 
-	# Clean plugins (non needed? done by scons now ??)
-	#-$(MAKE) -C $(CURDIR)/install/linux2/plugins clean
-	rm -rf $(CURDIR)/install/linux2/plugins/include
+	# Clean plugins directory [CHECK]
+	rm -rf install/linux2/plugins/include
 
-        # Ensure that the clean target does its job
-	rm -rf $(CURDIR)/build
-	rm -rf $(CURDIR)/install
-	rm -rf $(CURDIR)/intern/guardedalloc/intern/mallocn.o
-	rm -rf $(CURDIR)/linux2
-	rm -rf $(CURDIR)/obj/*
+	# Ensure that the clean target does its job [CHECK]
+	rm -rf build
+	rm -rf install
+	rm -rf intern/guardedalloc/intern/mallocn.o
+	rm -rf linux2
+	rm -rf obj/*
 
 install: build
 	dh_testdir
@@ -78,44 +79,40 @@ install: build
 	dh_clean -k
 	dh_installdirs
 
+	# Install most of the files at the appropriate place
 	dh_install
 
-	# Add here commands to install the package into debian/blender.
-	install -m 755 $(CURDIR)/install/linux2/blender $(CURDIR)/debian/blender/usr/bin/blender-bin
-	install -m 755 $(CURDIR)/debian/blender-wrapper $(CURDIR)/debian/blender/usr/bin/blender
-	install -m 755 $(CURDIR)/install/linux2/blenderplayer $(CURDIR)/debian/blender/usr/bin/blenderplayer
+	# Additional commands to handle the binaries
+	install -m 755 install/linux2/blender       $(BINARY)/usr/bin/blender-bin
+	install -m 755 debian/blender-wrapper       $(BINARY)/usr/bin/blender
+	install -m 755 install/linux2/blenderplayer $(BINARY)/usr/bin/blenderplayer
 
 	# Rename some files to make them visible
 	mv $(BINARY)/usr/share/blender/.Blanguages $(BINARY)/usr/share/blender/Blanguages
 	mv $(BINARY)/usr/share/blender/.bfont.ttf  $(BINARY)/usr/share/blender/bfont.ttf
 
 	# Remove exec permission from python scripts
-	find $(CURDIR)/debian/blender/usr/share/blender/scripts/ \
+	find $(BINARY)/usr/share/blender/scripts/ \
 		-name '*.py' -exec chmod a-x {} ';'
 
-	# Remove CVS dirs in package directory
-	-find $(CURDIR)/debian/blender -name CVS -type d -exec rm -rf '{}' \;
+	# Install overrides files [CHECK]
+	cp debian/blender.lintian-overrides \
+	   $(BINARY)/usr/share/lintian/overrides/blender
 
-	# Install lintian overrides file
-	cp $(CURDIR)/debian/blender.lintian-overrides \
-	   $(CURDIR)/debian/blender/usr/share/lintian/overrides/blender
+	cp debian/blender.linda-overrides \
+	   $(BINARY)/usr/share/linda/overrides/blender
 
-	cp $(CURDIR)/debian/blender.linda-overrides \
-	   $(CURDIR)/debian/blender/usr/share/linda/overrides/blender
-
-
-# Build architecture-independent files here.
+# Build architecture-independent files here
 binary-indep: build install
-# We have nothing to do by default.
 
-# Build architecture-dependent files here.
+# Build architecture-dependent files here
 binary-arch: build install
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs
 	dh_installdocs
 	dh_installmenu
-	dh_installman $(CURDIR)/debian/blender.1
+	dh_installman debian/blender.1
 	dh_desktop
 	dh_link
 	dh_strip

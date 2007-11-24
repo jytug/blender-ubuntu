@@ -29,6 +29,9 @@ blender (2.45-2) unstable; urgency=low
     latest gcc releases.
   * Actually drop the “ccache” detection introduced in 2.45-1. Setting the
     PATH is much more straightforward.
+  * General cleanup of debian/rules, especially superfluous use of $(CURDIR).
+    Work-needing entries are marked with “[CHECK]”, and a TODO entry has been
+    added.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 
