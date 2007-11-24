@@ -102,9 +102,9 @@ install: build
 	mv $(BINARY)/usr/share/blender/.Blanguages $(BINARY)/usr/share/blender/Blanguages
 	mv $(BINARY)/usr/share/blender/.bfont.ttf  $(BINARY)/usr/share/blender/bfont.ttf
 
-	# Fix permissions for python scripts
-	find $(CURDIR)/debian/blender/usr/share/blender/scripts/ -name '*.py' \
-		-exec sed -i -e 's/#!BPY/#!\/usr\/bin\/python/' {} ';'
+	# Remove exec permission from python scripts
+	find $(CURDIR)/debian/blender/usr/share/blender/scripts/ \
+		-name '*.py' -exec chmod a-x {} ';'
 
 	# Remove CVS dirs in package directory
 	-find $(CURDIR)/debian/blender -name CVS -type d -exec rm -rf '{}' \;
