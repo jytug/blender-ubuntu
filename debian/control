@@ -10,7 +10,7 @@ Homepage: http://blender.org/
 
 Package: blender
 Architecture: any
-Depends: ${shlibs:Depends}, ${python:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${python:Depends}, ${misc:Depends}, ttf-bitstream-vera
 Suggests: yafray, libtiff4
 Description: Very fast and versatile 3D modeller/renderer
  Blender is an integrated 3d suite for modelling, animation, rendering,

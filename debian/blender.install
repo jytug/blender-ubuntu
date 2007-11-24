@@ -25,4 +25,3 @@ release/scripts				/usr/share/blender
 release/VERSION				/usr/share/blender
 install/linux2/.blender/locale		/usr/share
 install/linux2/.blender/.Blanguages	/usr/share/blender
-install/linux2/.blender/.bfont.ttf	/usr/share/blender

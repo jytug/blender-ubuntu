@@ -89,11 +89,14 @@ install: build
 
 	# Rename some files to make them visible
 	mv $(BINARY)/usr/share/blender/.Blanguages $(BINARY)/usr/share/blender/Blanguages
-	mv $(BINARY)/usr/share/blender/.bfont.ttf  $(BINARY)/usr/share/blender/bfont.ttf
 
 	# Remove exec permission from python scripts
 	find $(BINARY)/usr/share/blender/scripts/ \
 		-name '*.py' -exec chmod a-x {} ';'
+
+	# Link to ttf-bitstream-vera instead of shipping a duplicate
+	dh_link /usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf \
+		/usr/share/blender/bfont.ttf
 
 	# Install overrides files [CHECK]
 	cp debian/blender.lintian-overrides \

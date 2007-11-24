@@ -35,6 +35,9 @@ blender (2.45-2) unstable; urgency=low
   * Delete “image-file-in-usr-lib” lintian override. No longer needed due to
     the /usr/lib to /usr/share migration of most of the files (nor really
     justified anyway).
+  * No longer ship bfont.ttf directly since it is a duplicate of Bitstream
+    Vera. Ship a symlink to the appopriate font and add a Depends: on the
+    ttf-bitstream-vera package. Thanks linda.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 
