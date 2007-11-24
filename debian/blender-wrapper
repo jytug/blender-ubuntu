@@ -8,9 +8,8 @@
 
 if [ ! -d ~/.blender ]; then
     install -d ~/.blender
-    ln -sf /usr/share/locale             ~/.blender/locale
     ln -sf /usr/share/blender/Blanguages ~/.blender/.Blanguages
-    ln -sf /usr/lib/blender/bfont.ttf    ~/.blender/.bfont.ttf
+    ln -sf /usr/share/blender/bfont.ttf  ~/.blender/.bfont.ttf
     cp -a /usr/lib/blender/bpydata ~/.blender
     cp -a /usr/lib/blender/VERSION ~/.blender
 

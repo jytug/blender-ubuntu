@@ -13,10 +13,12 @@ blender (2.45-2) unstable; urgency=low
   * Replace many “instal”l calls in debian/rules by a call to“
     dh_instal”l and appropriate lines in debian/blender.install.That also
     fixes the spurious installation of the SVG icon in a 32x32 icon folder.
-  * Move the locales where they belong: /usr/share/locale.
+  * Move the locales where they belong: /usr/share/locale. Remove the symlink
+    from the wrapper, it is no longer needed.
   * Remove the dot from the filenames of the Blanguages and bfont.ttf files,
     so that they no longer appear as hidden. Also move them to /usr/share.
-  * Modify the wrapper accordingly, so that it symlinks to the new locations.
+    Modify the wrapper accordingly, so that it symlinks to the new locations.
+    Also add a TODO about a possible removal of the font symlink.
   * For the records, the patch containing fixes for the German tranlation has
     been submitted upstream, item #7823 of the patch tracking system.
 
