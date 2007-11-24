@@ -32,6 +32,9 @@ blender (2.45-2) unstable; urgency=low
   * General cleanup of debian/rules, especially superfluous use of $(CURDIR).
     Work-needing entries are marked with “[CHECK]”, and a TODO entry has been
     added.
+  * Delete “image-file-in-usr-lib” lintian override. No longer needed due to
+    the /usr/lib to /usr/share migration of most of the files (nor really
+    justified anyway).
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 
