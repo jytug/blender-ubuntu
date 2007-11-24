@@ -10,8 +10,8 @@ blender (2.45-2) unstable; urgency=low
   * Remove the homepage from the long description.
   * Remove the source override about the additional “Homepage” source
     field, which is now official.
-  * Replace many “instal”l calls in debian/rules by a call to“
-    dh_instal”l and appropriate lines in debian/blender.install.That also
+  * Replace many “install” calls in debian/rules by a call to“
+    dh_install” and appropriate lines in debian/blender.install.That also
     fixes the spurious installation of the SVG icon in a 32x32 icon folder.
   * Move the locales where they belong: /usr/share/locale. Remove the symlink
     from the wrapper, it is no longer needed.
