@@ -24,6 +24,9 @@ blender (2.45-2) unstable; urgency=low
     accordingly.
   * For the records, the patch containing fixes for the German tranlation has
     been submitted upstream, item #7823 of the patch tracking system.
+  * Drop the optimization lowering on mips(el) from debian/rules, although
+    #354439 isn't marked as fixed yet. Hopefully the situation improved with
+    latest gcc releases.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 

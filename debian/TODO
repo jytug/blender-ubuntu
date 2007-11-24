@@ -10,6 +10,8 @@ Some items to work on:
  * Eventually drop the bfont.ttf symlink since strace doesn't show any
    open attempts on this file, and the text tool looks like working OK.
    Check the source and ask blendercoders to be sure.
+ * Check that dropping the mips(el) test in debian/rules doesn't lead
+   to FBTFS on these architectures.
 
 More items have been mentioned on the list, see the thread beginning at:
   http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html

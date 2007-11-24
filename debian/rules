@@ -11,13 +11,6 @@ include /usr/share/dpatch/dpatch.make
 
 BINARY = debian/blender
 
-# Lower optimization on mips and mispel in order to
-# circumvent ICE, see bug#354439.
-DEB_HOST_ARCH	?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
-ifneq (,$(findstring $(DEB_HOST_ARCH),mips mipsel))
-	COMPILER ?= REL_CFLAGS=-O1 REL_CCFLAGS=-O1
-endif
-
 # Accept a "ccache" option to speed up maintainer rebuilds
 ifneq (,$(findstring $(DEB_BUILD_OPTIONS),ccache))
 	CC = "ccache gcc"
