@@ -9,6 +9,8 @@
 # Include dpatch stuff.
 include /usr/share/dpatch/dpatch.make
 
+BINARY = debian/blender
+
 # Lower optimization on mips and mispel in order to
 # circumvent ICE, see bug#354439.
 DEB_HOST_ARCH	?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
@@ -95,6 +97,10 @@ install: build
 	install -m 755 $(CURDIR)/install/linux2/blender $(CURDIR)/debian/blender/usr/bin/blender-bin
 	install -m 755 $(CURDIR)/debian/blender-wrapper $(CURDIR)/debian/blender/usr/bin/blender
 	install -m 755 $(CURDIR)/install/linux2/blenderplayer $(CURDIR)/debian/blender/usr/bin/blenderplayer
+
+	# Rename some files to make them visible
+	mv $(BINARY)/usr/share/blender/.Blanguages $(BINARY)/usr/share/blender/Blanguages
+	mv $(BINARY)/usr/share/blender/.bfont.ttf  $(BINARY)/usr/share/blender/bfont.ttf
 
 	# Fix permissions for python scripts
 	find $(CURDIR)/debian/blender/usr/lib/blender/scripts/ -name "*.py" -exec chmod -R 644 '{}' \;
