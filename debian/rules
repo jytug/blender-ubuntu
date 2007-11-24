@@ -11,12 +11,6 @@ include /usr/share/dpatch/dpatch.make
 
 BINARY = debian/blender
 
-# Accept a "ccache" option to speed up maintainer rebuilds
-ifneq (,$(findstring $(DEB_BUILD_OPTIONS),ccache))
-	CC = "ccache gcc"
-	CXX = "ccache g++"
-endif
-
 CFLAGS = -Wall -g
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
