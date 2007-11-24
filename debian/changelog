@@ -8,8 +8,8 @@ blender (2.45-2) unstable; urgency=low
      - debian/rules:
         - Replace dh_pycentral with dh_pysupport.
   * Remove the homepage from the long description.
-  * Remove the source override about the additional “Homepage” source
-    field, which is now official.
+  * Remove the binary and source lintian overrides about the additional
+    “Homepage” source field, which is now official.
   * Replace many “install” calls in debian/rules by a call to“
     dh_install” and appropriate lines in debian/blender.install.That also
     fixes the spurious installation of the SVG icon in a 32x32 icon folder.
