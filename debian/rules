@@ -29,8 +29,8 @@ build-stamp: patch
 	dh_testdir
 
 	# Use updated config.* scripts
-	for config in $(CONFIG_SCRIPTs); do \
-		ln -sf /usr/share/misc/$(shell basename $$config) $$config; \
+	for config in $(CONFIG_SCRIPTS); do \
+		ln -sf /usr/share/misc/`basename $$config` $$config; \
 	done
 
 	# Main build
