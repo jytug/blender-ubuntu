@@ -4,7 +4,7 @@
 #
 
 # In case user's home directory doesn't contain ~/.blender, copy it
-# from /usr/lib/blender
+# from /usr/share/blender
 
 if [ ! -d ~/.blender ]; then
     install -d ~/.blender
@@ -20,8 +20,8 @@ if [ ! -d ~/.blender ]; then
     ln -sf /usr/share/blender/scripts/* ~/.blender/scripts/
 fi
 
-# 
-# In case the user's ~/.blender came from older versions, some files 
+#
+# In case the user's ~/.blender came from older versions, some files
 # should be reinstalled.
 #
 
