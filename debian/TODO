@@ -21,6 +21,8 @@ Some items to work on:
    touched.
  * Document the divergences between the original and the debianized
    config/linux2-config.py so that the patch stays maintainable.
+ * Check whether the build really happens twice, bad build timestamp
+   handling?
 
 More items have been mentioned on the list, see the thread beginning at:
   http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html
