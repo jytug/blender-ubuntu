@@ -24,8 +24,8 @@ else
 	CFLAGS += -O2
 endif
 
-build: build-stamp
-build-stamp: patch
+build: patch build-stamp
+build-stamp:
 	dh_testdir
 
 	# Use updated config.* scripts
