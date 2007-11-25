@@ -52,7 +52,7 @@ blender (2.45-2) unstable; urgency=low
          reported to the upstream patch tracker as #7823.
      - 10_gnukfreebsd_support by me:
          Add support for GNU/kFreeBSD in upstream files, see #388349.
-     - 20_gcc4.3_support by me: [disabled at the moment]
+     - 20_gcc4.3_support by me:
          Fix FTBFS with GCC 4.3, see #417491.
 
   [ Possible improvements ]
