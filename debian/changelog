@@ -29,8 +29,6 @@ blender (2.45-2) unstable; urgency=low
   * Actually drop the “ccache” detection introduced in 2.45-1. Setting the
     PATH is much more straightforward.
   * General cleanup of debian/rules, especially superfluous use of $(CURDIR).
-    Work-needing entries are marked with “[CHECK]”, and a TODO entry has been
-    added.
   * Delete “image-file-in-usr-lib” lintian override. No longer needed due to
     the /usr/lib to /usr/share migration of most of the files (nor really
     justified anyway).

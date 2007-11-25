@@ -91,7 +91,7 @@ install: build
 	dh_link /usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf \
 		/usr/share/blender/bfont.ttf
 
-	# Install overrides files [CHECK]
+	# Install overrides files
 	cp debian/blender.lintian-overrides \
 	   $(BINARY)/usr/share/lintian/overrides/blender
 

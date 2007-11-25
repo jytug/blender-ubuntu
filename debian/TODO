@@ -12,9 +12,6 @@ Some items to work on:
    Check the source and ask blendercoders to be sure.
  * Check that dropping the mips(el) test in debian/rules doesn't lead
    to FBTFS on these architectures.
- * Check some steps in debian/rules, marked [CHECK]. Mostly:
-    - Check whether building the plugins by hand is still needed.
-    - Check the additional clean steps are still needed.
  * Check whether it is possible to make the build fail when the
    plugins aren't built. The build fails on the dh_install call anyway
    but it might be better to have it fail before build-stamp is
