@@ -1,11 +1,3 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## 02_tmp_in_HOME.dpatch by Florian Ernst <florian@debian.org>
-##
-## All lines beginning with `## DP:' are a description of the patch.
-## DP: Create all temporaray user data (such as e.g. autosave files) in
-## DP: $HOME/.blender, this will prevent various symlink attacks, see bug#298167
-
-@DPATCH@
 diff -urNad blender-2.40~/source/blender/src/usiblender.c blender-2.40/source/blender/src/usiblender.c
 --- blender-2.40~/source/blender/src/usiblender.c	2005-11-23 17:33:19.000000000 +0100
 +++ blender-2.40/source/blender/src/usiblender.c	2006-01-12 11:13:07.000000000 +0100

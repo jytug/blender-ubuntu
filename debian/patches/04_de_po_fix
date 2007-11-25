@@ -1,10 +1,3 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## 04_de_po_fix.dpatch by Florian Ernst <florian@debian.org>
-##
-## All lines beginning with `## DP:' are a description of the patch.
-## DP: A little fix for de.po by Jens Seidel (bug#313676), extended by me
-
-@DPATCH@
 diff -urNad blender-2.40~/po/de.po blender-2.40/po/de.po
 --- blender-2.40~/po/de.po	2003-05-14 17:04:27.000000000 +0200
 +++ blender-2.40/po/de.po	2006-01-09 12:40:43.000000000 +0100

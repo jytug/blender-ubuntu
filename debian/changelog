@@ -23,8 +23,6 @@ blender (2.45-2) unstable; urgency=low
   * Also move the scripts hierarchy and the VERSION file to /usr/share. Adapt
     the wrapper for this purpose too. Adapt the “chmod” call in debian/rules
     accordingly.
-  * For the records, the patch containing fixes for the German tranlation has
-    been submitted upstream, item #7823 of the patch tracking system.
   * Drop the optimization lowering on mips(el) from debian/rules, although
     #354439 isn't marked as fixed yet. Hopefully the situation improved with
     latest gcc releases.
@@ -44,6 +42,18 @@ blender (2.45-2) unstable; urgency=low
   * Modify the tweaks for the build of the plugins, using a symlink now.
   * Move the conditional addition (on Linux architectures only) of libdc1394
     to the patch against config/linux2-config.py.
+  * Convert the patch system from dpatch to quilt. As a reminder, they are
+    currently:
+     - 02_tmp_in_HOME, by Florian Ernst:
+         Create all temporary user data in $HOME/.blender, preventing possible
+         security issues (e.g. symlink attacks, see #298167).
+     - 04_de_po_fix, by Florian Ernst:
+         Little fixes for de.po, by Jens Seidel <jensseidel@users.sf.net>,
+         reported to the upstream patch tracker as #7823.
+     - 10_gnukfreebsd_support by me:
+         Add support for GNU/kFreeBSD in upstream files, see #388349.
+     - 20_gcc4.3_support by me: [disabled at the moment]
+         Fix FTBFS with GCC 4.3, see #417491.
 
   [ Possible improvements ]
   * Maybe add libode0-dev to the B-D (not needed?).
