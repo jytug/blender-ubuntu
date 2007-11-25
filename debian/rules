@@ -33,6 +33,10 @@ build-stamp:
 		ln -sf /usr/share/misc/`basename $$config` $$config; \
 	done
 
+	# Ensure that non-Linux architectures use the same
+	# configuration without having to duplicate it
+	ln -s config/linux2-config.py user-config.py
+
 	# Main build
 	scons WITH_BF_PLAYER=1 BF_FANCY=0 CC=$(CC) CXX=$(CXX)
 
@@ -48,8 +52,9 @@ clean: unpatch
 	dh_testdir
 	dh_testroot
 
-	# Remove stamps and config.* helpers
-	rm -f build-stamp configure-stamp $(CONFIG_SCRIPTS)
+	# Remove stamps and configuration helpers
+	rm -f build-stamp configure-stamp
+	rm -f user-config.py $(CONFIG_SCRIPTS)
 
 	# General cleanup (instead of buggy scons clean)
 	rm -rf build
