@@ -1,7 +1,6 @@
-diff -urNad blender-2.40~/source/blender/src/usiblender.c blender-2.40/source/blender/src/usiblender.c
---- blender-2.40~/source/blender/src/usiblender.c	2005-11-23 17:33:19.000000000 +0100
-+++ blender-2.40/source/blender/src/usiblender.c	2006-01-12 11:13:07.000000000 +0100
-@@ -150,10 +150,12 @@
+--- a/source/blender/src/usiblender.c	2007-09-18 06:58:42.000000000 +0200
++++ b/source/blender/src/usiblender.c	2007-11-25 18:08:07.000000000 +0100
+@@ -172,10 +172,12 @@
  		U.tb_rightmouse= 5;
  	}
  	if(U.mixbufsize==0) U.mixbufsize= 2048;

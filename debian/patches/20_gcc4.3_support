@@ -1,5 +1,5 @@
---- a/intern/SoundSystem/intern/SND_Utils.cpp	2007-11-25 17:09:06.000000000 +0100
-+++ b/intern/SoundSystem/intern/SND_Utils.cpp	2007-11-25 17:09:10.000000000 +0100
+--- a/intern/SoundSystem/intern/SND_Utils.cpp	2007-09-18 06:57:59.000000000 +0200
++++ b/intern/SoundSystem/intern/SND_Utils.cpp	2007-11-25 18:08:41.000000000 +0100
 @@ -47,6 +47,7 @@
  #include <fcntl.h>
  #include <math.h>
@@ -8,8 +8,8 @@
  
  #if defined(WIN32)
  #include <io.h>
---- a/intern/ghost/intern/GHOST_WindowX11.cpp	2007-11-25 17:09:06.000000000 +0100
-+++ b/intern/ghost/intern/GHOST_WindowX11.cpp	2007-11-25 17:09:10.000000000 +0100
+--- a/intern/ghost/intern/GHOST_WindowX11.cpp	2007-09-18 06:57:51.000000000 +0200
++++ b/intern/ghost/intern/GHOST_WindowX11.cpp	2007-11-25 18:08:41.000000000 +0100
 @@ -42,6 +42,8 @@
  #include <strings.h>
  #endif
@@ -19,8 +19,8 @@
  
  // For obscure full screen mode stuuf
  // lifted verbatim from blut.
---- a/source/gameengine/Rasterizer/RAS_OpenGLRasterizer/glext.h	2007-11-25 17:09:06.000000000 +0100
-+++ b/source/gameengine/Rasterizer/RAS_OpenGLRasterizer/glext.h	2007-11-25 17:09:10.000000000 +0100
+--- a/source/gameengine/Rasterizer/RAS_OpenGLRasterizer/glext.h	2007-09-18 06:58:17.000000000 +0200
++++ b/source/gameengine/Rasterizer/RAS_OpenGLRasterizer/glext.h	2007-11-25 18:08:41.000000000 +0100
 @@ -54,7 +54,9 @@
  /* Header file version number, required by OpenGL ABI for Linux */
  /* glext.h last updated 2005/06/20 */
@@ -31,8 +31,8 @@
  
  #ifndef GL_VERSION_1_2
  #define GL_UNSIGNED_BYTE_3_3_2            0x8032
---- a/intern/string/STR_String.h	2007-11-25 17:16:51.000000000 +0100
-+++ b/intern/string/STR_String.h	2007-11-25 17:20:18.000000000 +0100
+--- a/intern/string/STR_String.h	2007-09-18 06:58:01.000000000 +0200
++++ b/intern/string/STR_String.h	2007-11-25 18:08:41.000000000 +0100
 @@ -47,6 +47,8 @@
  
  #include <vector>
@@ -42,8 +42,8 @@
  using namespace std;
  
  
---- a/source/gameengine/GamePlayer/common/GPC_KeyboardDevice.cpp	2007-11-25 17:39:48.000000000 +0100
-+++ b/source/gameengine/GamePlayer/common/GPC_KeyboardDevice.cpp	2007-11-25 17:40:23.000000000 +0100
+--- a/source/gameengine/GamePlayer/common/GPC_KeyboardDevice.cpp	2007-09-18 06:58:13.000000000 +0200
++++ b/source/gameengine/GamePlayer/common/GPC_KeyboardDevice.cpp	2007-11-25 18:08:41.000000000 +0100
 @@ -30,6 +30,8 @@
   * ***** END GPL/BL DUAL LICENSE BLOCK *****
   */

@@ -1,6 +1,6 @@
---- blender-2.43.orig/SConstruct	2007-02-19 22:31:36.265969000 +0100
-+++ blender-2.43/SConstruct	2007-02-19 22:38:03.000000000 +0100
-@@ -224,7 +224,7 @@
+--- a/SConstruct	2007-09-18 06:59:24.000000000 +0200
++++ b/SConstruct	2007-11-25 18:08:28.000000000 +0100
+@@ -185,7 +185,7 @@
  
  # see if this linux distro has libalut
  
@@ -9,8 +9,8 @@
      if env['WITH_BF_OPENAL']:
          mylib_test_source_file = """
          #include "AL/alut.h"
---- blender-2.43.orig/extern/bullet2/src/SConscript	2007-02-19 22:39:28.319537000 +0100
-+++ blender-2.43/extern/bullet2/src/SConscript	2007-02-19 22:41:04.000000000 +0100
+--- a/extern/bullet2/src/SConscript	2007-09-18 06:59:11.000000000 +0200
++++ b/extern/bullet2/src/SConscript	2007-11-25 18:08:28.000000000 +0100
 @@ -14,7 +14,7 @@
  elif env['OURPLATFORM']=='win32-mingw':
      defs += ' NDEBUG'
@@ -20,8 +20,8 @@
      defs += ' NDEBUG'
      cflags += ['-O2']
  elif sys.platform=='darwin':
---- blender-2.43.orig/extern/qhull/SConscript	2007-02-19 22:39:28.537707000 +0100
-+++ blender-2.43/extern/qhull/SConscript	2007-02-19 22:41:20.000000000 +0100
+--- a/extern/qhull/SConscript	2007-09-18 06:58:58.000000000 +0200
++++ b/extern/qhull/SConscript	2007-11-25 18:08:28.000000000 +0100
 @@ -5,7 +5,7 @@
  Import('env')
  defs = ''
@@ -31,8 +31,8 @@
     cflags += ['-O2','-ansi']
  elif env['OURPLATFORM']=='win32-vc':
     cflags += ['/O2']
---- blender-2.43.orig/extern/solid/SConscript	2007-02-19 22:39:28.753844000 +0100
-+++ blender-2.43/extern/solid/SConscript	2007-02-19 22:41:33.000000000 +0100
+--- a/extern/solid/SConscript	2007-09-18 06:59:13.000000000 +0200
++++ b/extern/solid/SConscript	2007-11-25 18:08:28.000000000 +0100
 @@ -12,7 +12,7 @@
  elif env['OURPLATFORM']=='win32-mingw':
      defs += ' NDEBUG'
@@ -42,8 +42,8 @@
      defs += ' NDEBUG'
      cflags += ['-O2']
  elif sys.platform=='darwin' :
---- blender-2.43.orig/extern/verse/dist/SConstruct	2007-02-19 22:39:28.976373000 +0100
-+++ blender-2.43/extern/verse/dist/SConstruct	2007-02-19 22:41:51.000000000 +0100
+--- a/extern/verse/dist/SConstruct	2007-09-18 06:58:56.000000000 +0200
++++ b/extern/verse/dist/SConstruct	2007-11-25 18:08:28.000000000 +0100
 @@ -38,7 +38,7 @@
  elif ourplatform == 'win32-mingw':
      defines += ['_WIN32', 'WIN32']
@@ -53,8 +53,8 @@
      print "Building on linux2"
  elif ourplatform == 'openbsd3':
      print "Building on openbsd3"
---- blender-2.43.orig/intern/ghost/SConscript	2007-02-19 22:39:29.217443000 +0100
-+++ blender-2.43/intern/ghost/SConscript	2007-02-19 22:42:28.000000000 +0100
+--- a/intern/ghost/SConscript	2007-09-18 06:57:52.000000000 +0200
++++ b/intern/ghost/SConscript	2007-11-25 18:08:28.000000000 +0100
 @@ -10,7 +10,7 @@
  
  pf = ['GHOST_DisplayManager', 'GHOST_System', 'GHOST_Window']
@@ -64,8 +64,8 @@
      for f in pf:
          sources.remove('intern' + os.sep + f + 'Win32.cpp')
          sources.remove('intern' + os.sep + f + 'Carbon.cpp')
---- blender-2.43.orig/source/blender/blenlib/SConscript	2007-02-19 22:39:29.439668000 +0100
-+++ blender-2.43/source/blender/blenlib/SConscript	2007-02-19 22:42:37.000000000 +0100
+--- a/source/blender/blenlib/SConscript	2007-09-18 06:58:46.000000000 +0200
++++ b/source/blender/blenlib/SConscript	2007-11-25 18:08:28.000000000 +0100
 @@ -17,7 +17,7 @@
  	defs += ' WITH_VERSE'
  	incs += ' ' + env['BF_VERSE_INCLUDE']
@@ -75,8 +75,8 @@
      cflags='-pthread'
  
  if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw'):
---- blender-2.43.orig/source/blender/render/SConscript	2007-02-19 22:39:29.661686000 +0100
-+++ blender-2.43/source/blender/render/SConscript	2007-02-19 22:42:45.000000000 +0100
+--- a/source/blender/render/SConscript	2007-09-18 06:58:22.000000000 +0200
++++ b/source/blender/render/SConscript	2007-11-25 18:08:28.000000000 +0100
 @@ -25,7 +25,7 @@
  if env['WITH_BF_OPENEXR']:
      defs.append('WITH_OPENEXR')
@@ -86,8 +86,8 @@
      cflags='-pthread'
  
  env.BlenderLib ( libname = 'blender_render', sources = sources, includes = Split(incs), defines=defs, libtype='core', priority=45, compileflags=cflags )
---- blender-2.43.orig/extern/bFTGL/src/FTVectoriser.cpp	2007-02-19 23:21:27.374524000 +0100
-+++ blender-2.43/extern/bFTGL/src/FTVectoriser.cpp	2007-02-19 23:21:41.000000000 +0100
+--- a/extern/bFTGL/src/FTVectoriser.cpp	2007-09-18 06:59:15.000000000 +0200
++++ b/extern/bFTGL/src/FTVectoriser.cpp	2007-11-25 18:08:28.000000000 +0100
 @@ -7,7 +7,7 @@
  
  #ifdef __APPLE_CC__    
@@ -97,8 +97,8 @@
      typedef GLvoid (*GLUTesselatorFunction)();
  #elif defined ( WIN32)
      typedef GLvoid (CALLBACK *GLUTesselatorFunction)( );
---- blender-2.43.orig/source/blender/blenlib/intern/storage.c	2007-02-19 23:43:09.787523000 +0100
-+++ blender-2.43/source/blender/blenlib/intern/storage.c	2007-02-19 23:44:24.000000000 +0100
+--- a/source/blender/blenlib/intern/storage.c	2007-09-18 06:58:46.000000000 +0200
++++ b/source/blender/blenlib/intern/storage.c	2007-11-25 18:08:28.000000000 +0100
 @@ -54,7 +54,7 @@
  #include <sys/statfs.h>
  #endif
@@ -108,8 +108,8 @@
  #include <sys/param.h>
  #include <sys/mount.h>
  #endif
---- blender-2.43.orig/release/plugins/bmake	2007-02-20 13:51:37.206421000 +0100
-+++ blender-2.43/release/plugins/bmake	2007-02-20 13:52:28.000000000 +0100
+--- a/release/plugins/bmake	2007-09-18 06:57:33.000000000 +0200
++++ b/release/plugins/bmake	2007-11-25 18:08:28.000000000 +0100
 @@ -58,7 +58,7 @@
  
  	LD="ld";
