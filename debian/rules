@@ -77,6 +77,7 @@ install: build
 	dh_install
 
 	# Additional commands to handle the binaries
+	install -d $(BINARY)/usr/bin
 	install -m 755 install/linux2/blender       $(BINARY)/usr/bin/blender-bin
 	install -m 755 debian/blender-wrapper       $(BINARY)/usr/bin/blender
 	install -m 755 install/linux2/blenderplayer $(BINARY)/usr/bin/blenderplayer
@@ -93,9 +94,11 @@ install: build
 		/usr/share/blender/bfont.ttf
 
 	# Install overrides files
+	install -d $(BINARY)/usr/share/lintian/overrides
 	cp debian/blender.lintian-overrides \
 	   $(BINARY)/usr/share/lintian/overrides/blender
 
+	install -d $(BINARY)/usr/share/linda/overrides
 	cp debian/blender.linda-overrides \
 	   $(BINARY)/usr/share/linda/overrides/blender
 
