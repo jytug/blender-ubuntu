@@ -65,6 +65,7 @@ clean: unpatch
 	rm -f tools/*.pyc
 	rm -f install/linux2/plugins/include
 
+	dh_clean
 
 install: build
 	dh_testdir
