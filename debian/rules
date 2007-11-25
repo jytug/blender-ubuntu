@@ -35,13 +35,13 @@ build-stamp:
 
 	# Ensure that non-Linux architectures use the same
 	# configuration without having to duplicate it
-	ln -s config/linux2-config.py user-config.py
+	ln -sf config/linux2-config.py user-config.py
 
 	# Main build
 	scons WITH_BF_PLAYER=1 BF_FANCY=0 CC=$(CC) CXX=$(CXX)
 
 	# Build plugins by hand
-	ln -s ../../../source/blender/blenpluginapi \
+	ln -sf ../../../source/blender/blenpluginapi \
 		install/linux2/plugins/include
 	chmod +x install/linux2/plugins/bmake
 	$(MAKE) -C install/linux2/plugins
