@@ -27,21 +27,20 @@ build-stamp: patch-stamp
 	ln -sf /usr/share/misc/config.sub	extern/bFTGL/unix/config.sub
 
 	# Add user specific config (without patching)
-	cp debian/misc/user-config.py .
+#	cp debian/misc/user-config.py .
 
 	# Remove libdc1394 on non-Linux arch
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
-	sed -i -e 's/libdc1394//' user-config.py
+#	sed -i -e 's/libdc1394//' user-config.py
 endif
 
 	# Main build
-	scons WITH_BF_PLAYER=1 WITH_BF_OPENAL=0 BF_FANCY=0 $(COMPILER) CC=$(CC) CXX=$(CXX)
+	scons WITH_BF_PLAYER=1 BF_FANCY=0 CC=$(CC) CXX=$(CXX)
 
 	# Build plugins by hand
-	install -d $(CURDIR)/install/linux2/plugins/include
-	install -m 644 source/blender/blenpluginapi/*.h $(CURDIR)/install/linux2/plugins/include
+	ln -s source/blender/blenpluginapi install/linux2/include
 	chmod +x install/linux2/plugins/bmake
-	$(MAKE) -C install/linux2/plugins $(COMPILER)
+	$(MAKE) -C install/linux2/plugins
 
 	touch $@
 
@@ -55,23 +54,15 @@ clean: unpatch
 		extern/bFTGL/unix/config.guess \
 		extern/bFTGL/unix/config.sub
 
-	# General cleanup
-	cp debian/misc/user-config.py .
-	-scons clean BF_FANCY=0
-	rm -f user-config.py
-
-	# Remove *.pycs
-	find -name '*.pyc' -exec rm {} ';'
-
-	# Clean plugins directory [CHECK]
-	rm -rf install/linux2/plugins/include
-
-	# Ensure that the clean target does its job [CHECK]
+	# General cleanup (instead of buggy scons clean)
 	rm -rf build
 	rm -rf install
-	rm -rf intern/guardedalloc/intern/mallocn.o
-	rm -rf linux2
-	rm -rf obj/*
+
+	# Additional cleanup
+	rm -f .sconsign.dblite
+	rm -f tools/*.pyc
+	rm -f install/linux2/plugins/include
+
 
 install: build
 	dh_testdir
