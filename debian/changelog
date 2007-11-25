@@ -56,6 +56,12 @@ blender (2.45-2) unstable; urgency=low
     symlinked at build time from user-config.py, so that non-Linux
     architectures use it, although the auto-detection doesn't find the
     matching configuration file. The symlink is removed at clean time.
+  * Drop no longer needed files:
+     - debian/dirs
+     - debian/genpot/*
+     - debian/misc/user-config.py
+     - debian/pot-header.txt
+     - debian/pycompat
 
   [ Possible improvements ]
   * Maybe add libode0-dev to the B-D (not needed?).
