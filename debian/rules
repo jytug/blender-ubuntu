@@ -33,14 +33,6 @@ build-stamp: patch-stamp
 		ln -sf /usr/share/misc/$(shell basename $$config) $$config; \
 	done
 
-	# Add user specific config (without patching)
-#	cp debian/misc/user-config.py .
-
-	# Remove libdc1394 on non-Linux arch
-ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
-#	sed -i -e 's/libdc1394//' user-config.py
-endif
-
 	# Main build
 	scons WITH_BF_PLAYER=1 BF_FANCY=0 CC=$(CC) CXX=$(CXX)
 

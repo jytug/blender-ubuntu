@@ -42,6 +42,8 @@ blender (2.45-2) unstable; urgency=low
   * Modify the handling of the config.* files. They are listed at the top of
     debian/rules and this list should be refreshed for each upstream release.
   * Modify the tweaks for the build of the plugins, using a symlink now.
+  * Move the conditional addition (on Linux architectures only) of libdc1394
+    to the patch against config/linux2-config.py.
 
   [ Possible improvements ]
   * Maybe add libode0-dev to the B-D (not needed?).
