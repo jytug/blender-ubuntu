@@ -18,6 +18,21 @@ Some items to work on:
    touched.
  * Document the divergences between the original and the debianized
    config/linux2-config.py so that the patch stays maintainable.
+   At the moment:
+    - Build in ., not in ..
+    - Use python 2.4, not python 2.5
+    - Do not use openal:
+       + FTBFS with stable release
+       + Do not use the embedded copy, which would be evil.
+    - Do not use yafray: FTBFS.
+    - Use ffmpeg, but use pkg-config. Conditionally enable libdc1394.
+    - Use gettext shared object.
+    - Enable the gameengine.
+    - Enable fmod (sound system).
+    - Use CXX to link, rather than -lstdc++.
+ * Modify the build system so that it is possible to switch to the
+   next python version with a binNMU. Might be tricky, though.
+
 
 More items have been mentioned on the list, see the thread beginning at:
   http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html

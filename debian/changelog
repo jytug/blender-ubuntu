@@ -52,6 +52,9 @@ blender (2.45-2) unstable; urgency=low
          Add support for GNU/kFreeBSD in upstream files, see #388349.
      - 20_gcc4.3_support by me:
          Fix FTBFS with GCC 4.3, see #417491.
+     - 50_debian_build_config by me:
+         Customize the upstream default Linux configuration. Diffs are listed
+         in TODO at the moment, until a dedicated file is added.
   * Modify the handling of user-config.py: config/linux2-config is now
     symlinked at build time from user-config.py, so that non-Linux
     architectures use it, although the auto-detection doesn't find the
