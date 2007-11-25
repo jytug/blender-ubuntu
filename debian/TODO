@@ -15,6 +15,12 @@ Some items to work on:
  * Check some steps in debian/rules, marked [CHECK]. Mostly:
     - Check whether building the plugins by hand is still needed.
     - Check the additional clean steps are still needed.
+ * Check whether it is possible to make the build fail when the
+   plugins aren't built. The build fails on the dh_install call anyway
+   but it might be better to have it fail before build-stamp is
+   touched.
+ * Document the divergences between the original and the debianized
+   config/linux2-config.py so that the patch stays maintainable.
 
 More items have been mentioned on the list, see the thread beginning at:
   http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html

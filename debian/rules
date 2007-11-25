@@ -11,6 +11,11 @@ include /usr/share/dpatch/dpatch.make
 
 BINARY = $(CURDIR)/debian/blender
 
+CONFIG_SCRIPTS = \
+	source/tools/guess/config.guess \
+	extern/bFTGL/unix/config.guess \
+	extern/bFTGL/unix/config.sub
+
 CFLAGS = -Wall -g
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
@@ -22,9 +27,11 @@ endif
 build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
-	ln -sf /usr/share/misc/config.guess	source/tools/guess/config.guess
-	ln -sf /usr/share/misc/config.guess	extern/bFTGL/unix/config.guess
-	ln -sf /usr/share/misc/config.sub	extern/bFTGL/unix/config.sub
+
+	# Use updated config.* scripts
+	for config in $(CONFIG_SCRIPTs); do \
+		ln -sf /usr/share/misc/$(shell basename $$config) $$config; \
+	done
 
 	# Add user specific config (without patching)
 #	cp debian/misc/user-config.py .
@@ -38,7 +45,8 @@ endif
 	scons WITH_BF_PLAYER=1 BF_FANCY=0 CC=$(CC) CXX=$(CXX)
 
 	# Build plugins by hand
-	ln -s source/blender/blenpluginapi install/linux2/include
+	ln -s ../../../source/blender/blenpluginapi \
+		install/linux2/plugins/include
 	chmod +x install/linux2/plugins/bmake
 	$(MAKE) -C install/linux2/plugins
 
@@ -48,11 +56,8 @@ clean: unpatch
 	dh_testdir
 	dh_testroot
 
-	# Remove stamps and config.* helpers [CHECK]
-	rm -f build-stamp configure-stamp \
-		source/tools/guess/config.guess \
-		extern/bFTGL/unix/config.guess \
-		extern/bFTGL/unix/config.sub
+	# Remove stamps and config.* helpers
+	rm -f build-stamp configure-stamp $(CONFIG_SCRIPTS)
 
 	# General cleanup (instead of buggy scons clean)
 	rm -rf build

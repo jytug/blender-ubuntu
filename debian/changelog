@@ -1,5 +1,6 @@
 blender (2.45-2) unstable; urgency=low
 
+  [ Great cleanup ]
   * Switch from python-central to python-support:
      - debian/control:
         - B-D: Replace python-central with python-support.
@@ -38,6 +39,15 @@ blender (2.45-2) unstable; urgency=low
   * No longer ship bfont.ttf directly since it is a duplicate of Bitstream
     Vera. Ship a symlink to the appopriate font and add a Depends: on the
     ttf-bitstream-vera package. Thanks linda.
+  * Modify the handling of the config.* files. They are listed at the top of
+    debian/rules and this list should be refreshed for each upstream release.
+  * Modify the tweaks for the build of the plugins, using a symlink now.
+
+  [ Possible improvements ]
+  * Maybe add libode0-dev to the B-D (not needed?).
+  * Maybe add libalut-dev to the B-D (not needed?).
+  * Maybe add libquicktime-dev to the B-D (FBTFS).
+  * Maybe add libopenal-dev to the B-D (too outdated version?).
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 
