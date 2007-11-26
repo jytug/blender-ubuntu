@@ -65,6 +65,10 @@ blender (2.45-2) unstable; urgency=low
      - debian/misc/user-config.py
      - debian/pot-header.txt
      - debian/pycompat
+  * Adapt the wrapper so that other packages can ship scripts under a given
+    directory (/usr/share/blender/scripts.d/$package) and that those scripts
+    are taken into account when blender is started (using the same symlink
+    mechanism that was already present for the scripts shipped with blender).
 
   [ Possible improvements ]
   * Maybe add libode0-dev to the B-D (not needed?).
