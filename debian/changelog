@@ -24,8 +24,8 @@ blender (2.45-2) unstable; urgency=low
     the wrapper for this purpose too. Adapt the “chmod” call in debian/rules
     accordingly.
   * Drop the optimization lowering on mips(el) from debian/rules, although
-    #354439 isn't marked as fixed yet. Hopefully the situation improved with
-    latest gcc releases.
+    #354439 isn't marked as fixed yet. Thanks to Arthur Loiret for checking
+    that the build goes fine with current gcc version.
   * Actually drop the “ccache” detection introduced in 2.45-1. Setting the
     PATH is much more straightforward.
   * General cleanup of debian/rules, especially superfluous use of $(CURDIR).
