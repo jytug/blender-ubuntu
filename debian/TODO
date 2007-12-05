@@ -1,5 +1,5 @@
 Some items to work on:
- * Adjust the manpage, if needed.
+ * Adjust the manpage, if needed (should be merged usptream).
  * Maybe add nvidia-glx-legacy as Build-Conflicts. Bartosz Feński has
    been mailed to get more info about the nvidia-glx problem. (Is there
    a less intrusive way to get the appropriate symbols without
@@ -32,7 +32,11 @@ Some items to work on:
     - Use CXX to link, rather than -lstdc++.
  * Modify the build system so that it is possible to switch to the
    next python version with a binNMU. Might be tricky, though.
-
+ * Possible improvements (regarding the build system options):
+    - Maybe add libode0-dev to the B-D (not needed?).
+    - Maybe add libalut-dev to the B-D (not needed?).
+    - Maybe add libquicktime-dev to the B-D (FBTFS).
+    - Maybe add libopenal-dev to the B-D (too outdated version?).
 
 More items have been mentioned on the list, see the thread beginning at:
   http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html
