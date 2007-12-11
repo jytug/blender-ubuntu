@@ -69,6 +69,8 @@ blender (2.45-2) unstable; urgency=low
     directory (/usr/share/blender/scripts.d/$package) and that those scripts
     are taken into account when blender is started (using the same symlink
     mechanism that was already present for the scripts shipped with blender).
+  * Update the menu file, providing with better long titles, thanks to
+    Bill Allombert (Closes: #445154).
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 
