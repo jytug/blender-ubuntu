@@ -50,6 +50,8 @@ TODO for blender:
     particularly important to know what happens when it comes to
     upgrading from the previous situation were individual symlinks
     were created.
+  * Rework/rewrap the changelog for real. Use sections to distinguish
+    between maintenance, transitions, enhancements, etc.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Sat, 12 Jan 2008 01:20:04 +0000
 
