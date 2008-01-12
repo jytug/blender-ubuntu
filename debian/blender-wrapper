@@ -5,58 +5,82 @@
 
 # In case user's home directory doesn't contain ~/.blender, copy it
 # from /usr/share/blender
-
 if [ ! -d ~/.blender ]; then
-    install -d ~/.blender
-    ln -sf /usr/share/blender/Blanguages ~/.blender/.Blanguages
-    ln -sf /usr/share/blender/bfont.ttf  ~/.blender/.bfont.ttf
+    # Top-level directory
+    mkdir -p ~/.blender
+
+    # Various files
+    ln -s /usr/share/blender/Blanguages ~/.blender/.Blanguages
+    ln -s /usr/share/blender/bfont.ttf  ~/.blender/.bfont.ttf
     cp -a /usr/share/blender/bpydata ~/.blender
-    cp -a /usr/share/blender/VERSION ~/.blender
+    cp    /usr/share/blender/VERSION ~/.blender
 
-    install -d ~/.blender/plugins/sequence
-    install -d ~/.blender/plugins/texture
-
-    install -d ~/.blender/scripts
-    ln -sf /usr/share/blender/scripts/* ~/.blender/scripts/
+    # Plugins, scripts
+    mkdir -p ~/.blender/plugins/sequence
+    mkdir -p ~/.blender/plugins/texture
+    mkdir -p ~/.blender/scripts
 fi
 
-#
 # In case the user's ~/.blender came from older versions, some files
 # should be reinstalled.
-#
-
 if [ $(cat ~/.blender/VERSION) != $(cat /usr/share/blender/VERSION) ]; then
+    # I'm not sure at all about this one. Could it lead to data loss?
+    # TODO: Check that.
     cp -a /usr/share/blender/bpydata ~/.blender
-    ln -sf /usr/share/blender/scripts/* ~/.blender/scripts/
-    cp -a /usr/share/blender/VERSION ~/.blender
+    cp    /usr/share/blender/VERSION ~/.blender
 fi
 
-#
-# Fully update the plugins every time blender is launched.
-#
 
-for script in /usr/share/blender/scripts/*.py* ; do
-    s=`basename $script`
-    if [ ! -e ~/.blender/scripts/$s ] ; then
-         ln -sf $script ~/.blender/scripts
-    fi
-done
+# A transition happened from 2.45-1 to 2.45-2. Scripts are symlinked
+# per package directory rather than individually. Old scripts should
+# be removed to avoid possible duplicates, and so as to clean this
+# directory. To do so, checking that they are symlinks, and point to
+# /usr/lib/blender/..., the previous location. To avoid checking
+# everything each time the scripts/ directory, the current blender
+# revision is stored, and the cleanup triggered conditionally.
 
-#
-# Do the same for the scripts shipped by other packages
-#
+# Fetch last run's revision number
+if [ -f ~/.blender/REVISION ]; then
+    REVISION=$(cat ~/.blender/REVISION)
+else
+    # Ensure a transition check happens.
+    REVISION=0
+fi
 
-for package in /usr/share/blender/scripts.d/* ; do
-    p=`basename $package`
-
-    mkdir -p ~/.blender/scripts/$p
-
-    for script in $package/*.py* ; do
-        s=`basename $script`
-        if [ ! -e ~/.blender/scripts/$s ] ; then
-            ln -sf $script ~/.blender/scripts/$p
+# 2.45-2 transition.
+# TODO: Find a better syntax for this
+if [ $(dpkg --compare-versions $REVISION lt 2.45-2 && echo 1 || echo 0) ]; then
+    # Check every symlink, and remove the old ones that were installed
+    # by this script. Check /usr/lib as well as /usr/share to deal
+    # with test packages that had scripts shipped under /usr/share.
+    for i in ~/.blender/scripts/*; do
+        if [ -L $i ]; then
+            case $(readlink -f $i) in
+                /usr/lib/blender/scripts/*)
+                    rm $i ;;
+                /usr/share/blender/scripts/*)
+                    rm $i ;;
+            esac
         fi
     done
+fi
+
+# Store the current revision for future transitions.
+dpkg -l blender | grep ^ii | awk '{ print $3}' > ~/.blender/REVISION
+
+# Symlink the directories only. Not symlinking scripts/ directly since
+# the user probably want a real directory to be able to add scripts
+# inside w/o having to install them system-wide.
+for path in /usr/share/blender/scripts/* ; do
+    package=$(basename $path)
+
+    # Only create if inexistent. That prevents creating symlinks in
+    # directories having the same name, that could be present (like
+    # ~/.blender/scripts/foo/foo -> /usr/share/blender/scripts/foo if
+    # ~/.blender/scripts/foo exists already).
+    if [ ! -e ~/.blender/scripts/$package ]; then
+        ln -sf $path ~/.blender/scripts/$package
+    fi
 done
 
 blender-bin "$@"
