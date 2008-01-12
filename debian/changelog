@@ -72,6 +72,7 @@ blender (2.45-2) unstable; urgency=low
     with blender).
   * Update the menu file, providing with better long titles, thanks to
     Bill Allombert (Closes: #445154).
+  * Bump Standards-Version to 3.7.3 (no change needed).
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 
