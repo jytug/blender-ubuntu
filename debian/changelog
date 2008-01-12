@@ -43,8 +43,8 @@ blender (2.45-2) unstable; urgency=low
   * Convert the patch system from dpatch to quilt. As a reminder, they are
     currently:
      - 02_tmp_in_HOME, by Florian Ernst:
-         Create all temporary user data in $HOME/.blender, preventing possible
-         security issues (e.g. symlink attacks, see #298167).
+         Create all temporary user data in $HOME/.blender, preventing
+         possible security issues (e.g. symlink attacks, see #298167).
      - 04_de_po_fix, by Florian Ernst:
          Little fixes for de.po, by Jens Seidel <jensseidel@users.sf.net>,
          reported to the upstream patch tracker as #7823.
@@ -53,8 +53,8 @@ blender (2.45-2) unstable; urgency=low
      - 20_gcc4.3_support by me:
          Fix FTBFS with GCC 4.3, see #417491.
      - 50_debian_build_config by me:
-         Customize the upstream default Linux configuration. Diffs are listed
-         in TODO at the moment, until a dedicated file is added.
+         Customize the upstream default Linux configuration. Diffs are
+         listed in TODO at the moment, until a dedicated file is added.
   * Modify the handling of user-config.py: config/linux2-config is now
     symlinked at build time from user-config.py, so that non-Linux
     architectures use it, although the auto-detection doesn't find the
@@ -65,10 +65,11 @@ blender (2.45-2) unstable; urgency=low
      - debian/misc/user-config.py
      - debian/pot-header.txt
      - debian/pycompat
-  * Adapt the wrapper so that other packages can ship scripts under a given
-    directory (/usr/share/blender/scripts.d/$package) and that those scripts
-    are taken into account when blender is started (using the same symlink
-    mechanism that was already present for the scripts shipped with blender).
+  * Adapt the wrapper so that other packages can ship scripts under a
+    given directory (/usr/share/blender/scripts.d/$package) and that those
+    scripts are taken into account when blender is started (using the same
+    symlink mechanism that was already present for the scripts shipped
+    with blender).
   * Update the menu file, providing with better long titles, thanks to
     Bill Allombert (Closes: #445154).
 
