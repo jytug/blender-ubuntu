@@ -55,7 +55,7 @@ if [ $(dpkg --compare-versions $REVISION lt 2.45-2 && echo 1 || echo 0) = 1 ]; t
     # with test packages that had scripts shipped under /usr/share.
     for i in ~/.blender/scripts/*; do
         if [ -L $i ]; then
-	    # -m is needed to handle broken symlinks
+            # -m is needed to handle broken symlinks
             case $(readlink -f -m $i) in
                 /usr/lib/blender/scripts/*)
                     rm $i ;;
@@ -76,9 +76,9 @@ if [ $(dpkg --compare-versions $REVISION lt 2.45-2 && echo 1 || echo 0) = 1 ]; t
     # The locale link is no longer needed. Only remove if it points to
     # the old location (a user could have changed this link).
     if [ -L locale ]; then
-	if [ $(readlink -f -m locale) = "/usr/lib/blender/locale" ]; then
-	    rm locale
-	fi
+        if [ $(readlink -f -m locale) = "/usr/lib/blender/locale" ]; then
+            rm locale
+        fi
     fi
 fi
 
