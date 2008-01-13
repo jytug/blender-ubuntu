@@ -19,6 +19,9 @@ if [ ! -d ~/.blender ]; then
     mkdir -p ~/.blender/plugins/sequence
     mkdir -p ~/.blender/plugins/texture
     mkdir -p ~/.blender/scripts
+
+    # Absolute path apparently needed
+    ln -s ~/.blender/bpydata ~/.blender/scripts/bpydata
 fi
 
 # In case the user's ~/.blender came from older versions, some files
