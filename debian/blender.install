@@ -21,7 +21,7 @@ install/linux2/plugins/texture/*.so	/usr/lib/blender/plugins/texture
 
 ### Misc. files
 release/scripts/bpydata			/usr/share/blender
-release/scripts				/usr/share/blender
+release/scripts				/usr/share/blender/scripts
 release/VERSION				/usr/share/blender
 install/linux2/.blender/locale		/usr/share
 install/linux2/.blender/.Blanguages	/usr/share/blender
