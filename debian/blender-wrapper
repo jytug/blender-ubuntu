@@ -26,9 +26,20 @@ fi
 
 # In case the user's ~/.blender came from older versions, some files
 # should be reinstalled.
-if [ $(cat ~/.blender/VERSION) != $(cat /usr/share/blender/VERSION) ]; then
-    # I'm not sure at all about this one. Could it lead to data loss?
-    # TODO: Check that.
+
+if [ -f ~/.blender/VERSION ]; then
+    OLD_VERSION=$(cat ~/.blender/VERSION)
+else
+    OLD_VERSION="old"
+fi
+
+if [ $OLD_VERSION != $(cat /usr/share/blender/VERSION) ]; then
+    # Create a backup of user's files, just in case.
+    mkdir -p ~/.blender/bpydata-$OLD_VERSION
+    mv ~/.blender/bpydata/* ~/.blender/bpydata-$OLD_VERSION
+
+    # And now replace with updated data.
+    rmdir ~/.blender/bpydata
     cp -a /usr/share/blender/bpydata ~/.blender
     cp    /usr/share/blender/VERSION ~/.blender
 fi
