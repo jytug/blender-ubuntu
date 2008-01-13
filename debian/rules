@@ -87,6 +87,9 @@ install: build
 	mv $(BINARY)/usr/share/blender/scripts/scripts \
 		$(BINARY)/usr/share/blender/scripts/blender
 
+	# Remove duplicates due to the new layout (scripts/<package>)
+	rm -rf $(BINARY)/usr/share/blender/scripts/blender/bpydata
+
 	# Remove exec permission from python scripts
 	find $(BINARY)/usr/share/blender/scripts/ \
 		-name '*.py' -exec chmod a-x {} ';'
