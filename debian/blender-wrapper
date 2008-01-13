@@ -49,13 +49,14 @@ fi
 
 # 2.45-2 transition.
 # TODO: Find a better syntax for this
-if [ $(dpkg --compare-versions $REVISION lt 2.45-2 && echo 1 || echo 0) ]; then
+if [ $(dpkg --compare-versions $REVISION lt 2.45-2 && echo 1 || echo 0) = 1 ]; then
     # Check every symlink, and remove the old ones that were installed
     # by this script. Check /usr/lib as well as /usr/share to deal
     # with test packages that had scripts shipped under /usr/share.
     for i in ~/.blender/scripts/*; do
         if [ -L $i ]; then
-            case $(readlink -f $i) in
+	    # -m is needed to handle broken symlinks
+            case $(readlink -f -m $i) in
                 /usr/lib/blender/scripts/*)
                     rm $i ;;
                 /usr/share/blender/scripts/*)
@@ -63,6 +64,22 @@ if [ $(dpkg --compare-versions $REVISION lt 2.45-2 && echo 1 || echo 0) ]; then
             esac
         fi
     done
+
+    # They were living in /usr/lib previously. No problem by replacing
+    # them since they were hidden.
+    ln -sf /usr/share/blender/Blanguages ~/.blender/.Blanguages
+    ln -sf /usr/share/blender/bfont.ttf  ~/.blender/.bfont.ttf
+
+    # It looks like bpydata has to be under scripts/ as well.
+    ln -s ~/.blender/bpydata ~/.blender/scripts/bpydata
+
+    # The locale link is no longer needed. Only remove if it points to
+    # the old location (a user could have changed this link).
+    if [ -L locale ]; then
+	if [ $(readlink -f -m locale) = "/usr/lib/blender/locale" ]; then
+	    rm locale
+	fi
+    fi
 fi
 
 # Store the current revision for future transitions.
