@@ -82,8 +82,10 @@ install: build
 	install -m 755 debian/blender-wrapper       $(BINARY)/usr/bin/blender
 	install -m 755 install/linux2/blenderplayer $(BINARY)/usr/bin/blenderplayer
 
-	# Rename some files to make them visible
+	# Rename some files to make them either visible or more meaningful
 	mv $(BINARY)/usr/share/blender/.Blanguages $(BINARY)/usr/share/blender/Blanguages
+	mv $(BINARY)/usr/share/blender/scripts/scripts \
+		$(BINARY)/usr/share/blender/scripts/blender
 
 	# Remove exec permission from python scripts
 	find $(BINARY)/usr/share/blender/scripts/ \
