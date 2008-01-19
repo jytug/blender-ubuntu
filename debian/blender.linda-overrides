@@ -1,8 +1,0 @@
-Tag: image-in-usr-lib
-Data: /usr/lib/blender/scripts/bpymodules/colladaImEx/logo.png
-
-Tag: binary-libc6
-Data: /usr/lib/blender/plugins/*
-
-Tag: shared-binary
-Data: /usr/lib/blender/plugins/*
