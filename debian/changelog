@@ -77,6 +77,9 @@ blender (2.45-2) unstable; urgency=low
   * No longer run “uupdate” in debian/watch.
   * Drop linda overrides, it looks like a outdated and deprecated tool.
 
+  [ Florian Ernst ]
+  * Drop myself from Uploaders as I'm hardly active anymore.
+
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 
 blender (2.45-1) unstable; urgency=low
