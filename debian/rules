@@ -103,6 +103,10 @@ install: build
 	cp debian/blender.lintian-overrides \
 	   $(BINARY)/usr/share/lintian/overrides/blender
 
+	install -d $(BINARY)/usr/share/linda/overrides
+	cp debian/blender.linda-overrides \
+	   $(BINARY)/usr/share/linda/overrides/blender
+
 # Build architecture-independent files here
 binary-indep: build install
 
