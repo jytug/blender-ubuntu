@@ -14,6 +14,10 @@ blender (2.45-2) unstable; urgency=low
     will be added automatically during the next startup.
   * Previous links (to /usr/lib/blender/…) should also be removed
     automatically.
+  * Add “-W” to the “Exec” key of blender-fullscreen.desktop, so that
+    Blender is really launched fullscreen (without window borders and
+    possible decorations). It's still amazing to see how collaborative
+    developers from sister distributions can be.
 
   [ Great cleanup ]
   * Switch from python-central to python-support:
