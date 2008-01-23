@@ -101,7 +101,7 @@ blender (2.45-2) unstable; urgency=low
   * Remove Florian Ernst from Uploaders upon his request, thanks for
     your taking care of Blender until now!
 
- -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Wed, 23 Jan 2008 04:15:13 +0100
 
 blender (2.45-1) unstable; urgency=low
 
