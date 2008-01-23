@@ -94,6 +94,8 @@ blender (2.45-2) unstable; urgency=low
   * Bump Standards-Version to 3.7.3 (no change needed).
   * Add Vcs-{Git,Browser} fields, pointing to collab-maint.
   * Remove debian/README.Alioth-CVS accordingly.
+  * Remove debian/NEWS: no longer needed, and debian/README contains
+    updated information.
   * No longer run “uupdate” in debian/watch.
   * Drop linda overrides, it looks like a outdated and deprecated tool.
   * Remove Florian Ernst from Uploaders upon his request, thanks for
