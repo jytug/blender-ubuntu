@@ -1,5 +1,20 @@
 blender (2.45-2) unstable; urgency=low
 
+  [ User-visible changes ]
+  * Rework the blender wrapper. As it was written, it might discard user
+    customization in the ~/.blender directory. Now, a subdirectory named
+    after the previous version number is created, and previous
+    configuration items are stored there before updating to the latest
+    data shipped by upstream. This way, last features are available by
+    default, while previous configuration is still accessible if needed.
+  * The wrapper also used to create many symlinks under ~/.blender/scripts
+    and has now been modified to rather create a single symlink per
+    package. Other packages can now ship Blender scripts under
+    /usr/share/blender/scripts/$package, and a symlink to this directory
+    will be added automatically during the next startup.
+  * Previous links (to /usr/lib/blender/…) should also be removed
+    automatically.
+
   [ Great cleanup ]
   * Switch from python-central to python-support:
      - debian/control:
@@ -76,9 +91,8 @@ blender (2.45-2) unstable; urgency=low
   * Add Vcs-{Git,Browser} fields, pointing to collab-maint.
   * No longer run “uupdate” in debian/watch.
   * Drop linda overrides, it looks like a outdated and deprecated tool.
-
-  [ Florian Ernst ]
-  * Drop myself from Uploaders as I'm hardly active anymore.
+  * Remove Florian Ernst from Uploaders upon his request, thanks for
+    your taking care until now!
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Thu, 22 Nov 2007 10:28:13 +0100
 
