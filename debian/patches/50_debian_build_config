@@ -1,5 +1,5 @@
---- a/config/linux2-config.py	2007-11-25 21:07:10.000000000 +0100
-+++ b/config/linux2-config.py	2007-11-25 21:33:08.000000000 +0100
+--- a/config/linux2-config.py
++++ b/config/linux2-config.py
 @@ -1,17 +1,17 @@
 -LCGDIR = '../lib/linux2'
 +LCGDIR = './lib/linux2'
@@ -48,15 +48,6 @@
  
  WITH_BF_ODE = 'false'
  BF_ODE = LIBDIR + '/ode'
-@@ -78,7 +78,7 @@
- BF_SOLID_INC = '${BF_SOLID}'
- BF_SOLID_LIB = 'extern_solid'
- 
--WITH_BF_YAFRAY = 'true'
-+WITH_BF_YAFRAY = 'false'
- 
- #WITH_BF_NSPR = 'true'
- #BF_NSPR = $(LIBDIR)/nspr
 @@ -113,11 +113,17 @@
  BF_ICONV_LIBPATH = '${BF_ICONV}/lib'
  

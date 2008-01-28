@@ -26,7 +26,6 @@ TODO for blender:
      - Do not use openal:
         + FTBFS with stable release
         + Do not use the embedded copy, which would be evil.
-     - Do not use yafray: FTBFS.
      - Use ffmpeg, but use pkg-config. Conditionally enable libdc1394.
      - Use gettext shared object.
      - Enable the gameengine.
