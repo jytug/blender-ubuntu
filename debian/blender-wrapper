@@ -89,6 +89,12 @@ if dpkg --compare-versions $REVISION lt 2.45-3 ; then
     # It looks like bpydata has to be under scripts/ as well.
     ln -sf ~/.blender/bpydata ~/.blender/scripts
 
+    # Remove recursive symlink (unfortunately introduced in 2.45-2).
+    # Not using -r or -f since we don't want to break anything in case
+    # some user put something there in the meanwhile (although it's
+    # unlikely).
+    rm ~/.blender/bpydata/bpydata
+
     # The locale link is no longer needed. Only remove if it points to
     # the old location (a user could have changed this link).
     if [ -L locale ]; then
