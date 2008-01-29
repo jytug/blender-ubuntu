@@ -78,6 +78,9 @@ if dpkg --compare-versions $REVISION lt 2.45-3 ; then
         fi
     done
 
+    # Make sure the scripts directory exists (one never knows).
+    mkdir -p ~/.blender/scripts
+
     # They were living in /usr/lib previously. No problem by replacing
     # them since they were hidden.
     ln -sf /usr/share/blender/Blanguages ~/.blender/.Blanguages
