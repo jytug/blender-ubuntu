@@ -61,8 +61,8 @@ else
     REVISION=0
 fi
 
-# 2.45-2 transition.
-if dpkg --compare-versions $REVISION lt 2.45-2; then
+# 2.45-2 transition, continued in 2.45-3.
+if dpkg --compare-versions $REVISION lt 2.45-3 ; then
     # Check every symlink, and remove the old ones that were installed
     # by this script. Check /usr/lib as well as /usr/share to deal
     # with test packages that had scripts shipped under /usr/share.
@@ -84,7 +84,7 @@ if dpkg --compare-versions $REVISION lt 2.45-2; then
     ln -sf /usr/share/blender/bfont.ttf  ~/.blender/.bfont.ttf
 
     # It looks like bpydata has to be under scripts/ as well.
-    ln -s ~/.blender/bpydata ~/.blender/scripts/bpydata
+    ln -sf ~/.blender/bpydata ~/.blender/scripts
 
     # The locale link is no longer needed. Only remove if it points to
     # the old location (a user could have changed this link).

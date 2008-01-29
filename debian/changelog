@@ -3,6 +3,10 @@ blender (2.45-3) unstable; urgency=low
   * Update the following patch to make YafRay available in the list of
     renderers again (Closes: #462949):
      - 50_debian_build_config.
+  * Modify the wrapper again:
+     - Use straightforward syntax for the “dpkg --compare-versions” call,
+       thanks Florian Ernst.
+     - Adjust the creation of the bpydata symlink.
 
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 28 Jan 2008 19:33:36 +0000
 
