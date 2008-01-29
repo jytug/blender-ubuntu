@@ -62,8 +62,7 @@ else
 fi
 
 # 2.45-2 transition.
-# TODO: Find a better syntax for this
-if [ $(dpkg --compare-versions $REVISION lt 2.45-2 ; echo $?) = 0 ]; then
+if dpkg --compare-versions $REVISION lt 2.45-2; then
     # Check every symlink, and remove the old ones that were installed
     # by this script. Check /usr/lib as well as /usr/share to deal
     # with test packages that had scripts shipped under /usr/share.
