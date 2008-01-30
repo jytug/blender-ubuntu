@@ -19,7 +19,7 @@ blender (2.45-3) unstable; urgency=low
      - Adjust the creation of the bpydata symlink.
      - Fix the removal of the locale symlink (which is no longer needed).
 
- -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Mon, 28 Jan 2008 19:33:36 +0000
+ -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Wed, 30 Jan 2008 02:23:18 +0000
 
 blender (2.45-2) unstable; urgency=low
 
