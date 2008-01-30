@@ -89,6 +89,7 @@ install: build
 
 	# Remove duplicates due to the new layout (scripts/<package>)
 	rm -rf $(BINARY)/usr/share/blender/scripts/blender/bpydata
+	rm -rf $(BINARY)/usr/share/blender/scripts/blender/bpymodules
 
 	# Remove exec permission from python scripts
 	find $(BINARY)/usr/share/blender/scripts/ \

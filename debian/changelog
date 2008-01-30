@@ -3,6 +3,14 @@ blender (2.45-3) unstable; urgency=low
   * Update the following patch to make YafRay available in the list of
     renderers again (Closes: #462949):
      - 50_debian_build_config.
+  * Install the bpymodules/ directory in /usr/share/blender/scripts
+    instead of under the blender/ subdirectory. This way, no special-case
+    is needed when dealing with the creation of the symlinks in the user's
+    ~/.blender/scripts directory, and it's not possible for another
+    package to ship such a directory either (possibly preventing corner
+    cases). As a side note, having this directory right under scripts/ is
+    needed because the modules it contains are accessed through a
+    hardcoded path (Closes: #463162).
   * Modify the wrapper again:
      - Extend the detection of the need for a migration to this revision.
      - Use straightforward syntax for the “dpkg --compare-versions” call,
