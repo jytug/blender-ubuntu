@@ -97,9 +97,9 @@ if dpkg --compare-versions $REVISION lt 2.45-3 ; then
 
     # The locale link is no longer needed. Only remove if it points to
     # the old location (a user could have changed this link).
-    if [ -L locale ]; then
-        if [ $(readlink -f -m locale) = "/usr/lib/blender/locale" ]; then
-            rm locale
+    if [ -L ~/.blender/locale ]; then
+        if [ $(readlink -f -m ~/.blender/locale) = "/usr/lib/blender/locale" ]; then
+            rm ~/.blender/locale
         fi
     fi
 fi
