@@ -30,7 +30,7 @@ endif
 # Based on:     http://wiki.debian.org/ArchitectureSpecificsMemo
 DEB_HOST_ARCH = $(shell dpkg-architecture -qDEB_HOST_ARCH)
 ifneq (,$(findstring $(DEB_HOST_ARCH),hppa m68k mips powerpc s390 sparc))
-	CFLAGS += -D__BIG_ENDIAN__
+	CPPFLAGS += -D__BIG_ENDIAN__
 endif
 
 build: patch build-stamp
@@ -47,7 +47,7 @@ build-stamp:
 	ln -sf config/linux2-config.py user-config.py
 
 	# Main build
-	scons WITH_BF_PLAYER=1 BF_FANCY=0 CC=$(CC) CXX=$(CXX)
+	scons WITH_BF_PLAYER=1 BF_FANCY=0 CC=$(CC) CXX=$(CXX) CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
 
 	# Build plugins by hand
 	ln -sf ../../../source/blender/blenpluginapi \

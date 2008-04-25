@@ -25,6 +25,9 @@ blender (2.45-5) unstable; urgency=high
     compiler, thus fixing the buggy endianness detection (upstream lists
     every platform, but misses at least hppa, mips, and s390). Thanks to
     Stefan Gartner for the tip (Closes: #441216).
+  * Make scons understand what is wanted from it:
+     - Pass “-g” and “-O” options through CFLAGS.
+     - Pass “-D” options through CPPFLAGS.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 07:06:06 +0200
 
