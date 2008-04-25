@@ -16,6 +16,10 @@ blender (2.45-5) unstable; urgency=high
     limits the size of accepted %s parameters (Closes: #477808):
      - 30_fix_CVE-2008-1102.
   * Bump urgency to “high” accordingly.
+  * Disable the “-Wdeclaration-after-statement” C_WARN flag (which is only
+    valid for C/ObjC but not for C++) in config/linux2-config.py, by
+    updating the following patch:
+     - 50_debian_build_config.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 07:06:06 +0200
 

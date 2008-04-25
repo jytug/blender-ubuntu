@@ -62,7 +62,14 @@
  
  # Mesa Libs should go here if your using them as well....
  WITH_BF_STATICOPENGL = 'false'
-@@ -151,7 +157,8 @@
+@@ -145,13 +151,14 @@
+ ##ARFLAGS = ruv
+ ##ARFLAGSQUIET = ru
+ ##
+-C_WARN = '-Wall -Wno-char-subscripts -Wdeclaration-after-statement'
++C_WARN = '-Wall -Wno-char-subscripts'
+ 
+ CC_WARN = '-Wall'
  
  ##FIX_STUBS_WARNINGS = -Wno-unused
  
