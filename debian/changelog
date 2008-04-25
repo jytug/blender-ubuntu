@@ -1,4 +1,4 @@
-blender (2.45-5) unstable; urgency=low
+blender (2.45-5) unstable; urgency=high
 
   * debian/control:
      - Adjust Maintainer and Uploaders according to last years' activity.
@@ -8,6 +8,14 @@ blender (2.45-5) unstable; urgency=low
      - Replace python2.4-dev with python2.5-dev in Build-Depends.
      - Refresh the following patch to set BF_PYTHON_VERSION accordingly:
         - 50_debian_build_config.
+  * Fix CVE-2008-1102: “Stack-based buffer overflow in the imb_loadhdr
+    function allows user-assisted remote attackers to execute arbitrary
+    code via a .blend file that contains a crafted Radiance RGBE image.”
+    Add upstream patch as pointed to by Tomas Hoger <thoger@redhat.com>
+    (thanks!), which basically adds a check on sscanf() return code and
+    limits the size of accepted %s parameters (Closes: #477808):
+     - 30_fix_CVE-2008-1102.
+  * Bump urgency to “high” accordingly.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 07:06:06 +0200
 

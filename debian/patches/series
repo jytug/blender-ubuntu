@@ -2,4 +2,5 @@
 04_de_po_fix
 10_gnukfreebsd_support
 20_gcc4.3_support
+30_fix_CVE-2008-1102
 50_debian_build_config
