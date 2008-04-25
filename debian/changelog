@@ -4,6 +4,10 @@ blender (2.45-5) unstable; urgency=low
      - Adjust Maintainer and Uploaders according to last years' activity.
      - Update my mail address. Many thanks to Florian Ernst who sponsored
        all my uploads.
+  * Switch from python2.4 to python2.5 (Closes: #477761):
+     - Replace python2.4-dev with python2.5-dev in Build-Depends.
+     - Refresh the following patch to set BF_PYTHON_VERSION accordingly:
+        - 50_debian_build_config.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 07:06:06 +0200
 
