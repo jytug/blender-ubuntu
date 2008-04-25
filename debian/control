@@ -12,7 +12,7 @@ Vcs-Git: git://git.debian.org/git/collab-maint/blender.git
 
 Package: blender
 Architecture: any
-Depends: ${shlibs:Depends}, ${python:Depends}, ${misc:Depends}, ttf-bitstream-vera
+Depends: ${shlibs:Depends}, ${python:Depends}, ${misc:Depends}, ttf-dejavu
 Suggests: yafray, libtiff4
 Description: Very fast and versatile 3D modeller/renderer
  Blender is an integrated 3d suite for modelling, animation, rendering,

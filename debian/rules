@@ -104,8 +104,9 @@ install: build
 	find $(BINARY)/usr/share/blender/scripts/ \
 		-name '*.py' -exec chmod a-x {} ';'
 
-	# Link to ttf-bitstream-vera instead of shipping a duplicate
-	dh_link /usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf \
+	# Link to ttf-bitstream-vera instead of shipping a duplicate...
+	# ... updated to use DejaVu instead (#463749).
+	dh_link /usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf \
 		/usr/share/blender/bfont.ttf
 
 	# Install overrides files

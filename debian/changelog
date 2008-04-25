@@ -33,6 +33,10 @@ blender (2.45-5) unstable; urgency=high
     scons 0.98.2-1 (deprecation will follow, but Blender should be updated
     upstream in the meanwhile), thanks to Mark Brown (see #477912):
      - 40_workaround_scons_options_deprecation.
+  * Switch from ttf-bitstream-vera to ttf-dejavu (Closes: #463749), thanks
+    to Sven Arvidsson:
+     - debian/control: Update Depends.
+     - debian/rules: Update symlink.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 07:06:06 +0200
 
