@@ -1,0 +1,19 @@
+--- a/tools/btools.py
++++ b/tools/btools.py
+@@ -1,7 +1,6 @@
+ import os
+ import os.path
+ import SCons.Options
+-import SCons.Options.BoolOption
+ try:
+     import subprocess
+ except ImportError:
+@@ -12,7 +11,7 @@
+ import sys
+ 
+ Options = SCons.Options
+-BoolOption = SCons.Options.BoolOption
++BoolOption = Options.BoolOption
+ 
+ def print_arguments(args, bc):
+     if len(args):

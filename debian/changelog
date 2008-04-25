@@ -28,6 +28,11 @@ blender (2.45-5) unstable; urgency=high
   * Make scons understand what is wanted from it:
      - Pass “-g” and “-O” options through CFLAGS.
      - Pass “-D” options through CPPFLAGS.
+  * Add patch to make blender able to use the compatibility layer that
+    scons is setting up for its Option->Variable transition, initiated in
+    scons 0.98.2-1 (deprecation will follow, but Blender should be updated
+    upstream in the meanwhile), thanks to Mark Brown (see #477912):
+     - 40_workaround_scons_options_deprecation.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 07:06:06 +0200
 
