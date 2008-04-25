@@ -38,7 +38,7 @@ blender (2.45-5) unstable; urgency=high
      - debian/control: Update Depends.
      - debian/rules: Update symlink.
 
- -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 07:06:06 +0200
+ -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 22:50:31 +0200
 
 blender (2.45-4) unstable; urgency=low
 
