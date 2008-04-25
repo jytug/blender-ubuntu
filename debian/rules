@@ -25,6 +25,14 @@ else
 	CFLAGS += -O2
 endif
 
+# Workaround Blender's misdetection of big endian architectures.
+# Upstream bug: http://projects.blender.org/tracker/index.php?func=detail&aid=8584&group_id=9&atid=127
+# Based on:     http://wiki.debian.org/ArchitectureSpecificsMemo
+DEB_HOST_ARCH = $(shell dpkg-architecture -qDEB_HOST_ARCH)
+ifneq (,$(findstring $(DEB_HOST_ARCH),hppa m68k mips powerpc s390 sparc))
+	CFLAGS += -D__BIG_ENDIAN__
+endif
+
 build: patch build-stamp
 build-stamp:
 	dh_testdir

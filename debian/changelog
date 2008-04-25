@@ -20,6 +20,11 @@ blender (2.45-5) unstable; urgency=high
     valid for C/ObjC but not for C++) in config/linux2-config.py, by
     updating the following patch:
      - 50_debian_build_config.
+  * Use DEB_HOST_ARCH to determine whether the host architecture is
+    big-endian so as to pass an extra “-D__BIG_ENDIAN__” flag to the
+    compiler, thus fixing the buggy endianness detection (upstream lists
+    every platform, but misses at least hppa, mips, and s390). Thanks to
+    Stefan Gartner for the tip (Closes: #441216).
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Apr 2008 07:06:06 +0200
 
