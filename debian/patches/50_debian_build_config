@@ -15,7 +15,7 @@
  BF_FMOD = LIBDIR + '/fmod'
  
  WITH_BF_OPENEXR = 'true'
-@@ -54,7 +54,7 @@
+@@ -60,7 +60,7 @@
  
  BF_GETTEXT = '/usr'
  BF_GETTEXT_INC = '${BF_GETTEXT}/include'
@@ -24,7 +24,7 @@
  BF_GETTEXT_LIBPATH = '${BF_GETTEXT}/lib'
  
  WITH_BF_FTGL = 'true'
-@@ -62,7 +62,7 @@
+@@ -68,7 +68,7 @@
  BF_FTGL_INC = '${BF_FTGL}/include'
  BF_FTGL_LIB = 'extern_ftgl'
  
@@ -47,7 +47,7 @@
  # Mesa Libs should go here if your using them as well....
  WITH_BF_STATICOPENGL = 'false'
  BF_OPENGL = '/usr'
-@@ -145,13 +151,14 @@
+@@ -156,13 +163,14 @@
  ##ARFLAGS = ruv
  ##ARFLAGSQUIET = ru
  ##
@@ -64,7 +64,7 @@
  ##LOPTS = --dynamic
  ##DYNLDFLAGS = -shared $(LDFLAGS)
  
-@@ -161,8 +168,8 @@
+@@ -172,8 +180,8 @@
  BF_DEBUG = 'false'
  BF_DEBUG_FLAGS = '-g'
  

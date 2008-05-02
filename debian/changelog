@@ -27,6 +27,7 @@ blender (2.45+r14660-1) experimental; urgency=low
      - Adapt the context of the (now) 5th hunk since BF_FFMPEG_LIB got
        moved some lines above, and is now empty (further tweaks might be
        needed).
+     - Refresh (get rid of the offset for) the other hunks.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 
