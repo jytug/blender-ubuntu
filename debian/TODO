@@ -23,9 +23,6 @@ TODO for blender:
     At the moment:
      - Build in ., not in ..
      - Use python 2.4, not python 2.5
-     - Do not use openal:
-        + FTBFS with stable release
-        + Do not use the embedded copy, which would be evil.
      - Use ffmpeg, but use pkg-config. Conditionally enable libdc1394.
      - Use gettext shared object.
      - Enable the gameengine.

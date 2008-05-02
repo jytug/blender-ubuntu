@@ -22,6 +22,8 @@ blender (2.45+r14660-1) experimental; urgency=low
      - Drop it, was backported from upstream.
   * debian/patches/40_workaround_scons_options_deprecation:
      - Drop it, merged upstream (in a slightly different way).
+  * debian/patches/50_debian_build_config:
+     - Drop 2nd hunk since WITH_BF_OPENAL now defaults to “false”.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 
