@@ -1,65 +1,51 @@
-This package was debianized by Masayuki Hatta (mhatta) <mhatta@debian.org> on
-Mon,  3 May 2004 15:16:26 +0900.
-
-It was downloaded from http://download.blender.org/source/
-
-Upstream Authors: Blender Foundation
-
-Copyright:
-
-Basically, Blender is now GPL'd:
-
-  Copyright (C) 2002-2005 Blender Foundation.
-  
-  Blender is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2, or (at your option)
-  any later version.
-	    
-  Blender is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
-  License for more details.
-		                    
-On Debian GNU/Linux systems, the complete text of the GNU General
-Public License can be found in /usr/share/common-licenses/GPL'.
+Format-Specification: http://wiki.debian.org/Proposals/CopyrightFormat
+Upstream-Author: Blender Foundation
+Debianized-By: Masayuki Hatta (mhatta) <mhatta@debian.org>
+Debianized-Date: Mon,  3 May 2004 15:16:26 +0900
+Original-Source-Location: http://download.blender.org/source/
 
 
-However, the following license is offered as an alternative:
+Files: *
+Copyright: © 2002-2008 Blender Foundation
+License: GPL-2+
+ | This program is free software; you can redistribute it and/or
+ | modify it under the terms of the GNU General Public License
+ | as published by the Free Software Foundation; either version 2
+ | of the License, or (at your option) any later version.
+ |
+ | This program is distributed in the hope that it will be useful,
+ | but WITHOUT ANY WARRANTY; without even the implied warranty of
+ | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ | GNU General Public License for more details.
+ |
+ | You should have received a copy of the GNU General Public License
+ | along with this program; if not, write to the Free Software Foundation,
+ | Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ |
+ |
+ | On Debian systems, the complete text of the GNU General Public License
+ | version 2 can be found in “/usr/share/common-licenses/GPL-2”.
 
-  Blender License (the "BL", see http://www.blender.org/BL/ ).
-  
-  Copyright (C) 2002-2005 Blender Foundation. All Rights Reserved.
-  
-  This text supersedes the previous BL description, called Blender License 1.0.
-  
-  When the Blender source code was released in 2002, the Blender Foundation reserved 
-  the right to offer licenses outside of the GNU GPL. This so-called "dual license" 
-  model was chosen to provide potential revenues for the Blender Foundation. 
-  
-  The BL has not been activated yet. Partially because;
-  
-  - there has to be a clear benefit for Blender itself and its community of 
-    developers and users.
-  - the developers who have copyrighted additions to the source code need to approve 
-    the decision.
-  - the (c) holder NaN Holding has to approve on a standard License Contract
-  
-  But most important; 
-  
-  - the Blender Foundation is financially healthy, based on community support
-    (e-shop sales), sponsoring and subsidy grants
-  - current focus for the Blender Foundation is to not set up any commercial
-    activity related to Blender development.
-  - the GNU GPL provides sufficient freedom for third parties to conduct business
-    with Blender
-  
-  For these reasons we've decided to cancel the BL offering for an indefinite period.
-  
-  Third parties interested to discuss usage or exploitation of Blender can email 
-  license@blender.org for further information.
-  
-  Ton Roosendaal
-  Chairman Blender Foundation.
-  June 2005
 
+Files: debian/*
+Copyright: © 2004-2005 Masayuki Hatta <mhatta@debian.org>
+           © 2005-2007 Florian Ernst <florian@debian.org>
+           © 2007-2008 Cyril Brulebois <kibi@debian.org>
+License: GPL-2+
+ | This program is free software; you can redistribute it and/or
+ | modify it under the terms of the GNU General Public License
+ | as published by the Free Software Foundation; either version 2
+ | of the License, or (at your option) any later version.
+ |
+ | This program is distributed in the hope that it will be useful,
+ | but WITHOUT ANY WARRANTY; without even the implied warranty of
+ | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ | GNU General Public License for more details.
+ |
+ | You should have received a copy of the GNU General Public License
+ | along with this program; if not, write to the Free Software Foundation,
+ | Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ |
+ |
+ | On Debian systems, the complete text of the GNU General Public License
+ | version 2 can be found in “/usr/share/common-licenses/GPL-2”.

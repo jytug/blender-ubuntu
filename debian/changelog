@@ -1,6 +1,12 @@
 blender (2.45+r14660-1) experimental; urgency=low
 
   * New upstream snapshot: SVN r14660, some commits after RC3.
+  * debian/copyright:
+     - Upstream now uses “pristine” GPL-2+ license statements, and no
+       longer the dual GPL/BL license.
+     - Update copyright years.
+     - Specify the license for the Debian packaging too (GPL-2+).
+     - Implement a version of the copyright format proposal.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 
