@@ -45,5 +45,11 @@ TODO for blender:
     beginning at:
     http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html
 
+
+Security TODO for blender:
+--------------------------
+
+  * Implement the wrapper modifications for TMP/TMPDIR handling.
+
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Sat, 12 Jan 2008 01:20:04 +0000
 

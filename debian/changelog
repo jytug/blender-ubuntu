@@ -7,6 +7,11 @@ blender (2.45+r14660-1) experimental; urgency=low
      - Update copyright years.
      - Specify the license for the Debian packaging too (GPL-2+).
      - Implement a version of the copyright format proposal.
+  * debian/patches/02_tmp_in_HOME:
+     - Disable it, no longer applies.
+     - Upstream now checks for TMP and TMPDIR before defaulting to /tmp.
+     - Modify wrapper so that it checks for those variables in the
+       environment, and sets one of them if none is set.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 
