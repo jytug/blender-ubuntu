@@ -20,6 +20,8 @@ blender (2.45+r14660-1) experimental; urgency=low
      - Drop it, merged upstream.
   * debian/patches/30_fix_CVE-2008-1102:
      - Drop it, was backported from upstream.
+  * debian/patches/40_workaround_scons_options_deprecation:
+     - Drop it, merged upstream (in a slightly different way).
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 
