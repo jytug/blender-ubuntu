@@ -33,26 +33,20 @@
  
  WITH_BF_ODE = 'false'
  BF_ODE = LIBDIR + '/ode'
-@@ -113,11 +113,17 @@
- BF_ICONV_LIBPATH = '${BF_ICONV}/lib'
- 
- # enable ffmpeg  support
--WITH_BF_FFMPEG = 'false'  # -DWITH_FFMPEG
-+WITH_BF_FFMPEG = 'true'  # -DWITH_FFMPEG
- BF_FFMPEG = '/usr'
+@@ -130,6 +130,13 @@
  BF_FFMPEG_INC = '${BF_FFMPEG}/include'
  BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
--BF_FFMPEG_LIB = 'avformat avcodec avutil'
-+
+ 
 +import commands
 +BF_FFMPEG_LIB = commands.getoutput('pkg-config --libs libavformat vorbisenc') + ' -lgsm'
 +
 +import sys
 +if sys.platform == 'linux2':
 +    BF_FFMPEG_LIB += ' ' + commands.getoutput('pkg-config --libs libdc1394')
- 
++
  # Mesa Libs should go here if your using them as well....
  WITH_BF_STATICOPENGL = 'false'
+ BF_OPENGL = '/usr'
 @@ -145,13 +151,14 @@
  ##ARFLAGS = ruv
  ##ARFLAGSQUIET = ru
