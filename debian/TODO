@@ -51,5 +51,11 @@ Security TODO for blender:
 
   * Implement the wrapper modifications for TMP/TMPDIR handling.
 
+
+Portability TODO for blender:
+-----------------------------
+
+  * Enable the GNU/kFreeBSD patch again, and update it.
+
  -- Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>  Sat, 12 Jan 2008 01:20:04 +0000
 

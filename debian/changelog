@@ -14,6 +14,8 @@ blender (2.45+r14660-1) experimental; urgency=low
        environment, and sets one of them if none is set.
   * debian/patches/04_de_po_fix:
      - Drop it, merged upstream.
+  * debian/patches/10_gnukfreebsd_support:
+     - Disable it, needs update.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 

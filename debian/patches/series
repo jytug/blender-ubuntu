@@ -1,4 +1,4 @@
-10_gnukfreebsd_support
+#10_gnukfreebsd_support
 20_gcc4.3_support
 30_fix_CVE-2008-1102
 40_workaround_scons_options_deprecation
