@@ -1,3 +1,4 @@
 #10_gnukfreebsd_support
 50_debian_build_config
 60_various_workarounds
+10_fix_ftbfs_with_systemwide_ftgl
