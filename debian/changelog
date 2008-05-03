@@ -31,6 +31,10 @@ blender (2.45+r14660-1) experimental; urgency=low
   * debian/patches/60_various_workarounds:
      - Add it, used to work around some C*FLAGS-related problem with
        scons.
+  * Update ffmpeg support:
+     - debian/control: Add libswscale-dev to Build-Depends.
+     - debian/patches/50_debian_build_config: Add libswscale to the
+       “pkg-config --libs” call.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 
