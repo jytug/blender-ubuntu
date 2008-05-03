@@ -1,14 +1,3 @@
---- a/source/blender/ftfont/intern/FTF_TTFont.h
-+++ b/source/blender/ftfont/intern/FTF_TTFont.h
-@@ -34,7 +34,7 @@
- #ifndef __FTF_TRUETYPE_FONT_H
- #define __FTF_TRUETYPE_FONT_H
- 
--#include "FTGLPixmapFont.h"
-+#include "ftgl.h"
- #include "FTGLTextureFont.h"
- 
- #include <stdio.h>
 --- a/source/blender/ftfont/intern/FTF_TTFont.cpp
 +++ b/source/blender/ftfont/intern/FTF_TTFont.cpp
 @@ -41,6 +41,8 @@
