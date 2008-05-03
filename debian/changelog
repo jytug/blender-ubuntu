@@ -35,6 +35,14 @@ blender (2.45+r14660-1) experimental; urgency=low
      - debian/control: Add libswscale-dev to Build-Depends.
      - debian/patches/50_debian_build_config: Add libswscale to the
        “pkg-config --libs” call.
+  * Use the system-wide FTGL library instead of the embedded one, thanks
+    Sam Hocevar (Closes: #478015):
+     - debian/control: The Build-Depends on ftgl-dev was there already.
+     - debian/patches/50_debian_build_config:
+        - Use “/usr” for BF_FTGL instead of “#extern/bFTGL”.
+        - Use “${BF_FTGL}/include/FTGL” for BF_FTGL_INC since
+          “pkg-config --cflags ftgl” returns several “-I” flags.
+        - Use “pkg-config --libs ftgl” for BF_FTGL_LIBS.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 

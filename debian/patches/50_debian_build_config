@@ -1,12 +1,15 @@
 --- a/config/linux2-config.py
 +++ b/config/linux2-config.py
-@@ -1,4 +1,4 @@
+@@ -1,4 +1,7 @@
 -LCGDIR = '../lib/linux2'
++# Needed for pkg-config calls.
++import commands
++
 +LCGDIR = './lib/linux2'
  LIBDIR = "${LCGDIR}"
  
  WITH_BF_VERSE = 'false'
-@@ -24,7 +24,7 @@
+@@ -24,7 +27,7 @@
  BF_SDL_INC = '${BF_SDL}/include/SDL' #$(shell $(BF_SDL)/bin/sdl-config --cflags)
  BF_SDL_LIB = 'SDL' #BF_SDL #$(shell $(BF_SDL)/bin/sdl-config --libs) -lSDL_mixer
  
@@ -15,7 +18,7 @@
  BF_FMOD = LIBDIR + '/fmod'
  
  WITH_BF_OPENEXR = 'true'
-@@ -60,7 +60,7 @@
+@@ -60,15 +63,17 @@
  
  BF_GETTEXT = '/usr'
  BF_GETTEXT_INC = '${BF_GETTEXT}/include'
@@ -24,20 +27,24 @@
  BF_GETTEXT_LIBPATH = '${BF_GETTEXT}/lib'
  
  WITH_BF_FTGL = 'true'
-@@ -68,7 +68,7 @@
- BF_FTGL_INC = '${BF_FTGL}/include'
- BF_FTGL_LIB = 'extern_ftgl'
+-BF_FTGL = '#extern/bFTGL'
+-BF_FTGL_INC = '${BF_FTGL}/include'
+-BF_FTGL_LIB = 'extern_ftgl'
++BF_FTGL = '/usr'
++# Hardcode the include path since scons would probably get confused as
++# "pkg-config --cflags ftgl" returns "-Ifoo -Ibar"
++BF_FTGL_INC = '${BF_FTGL}/include/FTGL'
++BF_FTGL_LIB = commands.getoutput('pkg-config --libs ftgl')
  
 -WITH_BF_GAMEENGINE='false'
 +WITH_BF_GAMEENGINE='true'
  
  WITH_BF_ODE = 'false'
  BF_ODE = LIBDIR + '/ode'
-@@ -130,6 +130,13 @@
+@@ -130,6 +135,12 @@
  BF_FFMPEG_INC = '${BF_FFMPEG}/include'
  BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
  
-+import commands
 +BF_FFMPEG_LIB = commands.getoutput('pkg-config --libs libavformat vorbisenc libswscale') + ' -lgsm'
 +
 +import sys
@@ -47,7 +54,7 @@
  # Mesa Libs should go here if your using them as well....
  WITH_BF_STATICOPENGL = 'false'
  BF_OPENGL = '/usr'
-@@ -156,13 +163,14 @@
+@@ -156,13 +167,14 @@
  ##ARFLAGS = ruv
  ##ARFLAGSQUIET = ru
  ##
@@ -64,7 +71,7 @@
  ##LOPTS = --dynamic
  ##DYNLDFLAGS = -shared $(LDFLAGS)
  
-@@ -172,8 +180,8 @@
+@@ -172,8 +184,8 @@
  BF_DEBUG = 'false'
  BF_DEBUG_FLAGS = '-g'
  
