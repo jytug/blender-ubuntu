@@ -1,0 +1,54 @@
+--- a/source/gameengine/BlenderRoutines/SConscript
++++ b/source/gameengine/BlenderRoutines/SConscript
+@@ -26,6 +26,6 @@
+ 	cxxflags.append ('/GR')
+ 
+ if env['WITH_BF_GLEXT'] == 1:
+-	env['CPPFLAGS'].append('-DWITH_GLEXT')
++	env['CPPFLAGS'] += ' -DWITH_GLEXT'
+ 
+ env.BlenderLib ( 'bf_bloutines', sources, Split(incs), [], libtype=['game', 'game2', 'player'], priority=[0, 0, 55] , compileflags=cxxflags)
+--- a/source/gameengine/Ketsji/SConscript
++++ b/source/gameengine/Ketsji/SConscript
+@@ -26,7 +26,7 @@
+ 	cflags.append('/Ox')
+ 
+ if env['WITH_BF_GLEXT'] == 1:
+-        env['CPPFLAGS'].append('-DWITH_GLEXT')
++        env['CPPFLAGS'] += ' -DWITH_GLEXT'
+ 
+ incs += ' ' + env['BF_SOLID_INC']
+ incs += ' ' + env['BF_PYTHON_INC']
+--- a/source/gameengine/Rasterizer/RAS_OpenGLRasterizer/SConscript
++++ b/source/gameengine/Rasterizer/RAS_OpenGLRasterizer/SConscript
+@@ -2,7 +2,7 @@
+ Import ('env')
+ 
+ if env['WITH_BF_GLEXT'] == 1:
+-        env['CPPFLAGS'].append('-DWITH_GLEXT')
++        env['CPPFLAGS'] += ' -DWITH_GLEXT'
+ 
+ sources = env.Glob('*.cpp') #'RAS_GLExtensionManager.cpp RAS_ListRasterizer.cpp RAS_OpenGLRasterizer.cpp RAS_VAOpenGLRasterizer.cpp'
+ 
+--- a/source/gameengine/Rasterizer/SConscript
++++ b/source/gameengine/Rasterizer/SConscript
+@@ -4,7 +4,7 @@
+ sources = env.Glob('*.cpp')
+ 
+ if env['WITH_BF_GLEXT'] == 1:
+-        env['CPPFLAGS'].append('-DWITH_GLEXT')
++        env['CPPFLAGS'] += ' -DWITH_GLEXT'
+ 
+ 
+ incs = '. #source/kernel/gen_system #intern/string #intern/moto/include #source/gameengine/BlenderRoutines'
+--- a/source/gameengine/GamePlayer/ghost/SConscript
++++ b/source/gameengine/GamePlayer/ghost/SConscript
+@@ -48,7 +48,7 @@
+     cflags = ['/GR']
+ 
+ if env['WITH_BF_GLEXT'] == 1:
+-        env['CPPFLAGS'].append('-DWITH_GLEXT')
++        env['CPPFLAGS'] += ' -DWITH_GLEXT'
+ 
+ 
+ env.BlenderLib (libname='gp_ghost', sources=source_files, includes = incs, defines = [], libtype='player',priority=0, compileflags=cflags)
