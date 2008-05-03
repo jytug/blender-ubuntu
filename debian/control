@@ -2,7 +2,7 @@ Source: blender
 Section: graphics
 Priority: optional
 Maintainer: Cyril Brulebois <kibi@debian.org>
-Build-Depends: debhelper (>= 5.0.37.2), quilt, ftgl-dev, gettext, libgettextpo-dev, libglut-dev, libjpeg-dev, libpng-dev, libsdl-dev, libz-dev, python2.5-dev, python-support, scons, libtiff4-dev, libopenexr-dev, libavformat-dev, libxi-dev, autotools-dev, pkg-config, libswscale-dev
+Build-Depends: debhelper (>= 5.0.37.2), quilt, libftgl-dev, gettext, libgettextpo-dev, libglut-dev, libjpeg-dev, libpng-dev, libsdl-dev, libz-dev, python2.5-dev, python-support, scons, libtiff4-dev, libopenexr-dev, libavformat-dev, libxi-dev, autotools-dev, pkg-config, libswscale-dev
 Build-Conflicts: nvidia-glx
 Standards-Version: 3.7.3
 Homepage: http://blender.org/

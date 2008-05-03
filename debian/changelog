@@ -37,7 +37,8 @@ blender (2.45+r14660-1) experimental; urgency=low
        “pkg-config --libs” call.
   * Use the system-wide FTGL library instead of the embedded one, thanks
     Sam Hocevar (Closes: #478015):
-     - debian/control: The Build-Depends on ftgl-dev was there already.
+     - debian/control: Replace ftgl-dev with libftgl-dev in Build-Depends
+       since the former is deprecated (dummy package in oldlibs).
      - debian/patches/50_debian_build_config:
         - Use “/usr” for BF_FTGL instead of “#extern/bFTGL”.
         - Use “${BF_FTGL}/include/FTGL” for BF_FTGL_INC since
