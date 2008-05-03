@@ -22,7 +22,6 @@ TODO for blender:
     config/linux2-config.py so that the patch stays maintainable.
     At the moment:
      - Build in ., not in ..
-     - Use python 2.4, not python 2.5
      - Use ffmpeg, but use pkg-config. Conditionally enable libdc1394.
      - Use gettext shared object.
      - Enable the gameengine.
