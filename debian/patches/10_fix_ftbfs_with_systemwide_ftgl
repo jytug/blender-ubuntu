@@ -20,3 +20,16 @@
  
      syslibs += Split(lenv['LLIBS'])
  
+--- a/extern/SConscript
++++ b/extern/SConscript
+@@ -10,7 +10,9 @@
+     SConscript(['bullet2/src/SConscript'])
+ 
+ if env['WITH_BF_INTERNATIONAL']:
+-    SConscript(['bFTGL/SConscript'])
++    # Only if the internal copy is used.
++    if env['BF_FTGL'].startswith('#extern'):
++        SConscript(['bFTGL/SConscript'])
+ 
+ if env['WITH_BF_VERSE']:
+     SConscript(['verse/dist/SConstruct'])
