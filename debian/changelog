@@ -11,7 +11,9 @@ blender (2.45+r14660-1) experimental; urgency=low
      - Disable it, no longer applies.
      - Upstream now checks for TMP and TMPDIR before defaulting to /tmp.
      - Modify wrapper so that it checks for those variables in the
-       environment, and sets one of them if none is set.
+       environment, and exports TMP to $HOME/.blender if both are empty.
+  * debian/README.Debian:
+     - Add an entry about the above point: handling of temporary files.
   * debian/patches/04_de_po_fix:
      - Drop it, merged upstream.
   * debian/patches/10_gnukfreebsd_support:
