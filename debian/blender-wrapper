@@ -116,4 +116,11 @@ for path in /usr/share/blender/scripts/* ; do
     fi
 done
 
+# To ensure no attack can happen on the temporary files, use
+# ~/.blender unless $TMP or $TMPDIR is defined. In that case, it is
+# assumed that people know what they're doing.
+if [ -z "$TMP" -a -z "$TMPDIR" ]; then
+    export TMP=$HOME/.blender
+fi
+
 blender-bin "$@"
