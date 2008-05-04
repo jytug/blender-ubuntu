@@ -46,9 +46,6 @@ Security TODO for blender:
 --------------------------
 
   * Implement the wrapper modifications for TMP/TMPDIR handling.
-  * Eventually add a minimal version in the B-D on libftgl-dev so as
-    to ensure the use of a shared-library-enabled version, instead of
-    a static-only one.
 
 
 Portability TODO for blender:
