@@ -1,6 +1,6 @@
-blender (2.45+r14660-1) experimental; urgency=low
+blender (2.46+dfsg-1) experimental; urgency=low
 
-  * New upstream snapshot: SVN r14660, some commits after RC3.
+  * New upstream release (Closes: #482034).
   * debian/copyright:
      - Upstream now uses “pristine” GPL-2+ license statements, and no
        longer the dual GPL/BL license.
