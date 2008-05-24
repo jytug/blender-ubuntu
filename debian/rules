@@ -12,9 +12,7 @@ include /usr/share/quilt/quilt.make
 BINARY = $(CURDIR)/debian/blender
 
 CONFIG_SCRIPTS = \
-	source/tools/guess/config.guess \
-	extern/bFTGL/unix/config.guess \
-	extern/bFTGL/unix/config.sub
+	source/tools/guess/config.guess
 
 CFLAGS = -Wall -g
 
