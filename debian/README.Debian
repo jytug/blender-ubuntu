@@ -1,4 +1,4 @@
-blender (2.45+r14660-1) experimental; urgency=low
+blender (2.46+dfsg-1) experimental; urgency=low
 
   * As of this 2.46 release candidate, upstream checks for TMP and TMPDIR
     in the environment to determine where to put temporary files. To avoid
