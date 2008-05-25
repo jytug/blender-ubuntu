@@ -82,7 +82,7 @@ blender (2.46+dfsg-1) experimental; urgency=low
        them. That also makes it clear that no internal copy of openal is
        used (Closes: #323527).
 
- -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
+ -- Cyril Brulebois <kibi@debian.org>  Mon, 26 May 2008 00:17:25 +0200
 
 blender (2.45-5) unstable; urgency=high
 
