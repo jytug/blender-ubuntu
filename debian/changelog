@@ -72,6 +72,10 @@ blender (2.46+dfsg-1) experimental; urgency=low
   * debian/source.lintian-overrides:
      - Drop it, no longer needed since upstream no longer ships .svn/*
        files.
+  * debian/control:
+     - Add libopenal-dev and libalut-dev to B-D, now builds fine with
+       them. That also makes it clear that no internal copy of openal is
+       used (Closes: #323527).
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 

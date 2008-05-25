@@ -33,7 +33,6 @@ TODO for blender:
      - Maybe add libode0-dev to the B-D (not needed?).
      - Maybe add libalut-dev to the B-D (not needed?).
      - Maybe add libquicktime-dev to the B-D (FBTFS).
-     - Maybe add libopenal-dev to the B-D (too outdated version?).
   * Ship a -dbg package. See how to deal with running gdb on blender
     because of the wrapper: how to make it intuitive to users? Maybe
     a --debug or --gdb option?
