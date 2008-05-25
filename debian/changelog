@@ -61,7 +61,10 @@ blender (2.46+dfsg-1) experimental; urgency=low
         - Add it, needed since upstream doesn't support (yet) building
           with a system-wide FTGL library. Forwarded upstream.
      - debian/patches/20_fix_ftbfs_with_latest_ftgl:
-        - Add it, needed due to upstream changes to FTGL.
+        - Add it, needed due to upstream changes in FTGL. An include of
+          GL/gl.h is missing, and the FTGL Advance(…) function calls are
+          now to be replaced with Advance(…).Xf() ones. Not forwarded
+          upstream yet, waiting for API stabilization first.
   * debian/pyversions:
      - Add it, set to “2.5” to ensure byte-compilation only targets
        python2.5, since there are now scripts using python2.5-only syntax.
