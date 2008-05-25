@@ -29,7 +29,11 @@ fi
 
 if [ -f ~/.blender/VERSION ]; then
     OLD_VERSION=$(cat ~/.blender/VERSION)
-else
+fi
+
+# An empty string can be returned in some cases (e.g. delayed writes
+# over NFS).
+if [ -z "$OLD_VERSION" ]; then
     OLD_VERSION="old"
 fi
 
@@ -56,7 +60,11 @@ fi
 # Fetch last run's revision number
 if [ -f ~/.blender/REVISION ]; then
     REVISION=$(cat ~/.blender/REVISION)
-else
+fi
+
+# An empty string can be returned in some cases (e.g. delayed writes
+# over NFS).
+if [ -z "$REVISION" ]; then
     # Ensure a transition check happens.
     REVISION=0
 fi
@@ -99,7 +107,13 @@ if dpkg --compare-versions $REVISION lt 2.45-3 ; then
 fi
 
 # Store the current revision for future transitions.
-dpkg -l blender | grep ^ii | awk '{ print $3}' > ~/.blender/REVISION
+CURRENT_REVISION=$(dpkg -l blender | grep ^ii | awk '{print $3}')
+
+# But only do that when that's a new revision, be gentle to people
+# working on NFS shares
+if [ $CURRENT_REVISION != $REVISION ]; then
+    echo $CURRENT_REVISION > ~/.blender/REVISION
+fi
 
 # Symlink the directories only. Not symlinking scripts/ directly since
 # the user probably want a real directory to be able to add scripts

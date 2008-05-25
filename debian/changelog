@@ -58,6 +58,12 @@ blender (2.46+dfsg-1) experimental; urgency=low
   * debian/pyversions:
      - Add it, set to “2.5” to ensure byte-compilation only targets
        python2.5, since there are now scripts using python2.5-only syntax.
+  * debian/blender-wrapper:
+     - Be more gentle when used over NFS: Don't write the revision when it
+       wasn't changed since the last time blender was run. The possible
+       write delay might trigger reading an empty string from that file.
+     - Also be more robust, check for empty strings when reading from
+       VERSION and REVISION files.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 02 May 2008 17:40:02 +0200
 
