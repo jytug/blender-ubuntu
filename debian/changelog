@@ -57,7 +57,7 @@ blender (2.46+dfsg-1) experimental; urgency=low
         - Use “${BF_FTGL}/include/FTGL” for BF_FTGL_INC since
           “pkg-config --cflags ftgl” returns several “-I” flags.
         - Use “pkg-config --libs ftgl” for BF_FTGL_LIBS.
-     - debian/patches/10_fix_ftbfs_with_systemwide_ftgl:
+     - debian/patches/10_use_systemwide_ftgl:
         - Add it, needed since upstream doesn't support (yet) building
           with a system-wide FTGL library. Forwarded upstream.
      - debian/patches/20_fix_ftbfs_with_latest_ftgl:
