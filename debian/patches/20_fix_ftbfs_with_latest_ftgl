@@ -1,0 +1,35 @@
+--- a/source/blender/ftfont/intern/FTF_TTFont.cpp
++++ b/source/blender/ftfont/intern/FTF_TTFont.cpp
+@@ -333,9 +333,9 @@
+ 	}
+ 
+ 	if ((FTF_USE_GETTEXT | FTF_INPUT_UTF8) & flag) 
+-		return font->Advance(wstr);
++		return font->Advance(wstr).Xf();
+ 	else
+-		return font->Advance(str);
++		return font->Advance(str).Xf();
+ }
+ 
+ 
+@@ -353,16 +353,16 @@
+ 		len=utf8towchar(wstr, gettext(str));
+ 
+ 		if(mode == FTF_PIXMAPFONT) {
+-			return font->Advance(wstr);
++			return font->Advance(wstr).Xf();
+ 		} else if(mode == FTF_TEXTUREFONT) {
+-			return font->Advance(wstr);// * fsize;
++			return font->Advance(wstr).Xf();// * fsize;
+ 		}
+ 	}
+ 	else {
+ 		if(mode == FTF_PIXMAPFONT) {
+-			return font->Advance(str);
++			return font->Advance(str).Xf();
+ 		} else if(mode == FTF_TEXTUREFONT) {
+-			return font->Advance(str);// * fsize;
++			return font->Advance(str).Xf();// * fsize;
+ 		}
+ 	}
+ 	

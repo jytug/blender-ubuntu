@@ -3,3 +3,4 @@
 10_fix_ftbfs_with_systemwide_ftgl
 50_debian_build_config
 60_various_workarounds
+20_fix_ftbfs_with_latest_ftgl
