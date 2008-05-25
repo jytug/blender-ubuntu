@@ -49,3 +49,9 @@ License: GPL-2+
  |
  | On Debian systems, the complete text of the GNU General Public License
  | version 2 can be found in “/usr/share/common-licenses/GPL-2”.
+
+
+
+Files: extern/{bFTGL,ffmpeg,libmp3lame,xvidcore,x264}
+Removed since they are embedded code copies of software available in
+main or software not acceptable in main.

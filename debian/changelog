@@ -3,6 +3,8 @@ blender (2.46+dfsg-1) experimental; urgency=low
   * New upstream release (Closes: #482034).
   * Repack to get rid of embedded code copies (extern/), in particular
     video encoders: bFTGL, ffmpeg, libmp3lame, xvidcore, x264.
+  * debian/copyright:
+     - Update accordingly.
   * debian/rules:
      - Update CONFIG_SCRIPTS accordingly (config.{guess,sub} removed).
   * debian/copyright:
