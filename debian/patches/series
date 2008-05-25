@@ -2,3 +2,4 @@
 50_debian_build_config
 60_various_workarounds
 10_fix_ftbfs_with_systemwide_ftgl
+02_tmp_in_HOME

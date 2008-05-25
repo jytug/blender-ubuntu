@@ -12,10 +12,15 @@ blender (2.46+dfsg-1) experimental; urgency=low
      - Specify the license for the Debian packaging too (GPL-2+).
      - Implement a version of the copyright format proposal.
   * debian/patches/02_tmp_in_HOME:
-     - Disable it, no longer applies.
-     - Upstream now checks for TMP and TMPDIR before defaulting to /tmp.
-     - Modify wrapper so that it checks for those variables in the
-       environment, and sets one of them if none is set.
+     - The context changed, modify it so that it finally checks for
+       “/tmp/” before returning, and switch to using “$HOME/.blender/”
+       instead in that case.
+     - As a side note, it wouldn't be sufficient to set TMP or TMPDIR in
+       the wrapper since the factory B.blend file contains that hardcoded
+       value, and is used at the very beginning of the BLI_where_is_used()
+       function.
+     - That doesn't prevent files from being written in /tmp, but at least
+       keeps quit.blend out of there, as that was already previously done.
   * debian/patches/04_de_po_fix:
      - Drop it, merged upstream.
   * debian/patches/10_gnukfreebsd_support:
