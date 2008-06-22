@@ -17,6 +17,7 @@ blender (2.46+dfsg-2) unstable; urgency=low
      - Split Name into Name and GenericName.
      - Drop extension for Icon.
      - Fix syntax for MimeType.
+  * Bump Standards-Version from 3.7.3 to 3.8.0 (no changes needed).
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 22 Jun 2008 09:02:28 +0200
 
