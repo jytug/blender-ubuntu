@@ -2,6 +2,10 @@ blender (2.46+dfsg-2) unstable; urgency=low
 
   * Upload to unstable. That also makes sure the package is installable
     again (Closes: #484709).
+  * Refresh the following patch since FTGL's API finally got stable, and
+    since using “foo().Xf()” is no longer needed. It now only contains the
+    missing <GL/gl.h> include (Closes: #485953).
+     - debian/patches/20_fix_ftbfs_with_latest_ftgl
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 22 Jun 2008 09:02:28 +0200
 
