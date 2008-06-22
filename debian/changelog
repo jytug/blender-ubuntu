@@ -6,6 +6,11 @@ blender (2.46+dfsg-2) unstable; urgency=low
     since using “foo().Xf()” is no longer needed. It now only contains the
     missing <GL/gl.h> include (Closes: #485953).
      - debian/patches/20_fix_ftbfs_with_latest_ftgl
+  * Merge the following patch from Ubuntu, so that the appropriate symlink
+    is used for libGL (libGL.so.1 rather than libGL.so, which is only
+    available if the development package is installed). Patch by Lukas
+    Fittl, forwarded by Daniel Hahler (Closes: #484440).
+     - debian/patches/30_gameengine_libgl_location_fix
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 22 Jun 2008 09:02:28 +0200
 

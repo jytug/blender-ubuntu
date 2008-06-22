@@ -2,5 +2,6 @@
 02_tmp_in_HOME
 10_use_systemwide_ftgl
 20_fix_ftbfs_with_latest_ftgl
+30_gameengine_libgl_location_fix
 50_debian_build_config
 60_various_workarounds

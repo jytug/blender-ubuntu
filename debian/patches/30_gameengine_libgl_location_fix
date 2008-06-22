@@ -1,0 +1,11 @@
+--- a/source/gameengine/Rasterizer/RAS_OpenGLRasterizer/RAS_GLExtensionManager.cpp
++++ b/source/gameengine/Rasterizer/RAS_OpenGLRasterizer/RAS_GLExtensionManager.cpp
+@@ -189,7 +189,7 @@
+ 	{
+ 		if (!libGL)
+ 		{
+-			libGL = dlopen("libGL.so", RTLD_LAZY|RTLD_GLOBAL);
++			libGL = dlopen("libGL.so.1", RTLD_LAZY|RTLD_GLOBAL);
+ 			if (libGL)
+ 				bglGetProcAddress = (PFNBGLXGETPROCADDRESSARBPROC) (dlsym(libGL, "glXGetProcAddressARB"));
+ 			else
