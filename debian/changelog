@@ -1,3 +1,10 @@
+blender (2.46+dfsg-2) unstable; urgency=low
+
+  * Upload to unstable. That also makes sure the package is installable
+    again (Closes: #484709).
+
+ -- Cyril Brulebois <kibi@debian.org>  Sun, 22 Jun 2008 09:02:28 +0200
+
 blender (2.46+dfsg-1) experimental; urgency=low
 
   * New upstream release (Closes: #482034).
