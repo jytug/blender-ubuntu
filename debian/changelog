@@ -11,6 +11,12 @@ blender (2.46+dfsg-2) unstable; urgency=low
     available if the development package is installed). Patch by Lukas
     Fittl, forwarded by Daniel Hahler (Closes: #484440).
      - debian/patches/30_gameengine_libgl_location_fix
+  * Improve debian/misc/*.desktop, thanks to Daniel Hahler again
+    (Closes: #484439):
+     - Add German translation.
+     - Split Name into Name and GenericName.
+     - Drop extension for Icon.
+     - Fix syntax for MimeType.
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 22 Jun 2008 09:02:28 +0200
 
