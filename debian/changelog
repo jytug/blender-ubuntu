@@ -1,3 +1,17 @@
+blender (2.46+dfsg-3) unstable; urgency=low
+
+  * Fix crash on “Add > Text” spotted by Antonio Ospite. Some additional
+    checks were introduced in freetype 2.3.6, which now leads to a crash
+    of Blender since the latter isn't using the appropriate function, and
+    since a cast was added to bypass compiler warnings. It looks like when
+    passing FT_ENCODING_UNICODE as second argument, one is interested in
+    calling FT_Select_Charmap() rather than FT_Set_Charmap(). The
+    following patch at least fixes the crash, although upstream hasn't
+    commented on it yet (Closes: #487890):
+     - debian/patches/40_freetype_fix_miscall
+
+ -- Cyril Brulebois <kibi@debian.org>  Fri, 04 Jul 2008 22:19:32 +0200
+
 blender (2.46+dfsg-2) unstable; urgency=low
 
   * Upload to unstable. That also makes sure the package is installable

@@ -3,5 +3,6 @@
 10_use_systemwide_ftgl
 20_fix_ftbfs_with_latest_ftgl
 30_gameengine_libgl_location_fix
+40_freetype_fix_miscall
 50_debian_build_config
 60_various_workarounds
