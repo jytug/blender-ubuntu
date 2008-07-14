@@ -49,7 +49,7 @@
 +
 +import sys
 +if sys.platform == 'linux2':
-+    BF_FFMPEG_LIB += ' ' + commands.getoutput('pkg-config --libs libdc1394')
++    BF_FFMPEG_LIB += ' ' + commands.getoutput('pkg-config --libs libdc1394-2')
 +
  # Mesa Libs should go here if your using them as well....
  WITH_BF_STATICOPENGL = 'false'

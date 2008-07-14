@@ -9,8 +9,15 @@ blender (2.46+dfsg-3) unstable; urgency=low
     following patch at least fixes the crash, although upstream hasn't
     commented on it yet (Closes: #487890):
      - debian/patches/40_freetype_fix_miscall
+  * Add a Build-Depends on libdc1394-22-dev (only on Linux architectures),
+    and move the “pkg-config --libs” call from libdc1394 to libdc1394-2
+    (following the move from libdc1394-13 to libdc1394-22), so that the
+    library is correctly found, and so that the blender binary is
+    correctly linked (Closes: #490317). Update the following patch to this
+    effect:
+      - debian/patches/50_debian_build_config
 
- -- Cyril Brulebois <kibi@debian.org>  Fri, 04 Jul 2008 22:19:32 +0200
+ -- Cyril Brulebois <kibi@debian.org>  Mon, 14 Jul 2008 03:28:47 +0200
 
 blender (2.46+dfsg-2) unstable; urgency=low
 
