@@ -1,3 +1,12 @@
+blender (2.46+dfsg-4) unstable; urgency=low
+
+  * Fix python syntax warning in import_dxf.py, which led to nasty output
+    in installation/upgrade logs during byte-compilation, using a patch
+    provided by the script author (Closes: #492280):
+     - debian/patches/45_fix_python_syntax_warning
+
+ -- Cyril Brulebois <kibi@debian.org>  Fri, 08 Aug 2008 02:45:40 +0200
+
 blender (2.46+dfsg-3) unstable; urgency=low
 
   * Fix crash on “Add > Text” spotted by Antonio Ospite. Some additional

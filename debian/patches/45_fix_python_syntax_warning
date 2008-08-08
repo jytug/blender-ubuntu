@@ -1,0 +1,19 @@
+--- a/release/scripts/import_dxf.py
++++ b/release/scripts/import_dxf.py
+@@ -3833,7 +3833,7 @@
+ 		self.colMaterials = MatColors({}) #A container for dxf-color based materials
+ 		self.layMaterials = MatLayers({}) #A container for dxf-layer based materials
+ 		#self.collayMaterials = MatColLayers({}) #A container for dxf-color+layer based materials
+-		global layersmap, layernamesmap
++		global layersmap, layernamesmap, oblist
+ 		layersmap, layernamesmap = {}, {}
+ 		if 'tables' in sections.keys():
+ 			self.write("found section:tables")
+@@ -3876,7 +3876,6 @@
+ 
+ 			if vports: #----------------------------------
+ 				if self.var['views_on']:
+-					global oblist
+ 					for item in vports.data:
+ 						if type(item) != list and item.type == 'vport':
+ 							#print 'deb:settings_valid views dir(item)=', dir(item) #-------------
