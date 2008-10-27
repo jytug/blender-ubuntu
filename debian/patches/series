@@ -1,4 +1,5 @@
 #10_gnukfreebsd_support
+01_sanitize_sys.path
 02_tmp_in_HOME
 10_use_systemwide_ftgl
 20_fix_ftbfs_with_latest_ftgl

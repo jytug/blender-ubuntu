@@ -1,3 +1,16 @@
+blender (2.46+dfsg-5) unstable; urgency=high
+
+  * Include patch by James Vega (thanks!) to fix security bug: Blender's
+    BPY_interface was calling PySys_SetArgv so that sys.path was prepended
+    with an empty string, resulting in possible arbitrary code execution,
+    when the working directory contains a file named like one that
+    Blender's python scripts try to import (Closes: #503632). That patch
+    removes empty elements from sys.path:
+     - debian/patches/01_sanitize_sys.path
+  * Urgency set to “high” accordingly.
+
+ -- Cyril Brulebois <kibi@debian.org>  Mon, 27 Oct 2008 06:44:20 +0100
+
 blender (2.46+dfsg-4) unstable; urgency=low
 
   * Fix python syntax warning in import_dxf.py, which led to nasty output
