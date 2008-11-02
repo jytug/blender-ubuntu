@@ -23,7 +23,7 @@ blender (2.46+dfsg-6) unstable; urgency=high
     will mostly be useful to keep those patches uptodate:
      - debian/README.source
 
- -- Cyril Brulebois <kibi@debian.org>  Sun, 02 Nov 2008 21:42:10 +0100
+ -- Cyril Brulebois <kibi@debian.org>  Mon, 03 Nov 2008 00:52:01 +0100
 
 blender (2.46+dfsg-5) unstable; urgency=high
 
