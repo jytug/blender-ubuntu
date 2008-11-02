@@ -1,4 +1,4 @@
-blender (2.46+dfsg-6) unstable; urgency=low
+blender (2.46+dfsg-6) unstable; urgency=high
 
   * Add patch to fix FTBFS now that python's sys.platform reports
     linux2-$arch on various architectures (alpha, hppa, mips*, sparc), see
@@ -11,6 +11,8 @@ blender (2.46+dfsg-6) unstable; urgency=low
     SConscript scripts, and in Python scripts shipped under the
     release/scripts directory (Closes: #503639):
      - debian/patches/70_portability_platform_detection
+  * Keep urgency to “high” since the previous upload couldn't migrate to
+    testing because of this FTBFS.
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 02 Nov 2008 21:42:10 +0100
 
