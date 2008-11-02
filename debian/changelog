@@ -13,6 +13,12 @@ blender (2.46+dfsg-6) unstable; urgency=high
      - debian/patches/70_portability_platform_detection
   * Keep urgency to “high” since the previous upload couldn't migrate to
     testing because of this FTBFS.
+  * Enable GNU/kFreeBSD support again. The previous patch was obsolete,
+    and this new one benefits from the aforementioned one, since there's
+    no need to add a specific check for tests on ENV['OURPLATFORM']. Don't
+    delete the (already disabled) 10_gnukfreebsd_support patch to keep the
+    release team happy:
+     - debian/patches/80_gnukfreebsd_support
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 02 Nov 2008 21:42:10 +0100
 

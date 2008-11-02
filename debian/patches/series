@@ -9,3 +9,4 @@
 50_debian_build_config
 60_various_workarounds
 70_portability_platform_detection
+80_gnukfreebsd_support
