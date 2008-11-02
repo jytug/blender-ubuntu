@@ -1,3 +1,19 @@
+blender (2.46+dfsg-6) unstable; urgency=low
+
+  * Add patch to fix FTBFS now that python's sys.platform reports
+    linux2-$arch on various architectures (alpha, hppa, mips*, sparc), see
+    #499132. At toplevel, the SConstruct script sets ENV['OURPLATFORM'] to
+    sys.platform, and with this patch, makes it become 'linux2' when the
+    platform string starts with 'linux2', and since userland is the same,
+    ditto when the platform string starts with 'gnukfreebsd'. That patch
+    also adds a check for sys.platform starting with those variables in
+    various parts (which are not using ENV['OURPLATFORM]'), mostly in
+    SConscript scripts, and in Python scripts shipped under the
+    release/scripts directory (Closes: #503639):
+     - debian/patches/70_portability_platform_detection
+
+ -- Cyril Brulebois <kibi@debian.org>  Sun, 02 Nov 2008 21:42:10 +0100
+
 blender (2.46+dfsg-5) unstable; urgency=high
 
   * Include patch by James Vega (thanks!) to fix security bug: Blender's

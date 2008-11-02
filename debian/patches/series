@@ -8,3 +8,4 @@
 45_fix_python_syntax_warning
 50_debian_build_config
 60_various_workarounds
+70_portability_platform_detection
