@@ -19,6 +19,9 @@ blender (2.46+dfsg-6) unstable; urgency=high
     delete the (already disabled) 10_gnukfreebsd_support patch to keep the
     release team happy:
      - debian/patches/80_gnukfreebsd_support
+  * Add documentation on how to upgrade to a new upstream release, which
+    will mostly be useful to keep those patches uptodate:
+     - debian/README.source
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 02 Nov 2008 21:42:10 +0100
 
