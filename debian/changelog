@@ -9,6 +9,7 @@ blender (2.48a+dfsg-1) experimental; urgency=low
      - 50_debian_build_config: Refresh.
      - 60_various_workarounds: Drop, no longer needed.
   * No longer unpatch before cleaning (one never knows).
+  * Tidy up debian/TODO.
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 28 Dec 2008 19:38:11 +0100
 
