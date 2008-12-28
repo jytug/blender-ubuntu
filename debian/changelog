@@ -11,7 +11,7 @@ blender (2.48a+dfsg-1) experimental; urgency=low
   * No longer unpatch before cleaning (one never knows).
   * Tidy up debian/TODO.
 
- -- Cyril Brulebois <kibi@debian.org>  Sun, 28 Dec 2008 19:38:11 +0100
+ -- Cyril Brulebois <kibi@debian.org>  Mon, 29 Dec 2008 00:33:51 +0100
 
 blender (2.46+dfsg-6) unstable; urgency=high
 
