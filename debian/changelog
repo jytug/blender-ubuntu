@@ -1,6 +1,6 @@
 blender (2.48a+dfsg-1) experimental; urgency=low
 
-  * New upstream release.
+  * New upstream release (Closes: #503680).
   * Patches:
      - 01_sanitize_sys.path: Refresh accordingly.
      - 30_gameengine_libgl_location_fix: Drop, patched code went away.
