@@ -1,4 +1,4 @@
-blender (2.48a-1) experimental; urgency=low
+blender (2.48a+dfsg-1) experimental; urgency=low
 
   * New upstream release.
   * Patches:
