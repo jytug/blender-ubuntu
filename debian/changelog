@@ -1,3 +1,9 @@
+blender (2.48a-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Cyril Brulebois <kibi@debian.org>  Sun, 28 Dec 2008 19:38:11 +0100
+
 blender (2.46+dfsg-6) unstable; urgency=high
 
   * Add patch to fix FTBFS now that python's sys.platform reports
