@@ -8,6 +8,7 @@ blender (2.48a+dfsg-1) experimental; urgency=low
      - 45_fix_python_syntax_warning: Drop, was a backport.
      - 50_debian_build_config: Refresh.
      - 60_various_workarounds: Drop, no longer needed.
+  * No longer unpatch before cleaning (one never knows).
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 28 Dec 2008 19:38:11 +0100
 

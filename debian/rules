@@ -55,7 +55,8 @@ build-stamp:
 
 	touch $@
 
-clean: unpatch
+clean: clean-patched unpatch
+clean-patched:
 	dh_testdir
 	dh_testroot
 
