@@ -9,15 +9,6 @@
  LIBDIR = "${LCGDIR}"
  
  WITH_BF_VERSE = 'false'
-@@ -24,7 +27,7 @@
- BF_SDL_INC = '${BF_SDL}/include/SDL' #$(shell $(BF_SDL)/bin/sdl-config --cflags)
- BF_SDL_LIB = 'SDL' #BF_SDL #$(shell $(BF_SDL)/bin/sdl-config --libs) -lSDL_mixer
- 
--WITH_BF_FMOD = 'false'
-+WITH_BF_FMOD = 'true'
- BF_FMOD = LIBDIR + '/fmod'
- 
- WITH_BF_OPENEXR = 'true'
 @@ -60,15 +63,17 @@
  
  BF_GETTEXT = '/usr'
@@ -26,7 +17,7 @@
 +BF_GETTEXT_LIB = 'gettextpo'
  BF_GETTEXT_LIBPATH = '${BF_GETTEXT}/lib'
  
- WITH_BF_FTGL = 'true'
+ WITH_BF_FTGL = True
 -BF_FTGL = '#extern/bFTGL'
 -BF_FTGL_INC = '${BF_FTGL}/include'
 -BF_FTGL_LIB = 'extern_ftgl'
@@ -36,8 +27,8 @@
 +BF_FTGL_INC = '${BF_FTGL}/include/FTGL'
 +BF_FTGL_LIB = commands.getoutput('pkg-config --libs ftgl')
  
--WITH_BF_GAMEENGINE='false'
-+WITH_BF_GAMEENGINE='true'
+-WITH_BF_GAMEENGINE=False
++WITH_BF_GAMEENGINE=True
  
  WITH_BF_ODE = 'false'
  BF_ODE = LIBDIR + '/ode'
@@ -71,14 +62,16 @@
  ##LOPTS = --dynamic
  ##DYNLDFLAGS = -shared $(LDFLAGS)
  
-@@ -172,8 +184,8 @@
- BF_DEBUG = 'false'
+@@ -172,9 +184,9 @@
+ BF_DEBUG = False
  BF_DEBUG_FLAGS = '-g'
  
 -BF_BUILDDIR = '../build/linux2'
 -BF_INSTALLDIR='../install/linux2'
+-BF_DOCDIR='../install/doc'
 +BF_BUILDDIR = './build/linux2'
 +BF_INSTALLDIR='./install/linux2'
++BF_DOCDIR='./install/doc'
  
  
  #Link against pthread

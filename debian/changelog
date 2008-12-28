@@ -6,6 +6,7 @@ blender (2.48a-1) experimental; urgency=low
      - 30_gameengine_libgl_location_fix: Drop, patched code went away.
      - 40_freetype_fix_miscall: Drop, patched code is now commented out.
      - 45_fix_python_syntax_warning: Drop, was a backport.
+     - 50_debian_build_config: Refresh.
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 28 Dec 2008 19:38:11 +0100
 
