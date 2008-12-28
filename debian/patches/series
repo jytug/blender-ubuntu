@@ -3,6 +3,5 @@
 10_use_systemwide_ftgl
 20_fix_ftbfs_with_latest_ftgl
 50_debian_build_config
-60_various_workarounds
 70_portability_platform_detection
 80_gnukfreebsd_support
