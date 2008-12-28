@@ -3,6 +3,7 @@ blender (2.48a-1) experimental; urgency=low
   * New upstream release.
   * Patches:
      - 01_sanitize_sys.path: Refresh accordingly.
+     - 30_gameengine_libgl_location_fix: Drop, patched code went away.
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 28 Dec 2008 19:38:11 +0100
 
