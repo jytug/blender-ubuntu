@@ -4,6 +4,12 @@ blender (2.48a+dfsg-2) unstable; urgency=low
   * Introduce patch to fix ffmpeg header includes, fixing FTBFS with newer
     ffmpeg (Closes: #516962):
      - 90_fix_ffmpeg_includes
+  * Also try to use the new API: avcodec_decode_audio2() instead of
+    avcodec_decode_audio(). But since the how-to-upgrade note is kind of
+    cryptic to me, that's a temptative patch only, user reports are very
+    welcome (a mail to myself would do), especially if the audio sequencer
+    is well-tested! For that matter, introduce this patch:
+     - 91_update_to_new_ffmpeg_api
   * Update the following patch to also link against libavcodec:
      - 50_debian_build_config
   * Thanks for the advance warning and the patch in the BTS.
