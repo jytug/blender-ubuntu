@@ -36,7 +36,7 @@
  BF_FFMPEG_INC = '${BF_FFMPEG}/include'
  BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
  
-+BF_FFMPEG_LIB = commands.getoutput('pkg-config --libs libavformat vorbisenc libswscale') + ' -lgsm'
++BF_FFMPEG_LIB = commands.getoutput('pkg-config --libs libavcodec libavformat vorbisenc libswscale') + ' -lgsm'
 +
 +import sys
 +if sys.platform == 'linux2':
