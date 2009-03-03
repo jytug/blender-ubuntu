@@ -1,6 +1,10 @@
 blender (2.48a+dfsg-2) unstable; urgency=low
 
   * Upload to unstable now that lenny is released (yay).
+  * Introduce patch to fix ffmpeg header includes, fixing FTBFS with newer
+    ffmpeg (Closes: #516962):
+     - 90_fix_ffmpeg_includes
+  * Thanks for the advance warning and the patch in the BTS.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 03 Mar 2009 02:53:51 +0000
 

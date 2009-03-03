@@ -1,0 +1,94 @@
+--- a/source/blender/blenkernel/intern/writeffmpeg.c
++++ b/source/blender/blenkernel/intern/writeffmpeg.c
+@@ -29,11 +29,11 @@
+ 
+ #include <stdlib.h>
+ 
+-#include <ffmpeg/avformat.h>
+-#include <ffmpeg/avcodec.h>
+-#include <ffmpeg/rational.h>
+-#include <ffmpeg/swscale.h>
+-#include <ffmpeg/opt.h>
++#include <libavformat/avformat.h>
++#include <libavcodec/avcodec.h>
++#include <libavutil/rational.h>
++#include <libswscale/swscale.h>
++#include <libavcodec/opt.h>
+ 
+ #if LIBAVFORMAT_VERSION_INT < (49 << 16)
+ #define FFMPEG_OLD_FRAME_RATE 1
+--- a/source/blender/imbuf/intern/IMB_anim.h
++++ b/source/blender/imbuf/intern/IMB_anim.h
+@@ -76,9 +76,9 @@
+ #endif /* WITH_QUICKTIME */
+ 
+ #ifdef WITH_FFMPEG
+-#include <ffmpeg/avformat.h>
+-#include <ffmpeg/avcodec.h>
+-#include <ffmpeg/swscale.h>
++#include <libavformat/avformat.h>
++#include <libavcodec/avcodec.h>
++#include <libswscale/swscale.h>
+ #endif
+ 
+ #ifdef WITH_REDCODE
+--- a/source/blender/imbuf/intern/anim.c
++++ b/source/blender/imbuf/intern/anim.c
+@@ -83,10 +83,10 @@
+ #include "IMB_anim5.h"
+ 
+ #ifdef WITH_FFMPEG
+-#include <ffmpeg/avformat.h>
+-#include <ffmpeg/avcodec.h>
+-#include <ffmpeg/rational.h>
+-#include <ffmpeg/swscale.h>
++#include <libavformat/avformat.h>
++#include <libavcodec/avcodec.h>
++#include <libavutil/rational.h>
++#include <libswscale/swscale.h>
+ 
+ #if LIBAVFORMAT_VERSION_INT < (49 << 16)
+ #define FFMPEG_OLD_FRAME_RATE 1
+--- a/source/blender/imbuf/intern/util.c
++++ b/source/blender/imbuf/intern/util.c
+@@ -62,8 +62,8 @@
+ #endif
+ 
+ #ifdef WITH_FFMPEG
+-#include <ffmpeg/avcodec.h>
+-#include <ffmpeg/avformat.h>
++#include <libavcodec/avcodec.h>
++#include <libavformat/avformat.h>
+ 
+ #if LIBAVFORMAT_VERSION_INT < (49 << 16)
+ #define FFMPEG_OLD_FRAME_RATE 1
+--- a/source/blender/src/buttons_scene.c
++++ b/source/blender/src/buttons_scene.c
+@@ -109,9 +109,9 @@
+ 
+ #ifdef WITH_FFMPEG
+ 
+-#include <ffmpeg/avcodec.h> /* for PIX_FMT_* and CODEC_ID_* */
+-#include <ffmpeg/avformat.h>
+-#include <ffmpeg/opt.h>
++#include <libavcodec/avcodec.h> /* for PIX_FMT_* and CODEC_ID_* */
++#include <libavformat/avformat.h>
++#include <libavcodec/opt.h>
+ 
+ static int ffmpeg_preset_sel = 0;
+ 
+--- a/source/blender/src/hddaudio.c
++++ b/source/blender/src/hddaudio.c
+@@ -33,9 +33,9 @@
+ #endif
+ 
+ #ifdef WITH_FFMPEG
+-#include <ffmpeg/avformat.h>
+-#include <ffmpeg/avcodec.h>
+-#include <ffmpeg/rational.h>
++#include <libavformat/avformat.h>
++#include <libavcodec/avcodec.h>
++#include <libavutil/rational.h>
+ #if LIBAVFORMAT_VERSION_INT < (49 << 16)
+ #define FFMPEG_OLD_FRAME_RATE 1
+ #else
