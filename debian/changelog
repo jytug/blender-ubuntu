@@ -18,6 +18,8 @@ blender (2.48a+dfsg-2) unstable; urgency=low
      - Add B-D on libvorbis-dev and libgsm1-dev: They were probably
        pulled indirectly previously, let's make the build dependencies
        explicit now.
+  * Keep the urgency to “low” even though it's about fixing an RC bug,
+    testing is needed.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 03 Mar 2009 02:53:51 +0000
 
