@@ -2,7 +2,7 @@ blender (2.48a+dfsg-2) unstable; urgency=low
 
   * Upload to unstable now that lenny is released (yay).
   * Introduce patch to fix ffmpeg header includes, fixing FTBFS with newer
-    ffmpeg (Closes: #516962):
+    ffmpeg (Closes: #516962), and uninstallability (Closes: #518204):
      - 90_fix_ffmpeg_includes
   * Also try to use the new API: avcodec_decode_audio2() instead of
     avcodec_decode_audio(). But since the how-to-upgrade note is kind of
