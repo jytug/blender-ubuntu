@@ -13,6 +13,10 @@ blender (2.48a+dfsg-2) unstable; urgency=low
   * Update the following patch to also link against libavcodec:
      - 50_debian_build_config
   * Thanks for the advance warning and the patch in the BTS.
+  * debian/control:
+     - Add B-D on libvorbis-dev and libgsm1-dev: They were probably
+       pulled indirectly previously, let's make the build dependencies
+       explicit now.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 03 Mar 2009 02:53:51 +0000
 
