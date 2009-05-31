@@ -28,7 +28,7 @@ blender (2.49+dfsg-1) unstable; urgency=low
   * debian/control:
      - Bump Standards-Version to 3.8.1 (no changes needed).
 
- -- Cyril Brulebois <kibi@debian.org>  Sun, 31 May 2009 21:45:12 +0200
+ -- Cyril Brulebois <kibi@debian.org>  Mon, 01 Jun 2009 01:42:09 +0200
 
 blender (2.48a+dfsg-2) unstable; urgency=low
 
