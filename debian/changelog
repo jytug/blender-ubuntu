@@ -14,6 +14,10 @@ blender (2.49+dfsg-1) unstable; urgency=low
   * Drop patches (merged upstream):
      - 90_fix_ffmpeg_includes
      - 91_update_to_new_ffmpeg_api
+  * Add patch:
+     - 30_fix_python_syntax_warning: Fix Python 2.5/2.6 syntax warning
+       during byte-compilation by using “except Foo, bar:” instead of
+       “except Foo as bar:”.
   * debian/rules:
      - Get rid of CFLAGS handling, dpkg-buildpackage does that.
      - Get rid of dh_desktop, now a no-op.
