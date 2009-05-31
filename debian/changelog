@@ -3,6 +3,8 @@ blender (2.49+dfsg-1) unstable; urgency=low
   * New upstream release.
   * debian/copyright:
      - Update the list of removed directories: add extern/libopenjpeg.
+  * Refresh patch:
+     - 10_use_systemwide_ftgl
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 31 May 2009 21:45:12 +0200
 
