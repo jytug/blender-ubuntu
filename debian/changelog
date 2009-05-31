@@ -6,6 +6,7 @@ blender (2.49+dfsg-1) unstable; urgency=low
   * Refresh patches:
      - 10_use_systemwide_ftgl
      - 50_debian_build_config
+     - 70_portability_platform_detection
   * Drop patches (merged upstream):
      - 90_fix_ffmpeg_includes
      - 91_update_to_new_ffmpeg_api

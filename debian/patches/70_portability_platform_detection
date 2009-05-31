@@ -1,6 +1,6 @@
 --- a/extern/bullet2/src/SConscript
 +++ b/extern/bullet2/src/SConscript
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ if env['OURPLATFORM']=='win32-vc':
  elif env['OURPLATFORM']=='win32-mingw':
      defs += ' NDEBUG'
      cflags += ['-O2']
@@ -11,7 +11,7 @@
  elif sys.platform=='darwin':
 --- a/extern/qhull/SConscript
 +++ b/extern/qhull/SConscript
-@@ -5,7 +5,7 @@
+@@ -5,7 +5,7 @@ import os
  Import('env')
  defs = ''
  cflags = []
@@ -22,7 +22,7 @@
     cflags += ['/O2']
 --- a/extern/solid/SConscript
 +++ b/extern/solid/SConscript
-@@ -12,7 +12,7 @@
+@@ -12,7 +12,7 @@ if env['OURPLATFORM']=='win32-vc':
  elif env['OURPLATFORM']=='win32-mingw':
      defs += ' NDEBUG'
      cflags += ['-O2']
@@ -33,9 +33,9 @@
  elif sys.platform=='darwin' :
 --- a/config/linux2-config.py
 +++ b/config/linux2-config.py
-@@ -137,8 +137,11 @@
+@@ -169,8 +169,11 @@ BF_REDCODE_LIBPATH='${BF_REDCODE}/lib'
  
- BF_FFMPEG_LIB = commands.getoutput('pkg-config --libs libavformat vorbisenc libswscale') + ' -lgsm'
+ BF_FFMPEG_LIB = commands.getoutput('pkg-config --libs libavcodec libavformat vorbisenc libswscale') + ' -lgsm'
  
 +# Note: While linux2* and gnukfreebsd* share a lot, that particular case is
 +# really Linux-specific, which is why there's not test on sys.platform starting
@@ -48,7 +48,7 @@
  # Mesa Libs should go here if your using them as well....
 --- a/SConstruct
 +++ b/SConstruct
-@@ -143,6 +143,13 @@
+@@ -146,6 +146,13 @@ if crossbuild and platform!='win32':
  
  env['OURPLATFORM'] = platform
  
@@ -62,18 +62,18 @@
  configfile = 'config'+os.sep+platform+'-config.py'
  
  if os.path.exists(configfile):
-@@ -215,7 +222,7 @@
-         """
+@@ -222,7 +229,7 @@ if env['OURPLATFORM'] == 'linux2' :
+ 		"""
  
-         def CheckFreeAlut(context,env):
--            context.Message( B.bc.OKGREEN + "Linux platform detected:\n  checking for FreeAlut... " + B.bc.ENDC )
-+            context.Message( B.bc.OKGREEN + "Linux(-like) platform detected:\n  checking for FreeAlut... " + B.bc.ENDC )
-             env['LIBS'] = 'alut'
-             result = context.TryLink(mylib_test_source_file, '.c')
-             context.Result(result)
+ 		def CheckFreeAlut(context,env):
+-			context.Message( B.bc.OKGREEN + "Linux platform detected:\n  checking for FreeAlut... " + B.bc.ENDC )
++			context.Message( B.bc.OKGREEN + "Linux(-like) platform detected:\n  checking for FreeAlut... " + B.bc.ENDC )
+ 			env['LIBS'] = 'alut'
+ 			result = context.TryLink(mylib_test_source_file, '.c')
+ 			context.Result(result)
 --- a/release/scripts/bpymodules/colladaImEx/cutils.py
 +++ b/release/scripts/bpymodules/colladaImEx/cutils.py
-@@ -244,7 +244,7 @@
+@@ -289,7 +289,7 @@ def AddEuler(euler1, euler2):
  
  # Clear the console
  def ClearConsole():
