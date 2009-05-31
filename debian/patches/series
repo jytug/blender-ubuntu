@@ -5,5 +5,3 @@
 50_debian_build_config
 70_portability_platform_detection
 80_gnukfreebsd_support
-90_fix_ffmpeg_includes
-91_update_to_new_ffmpeg_api
