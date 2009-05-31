@@ -52,6 +52,6 @@ License: GPL-2+
 
 
 
-Files: extern/{bFTGL,ffmpeg,libmp3lame,xvidcore,x264}
+Files: extern/{bFTGL,ffmpeg,libmp3lame,libopenjpeg,xvidcore,x264}
 Removed since they are embedded code copies of software available in
 main or software not acceptable in main.
