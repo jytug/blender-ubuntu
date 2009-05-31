@@ -16,6 +16,7 @@ blender (2.49+dfsg-1) unstable; urgency=low
      - 91_update_to_new_ffmpeg_api
   * debian/rules:
      - Get rid of CFLAGS handling, dpkg-buildpackage does that.
+     - Get rid of dh_desktop, now a no-op.
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 31 May 2009 21:45:12 +0200
 

@@ -115,7 +115,6 @@ binary-arch: build install
 	dh_installdocs
 	dh_installmenu
 	dh_installman debian/blender.1
-	dh_desktop
 	dh_link
 	dh_strip
 	dh_compress
