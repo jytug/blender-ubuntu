@@ -25,6 +25,8 @@ blender (2.49+dfsg-1) unstable; urgency=low
   * debian/rules:
      - Get rid of CFLAGS handling, dpkg-buildpackage does that.
      - Get rid of dh_desktop, now a no-op.
+  * debian/control:
+     - Bump Standards-Version to 3.8.1 (no changes needed).
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 31 May 2009 21:45:12 +0200
 

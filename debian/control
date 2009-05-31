@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Cyril Brulebois <kibi@debian.org>
 Build-Depends: debhelper (>= 5.0.37.2), quilt, libftgl-dev, gettext, libgettextpo-dev, libglut-dev, libjpeg-dev, libpng-dev, libsdl-dev, libz-dev, python2.5-dev, python-support, scons, libtiff4-dev, libopenexr-dev, libavformat-dev, libxi-dev, autotools-dev, pkg-config, libswscale-dev, libavdevice-dev, libopenal-dev, libalut-dev, libdc1394-22-dev [!hurd-i386 !kfreebsd-amd64 !kfreebsd-i386], libvorbis-dev, libgsm1-dev, libopenjpeg-dev
 Build-Conflicts: nvidia-glx
-Standards-Version: 3.8.0
+Standards-Version: 3.8.1
 Homepage: http://blender.org/
 Vcs-Browser: http://git.debian.org/?p=collab-maint/blender.git
 Vcs-Git: git://git.debian.org/git/collab-maint/blender.git
