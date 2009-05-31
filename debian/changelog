@@ -1,6 +1,10 @@
 blender (2.49+dfsg-1) unstable; urgency=low
 
   * New upstream release.
+  * Hopefully, since upstream upgraded their embedded copies of ffmpeg
+    libraries (which we don't use), and adapted their code accordingly,
+    troubles should go away, and at least sound seems to be working fine
+    now (Closes: #519396). Thanks to Rebecca Breu for her help.
   * Update dependencies:
      - Add libavdevice-dev and libopenjpeg-dev to Build-Depends.
      - Add “libavdevice” to the “pkg-config --libs” call through the
