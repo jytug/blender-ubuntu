@@ -14,15 +14,6 @@ BINARY = $(CURDIR)/debian/blender
 CONFIG_SCRIPTS = \
 	source/tools/guess/config.guess
 
-CFLAGS = -Wall -g
-
-# Optimization flags.
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
-else
-	CFLAGS += -O2
-endif
-
 # Workaround Blender's misdetection of big endian architectures.
 # Upstream bug: http://projects.blender.org/tracker/index.php?func=detail&aid=8584&group_id=9&atid=127
 # Based on:     http://wiki.debian.org/ArchitectureSpecificsMemo

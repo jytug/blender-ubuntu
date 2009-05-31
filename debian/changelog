@@ -14,6 +14,8 @@ blender (2.49+dfsg-1) unstable; urgency=low
   * Drop patches (merged upstream):
      - 90_fix_ffmpeg_includes
      - 91_update_to_new_ffmpeg_api
+  * debian/rules:
+     - Get rid of CFLAGS handling, dpkg-buildpackage does that.
 
  -- Cyril Brulebois <kibi@debian.org>  Sun, 31 May 2009 21:45:12 +0200
 
