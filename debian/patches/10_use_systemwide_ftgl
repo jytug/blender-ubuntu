@@ -22,3 +22,15 @@
  
  if env['WITH_BF_VERSE']:
      SConscript(['verse/dist/SConstruct'])
+--- a/source/blender/ftfont/intern/FTF_TTFont.h
++++ b/source/blender/ftfont/intern/FTF_TTFont.h
+@@ -34,8 +34,7 @@
+ #ifndef __FTF_TRUETYPE_FONT_H
+ #define __FTF_TRUETYPE_FONT_H
+ 
+-#include "FTGLPixmapFont.h"
+-#include "FTGLTextureFont.h"
++#include <FTGL/ftgl.h>
+ 
+ #include <stdio.h>
+ //#include <iconv.h>
