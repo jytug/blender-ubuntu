@@ -8,8 +8,8 @@
 +LCGDIR = './lib/linux2'
  LIBDIR = "${LCGDIR}"
  
- WITH_BF_VERSE = 'false'
-@@ -60,15 +63,17 @@
+ WITH_BF_VERSE = False
+@@ -73,13 +76,14 @@ WITH_BF_INTERNATIONAL = True
  
  BF_GETTEXT = '/usr'
  BF_GETTEXT_INC = '${BF_GETTEXT}/include'
@@ -21,20 +21,16 @@
 -BF_FTGL = '#extern/bFTGL'
 -BF_FTGL_INC = '${BF_FTGL}/include'
 -BF_FTGL_LIB = 'extern_ftgl'
-+BF_FTGL = '/usr'
 +# Hardcode the include path since scons would probably get confused as
 +# "pkg-config --cflags ftgl" returns "-Ifoo -Ibar"
 +BF_FTGL_INC = '${BF_FTGL}/include/FTGL'
 +BF_FTGL_LIB = commands.getoutput('pkg-config --libs ftgl')
  
--WITH_BF_GAMEENGINE=False
-+WITH_BF_GAMEENGINE=True
- 
- WITH_BF_ODE = 'false'
- BF_ODE = LIBDIR + '/ode'
-@@ -130,6 +135,12 @@
- BF_FFMPEG_INC = '${BF_FFMPEG}/include'
- BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
+ WITH_BF_GAMEENGINE = True
+ WITH_BF_PLAYER = True
+@@ -163,6 +167,12 @@ BF_REDCODE_LIB = ''
+ BF_REDCODE_INC = '${BF_REDCODE}/../' #C files request "libredcode/format.h" which is in "#extern/libredcode/format.h", stupid but compiles for now.
+ BF_REDCODE_LIBPATH='${BF_REDCODE}/lib'
  
 +BF_FFMPEG_LIB = commands.getoutput('pkg-config --libs libavcodec libavformat vorbisenc libswscale') + ' -lgsm'
 +
@@ -43,28 +39,21 @@
 +    BF_FFMPEG_LIB += ' ' + commands.getoutput('pkg-config --libs libdc1394-2')
 +
  # Mesa Libs should go here if your using them as well....
- WITH_BF_STATICOPENGL = 'false'
+ WITH_BF_STATICOPENGL = False
  BF_OPENGL = '/usr'
-@@ -156,13 +167,14 @@
- ##ARFLAGS = ruv
- ##ARFLAGSQUIET = ru
- ##
--C_WARN = '-Wall -Wno-char-subscripts -Wdeclaration-after-statement'
-+C_WARN = '-Wall -Wno-char-subscripts'
- 
- CC_WARN = '-Wall'
+@@ -195,7 +205,8 @@ CC_WARN = ['-Wall']
  
  ##FIX_STUBS_WARNINGS = -Wno-unused
  
--LLIBS = 'util c m dl pthread stdc++'
+-LLIBS = ['util', 'c', 'm', 'dl', 'pthread', 'stdc++']
 +LINK = CXX
-+LLIBS = 'util c m dl pthread'
++LLIBS = ['util', 'c', 'm', 'dl', 'pthread']
  ##LOPTS = --dynamic
  ##DYNLDFLAGS = -shared $(LDFLAGS)
  
-@@ -172,9 +184,9 @@
+@@ -206,9 +217,9 @@ BF_PROFILE_LINKFLAGS = ['-pg']
  BF_DEBUG = False
- BF_DEBUG_FLAGS = '-g'
+ BF_DEBUG_CCFLAGS = ['-g']
  
 -BF_BUILDDIR = '../build/linux2'
 -BF_INSTALLDIR='../install/linux2'
