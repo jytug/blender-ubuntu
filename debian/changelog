@@ -1,6 +1,10 @@
 blender (2.49+dfsg-1) unstable; urgency=low
 
   * New upstream release.
+  * Update dependencies:
+     - Add libavdevice-dev to Build-Depends.
+     - Add “libavdevice” to the “pkg-config --libs” call through the
+       50_debian_build_config patch.
   * debian/copyright:
      - Update the list of removed directories: add extern/libopenjpeg.
   * Refresh patches:
