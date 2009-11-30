@@ -2,6 +2,8 @@ blender (2.49b+dfsg-1) unstable; urgency=low
 
   * New upstream release.
   * Repack as usual, as documented in debian/copyright.
+  * Drop patch (merged upstream):
+     - 30_fix_python_syntax_warning
 
  -- Cyril Brulebois <kibi@debian.org>  Mon, 30 Nov 2009 17:08:04 +0100
 
