@@ -1,3 +1,9 @@
+blender (2.49b+dfsg-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Cyril Brulebois <kibi@debian.org>  Mon, 30 Nov 2009 17:08:04 +0100
+
 blender (2.49+dfsg-2) unstable; urgency=low
 
   * Update Build-Depends: replace libglut-dev with freeglut3-dev as the
