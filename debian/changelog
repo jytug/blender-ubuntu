@@ -25,6 +25,7 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
      - Update debian/pyversions.
      - Unfortunately, python (>= 3.1) gets added to Depends, which makes
        the resulting binary uninstallable even in experimental.
+     - Replace ${python:Version} with hardcoded python3.1 for now.
   * Get rid of embedded python by overriding dh_auto_install:
      - Blender should fall back to the system python if there's no
        embedded one.
