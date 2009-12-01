@@ -1,0 +1,24 @@
+Configure the build for Debian.
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -65,15 +65,15 @@ OPTION(WITH_ELBEEM        "Enable Elbeem
+ OPTION(WITH_QUICKTIME     "Enable Quicktime Support" OFF)
+ OPTION(WITH_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
+ OPTION(WITH_DDS           "Enable DDS Support" ON)
+-OPTION(WITH_FFMPEG        "Enable FFMPeg Support (http://ffmpeg.mplayerhq.hu/)" OFF)
++OPTION(WITH_FFMPEG        "Enable FFMPeg Support (http://ffmpeg.mplayerhq.hu/)" ON)
+ OPTION(WITH_PYTHON        "Enable Embedded Python API" ON)
+ OPTION(WITH_SDL           "Enable SDL for sound and joystick support" ON)
+-OPTION(WITH_OPENJPEG      "Enable OpenJpeg Support (http://www.openjpeg.org/)" OFF)
++OPTION(WITH_OPENJPEG      "Enable OpenJpeg Support (http://www.openjpeg.org/)" ON)
+ OPTION(WITH_OPENAL        "Enable OpenAL Support (http://www.openal.org)" ON)
+ OPTION(WITH_WEBPLUGIN     "Enable Web Plugin (Unix only)" OFF)
+-OPTION(WITH_FFTW3         "Enable FFTW3 support" OFF)
+-OPTION(WITH_JACK          "Enable Jack Support (http://www.jackaudio.org)" OFF)
+-OPTION(WITH_SNDFILE       "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" OFF)
++OPTION(WITH_FFTW3         "Enable FFTW3 support" ON)
++OPTION(WITH_JACK          "Enable Jack Support (http://www.jackaudio.org)" ON)
++OPTION(WITH_SNDFILE       "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" ON)
+ OPTION(WITH_LZO           "Enable fast LZO compression, used for pointcache" ON)
+ OPTION(WITH_LZMA          "Enable best LZMA compression, used for pointcache" ON)
+ OPTION(WITH_CXX_GUARDEDALLOC "Enable GuardedAlloc for C++ memory allocation" OFF)

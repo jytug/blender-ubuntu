@@ -13,6 +13,10 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
      - Get rid of debian/{install,links}: no longer needed.
      - Get rid of lintian overrides: no longer needed.
      - Get rid of the wrapper: hopefully no longer needed.
+  * Add patch:
+     - 10_build_configuration: configure the build for Debian using the
+       top-level CMakeLists.txt file. Currently, it enables the following
+       items: ffmpeg, openjpeg, fftw3, jack, sndfile.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 01 Dec 2009 01:24:44 +0100
 
