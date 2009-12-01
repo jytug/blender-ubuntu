@@ -22,6 +22,8 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
   * Switch python version as needed upstream, from 2.5 to 3.1:
      - Update Build-Depends on pythonX.Y-dev.
      - Update debian/pyversions.
+     - Unfortunately, python (>= 3.1) gets added to Depends, which makes
+       the resulting binary uninstallable even in experimental.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 01 Dec 2009 01:24:44 +0100
 
