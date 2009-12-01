@@ -4,7 +4,7 @@ override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
 	# Get rid of embedded python, blender should fall back to
 	# system python if it doesn't find the embedded one:
-	rm -r debian/blender/usr/lib/blender/*/python/
+	rm -r debian/blender/usr/share/blender/*/python/
 
 override_dh_pysupport:
 	# Not supported yet: dh_pysupport -V 3.1
