@@ -10,6 +10,9 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
      - Get rid of the current debian/rules, start over with a tiny one,
        only using the quilt addon, and the cmake buildsystem. Given there
        are at least scons and cmake files, let's give a hint to dh.
+     - Get rid of debian/{install,links}: no longer needed.
+     - Get rid of lintian overrides: no longer needed.
+     - Get rid of the wrapper: hopefully no longer needed.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 01 Dec 2009 01:24:44 +0100
 
