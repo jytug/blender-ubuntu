@@ -1,4 +1,10 @@
 #!/usr/bin/make -f
 
+override_dh_auto_install:
+	dh_auto_install --buildsystem=cmake
+	# Get rid of embedded python, blender should fall back to
+	# system python if it doesn't find the embedded one:
+	rm -r debian/blender/usr/lib/blender/*/python/
+
 %:
 	dh --with quilt --buildsystem=cmake $@
