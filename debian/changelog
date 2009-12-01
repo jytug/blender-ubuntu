@@ -3,6 +3,7 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
   * New upstream snapshot:
      - Use the blender-2.50-release tag, svn revision 24834.
      - Upstream codename is 2.5 alpha 0.
+  * Drop all patches for now.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 01 Dec 2009 01:24:44 +0100
 
