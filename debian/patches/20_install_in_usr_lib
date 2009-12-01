@@ -1,0 +1,12 @@
+Arch-specific files go to /usr/lib rather than /usr/share.
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -70,7 +70,7 @@ IF(NOT WITH_SDL)
+ ENDIF(NOT WITH_SDL)
+ 
+ IF(UNIX AND NOT APPLE)
+-	SET(BLENDERPATH ${CMAKE_INSTALL_PREFIX}/share/blender/${BLENDER_VERSION})
++	SET(BLENDERPATH ${CMAKE_INSTALL_PREFIX}/lib/blender/${BLENDER_VERSION})
+ 	# blender_path in creator.c
+ 	ADD_DEFINITIONS(-DBLENDERPATH="${BLENDERPATH}")
+ ENDIF(UNIX AND NOT APPLE)
