@@ -31,6 +31,10 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
   * Get rid of embedded python by overriding dh_auto_install:
      - Blender should fall back to the system python if there's no
        embedded one.
+  * Remove apparently-unneeded dotfiles:
+     - At the moment, that's .bfont.ttf and .Blanguages.
+     - Even when the latter is here, lang selection doesn't seem to work.
+     - Here, “apparently” means “does not show up in strace”.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 01 Dec 2009 01:24:44 +0100
 
