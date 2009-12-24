@@ -1,0 +1,14 @@
+Don't try and use extern/libopenjpeg
+--- a/extern/CMakeLists.txt
++++ b/extern/CMakeLists.txt
+@@ -34,10 +34,6 @@ ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ 
+ ADD_SUBDIRECTORY(glew)
+ 
+-IF(WITH_OPENJPEG)
+-	ADD_SUBDIRECTORY(libopenjpeg)
+-ENDIF(WITH_OPENJPEG)
+-
+ IF(WITH_LZO)
+ 	ADD_SUBDIRECTORY(lzo)
+ ENDIF(WITH_LZO)
