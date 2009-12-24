@@ -2,7 +2,38 @@ Source: blender
 Section: graphics
 Priority: optional
 Maintainer: Cyril Brulebois <kibi@debian.org>
-Build-Depends: debhelper (>= 7), quilt, libftgl-dev, gettext, libgettextpo-dev, freeglut3-dev, libjpeg-dev, libpng-dev, libsdl-dev, libz-dev, python3.1-dev, python-support, cmake, libtiff4-dev, libopenexr-dev, libavformat-dev, libxi-dev, autotools-dev, pkg-config, libswscale-dev, libavdevice-dev, libopenal-dev, libalut-dev, libdc1394-22-dev [!hurd-i386 !kfreebsd-amd64 !kfreebsd-i386], libvorbis-dev, libgsm1-dev, libopenjpeg-dev, libsndfile-dev, libjack-dev, libsamplerate0-dev, libfftw3-dev, libglew1.5-dev
+Build-Depends: debhelper (>= 7),
+ quilt,
+ libftgl-dev,
+ gettext,
+ libgettextpo-dev,
+ freeglut3-dev,
+ libjpeg-dev,
+ libpng-dev,
+ libsdl-dev,
+ libz-dev,
+ python3.1-dev,
+ python-support,
+ cmake,
+ libtiff4-dev,
+ libopenexr-dev,
+ libavformat-dev,
+ libxi-dev,
+ autotools-dev,
+ pkg-config,
+ libswscale-dev,
+ libavdevice-dev,
+ libopenal-dev,
+ libalut-dev,
+ libdc1394-22-dev [!hurd-i386 !kfreebsd-amd64 !kfreebsd-i386],
+ libvorbis-dev,
+ libgsm1-dev,
+ libopenjpeg-dev,
+ libsndfile-dev,
+ libjack-dev,
+ libsamplerate0-dev,
+ libfftw3-dev,
+ libglew1.5-dev
 Build-Conflicts: nvidia-glx
 Standards-Version: 3.8.3
 Homepage: http://blender.org/
