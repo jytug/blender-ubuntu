@@ -1,10 +1,12 @@
 Don't try and use extern/libopenjpeg
 --- a/extern/CMakeLists.txt
 +++ b/extern/CMakeLists.txt
-@@ -34,10 +34,6 @@ ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+@@ -32,12 +32,6 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ 	ADD_SUBDIRECTORY(binreloc)
+ ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
  
- ADD_SUBDIRECTORY(glew)
- 
+-ADD_SUBDIRECTORY(glew)
+-
 -IF(WITH_OPENJPEG)
 -	ADD_SUBDIRECTORY(libopenjpeg)
 -ENDIF(WITH_OPENJPEG)
@@ -12,3 +14,15 @@ Don't try and use extern/libopenjpeg
  IF(WITH_LZO)
  	ADD_SUBDIRECTORY(lzo)
  ENDIF(WITH_LZO)
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -242,6 +242,9 @@ IF(UNIX AND NOT APPLE)
+ 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+ 	ENDIF(WITH_OPENMP)
+ 
++	# Use system-wide GLEW:
++	SET(LLIBS "${LLIBS} -lGLEW")
++
+ 
+ 	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing -Wno-char-subscripts")
+ 
