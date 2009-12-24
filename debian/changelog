@@ -21,6 +21,8 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
      - 20_install_in_usr_lib: arch-dep files have to go to /usr/lib, they
        don't belong to /usr/share. Only needed if embedded python isn't
        removed from the final binary (see below), disabled for now.
+     - 30_use_systemwide_libraries: Use system-wide glew and openjpeg
+       libraries, and do not use -lstdc++ for linking.
   * Update Build-Depends:
      - Replace scons with cmake in Build-Depends.
      - Add libsndfile-dev, libjack-dev, libsamplerate0-dev, libfftw3-dev,
