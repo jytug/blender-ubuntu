@@ -23,7 +23,7 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
        removed from the final binary (see below), disabled for now.
   * Update Build-Depends:
      - Replace scons with cmake in Build-Depends.
-     - Add libsndfile-dev, libjack-dev, libsamplerate0-dev.
+     - Add libsndfile-dev, libjack-dev, libsamplerate0-dev, libfftw3-dev.
   * Switch python version as needed upstream, from 2.5 to 3.1:
      - Update Build-Depends on pythonX.Y-dev.
      - Update debian/pyversions.
