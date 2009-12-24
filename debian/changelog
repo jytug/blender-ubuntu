@@ -51,7 +51,7 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
      - No longer mention extern/bFTGL, no longer in SVN.
      - Add extern/glew.
 
- -- Cyril Brulebois <kibi@debian.org>  Tue, 01 Dec 2009 01:24:44 +0100
+ -- Cyril Brulebois <kibi@debian.org>  Thu, 24 Dec 2009 18:47:44 +0100
 
 blender (2.49.2~dfsg-1) unstable; urgency=low
 
