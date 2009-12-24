@@ -16,6 +16,15 @@ Don't try and use extern/libopenjpeg
  ENDIF(WITH_LZO)
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
+@@ -229,7 +229,7 @@ IF(UNIX AND NOT APPLE)
+ 
+ 
+ 	# Could use ${X11_Xinput_LIB} ${X11_X11_LIB} too
+-	SET(LLIBS "-lXi -lutil -lc -lm -lpthread -lstdc++ -lX11")
++	SET(LLIBS "-lXi -lutil -lc -lm -lpthread -lX11")
+ 
+ 	IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ 		# BSD's dont use libdl.so
 @@ -242,6 +242,9 @@ IF(UNIX AND NOT APPLE)
  		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
  	ENDIF(WITH_OPENMP)
