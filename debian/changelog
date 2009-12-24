@@ -37,6 +37,7 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
      - Here, “apparently” means “does not show up in strace”.
   * Adjust README.source to mention $VCS.
   * Remove README.Debian, quite obsolete.
+  * Update debian/copyright: no longer mention bFTGL, no longer in SVN.
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 01 Dec 2009 01:24:44 +0100
 
