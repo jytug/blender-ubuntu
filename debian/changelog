@@ -8,6 +8,8 @@ blender (2.50~alpha~0~svn24834-2) experimental; urgency=low
      - Override dh_strip to put debug symbols in blender-dbg.
      - Override dh_install to make sure nothing gets forgotten and
        installed nowhere.
+  * Bump version for debhelper in Build-Depends from 7 to 7.0.50~ since
+    overrides are used.
 
  -- Cyril Brulebois <kibi@debian.org>  Wed, 17 Feb 2010 19:28:18 +0100
 
