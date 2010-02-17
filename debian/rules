@@ -11,6 +11,9 @@ override_dh_auto_install:
 	rm $(INSTDIR)/usr/share/blender/*/.bfont.ttf
 	rm $(INSTDIR)/usr/share/blender/*/.Blanguages
 
+override_dh_install:
+	dh_install --fail-missing
+
 override_dh_strip:
 	dh_strip --dbg-package=blender-dbg
 
