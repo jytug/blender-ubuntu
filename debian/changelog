@@ -1,3 +1,9 @@
+blender (2.50~alpha~0~svn24834-2) experimental; urgency=low
+
+  * Introduce $(INSTDIR) in debian/rules.
+
+ -- Cyril Brulebois <kibi@debian.org>  Wed, 17 Feb 2010 19:28:18 +0100
+
 blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
 
   * New upstream snapshot:
