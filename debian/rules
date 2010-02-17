@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-INSTDIR = debian/blender
+INSTDIR = debian/tmp
 
 override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
@@ -11,6 +11,8 @@ override_dh_auto_install:
 	rm $(INSTDIR)/usr/share/blender/*/.bfont.ttf
 	rm $(INSTDIR)/usr/share/blender/*/.Blanguages
 
+override_dh_strip:
+	dh_strip --dbg-package=blender-dbg
 
 override_dh_pysupport:
 	# Not supported yet: dh_pysupport -V 3.1
