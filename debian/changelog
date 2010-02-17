@@ -10,6 +10,7 @@ blender (2.50~alpha~0~svn24834-2) experimental; urgency=low
        installed nowhere.
   * Bump version for debhelper in Build-Depends from 7 to 7.0.50~ since
     overrides are used.
+  * Bump Standards-Version from 3.8.3 to 3.8.4 (no changes needed).
 
  -- Cyril Brulebois <kibi@debian.org>  Wed, 17 Feb 2010 19:28:18 +0100
 
