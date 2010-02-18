@@ -16,7 +16,7 @@ blender (2.50~alpha~0~svn24834-2) experimental; urgency=low
     overrides are used.
   * Bump Standards-Version from 3.8.3 to 3.8.4 (no changes needed).
 
- -- Cyril Brulebois <kibi@debian.org>  Wed, 17 Feb 2010 19:28:18 +0100
+ -- Cyril Brulebois <kibi@debian.org>  Thu, 18 Feb 2010 02:55:48 +0100
 
 blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
 
