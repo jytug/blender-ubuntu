@@ -32,7 +32,9 @@ Build-Depends: debhelper (>= 7.0.50~),
  libjack-dev,
  libsamplerate0-dev,
  libfftw3-dev,
- libglew1.5-dev
+ libglew1.5-dev,
+ liblzma-dev,
+ liblzo2-dev,
 Build-Conflicts: nvidia-glx
 Standards-Version: 3.8.4
 Homepage: http://blender.org/

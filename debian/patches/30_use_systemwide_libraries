@@ -1,7 +1,9 @@
 Don't try and use extern/libopenjpeg
---- a/extern/CMakeLists.txt
-+++ b/extern/CMakeLists.txt
-@@ -32,12 +32,6 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+Index: 2.50~alpha~2-0/extern/CMakeLists.txt
+===================================================================
+--- 2.50~alpha~2-0.orig/extern/CMakeLists.txt	2010-05-15 17:16:23.000000000 +0200
++++ 2.50~alpha~2-0/extern/CMakeLists.txt	2010-05-15 17:41:33.000000000 +0200
+@@ -32,12 +32,6 @@
  	ADD_SUBDIRECTORY(binreloc)
  ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
  
@@ -14,9 +16,11 @@ Don't try and use extern/libopenjpeg
  IF(WITH_LZO)
  	ADD_SUBDIRECTORY(lzo)
  ENDIF(WITH_LZO)
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -229,7 +229,7 @@ IF(UNIX AND NOT APPLE)
+Index: 2.50~alpha~2-0/CMakeLists.txt
+===================================================================
+--- 2.50~alpha~2-0.orig/CMakeLists.txt	2010-05-15 17:41:33.000000000 +0200
++++ 2.50~alpha~2-0/CMakeLists.txt	2010-05-15 17:41:59.000000000 +0200
+@@ -231,7 +231,7 @@
  
  
  	# Could use ${X11_Xinput_LIB} ${X11_X11_LIB} too
@@ -25,13 +29,15 @@ Don't try and use extern/libopenjpeg
  
  	IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
  		# BSD's dont use libdl.so
-@@ -242,6 +242,9 @@ IF(UNIX AND NOT APPLE)
+@@ -244,6 +244,11 @@
  		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
  	ENDIF(WITH_OPENMP)
  
 +	# Use system-wide GLEW:
 +	SET(LLIBS "${LLIBS} -lGLEW")
++	SET(LLIBS "${LLIBS} -lopenjpeg")
 +
++	ADD_DEFINITIONS(-DWITH_OPENJPEG)
  
  	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing -Wno-char-subscripts")
  
