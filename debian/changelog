@@ -1,3 +1,9 @@
+blender (2.5~alpha2~svn30406) lucid; urgency=low
+
+  * New Upstream Release
+
+ -- Kevin Roy <kiniou@gmail.com>  Fri, 16 Jul 2010 15:29:00 +0200
+
 blender (2.50~alpha~0~svn24834-2) experimental; urgency=low
 
   * Add debug package blender-dbg:
