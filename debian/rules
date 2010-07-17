@@ -6,13 +6,14 @@ override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
 	# Get rid of embedded python, blender should fall back to
 	# system python if it doesn't find the embedded one:
-	rm -r $(INSTDIR)/usr/share/blender/*/python/
+	#rm -r $(INSTDIR)/usr/share/blender/*/python/
 	# Remove apparently-unneded dotfiles:
-	rm $(INSTDIR)/usr/share/blender/*/.bfont.ttf
-	rm $(INSTDIR)/usr/share/blender/*/.Blanguages
+	#rm $(INSTDIR)/usr/share/blender/*/.bfont.ttf
+	#rm $(INSTDIR)/usr/share/blender/*/.Blanguages
+	mv $(INSTDIR)/usr/share/blender/*/datafiles/locale $(INSTDIR)/usr/share/locale
 
 override_dh_install:
-	dh_install --fail-missing
+	dh_install --fail-missing --list-missing
 
 override_dh_strip:
 	dh_strip --dbg-package=blender-dbg

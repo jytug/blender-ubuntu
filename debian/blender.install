@@ -2,3 +2,4 @@ usr/bin
 usr/share
 debian/misc/*.desktop   /usr/share/applications
 debian/misc/blender.xpm /usr/share/pixmaps
+usr/man/ /usr/share/man/

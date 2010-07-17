@@ -1,33 +1,39 @@
-Configure the build for Debian.
-Index: 2.50~alpha~2-0/CMakeLists.txt
+Index: 2.5~alpha2~svn30406/CMakeLists.txt
 ===================================================================
---- 2.50~alpha~2-0.orig/CMakeLists.txt	2010-05-13 18:26:21.000000000 +0200
-+++ 2.50~alpha~2-0/CMakeLists.txt	2010-05-13 18:27:44.000000000 +0200
-@@ -65,21 +65,21 @@
- OPTION(WITH_QUICKTIME     "Enable Quicktime Support" OFF)
- OPTION(WITH_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
- OPTION(WITH_DDS           "Enable DDS Support" ON)
--OPTION(WITH_FFMPEG        "Enable FFMPeg Support (http://ffmpeg.mplayerhq.hu/)" OFF)
-+OPTION(WITH_FFMPEG        "Enable FFMPeg Support (http://ffmpeg.mplayerhq.hu/)" ON)
+--- 2.5~alpha2~svn30406.orig/CMakeLists.txt	2010-07-17 00:36:58.000000000 +0200
++++ 2.5~alpha2~svn30406/CMakeLists.txt	2010-07-17 00:39:54.000000000 +0200
+@@ -70,7 +70,7 @@
  OPTION(WITH_PYTHON        "Enable Embedded Python API" ON)
- OPTION(WITH_SDL           "Enable SDL for sound and joystick support" ON)
+ OPTION(WITH_BUILDINFO     "Include extra build details" ON)
+ OPTION(WITH_ELBEEM        "Enable Elbeem (Fluid Simulation)" ON)
+-OPTION(WITH_FFTW3         "Enable FFTW3 support (Used for smoke and audio effects)" OFF)
++OPTION(WITH_FFTW3         "Enable FFTW3 support (Used for smoke and audio effects)" ON)
+ OPTION(WITH_BULLET        "Enable Bullet (Physics Engine)" ON)
+ OPTION(WITH_GAMEENGINE    "Enable Game Engine" ON)
+ OPTION(WITH_PLAYER        "Build Player" OFF)
+@@ -83,13 +83,13 @@
+ 
+ # Image format support
+ OPTION(WITH_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
 -OPTION(WITH_OPENJPEG      "Enable OpenJpeg Support (http://www.openjpeg.org/)" OFF)
 +OPTION(WITH_OPENJPEG      "Enable OpenJpeg Support (http://www.openjpeg.org/)" ON)
- OPTION(WITH_OPENAL        "Enable OpenAL Support (http://www.openal.org)" ON)
- OPTION(WITH_WEBPLUGIN     "Enable Web Plugin (Unix only)" OFF)
--OPTION(WITH_FFTW3         "Enable FFTW3 support" OFF)
--OPTION(WITH_JACK          "Enable Jack Support (http://www.jackaudio.org)" OFF)
--OPTION(WITH_SNDFILE       "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" OFF)
-+OPTION(WITH_FFTW3         "Enable FFTW3 support" ON)
-+OPTION(WITH_JACK          "Enable Jack Support (http://www.jackaudio.org)" ON)
-+OPTION(WITH_SNDFILE       "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" ON)
- OPTION(WITH_LZO           "Enable fast LZO compression, used for pointcache" ON)
- OPTION(WITH_LZMA          "Enable best LZMA compression, used for pointcache" ON)
- OPTION(WITH_CXX_GUARDEDALLOC "Enable GuardedAlloc for C++ memory allocation" OFF)
- OPTION(WITH_BUILDINFO     "Include extra build details" ON)
- OPTION(WITH_INSTALL       "Install accompanying scripts and language files needed to run blender" ON)
--OPTION(WITH_OPENCOLLADA		"Enable OpenCollada Support (http://www.opencollada.org/)"	ON)
-+OPTION(WITH_OPENCOLLADA		"Enable OpenCollada Support (http://www.opencollada.org/)"	OFF)
+ OPTION(WITH_TIFF          "Enable LibTIFF Support" ON)
+ OPTION(WITH_DDS           "Enable DDS Support" ON)
  
- # Unix defaults to OpenMP On
- IF(UNIX AND NOT APPLE)
+ # Audio format support
+-OPTION(WITH_FFMPEG        "Enable FFMPeg Support (http://ffmpeg.mplayerhq.hu/)" OFF)
+-OPTION(WITH_SNDFILE       "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" OFF)
++OPTION(WITH_FFMPEG        "Enable FFMPeg Support (http://ffmpeg.mplayerhq.hu/)" ON)
++OPTION(WITH_SNDFILE       "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" ON)
+ IF(APPLE OR WIN32)
+ 	OPTION(WITH_QUICKTIME     "Enable Quicktime Support" OFF)
+ ENDIF(APPLE OR WIN32)
+@@ -105,7 +105,7 @@
+ # Sound output
+ OPTION(WITH_SDL           "Enable SDL for sound and joystick support" ON)
+ OPTION(WITH_OPENAL        "Enable OpenAL Support (http://www.openal.org)" ON)
+-OPTION(WITH_JACK          "Enable Jack Support (http://www.jackaudio.org)" OFF)
++OPTION(WITH_JACK          "Enable Jack Support (http://www.jackaudio.org)" ON)
+ 
+ # Compression
+ OPTION(WITH_LZO           "Enable fast LZO compression (used for pointcache)" ON)
