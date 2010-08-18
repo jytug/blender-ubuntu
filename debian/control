@@ -1,8 +1,7 @@
 Source: blender
 Section: graphics
 Priority: optional
-Maintainer: Debian Blender maintainers <pkg-blender-maintainers@lists.alioth.debian.org>
-Uploaders: Kevin Roy <kiniou@gmail.com> 
+Maintainer: Kevin Roy <kiniou@gmail.com> 
 Build-Depends: debhelper (>= 7.0.50~),
  quilt (>= 0.46-7~),
  libftgl-dev,
