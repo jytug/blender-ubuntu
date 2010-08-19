@@ -6,7 +6,7 @@ Original-Source-Location: http://download.blender.org/source/
 
 
 Files: *
-Copyright: © 2002-2008 Blender Foundation
+Copyright: © 2002-2010 Blender Foundation
 License: GPL-2+
  | This program is free software; you can redistribute it and/or
  | modify it under the terms of the GNU General Public License
@@ -30,7 +30,8 @@ License: GPL-2+
 Files: debian/*
 Copyright: © 2004-2005 Masayuki Hatta <mhatta@debian.org>
            © 2005-2007 Florian Ernst <florian@debian.org>
-           © 2007-2008 Cyril Brulebois <kibi@debian.org>
+           © 2007-2010 Cyril Brulebois <kibi@debian.org>
+           © 2010      Kevin Roy <kiniou@gmail.com>
 License: GPL-2+
  | This program is free software; you can redistribute it and/or
  | modify it under the terms of the GNU General Public License

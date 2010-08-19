@@ -1,6 +1,5 @@
-blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
-
-  * Important changes in this upload:
+blender (2.53-beta-svn30596-1) experimental; urgency=low
+  Important changes in this upload:
      - /usr/bin/blender is no longer a shell wrapper for
        /usr/bin/blender-bin, it's now the real binary.
      - Rationale: maintaining a bunch of symlinks (from ~/.blender to the
@@ -13,4 +12,5 @@ blender (2.50~alpha~0~svn24834-1) experimental; urgency=low
        day; in the meanwhile, that's an upload to experimental…
      - Localization seems not to be working (see changelog).
 
- -- Cyril Brulebois <kibi@debian.org>  Thu, 24 Dec 2009 19:20:05 +0100
+ -- Kevin Roy <kiniou@gmail.com>  Thu, 19 Aug 2010 17:40:14 +0200
+

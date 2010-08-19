@@ -5,7 +5,7 @@ blender (2.53-beta-svn30596-1) experimental; urgency=low
   * New Maintainer (Closes: #570053) 
   * Added get-orig-source in debian/rules to ease download orig.tar.gz from svn
 
- -- Kevin Roy <kiniou@gmail.com>  Thu, 19 Aug 2010 16:26:50 +0200
+ -- Kevin Roy <kiniou@gmail.com>  Thu, 19 Aug 2010 17:40:30 +0200
 
 blender (2.50~alpha~0~svn24834-2) experimental; urgency=low
 
