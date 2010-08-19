@@ -1,12 +1,11 @@
-blender (2.53-betasvn30596-1) experimental; urgency=low
+blender (2.53-beta-svn30596-1) experimental; urgency=low
 
   * New Upstream Beta Release
   * Switch to dpkg-source 3.0 (quilt) format
-  * Add Uploaders section to control file
-  * Change Maintainer section to Debian Blender Maintainers
+  * New Maintainer (Closes: #570053) 
   * Added get-orig-source in debian/rules to ease download orig.tar.gz from svn
 
- -- Kevin Roy <kiniou@gmail.com>  Sat, 14 Aug 2010 21:09:59 +0200
+ -- Kevin Roy <kiniou@gmail.com>  Thu, 19 Aug 2010 16:26:50 +0200
 
 blender (2.50~alpha~0~svn24834-2) experimental; urgency=low
 
