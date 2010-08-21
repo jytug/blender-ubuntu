@@ -1,9 +1,4 @@
 ?package(blender):needs="X11" section="Applications/Graphics" hints="Modeler"\
   longtitle="Blender 3D modeler / renderer"\
-  icon="/usr/share/pixmaps/blender.xpm"\
-  title="Blender (full screen)" command="/usr/bin/blender"
-
-?package(blender):needs="X11" section="Applications/Graphics" hints="Modeler"\
-  longtitle="Blender 3D modeler / renderer"\
-  icon="/usr/share/pixmaps/blender.xpm"\
-  title="Blender (windowed)" command="/usr/bin/blender -w"
+  icon="/usr/share/pixmaps/blender-32x32.xpm"\
+  title="Blender" command="/usr/bin/blender"

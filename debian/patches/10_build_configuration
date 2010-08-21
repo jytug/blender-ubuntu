@@ -1,8 +1,8 @@
 Build configuration
-Index: 2.5~alpha2~svn30406/CMakeLists.txt
+Index: collab-maint.git/CMakeLists.txt
 ===================================================================
---- 2.5~alpha2~svn30406.orig/CMakeLists.txt	2010-07-17 00:36:58.000000000 +0200
-+++ 2.5~alpha2~svn30406/CMakeLists.txt	2010-07-17 00:39:54.000000000 +0200
+--- collab-maint.git.orig/CMakeLists.txt	2010-08-21 05:02:47.000000000 +0200
++++ collab-maint.git/CMakeLists.txt	2010-08-21 05:13:04.000000000 +0200
 @@ -70,7 +70,7 @@
  OPTION(WITH_PYTHON        "Enable Embedded Python API" ON)
  OPTION(WITH_BUILDINFO     "Include extra build details" ON)

@@ -1,8 +1,8 @@
 Don't try and use extern/libopenjpeg
-Index: 2.5-beta-0/extern/CMakeLists.txt
+Index: collab-maint.git/extern/CMakeLists.txt
 ===================================================================
---- 2.5-beta-0.orig/extern/CMakeLists.txt	2010-07-21 18:08:36.000000000 +0200
-+++ 2.5-beta-0/extern/CMakeLists.txt	2010-07-21 18:12:30.000000000 +0200
+--- collab-maint.git.orig/extern/CMakeLists.txt	2010-08-21 05:02:48.000000000 +0200
++++ collab-maint.git/extern/CMakeLists.txt	2010-08-21 05:04:26.000000000 +0200
 @@ -32,12 +32,6 @@
  	ADD_SUBDIRECTORY(binreloc)
  ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -16,10 +16,10 @@ Index: 2.5-beta-0/extern/CMakeLists.txt
  IF(WITH_LZO)
  	ADD_SUBDIRECTORY(lzo)
  ENDIF(WITH_LZO)
-Index: 2.5-beta-0/CMakeLists.txt
+Index: collab-maint.git/CMakeLists.txt
 ===================================================================
---- 2.5-beta-0.orig/CMakeLists.txt	2010-07-21 18:12:30.000000000 +0200
-+++ 2.5-beta-0/CMakeLists.txt	2010-07-21 18:12:30.000000000 +0200
+--- collab-maint.git.orig/CMakeLists.txt	2010-08-21 05:04:26.000000000 +0200
++++ collab-maint.git/CMakeLists.txt	2010-08-21 05:04:26.000000000 +0200
 @@ -289,7 +289,7 @@
  
  

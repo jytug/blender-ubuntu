@@ -1,7 +1,9 @@
 Arch-specific files go to /usr/lib rather than /usr/share.
---- a/source/creator/CMakeLists.txt
-+++ b/source/creator/CMakeLists.txt
-@@ -70,7 +70,7 @@ IF(NOT WITH_SDL)
+Index: collab-maint.git/source/creator/CMakeLists.txt
+===================================================================
+--- collab-maint.git.orig/source/creator/CMakeLists.txt	2010-08-21 05:03:12.000000000 +0200
++++ collab-maint.git/source/creator/CMakeLists.txt	2010-08-21 05:04:26.000000000 +0200
+@@ -71,7 +71,7 @@
  ENDIF(NOT WITH_SDL)
  
  IF(UNIX AND NOT APPLE)
