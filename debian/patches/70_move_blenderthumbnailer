@@ -1,0 +1,26 @@
+Index: collab-maint.git/bin/blender-thumbnailer.py
+===================================================================
+--- collab-maint.git.orig/bin/blender-thumbnailer.py	2010-08-22 03:21:50.000000000 +0200
++++ collab-maint.git/bin/blender-thumbnailer.py	2010-08-22 03:23:50.000000000 +0200
+@@ -22,7 +22,7 @@
+ Thumbnailer runs with python 2.6 and 3.x.
+ To run automatically with nautilus:
+    gconftool --type boolean --set /desktop/gnome/thumbnailers/application@x-blender/enable true
+-   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "blender-thumbnailer.py %i %o"
++   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "/usr/lib/blender/2.53/scripts/blender-thumbnailer.py %i %o"
+ """
+ 
+ import struct
+Index: collab-maint.git/source/creator/CMakeLists.txt
+===================================================================
+--- collab-maint.git.orig/source/creator/CMakeLists.txt	2010-08-22 03:19:42.000000000 +0200
++++ collab-maint.git/source/creator/CMakeLists.txt	2010-08-22 03:20:13.000000000 +0200
+@@ -201,7 +201,7 @@
+         )
+ 		INSTALL(
+ 			PROGRAMS ${CMAKE_SOURCE_DIR}/bin/blender-thumbnailer.py
+-			DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
++            DESTINATION ${BLENDERPATH}/scripts
+ 		)
+ 		INSTALL(
+             FILES ${CMAKE_SOURCE_DIR}/doc/blender.1

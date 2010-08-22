@@ -2,4 +2,4 @@ usr/bin
 usr/share
 usr/lib
 #debian/misc/*.desktop   /usr/share/applications
-#debian/misc/blender.xpm /usr/share/pixmaps
+debian/misc/blender-*.xpm /usr/share/pixmaps
