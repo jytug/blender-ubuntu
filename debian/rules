@@ -27,12 +27,12 @@ override_dh_auto_install:
 	# Remove apparently-unneded dotfiles:
 	#rm $(INSTDIR)/usr/share/blender/*/.bfont.ttf
 	#rm $(INSTDIR)/usr/share/blender/*/.Blanguages
-	mv $(INSTDIR)/usr/share/blender/*/datafiles/locale $(INSTDIR)/usr/share/locale
+	#mv $(INSTDIR)/usr/lib/blender/*/datafiles/locale $(INSTDIR)/usr/share/locale
 	#remove empty directory (e.g scripts/cfg)
-	find $(INSTDIR)/usr/share/blender/ -type d -empty -delete
+	find $(INSTDIR)/usr/lib/blender/ -type d -empty -delete
 	#remove duplicated GPL license file and unneeded Python license since python is shipped externally
-	rm $(INSTDIR)/usr/share/doc/blender/GPL-license.txt
-	rm $(INSTDIR)/usr/share/doc/blender/Python-license.txt
+	#rm $(INSTDIR)/usr/share/doc/blender/GPL-license.txt
+	#rm $(INSTDIR)/usr/share/doc/blender/Python-license.txt
 	
 
 override_dh_install:

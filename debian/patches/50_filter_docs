@@ -1,0 +1,15 @@
+Index: collab-maint.git/source/creator/CMakeLists.txt
+===================================================================
+--- collab-maint.git.orig/source/creator/CMakeLists.txt	2010-08-22 02:29:43.000000000 +0200
++++ collab-maint.git/source/creator/CMakeLists.txt	2010-08-22 02:33:04.000000000 +0200
+@@ -208,9 +208,8 @@
+             DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
+         )
+ 		INSTALL(
+-            DIRECTORY ${CMAKE_SOURCE_DIR}/release/text/
++            FILES ${CMAKE_SOURCE_DIR}/release/text/readme.html ${CMAKE_SOURCE_DIR}/release/text/copyright.txt
+             DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/blender
+-            PATTERN ".svn" EXCLUDE
+         )
+ 		INSTALL(
+             DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts/

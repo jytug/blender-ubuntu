@@ -2,3 +2,5 @@
 20_install_in_usr_lib
 30_use_systemwide_libraries
 40_freedesktop_deprecates_encoding
+50_filter_docs
+60_locale_directory
