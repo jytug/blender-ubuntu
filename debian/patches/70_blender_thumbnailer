@@ -1,8 +1,15 @@
 Move thumbnailer script to an appropriate destination
+change to python 3.1 since lintian is messing around with that
 Index: collab-maint.git/bin/blender-thumbnailer.py
 ===================================================================
---- collab-maint.git.orig/bin/blender-thumbnailer.py	2010-08-22 03:21:50.000000000 +0200
-+++ collab-maint.git/bin/blender-thumbnailer.py	2010-08-22 03:23:50.000000000 +0200
+--- collab-maint.git.orig/bin/blender-thumbnailer.py	2010-08-22 03:29:44.000000000 +0200
++++ collab-maint.git/bin/blender-thumbnailer.py	2010-08-22 04:14:53.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/python3.1
+ 
+ # ##### BEGIN GPL LICENSE BLOCK #####
+ #
 @@ -22,7 +22,7 @@
  Thumbnailer runs with python 2.6 and 3.x.
  To run automatically with nautilus:
@@ -14,8 +21,8 @@ Index: collab-maint.git/bin/blender-thumbnailer.py
  import struct
 Index: collab-maint.git/source/creator/CMakeLists.txt
 ===================================================================
---- collab-maint.git.orig/source/creator/CMakeLists.txt	2010-08-22 03:19:42.000000000 +0200
-+++ collab-maint.git/source/creator/CMakeLists.txt	2010-08-22 03:20:13.000000000 +0200
+--- collab-maint.git.orig/source/creator/CMakeLists.txt	2010-08-22 04:13:00.000000000 +0200
++++ collab-maint.git/source/creator/CMakeLists.txt	2010-08-22 04:13:00.000000000 +0200
 @@ -201,7 +201,7 @@
          )
  		INSTALL(
