@@ -1,3 +1,4 @@
+Changed locales install
 Index: collab-maint.git/source/creator/CMakeLists.txt
 ===================================================================
 --- collab-maint.git.orig/source/creator/CMakeLists.txt	2010-08-22 02:12:55.000000000 +0200

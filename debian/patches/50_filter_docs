@@ -1,3 +1,4 @@
+Install relevant documentation
 Index: collab-maint.git/source/creator/CMakeLists.txt
 ===================================================================
 --- collab-maint.git.orig/source/creator/CMakeLists.txt	2010-08-22 02:29:43.000000000 +0200

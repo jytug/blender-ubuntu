@@ -1,3 +1,4 @@
+Move thumbnailer script to an appropriate destination
 Index: collab-maint.git/bin/blender-thumbnailer.py
 ===================================================================
 --- collab-maint.git.orig/bin/blender-thumbnailer.py	2010-08-22 03:21:50.000000000 +0200
