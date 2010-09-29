@@ -3,7 +3,6 @@ Section: graphics
 Priority: optional
 Maintainer: Kevin Roy <kiniou@gmail.com> 
 Build-Depends: debhelper (>= 7.0.50~),
- quilt (>= 0.46-7~),
  libftgl-dev,
  gettext,
  libgettextpo-dev,
