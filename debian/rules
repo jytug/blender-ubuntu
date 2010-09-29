@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
 
 INSTDIR = debian/tmp
+PROCESSORS:= $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
 
 # Adapted from http://wiki.debian.org/SandroTosi/Svn_get-orig-source
 PACKAGE = blender
@@ -9,6 +10,7 @@ SVN_REVISION := $(shell echo $(SRC_VERSION) | sed 's,^.*svn,,')
 TARBALL = $(PACKAGE)_$(SRC_VERSION).orig.tar.gz
 UPSTREAM_SVN_REPOSITORY = "https://svn.blender.org/svnroot/bf-blender/trunk/blender"
 .PHONY: get-orig-source
+
 get-orig-source:
 	rm -rf get-orig-source $(TARBALL)
 	mkdir get-orig-source
@@ -18,6 +20,9 @@ get-orig-source:
 	rm -rf get-orig-source
 	@echo "  "$(TARBALL)" created; move it to the right destination to build the package"
 
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_SKIP_RPATH=ON -DCMAKE_VERBOSE_MAKEFILE=OFF  \
+							-DWITH_FFMPEG=ON -DSNDFILE=ON -DWITH_OPENJPEG=ON -DWITH_FFTW3=ON -DWITH_JACK=ON
 
 override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
@@ -46,4 +51,4 @@ override_dh_pysupport:
 	#dh_pysupport -V 3.1
 
 %:
-	dh --with quilt --buildsystem=cmake $@
+	dh --buildsystem=cmake --parallel=$(PROCESSORS) $@
