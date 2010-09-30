@@ -1,0 +1,44 @@
+From: Kevin Roy <kiniou@gmail.com>
+Date: Tue, 28 Sep 2010 15:00:28 +0200
+Subject: [PATCH] blender_thumbnailer
+
+* Move thumbnailer script to an appropriate destination
+* Change to python 3.1 since lintian is messing around with that
+---
+ bin/blender-thumbnailer.py    |    4 ++--
+ source/creator/CMakeLists.txt |    2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/bin/blender-thumbnailer.py b/bin/blender-thumbnailer.py
+index 27d6259..506a038 100755
+--- a/bin/blender-thumbnailer.py
++++ b/bin/blender-thumbnailer.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/python3.1
+ 
+ # ##### BEGIN GPL LICENSE BLOCK #####
+ #
+@@ -22,7 +22,7 @@
+ Thumbnailer runs with python 2.6 and 3.x.
+ To run automatically with nautilus:
+    gconftool --type boolean --set /desktop/gnome/thumbnailers/application@x-blender/enable true
+-   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "blender-thumbnailer.py %i %o"
++   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "/usr/lib/blender/scripts/blender-thumbnailer.py %i %o"
+ """
+ 
+ import struct
+diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
+index 39ef411..9faa10c 100644
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -201,7 +201,7 @@ IF(WITH_INSTALL)
+         )
+ 		INSTALL(
+ 			PROGRAMS ${CMAKE_SOURCE_DIR}/bin/blender-thumbnailer.py
+-			DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
++            DESTINATION ${BLENDERPATH}/scripts
+ 		)
+ 		INSTALL(
+             FILES ${CMAKE_SOURCE_DIR}/doc/blender.1
+-- 

@@ -1,9 +1,17 @@
+From: Kevin Roy <kiniou@gmail.com>
+Date: Tue, 28 Sep 2010 15:00:26 +0200
+Subject: [PATCH] filter_docs_to_install
+
 Install relevant documentation
-Index: collab-maint.git/source/creator/CMakeLists.txt
-===================================================================
---- collab-maint.git.orig/source/creator/CMakeLists.txt	2010-08-22 02:29:43.000000000 +0200
-+++ collab-maint.git/source/creator/CMakeLists.txt	2010-08-22 02:33:04.000000000 +0200
-@@ -208,9 +208,8 @@
+---
+ source/creator/CMakeLists.txt |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
+index 420a02f..1d5d576 100644
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -208,9 +208,8 @@ IF(WITH_INSTALL)
              DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
          )
  		INSTALL(
@@ -14,3 +22,4 @@ Index: collab-maint.git/source/creator/CMakeLists.txt
          )
  		INSTALL(
              DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts/
+-- 

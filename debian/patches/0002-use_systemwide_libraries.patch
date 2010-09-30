@@ -1,0 +1,53 @@
+From: Kevin Roy <kiniou@gmail.com>
+Date: Tue, 28 Sep 2010 15:00:23 +0200
+Subject: [PATCH] use_systemwide_libraries
+
+Don't try and use extern/libopenjpeg nor extern/glew
+---
+ CMakeLists.txt        |    7 ++++++-
+ extern/CMakeLists.txt |    6 ------
+ 2 files changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c6d8fb9..5f4850e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -289,7 +289,7 @@ IF(UNIX AND NOT APPLE)
+ 
+ 
+ 	# Could use ${X11_Xinput_LIB} ${X11_X11_LIB} too
+-	SET(LLIBS "-lXi -lutil -lc -lm -lpthread -lstdc++ -lX11")
++	SET(LLIBS "-lXi -lutil -lc -lm -lpthread -lX11")
+ 
+ 	IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ 		# BSD's dont use libdl.so
+@@ -306,6 +306,11 @@ IF(UNIX AND NOT APPLE)
+ 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+ 	ENDIF(WITH_OPENMP)
+ 
++	# Use system-wide GLEW:
++	SET(LLIBS "${LLIBS} -lGLEW")
++	SET(LLIBS "${LLIBS} -lopenjpeg")
++
++	ADD_DEFINITIONS(-DWITH_OPENJPEG)
+ 
+ 	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing -Wno-char-subscripts")
+ 
+diff --git a/extern/CMakeLists.txt b/extern/CMakeLists.txt
+index e14d416..4f741ce 100644
+--- a/extern/CMakeLists.txt
++++ b/extern/CMakeLists.txt
+@@ -32,12 +32,6 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ 	ADD_SUBDIRECTORY(binreloc)
+ ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ 
+-ADD_SUBDIRECTORY(glew)
+-
+-IF(WITH_OPENJPEG)
+-	ADD_SUBDIRECTORY(libopenjpeg)
+-ENDIF(WITH_OPENJPEG)
+-
+ IF(WITH_LZO)
+ 	ADD_SUBDIRECTORY(lzo)
+ ENDIF(WITH_LZO)
+-- 

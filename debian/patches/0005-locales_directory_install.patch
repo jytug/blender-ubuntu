@@ -1,0 +1,23 @@
+From: Kevin Roy <kiniou@gmail.com>
+Date: Tue, 28 Sep 2010 15:00:27 +0200
+Subject: [PATCH] locales_directory_install
+
+Change where locales are installed
+---
+ source/creator/CMakeLists.txt |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
+index 1d5d576..39ef411 100644
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -220,7 +220,7 @@ IF(WITH_INSTALL)
+ 		IF(WITH_INTERNATIONAL)
+ 			INSTALL(
+     	        DIRECTORY ${CMAKE_SOURCE_DIR}/bin/.blender/locale/
+-    	        DESTINATION ${BLENDERPATH}/datafiles/locale
++    	        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/locale
+     	        PATTERN ".svn" EXCLUDE
+ 	        )
+ 		ENDIF(WITH_INTERNATIONAL)
+-- 

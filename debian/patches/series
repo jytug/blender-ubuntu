@@ -1,7 +1,7 @@
-10_build_configuration
-20_install_in_usr_lib
-30_use_systemwide_libraries
-40_freedesktop_deprecates_encoding
-50_filter_docs
-60_locale_directory
-70_blender_thumbnailer
+0001-install_in_usr_lib.patch
+0002-use_systemwide_libraries.patch
+0003-freedesktop_deprecates_encoding.patch
+0004-filter_docs_to_install.patch
+0005-locales_directory_install.patch
+0006-blender_thumbnailer.patch
+0007-fix_FTBFS_on_KFreeBSD.patch
