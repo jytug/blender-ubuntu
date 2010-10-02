@@ -5,3 +5,4 @@
 0005-locales_directory_install.patch
 0006-blender_thumbnailer.patch
 0007-fix_FTBFS_on_KFreeBSD.patch
+0008-debug_system_path.patch

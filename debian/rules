@@ -22,7 +22,9 @@ get-orig-source:
 
 override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_SKIP_RPATH=ON -DCMAKE_VERBOSE_MAKEFILE=OFF  \
-							-DWITH_FFMPEG=ON -DSNDFILE=ON -DWITH_OPENJPEG=ON -DWITH_FFTW3=ON -DWITH_JACK=ON -DPATH_DEBUG2=ON
+							-DWITH_FFMPEG=ON -DSNDFILE=ON -DWITH_OPENJPEG=ON -DWITH_FFTW3=ON -DWITH_JACK=ON \
+	-DCMAKE_C_FLAGS="-DPATH_DEBUG2" \
+	-DCMAKE_CXX_FLAGS="-DPATH_DEBUG2"
 
 override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
