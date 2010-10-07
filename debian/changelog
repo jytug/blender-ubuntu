@@ -1,4 +1,4 @@
-blender (2.53-beta-svn30596-2) UNRELEASED; urgency=low
+blender (2.53-beta-svn30596-2) experimental; urgency=low
 
   [Kevin Roy]
     * debian/patches
