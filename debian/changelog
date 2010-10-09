@@ -1,10 +1,30 @@
-blender (2.53-beta-svn30596-2) experimental; urgency=low
+blender (2.53-beta-svn30596-1) experimental; urgency=low
 
   [Kevin Roy]
+    * New Upstream Beta Release.
+    * New Maintainer (Closes: #570053).
+    * Bump Standards-Version to 3.9.1
+    * Switch to dpkg-source 3.0 (quilt) format.
     * debian/patches
       - Update patches from contrib sources (see below)
       - Use gbp-pq to produce patch series
-    * mini fix to make blender look for system dir in /usr/lib
+      - mini fix to make blender look for system dir in /usr/lib
+    * Add get-orig-source in debian/rules
+       - A rule to ease download orig.tar.gz from upstream svn
+    * Modify install of blender-thumbnailer.py:
+       - This script is now in /usr/lib/blender/2.53/scripts.
+       - Although it may be run with python 2.5.
+         For consistency with dependencies, make it run with 3.1
+       - Add quoted infos from the script to enabled it.
+       - As it's nautilus related, maybe worth packaging it alone.
+    * Introduce doc-base for readme.html.
+    * Transform some dh_auto_install commands into patches
+       - 50_filter_docs : copy "allowed" files 
+         (this means don't install the GPL and Python licenses).
+       - 60_locale_directory : change locale destination to /usr/share/locale 
+         and not /usr/lib/blender/2.53/locale.
+    * Update icons with those shipped in upstream source.
+    * Remove fullscreen entry in menu because it can be enabled in Blender now
 
   [Cosme Domínguez Díaz]
     * debian/patches
@@ -26,31 +46,6 @@ blender (2.53-beta-svn30596-2) experimental; urgency=low
   [Gonéri Le Bouder]
     * debian/patches
       - FTBFS fix for KFreeBSD
-
- -- Kevin Roy <kiniou@gmail.com>  Wed, 29 Sep 2010 17:51:10 +0200
-
-blender (2.53-beta-svn30596-1) experimental; urgency=low
-
-  * New Upstream Beta Release.
-  * Switch to dpkg-source 3.0 (quilt) format.
-  * New Maintainer (Closes: #570053).
-  * Add get-orig-source in debian/rules
-     - A rule to ease download orig.tar.gz from upstream svn
-  * Modify install of blender-thumbnailer.py:
-     - This script is now in /usr/lib/blender/2.53/scripts.
-     - Although it may be run with python 2.5.
-       For consistency with dependencies, make it run with 3.1
-     - Add quoted infos from the script to enabled it.
-     - As it's nautilus related, maybe worth packaging it alone.
-  * Introduce doc-base for readme.html.
-  * Transform some dh_auto_install commands into patches
-     - 50_filter_docs : copy "allowed" files 
-       (this means don't install the GPL and Python licenses).
-     - 60_locale_directory : change locale destination to /usr/share/locale 
-       and not /usr/lib/blender/2.53/locale.
-  * Update icons with those shipped in upstream source.
-  * Remove fullscreen entry in menu because it can be enabled in Blender now
-  * Bump Standards-Version to 3.9.1
 
  -- Kevin Roy <kiniou@gmail.com>  Sun, 22 Aug 2010 13:04:22 +0200
 
