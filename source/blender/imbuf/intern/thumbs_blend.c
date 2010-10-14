@@ -1,5 +1,5 @@
 /**
- * $Id: thumbs_blend.c 30425 2010-07-17 00:38:34Z campbellbarton $
+ * $Id: thumbs_blend.c 31719 2010-09-02 07:00:34Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -97,7 +97,7 @@ static ImBuf *loadblend_thumb(gzFile gzfile)
 		/* length */
 		bhead[1] -= sizeof(int) * 2;
 
-		/* inconsistant image size, quit early */
+		/* inconsistent image size, quit early */
 		if(bhead[1] != size[0] * size[1] * sizeof(int))
 			return NULL;
 	

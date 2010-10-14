@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_value.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: CMP_value.c 31023 2010-08-03 23:57:39Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,7 +31,7 @@
 
 /* **************** VALUE ******************** */
 static bNodeSocketType cmp_node_value_out[]= {
-	{	SOCK_VALUE, 0, "Value",		0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VALUE, 0, "Value",		0.5f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f},
 	{	-1, 0, ""	}
 };
 

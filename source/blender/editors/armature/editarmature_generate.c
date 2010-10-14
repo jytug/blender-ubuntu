@@ -1,5 +1,5 @@
 /**
- * $Id: editarmature_generate.c 28395 2010-04-23 23:57:00Z campbellbarton $
+ * $Id: editarmature_generate.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,7 +32,6 @@
 #include <math.h>
 #include <float.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "DNA_scene_types.h"
 #include "DNA_armature_types.h"
@@ -42,8 +41,6 @@
 #include "BLI_graph.h"
  
 #include "BKE_utildefines.h"
-#include "BKE_global.h"
-#include "BKE_context.h"
 
 #include "ED_armature.h"
 #include "armature_intern.h"

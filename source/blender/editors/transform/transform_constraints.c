@@ -1,5 +1,5 @@
 /**
- * $Id: transform_constraints.c 30590 2010-07-21 16:18:00Z blendix $
+ * $Id: transform_constraints.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,7 +38,6 @@
 #include <io.h>
 #endif
 
-#include "MEM_guardedalloc.h"
 
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
@@ -50,7 +49,6 @@
 #include "BIF_glutil.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h"
 #include "BKE_utildefines.h"
 
 #include "ED_image.h"

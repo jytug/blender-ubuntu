@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_particleinstance.c 28181 2010-04-13 22:43:48Z campbellbarton $
+* $Id: MOD_particleinstance.c 31364 2010-08-16 05:46:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -31,6 +31,8 @@
 */
 
 #include "DNA_meshdata_types.h"
+
+#include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
 #include "BLI_listbase.h"

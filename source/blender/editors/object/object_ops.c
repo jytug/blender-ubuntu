@@ -1,5 +1,5 @@
 /**
- * $Id: object_ops.c 30445 2010-07-17 18:02:10Z campbellbarton $
+ * $Id: object_ops.c 31471 2010-08-20 05:23:12Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
@@ -38,8 +37,6 @@
 #include "BLI_blenlib.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
@@ -364,7 +361,10 @@ void ED_keymap_object(wmKeyConfig *keyconf)
 		RNA_int_set(kmi->ptr, "level", i);
 	}
 
-	/* Lattice -------------------------------------------------------------------- */
+	/* ############################################################################ */
+	/* ################################ LATTICE ################################### */
+	/* ############################################################################ */
+
 	keymap= WM_keymap_find(keyconf, "Lattice", 0, 0);
 	keymap->poll= ED_operator_editlattice;
 
@@ -375,7 +375,7 @@ void ED_keymap_object(wmKeyConfig *keyconf)
 		/* menus */
 	WM_keymap_add_menu(keymap, "VIEW3D_MT_hook", HKEY, KM_PRESS, KM_CTRL, 0);
 
-	ED_object_generic_keymap(keyconf, keymap, 1);
+	ED_object_generic_keymap(keyconf, keymap, 2);
 }
 
 void ED_object_generic_keymap(struct wmKeyConfig *keyconf, struct wmKeyMap *keymap, int do_pet)
@@ -383,22 +383,31 @@ void ED_object_generic_keymap(struct wmKeyConfig *keyconf, struct wmKeyMap *keym
 	wmKeyMapItem *kmi;
 
 	/* used by mesh, curve & lattice only */
-	if(do_pet > 0) {
+	if(do_pet) {
 		/* context ops */
 		kmi = WM_keymap_add_item(keymap, "WM_OT_context_cycle_enum", OKEY, KM_PRESS, KM_SHIFT, 0);
-		RNA_string_set(kmi->ptr, "data_path", "tool_settings.proportional_editing_falloff");
+		RNA_string_set(kmi->ptr, "data_path", "tool_settings.proportional_edit_falloff");
 
-		kmi = WM_keymap_add_item(keymap, "WM_OT_context_toggle_enum", OKEY, KM_PRESS, 0, 0);
-		RNA_string_set(kmi->ptr, "data_path", "tool_settings.proportional_editing");
-		RNA_string_set(kmi->ptr, "value_1", "DISABLED");
-		RNA_string_set(kmi->ptr, "value_2", "ENABLED");
+		// Object mode
+		if (do_pet == 1) {
 
-		/* for modes/object types that allow 'conencted' mode, add the Alt O key */
-		if (do_pet > 1) {
-			kmi = WM_keymap_add_item(keymap, "WM_OT_context_toggle_enum", OKEY, KM_PRESS, KM_ALT, 0);
-			RNA_string_set(kmi->ptr, "data_path", "tool_settings.proportional_editing");
+			kmi = WM_keymap_add_item(keymap, "WM_OT_context_toggle", OKEY, KM_PRESS, 0, 0);
+			RNA_string_set(kmi->ptr, "data_path", "tool_settings.use_proportional_edit_objects");
+
+		} else { // Edit mode
+
+			kmi = WM_keymap_add_item(keymap, "WM_OT_context_toggle_enum", OKEY, KM_PRESS, 0, 0);
+			RNA_string_set(kmi->ptr, "data_path", "tool_settings.proportional_edit");
 			RNA_string_set(kmi->ptr, "value_1", "DISABLED");
-			RNA_string_set(kmi->ptr, "value_2", "CONNECTED");
+			RNA_string_set(kmi->ptr, "value_2", "ENABLED");
+
+			/* for modes/object types that allow 'connected' mode, add the Alt O key */
+			if (do_pet == 3) {
+				kmi = WM_keymap_add_item(keymap, "WM_OT_context_toggle_enum", OKEY, KM_PRESS, KM_ALT, 0);
+				RNA_string_set(kmi->ptr, "data_path", "tool_settings.proportional_edit");
+				RNA_string_set(kmi->ptr, "value_1", "DISABLED");
+				RNA_string_set(kmi->ptr, "value_2", "CONNECTED");
+			}
 		}
 	}
 }

@@ -1,7 +1,7 @@
 /* boids.c
  *
  *
- * $Id: boids.c 28395 2010-04-23 23:57:00Z campbellbarton $
+ * $Id: boids.c 31734 2010-09-03 05:54:09Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -659,9 +659,9 @@ static int rule_fight(BoidRule *rule, BoidBrainData *bbd, BoidValues *val, Parti
 		/* attack if in range */
 		if(closest_dist <= bbd->part->boids->range + pa->size + enemy_pa->size) {
 			float damage = BLI_frand();
-			float enemy_dir[3] = {bbd->wanted_co[0],bbd->wanted_co[1],bbd->wanted_co[2]};
+			float enemy_dir[3];
 
-			normalize_v3(enemy_dir);
+			normalize_v3_v3(enemy_dir, bbd->wanted_co);
 
 			/* fight mode */
 			bbd->wanted_speed = 0.0f;
@@ -786,8 +786,7 @@ static Object *boid_find_ground(BoidBrainData *bbd, ParticleData *pa, float *gro
 		if(hit.index>=0) {
 			t = hit.dist/col.ray_len;
 			interp_v3_v3v3(ground_co, col.co1, col.co2, t);
-			VECCOPY(ground_nor, col.nor);
-			normalize_v3(ground_nor);
+			normalize_v3_v3(ground_nor, col.nor);
 			return col.hit_ob;
 		}
 		else {
@@ -911,6 +910,7 @@ void boid_brain(BoidBrainData *bbd, int p, ParticleData *pa)
 
 	if(bpa->data.health <= 0.0f) {
 		pa->alive = PARS_DYING;
+		pa->dietime = bbd->cfra;
 		return;
 	}
 
@@ -1115,8 +1115,7 @@ void boid_body(BoidBrainData *bbd, ParticleData *pa)
 		}
 
 		VECCOPY(old_dir, pa->prev_state.ave);
-		VECCOPY(wanted_dir, bbd->wanted_co);
-		new_speed = normalize_v3(wanted_dir);
+		new_speed = normalize_v3_v3(wanted_dir, bbd->wanted_co);
 
 		/* first check if we have valid direction we want to go towards */
 		if(new_speed == 0.0f) {
@@ -1356,8 +1355,7 @@ void boid_body(BoidBrainData *bbd, ParticleData *pa)
 	/* save direction to state.ave unless the boid is falling */
 	/* (boids can't effect their direction when falling) */
 	if(bpa->data.mode!=eBoidMode_Falling && len_v3(pa->state.vel) > 0.1*pa->size) {
-		VECCOPY(pa->state.ave, pa->state.vel);
-		normalize_v3(pa->state.ave);
+		normalize_v3_v3(pa->state.ave, pa->state.vel);
 	}
 
 	/* apply damping */

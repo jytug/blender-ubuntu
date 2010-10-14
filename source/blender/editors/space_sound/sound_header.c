@@ -1,5 +1,5 @@
 /**
- * $Id: sound_header.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: sound_header.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,7 +35,6 @@
 #include "BLI_blenlib.h"
 
 #include "BKE_context.h"
-#include "BKE_screen.h"
 
 #include "ED_screen.h"
 #include "ED_types.h"

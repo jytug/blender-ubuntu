@@ -1,5 +1,5 @@
 /**
- * $Id: uvedit_draw.c 28202 2010-04-15 10:28:32Z blendix $
+ * $Id: uvedit_draw.c 31166 2010-08-08 13:03:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,10 +35,8 @@
 #include "DNA_screen_types.h"
 #include "DNA_space_types.h"
 
-#include "BKE_customdata.h"
 #include "BKE_DerivedMesh.h"
 #include "BKE_mesh.h"
-#include "BKE_object.h"
 #include "BKE_utildefines.h"
 
 #include "BLI_math.h"

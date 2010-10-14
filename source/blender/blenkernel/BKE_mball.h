@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_mball.h (mar-2001 nzc)
  *	
- * $Id: BKE_mball.h 30031 2010-07-06 11:44:45Z blendix $ 
+ * $Id: BKE_mball.h 31524 2010-08-23 00:57:19Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -162,6 +162,7 @@ void free_mball(struct MetaBall *mb);
 struct MetaBall *add_mball(char *name);
 struct MetaBall *copy_mball(struct MetaBall *mb);
 void make_local_mball(struct MetaBall *mb);
+struct MetaElem *add_metaball_element(struct MetaBall *mb, const int type);
 void tex_space_mball(struct Object *ob);
 float *make_orco_mball(struct Object *ob, struct ListBase *dispbase);
 void copy_mball_properties(struct Scene *scene, struct Object *active_object);

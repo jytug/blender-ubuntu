@@ -1,7 +1,7 @@
 /**
  * Jitter offset table
  *
- * $Id: gammaCorrectionTables.c 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: gammaCorrectionTables.c 30705 2010-07-25 01:45:53Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -117,7 +117,7 @@ void makeGammaTables(float gamma)
 
 	/* The end of the table should match 1.0 carefully. In order to avoid    */
 	/* rounding errors, we just set this explicitly. The last segment may    */
-	/* have a different lenght than the other segments, but our              */
+	/* have a different length than the other segments, but our              */
 	/* interpolation is insensitive to that.                                 */
 	color_domain_table[RE_GAMMA_TABLE_SIZE]   = 1.0;
 	gamma_range_table[RE_GAMMA_TABLE_SIZE]     = 1.0;

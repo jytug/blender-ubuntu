@@ -1,5 +1,5 @@
 /**
- * $Id: editface.c 28397 2010-04-24 10:08:07Z campbellbarton $
+ * $Id: editface.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,21 +44,12 @@
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 
-#include "BKE_brush.h"
-#include "BKE_customdata.h"
-#include "BKE_depsgraph.h"
 #include "BKE_DerivedMesh.h"
-#include "BKE_displist.h"
 #include "BKE_global.h"
 #include "BKE_mesh.h"
-#include "BKE_object.h"
-#include "BKE_texture.h"
-#include "BKE_utildefines.h"
-#include "BKE_customdata.h"
 #include "BKE_context.h"
 
 #include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 
 #ifndef DISABLE_PYTHON

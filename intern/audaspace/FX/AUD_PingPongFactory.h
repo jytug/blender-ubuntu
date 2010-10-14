@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_PingPongFactory.h 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_PingPongFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -34,18 +34,19 @@
  */
 class AUD_PingPongFactory : public AUD_EffectFactory
 {
+private:
+	// hide copy constructor and operator=
+	AUD_PingPongFactory(const AUD_PingPongFactory&);
+	AUD_PingPongFactory& operator=(const AUD_PingPongFactory&);
+
 public:
 	/**
 	 * Creates a new ping pong factory.
 	 * \param factory The input factory.
 	 */
-	AUD_PingPongFactory(AUD_IFactory* factory = 0);
+	AUD_PingPongFactory(AUD_IFactory* factory);
 
-	/**
-	 * Destroys the factory.
-	 */
-
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_PINGPONGFACTORY

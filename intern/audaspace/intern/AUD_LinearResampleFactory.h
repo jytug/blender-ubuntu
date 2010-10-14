@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_LinearResampleFactory.h 25643 2010-01-01 05:09:30Z nexyon $
+ * $Id: AUD_LinearResampleFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -33,12 +33,15 @@
  */
 class AUD_LinearResampleFactory : public AUD_ResampleFactory
 {
-public:
-	AUD_LinearResampleFactory(AUD_IReader* reader, AUD_DeviceSpecs specs);
-	AUD_LinearResampleFactory(AUD_IFactory* factory, AUD_DeviceSpecs specs);
-	AUD_LinearResampleFactory(AUD_DeviceSpecs specs);
+private:
+	// hide copy constructor and operator=
+	AUD_LinearResampleFactory(const AUD_LinearResampleFactory&);
+	AUD_LinearResampleFactory& operator=(const AUD_LinearResampleFactory&);
 
-	virtual AUD_IReader* createReader();
+public:
+	AUD_LinearResampleFactory(AUD_IFactory* factory, AUD_DeviceSpecs specs);
+
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_LINEARRESAMPLEFACTORY

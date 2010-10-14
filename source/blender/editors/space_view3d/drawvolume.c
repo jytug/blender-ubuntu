@@ -1,5 +1,5 @@
 /**
- * $Id: drawvolume.c 28730 2010-05-11 20:38:01Z campbellbarton $
+ * $Id: drawvolume.c 31578 2010-08-25 12:01:15Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,7 +45,6 @@
 #include "BLI_edgehash.h"
 #include "BLI_rand.h"
 
-#include "BKE_anim.h"			//for the where_on_path function
 #include "BKE_curve.h"
 #include "BKE_constraint.h" // for the get_constraint_target function
 #include "BKE_DerivedMesh.h"
@@ -66,12 +65,10 @@
 #include "BKE_particle.h"
 #include "BKE_property.h"
 #include "BKE_smoke.h"
-#include "BKE_unit.h"
 #include "BKE_utildefines.h"
 #include "smoke_API.h"
 
 #include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "GPU_extensions.h"
 
@@ -119,6 +116,7 @@ static void tend ( void )
 {
 	gettimeofday ( &_tend,&tz );
 }
+  #if 0
 static double tval()
 {
 	double t1, t2;
@@ -126,6 +124,7 @@ static double tval()
 	t2 = ( double ) _tend.tv_sec*1000 + ( double ) _tend.tv_usec/ ( 1000 );
 	return t2-t1;
 }
+  #endif
 #endif
 
 struct GPUTexture;
@@ -450,7 +449,7 @@ void draw_volume(Scene *scene, ARegion *ar, View3D *v3d, Base *base, GPUTexture 
 	}
 
 	tend();
-	printf ( "Draw Time: %f\n",( float ) tval() );
+	// printf ( "Draw Time: %f\n",( float ) tval() );
 
 	if(tex_shadow)
 		GPU_texture_unbind(tex_shadow);

@@ -1,5 +1,5 @@
 /**
- * $Id: editmode_undo.c 28397 2010-04-24 10:08:07Z campbellbarton $
+ * $Id: editmode_undo.c 31166 2010-08-08 13:03:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,12 +40,10 @@
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_global.h"
-#include "BKE_object.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_dynstr.h"
 
-#include "BKE_utildefines.h"
 
 #include "ED_mesh.h"
 

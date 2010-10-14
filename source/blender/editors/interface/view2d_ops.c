@@ -1,5 +1,5 @@
 /**
- * $Id: view2d_ops.c 29329 2010-06-08 00:51:57Z aligorith $
+ * $Id: view2d_ops.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,6 @@
 #include "BLI_blenlib.h"
 
 #include "BKE_context.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
@@ -42,7 +41,6 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
-#include "BIF_gl.h"
 
 #include "ED_screen.h"
 

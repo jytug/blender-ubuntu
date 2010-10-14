@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_ReverseFactory.h 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_ReverseFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -34,17 +34,19 @@
  */
 class AUD_ReverseFactory : public AUD_EffectFactory
 {
+private:
+	// hide copy constructor and operator=
+	AUD_ReverseFactory(const AUD_ReverseFactory&);
+	AUD_ReverseFactory& operator=(const AUD_ReverseFactory&);
+
 public:
 	/**
 	 * Creates a new reverse factory.
 	 * \param factory The input factory.
 	 */
-	AUD_ReverseFactory(AUD_IFactory* factory = 0);
+	AUD_ReverseFactory(AUD_IFactory* factory);
 
-	/**
-	 * Destroys the factory.
-	 */
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_REVERSEFACTORY

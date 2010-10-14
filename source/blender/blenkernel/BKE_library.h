@@ -3,7 +3,7 @@
  *	
  * Library
  *
- * $Id: BKE_library.h 30576 2010-07-21 10:39:51Z blendix $ 
+ * $Id: BKE_library.h 31028 2010-08-04 04:01:27Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -55,7 +55,7 @@ int new_id(struct ListBase *lb, struct ID *id, const char *name);
 
 struct ListBase *which_libbase(struct Main *mainlib, short type);
 
-#define MAX_LIBARRAY	40
+#define MAX_LIBARRAY	39
 int set_listbasepointers(struct Main *main, struct ListBase **lb);
 
 void free_libblock(struct ListBase *lb, void *idv);
@@ -63,8 +63,9 @@ void free_libblock_us(struct ListBase *lb, void *idv);
 void free_main(struct Main *mainvar);
 void tag_main(struct Main *mainvar, int tag);
 
-void splitIDname(char *name, char *left, int *nr);
+int splitIDname(char *name, char *left, int *nr);
 void rename_id(struct ID *id, char *name);
+void name_uiprefix_id(char *name, struct ID *id);
 void test_idbutton(char *name);
 void text_idbutton(struct ID *id, char *text);
 void all_local(struct Library *lib, int untagged_only);
@@ -85,4 +86,3 @@ void set_free_windowmanager_cb(void (*func)(struct bContext *, struct wmWindowMa
 #define ID_FALLBACK_NAME "Untitled"
 
 #endif
-

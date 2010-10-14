@@ -19,9 +19,11 @@
 # <pep8 compliant>
 
 from _bpy import types as bpy_types
+import _bpy
 from mathutils import Vector
 
 StructRNA = bpy_types.Struct.__bases__[0]
+StructMetaIDProp = _bpy.StructMetaIDProp
 # StructRNA = bpy_types.Struct
 
 
@@ -51,7 +53,7 @@ class Library(bpy_types.ID):
 
         # See: readblenentry.c, IDTYPE_FLAGS_ISLINKABLE, we could make this an attribute in rna.
         attr_links = "actions", "armatures", "brushes", "cameras", \
-                "curves", "gpencil", "groups", "images", \
+                "curves", "grease_pencil", "groups", "images", \
                 "lamps", "lattices", "materials", "metaballs", \
                 "meshes", "node_groups", "objects", "scenes", \
                 "sounds", "textures", "texts", "fonts", "worlds"
@@ -250,7 +252,7 @@ class _GenericBone:
             bones = id_data.pose.bones
         elif id_data_type == bpy_types.Armature:
             bones = id_data.edit_bones
-            if not bones: # not in editmode
+            if not bones:  # not in editmode
                 bones = id_data.bones
 
         return bones
@@ -305,25 +307,30 @@ class Mesh(bpy_types.ID):
         Make a mesh from a list of verts/edges/faces
         Until we have a nicer way to make geometry, use this.
         """
-        self.add_geometry(len(verts), len(edges), len(faces))
+        self.vertices.add(len(verts))
+        self.edges.add(len(edges))
+        self.faces.add(len(faces))
 
         verts_flat = [f for v in verts for f in v]
-        self.verts.foreach_set("co", verts_flat)
+        self.vertices.foreach_set("co", verts_flat)
         del verts_flat
 
         edges_flat = [i for e in edges for i in e]
-        self.edges.foreach_set("verts", edges_flat)
+        self.edges.foreach_set("vertices", edges_flat)
         del edges_flat
 
         def treat_face(f):
             if len(f) == 3:
-                return f[0], f[1], f[2], 0
-            elif f[3] == 0:
+                if f[2] == 0:
+                    return f[2], f[0], f[1], 0
+                else:
+                    return f[0], f[1], f[2], 0
+            elif f[2] == 0 or f[3] == 0:
                 return f[3], f[0], f[1], f[2]
             return f
 
         faces_flat = [v for f in faces for v in treat_face(f)]
-        self.faces.foreach_set("verts_raw", faces_flat)
+        self.faces.foreach_set("vertices_raw", faces_flat)
         del faces_flat
 
     @property
@@ -362,7 +369,7 @@ class Mesh(bpy_types.ID):
         return a list of edge vertex index lists
         """
 
-        OTHER_INDEX = 2, 3, 0, 1 # opposite face index
+        OTHER_INDEX = 2, 3, 0, 1  # opposite face index
 
         if faces is None:
             faces = self.faces
@@ -371,7 +378,7 @@ class Mesh(bpy_types.ID):
 
         for f in faces:
 #            if len(f) == 4:
-            if f.verts_raw[3] != 0:
+            if f.vertices_raw[3] != 0:
                 edge_keys = f.edge_keys
                 for i, edkey in enumerate(f.edge_keys):
                     edges.setdefault(edkey, []).append(edge_keys[OTHER_INDEX[i]])
@@ -383,7 +390,7 @@ class Mesh(bpy_types.ID):
         edge_loops = []
 
         for edkey, ed_adj in edges.items():
-            if 0 < len(ed_adj) < 3: # 1 or 2
+            if 0 < len(ed_adj) < 3:  # 1 or 2
                 # Seek the first edge
                 context_loop = [edkey, ed_adj[0]]
                 edge_loops.append(context_loop)
@@ -401,11 +408,11 @@ class Mesh(bpy_types.ID):
                     ed_adj = edges[context_loop[-1]]
                     if len(ed_adj) != 2:
 
-                        if other_dir and flipped == False: # the original edge had 2 other edges
-                            flipped = True # only flip the list once
+                        if other_dir and flipped == False:  # the original edge had 2 other edges
+                            flipped = True  # only flip the list once
                             context_loop.reverse()
                             ed_adj[:] = []
-                            context_loop.append(other_dir) # save 1 lookiup
+                            context_loop.append(other_dir)  # save 1 lookiup
 
                             ed_adj = edges[context_loop[-1]]
                             if len(ed_adj) != 2:
@@ -420,7 +427,6 @@ class Mesh(bpy_types.ID):
 
                     # Dont look at this again
                     ed_adj[:] = []
-
 
         return edge_loops
 
@@ -448,7 +454,7 @@ class Mesh(bpy_types.ID):
 
         while edges:
             current_edge = edges.pop()
-            vert_end, vert_start = current_edge.verts[:]
+            vert_end, vert_start = current_edge.vertices[:]
             line_poly = [vert_start, vert_end]
 
             ok = True
@@ -459,7 +465,7 @@ class Mesh(bpy_types.ID):
                 while i:
                     i -= 1
                     ed = edges[i]
-                    v1, v2 = ed.verts
+                    v1, v2 = ed.vertices
                     if v1 == vert_end:
                         line_poly.append(v2)
                         vert_end = line_poly[-1]
@@ -494,7 +500,7 @@ class MeshEdge(StructRNA):
 
     @property
     def key(self):
-        return ord_ind(*tuple(self.verts))
+        return ord_ind(*tuple(self.vertices))
 
 
 class MeshFace(StructRNA):
@@ -503,8 +509,8 @@ class MeshFace(StructRNA):
     @property
     def center(self):
         """The midpoint of the face."""
-        face_verts = self.verts[:]
-        mesh_verts = self.id_data.verts
+        face_verts = self.vertices[:]
+        mesh_verts = self.id_data.vertices
         if len(face_verts) == 3:
             return (mesh_verts[face_verts[0]].co + mesh_verts[face_verts[1]].co + mesh_verts[face_verts[2]].co) / 3.0
         else:
@@ -512,7 +518,7 @@ class MeshFace(StructRNA):
 
     @property
     def edge_keys(self):
-        verts = self.verts[:]
+        verts = self.vertices[:]
         if len(verts) == 3:
             return ord_ind(verts[0], verts[1]), ord_ind(verts[1], verts[2]), ord_ind(verts[2], verts[0])
 
@@ -524,7 +530,7 @@ class Text(bpy_types.ID):
 
     def as_string(self):
         """Return the text as a string."""
-        return "\n".join(line.line for line in self.lines)
+        return "\n".join(line.body for line in self.lines)
 
     def from_string(self, string):
         """Replace text with this string."""
@@ -539,8 +545,86 @@ class Text(bpy_types.ID):
 
 import collections
 
+TypeMap = {}
+# Properties (IDPropertyGroup) are different from types because they need to be registered
+# before adding sub properties to them, so they are registered on definition
+# and unregistered on unload
+PropertiesMap = {}
 
-class OrderedMeta(type):
+# Using our own loading function we set this to false
+# so when running a script directly in the text editor
+# registers moduals instantly.
+_register_immediate = True
+
+
+def _unregister_module(module, free=True):
+    for t in TypeMap.get(module, ()):
+        try:
+            bpy_types.unregister(t)
+        except:
+            import traceback
+            print("bpy.utils._unregister_module(): Module '%s' failed to unregister class '%s.%s'" % (module, t.__module__, t.__name__))
+            traceback.print_exc()
+
+    if free == True and module in TypeMap:
+        del TypeMap[module]
+
+    for t in PropertiesMap.get(module, ()):
+        try:
+            bpy_types.unregister(t)
+        except:
+            import traceback
+            print("bpy.utils._unload_module(): Module '%s' failed to unregister class '%s.%s'" % (module, t.__module__, t.__name__))
+            traceback.print_exc()
+
+    if free == True and module in PropertiesMap:
+        del PropertiesMap[module]
+
+
+def _register_module(module):
+    for t in TypeMap.get(module, ()):
+        try:
+            bpy_types.register(t)
+        except:
+            import traceback
+            import sys
+            print("bpy.utils._register_module(): '%s' failed to register class '%s.%s'" % (sys.modules[module].__file__, t.__module__, t.__name__))
+            traceback.print_exc()
+
+
+class RNAMeta(type):
+    @classmethod
+    def _register_immediate(cls):
+        return _register_immediate
+
+    def __new__(cls, name, bases, classdict, **args):
+        result = type.__new__(cls, name, bases, classdict)
+        if bases and bases[0] != StructRNA:
+            module = result.__module__
+
+            ClassMap = TypeMap
+
+            # Register right away if needed
+            if cls._register_immediate():
+                bpy_types.register(result)
+                ClassMap = PropertiesMap
+
+            # first part of packages only
+            if "." in module:
+                module = module[:module.index(".")]
+
+            ClassMap.setdefault(module, []).append(result)
+
+        return result
+
+
+class RNAMetaRegister(RNAMeta, StructMetaIDProp):
+    @classmethod
+    def _register_immediate(cls):
+        return True
+
+
+class OrderedMeta(RNAMeta):
 
     def __init__(cls, name, bases, attributes):
         super(OrderedMeta, cls).__init__(name, bases, attributes)
@@ -554,6 +638,14 @@ class OrderedMeta(type):
 class Operator(StructRNA, metaclass=OrderedMeta):
     __slots__ = ()
 
+    @classmethod
+    def easy_getsets(cls):
+        def bypass_attr(attr):
+            setattr(cls, attr, property(lambda self: getattr(self.properties, attr), lambda self, value: setattr(self.properties, attr, value)))
+        for attr, value in list(cls.__dict__.items()):
+            if type(value) == tuple and len(value) == 2 and type(value[1]) == dict:
+                bypass_attr(attr)
+
 
 class Macro(StructRNA, metaclass=OrderedMeta):
     # bpy_types is imported before ops is defined
@@ -564,6 +656,14 @@ class Macro(StructRNA, metaclass=OrderedMeta):
     def define(self, opname):
         from _bpy import ops
         return ops.macro_define(self, opname)
+
+
+class IDPropertyGroup(StructRNA, metaclass=RNAMetaRegister):
+        __slots__ = ()
+
+
+class RenderEngine(StructRNA, metaclass=RNAMeta):
+    __slots__ = ()
 
 
 class _GenericUI:
@@ -606,15 +706,15 @@ class _GenericUI:
             pass
 
 
-class Panel(StructRNA, _GenericUI):
+class Panel(StructRNA, _GenericUI, metaclass=RNAMeta):
     __slots__ = ()
 
 
-class Header(StructRNA, _GenericUI):
+class Header(StructRNA, _GenericUI, metaclass=RNAMeta):
     __slots__ = ()
 
 
-class Menu(StructRNA, _GenericUI):
+class Menu(StructRNA, _GenericUI, metaclass=RNAMeta):
     __slots__ = ()
 
     def path_menu(self, searchpaths, operator, props_default={}):
@@ -638,7 +738,7 @@ class Menu(StructRNA, _GenericUI):
             if f.startswith("."):
                 continue
 
-            preset_name = bpy.utils.display_name(f)
+            preset_name = bpy.path.display_name(f)
             props = layout.operator(operator, text=preset_name)
 
             for attr, value in props_default.items():

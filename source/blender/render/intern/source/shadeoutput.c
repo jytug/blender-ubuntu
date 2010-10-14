@@ -1,5 +1,5 @@
 /**
-* $Id: shadeoutput.c 28000 2010-04-05 05:46:39Z broken $
+* $Id: shadeoutput.c 30831 2010-07-28 08:06:46Z broken $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1644,7 +1644,7 @@ void shade_lamp_loop(ShadeInput *shi, ShadeResult *shr)
 		if(((passflag & SCE_PASS_COMBINED) && (shi->combinedflag & (SCE_PASS_AO|SCE_PASS_ENVIRONMENT|SCE_PASS_INDIRECT)))
 			|| (passflag & (SCE_PASS_AO|SCE_PASS_ENVIRONMENT|SCE_PASS_INDIRECT))) {
 			/* AO was calculated for scanline already */
-			if(shi->depth)
+			if(shi->depth || shi->volume_depth)
 				ambient_occlusion(shi);
 			VECCOPY(shr->ao, shi->ao);
 			VECCOPY(shr->env, shi->env); // XXX multiply

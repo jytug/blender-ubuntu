@@ -1,5 +1,5 @@
 /**
- * $Id: bvh.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: bvh.h 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,7 +28,6 @@
  */
 #include "rayobject.h"
 #include "raycounter.h"
-#include "MEM_guardedalloc.h"
 #include "rayobject_rtbuild.h"
 #include "rayobject_hint.h"
 

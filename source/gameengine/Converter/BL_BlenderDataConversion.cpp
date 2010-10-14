@@ -1,5 +1,5 @@
 /**
- * $Id: BL_BlenderDataConversion.cpp 30167 2010-07-09 23:14:07Z gsrb3d $
+ * $Id: BL_BlenderDataConversion.cpp 31636 2010-08-28 20:56:54Z ben2610 $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1568,6 +1568,15 @@ void BL_CreatePhysicsObjectNew(KX_GameObject* gameobj,
 				objprop.m_boundclass = KX_BOUNDCONE;
 				objprop.m_boundobject.c.m_radius = MT_max(bb.m_extends[0], bb.m_extends[1]);
 				objprop.m_boundobject.c.m_height = 2.f*bb.m_extends[2];
+				break;
+			}
+			case OB_BOUND_CAPSULE:
+			{
+				objprop.m_boundclass = KX_BOUNDCAPSULE;
+				objprop.m_boundobject.c.m_radius = MT_max(bb.m_extends[0], bb.m_extends[1]);
+				objprop.m_boundobject.c.m_height = 2.f*(bb.m_extends[2]-objprop.m_boundobject.c.m_radius);
+				if (objprop.m_boundobject.c.m_height < 0.f)
+					objprop.m_boundobject.c.m_height = 0.f;
 				break;
 			}
 		}

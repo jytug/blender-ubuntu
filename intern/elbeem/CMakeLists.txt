@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 27817 2010-03-28 21:38:22Z dfelinto $
+# $Id: CMakeLists.txt 31545 2010-08-24 04:29:23Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -37,5 +37,5 @@ IF(WITH_OPENMP)
 		ADD_DEFINITIONS(-DPARALLEL=1)
 ENDIF(WITH_OPENMP)
 
-BLENDERLIB_NOLIST(bf_elbeem "${SRC}" "${INC}")
+BLENDERLIB_NOLIST(bf_intern_elbeem "${SRC}" "${INC}")
 #, libtype='blender', priority=0 )

@@ -1,5 +1,5 @@
 /**
- * $Id: anim_ipo_utils.c 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: anim_ipo_utils.c 31812 2010-09-07 12:03:09Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -157,6 +157,9 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 			/* icon for this should be the icon for the base ID */
 			// TODO: or should we just use the error icon?
 			icon= RNA_struct_ui_icon(id_ptr.type);
+			
+			/* tag F-Curve as disabled - as not usable path */
+			fcu->flag |= FCURVE_DISABLED;
 		}
 	}
 	

@@ -1,5 +1,5 @@
 /*
- * $Id: sculpt_undo.c 30332 2010-07-14 17:27:56Z gsrb3d $
+ * $Id: sculpt_undo.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,6 +30,8 @@
  *
  */
 
+#include "MEM_guardedalloc.h"
+
 #include "BLI_math.h"
 #include "BLI_ghash.h"
 #include "BLI_threads.h"
@@ -38,7 +40,6 @@
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_mesh_types.h"
-#include "DNA_key_types.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_context.h"
@@ -46,7 +47,6 @@
 #include "BKE_modifier.h"
 #include "BKE_multires.h"
 #include "BKE_paint.h"
-#include "BKE_mesh.h"
 #include "BKE_key.h"
 
 #include "WM_api.h"

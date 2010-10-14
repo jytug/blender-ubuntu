@@ -1,5 +1,5 @@
 /**
- * $Id: file_ops.c 30415 2010-07-16 16:02:07Z elubie $
+ * $Id: file_ops.c 30600 2010-07-21 22:57:48Z broken $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -333,7 +333,7 @@ static int file_select_all_exec(bContext *C, wmOperator *op)
 void FILE_OT_select_all_toggle(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Select/Deselect all files";
+	ot->name= "Select/Deselect All Files";
 	ot->description= "Select/deselect all files";
 	ot->idname= "FILE_OT_select_all_toggle";
 	

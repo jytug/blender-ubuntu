@@ -1,5 +1,5 @@
 /**
- * $Id: storage.c 30553 2010-07-20 19:26:53Z elubie $
+ * $Id: storage.c 31268 2010-08-11 22:36:43Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,11 +28,6 @@
  * Reorganised mar-01 nzc
  * Some really low-level file thingies.
  */
-
-/* needed for mingw & _stat64i32 */
-#ifdef FREE_WINDOWS
-# define __MSVCRT_VERSION__ 0x0800
-#endif
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -242,8 +237,19 @@ void BLI_builddir(char *dirname, char *relname)
 		
 		if (newnum){
 
-			if (files) files=(struct direntry *)realloc(files,(totnum+newnum) * sizeof(struct direntry));
-			else files=(struct direntry *)malloc(newnum * sizeof(struct direntry));
+			if(files) {
+				void *tmp= realloc(files, (totnum+newnum) * sizeof(struct direntry));
+				if(tmp) {
+					files= (struct direntry *)tmp;
+				}
+				else { /* realloc fail */
+					free(files);
+					files= NULL;
+				}
+			}
+			
+			if(files==NULL)
+				files=(struct direntry *)malloc(newnum * sizeof(struct direntry));
 
 			if (files){
 				dlink = (struct dirlink *) dirbase->first;
@@ -255,6 +261,8 @@ void BLI_builddir(char *dirname, char *relname)
 // Excluding other than current MSVC compiler until able to test.
 #if (defined(WIN32) || defined(WIN64)) && (_MSC_VER>=1500)
 					_stat64(dlink->name,&files[actnum].s);
+#elif defined(__MINGW32__)
+					_stati64(dlink->name,&files[actnum].s);
 #else
 					stat(dlink->name,&files[actnum].s);
 #endif
@@ -449,14 +457,14 @@ int BLI_exist(char *name)
 	if (len > 3 && ( tmp[len-1]=='\\' || tmp[len-1]=='/') ) tmp[len-1] = '\0';
 	res = _stat(tmp, &st);
 	if (res == -1) return(0);
-#elif defined(WIN32) && defined(__MINGW32__)
-	struct stat st;
+#elif defined(__MINGW32__)
+	struct _stati64 st;
 	char tmp[FILE_MAXDIR+FILE_MAXFILE];
 	int len, res;
 	BLI_strncpy(tmp, name, FILE_MAXDIR+FILE_MAXFILE);
 	len = strlen(tmp);
 	if (len > 3 && ( tmp[len-1]=='\\' || tmp[len-1]=='/') ) tmp[len-1] = '\0';
-	res = stat(tmp, &st);
+	res = _stati64(tmp, &st);
 	if (res) return(0);
 #else
 	struct stat st;

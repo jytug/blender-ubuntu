@@ -1,5 +1,5 @@
 /**
- * $Id: meshlaplacian.c 29984 2010-07-05 11:48:13Z blendix $
+ * $Id: meshlaplacian.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,6 @@
 #include "DNA_object_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
 #include "DNA_scene_types.h"
 
 #include "BLI_math.h"

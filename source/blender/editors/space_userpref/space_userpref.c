@@ -1,5 +1,5 @@
 /**
- * $Id: space_userpref.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: space_userpref.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,7 +39,6 @@
 
 #include "ED_screen.h"
 
-#include "BIF_gl.h"
 
 #include "WM_api.h"
 #include "WM_types.h"

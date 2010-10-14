@@ -47,17 +47,10 @@
 
 #include "BKE_context.h"
 #include "BKE_global.h"
-#include "BKE_image.h"
-#include "BKE_library.h"
 #include "BKE_main.h"
-#include "BKE_plugin_types.h"
 #include "BKE_sequencer.h"
-#include "BKE_scene.h"
-#include "BKE_utildefines.h"
 #include "BKE_report.h"
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -140,6 +133,7 @@ static void sequencer_generic_invoke_xy__internal(bContext *C, wmOperator *op, w
 
 static void seq_load_operator_info(SeqLoadInfo *seq_load, wmOperator *op)
 {
+	int relative= RNA_struct_find_property(op->ptr, "relative_path") && RNA_boolean_get(op->ptr, "relative_path");
 	int is_file= -1;
 	memset(seq_load, 0, sizeof(SeqLoadInfo));
 
@@ -157,6 +151,10 @@ static void seq_load_operator_info(SeqLoadInfo *seq_load, wmOperator *op)
 		is_file= 0;
 	}
 
+	if((is_file != -1) && relative)
+		BLI_path_rel(seq_load->path, G.sce);
+
+	
 	if (RNA_struct_find_property(op->ptr, "frame_end")) {
 		seq_load->end_frame = RNA_int_get(op->ptr, "frame_end");
 	}
@@ -181,7 +179,9 @@ static void seq_load_operator_info(SeqLoadInfo *seq_load, wmOperator *op)
 		/* used for image strip */
 		/* best guess, first images name */
 		RNA_BEGIN(op->ptr, itemptr, "files") {
-			RNA_string_get(&itemptr, "name", seq_load->name);
+			char *name= RNA_string_get_alloc(&itemptr, "name", NULL, 0);
+			BLI_strncpy(seq_load->name, name, sizeof(seq_load->name));
+			MEM_freeN(name);
 			break;
 		}
 		RNA_END;
@@ -352,6 +352,10 @@ static int sequencer_add_movie_strip_invoke(bContext *C, wmOperator *op, wmEvent
 	if(!RNA_property_is_set(op->ptr, "relative_path"))
 		RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
 
+	/* This is for drag and drop */
+	if(RNA_property_is_set(op->ptr, "filepath"))
+		return sequencer_add_movie_strip_exec(C, op);
+
 	sequencer_generic_invoke_xy__internal(C, op, event, 0);
 
 	WM_event_add_fileselect(C, op);
@@ -402,6 +406,10 @@ static int sequencer_add_sound_strip_invoke(bContext *C, wmOperator *op, wmEvent
 
 	if(!RNA_property_is_set(op->ptr, "relative_path"))
 		RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
+
+	/* This is for drag and drop */
+	if(RNA_property_is_set(op->ptr, "filepath"))
+		return sequencer_add_sound_strip_exec(C, op);
 
 	sequencer_generic_invoke_xy__internal(C, op, event, 0);
 

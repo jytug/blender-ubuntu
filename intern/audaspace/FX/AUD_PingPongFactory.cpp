@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_PingPongFactory.cpp 23031 2009-09-06 14:32:02Z jesterking $
+ * $Id: AUD_PingPongFactory.cpp 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -28,40 +28,25 @@
 #include "AUD_ReverseFactory.h"
 
 AUD_PingPongFactory::AUD_PingPongFactory(AUD_IFactory* factory) :
-		AUD_EffectFactory(factory) {}
-
-AUD_IReader* AUD_PingPongFactory::createReader()
+		AUD_EffectFactory(factory)
 {
-	if(m_factory == 0)
-		return 0;
+}
 
-	AUD_IReader* reader = m_factory->createReader();
+AUD_IReader* AUD_PingPongFactory::createReader() const
+{
+	AUD_IReader* reader = getReader();
+	AUD_IReader* reader2;
+	AUD_ReverseFactory factory(m_factory);
 
-	if(reader != 0)
+	try
 	{
-		AUD_IReader* reader2;
-		AUD_ReverseFactory factory(m_factory);
-
-		try
-		{
-			reader2 = factory.createReader();
-		}
-		catch(AUD_Exception)
-		{
-			reader2 = 0;
-		}
-
-		if(reader2 != 0)
-		{
-			reader = new AUD_DoubleReader(reader, reader2);
-			AUD_NEW("reader")
-		}
-		else
-		{
-			delete reader; AUD_DELETE("reader")
-			reader = 0;
-		}
+		reader2 = factory.createReader();
+	}
+	catch(AUD_Exception&)
+	{
+		delete reader;
+		throw;
 	}
 
-	return reader;
+	return new AUD_DoubleReader(reader, reader2);
 }

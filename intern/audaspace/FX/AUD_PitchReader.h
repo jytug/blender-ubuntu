@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_PitchReader.h 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_PitchReader.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -37,18 +37,21 @@ private:
 	/**
 	 * The pitch level.
 	 */
-	float m_pitch;
+	const float m_pitch;
+
+	// hide copy constructor and operator=
+	AUD_PitchReader(const AUD_PitchReader&);
+	AUD_PitchReader& operator=(const AUD_PitchReader&);
 
 public:
 	/**
 	 * Creates a new pitch reader.
 	 * \param reader The reader to read from.
 	 * \param pitch The size of the buffer.
-	 * \exception AUD_Exception Thrown if the reader specified is NULL.
 	 */
 	AUD_PitchReader(AUD_IReader* reader, float pitch);
 
-	virtual AUD_Specs getSpecs();
+	virtual AUD_Specs getSpecs() const;
 };
 
 #endif //AUD_PITCHREADER

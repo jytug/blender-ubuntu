@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_image.h (mar-2001 nzc)
  *	
- * $Id: BKE_image.h 29805 2010-06-29 22:07:27Z campbellbarton $ 
+ * $Id: BKE_image.h 30889 2010-07-30 06:09:23Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -159,7 +159,7 @@ void BKE_image_memorypack(struct Image *ima);
 void BKE_image_print_memlist(void);
 
 /* empty image block, of similar type and filename */
-struct Image *BKE_image_copy(struct Image *ima);
+struct Image *copy_image(struct Image *ima);
 
 /* merge source into dest, and free source */
 void BKE_image_merge(struct Image *dest, struct Image *source);

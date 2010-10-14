@@ -1,5 +1,5 @@
 /**
- * $Id: noise.c 30548 2010-07-20 17:17:47Z gsrb3d $
+ * $Id: noise.c 31332 2010-08-14 05:33:20Z campbellbarton $
  *
  * Blender.Noise BPython module implementation.
  * This submodule has functions to generate noise of various types.
@@ -18,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA	02111-1307, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
  * All rights reserved.
@@ -658,7 +658,7 @@ static struct PyModuleDef noise_module_def = {
 PyObject *Noise_Init(void)
 {
 	PyObject *submodule = PyModule_Create(&noise_module_def);
-	PyDict_SetItemString(PySys_GetObject("modules"), noise_module_def.m_name, submodule);
+	PyDict_SetItemString(PyImport_GetModuleDict(), noise_module_def.m_name, submodule);
 
 	/* use current time as seed for random number generator by default */
 	setRndSeed(0);	

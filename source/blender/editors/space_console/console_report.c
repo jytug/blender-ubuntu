@@ -1,5 +1,5 @@
 /**
- * $Id: console_report.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: console_report.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,13 +36,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_dynstr.h"
 
-#include "BKE_utildefines.h"
 #include "BKE_context.h"
-#include "BKE_depsgraph.h"
-#include "BKE_global.h"
-#include "BKE_library.h"
-#include "BKE_main.h"
-#include "BKE_report.h"
 
 #include "WM_api.h"
 #include "WM_types.h"

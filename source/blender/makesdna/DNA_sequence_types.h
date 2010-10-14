@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_sequence_types.h (mar-2001 nzc)
  *
- * $Id: DNA_sequence_types.h 30255 2010-07-13 09:28:01Z campbellbarton $
+ * $Id: DNA_sequence_types.h 31171 2010-08-08 13:56:33Z schlaile $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,27 +32,17 @@
 #define DNA_SEQUENCE_TYPES_H
 
 #include "DNA_listBase.h"
-
-/* needed for sound support */
-#include "DNA_sound_types.h"
+#include "DNA_vec_types.h"
 
 struct Ipo;
 struct Scene;
+struct bSound;
 
 /* strlens; 80= FILE_MAXFILE, 160= FILE_MAXDIR */
 
 typedef struct StripElem {
 	char name[80];
 } StripElem;
-
-typedef struct TStripElem {
-	struct ImBuf *ibuf;
-	struct ImBuf *ibuf_comp;
-	struct TStripElem *se1, *se2, *se3;
-	short ok;
-	short flag;
-	int nr;
-} TStripElem;
 
 typedef struct StripCrop {
 	int top;
@@ -96,11 +86,6 @@ typedef struct Strip {
 	StripCrop *crop;
 	StripTransform *transform;
 	StripColorBalance *color_balance;
-	TStripElem *tstripdata;
-	TStripElem *tstripdata_startstill;
-	TStripElem *tstripdata_endstill;
-	struct ImBuf *ibuf_startstill;
-	struct ImBuf *ibuf_endstill;
 } Strip;
 
 

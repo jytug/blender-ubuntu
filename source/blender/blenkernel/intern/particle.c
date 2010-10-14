@@ -1,7 +1,7 @@
 /* particle.c
  *
  *
- * $Id: particle.c 30442 2010-07-17 17:07:50Z blendix $
+ * $Id: particle.c 31730 2010-09-03 03:30:20Z gsrb3d $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,12 +40,16 @@
 #include "DNA_key_types.h"
 #include "DNA_material_types.h"
 #include "DNA_mesh_types.h"
+#include "DNA_meshdata_types.h"
 #include "DNA_particle_types.h"
 #include "DNA_smoke_types.h"
+#include "DNA_scene_types.h"
 
+#include "BLI_blenlib.h"
 #include "BLI_kdtree.h"
 #include "BLI_rand.h"
 #include "BLI_threads.h"
+#include "BLI_math.h"
 
 #include "BKE_anim.h"
 #include "BKE_animsys.h"
@@ -620,8 +624,7 @@ static float psys_render_projected_area(ParticleSystem *psys, float *center, flo
 	mul_m4_v4(data->viewmat, co);
 	
 	/* compute two vectors orthogonal to view vector */
-	VECCOPY(view, co);
-	normalize_v3(view);
+	normalize_v3_v3(view, co);
 	ortho_basis_v3v3_v3( ortho1, ortho2,view);
 
 	/* compute on screen minification */
@@ -706,6 +709,10 @@ void psys_render_set(Object *ob, ParticleSystem *psys, float viewmat[][4], float
 	data->timeoffset= timeoffset;
 
 	psys->renderdata= data;
+
+	/* Hair can and has to be recalculated if everything isn't displayed. */
+	if(psys->part->disp != 100 && psys->part->type == PART_HAIR)
+		psys->recalc |= PSYS_RECALC_RESET;
 }
 
 void psys_render_restore(Object *ob, ParticleSystem *psys)
@@ -1114,6 +1121,24 @@ static int get_pointcache_times_for_particle(PointCache *cache, int index, float
 
 	return ret == 2;
 }
+
+float psys_get_dietime_from_cache(PointCache *cache, int index) {
+	PTCacheMem *pm;
+	int dietime = 10000000; /* some max value so that we can default to pa->time+lifetime */
+
+	for(pm=cache->mem_cache.last; pm; pm=pm->prev) {
+		if(pm->index_array) {
+			if(pm->index_array[index])
+				return (float)pm->frame;
+		}
+		else {
+			return (float)pm->frame;
+		}
+	}
+
+	return (float)dietime;
+}
+
 static void init_particle_interpolation(Object *ob, ParticleSystem *psys, ParticleData *pa, ParticleInterpolationData *pind)
 {
 
@@ -1919,8 +1944,7 @@ static void do_prekink(ParticleKey *state, ParticleKey *par, float *par_rot, flo
 				mul_qt_v3(q2,z_vec);
 				
 				VECSUB(vec_from_par,state->co,par->co);
-				VECCOPY(vec_one,vec_from_par);
-				radius=normalize_v3(vec_one);
+				radius= normalize_v3_v3(vec_one, vec_from_par);
 
 				inp_y=dot_v3v3(y_vec,vec_one);
 				inp_z=dot_v3v3(z_vec,vec_one);
@@ -2007,6 +2031,10 @@ void precalc_guides(ParticleSimulationData *sim, ListBase *effectors)
 
 	LOOP_PARTICLES {
 		psys_particle_on_emitter(sim->psmd,sim->psys->part->from,pa->num,pa->num_dmcache,pa->fuv,pa->foffset,state.co,0,0,0,0,0);
+		
+		mul_m4_v3(sim->ob->obmat, state.co);
+		mul_mat3_m4_v3(sim->ob->obmat, state.vel);
+		
 		pd_point_from_particle(sim, pa, &state, &point);
 
 		for(eff = effectors->first; eff; eff=eff->next) {
@@ -2787,7 +2815,7 @@ void psys_cache_paths(ParticleSimulationData *sim, float cfra)
 	int steps = (int)pow(2.0, (double)(psys->renderdata ? part->ren_step : part->draw_step));
 	int totpart = psys->totpart;
 	float length, vec[3];
-	float *vg_effector= NULL, effector=0.0f;
+	float *vg_effector= NULL;
 	float *vg_length= NULL, pa_length=1.0f;
 	int keyed, baked;
 
@@ -2889,85 +2917,83 @@ void psys_cache_paths(ParticleSimulationData *sim, float cfra)
 		
 		/*--modify paths and calculate rotation & velocity--*/
 
-		sub_v3_v3v3(vec,(cache[p]+1)->co,cache[p]->co);
-		length = len_v3(vec);
-
-		effector= 1.0f;
-		if(vg_effector)
-			effector*= psys_particle_value_from_verts(psmd->dm,psys->part->from,pa,vg_effector);
-
-		for(k=0, ca=cache[p]; k<=steps; k++, ca++) {
-			if(!(psys->flag & PSYS_GLOBAL_HAIR)) {
+		if(!(psys->flag & PSYS_GLOBAL_HAIR)) {
 			/* apply effectors */
-				if(!(psys->part->flag & PART_CHILD_EFFECT) && k)
-					do_path_effectors(sim, p, ca, k, steps, cache[p]->co, effector, dfra, cfra, &length, vec);
+			if((psys->part->flag & PART_CHILD_EFFECT) == 0) {
+				float effector= 1.0f;
+				if(vg_effector)
+					effector*= psys_particle_value_from_verts(psmd->dm,psys->part->from,pa,vg_effector);
 
-				/* apply guide curves to path data */
-				if(sim->psys->effectors && (psys->part->flag & PART_CHILD_EFFECT)==0)
+				sub_v3_v3v3(vec,(cache[p]+1)->co,cache[p]->co);
+				length = len_v3(vec);
+
+				for(k=1, ca=cache[p]+1; k<=steps; k++, ca++)
+					do_path_effectors(sim, p, ca, k, steps, cache[p]->co, effector, dfra, cfra, &length, vec);
+			}
+
+			/* apply guide curves to path data */
+			if(sim->psys->effectors && (psys->part->flag & PART_CHILD_EFFECT)==0) {
+				for(k=0, ca=cache[p]; k<=steps; k++, ca++)
 					/* ca is safe to cast, since only co and vel are used */
 					do_guides(sim->psys->effectors, (ParticleKey*)ca, p, (float)k/(float)steps);
+			}
 
-				/* apply lattice */
-				if(psys->lattice)
+			/* lattices have to be calculated separately to avoid mixups between effector calculations */
+			if(psys->lattice) {
+				for(k=0, ca=cache[p]; k<=steps; k++, ca++)
 					calc_latt_deform(psys->lattice, ca->co, 1.0f);
+			}
+		}
 
-				/* figure out rotation */
-				
-				if(k) {
-					float cosangle, angle, tangent[3], normal[3], q[4];
+		/* finally do rotation & velocity */
+		for(k=1, ca=cache[p]+1; k<=steps; k++, ca++) {
+			/* figure out rotation */
+			float cosangle, angle, tangent[3], normal[3], q[4];
 
-					if(k == 1) {
-						/* calculate initial tangent for incremental rotations */
-						VECSUB(tangent, ca->co, (ca - 1)->co);
-						VECCOPY(prev_tangent, tangent);
-						normalize_v3(prev_tangent);
+			if(k == 1) {
+				/* calculate initial tangent for incremental rotations */
+				VECSUB(tangent, ca->co, (ca - 1)->co);
+				normalize_v3_v3(prev_tangent, tangent);
 
-						/* First rotation is based on emitting face orientation.		*/
-						/* This is way better than having flipping rotations resulting	*/
-						/* from using a global axis as a rotation pole (vec_to_quat()). */
-						/* It's not an ideal solution though since it disregards the	*/
-						/* initial tangent, but taking that in to account will allow	*/
-						/* the possibility of flipping again. -jahka					*/
-						mat3_to_quat_is_ok( (ca-1)->rot,rotmat);
-					}
-					else {
-						VECSUB(tangent, ca->co, (ca - 1)->co);
-						normalize_v3(tangent);
+				/* First rotation is based on emitting face orientation.		*/
+				/* This is way better than having flipping rotations resulting	*/
+				/* from using a global axis as a rotation pole (vec_to_quat()). */
+				/* It's not an ideal solution though since it disregards the	*/
+				/* initial tangent, but taking that in to account will allow	*/
+				/* the possibility of flipping again. -jahka					*/
+				mat3_to_quat_is_ok( (ca-1)->rot,rotmat);
+			}
+			else {
+				VECSUB(tangent, ca->co, (ca - 1)->co);
+				normalize_v3(tangent);
 
-						cosangle= dot_v3v3(tangent, prev_tangent);
+				cosangle= dot_v3v3(tangent, prev_tangent);
 
-						/* note we do the comparison on cosangle instead of
-						* angle, since floating point accuracy makes it give
-						* different results across platforms */
-						if(cosangle > 0.999999f) {
-							QUATCOPY((ca - 1)->rot, (ca - 2)->rot);
-						}
-						else {
-							angle= saacos(cosangle);
-							cross_v3_v3v3(normal, prev_tangent, tangent);
-							axis_angle_to_quat( q,normal, angle);
-							mul_qt_qtqt((ca - 1)->rot, q, (ca - 2)->rot);
-						}
-
-						VECCOPY(prev_tangent, tangent);
-					}
-
-					if(k == steps)
-						QUATCOPY(ca->rot, (ca - 1)->rot);
+				/* note we do the comparison on cosangle instead of
+				* angle, since floating point accuracy makes it give
+				* different results across platforms */
+				if(cosangle > 0.999999f) {
+					QUATCOPY((ca - 1)->rot, (ca - 2)->rot);
+				}
+				else {
+					angle= saacos(cosangle);
+					cross_v3_v3v3(normal, prev_tangent, tangent);
+					axis_angle_to_quat( q,normal, angle);
+					mul_qt_qtqt((ca - 1)->rot, q, (ca - 2)->rot);
 				}
 
+				VECCOPY(prev_tangent, tangent);
 			}
+
+			if(k == steps)
+				QUATCOPY(ca->rot, (ca - 1)->rot);
 			
+
 			/* set velocity */
+			VECSUB(ca->vel, ca->co, (ca-1)->co);
 
-			if(k){
-				VECSUB(ca->vel, ca->co, (ca-1)->co);
-
-				if(k==1) {
-					VECCOPY((ca-1)->vel, ca->vel);
-				}
-
-			}
+			if(k==1)
+				VECCOPY((ca-1)->vel, ca->vel);
 		}
 	}
 
@@ -3103,8 +3129,7 @@ void psys_cache_edit_paths(Scene *scene, Object *ob, PTCacheEdit *edit, float cf
 					if(k == 1) {
 						/* calculate initial tangent for incremental rotations */
 						VECSUB(tangent, ca->co, (ca - 1)->co);
-						VECCOPY(prev_tangent, tangent);
-						normalize_v3(prev_tangent);
+						normalize_v3_v3(prev_tangent, tangent);
 
 						/* First rotation is based on emitting face orientation.		*/
 						/* This is way better than having flipping rotations resulting	*/
@@ -3165,7 +3190,7 @@ void psys_cache_edit_paths(Scene *scene, Object *ob, PTCacheEdit *edit, float cf
 
 				/* at the moment this is only used for weight painting.
 				 * will need to move out of this check if its used elsewhere. */
-				t2 = birthtime + ((float)(k+1)/(float)steps) * (dietime - birthtime);
+				t2 = birthtime + ((float)k/(float)steps) * (dietime - birthtime);
 
 				while (pind.hkey[1]->time < t2) pind.hkey[1]++;
 				pind.hkey[0] = pind.hkey[1] - 1;
@@ -3396,7 +3421,7 @@ ModifierData *object_add_particle_system(Scene *scene, Object *ob, char *name)
 	psys->flag = PSYS_ENABLED|PSYS_CURRENT;
 	psys->cfra=bsystem_time(scene,ob,scene->r.cfra+1,0.0);
 
-	DAG_scene_sort(scene);
+	DAG_scene_sort(G.main, scene);
 	DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 
 	return md;
@@ -3433,7 +3458,7 @@ void object_remove_particle_system(Scene *scene, Object *ob)
 	else
 		ob->mode &= ~OB_MODE_PARTICLE_EDIT;
 
-	DAG_scene_sort(scene);
+	DAG_scene_sort(G.main, scene);
 	DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 }
 static void default_particle_settings(ParticleSettings *part)
@@ -4368,20 +4393,14 @@ void psys_make_billboard(ParticleBillboardData *bb, float xvec[3], float yvec[3]
 		onevec[bb->align]=1.0f;
 
 	if(bb->lock && (bb->align == PART_BB_VIEW)) {
-		VECCOPY(xvec, bb->ob->obmat[0]);
-		normalize_v3(xvec);
-
-		VECCOPY(yvec, bb->ob->obmat[1]);
-		normalize_v3(yvec);
-
-		VECCOPY(zvec, bb->ob->obmat[2]);
-		normalize_v3(zvec);
+		normalize_v3_v3(xvec, bb->ob->obmat[0]);
+		normalize_v3_v3(yvec, bb->ob->obmat[1]);
+		normalize_v3_v3(zvec, bb->ob->obmat[2]);
 	}
 	else if(bb->align == PART_BB_VEL) {
 		float temp[3];
 
-		VECCOPY(temp, bb->vel);
-		normalize_v3(temp);
+		normalize_v3_v3(temp, bb->vel);
 
 		VECSUB(zvec, bb->ob->obmat[3], bb->vec);
 
@@ -4430,3 +4449,34 @@ void psys_make_billboard(ParticleBillboardData *bb, float xvec[3], float yvec[3]
 	VECADDFAC(center, center, yvec, bb->offset[1]);
 }
 
+
+void psys_apply_hair_lattice(Scene *scene, Object *ob, ParticleSystem *psys) {
+	ParticleSimulationData sim = {scene, ob, psys, psys_get_modifier(ob, psys)};
+
+	psys->lattice = psys_get_lattice(&sim);
+
+	if(psys->lattice) {
+		ParticleData *pa = psys->particles;
+		HairKey *hkey;
+		int p, h;
+		float hairmat[4][4], imat[4][4];
+
+		for(p=0; p<psys->totpart; p++, pa++) {
+			psys_mat_hair_to_global(sim.ob, sim.psmd->dm, psys->part->from, pa, hairmat);
+			invert_m4_m4(imat, hairmat);
+
+			hkey = pa->hair;
+			for(h=0; h<pa->totkey; h++, hkey++) {
+				mul_m4_v3(hairmat, hkey->co);
+				calc_latt_deform(psys->lattice, hkey->co, 1.0f);
+				mul_m4_v3(imat, hkey->co);
+			}
+		}
+		
+		end_latt_deform(psys->lattice);
+		psys->lattice= NULL;
+
+		/* protect the applied shape */
+		psys->flag |= PSYS_EDITED;
+	}
+}

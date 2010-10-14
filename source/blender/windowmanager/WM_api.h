@@ -1,5 +1,5 @@
 /**
- * $Id: WM_api.h 30501 2010-07-19 15:39:12Z xat $
+ * $Id: WM_api.h 31664 2010-08-30 13:50:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -57,7 +57,7 @@ void		WM_init				(struct bContext *C, int argc, char **argv);
 void		WM_exit				(struct bContext *C);
 void		WM_main				(struct bContext *C);
 
-void		WM_init_game		(struct bContext *C);
+int 		WM_init_game		(struct bContext *C);
 void		WM_init_splash		(struct bContext *C);
 
 
@@ -97,8 +97,8 @@ void		WM_paint_cursor_end(struct wmWindowManager *wm, void *handle);
 void		WM_cursor_warp		(struct wmWindow *win, int x, int y);
 
 			/* keyconfig and keymap */
-wmKeyConfig *WM_keyconfig_add	(struct wmWindowManager *wm, char *idname);
-wmKeyConfig *WM_keyconfig_add_user(struct wmWindowManager *wm, char *idname);
+wmKeyConfig *WM_keyconfig_new	(struct wmWindowManager *wm, char *idname);
+wmKeyConfig *WM_keyconfig_new_user(struct wmWindowManager *wm, char *idname);
 void 		WM_keyconfig_remove	(struct wmWindowManager *wm, struct wmKeyConfig *keyconf);
 void 		WM_keyconfig_free	(struct wmKeyConfig *keyconf);
 void		WM_keyconfig_userdef(struct wmWindowManager *wm);
@@ -201,7 +201,6 @@ void		WM_operator_free		(struct wmOperator *op);
 void		WM_operator_stack_clear(struct bContext *C);
 
 struct wmOperatorType *WM_operatortype_find(const char *idnamem, int quiet);
-struct wmOperatorType *WM_operatortype_exists(const char *idname);
 struct wmOperatorType *WM_operatortype_first(void);
 void		WM_operatortype_append	(void (*opfunc)(struct wmOperatorType*));
 void		WM_operatortype_append_ptr	(void (*opfunc)(struct wmOperatorType*, void *), void *userdata);

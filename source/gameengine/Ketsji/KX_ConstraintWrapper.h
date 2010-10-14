@@ -1,5 +1,5 @@
 /**
- * $Id: KX_ConstraintWrapper.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_ConstraintWrapper.h 31373 2010-08-16 12:14:09Z nexyon $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,6 +44,8 @@ public:
 	KX_PYMETHOD_NOARGS(KX_ConstraintWrapper,GetConstraintId);
 	KX_PYMETHOD(KX_ConstraintWrapper,SetParam);
 	KX_PYMETHOD(KX_ConstraintWrapper,GetParam);
+
+	static PyObject* pyattr_get_constraintId(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 #endif
 
 private:

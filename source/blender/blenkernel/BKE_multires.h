@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_multires.h 29986 2010-07-05 12:20:49Z blendix $
+ * $Id: BKE_multires.h 31832 2010-09-09 00:14:51Z nicholasbishop $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,6 +43,8 @@ void multires_mark_as_modified(struct Object *ob);
 void multires_force_update(struct Object *ob);
 void multires_force_render_update(struct Object *ob);
 void multires_force_external_reload(struct Object *ob);
+
+void multiresModifier_set_levels_from_disps(struct MultiresModifierData *mmd, struct Object *ob);
 
 struct DerivedMesh *multires_dm_create_from_derived(struct MultiresModifierData*,
 	int local_mmd, struct DerivedMesh*, struct Object *, int, int);

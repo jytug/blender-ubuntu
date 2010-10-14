@@ -39,7 +39,8 @@ class ExportUVLayout(bpy.types.Operator):
                 description="File format to export the UV layout to",
                 default='SVG')
 
-    def poll(self, context):
+    @classmethod
+    def poll(cls, context):
         obj = context.active_object
         return (obj and obj.type == 'MESH')
 
@@ -68,14 +69,14 @@ class ExportUVLayout(bpy.types.Operator):
     def _face_uv_iter(self, context):
         obj = context.active_object
         mesh = obj.data
-        uv_layer = mesh.active_uv_texture.data
+        uv_layer = mesh.uv_textures.active.data
         uv_layer_len = len(uv_layer)
 
-        if not self.properties.export_all:
+        if not self.export_all:
 
             local_image = Ellipsis
 
-            if context.tool_settings.uv_local_view:
+            if context.tool_settings.show_uv_local_view:
                 space_data = self._space_image(context)
                 if space_data:
                     local_image = space_data.image
@@ -111,9 +112,11 @@ class ExportUVLayout(bpy.types.Operator):
         mesh = obj.data
         faces = mesh.faces
 
-        mode = self.properties.mode
+        mode = self.mode
 
-        file = open(self.properties.filepath, "w")
+        filepath = self.filepath
+        filepath = bpy.path.ensure_ext(filepath, "." + mode.lower())
+        file = open(filepath, "w")
         fw = file.write
 
         if mode == 'SVG':
@@ -136,7 +139,7 @@ class ExportUVLayout(bpy.types.Operator):
                     fill_settings.append(fill_default)
 
             for i, uvs in self._face_uv_iter(context):
-                try: # rare cases material index is invalid.
+                try:  # rare cases material index is invalid.
                     fill = fill_settings[faces[i].material_index]
                 except IndexError:
                     fill = fill_default
@@ -204,7 +207,7 @@ class ExportUVLayout(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        wm = context.manager
+        wm = context.window_manager
         wm.add_fileselect(self)
         return {'RUNNING_MODAL'}
 
@@ -216,12 +219,10 @@ def menu_func(self, context):
 
 
 def register():
-    bpy.types.register(ExportUVLayout)
     bpy.types.IMAGE_MT_uvs.append(menu_func)
 
 
 def unregister():
-    bpy.types.unregister(ExportUVLayout)
     bpy.types.IMAGE_MT_uvs.remove(menu_func)
 
 if __name__ == "__main__":

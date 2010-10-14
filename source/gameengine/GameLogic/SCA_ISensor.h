@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_ISensor.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SCA_ISensor.h 31373 2010-08-16 12:14:09Z nexyon $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -167,6 +167,18 @@ public:
 		return m_prev_state;
 	}
 
+	/** get the number of ticks since the last positive pulse */
+	int GetPosTicks()
+	{
+		return m_pos_ticks;
+	}
+
+	/** get the number of ticks since the last negative pulse */
+	int GetNegTicks()
+	{
+		return m_neg_ticks;
+	}
+
 	/** Resume sensing. */
 	void Resume();
 
@@ -185,6 +197,9 @@ public:
 	static PyObject*	pyattr_get_triggered(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static PyObject*	pyattr_get_positive(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static PyObject*	pyattr_get_status(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static PyObject*	pyattr_get_posTicks(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static PyObject*	pyattr_get_negTicks(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+
 	static int          pyattr_check_level(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static int          pyattr_check_tap(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	

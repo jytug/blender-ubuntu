@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_wave.c 29729 2010-06-27 05:39:55Z broken $
+* $Id: MOD_wave.c 31028 2010-08-04 04:01:27Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -34,6 +34,7 @@
 
 #include "DNA_meshdata_types.h"
 #include "DNA_scene_types.h"
+#include "DNA_object_types.h"
 
 #include "BKE_DerivedMesh.h"
 #include "BKE_object.h"

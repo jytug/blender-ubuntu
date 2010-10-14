@@ -1,5 +1,5 @@
 /**
- * $Id: gpu_buffers.c 30311 2010-07-14 10:46:12Z blendix $
+ * $Id: gpu_buffers.c 31538 2010-08-23 21:31:57Z ben2610 $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,7 +45,6 @@
 #include "DNA_meshdata_types.h"
 
 #include "BKE_DerivedMesh.h"
-#include "BKE_utildefines.h"
 
 #include "DNA_userdef_types.h"
 
@@ -149,6 +148,9 @@ void GPU_buffer_pool_free(GPUBufferPool *pool)
 
 	MEM_freeN(pool->buffers);
 	MEM_freeN(pool);
+	/* if we are releasing the global pool, stop keeping a reference to it */
+	if (pool == globalPool)
+		globalPool = NULL;
 }
 
 void GPU_buffer_pool_free_unused(GPUBufferPool *pool)

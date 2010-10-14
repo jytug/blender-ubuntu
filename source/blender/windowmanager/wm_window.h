@@ -1,5 +1,5 @@
 /**
- * $Id: wm_window.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: wm_window.h 31373 2010-08-16 12:14:09Z nexyon $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,6 +35,8 @@ struct wmOperator;
 /* *************** internal api ************** */
 void		wm_ghost_init			(bContext *C);
 void		wm_ghost_exit(void);
+
+void wm_get_screensize(int *width_r, int *height_r);
 
 wmWindow	*wm_window_new			(bContext *C);
 void		wm_window_free			(bContext *C, wmWindowManager *wm, wmWindow *win);

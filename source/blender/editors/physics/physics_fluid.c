@@ -1,7 +1,7 @@
 /**
  * fluidsim.c
  * 
- * $Id: physics_fluid.c 29294 2010-06-07 03:02:47Z broken $
+ * $Id: physics_fluid.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -77,7 +77,6 @@
 
 #include "LBM_fluidsim.h"
 
-#include "BIF_gl.h"
 
 #include "ED_screen.h"
 
@@ -563,7 +562,6 @@ static void export_fluid_objects(ListBase *fobjects, Scene *scene, int length)
 		
 		if(verts) MEM_freeN(verts);
 		if(tris) MEM_freeN(tris);
-		if(fsmesh.channelVertices) MEM_freeN(fsmesh.channelVertices);
 	}
 }
 

@@ -1,5 +1,5 @@
 /**
- * $Id: PyObjectPlus.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: PyObjectPlus.h 31373 2010-08-16 12:14:09Z nexyon $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -318,9 +318,6 @@ typedef struct KX_PYATTRIBUTE_DEF {
 		char *m_charPtr;
 	} m_typeCheck;
 } PyAttributeDef;
-
-#define KX_PYATTRIBUTE_DUMMY(name) \
-	{ name, KX_PYATTRIBUTE_TYPE_DUMMY, KX_PYATTRIBUTE_RO, 0, 0, 0.f, 0.f, false, false, 0, 0, 1, NULL, NULL, NULL, {NULL, NULL, NULL, NULL, NULL, NULL, NULL} }
 
 #define KX_PYATTRIBUTE_BOOL_RW(name,object,field) \
 	{ name, KX_PYATTRIBUTE_TYPE_BOOL, KX_PYATTRIBUTE_RW, 0, 1, 0.f, 0.f, false, false, offsetof(object,field), 0, 1, NULL, NULL, NULL, {&((object *)0)->field, NULL, NULL, NULL, NULL, NULL, NULL} }

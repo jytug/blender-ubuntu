@@ -6,7 +6,7 @@
  *  
  * texture coordinates are patched within the displist
  * 
- * $Id: mball.c 30274 2010-07-13 16:06:51Z campbellbarton $
+ * $Id: mball.c 31524 2010-08-23 00:57:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -175,6 +175,55 @@ void make_local_mball(MetaBall *mb)
 			ob= ob->id.next;
 		}
 	}
+}
+
+/* most simple meta-element adding function
+ * dont do context menipulation here (rna uses) */
+MetaElem *add_metaball_element(MetaBall *mb, const int type)
+{
+	MetaElem *ml= MEM_callocN(sizeof(MetaElem), "metaelem");
+
+	unit_qt(ml->quat);
+
+	ml->rad= 2.0;
+	ml->s= 2.0;
+	ml->flag= MB_SCALE_RAD;
+
+	switch(type) {
+	case MB_BALL:
+		ml->type = MB_BALL;
+		ml->expx= ml->expy= ml->expz= 1.0;
+
+		break;
+	case MB_TUBE:
+		ml->type = MB_TUBE;
+		ml->expx= ml->expy= ml->expz= 1.0;
+
+		break;
+	case MB_PLANE:
+		ml->type = MB_PLANE;
+		ml->expx= ml->expy= ml->expz= 1.0;
+
+		break;
+	case MB_ELIPSOID:
+		ml->type = MB_ELIPSOID;
+		ml->expx= 1.2f;
+		ml->expy= 0.8f;
+		ml->expz= 1.0;
+		
+		break;
+	case MB_CUBE:
+		ml->type = MB_CUBE;
+		ml->expx= ml->expy= ml->expz= 1.0;
+
+		break;
+	default:
+		break;
+	}
+
+	BLI_addtail(&mb->elems, ml);
+
+	return ml;
 }
 /** Compute bounding box of all MetaElems/MetaBalls.
  *

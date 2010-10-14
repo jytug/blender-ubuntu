@@ -1,5 +1,5 @@
 /**
- * $Id: math_geom.c 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: math_geom.c 31352 2010-08-15 15:14:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -841,10 +841,8 @@ int isect_line_line_v3(float v1[3], float v2[3], float v3[3], float v4[3], float
 	sub_v3_v3v3(a, v2, v1);
 	sub_v3_v3v3(b, v4, v3);
 
-	copy_v3_v3(dir1, a);
-	normalize_v3(dir1);
-	copy_v3_v3(dir2, b);
-	normalize_v3(dir2);
+	normalize_v3_v3(dir1, a);
+	normalize_v3_v3(dir2, b);
 	d = dot_v3v3(dir1, dir2);
 	if (d == 1.0f || d == -1.0f) {
 		/* colinear */
@@ -908,10 +906,8 @@ int isect_line_line_strict_v3(float v1[3], float v2[3], float v3[3], float v4[3]
 	sub_v3_v3v3(a, v2, v1);
 	sub_v3_v3v3(b, v4, v3);
 
-	copy_v3_v3(dir1, a);
-	normalize_v3(dir1);
-	copy_v3_v3(dir2, b);
-	normalize_v3(dir2);
+	normalize_v3_v3(dir1, a);
+	normalize_v3_v3(dir2, b);
 	d = dot_v3v3(dir1, dir2);
 	if (d == 1.0f || d == -1.0f || d == 0) {
 		/* colinear or one vector is zero-length*/
@@ -1225,7 +1221,7 @@ static int point_in_slice_as(float p[3],float origin[3],float normal[3])
 	return 1;
 }
 
-/*mama (knowing the squared lenght of the normal)*/
+/*mama (knowing the squared length of the normal)*/
 static int point_in_slice_m(float p[3],float origin[3],float normal[3],float lns)
 {
 	float h,rp[3];

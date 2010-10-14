@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_cloth.c 28630 2010-05-06 21:31:16Z campbellbarton $
+* $Id: MOD_cloth.c 31364 2010-08-16 05:46:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -29,6 +29,12 @@
 * ***** END GPL LICENSE BLOCK *****
 *
 */
+
+#include "DNA_cloth_types.h"
+#include "DNA_scene_types.h"
+#include "DNA_object_types.h"
+
+#include "MEM_guardedalloc.h"
 
 #include "BKE_cloth.h"
 #include "BKE_cdderivedmesh.h"

@@ -1,5 +1,5 @@
 /*
- * $Id: GEN_HashedPtr.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: GEN_HashedPtr.cpp 31730 2010-09-03 03:30:20Z gsrb3d $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

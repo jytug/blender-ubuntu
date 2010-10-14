@@ -1,5 +1,5 @@
 /**
- * $Id: nla_select.c 29537 2010-06-18 04:39:32Z broken $
+ * $Id: nla_select.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,10 +38,8 @@
 #include "BLI_math.h"
 #include "BLI_rand.h"
 
-#include "BKE_animsys.h"
 #include "BKE_nla.h"
 #include "BKE_context.h"
-#include "BKE_report.h"
 #include "BKE_screen.h"
 
 #include "ED_anim_api.h"

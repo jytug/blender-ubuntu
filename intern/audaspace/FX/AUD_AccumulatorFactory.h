@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_AccumulatorFactory.h 25656 2010-01-01 18:45:21Z nexyon $
+ * $Id: AUD_AccumulatorFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -37,7 +37,11 @@ private:
 	/**
 	 * Whether the accumulator is additive.
 	 */
-	bool m_additive;
+	const bool m_additive;
+
+	// hide copy constructor and operator=
+	AUD_AccumulatorFactory(const AUD_AccumulatorFactory&);
+	AUD_AccumulatorFactory& operator=(const AUD_AccumulatorFactory&);
 
 public:
 	/**
@@ -47,13 +51,7 @@ public:
 	 */
 	AUD_AccumulatorFactory(AUD_IFactory* factory, bool additive = false);
 
-	/**
-	 * Creates a new accumulator factory.
-	 * \param additive Whether the accumulator is additive.
-	 */
-	AUD_AccumulatorFactory(bool additive = false);
-
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_ACCUMULATORFACTORY

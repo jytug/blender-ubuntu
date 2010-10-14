@@ -3,7 +3,7 @@
  *
  * ID and Library types, which are fundamental for sdna,
  *
- * $Id: DNA_ID.h 30325 2010-07-14 14:11:03Z jwilkins $
+ * $Id: DNA_ID.h 31028 2010-08-04 04:01:27Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -164,7 +164,6 @@ typedef struct PreviewImage {
 #define ID_MA		MAKE_ID2('M', 'A') /* Material */
 #define ID_TE		MAKE_ID2('T', 'E') /* Texture */
 #define ID_IM		MAKE_ID2('I', 'M') /* Image */
-#define ID_WV		MAKE_ID2('W', 'V') /* Wave (unused) */
 #define ID_LT		MAKE_ID2('L', 'T') /* Lattice */
 #define ID_LA		MAKE_ID2('L', 'A') /* Lamp */
 #define ID_CA		MAKE_ID2('C', 'A') /* Camera */

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -38,4 +38,3 @@ SET(INC
 )
 
 BLENDERLIB(bf_cineon "${SRC}" "${INC}")
-#env.BlenderLib ('bf_cineon', source_files, incs, defs, libtype=['core','player'], priority = [90, 200])

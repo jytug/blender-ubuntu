@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_shrinkwrap.c 28152 2010-04-12 22:33:43Z campbellbarton $
+* $Id: MOD_shrinkwrap.c 31320 2010-08-13 15:26:37Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,11 +30,13 @@
 *
 */
 
-#include "string.h"
+#include <string.h>
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"
 #include "BKE_shrinkwrap.h"
+
+#include "DNA_object_types.h"
 
 #include "depsgraph_private.h"
 

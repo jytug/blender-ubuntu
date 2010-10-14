@@ -1,5 +1,5 @@
 /**
- * $Id: anim_channels_edit.c 30445 2010-07-17 18:02:10Z campbellbarton $
+ * $Id: anim_channels_edit.c 31028 2010-08-04 04:01:27Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,6 +33,7 @@
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_key_types.h"
+#include "DNA_gpencil_types.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"

@@ -1,5 +1,5 @@
 /**
- * $Id: filesel.c 29876 2010-07-02 17:49:40Z campbellbarton $
+ * $Id: filesel.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -62,10 +62,7 @@
 #include "BLI_storage_types.h"
 #include "BLI_dynstr.h"
 
-#include "BLO_readfile.h"
-
 #include "BKE_context.h"
-#include "BKE_screen.h"
 #include "BKE_global.h"
 
 #include "BLF_api.h"
@@ -76,8 +73,6 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "RNA_access.h"
 
@@ -207,6 +202,13 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 		params->filter = 0;
 		params->sort = FILE_SORT_ALPHA;
 	}
+
+
+	/* initialize the list with previous folders */
+	if (!sfile->folders_prev)
+		sfile->folders_prev = folderlist_new();
+	folderlist_pushdir(sfile->folders_prev, sfile->params->dir);
+
 	return 1;
 }
 

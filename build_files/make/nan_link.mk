@@ -1,7 +1,7 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
 #
-# $Id: nan_link.mk 30250 2010-07-13 00:57:19Z campbellbarton $
+# $Id: nan_link.mk 31029 2010-08-04 08:42:18Z sgefant $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -193,6 +193,10 @@ endif
 
 ifeq ($(WITH_TIFF),true)
    LLIBS += $(NAN_TIFF_LIBS)
+endif
+
+ifeq ($(WITH_LCMS),true)
+   LLIBS += $(BF_LCMS_LIBS)
 endif
 
 LLIBS += $(NAN_PYTHON_LIB)

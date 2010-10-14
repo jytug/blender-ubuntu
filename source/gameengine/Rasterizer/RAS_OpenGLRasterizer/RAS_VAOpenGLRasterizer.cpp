@@ -1,5 +1,5 @@
 /**
- * $Id: RAS_VAOpenGLRasterizer.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: RAS_VAOpenGLRasterizer.cpp 30804 2010-07-27 11:07:34Z blendix $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -91,8 +91,8 @@ void RAS_VAOpenGLRasterizer::SetDrawingMode(int drawingmode)
 
 void RAS_VAOpenGLRasterizer::Exit()
 {
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 

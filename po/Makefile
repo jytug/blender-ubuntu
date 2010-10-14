@@ -1,6 +1,6 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
-# $Id: Makefile 23263 2009-09-15 22:34:10Z gsrb3d $
+# $Id: Makefile 30755 2010-07-26 11:47:33Z campbellbarton $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -51,7 +51,7 @@ $(DIR)%/LC_MESSAGES/blender.mo: %.po
 	mkdir -p $(@D)
 	msgfmt -o $@ $<
 ifeq ($(BF_VERIFY_MO_FILES), true)
-	@cmp $@ $(NANBLENDERHOME)/bin/.blender/locale/$(basename $<)/LC_MESSAGES/blender.mo \
+	@cmp $@ $(NANBLENDERHOME)/release/bin/.blender/locale/$(basename $<)/LC_MESSAGES/blender.mo \
           || ( echo Mismatch between generated and commited $(basename $<).mo catalog && \
                rm -f $@ && false )
 endif

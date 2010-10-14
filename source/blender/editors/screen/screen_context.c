@@ -1,5 +1,5 @@
 /**
- * $Id: screen_context.c 30054 2010-07-06 18:07:10Z campbellbarton $
+ * $Id: screen_context.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,7 +35,6 @@
 
 #include "BKE_context.h"
 #include "BKE_utildefines.h"
-#include "BKE_global.h"
 #include "BKE_action.h"
 #include "BKE_sequencer.h"
 

@@ -1,5 +1,5 @@
 /**
- * $Id: MOD_modifiertypes.h 28406 2010-04-25 01:10:03Z campbellbarton $
+ * $Id: MOD_modifiertypes.h 31223 2010-08-10 21:22:26Z gsrb3d $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -18,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software Foundation;
- * Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  * Contributor(s): Ben Batt
  *

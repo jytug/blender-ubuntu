@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 27255 2010-03-03 19:18:50Z dfelinto $
+# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -74,4 +74,3 @@ SET(INC
 ADD_DEFINITIONS(-DGLEW_STATIC)
 
 BLENDERLIB_NOLIST(gp_common "${SRC}" "${INC}")
-#env.BlenderLib (libname='gp_common', sources=source_files, includes=incs, defines = [], libtype='player', priority=5, compileflags=cflags)

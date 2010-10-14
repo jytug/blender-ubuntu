@@ -1,5 +1,5 @@
 /**
- * $Id: transform_conversions.c 30446 2010-07-17 18:08:14Z campbellbarton $
+ * $Id: transform_conversions.c 31515 2010-08-22 10:52:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,8 +35,6 @@
 #include <string.h>
 #include <math.h>
 
-#include "MEM_guardedalloc.h"
-
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_lattice_types.h"
@@ -47,41 +45,30 @@
 #include "DNA_sequence_types.h"
 #include "DNA_view3d_types.h"
 #include "DNA_constraint_types.h"
+#include "DNA_scene_types.h"
+#include "DNA_meshdata_types.h"
 
-#include "BKE_anim.h"
+#include "MEM_guardedalloc.h"
+
 #include "BKE_action.h"
 #include "BKE_armature.h"
-#include "BKE_blender.h"
-#include "BKE_cloth.h"
 #include "BKE_context.h"
 #include "BKE_curve.h"
 #include "BKE_constraint.h"
 #include "BKE_depsgraph.h"
-#include "BKE_displist.h"
-#include "BKE_DerivedMesh.h"
-#include "BKE_effect.h"
-#include "BKE_font.h"
 #include "BKE_fcurve.h"
 #include "BKE_global.h"
-#include "BKE_lattice.h"
 #include "BKE_key.h"
 #include "BKE_main.h"
-#include "BKE_mball.h"
-#include "BKE_mesh.h"
 #include "BKE_modifier.h"
 #include "BKE_nla.h"
 #include "BKE_object.h"
 #include "BKE_particle.h"
 #include "BKE_sequencer.h"
 #include "BKE_pointcache.h"
-#include "BKE_softbody.h"
-#include "BKE_utildefines.h"
 #include "BKE_bmesh.h"
-#include "BKE_context.h"
-#include "BKE_report.h"
 #include "BKE_scene.h"
 
-#include "BIF_gl.h"
 
 #include "ED_anim_api.h"
 #include "ED_armature.h"
@@ -94,6 +81,7 @@
 #include "ED_mesh.h"
 #include "ED_types.h"
 #include "ED_uvedit.h"
+#include "ED_curve.h" /* for ED_curve_editnurbs */
 
 #include "UI_view2d.h"
 
@@ -659,7 +647,8 @@ static void bone_children_clear_transflag(int mode, short around, ListBase *lb)
 	}
 }
 
-/* sets transform flags in the bones, returns total */
+/* sets transform flags in the bones
+ * returns total number of bones with BONE_TRANSFORM */
 int count_set_pose_transflags(int *out_mode, short around, Object *ob)
 {
 	bArmature *arm= ob->data;
@@ -1347,12 +1336,14 @@ static void createTransCurveVerts(bContext *C, TransInfo *t)
 	int count=0, countsel=0;
 	int propmode = t->flag & T_PROP_EDIT;
 	short hide_handles = (cu->drawflag & CU_HIDE_HANDLES);
-	
+	ListBase *nurbs;
+
 	/* to be sure */
 	if(cu->editnurb==NULL) return;
 
 	/* count total of vertices, check identical as in 2nd loop for making transdata! */
-	for(nu= cu->editnurb->first; nu; nu= nu->next) {
+	nurbs= ED_curve_editnurbs(cu);
+	for(nu= nurbs->first; nu; nu= nu->next) {
 		if(nu->type == CU_BEZIER) {
 			for(a=0, bezt= nu->bezt; a<nu->pntsu; a++, bezt++) {
 				if(bezt->hide==0) {
@@ -1388,7 +1379,7 @@ static void createTransCurveVerts(bContext *C, TransInfo *t)
 	invert_m3_m3(smtx, mtx);
 
 	td = t->data;
-	for(nu= cu->editnurb->first; nu; nu= nu->next) {
+	for(nu= nurbs->first; nu; nu= nu->next) {
 		if(nu->type == CU_BEZIER) {
 			TransData *head, *tail;
 			head = tail = td;
@@ -1541,7 +1532,7 @@ static void createTransCurveVerts(bContext *C, TransInfo *t)
 
 static void createTransLatticeVerts(bContext *C, TransInfo *t)
 {
-	Lattice *latt = ((Lattice*)t->obedit->data)->editlatt;
+	Lattice *latt = ((Lattice*)t->obedit->data)->editlatt->latt;
 	TransData *td = NULL;
 	BPoint *bp;
 	float mtx[3][3], smtx[3][3];
@@ -1772,13 +1763,16 @@ static int connectivity_edge(float mtx[][3], EditVert *v1, EditVert *v2)
 	float edge_len;
 	int done = 0;
 
+	/* note: hidden verts are not being checked for, this assumes
+	 * flushing of hidden faces & edges is working right */
+	
+	if (v1->f2 + v2->f2 == 4)
+		return 0;
+	
 	sub_v3_v3v3(edge_vec, v1->co, v2->co);
 	mul_m3_v3(mtx, edge_vec);
 
 	edge_len = len_v3(edge_vec);
-
-	if (v1->f2 + v2->f2 == 4)
-		return 0;
 
 	if (v1->f2) {
 		if (v2->f2) {
@@ -1845,7 +1839,7 @@ static void editmesh_set_connectivity_distance(EditMesh *em, float mtx[][3])
 
 		/* do internal edges for quads */
 		for(efa= em->faces.first; efa; efa= efa->next) {
-			if (efa->v4) {
+			if (efa->v4 && efa->h==0) {
 				done |= connectivity_edge(mtx, efa->v1, efa->v3);
 				done |= connectivity_edge(mtx, efa->v2, efa->v4);
 			}
@@ -3033,7 +3027,7 @@ static TransData *ActionFCurveToTransData(TransData *td, TransData2D **td2dv, FC
 
 	for (i=0, bezt=fcu->bezt; i < fcu->totvert; i++, bezt++) {
 		/* only add selected keyframes (for now, proportional edit is not enabled) */
-		if (BEZSELECTED(bezt)) {
+		if (bezt->f2 & SELECT) { /* note this MUST match count_fcurve_keys(), so can't use BEZSELECTED() macro */
 			/* only add if on the right 'side' of the current frame */
 			if (FrameOnMouseSide(side, bezt->vec[1][0], cfra)) {
 				TimeToTransData(td, bezt->vec[1], adt);
@@ -4377,7 +4371,11 @@ static void set_trans_object_base_flags(bContext *C, TransInfo *t)
 
 			/* if parent selected, deselect */
 			while(parsel) {
-				if(parsel->flag & SELECT) break;
+				if(parsel->flag & SELECT) {
+					Base *parbase = object_in_scene(parsel, scene);
+					if TESTBASELIB_BGMODE(v3d, scene, parbase)
+							break;
+				}
 				parsel= parsel->parent;
 			}
 
@@ -4397,7 +4395,7 @@ static void set_trans_object_base_flags(bContext *C, TransInfo *t)
 	}
 
 	/* all recalc flags get flushed to all layers, so a layer flip later on works fine */
-	DAG_scene_flush_update(t->scene, -1, 0);
+	DAG_scene_flush_update(G.main, t->scene, -1, 0);
 
 	/* and we store them temporal in base (only used for transform code) */
 	/* this because after doing updates, the object->recalc is cleared */
@@ -4475,7 +4473,7 @@ static int count_proportional_objects(TransInfo *t)
 	
 
 	/* all recalc flags get flushed to all layers, so a layer flip later on works fine */
-	DAG_scene_flush_update(t->scene, -1, 0);
+	DAG_scene_flush_update(G.main, t->scene, -1, 0);
 
 	/* and we store them temporal in base (only used for transform code) */
 	/* this because after doing updates, the object->recalc is cleared */

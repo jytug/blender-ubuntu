@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_hook.c 29429 2010-06-13 00:11:42Z campbellbarton $
+* $Id: MOD_hook.c 31028 2010-08-04 04:01:27Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -32,6 +32,7 @@
 
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
+#include "DNA_object_types.h"
 
 #include "BLI_math.h"
 

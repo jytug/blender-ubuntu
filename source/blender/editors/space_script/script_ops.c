@@ -1,5 +1,5 @@
 /**
- * $Id: script_ops.c 29440 2010-06-14 03:52:10Z campbellbarton $
+ * $Id: script_ops.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "DNA_screen_types.h"
 #include "DNA_space_types.h"
@@ -38,8 +37,6 @@
 #include "BLI_blenlib.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_access.h"
 

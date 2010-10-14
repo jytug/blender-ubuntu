@@ -195,7 +195,7 @@ def read_stl(filename):
        >>> pts = list(pts)
        >>>
        >>> # print the coordinate of the triangle n
-       >>> print(pts[i] for i in tris[n])
+       >>> print([pts[i] for i in tris[n]])
     '''
 
     tris, pts = [], ListDict()

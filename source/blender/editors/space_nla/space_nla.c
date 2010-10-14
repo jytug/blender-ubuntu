@@ -1,5 +1,5 @@
 /**
- * $Id: space_nla.c 28034 2010-04-06 07:02:16Z broken $
+ * $Id: space_nla.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,15 +38,10 @@
 #include "BLI_math.h"
 #include "BLI_rand.h"
 
-#include "BKE_animsys.h"
-#include "BKE_action.h"
-#include "BKE_nla.h"
-#include "BKE_colortools.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 #include "ED_anim_api.h"
 #include "ED_markers.h"

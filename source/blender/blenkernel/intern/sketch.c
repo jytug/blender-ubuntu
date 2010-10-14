@@ -1,6 +1,6 @@
 /**
  *
- * $Id: sketch.c 28395 2010-04-23 23:57:00Z campbellbarton $
+ * $Id: sketch.c 31352 2010-08-15 15:14:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -72,8 +72,7 @@ void sk_initPoint(SK_Point *pt, SK_DrawData *dd, float *no)
 {
 	if (no)
 	{
-		VECCOPY(pt->no, no);
-		normalize_v3(pt->no);
+		normalize_v3_v3(pt->no, no);
 	}
 	else
 	{

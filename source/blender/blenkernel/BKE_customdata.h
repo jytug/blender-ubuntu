@@ -1,5 +1,5 @@
 /*
-* $Id: BKE_customdata.h 29140 2010-06-01 19:26:35Z blendix $
+* $Id: BKE_customdata.h 31540 2010-08-23 22:16:45Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -88,7 +88,7 @@ void *CustomData_add_layer(struct CustomData *data, int type, int alloctype,
 						   void *layer, int totelem);
 /*same as above but accepts a name */
 void *CustomData_add_layer_named(struct CustomData *data, int type, int alloctype,
-						   void *layer, int totelem, char *name);
+						   void *layer, int totelem, const char *name);
 
 /* frees the active or first data layer with the give type.
  * returns 1 on succes, 0 if no layer with the given type is found

@@ -1,7 +1,7 @@
 /*  effect.c
  * 
  * 
- * $Id: effect.c 29544 2010-06-18 11:36:51Z jhk $
+ * $Id: effect.c 31839 2010-09-09 07:52:35Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -433,9 +433,8 @@ static float eff_calc_visibility(ListBase *colliders, EffectorCache *eff, Effect
 
 	if(!colls)
 		return visibility;
-	
-	VECCOPY(norm, efd->vec_to_point);
-	negate_v3(norm);
+
+	negate_v3_v3(norm, efd->vec_to_point);
 	len = normalize_v3(norm);
 	
 	// check all collision objects
@@ -663,16 +662,15 @@ int get_effector_data(EffectorCache *eff, EffectorData *efd, EffectedPoint *poin
 		where_is_object_time(eff->scene, ob, cfra);
 
 		/* use z-axis as normal*/
-		VECCOPY(efd->nor, ob->obmat[2]);
-		normalize_v3(efd->nor);
+		normalize_v3_v3(efd->nor, ob->obmat[2]);
 
 		/* for vortex the shape chooses between old / new force */
 		if(eff->pd && eff->pd->shape == PFIELD_SHAPE_PLANE) {
 			/* efd->loc is closes point on effector xy-plane */
-			float temp[3];
+			float temp[3], translate[3];
 			sub_v3_v3v3(temp, point->loc, ob->obmat[3]);
-			project_v3_v3v3(efd->loc, temp, efd->nor);
-			sub_v3_v3v3(efd->loc, point->loc, efd->loc);
+			project_v3_v3v3(translate, temp, efd->nor);
+			add_v3_v3v3(efd->loc, ob->obmat[3], translate);
 		}
 		else {
 			VECCOPY(efd->loc, ob->obmat[3]);
@@ -708,8 +706,7 @@ int get_effector_data(EffectorCache *eff, EffectorData *efd, EffectedPoint *poin
 		else {
 			/* for some effectors we need the object center every time */
 			sub_v3_v3v3(efd->vec_to_point2, point->loc, eff->ob->obmat[3]);
-			VECCOPY(efd->nor2, eff->ob->obmat[2]);
-			normalize_v3(efd->nor2);
+			normalize_v3_v3(efd->nor2, eff->ob->obmat[2]);
 		}
 	}
 

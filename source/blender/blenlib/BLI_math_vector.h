@@ -1,5 +1,5 @@
 /**
- * $Id: BLI_math_vector.h 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: BLI_math_vector.h 31573 2010-08-25 08:31:52Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -126,6 +126,7 @@ MINLINE int compare_v3v3(float a[3], float b[3], float limit);
 MINLINE int compare_len_v3v3(float a[3], float b[3], float limit);
 
 MINLINE int compare_v4v4(float a[4], float b[4], float limit);
+MINLINE int equals_v4v4(float a[4], float b[4]);
 
 /********************************** Angles ***********************************/
 /* - angle with 2 arguments is angle between vector                          */
@@ -150,9 +151,9 @@ void bisect_v3_v3v3v3(float r[3], float a[3], float b[3], float c[3]);
 
 /*********************************** Other ***********************************/
 
-void print_v2(char *str, float a[2]);
-void print_v3(char *str, float a[3]);
-void print_v4(char *str, float a[4]);
+void print_v2(const char *str, const float a[2]);
+void print_v3(const char *str, const float a[3]);
+void print_v4(const char *str, const float a[4]);
 
 MINLINE void normal_short_to_float_v3(float r[3], const short n[3]);
 MINLINE void normal_float_to_short_v3(short r[3], const float n[3]);

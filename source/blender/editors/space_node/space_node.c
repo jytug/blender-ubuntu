@@ -1,5 +1,5 @@
 /**
- * $Id: space_node.c 29440 2010-06-14 03:52:10Z campbellbarton $
+ * $Id: space_node.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,15 +40,12 @@
 #include "BLI_math.h"
 #include "BLI_rand.h"
 
-#include "BKE_colortools.h"
 #include "BKE_context.h"
 #include "BKE_screen.h"
-#include "BKE_node.h"
 
 #include "ED_render.h"
 #include "ED_screen.h"
 
-#include "BIF_gl.h"
 
 #include "WM_api.h"
 #include "WM_types.h"

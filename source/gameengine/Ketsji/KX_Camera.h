@@ -1,5 +1,5 @@
 /*
- * $Id: KX_Camera.h 30347 2010-07-14 20:52:04Z campbellbarton $
+ * $Id: KX_Camera.h 30705 2010-07-25 01:45:53Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,7 +51,7 @@ class KX_Camera : public KX_GameObject
 	Py_Header;
 protected:
 	friend class KX_Scene;
-	/** Camera parameters (clips distances, focal lenght). These
+	/** Camera parameters (clips distances, focal length). These
 	 * params are closely tied to Blender. In the gameengine, only the
 	 * projection and modelview matrices are relevant. There's a
 	 * conversion being done in the engine class. Why is it stored

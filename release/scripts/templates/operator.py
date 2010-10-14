@@ -23,7 +23,8 @@ class ExportSomeData(bpy.types.Operator):
                         description="Choose between two items",
                         default='OPT_A')
 
-    def poll(self, context):
+    @classmethod
+    def poll(cls, context):
         return context.active_object != None
 
     def execute(self, context):
@@ -32,12 +33,12 @@ class ExportSomeData(bpy.types.Operator):
         #if not self.is_property_set("filepath"):
         #    raise Exception("filename not set")
 
-        write_some_data(self.properties.filepath, context, self.properties.use_setting)
+        write_some_data(self.filepath, context, self.use_setting)
 
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        wm = context.manager
+        wm = context.window_manager
 
         if True:
             # File selector
@@ -53,9 +54,6 @@ class ExportSomeData(bpy.types.Operator):
         elif False:
             return self.execute(context)
 
-
-
-bpy.types.register(ExportSomeData)
 
 # Only needed if you want to add into a dynamic menu
 menu_func = lambda self, context: self.layout.operator("export.some_data", text="Example Exporter...")

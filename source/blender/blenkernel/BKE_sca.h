@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_sca.h (mar-2001 nzc)
  *	
- * $Id: BKE_sca.h 30190 2010-07-10 21:15:10Z dfelinto $ 
+ * $Id: BKE_sca.h 31207 2010-08-10 05:41:51Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -70,9 +70,9 @@ void set_sca_new_poins_ob(struct Object *ob);
 void set_sca_new_poins(void);
 void sca_remove_ob_poin(struct Object *obt, struct Object *ob);                    
 
-void sca_move_sensor(struct bSensor *sens_to_move, Object *ob, int move_up);
-void sca_move_controller(struct bController *cont_to_move, Object *ob, int move_up);
-void sca_move_actuator(struct bActuator *act_to_move, Object *ob, int move_up);
+void sca_move_sensor(struct bSensor *sens_to_move, struct Object *ob, int move_up);
+void sca_move_controller(struct bController *cont_to_move, struct Object *ob, int move_up);
+void sca_move_actuator(struct bActuator *act_to_move, struct Object *ob, int move_up);
 
 #endif
 

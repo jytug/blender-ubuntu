@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_mesh_types.h 26998 2010-02-17 19:50:42Z campbellbarton $ 
+ * $Id: DNA_mesh_types.h 30899 2010-07-30 11:50:00Z blendix $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -128,8 +128,8 @@ typedef struct TFace {
 
 
 /* me->flag */
-#define ME_ISDONE		1
-#define ME_NOPUNOFLIP	2
+/* #define ME_ISDONE		1 */
+#define ME_DEPRECATED	2
 #define ME_TWOSIDED		4
 #define ME_UVEFFECT		8
 #define ME_VCOLEFFECT	16

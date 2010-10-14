@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_string.h 28667 2010-05-08 15:37:29Z campbellbarton $
+ * $Id: BLI_string.h 31630 2010-08-28 12:34:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,7 +26,7 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  *
- * $Id: BLI_string.h 28667 2010-05-08 15:37:29Z campbellbarton $ 
+ * $Id: BLI_string.h 31630 2010-08-28 12:34:22Z campbellbarton $ 
 */
 
 #ifndef BLI_STRING_H
@@ -131,6 +131,9 @@ int BLI_natstrcmp(const char *s1, const char *s2);
 size_t BLI_strnlen(const char *str, size_t maxlen);
 
 void BLI_timestr(double _time, char *str); /* time var is global */
+
+int BLI_utf8_invalid_byte(const char *str, int length);
+int BLI_utf8_invalid_strip(char *str, int length);
 
 #ifdef __cplusplus
 }

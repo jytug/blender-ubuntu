@@ -3,7 +3,7 @@
  *	
  * Object is a sort of wrapper for general info.
  *
- * $Id: DNA_object_types.h 30444 2010-07-17 17:50:20Z campbellbarton $ 
+ * $Id: DNA_object_types.h 31636 2010-08-28 20:56:54Z ben2610 $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,7 +35,7 @@
 
 #include "DNA_listBase.h"
 #include "DNA_ID.h"
-#include "DNA_action_types.h"
+#include "DNA_action_types.h" /* bAnimVizSettings */
 
 #ifdef __cplusplus
 extern "C" {
@@ -402,6 +402,7 @@ extern Object workob;
 #define OB_BOUND_POLYH		4
 #define OB_BOUND_POLYT		5
 #define OB_BOUND_DYN_MESH   6
+#define OB_BOUND_CAPSULE	7
 
 
 /* **************** BASE ********************* */
@@ -556,10 +557,11 @@ typedef enum ObjectMode {
 	OB_MODE_POSE = 64
 } ObjectMode;
 
+#define MAX_DUPLI_RECUR 8
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
 

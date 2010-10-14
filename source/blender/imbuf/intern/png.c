@@ -24,13 +24,14 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * $Id: png.c 30432 2010-07-17 13:29:55Z campbellbarton $
+ * $Id: png.c 31364 2010-08-16 05:46:10Z campbellbarton $
  */
 
 
 #include "png.h"
 
 #include "BLI_blenlib.h"
+#include "MEM_guardedalloc.h"
 
 #include "imbuf.h"
 

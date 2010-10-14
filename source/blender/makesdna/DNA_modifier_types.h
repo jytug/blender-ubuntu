@@ -1,6 +1,6 @@
 /**
  *
- * $Id: DNA_modifier_types.h 29984 2010-07-05 11:48:13Z blendix $ 
+ * $Id: DNA_modifier_types.h 31451 2010-08-19 05:58:22Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,6 +66,9 @@ typedef enum ModifierType {
 	eModifierType_ShapeKey,
 	eModifierType_Solidify,
 	eModifierType_Screw,
+	/* placeholder, keep this so durian files load in
+	 * trunk with the correct modifier once its merged */
+	eModifierType_Warp,
 	NUM_MODIFIER_TYPES
 } ModifierType;
 

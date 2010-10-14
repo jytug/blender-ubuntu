@@ -1,5 +1,5 @@
 /**
- * $Id: space.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: space.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,13 +29,10 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 
-#include "BKE_context.h"
-#include "BKE_screen.h"
 
 
 /* */

@@ -1,5 +1,5 @@
 /**
- * $Id: space_time.c 30189 2010-07-10 21:09:38Z campbellbarton $
+ * $Id: space_time.c 31633 2010-08-28 15:04:42Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,7 +31,6 @@
 
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
-#include "DNA_particle_types.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -42,7 +41,6 @@
 #include "BKE_global.h"
 #include "BKE_screen.h"
 #include "BKE_pointcache.h"
-#include "BKE_utildefines.h"
 
 #include "ED_anim_api.h"
 #include "ED_keyframes_draw.h"
@@ -511,9 +509,14 @@ static void time_main_area_listener(ARegion *ar, wmNotifier *wmn)
 			break;
 		
 		case NC_SCENE:
-			ED_region_tag_redraw(ar);
-			break;
-		
+			switch (wmn->data) {
+				case ND_FRAME:
+				case ND_FRAME_RANGE:
+				case ND_KEYINGSET:
+				case ND_RENDER_OPTIONS:
+					ED_region_tag_redraw(ar);
+				break;
+			}
 	}
 }
 
@@ -542,6 +545,7 @@ static void time_header_area_listener(ARegion *ar, wmNotifier *wmn)
 		case NC_SCENE:
 			switch (wmn->data) {
 				case ND_FRAME:
+				case ND_FRAME_RANGE:
 				case ND_KEYINGSET:
 				case ND_RENDER_OPTIONS:
 					ED_region_tag_redraw(ar);

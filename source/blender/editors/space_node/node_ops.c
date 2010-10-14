@@ -1,5 +1,5 @@
 /**
- * $Id: node_ops.c 30445 2010-07-17 18:02:10Z campbellbarton $
+ * $Id: node_ops.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,6 @@
 #include "DNA_scene_types.h"
 
 #include "BKE_context.h"
-#include "BKE_node.h"
 
 #include "ED_screen.h"
 #include "ED_transform.h"

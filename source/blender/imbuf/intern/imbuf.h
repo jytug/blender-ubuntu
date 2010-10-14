@@ -3,7 +3,7 @@
  *
  * This header might have to become external...
  *
- * $Id: imbuf.h 28651 2010-05-07 15:18:04Z blendix $ 
+ * $Id: imbuf.h 31364 2010-08-16 05:46:10Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -50,8 +50,6 @@
 #ifndef WIN32
 #include <sys/mman.h>
 #endif
-
-#include "MEM_guardedalloc.h"
 
 #if !defined(WIN32)
 #define O_BINARY 0

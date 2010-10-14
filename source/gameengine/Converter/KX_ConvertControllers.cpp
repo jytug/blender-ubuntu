@@ -1,5 +1,5 @@
 /**
- * $Id: KX_ConvertControllers.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_ConvertControllers.cpp 31056 2010-08-05 03:25:45Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -176,11 +176,11 @@ void BL_ConvertControllers(
 					/* let the controller print any warnings here when importing */
 					pyctrl->SetScriptText(STR_String(pycont->module)); 
 					pyctrl->SetScriptName(pycont->module); /* will be something like module.func so using it as the name is OK */
-				}
 
-				if(pycont->flag & CONT_PY_DEBUG) {
-					printf("\nDebuging \"%s\", module for object %s\n\texpect worse performance.\n", pycont->module, blenderobject->id.name+2);
-					pyctrl->SetDebug(true);
+					if(pycont->flag & CONT_PY_DEBUG) {
+						printf("\nDebuging \"%s\", module for object %s\n\texpect worse performance.\n", pycont->module, blenderobject->id.name+2);
+						pyctrl->SetDebug(true);
+					}
 				}
 				
 #endif // DISABLE_PYTHON

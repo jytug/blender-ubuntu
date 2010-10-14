@@ -1,5 +1,5 @@
 /*
- * $Id: KX_KetsjiEngine.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: KX_KetsjiEngine.h 31056 2010-08-05 03:25:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,6 +71,7 @@ private:
 	class KX_ISceneConverter*			m_sceneconverter;
 	class NG_NetworkDeviceInterface*		m_networkdevice;
 #ifndef DISABLE_PYTHON
+	/* borrowed from sys.modules["__main__"], dont manage ref's */
 	PyObject*					m_pythondictionary;
 #endif
 	class SCA_IInputDevice*				m_keyboarddevice;

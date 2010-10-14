@@ -1,5 +1,5 @@
 /**
- * $Id: interface_panel.c 30219 2010-07-12 10:55:05Z blendix $
+ * $Id: interface_panel.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,6 @@
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h"

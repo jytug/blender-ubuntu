@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_bevel.c 28152 2010-04-12 22:33:43Z campbellbarton $
+* $Id: MOD_bevel.c 31364 2010-08-16 05:46:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -29,6 +29,7 @@
 * ***** END GPL LICENSE BLOCK *****
 *
 */
+#include "MEM_guardedalloc.h"
 
 #include "BKE_bmesh.h"
 #include "BKE_cdderivedmesh.h"

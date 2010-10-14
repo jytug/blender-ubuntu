@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_mesh.h (mar-2001 nzc)
  *	
- * $Id: BKE_mesh.h 27326 2010-03-08 13:49:13Z nazgul $ 
+ * $Id: BKE_mesh.h 30995 2010-08-03 00:56:43Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -140,7 +140,12 @@ int mesh_layers_menu_charlen(struct CustomData *data, int type); /* use this to 
 void mesh_layers_menu_concat(struct CustomData *data, int type, char *str);
 int mesh_layers_menu(struct CustomData *data, int type);
 
+/* vertex level transformations & checks (no derived mesh) */
 
+int minmax_mesh(struct Mesh *me, float min[3], float max[3]);
+int mesh_center_median(struct Mesh *me, float cent[3]);
+int mesh_center_bounds(struct Mesh *me, float cent[3]);
+void mesh_translate(struct Mesh *me, float offset[3], int do_keys);
 
 #ifdef __cplusplus
 }

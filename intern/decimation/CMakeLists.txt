@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31545 2010-08-24 04:29:23Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -28,5 +28,5 @@ SET(INC . ../moto/include ../container ../memutil)
 
 FILE(GLOB SRC intern/*.cpp)
 
-BLENDERLIB(bf_decimation "${SRC}" "${INC}")
+BLENDERLIB(bf_intern_decimate "${SRC}" "${INC}")
 #, libtype=['core','common','player'], priority = [10, 20, 25] )

@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_BandPassReader.h 25591 2009-12-28 10:15:35Z nexyon $
+ * $Id: AUD_BandPassReader.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -83,7 +83,6 @@ public:
 	 * \param reader The reader to read from.
 	 * \param low The lowest passed frequency.
 	 * \param high The highest passed frequency.
-	 * \exception AUD_Exception Thrown if the reader specified is NULL.
 	 */
 	AUD_BandPassReader(AUD_IReader* reader, float low, float high);
 

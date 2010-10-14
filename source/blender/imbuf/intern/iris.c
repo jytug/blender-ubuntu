@@ -26,11 +26,14 @@
  * ***** END GPL LICENSE BLOCK *****
  * iris.c
  *
- * $Id: iris.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: iris.c 31364 2010-08-16 05:46:10Z campbellbarton $
  */
 
 #include <string.h>
+
 #include "BLI_blenlib.h"
+#include "MEM_guardedalloc.h"
+
 #include "imbuf.h"
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"

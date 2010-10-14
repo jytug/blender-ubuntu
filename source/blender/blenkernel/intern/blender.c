@@ -2,7 +2,7 @@
  * 
  * common help functions and data
  * 
- * $Id: blender.c 30307 2010-07-14 09:46:26Z blendix $
+ * $Id: blender.c 31677 2010-08-31 14:56:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,6 +43,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 #include <fcntl.h> // for open
 
@@ -52,6 +53,7 @@
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_sequence_types.h"
+#include "DNA_sound_types.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_dynstr.h"
@@ -102,6 +104,7 @@ void free_blender(void)
 	BKE_spacetypes_free();		/* after free main, it uses space callbacks */
 	
 	IMB_exit();
+	seq_stripelem_cache_destruct();
 	
 	free_nodesystem();	
 }
@@ -228,7 +231,7 @@ static void setup_app_data(bContext *C, BlendFileData *bfd, char *filename)
 		curscene= bfd->curscene;
 		if(curscene==NULL) curscene= bfd->main->scene.first;
 		/* and we enforce curscene to be in current screen */
-		curscreen->scene= curscene;
+		if(curscreen) curscreen->scene= curscene; /* can run in bgmode */
 
 		/* clear_global will free G.main, here we can still restore pointers */
 		lib_link_screen_restore(bfd->main, curscreen, curscene);
@@ -312,7 +315,7 @@ static void setup_app_data(bContext *C, BlendFileData *bfd, char *filename)
 	BLI_strncpy(G.main->name, filename, FILE_MAX); /* is guaranteed current file */
 
 	/* baseflags, groups, make depsgraph, etc */
-	set_scene_bg(CTX_data_scene(C));
+	set_scene_bg(G.main, CTX_data_scene(C));
 	
 	MEM_freeN(bfd);
 }
@@ -457,13 +460,16 @@ static UndoElem *curundo= NULL;
 
 static int read_undosave(bContext *C, UndoElem *uel)
 {
-	char scestr[FILE_MAXDIR+FILE_MAXFILE];
+	char scestr[FILE_MAXDIR+FILE_MAXFILE]; /* we should eventually just use G.main->name */
+	char mainstr[FILE_MAXDIR+FILE_MAXFILE];
 	int success=0, fileflags;
 	
 	/* This is needed so undoing/redoing doesnt crash with threaded previews going */
 	WM_jobs_stop_all(CTX_wm_manager(C));
 	
 	strcpy(scestr, G.sce);	/* temporal store */
+	strcpy(mainstr, G.main->name);	/* temporal store */
+
 	fileflags= G.fileflags;
 	G.fileflags |= G_FILE_NO_UI;
 
@@ -473,11 +479,12 @@ static int read_undosave(bContext *C, UndoElem *uel)
 		success= BKE_read_file_from_memfile(C, &uel->memfile, NULL);
 
 	/* restore */
-	strcpy(G.sce, scestr);
+	strcpy(G.sce, scestr); /* restore */
+	strcpy(G.main->name, mainstr); /* restore */
 	G.fileflags= fileflags;
 
 	if(success)
-		DAG_on_load_update();
+		DAG_on_load_update(G.main);
 
 	return success;
 }
@@ -639,11 +646,11 @@ void BKE_undo_number(bContext *C, int nr)
 void BKE_undo_name(bContext *C, const char *name)
 {
 	UndoElem *uel;
-	
-	for(uel= undobase.last; uel; uel= uel->prev) {
+
+	for(uel= undobase.last; uel; uel= uel->prev)
 		if(strcmp(name, uel->name)==0)
 			break;
-	}
+
 	if(uel && uel->prev) {
 		curundo= uel->prev;
 		BKE_undo_step(C, 0);

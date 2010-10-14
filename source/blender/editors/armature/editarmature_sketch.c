@@ -1,5 +1,5 @@
 /**
- * $Id: editarmature_sketch.c 29870 2010-07-02 11:26:12Z blendix $
+ * $Id: editarmature_sketch.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_armature_types.h"
 
@@ -37,11 +38,6 @@
 #include "BLI_graph.h"
 #include "BLI_ghash.h"
 
-#include "BKE_utildefines.h"
-#include "BKE_global.h"
-#include "BKE_DerivedMesh.h"
-#include "BKE_object.h"
-#include "BKE_anim.h"
 #include "BKE_context.h"
 #include "BKE_sketch.h"
 

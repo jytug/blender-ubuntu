@@ -27,7 +27,7 @@
  * cineon.c
  * contributors: joeedh
  * I hearby donate this code and all rights to the Blender Foundation.
- * $Id: cineon_dpx.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: cineon_dpx.c 31533 2010-08-23 11:46:12Z ton $
  */
  
 #include <stdio.h>
@@ -53,7 +53,7 @@ static void cineon_conversion_parameters(LogImageByteConversionParameters *param
 	
 	params->blackPoint = 95;
 	params->whitePoint = 685;
-	params->gamma = 1.7f;
+	params->gamma = 1.0f;
 	params->doLogarithm = 0;
 	
 }

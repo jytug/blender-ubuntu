@@ -1,5 +1,5 @@
 /**
- * $Id: blf_lang.c 29935 2010-07-04 15:35:23Z elubie $
+ * $Id: blf_lang.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,6 @@
 #include <locale.h>
 #include "libintl.h"
 
-#include "MEM_guardedalloc.h"
 
 #include "DNA_listBase.h"
 #include "DNA_vec_types.h"

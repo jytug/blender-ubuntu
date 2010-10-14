@@ -1,5 +1,5 @@
 /**
-* $Id: wm_cursors.c 27655 2010-03-22 09:30:00Z campbellbarton $
+* $Id: wm_cursors.c 31673 2010-08-31 11:31:21Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -31,6 +31,8 @@
 #include <string.h>
 
 #include "GHOST_C-api.h"
+
+#include "BLO_sys_types.h"
 
 #include "DNA_listBase.h"
 #include "DNA_userdef_types.h" 

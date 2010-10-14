@@ -1,6 +1,6 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
-# $Id: Makefile 30250 2010-07-13 00:57:19Z campbellbarton $
+# $Id: Makefile 30755 2010-07-26 11:47:33Z campbellbarton $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -45,7 +45,7 @@ MAKEFLAGS=-I$(NANBLENDERHOME)/build_files/make --no-print-directory
 
 SOURCEDIR = 
 ifeq ($(FREE_WINDOWS),true)
-    DIRS ?= dlltool extern intern source po
+    DIRS ?= $(NANBLENDERHOME)/build_files/make/dlltool extern intern source po
 else
     DIRS ?= extern intern source po
 endif

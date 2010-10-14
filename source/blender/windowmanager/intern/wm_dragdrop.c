@@ -1,5 +1,5 @@
 /**
- * $Id: wm_dragdrop.c 27913 2010-04-01 01:27:22Z broken $
+ * $Id: wm_dragdrop.c 31320 2010-08-13 15:26:37Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#include "string.h"
+#include <string.h>
 
 #include "DNA_windowmanager_types.h"
 #include "DNA_screen_types.h"

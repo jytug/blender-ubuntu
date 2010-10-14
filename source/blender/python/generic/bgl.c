@@ -1,5 +1,5 @@
 /* 
- * $Id: bgl.c 30370 2010-07-15 11:51:43Z campbellbarton $
+ * $Id: bgl.c 31332 2010-08-14 05:33:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1117,7 +1117,7 @@ PyObject *BGL_Init(void)
 {
 	PyObject *mod, *dict, *item;
 	mod = PyModule_Create(&BGL_module_def);
-	PyDict_SetItemString(PySys_GetObject("modules"), BGL_module_def.m_name, mod);
+	PyDict_SetItemString(PyImport_GetModuleDict(), BGL_module_def.m_name, mod);
 	dict= PyModule_GetDict(mod);
 	
 	if( PyType_Ready( &BGL_bufferType) < 0)

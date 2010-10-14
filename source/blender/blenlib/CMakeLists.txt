@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 29947 2010-07-04 21:14:59Z elubie $
+# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -27,10 +27,15 @@
 FILE(GLOB SRC intern/*.c)
 
 SET(INC 
-	. ../makesdna ../blenkernel ../../../intern/guardedalloc ../include
-	../gpu ../../../intern/ghost
-	${FREETYPE_INCLUDE_DIRS}
+	.
+	../makesdna
+	../blenkernel
+	../include
+	../gpu
+	../../../intern/ghost
+	../../../intern/guardedalloc
 	${ZLIB_INC}
+	${FREETYPE_INCLUDE_DIRS}
 )
 
 IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -41,7 +46,7 @@ SET(INC
 ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 IF(WIN32)
-	SET(INC ${INC} ${PTHREADS_INC})
+	LIST(APPEND INC ${PTHREADS_INC})
 ENDIF(WIN32)
 
 IF(WITH_OPENMP)
@@ -49,7 +54,3 @@ IF(WITH_OPENMP)
 ENDIF(WITH_OPENMP)
 
 BLENDERLIB(bf_blenlib "${SRC}" "${INC}")
-#if env['OURPLATFORM'] == 'linux2':
-#    cflags='-pthread'
-#
-#env.BlenderLib ( 'bf_blenlib', sources, Split(incs), Split(defs), libtype=['core','player'], priority = [85,195], compileflags =cflags )

@@ -1,5 +1,5 @@
 /**
- * $Id: mesh_ops.c 30445 2010-07-17 18:02:10Z campbellbarton $
+ * $Id: mesh_ops.c 31710 2010-09-01 21:11:33Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
@@ -39,9 +38,6 @@
 #include "BLI_editVert.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_mesh.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_access.h"
 
@@ -79,7 +75,7 @@ void ED_operatortypes_mesh(void)
 	WM_operatortype_append(MESH_OT_primitive_plane_add);
 	WM_operatortype_append(MESH_OT_primitive_cube_add);
 	WM_operatortype_append(MESH_OT_primitive_circle_add);
-	WM_operatortype_append(MESH_OT_primitive_tube_add);
+	WM_operatortype_append(MESH_OT_primitive_cylinder_add);
 	WM_operatortype_append(MESH_OT_primitive_cone_add);
 	WM_operatortype_append(MESH_OT_primitive_grid_add);
 	WM_operatortype_append(MESH_OT_primitive_monkey_add);
@@ -314,6 +310,6 @@ void ED_keymap_mesh(wmKeyConfig *keyconf)
 	WM_keymap_add_menu(keymap, "VIEW3D_MT_uv_map", UKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_menu(keymap, "VIEW3D_MT_vertex_group", GKEY, KM_PRESS, KM_CTRL, 0);
 	
-	ED_object_generic_keymap(keyconf, keymap, 2);
+	ED_object_generic_keymap(keyconf, keymap, 3);
 }
 

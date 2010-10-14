@@ -1,5 +1,5 @@
 /**
- * $Id: node_buttons.c 27687 2010-03-23 15:31:12Z blendix $
+ * $Id: node_buttons.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,16 +41,9 @@
 #include "BLI_rand.h"
 
 #include "BKE_context.h"
-#include "BKE_depsgraph.h"
-#include "BKE_idprop.h"
-#include "BKE_object.h"
 #include "BKE_node.h"
-#include "BKE_global.h"
-#include "BKE_scene.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
-#include "BIF_gl.h"
 
 #include "WM_api.h"
 #include "WM_types.h"

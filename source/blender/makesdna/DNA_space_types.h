@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_space_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_space_types.h 29604 2010-06-22 02:29:52Z broken $ 
+ * $Id: DNA_space_types.h 31270 2010-08-12 00:14:32Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,6 +42,7 @@
 struct ID;
 struct Text;
 struct Script;
+struct bSound;
 struct ImBuf;
 struct Image;
 struct Scopes;
@@ -160,6 +161,7 @@ typedef struct FileSelectParams {
 	char dir[240]; /* directory */
 	char file[80]; /* file */
 	char renamefile[80];
+	char renameedit[80]; /* annoying but the first is only used for initialization */
 
 	short type; /* XXXXX for now store type here, should be moved to the operator */
 	short flag; /* settings for filter, hiding dots files,...  */
@@ -302,7 +304,8 @@ typedef struct SpaceText {
 	int showlinenrs;
 	int tabnumber;
 
-	int showsyntax;
+	short showsyntax;
+	short line_hlight;
 	short overwrite;
 	short live_edit; /* run python while editing, evil */
 	float pix_per_line;
@@ -549,6 +552,22 @@ typedef struct SpaceUserPref {
 	char filter[64];		/* search term for filtering in the UI */
 
 } SpaceUserPref;
+
+typedef struct SpaceSound {
+	struct SpaceLink *next, *prev;
+	ListBase regionbase;		/* storage of regions for inactive spaces */
+	int spacetype;
+	float blockscale;
+	struct ScrArea *area;
+	
+	View2D v2d;
+	
+	struct bSound *sound;
+	short mode, sndnr;
+	short xof, yof;
+	short flag, lock;
+	int pad2;
+} SpaceSound;
 
 /* view3d  Now in DNA_view3d_types.h */
 

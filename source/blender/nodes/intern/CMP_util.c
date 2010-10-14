@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_util.c 30586 2010-07-21 14:13:48Z blendix $
+ * $Id: CMP_util.c 31783 2010-09-06 10:15:41Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -62,7 +62,7 @@ CompBuf *dupalloc_compbuf(CompBuf *cbuf)
 {
 	CompBuf *dupbuf= alloc_compbuf(cbuf->x, cbuf->y, cbuf->type, 1);
 	if(dupbuf) {
-		memcpy(dupbuf->rect, cbuf->rect, cbuf->type*sizeof(float)*cbuf->x*cbuf->y);
+		memmove(dupbuf->rect, cbuf->rect, cbuf->type*sizeof(float)*cbuf->x*cbuf->y);
 	
 		dupbuf->xof= cbuf->xof;
 		dupbuf->yof= cbuf->yof;

@@ -1,5 +1,5 @@
 /**
- * $Id: nla_draw.c 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: nla_draw.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,19 +37,16 @@
 #include "DNA_space_types.h"
 #include "DNA_windowmanager_types.h"
 
-#include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
 #include "BLI_dlrbTree.h"
 
-#include "BKE_animsys.h"
 #include "BKE_fcurve.h"
 #include "BKE_nla.h"
 #include "BKE_context.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 #include "ED_anim_api.h"
 #include "ED_keyframes_draw.h"

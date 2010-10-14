@@ -1,5 +1,5 @@
 /*
- * $Id: writeframeserver.c 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: writeframeserver.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * Frameserver
  * Makes Blender accessible from TMPGenc directly using VFAPI (you can
@@ -45,7 +45,6 @@
 
 #include <stdlib.h>
 
-#include "MEM_guardedalloc.h"
 #include "DNA_userdef_types.h"
 
 #include "BKE_global.h"

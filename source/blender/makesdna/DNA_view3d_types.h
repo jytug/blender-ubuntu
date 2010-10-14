@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_view3d_types.h (mar-2001 nzc)
  *
- * $Id: DNA_view3d_types.h 27655 2010-03-22 09:30:00Z campbellbarton $ 
+ * $Id: DNA_view3d_types.h 31870 2010-09-11 04:39:00Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -185,7 +185,9 @@ typedef struct View3D {
 	unsigned int customdata_mask;
 	
 	/* afterdraw, for xray & transparent */
-	struct ListBase afterdraw;
+	struct ListBase afterdraw_transp;
+	struct ListBase afterdraw_xray;
+	struct ListBase afterdraw_xraytransp;
 	
 	/* drawflags, denoting state */
 	short zbuf, transp, xray;
@@ -296,6 +298,9 @@ typedef struct View3D {
 /* BGPic->flag */
 /* may want to use 1 for select ?*/
 #define V3D_BGPIC_EXPANDED		2
+
+#define RV3D_CAMZOOM_MIN -30
+#define RV3D_CAMZOOM_MAX 600
 
 #endif
 

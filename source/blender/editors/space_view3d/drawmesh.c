@@ -1,5 +1,5 @@
 /**
- * $Id: drawmesh.c 30311 2010-07-14 10:46:12Z blendix $
+ * $Id: drawmesh.c 31207 2010-08-10 05:41:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,17 +42,12 @@
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_view3d_types.h"
+#include "DNA_object_types.h"
 
-#include "BKE_bmfont.h"
-#include "BKE_displist.h"
 #include "BKE_DerivedMesh.h"
 #include "BKE_effect.h"
-#include "BKE_global.h"
 #include "BKE_image.h"
-#include "BKE_main.h"
 #include "BKE_material.h"
-#include "BKE_mesh.h"
-#include "BKE_object.h"
 #include "BKE_paint.h"
 #include "BKE_property.h"
 #include "BKE_utildefines.h"

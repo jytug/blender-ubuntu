@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_armature.h (mar-2001 nzc)
  *	
- * $Id: BKE_armature.h 28261 2010-04-18 14:47:45Z campbellbarton $ 
+ * $Id: BKE_armature.h 30885 2010-07-30 01:13:07Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -80,7 +80,6 @@ void free_armature(struct bArmature *arm);
 void make_local_armature(struct bArmature *arm);
 struct bArmature *copy_armature(struct bArmature *arm);
 
-void bone_flip_name (char *name, int strip_number);
 int bone_autoside_name (char *name, int strip_number, short axis, float head, float tail);
 
 struct Bone *get_named_bone (struct bArmature *arm, const char *name);

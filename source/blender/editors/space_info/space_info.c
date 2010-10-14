@@ -1,5 +1,5 @@
 /**
- * $Id: space_info.c 29935 2010-07-04 15:35:23Z elubie $
+ * $Id: space_info.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,10 +37,8 @@
 #include "BLI_rand.h"
 
 #include "BKE_context.h"
-#include "BKE_colortools.h"
 #include "BKE_global.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 #include "ED_screen.h"
 
@@ -51,6 +49,7 @@
 
 #include "UI_resources.h"
 #include "UI_interface.h"
+
 
 #include "info_intern.h"	// own include
 

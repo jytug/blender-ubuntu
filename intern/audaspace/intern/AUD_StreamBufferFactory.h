@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_StreamBufferFactory.h 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_StreamBufferFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -47,6 +47,10 @@ private:
 	 */
 	AUD_Specs m_specs;
 
+	// hide copy constructor and operator=
+	AUD_StreamBufferFactory(const AUD_StreamBufferFactory&);
+	AUD_StreamBufferFactory& operator=(const AUD_StreamBufferFactory&);
+
 public:
 	/**
 	 * Creates the factory and reads the reader created by the factory supplied
@@ -56,7 +60,7 @@ public:
 	 */
 	AUD_StreamBufferFactory(AUD_IFactory* factory);
 
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_STREAMBUFFERFACTORY

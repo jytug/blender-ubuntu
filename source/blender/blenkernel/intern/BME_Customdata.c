@@ -3,7 +3,7 @@
  *
  *	Custom Data functions for Bmesh
  *
- * $Id: BME_Customdata.c 27655 2010-03-22 09:30:00Z campbellbarton $
+ * $Id: BME_Customdata.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,9 +36,9 @@
 
 #include <string.h>
 
+#include "MEM_guardedalloc.h"
 #include "BKE_bmeshCustomData.h"
 #include "bmesh_private.h"
-#include "MEM_guardedalloc.h"
 
 /********************* Layer type information **********************/
 typedef struct BME_LayerTypeInfo {

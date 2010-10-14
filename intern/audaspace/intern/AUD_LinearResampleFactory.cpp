@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_LinearResampleFactory.cpp 25643 2010-01-01 05:09:30Z nexyon $
+ * $Id: AUD_LinearResampleFactory.cpp 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -26,28 +26,18 @@
 #include "AUD_LinearResampleFactory.h"
 #include "AUD_LinearResampleReader.h"
 
-AUD_LinearResampleFactory::AUD_LinearResampleFactory(AUD_IReader* reader,
-													 AUD_DeviceSpecs specs) :
-		AUD_ResampleFactory(reader, specs) {}
-
 AUD_LinearResampleFactory::AUD_LinearResampleFactory(AUD_IFactory* factory,
 													 AUD_DeviceSpecs specs) :
-		AUD_ResampleFactory(factory, specs) {}
+		AUD_ResampleFactory(factory, specs)
+{
+}
 
-AUD_LinearResampleFactory::AUD_LinearResampleFactory(AUD_DeviceSpecs specs) :
-		AUD_ResampleFactory(specs) {}
-
-AUD_IReader* AUD_LinearResampleFactory::createReader()
+AUD_IReader* AUD_LinearResampleFactory::createReader() const
 {
 	AUD_IReader* reader = getReader();
 
-	if(reader != 0)
-	{
-		if(reader->getSpecs().rate != m_specs.rate)
-		{
-			reader = new AUD_LinearResampleReader(reader, m_specs.specs);
-			AUD_NEW("reader")
-		}
-	}
+	if(reader->getSpecs().rate != m_specs.rate)
+		reader = new AUD_LinearResampleReader(reader, m_specs.specs);
+
 	return reader;
 }

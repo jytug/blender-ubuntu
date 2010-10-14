@@ -1,5 +1,5 @@
 /**
- * $Id: space_graph.c 29537 2010-06-18 04:39:32Z broken $
+ * $Id: space_graph.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,6 @@
 #include "BKE_main.h"
 #include "BKE_fcurve.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 #include "ED_screen.h"
 #include "ED_anim_api.h"

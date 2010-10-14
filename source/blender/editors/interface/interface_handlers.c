@@ -28,6 +28,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "MEM_guardedalloc.h"
 
@@ -43,7 +44,6 @@
 #include "BKE_idprop.h"
 #include "BKE_report.h"
 #include "BKE_texture.h"
-#include "BKE_utildefines.h"
 
 #include "ED_screen.h"
 #include "ED_util.h"
@@ -240,6 +240,20 @@ static int ui_is_a_warp_but(uiBut *but)
 			return TRUE;
 
 	return FALSE;
+}
+
+/* file selectors are exempt from utf-8 checks */
+static int ui_is_utf8_but(uiBut *but)
+{
+	if (but->rnaprop) {
+		int subtype= RNA_property_subtype(but->rnaprop);
+		
+		if(ELEM3(subtype, PROP_FILEPATH, PROP_DIRPATH, PROP_FILENAME)) {
+			return TRUE;
+		}
+	}
+
+	return !(but->flag & UI_BUT_NO_UTF8);
 }
 
 /* ********************** button apply/revert ************************/
@@ -1155,7 +1169,7 @@ static int ui_textedit_delete_selection(uiBut *but, uiHandleButtonData *data)
 	int len= strlen(str);
 	int change= 0;
 	if(but->selsta != but->selend && len) {
-		memmove( str+but->selsta, str+but->selend, len+1 );
+		memmove( str+but->selsta, str+but->selend, len-but->selsta+1 );
 		change= 1;
 	}
 	
@@ -1535,6 +1549,19 @@ static void ui_textedit_begin(bContext *C, uiBut *but, uiHandleButtonData *data)
 	data->str= MEM_callocN(sizeof(char)*data->maxlen + 1, "textedit str");
 	ui_get_but_string(but, data->str, data->maxlen);
 
+	if(ELEM3(but->type, NUM, NUMABS, NUMSLI)) {
+		/* XXX: we dont have utf editing yet so for numbers its best to strip out utf chars 
+		 * this is so the deg' synbol isnt included in number editing fields: bug 22274 */
+		int i;
+		for(i=0; data->str[i]; i++) {
+			if(!isascii(data->str[i])) {
+				data->str[i]= '\0';
+				break;
+			}
+		}
+	}
+	
+	
 	data->origstr= BLI_strdup(data->str);
 	data->selextend= 0;
 	data->selstartx= 0;
@@ -1559,6 +1586,15 @@ static void ui_textedit_begin(bContext *C, uiBut *but, uiHandleButtonData *data)
 static void ui_textedit_end(bContext *C, uiBut *but, uiHandleButtonData *data)
 {
 	if(but) {
+		if(ui_is_utf8_but(but)) {
+			int strip= BLI_utf8_invalid_strip(but->editstr, strlen(but->editstr));
+			/* not a file?, strip non utf-8 chars */
+			if(strip) {
+				/* wont happen often so isnt that annoying to keep it here for a while */
+				printf("invalid utf8 - stripped chars %d\n", strip);
+			}
+		}
+		
 		if(data->searchbox) {
 			if(data->cancel==0)
 				ui_searchbox_apply(but, data->searchbox);
@@ -3237,24 +3273,8 @@ static int ui_do_but_COLORBAND(bContext *C, uiBlock *block, uiBut *but, uiHandle
 
 			if(event->ctrl) {
 				/* insert new key on mouse location */
-				if(coba->tot < MAXCOLORBAND-1) {
-					float pos= ((float)(mx - but->x1))/(but->x2-but->x1);
-					float col[4];
-					
-					do_colorband(coba, pos, col);	/* executes it */
-					
-					coba->tot++;
-					coba->cur= coba->tot-1;
-					
-					coba->data[coba->cur].r= col[0];
-					coba->data[coba->cur].g= col[1];
-					coba->data[coba->cur].b= col[2];
-					coba->data[coba->cur].a= col[3];
-					coba->data[coba->cur].pos= pos;
-
-					ui_colorband_update(coba);
-				}
-
+				float pos= ((float)(mx - but->x1))/(but->x2-but->x1);
+				colorband_element_add(coba, pos);
 				button_activate_state(C, but, BUTTON_STATE_EXIT);
 			}
 			else {
@@ -4265,7 +4285,7 @@ static int ui_do_button(bContext *C, uiBlock *block, uiBut *but, wmEvent *event)
 			return WM_UI_HANDLER_BREAK;
 		}
 		/* reset to default */
-		else if(event->type == ZEROKEY && event->val == KM_PRESS) {
+		else if(ELEM(event->type, ZEROKEY,PAD0) && event->val == KM_PRESS) {
 			if (!(ELEM3(but->type, HSVCIRCLE, HSVCUBE, HISTOGRAM)))
 				ui_set_but_default(C, but);
 		}
@@ -4780,7 +4800,7 @@ static void button_activate_init(bContext *C, ARegion *ar, uiBut *but, uiButtonA
 		button_activate_state(C, but, BUTTON_STATE_WAIT_FLASH);
 }
 
-static void button_activate_exit(bContext *C, uiHandleButtonData *data, uiBut *but, int mousemove)
+static void button_activate_exit(bContext *C, uiHandleButtonData *data, uiBut *but, int mousemove, int onfree)
 {
 	uiBlock *block= but->block;
 	uiBut *bt;
@@ -4790,7 +4810,8 @@ static void button_activate_exit(bContext *C, uiHandleButtonData *data, uiBut *b
 		button_activate_state(C, but, BUTTON_STATE_EXIT);
 
 	/* apply the button action or value */
-	ui_apply_button(C, block, but, data, 0);
+	if(!onfree)
+		ui_apply_button(C, block, but, data, 0);
 
 	/* if this button is in a menu, this will set the button return
 	 * value to the button value and the menu return value to ok, the
@@ -4805,7 +4826,7 @@ static void button_activate_exit(bContext *C, uiHandleButtonData *data, uiBut *b
 		}
 	}
 
-	if(!data->cancel) {
+	if(!onfree && !data->cancel) {
 		/* autokey & undo push */
 		ui_apply_autokey_undo(C, but);
 
@@ -4838,7 +4859,8 @@ static void button_activate_exit(bContext *C, uiHandleButtonData *data, uiBut *b
 	but->active= NULL;
 	but->flag &= ~(UI_ACTIVE|UI_SELECT);
 	but->flag |= UI_BUT_LAST_ACTIVE;
-	ui_check_but(but);
+	if(!onfree)
+		ui_check_but(but);
 
 	/* adds empty mousemove in queue for re-init handler, in case mouse is
 	 * still over a button. we cannot just check for this ourselfs because
@@ -4847,7 +4869,7 @@ static void button_activate_exit(bContext *C, uiHandleButtonData *data, uiBut *b
 		WM_event_add_mousemove(C);
 }
 
-void ui_button_active_cancel(const bContext *C, uiBut *but)
+void ui_button_active_free(const bContext *C, uiBut *but)
 {
 	uiHandleButtonData *data;
 
@@ -4857,7 +4879,7 @@ void ui_button_active_cancel(const bContext *C, uiBut *but)
 	if(but->active) {
 		data= but->active;
 		data->cancel= 1;
-		button_activate_exit((bContext*)C, data, but, 0);
+		button_activate_exit((bContext*)C, data, but, 0, 1);
 	}
 }
 
@@ -4923,7 +4945,7 @@ static void ui_handle_button_activate(bContext *C, ARegion *ar, uiBut *but, uiBu
 	if(oldbut) {
 		data= oldbut->active;
 		data->cancel= 1;
-		button_activate_exit(C, data, oldbut, 0);
+		button_activate_exit(C, data, oldbut, 0, 0);
 	}
 
 	button_activate_init(C, ar, but, type);
@@ -5081,7 +5103,7 @@ static int ui_handle_button_event(bContext *C, wmEvent *event, uiBut *but)
 		postbut= data->postbut;
 		posttype= data->posttype;
 
-		button_activate_exit(C, data, but, (postbut == NULL));
+		button_activate_exit(C, data, but, (postbut == NULL), 0);
 
 		/* for jumping to the next button with tab while text editing */
 		if(postbut)
@@ -5185,20 +5207,21 @@ static void ui_handle_button_return_submenu(bContext *C, wmEvent *event, uiBut *
 		if(menu->menuretval != UI_RETURN_OK)
 			data->cancel= 1;
 
-		button_activate_exit(C, data, but, 1);
+		button_activate_exit(C, data, but, 1, 0);
 	}
 	else if(menu->menuretval == UI_RETURN_OUT) {
 		if(event->type==MOUSEMOVE && ui_mouse_inside_button(data->region, but, event->x, event->y)) {
 			button_activate_state(C, but, BUTTON_STATE_HIGHLIGHT);
 		}
 		else {
-			if(event->type != MOUSEMOVE) {
+			if (ISKEYBOARD(event->type)) {
+				/* keyboard menu hierarchy navigation, going back to previous level */
 				but->active->used_mouse= 0;
 				button_activate_state(C, but, BUTTON_STATE_HIGHLIGHT);
 			}
 			else {
 				data->cancel= 1;
-				button_activate_exit(C, data, but, 1);
+				button_activate_exit(C, data, but, 1, 0);
 			}
 		}
 	}

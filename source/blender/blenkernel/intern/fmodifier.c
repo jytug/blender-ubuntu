@@ -1,5 +1,5 @@
 /**
- * $Id: fmodifier.c 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: fmodifier.c 31547 2010-08-24 06:40:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,10 +42,6 @@
 #include "BKE_fcurve.h"
 #include "BKE_idprop.h"
 #include "BKE_utildefines.h"
-
-#ifndef DISABLE_PYTHON
-#include "BPY_extern.h" /* for BPY_eval_driver() */
-#endif
 
 #define SMALL -1.0e-10
 #define SELECT 1
@@ -1089,13 +1085,6 @@ int remove_fmodifier (ListBase *modifiers, FModifier *fcm)
 		MEM_freeN(fcm);
 		return 0;
 	}
-}
-
-/* Remove and free the nth F-Modifier from the given stack */
-int remove_fmodifier_index (ListBase *modifiers, int index)
-{
-	FModifier *fcm= BLI_findlink(modifiers, index);
-	return remove_fmodifier(modifiers, fcm);
 }
 
 /* Remove all of a given F-Curve's modifiers */

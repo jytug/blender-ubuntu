@@ -1,5 +1,5 @@
 /**
- * $Id: image_render.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: image_render.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,9 +32,7 @@
 #include "DNA_space_types.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h"
 #include "BKE_image.h"
-#include "BKE_screen.h"
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h"

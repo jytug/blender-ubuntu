@@ -1,6 +1,6 @@
 /**
  *	
- * $Id: BKE_modifier.h 28376 2010-04-23 11:19:06Z blendix $ 
+ * $Id: BKE_modifier.h 31832 2010-09-09 00:14:51Z nicholasbishop $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -320,6 +320,9 @@ struct LinkNode *modifiers_calcDataMasks(struct Scene *scene,
 										 CustomDataMask dataMask,
 										 int required_mode);
 struct ModifierData  *modifiers_getVirtualModifierList(struct Object *ob);
+
+/* ensure modifier correctness when changing ob->data */
+void test_object_modifiers(struct Object *ob);
 
 /* here for do_versions */
 void modifier_mdef_compact_influences(struct ModifierData *md);

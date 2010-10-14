@@ -1,5 +1,5 @@
 /*
- * $Id: multires.c 29986 2010-07-05 12:20:49Z blendix $
+ * $Id: multires.c 31832 2010-09-09 00:14:51Z nicholasbishop $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -273,6 +273,40 @@ int multiresModifier_reshapeFromDeformMod(Scene *scene, MultiresModifierData *mm
 	ndm->release(ndm);
 
 	return result;
+}
+
+/* reset the multires levels to match the number of mdisps */
+void multiresModifier_set_levels_from_disps(MultiresModifierData *mmd, Object *ob)
+{
+	Mesh *me = ob->data;
+	MDisps *mdisp;
+	int i;
+
+	mdisp = CustomData_get_layer(&me->fdata, CD_MDISPS);
+
+	if(mdisp) {
+		for(i = 0; i < me->totface; ++i, ++mdisp) {
+			int S = me->mface[i].v4 ? 4 : 3;
+
+			if(mdisp->totdisp == 0) continue;
+
+			while(1) {
+				int side = (1 << (mmd->totlvl-1)) + 1;
+				int lvl_totdisp = side*side*S;
+				if(mdisp->totdisp == lvl_totdisp)
+					break;
+				else if(mdisp->totdisp < lvl_totdisp)
+					--mmd->totlvl;
+				else
+					++mmd->totlvl;
+					
+			}
+		}
+
+		mmd->lvl = MIN2(mmd->sculptlvl, mmd->totlvl);
+		mmd->sculptlvl = MIN2(mmd->sculptlvl, mmd->totlvl);
+		mmd->renderlvl = MIN2(mmd->renderlvl, mmd->totlvl);
+	}
 }
 
 static void multires_set_tot_mdisps(Mesh *me, int lvl)

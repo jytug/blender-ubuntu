@@ -1,5 +1,5 @@
 /**
- * $Id: editmesh_loop.c 28640 2010-05-07 07:54:25Z campbellbarton $
+ * $Id: editmesh_loop.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,13 +51,7 @@ editmesh_loop: tools with own drawing subloops, select, knife, subdiv
 
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
-#include "BKE_displist.h"
-#include "BKE_global.h"
-#include "BKE_library.h"
 #include "BKE_mesh.h"
-#include "BKE_object.h"
-#include "BKE_report.h"
-#include "BKE_utildefines.h"
 
 #include "PIL_time.h"
 

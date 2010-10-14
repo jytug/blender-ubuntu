@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_huecorrect.c 28158 2010-04-13 08:30:53Z broken $
+ * $Id: CMP_huecorrect.c 30882 2010-07-30 00:06:59Z broken $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -141,7 +141,7 @@ static void node_composit_init_huecorrect(bNode* node)
 	
 	for (c=0; c<3; c++) {
 		CurveMap *cuma = &cumapping->cm[c];
-		curvemap_reset(cuma, &cumapping->clipr, cumapping->preset);
+		curvemap_reset(cuma, &cumapping->clipr, cumapping->preset, CURVEMAP_SLOPE_POSITIVE);
 	}
 	
 	/* default to showing Saturation */

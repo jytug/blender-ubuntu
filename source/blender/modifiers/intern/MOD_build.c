@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_build.c 29729 2010-06-27 05:39:55Z broken $
+* $Id: MOD_build.c 31364 2010-08-16 05:46:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -29,6 +29,8 @@
 * ***** END GPL LICENSE BLOCK *****
 *
 */
+
+#include "MEM_guardedalloc.h"
 
 #include "BLI_rand.h"
 #include "BLI_ghash.h"

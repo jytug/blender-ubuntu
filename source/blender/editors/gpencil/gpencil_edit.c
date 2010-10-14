@@ -1,5 +1,5 @@
 /**
- * $Id: gpencil_edit.c 28223 2010-04-16 08:13:30Z nazgul $
+ * $Id: gpencil_edit.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,21 +45,15 @@
 #include "DNA_screen_types.h"
 #include "DNA_space_types.h"
 #include "DNA_view3d_types.h"
+#include "DNA_gpencil_types.h"
 
-#include "BKE_armature.h"
-#include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_curve.h"
-#include "BKE_global.h"
 #include "BKE_gpencil.h"
-#include "BKE_image.h"
 #include "BKE_library.h"
 #include "BKE_object.h"
 #include "BKE_report.h"
-#include "BKE_utildefines.h"
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "WM_api.h"
 #include "WM_types.h"

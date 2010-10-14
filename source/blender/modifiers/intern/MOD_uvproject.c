@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_uvproject.c 29479 2010-06-15 21:46:02Z campbellbarton $
+* $Id: MOD_uvproject.c 31028 2010-08-04 04:01:27Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -34,6 +34,7 @@
 
 #include "DNA_meshdata_types.h"
 #include "DNA_camera_types.h"
+#include "DNA_object_types.h"
 
 #include "BLI_math.h"
 #include "BLI_uvproject.h"

@@ -1,5 +1,5 @@
 /**
- * $Id: KX_ConstraintWrapper.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_ConstraintWrapper.cpp 31373 2010-08-16 12:14:09Z nexyon $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -110,8 +110,14 @@ PyMethodDef KX_ConstraintWrapper::Methods[] = {
 };
 
 PyAttributeDef KX_ConstraintWrapper::Attributes[] = {
-	//KX_PYATTRIBUTE_TODO("constraintId"),
+	KX_PYATTRIBUTE_RO_FUNCTION("constraint_id", KX_ConstraintWrapper, pyattr_get_constraintId),
 	{ NULL }	//Sentinel
 };
+
+PyObject* KX_ConstraintWrapper::pyattr_get_constraintId(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+{
+	KX_ConstraintWrapper* self= static_cast<KX_ConstraintWrapper*>(self_v);
+	return self->PyGetConstraintId();
+}
 
 #endif // DISABLE_PYTHON

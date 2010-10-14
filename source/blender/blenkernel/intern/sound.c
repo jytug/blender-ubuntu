@@ -1,7 +1,7 @@
 /**
  * sound.c (mar-2001 nzc)
  *
- * $Id: sound.c 30568 2010-07-21 07:55:53Z nexyon $
+ * $Id: sound.c 31372 2010-08-16 11:41:07Z nexyon $
  */
 
 #include <string.h>
@@ -16,6 +16,7 @@
 #include "DNA_sequence_types.h"
 #include "DNA_packedFile_types.h"
 #include "DNA_screen_types.h"
+#include "DNA_sound_types.h"
 
 #include "AUD_C-API.h"
 
@@ -381,10 +382,8 @@ void sound_move_scene_sound(struct Scene *scene, void* handle, int startframe, i
 
 void sound_start_play_scene(struct Scene *scene)
 {
-	AUD_Sound* sound;
-	sound = AUD_loopSound(scene->sound_scene);
-	scene->sound_scene_handle = AUD_play(sound, 1);
-	AUD_unload(sound);
+	scene->sound_scene_handle = AUD_play(scene->sound_scene, 1);
+	AUD_setLoop(scene->sound_scene_handle, -1);
 }
 
 void sound_play_scene(struct Scene *scene)
@@ -396,8 +395,6 @@ void sound_play_scene(struct Scene *scene)
 
 	if(status == AUD_STATUS_INVALID)
 		sound_start_play_scene(scene);
-
-	AUD_setLoop(scene->sound_scene_handle, -1, -1);
 
 	if(status != AUD_STATUS_PLAYING)
 	{
@@ -436,12 +433,16 @@ void sound_seek_scene(struct bContext *C)
 
 	if(scene->audio.flag & AUDIO_SCRUB && !CTX_wm_screen(C)->animtimer)
 	{
-		AUD_setLoop(scene->sound_scene_handle, -1, 1 / FPS);
+		// AUD_XXX TODO: fix scrubbing, it currently doesn't stop playing
 		if(scene->audio.flag & AUDIO_SYNC)
 			AUD_seekSequencer(scene->sound_scene_handle, CFRA / FPS);
 		else
 			AUD_seek(scene->sound_scene_handle, CFRA / FPS);
 		AUD_resume(scene->sound_scene_handle);
+		if(AUD_getStatus(scene->sound_scrub_handle) != AUD_STATUS_INVALID)
+			AUD_seek(scene->sound_scrub_handle, 0);
+		else
+			scene->sound_scrub_handle = AUD_pauseAfter(scene->sound_scene_handle, 1 / FPS);
 	}
 	else
 	{

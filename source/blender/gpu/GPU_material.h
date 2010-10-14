@@ -1,5 +1,5 @@
 /**
- * $Id: GPU_material.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: GPU_material.h 30805 2010-07-27 11:10:34Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -158,7 +158,7 @@ int GPU_lamp_has_shadow_buffer(GPULamp *lamp);
 void GPU_lamp_shadow_buffer_bind(GPULamp *lamp, float viewmat[][4], int *winsize, float winmat[][4]);
 void GPU_lamp_shadow_buffer_unbind(GPULamp *lamp);
 
-void GPU_lamp_update(GPULamp *lamp, int lay, float obmat[][4]);
+void GPU_lamp_update(GPULamp *lamp, int lay, int hide, float obmat[][4]);
 void GPU_lamp_update_colors(GPULamp *lamp, float r, float g, float b, float energy);
 int GPU_lamp_shadow_layer(GPULamp *lamp);
 

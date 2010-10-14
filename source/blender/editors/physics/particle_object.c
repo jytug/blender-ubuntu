@@ -1,5 +1,5 @@
 /**
- * $Id: particle_object.c 29604 2010-06-22 02:29:52Z broken $
+ * $Id: particle_object.c 31825 2010-09-08 08:36:12Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -166,7 +166,7 @@ static int new_particle_settings_exec(bContext *C, wmOperator *op)
 
 	psys_check_boid_data(psys);
 
-	DAG_scene_sort(scene);
+	DAG_scene_sort(bmain, scene);
 	DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
@@ -193,6 +193,7 @@ void PARTICLE_OT_new(wmOperatorType *ot)
 
 static int new_particle_target_exec(bContext *C, wmOperator *op)
 {
+	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem);
 	ParticleSystem *psys= ptr.data;
@@ -214,7 +215,7 @@ static int new_particle_target_exec(bContext *C, wmOperator *op)
 
 	BLI_addtail(&psys->targets, pt);
 
-	DAG_scene_sort(scene);
+	DAG_scene_sort(bmain, scene);
 	DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
@@ -238,6 +239,7 @@ void PARTICLE_OT_new_target(wmOperatorType *ot)
 
 static int remove_particle_target_exec(bContext *C, wmOperator *op)
 {
+	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem);
 	ParticleSystem *psys= ptr.data;
@@ -262,7 +264,7 @@ static int remove_particle_target_exec(bContext *C, wmOperator *op)
 	if(pt)
 		pt->flag |= PTARGET_CURRENT;
 
-	DAG_scene_sort(scene);
+	DAG_scene_sort(bmain, scene);
 	DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
@@ -593,6 +595,7 @@ static int disconnect_hair_exec(bContext *C, wmOperator *op)
 		disconnect_hair(scene, ob, psys);
 	}
 
+	DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
 
 	return OPERATOR_FINISHED;
@@ -636,7 +639,8 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 	point=  edit ? edit->points : NULL;
 	
 	if(psmd->dm->deformedOnly)
-		dm= psmd->dm;
+		/* we don't want to mess up psmd->dm when converting to global coordinates below */
+		dm= CDDM_copy(psmd->dm);
 	else
 		dm= mesh_get_derived_deform(scene, ob, CD_MASK_BAREMESH);
 
@@ -701,8 +705,7 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 	}
 
 	free_bvhtree_from_mesh(&bvhtree);
-	if(!psmd->dm->deformedOnly)
-		dm->release(dm);
+	dm->release(dm);
 
 	psys_free_path_cache(psys, psys->edit);
 
@@ -732,6 +735,7 @@ static int connect_hair_exec(bContext *C, wmOperator *op)
 		connect_hair(scene, ob, psys);
 	}
 
+	DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
 
 	return OPERATOR_FINISHED;

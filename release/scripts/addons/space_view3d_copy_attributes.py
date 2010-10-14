@@ -236,8 +236,9 @@ class CopySelectedPoseConstraints(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
+        props = self.properties
         for idx, const in enumerate(context.active_pose_bone.constraints):
-            layout.prop(self, "selection", index=idx, text=const.name,
+            layout.prop(props, 'selection', index=idx, text=const.name,
                toggle=True)
 
     def execute(self, context):
@@ -305,7 +306,6 @@ def obDrw(ob, active, context):
     ob.show_texture_space = active.show_texture_space
     ob.show_transparent = active.show_transparent
     ob.show_wire = active.show_wire
-    ob.show_x_ray = active.show_x_ray
     ob.empty_draw_type = active.empty_draw_type
     ob.empty_draw_size = active.empty_draw_size
 
@@ -489,8 +489,9 @@ class CopySelectedObjectConstraints(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
+        props = self.properties
         for idx, const in enumerate(context.active_object.constraints):
-            layout.prop(self, "selection", index=idx, text=const.name,
+            layout.prop(props, 'selection', index=idx, text=const.name,
                toggle=True)
 
     def execute(self, context):
@@ -519,8 +520,9 @@ class CopySelectedObjectModifiers(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
+        props = self.properties
         for idx, const in enumerate(context.active_object.modifiers):
-            layout.prop(self, 'selection', index=idx, text=const.name,
+            layout.prop(props, 'selection', index=idx, text=const.name,
                toggle=True)
 
     def execute(self, context):
@@ -650,8 +652,8 @@ class MESH_OT_CopyFaceSettings(bpy.types.Operator):
 
     def execute(self, context):
         mesh = context.object.data
-        mode = getattr(self, 'mode', 'MODE')
-        layername = getattr(self, 'layer', None)
+        mode = self.properties.get('mode', 'MODE')
+        layername = self.properties.get('layer')
 
         # Switching out of edit mode updates the selected state of faces and
         # makes the data from the uv texture and vertex color layers available.

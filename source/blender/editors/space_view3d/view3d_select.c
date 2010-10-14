@@ -1,5 +1,5 @@
 /**
- * $Id: view3d_select.c 29210 2010-06-04 06:02:46Z broken $
+ * $Id: view3d_select.c 31808 2010-09-07 10:24:12Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -46,15 +46,8 @@
 #include "BLI_rand.h"
 #include "BLI_linklist.h"
 
-#include "BKE_action.h"
 #include "BKE_context.h"
-#include "BKE_depsgraph.h"
-#include "BKE_object.h"
-#include "BKE_global.h"
 #include "BKE_paint.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 
 #include "BIF_gl.h"
@@ -356,11 +349,9 @@ static void do_lasso_select_pose(ViewContext *vc, Object *ob, short mcords[][2],
 	if(ob->type!=OB_ARMATURE || ob->pose==NULL) return;
 	
 	for(pchan= ob->pose->chanbase.first; pchan; pchan= pchan->next) {
-		VECCOPY(vec, pchan->pose_head);
-		mul_m4_v3(ob->obmat, vec);
+		mul_v3_m4v3(vec, ob->obmat, pchan->pose_head);
 		project_short(vc->ar, vec, sco1);
-		VECCOPY(vec, pchan->pose_tail);
-		mul_m4_v3(ob->obmat, vec);
+		mul_v3_m4v3(vec, ob->obmat, pchan->pose_tail);
 		project_short(vc->ar, vec, sco2);
 		
 		if(lasso_inside_edge(mcords, moves, sco1[0], sco1[1], sco2[0], sco2[1])) {
@@ -644,11 +635,9 @@ static void do_lasso_select_armature(ViewContext *vc, short mcords[][2], short m
 	
 	for (ebone= arm->edbo->first; ebone; ebone=ebone->next) {
 
-		VECCOPY(vec, ebone->head);
-		mul_m4_v3(vc->obedit->obmat, vec);
+		mul_v3_m4v3(vec, vc->obedit->obmat, ebone->head);
 		project_short(vc->ar, vec, sco1);
-		VECCOPY(vec, ebone->tail);
-		mul_m4_v3(vc->obedit->obmat, vec);
+		mul_v3_m4v3(vec, vc->obedit->obmat, ebone->tail);
 		project_short(vc->ar, vec, sco2);
 		
 		didpoint= 0;
@@ -735,8 +724,10 @@ void view3d_lasso_select(bContext *C, ViewContext *vc, short mcords[][2], short 
 			;
 		else if(ob && ob->mode & OB_MODE_PARTICLE_EDIT)
 			PE_lasso_select(C, mcords, moves, select);
-		else  
+		else {
 			do_lasso_select_objects(vc, mcords, moves, select);
+			WM_event_add_notifier(C, NC_SCENE|ND_OB_SELECT, vc->scene);
+		}
 	}
 	else { /* Edit Mode */
 		if(vc->obedit->type==OB_MESH)
@@ -1064,7 +1055,7 @@ static Base *mouse_select_eval_buffer(ViewContext *vc, unsigned int *buffer, int
 		
 		base= FIRSTBASE;
 		while(base) {
-			if(base->lay & v3d->lay) {
+			if(BASE_SELECTABLE(v3d, base)) {
 				if(base->selcol==selcol) break;
 			}
 			base= base->next;
@@ -1083,7 +1074,7 @@ static Base *mouse_select_eval_buffer(ViewContext *vc, unsigned int *buffer, int
 				if(base==startbase) break;
 			}
 			
-			if(base->lay & v3d->lay) {
+			if(BASE_SELECTABLE(v3d, base)) {
 				for(a=0; a<hits; a++) {
 					if(has_bones) {
 						/* skip non-bone objects */
@@ -1632,7 +1623,7 @@ static int view3d_borderselect_exec(bContext *C, wmOperator *op)
 			} else {
 				while(base) {
 					Base *next = base->next;
-					if(base->lay & v3d->lay) {
+					if(BASE_SELECTABLE(v3d, base)) {
 						ED_base_object_select(base, BA_DESELECT);
 					}
 					base= next;
@@ -1661,7 +1652,7 @@ static int view3d_borderselect_exec(bContext *C, wmOperator *op)
 			
 			while(base && hits) {
 				Base *next = base->next;
-				if(base->lay & v3d->lay) {
+				if(BASE_SELECTABLE(v3d, base)) {
 					while (base->selcol == (*col & 0xFFFF)) {	/* we got an object */
 						
 						if(*col & 0xFFFF0000) {					/* we got a bone */
@@ -2010,13 +2001,11 @@ static void armature_circle_select(ViewContext *vc, int selecting, short *mval, 
 		float vec[3];
 		
 		/* project head location to screenspace */
-		VECCOPY(vec, ebone->head);
-		mul_m4_v3(vc->obedit->obmat, vec);
+		mul_v3_m4v3(vec, vc->obedit->obmat, ebone->head);
 		project_short(vc->ar, vec, sco1);
 		
 		/* project tail location to screenspace */
-		VECCOPY(vec, ebone->tail);
-		mul_m4_v3(vc->obedit->obmat, vec);
+		mul_v3_m4v3(vec, vc->obedit->obmat, ebone->tail);
 		project_short(vc->ar, vec, sco2);
 		
 		/* check if the head and/or tail is in the circle 
@@ -2103,7 +2092,7 @@ static int view3d_circle_select_exec(bContext *C, wmOperator *op)
 		Base *base;
 		selecting= selecting?BA_SELECT:BA_DESELECT;
 		for(base= FIRSTBASE; base; base= base->next) {
-			if(base->lay & v3d->lay) {
+			if(BASE_SELECTABLE(v3d, base)) {
 				project_short(ar, base->object->obmat[3], &base->sx);
 				if(base->sx!=IS_CLIPPED) {
 					int dx= base->sx-x;

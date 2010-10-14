@@ -1,5 +1,5 @@
 /**
- * $Id: logic_intern.h 28502 2010-04-29 07:01:48Z broken $
+ * $Id: logic_intern.h 30907 2010-07-30 15:44:26Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,9 +41,6 @@ struct Scene;
 
 /* space_logic.c */
 struct ARegion *logic_has_buttons_region(struct ScrArea *sa);
-
-/* logic_header.c */
-void logic_header_buttons(const struct bContext *C, struct ARegion *ar);
 
 /* logic_ops.c */
 

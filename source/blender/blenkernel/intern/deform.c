@@ -4,7 +4,7 @@
  * 
  *	Reevan McKay
  *
- * $Id: deform.c 28391 2010-04-23 20:05:16Z letterrip $
+ * $Id: deform.c 31517 2010-08-22 14:15:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -176,7 +176,7 @@ void defvert_flip (MDeformVert *dvert, int *flip_map)
 }
 
 
-bDeformGroup *defgroup_find_name (Object *ob, char *name)
+bDeformGroup *defgroup_find_name (Object *ob, const char *name)
 {
 	/* return a pointer to the deform group with this name
 	 * or return NULL otherwise.

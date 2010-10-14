@@ -1,5 +1,5 @@
 /**
- * $Id: wm.c 29174 2010-06-03 07:27:55Z broken $
+ * $Id: wm.c 31673 2010-08-31 11:31:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,7 +26,10 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#include "string.h"
+#include <string.h>
+#include <stddef.h>
+
+#include "BLO_sys_types.h"
 
 #include "DNA_windowmanager_types.h"
 
@@ -149,9 +152,9 @@ MenuType *WM_menutype_find(const char *idname, int quiet)
 	MenuType* mt;
 
 	if (idname[0]) {
-		for(mt=menutypes.first; mt; mt=mt->next)
-			if(strcmp(idname, mt->idname)==0)
-				return mt;
+		mt= BLI_findstring(&menutypes, idname, offsetof(MenuType, idname));
+		if(mt)
+			return mt;
 	}
 
 	if(!quiet)
@@ -194,7 +197,7 @@ void WM_keymap_init(bContext *C)
 	wmWindowManager *wm= CTX_wm_manager(C);
 
 	if(!wm->defaultconf)
-		wm->defaultconf= WM_keyconfig_add(wm, "Blender");
+		wm->defaultconf= WM_keyconfig_new(wm, "Blender");
 	
 	if(wm && CTX_py_init_get(C) && (wm->initialized & WM_INIT_KEYMAP) == 0) {
 		/* create default key config */

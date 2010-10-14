@@ -1,5 +1,5 @@
 /**
- * $Id: editmesh_add.c 30546 2010-07-20 16:54:50Z bdiego $
+ * $Id: editmesh_add.c 31710 2010-09-01 21:11:33Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,11 +47,8 @@
 
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
-#include "BKE_global.h"
 #include "BKE_library.h"
 #include "BKE_mesh.h"
-#include "BKE_object.h"
-#include "BKE_utildefines.h"
 #include "BKE_report.h"
 
 #include "WM_api.h"
@@ -1268,7 +1265,7 @@ static char *get_mesh_defname(int type)
 		case PRIM_PLANE: return "Plane";
 		case PRIM_CUBE: return "Cube";
 		case PRIM_CIRCLE: return "Circle";
-		case PRIM_CYLINDER: return "Tube";
+		case PRIM_CYLINDER: return "Cylinder";
 		case PRIM_CONE: return "Cone";
 		case PRIM_GRID: return "Grid";
 		case PRIM_UVSPHERE: return "Sphere";
@@ -1424,7 +1421,7 @@ void MESH_OT_primitive_circle_add(wmOperatorType *ot)
 	ED_object_add_generic_props(ot, TRUE);
 }
 
-static int add_primitive_tube_exec(bContext *C, wmOperator *op)
+static int add_primitive_cylinder_exec(bContext *C, wmOperator *op)
 {
 	int enter_editmode;
 	unsigned int layer;
@@ -1442,16 +1439,16 @@ static int add_primitive_tube_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-void MESH_OT_primitive_tube_add(wmOperatorType *ot)
+void MESH_OT_primitive_cylinder_add(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Add Tube";
-	ot->description= "Construct a tube mesh";
-	ot->idname= "MESH_OT_primitive_tube_add";
+	ot->name= "Add Cylinder";
+	ot->description= "Construct a cylinder mesh";
+	ot->idname= "MESH_OT_primitive_cylinder_add";
 	
 	/* api callbacks */
 	ot->invoke= ED_object_add_generic_invoke;
-	ot->exec= add_primitive_tube_exec;
+	ot->exec= add_primitive_cylinder_exec;
 	ot->poll= ED_operator_scene_editable;
 	
 	/* flags */
@@ -1590,7 +1587,7 @@ static int add_primitive_uvsphere_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 
 	make_prim_ext(C, loc, rot, enter_editmode, layer,
-			PRIM_UVSPHERE, RNA_int_get(op->ptr, "rings"),
+			PRIM_UVSPHERE, RNA_int_get(op->ptr, "ring_count"),
 			RNA_int_get(op->ptr, "segments"), 0,
 			RNA_float_get(op->ptr,"size"), 0.0f, 0, 0);
 
@@ -1614,7 +1611,7 @@ void MESH_OT_primitive_uv_sphere_add(wmOperatorType *ot)
 	
 	/* props */
 	RNA_def_int(ot->srna, "segments", 32, INT_MIN, INT_MAX, "Segments", "", 3, 500);
-	RNA_def_int(ot->srna, "rings", 16, INT_MIN, INT_MAX, "Rings", "", 3, 500);
+	RNA_def_int(ot->srna, "ring_count", 16, INT_MIN, INT_MAX, "Rings", "", 3, 500);
 	RNA_def_float(ot->srna, "size", 1.0f, 0.0, FLT_MAX, "Size", "", 0.001, 100.00);
 
 	ED_object_add_generic_props(ot, TRUE);
@@ -1652,7 +1649,7 @@ void MESH_OT_primitive_ico_sphere_add(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* props */
-	RNA_def_int(ot->srna, "subdivisions", 2, 0, 6, "Subdivisions", "", 0, 8);
+	RNA_def_int(ot->srna, "subdivisions", 2, 0, INT_MAX, "Subdivisions", "", 0, 8);
 	RNA_def_float(ot->srna, "size", 1.0f, 0.0f, FLT_MAX, "Size", "", 0.001f, 100.00);
 
 	ED_object_add_generic_props(ot, TRUE);

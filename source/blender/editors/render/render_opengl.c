@@ -1,5 +1,5 @@
 /**
- * $Id: render_opengl.c 29844 2010-07-01 11:58:48Z campbellbarton $
+ * $Id: render_opengl.c 31598 2010-08-26 23:30:15Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,19 +40,11 @@
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 
-#include "BKE_blender.h"
-#include "BKE_object.h"
 #include "BKE_context.h"
-#include "BKE_global.h"
 #include "BKE_image.h"
-#include "BKE_library.h"
 #include "BKE_main.h"
-#include "BKE_mesh.h"
-#include "BKE_multires.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
-#include "BKE_screen.h"
-#include "BKE_utildefines.h"
 #include "BKE_writeavi.h"
 
 #include "WM_api.h"
@@ -124,6 +116,17 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 
 	rr= RE_AcquireResultRead(oglrender->re);
 	
+	/* note on color management:
+	 * looked into how best to deal with color management here and found heres how it should work.
+	 *
+	 * OpenGL materials etc are color corrected, so a float buffer from the graphics card is
+	 * color corrected, without running any conversion functions.
+	 * 
+	 * With color correction disabled blender expects the rr->rectf to be non-color managed so
+	 * just do a direct copy from the byte array to the rectf with no conversion too.
+	 * notice IMB_float_from_rect has the profile set so no conversion is done.
+	 */
+
 	if(view_context) {
 		GPU_offscreen_bind(oglrender->ofs); /* bind */
 
@@ -141,11 +144,8 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 		GPU_offscreen_unbind(oglrender->ofs); /* unbind */
 	}
 	else {
-		ImBuf *ibuf_view= ED_view3d_draw_offscreen_imbuf_simple(scene, oglrender->sizex, oglrender->sizey, OB_SOLID);
-		IMB_float_from_rect(ibuf_view);
-
+		ImBuf *ibuf_view= ED_view3d_draw_offscreen_imbuf_simple(scene, oglrender->sizex, oglrender->sizey, IB_rectfloat, OB_SOLID);
 		memcpy(rr->rectf, ibuf_view->rect_float, sizeof(float) * 4 * oglrender->sizex * oglrender->sizey);
-
 		IMB_freeImBuf(ibuf_view);
 	}
 	
@@ -241,6 +241,7 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 
 static void screen_opengl_render_end(bContext *C, OGLRender *oglrender)
 {
+	Main *bmain= CTX_data_main(C);
 	Scene *scene= oglrender->scene;
 
 	if(oglrender->mh) {
@@ -250,7 +251,7 @@ static void screen_opengl_render_end(bContext *C, OGLRender *oglrender)
 
 	if(oglrender->timer) { /* exec will not have a timer */
 		scene->r.cfra= oglrender->cfrao;
-		scene_update_for_newframe(scene, screen_opengl_layers(oglrender));
+		scene_update_for_newframe(bmain, scene, screen_opengl_layers(oglrender));
 
 		WM_event_remove_timer(CTX_wm_manager(C), CTX_wm_window(C), oglrender->timer);
 	}
@@ -297,6 +298,7 @@ static int screen_opengl_render_anim_initialize(bContext *C, wmOperator *op)
 }
 static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 {
+	Main *bmain= CTX_data_main(C);
 	OGLRender *oglrender= op->customdata;
 	Scene *scene= oglrender->scene;
 	ImBuf *ibuf;
@@ -316,11 +318,11 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 		if(lay & 0xFF000000)
 			lay &= 0xFF000000;
 
-		scene_update_for_newframe(scene, lay);
+		scene_update_for_newframe(bmain, scene, lay);
 		CFRA++;
 	}
 
-	scene_update_for_newframe(scene, screen_opengl_layers(oglrender));
+	scene_update_for_newframe(bmain, scene, screen_opengl_layers(oglrender));
 
 	if(view_context) {
 		if(oglrender->rv3d->persp==RV3D_CAMOB && oglrender->v3d->camera && oglrender->v3d->scenelock) {

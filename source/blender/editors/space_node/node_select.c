@@ -1,5 +1,5 @@
 /**
- * $Id: node_select.c 29537 2010-06-18 04:39:32Z broken $
+ * $Id: node_select.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,9 +32,6 @@
 #include "DNA_scene_types.h"
 
 #include "BKE_context.h"
-#include "BKE_node.h"
-#include "BKE_global.h"
-#include "BKE_utildefines.h"
 
 #include "BLI_rect.h"
 
@@ -271,7 +268,7 @@ static int node_select_all_exec(bContext *C, wmOperator *op)
 void NODE_OT_select_all(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name = "Select/Deselect All";
+	ot->name = "Select or Deselect All";
 	ot->description = "(De)select all nodes";
 	ot->idname = "NODE_OT_select_all";
 	

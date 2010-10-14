@@ -1,5 +1,5 @@
 /**
- * $Id: anim_filter.c 29964 2010-07-05 04:37:30Z aligorith $
+ * $Id: anim_filter.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,7 +49,6 @@
 
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
 #include "DNA_camera_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_lattice_types.h"
@@ -64,6 +63,8 @@
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_world_types.h"
+#include "DNA_gpencil_types.h"
+#include "DNA_object_types.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -80,7 +81,6 @@
 #include "BKE_material.h"
 #include "BKE_node.h"
 #include "BKE_sequencer.h"
-#include "BKE_utildefines.h"
 
 #include "ED_anim_api.h"
 

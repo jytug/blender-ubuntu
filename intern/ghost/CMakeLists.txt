@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 30396 2010-07-15 20:25:09Z campbellbarton $
+# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -52,13 +52,13 @@ SET(SRC
 
 IF(APPLE)
 	IF(WITH_COCOA)
-		SET(SRC ${SRC}
+		LIST(APPEND SRC
 			${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_DisplayManagerCocoa.mm
 			${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_SystemCocoa.mm
 			${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_WindowCocoa.mm
 		)
 	ELSE(WITH_COCOA)
-		SET(SRC ${SRC}
+		LIST(APPEND SRC
 			${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_DisplayManagerCarbon.cpp
 			${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_SystemCarbon.cpp
 			${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_WindowCarbon.cpp
@@ -69,18 +69,18 @@ IF(APPLE)
 		ADD_DEFINITIONS(-DWITH_QUICKTIME)
 	ENDIF(WITH_QUICKTIME)
 ELSEIF(WIN32)
-	SET(INC ${INC} ${WINTAB_INC})
+	LIST(APPEND INC ${WINTAB_INC})
 
-	SET(SRC ${SRC}
+	LIST(APPEND SRC
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_DisplayManagerWin32.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_SystemWin32.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_WindowWin32.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_DropTargetWin32.cpp
 	)
 ELSEIF(UNIX)
-	SET(INC ${INC} ${X11_X11_INCLUDE_PATH})
+	LIST(APPEND INC ${X11_X11_INCLUDE_PATH})
 
-	SET(SRC ${SRC}
+	LIST(APPEND SRC
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_DisplayManagerX11.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_SystemX11.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_WindowX11.cpp
@@ -90,5 +90,5 @@ ELSEIF(UNIX)
 
 ENDIF(APPLE)
 
-BLENDERLIB(bf_ghost "${SRC}" "${INC}")
+BLENDERLIB(bf_intern_ghost "${SRC}" "${INC}")
 

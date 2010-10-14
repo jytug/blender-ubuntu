@@ -3,7 +3,7 @@
  * various string, file, list operations.
  *
  *
- * $Id: listbase.c 27625 2010-03-20 16:41:01Z campbellbarton $
+ * $Id: listbase.c 31307 2010-08-13 06:30:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -364,6 +364,27 @@ void *BLI_findstring(ListBase *listbase, const char *id, int offset)
 	link= listbase->first;
 	while (link) {
 		id_iter= ((const char *)link) + offset;
+
+		if(id[0] == id_iter[0] && strcmp(id, id_iter)==0)
+			return link;
+
+		link= link->next;
+	}
+
+	return NULL;
+}
+
+void *BLI_findstring_ptr(ListBase *listbase, const char *id, int offset)
+{
+	Link *link= NULL;
+	const char *id_iter;
+
+	if (listbase == NULL) return NULL;
+
+	link= listbase->first;
+	while (link) {
+		/* exact copy of BLI_findstring(), except for this line */
+		id_iter= *((const char **)(((const char *)link) + offset));
 
 		if(id[0] == id_iter[0] && strcmp(id, id_iter)==0)
 			return link;

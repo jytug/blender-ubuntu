@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -31,13 +31,12 @@ SET(INC
 )
 
 IF(WIN32)
-	SET(INC ${INC} ${PTHREADS_INC})
+	LIST(APPEND INC ${PTHREADS_INC})
 ENDIF(WIN32)
 
 IF(WITH_QUICKTIME)
-	SET(INC ${INC} ${QUICKTIME_INC})
+	LIST(APPEND INC ${QUICKTIME_INC})
 	ADD_DEFINITIONS(-DWITH_QUICKTIME)
 ENDIF(WITH_QUICKTIME)
 
 BLENDERLIB(bf_blenpluginapi "${SRC}" "${INC}")
-#env.BlenderLib ( libname = 'bf_blenpluginapi', sources = sources, includes = Split(incs), defines = defs, libtype=['core', 'player'], priority = [75, 35] )

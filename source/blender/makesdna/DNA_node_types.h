@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_node_types.h 29989 2010-07-05 14:29:16Z campbellbarton $ 
+ * $Id: DNA_node_types.h 31561 2010-08-25 02:18:37Z scourage $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -255,6 +255,7 @@ typedef struct NodeChroma {
 
 typedef struct NodeTwoXYs {
 	short x1, x2, y1, y2;
+   float fac_x1, fac_x2, fac_y1, fac_y2;
 } NodeTwoXYs;
 
 typedef struct NodeTwoFloats {
@@ -314,6 +315,7 @@ typedef struct NodeColorBalance {
 
 	/* temp storage for inverted lift */
 	float lift_lgg[3];
+	float gamma_inv[3];
 } NodeColorBalance;
 
 typedef struct NodeColorspill {

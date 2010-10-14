@@ -1,5 +1,5 @@
 /**
- * $Id: gpencil_ops.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: gpencil_ops.c 31673 2010-08-31 11:31:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,8 +29,9 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "BLI_blenlib.h"
+#include "BLO_sys_types.h"
 
+#include "BLI_blenlib.h"
 
 #include "WM_api.h"
 #include "WM_types.h"

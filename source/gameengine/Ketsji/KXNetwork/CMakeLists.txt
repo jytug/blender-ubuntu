@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 27039 2010-02-20 22:51:22Z theeth $
+# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -39,10 +39,9 @@ SET(INC
 )
 
 IF(WITH_PYTHON)
-	SET(INC ${INC} ${PYTHON_INC})
+	LIST(APPEND INC ${PYTHON_INC})
 ELSE(WITH_PYTHON)
 	ADD_DEFINITIONS(-DDISABLE_PYTHON)
 ENDIF(WITH_PYTHON)
 
 BLENDERLIB(kx_network "${SRC}" "${INC}")
-#env.BlenderLib ( 'kx_network', Split(sources), Split(incs), defines=[],libtype=['game2', 'player'], priority=[5, 155] )

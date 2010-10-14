@@ -3,7 +3,7 @@
  *
  * Some types for dealing with directories
  *
- * $Id: BLI_storage_types.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BLI_storage_types.h 30753 2010-07-26 10:41:26Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -58,6 +58,8 @@ struct direntry{
 	char	*path;
 #if (defined(WIN32) || defined(WIN64)) && (_MSC_VER>=1500)
 	struct _stat64 s;
+#elif defined(__MINGW32__)
+	struct _stati64 s;
 #else
 	struct	stat s;
 #endif

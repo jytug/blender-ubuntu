@@ -1,5 +1,5 @@
 /**
- * $Id: interface_intern.h 29972 2010-07-05 07:08:10Z campbellbarton $
+ * $Id: interface_intern.h 31577 2010-08-25 09:33:48Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -456,7 +456,7 @@ void ui_draw_but_IMAGE(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rct
 
 /* interface_handlers.c */
 extern void ui_button_activate_do(struct bContext *C, struct ARegion *ar, uiBut *but);
-extern void ui_button_active_cancel(const struct bContext *C, uiBut *but);
+extern void ui_button_active_free(const struct bContext *C, uiBut *but);
 extern int ui_button_is_active(struct ARegion *ar);
 
 /* interface_widgets.c */

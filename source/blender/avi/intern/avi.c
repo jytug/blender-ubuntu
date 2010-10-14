@@ -3,7 +3,7 @@
  *
  * This is external code.
  *
- * $Id: avi.c 27655 2010-03-22 09:30:00Z campbellbarton $ 
+ * $Id: avi.c 31364 2010-08-16 05:46:10Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,6 +37,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
+
+#include "MEM_guardedalloc.h"
 
 #include "AVI_avi.h"
 #include "avi_intern.h"

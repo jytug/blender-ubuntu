@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31006 2010-08-03 11:25:34Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -38,8 +38,8 @@ ADD_SUBDIRECTORY(boolop)
 ADD_SUBDIRECTORY(opennl)
 ADD_SUBDIRECTORY(smoke)
 
-IF(WITH_ELBEEM)
+IF(WITH_FLUID)
 	ADD_SUBDIRECTORY(elbeem)
-ENDIF(WITH_ELBEEM)
+ENDIF(WITH_FLUID)
 
 ADD_SUBDIRECTORY(bsp)

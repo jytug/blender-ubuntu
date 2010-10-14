@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_LowpassFactory.h 25646 2010-01-01 11:55:56Z nexyon $
+ * $Id: AUD_LowpassFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -37,12 +37,16 @@ private:
 	/**
 	 * The attack value in seconds.
 	 */
-	float m_frequency;
+	const float m_frequency;
 
 	/**
 	 * The Q factor.
 	 */
-	float m_Q;
+	const float m_Q;
+
+	// hide copy constructor and operator=
+	AUD_LowpassFactory(const AUD_LowpassFactory&);
+	AUD_LowpassFactory& operator=(const AUD_LowpassFactory&);
 
 public:
 	/**
@@ -53,14 +57,7 @@ public:
 	 */
 	AUD_LowpassFactory(AUD_IFactory* factory, float frequency, float Q = 1.0f);
 
-	/**
-	 * Creates a new lowpass factory.
-	 * \param frequency The cutoff frequency.
-	 * \param Q The Q factor.
-	 */
-	AUD_LowpassFactory(float frequency, float Q = 1.0f);
-
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_LOWPASSFACTORY

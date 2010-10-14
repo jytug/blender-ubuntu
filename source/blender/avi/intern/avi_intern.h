@@ -1,5 +1,5 @@
 /**
- * $Id: avi_intern.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: avi_intern.h 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,8 +30,6 @@
 #define AVI_INTERN_H
 
 #include <stdio.h> /* for FILE */
-
-#include "MEM_guardedalloc.h"
 
 unsigned int GET_FCC (FILE *fp);
 unsigned int GET_TCC (FILE *fp);
