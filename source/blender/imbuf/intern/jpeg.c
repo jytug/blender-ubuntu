@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * jpeg.c
  *
- * $Id: jpeg.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: jpeg.c 30808 2010-07-27 14:40:48Z blendix $
  */
 
 
@@ -156,7 +156,10 @@ static void skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 {
 	my_src_ptr src = (my_src_ptr) cinfo->src;
 
-	src->pub.next_input_byte = src->pub.next_input_byte + num_bytes;
+	if(num_bytes > 0) {
+		src->pub.next_input_byte = src->pub.next_input_byte + num_bytes;
+		src->pub.bytes_in_buffer = src->pub.bytes_in_buffer - num_bytes;
+	}
 }
 
 

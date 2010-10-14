@@ -1,5 +1,5 @@
 /**
- * $Id: console_draw.c 28341 2010-04-22 10:56:45Z bdiego $
+ * $Id: console_draw.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,7 +33,6 @@
 #include <sys/stat.h>
 #include <limits.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "BLF_api.h"
 
@@ -42,10 +41,7 @@
 #include "DNA_space_types.h"
 #include "DNA_screen_types.h"
 
-#include "BKE_global.h"
-#include "BKE_main.h"
 // #include "BKE_suggestions.h"
-#include "BKE_text.h"
 #include "BKE_report.h"
 #include "BKE_utildefines.h"
 

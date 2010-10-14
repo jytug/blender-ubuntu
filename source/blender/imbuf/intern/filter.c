@@ -26,10 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  * filter.c
  *
- * $Id: filter.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: filter.c 31364 2010-08-16 05:46:10Z campbellbarton $
  */
 
 #include "BKE_utildefines.h"
+#include "MEM_guardedalloc.h"
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"

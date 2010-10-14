@@ -26,11 +26,12 @@
  * ***** END GPL LICENSE BLOCK *****
  * rotate.c
  *
- * $Id: rotate.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: rotate.c 31364 2010-08-16 05:46:10Z campbellbarton $
  */
 
 #include "BLI_blenlib.h"
-#include  "BKE_utildefines.h"
+#include "BKE_utildefines.h"
+#include "MEM_guardedalloc.h"
 
 #include "imbuf.h"
 #include "IMB_imbuf_types.h"

@@ -1,5 +1,5 @@
 /**
- * $Id: fsmenu.c 30415 2010-07-16 16:02:07Z elubie $
+ * $Id: fsmenu.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -55,7 +55,6 @@
 #define ID ID_
 #include <CoreServices/CoreServices.h>
 
-#include "BKE_utildefines.h"
 #endif
 
 #ifdef __linux__

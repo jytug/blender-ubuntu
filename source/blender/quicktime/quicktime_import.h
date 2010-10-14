@@ -1,7 +1,7 @@
 /**
  * Quicktime_import.h
  *
- * $Id: quicktime_import.h 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: quicktime_import.h 31730 2010-09-03 03:30:20Z gsrb3d $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

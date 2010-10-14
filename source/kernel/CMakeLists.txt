@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31783 2010-09-06 10:15:41Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,7 +24,13 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC gen_messaging gen_system ../../intern/string ../../intern/moto/include ../../source/blender/blenloader )
+SET(INC
+	gen_messaging
+	gen_system
+	../../intern/string
+	../../intern/moto/include
+	../../source/blender/blenloader
+)
 
 FILE(GLOB SRC   
 	gen_messaging/intern/messaging.c
@@ -35,4 +41,3 @@ FILE(GLOB SRC
 )
 
 BLENDERLIB(bf_kernel "${SRC}" "${INC}")
-#env.BlenderLib ( 'bf_kernel', Split(sources), Split(incs), [], libtype = ['common','game2', 'player'], priority = [15, 10, 150] )

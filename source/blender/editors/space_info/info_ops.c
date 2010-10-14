@@ -1,5 +1,5 @@
 /**
- * $Id: info_ops.c 29854 2010-07-01 19:28:45Z campbellbarton $
+ * $Id: info_ops.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,14 +45,11 @@
 #include "BKE_main.h"
 #include "BKE_packedFile.h"
 #include "BKE_report.h"
-#include "BKE_screen.h"
 
 
 #include "WM_api.h"
 #include "WM_types.h"
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "UI_interface.h"
 

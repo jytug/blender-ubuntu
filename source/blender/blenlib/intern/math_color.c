@@ -1,5 +1,5 @@
 /**
- * $Id: math_color.c 30448 2010-07-17 21:01:00Z blendix $
+ * $Id: math_color.c 31592 2010-08-26 09:12:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -372,6 +372,40 @@ void linearrgb_to_srgb_v3_v3(float *col_to, float *col_from)
 	col_to[2] = linearrgb_to_srgb(col_from[2]);
 }
 
+/* todo, should these be moved elsewhere?, they dont belong in imbuf */
+void srgb_to_linearrgb_rgba_buf(float *col, int tot)
+{
+	while(tot--) {
+		srgb_to_linearrgb_v3_v3(col, col);
+		col += 4;
+	}
+}
+
+void linearrgb_to_srgb_rgba_buf(float *col, int tot)
+{
+	while(tot--) {
+		linearrgb_to_srgb_v3_v3(col, col);
+		col += 4;
+	}
+}
+
+void srgb_to_linearrgb_rgba_rgba_buf(float *col_to, float *col_from, int tot)
+{
+	while(tot--) {
+		srgb_to_linearrgb_v3_v3(col_to, col_from);
+		col_to += 4;
+		col_from += 4;
+	}
+}
+
+void linearrgb_to_srgb_rgba_rgba_buf(float *col_to, float *col_from, int tot)
+{
+	while(tot--) {
+		linearrgb_to_srgb_v3_v3(col_to, col_from);
+		col_to += 4;
+		col_from += 4;
+	}
+}
 
 void minmax_rgb(short c[])
 {

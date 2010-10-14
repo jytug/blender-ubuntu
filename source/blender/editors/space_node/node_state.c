@@ -1,5 +1,5 @@
 /**
- * $Id: node_state.c 30515 2010-07-19 22:47:15Z bdiego $
+ * $Id: node_state.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,7 +33,6 @@
 
 #include "BKE_context.h"
 #include "BKE_node.h"
-#include "BKE_global.h"
 
 #include "BLI_rect.h"
 

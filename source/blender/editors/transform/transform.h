@@ -1,5 +1,5 @@
 /**
- * $Id: transform.h 28628 2010-05-06 19:54:43Z joeedh $
+ * $Id: transform.h 31760 2010-09-04 20:55:31Z schlaile $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -166,7 +166,7 @@ typedef struct TransDataCurveHandleFlags {
 typedef struct TransDataSeq {
 	struct Sequence *seq;
 	int flag;		/* a copy of seq->flag that may be modified for nested strips */
-	short start_offset; /* use this so we can have transform data at the strips start, but apply correctly to the start frame  */
+	int start_offset; /* use this so we can have transform data at the strips start, but apply correctly to the start frame  */
 	short sel_flag; /* one of SELECT, SEQ_LEFTSEL and SEQ_RIGHTSEL */
 
 } TransDataSeq;

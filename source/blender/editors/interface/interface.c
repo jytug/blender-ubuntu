@@ -1,5 +1,5 @@
 /**
- * $Id: interface.c 29078 2010-05-30 14:05:58Z campbellbarton $
+ * $Id: interface.c 31577 2010-08-25 09:33:48Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,15 +41,10 @@
 #include "BLI_dynstr.h"
 
 #include "BKE_context.h"
-#include "BKE_idprop.h"
 #include "BKE_library.h"
-#include "BKE_screen.h"
-#include "BKE_texture.h"
-#include "BKE_utildefines.h"
 #include "BKE_unit.h"
 
 #include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "BLF_api.h"
 
@@ -1464,13 +1459,13 @@ static void ui_get_but_string_unit(uiBut *but, char *str, int len_max, double va
 	bUnit_AsString(str, len_max, ui_get_but_scale_unit(but, value), precision, scene->unit.system, unit_type, do_split, pad);
 }
 
-static float ui_get_but_step_unit(uiBut *but, double value, float step_default)
+static float ui_get_but_step_unit(uiBut *but, float step_default)
 {
 	Scene *scene= CTX_data_scene((bContext *)but->block->evil_C);
 	int unit_type=  RNA_SUBTYPE_UNIT_VALUE(RNA_property_subtype(but->rnaprop));
 	float step;
 
-	step = bUnit_ClosestScalar(ui_get_but_scale_unit(but, value), scene->unit.system, unit_type);
+	step = bUnit_ClosestScalar(ui_get_but_scale_unit(but, step_default), scene->unit.system, unit_type);
 
 	if(step > 0.0) { /* -1 is an error value */
 		return (step/ui_get_but_scale_unit(but, 1.0))*100;
@@ -1644,7 +1639,7 @@ int ui_set_but_string(bContext *C, uiBut *but, const char *str)
 		value= atof(str);
 #endif
 
-		if(!ui_is_but_float(but)) value= (int)value;
+		if(!ui_is_but_float(but)) value= (int)floor(value + 0.5);
 		if(but->type==NUMABS) value= fabs(value);
 
 		/* not that we use hard limits here */
@@ -1770,9 +1765,11 @@ static void ui_free_but(const bContext *C, uiBut *but)
 	}
 	if(but->func_argN) MEM_freeN(but->func_argN);
 	if(but->active) {
-		/* XXX solve later, buttons should be free-able without context? */
+		/* XXX solve later, buttons should be free-able without context ideally,
+		   however they may have open tooltips or popup windows, which need to
+		   be closed using a context pointer */
 		if(C) 
-			ui_button_active_cancel(C, but);
+			ui_button_active_free(C, but);
 		else
 			if(but->active) 
 				MEM_freeN(but->active);
@@ -2533,8 +2530,10 @@ uiBut *ui_def_but_rna(uiBlock *block, int type, int retval, char *str, short x1,
 			}
 		}
 	}
-	else
+	else {
+		printf("ui_def_but_rna: property not found: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
 		str= (char*)propname;
+	}
 
 	/* now create button */
 	but= ui_def_but(block, type, retval, str, x1, y1, x2, y2, NULL, min, max, a1, a2, tip);
@@ -2563,7 +2562,7 @@ uiBut *ui_def_but_rna(uiBlock *block, int type, int retval, char *str, short x1,
 
 	/* If this button uses units, calculate the step from this */
 	if(ui_is_but_unit(but))
-		but->a1= ui_get_but_step_unit(but, ui_get_but_val(but), but->a1);
+		but->a1= ui_get_but_step_unit(but, but->a1);
 
 	if(freestr)
 		MEM_freeN(str);

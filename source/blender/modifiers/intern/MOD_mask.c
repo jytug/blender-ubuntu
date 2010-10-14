@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_mask.c 28640 2010-05-07 07:54:25Z campbellbarton $
+* $Id: MOD_mask.c 31364 2010-08-16 05:46:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,11 +30,14 @@
 *
 */
 
+#include "MEM_guardedalloc.h"
+
+#include "BLI_ghash.h"
+
 #include "DNA_armature_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_modifier_types.h"
-
-#include "BLI_ghash.h"
+#include "DNA_object_types.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_mesh.h"

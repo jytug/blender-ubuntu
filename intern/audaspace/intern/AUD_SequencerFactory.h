@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_SequencerFactory.h 26693 2010-02-07 23:41:17Z nexyon $
+ * $Id: AUD_SequencerFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -60,6 +60,12 @@ private:
 	void* m_data;
 	AUD_volumeFunction m_volume;
 
+	AUD_IReader* newReader();
+
+	// hide copy constructor and operator=
+	AUD_SequencerFactory(const AUD_SequencerFactory&);
+	AUD_SequencerFactory& operator=(const AUD_SequencerFactory&);
+
 public:
 	AUD_SequencerFactory(AUD_Specs specs, void* data, AUD_volumeFunction volume);
 	~AUD_SequencerFactory();
@@ -69,7 +75,7 @@ public:
 	void move(AUD_SequencerEntry* entry, float begin, float end, float skip);
 	void mute(AUD_SequencerEntry* entry, bool mute);
 
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 
 	void removeReader(AUD_SequencerReader* reader);
 };

@@ -1,5 +1,5 @@
 /**
- * $Id: view3d_toolbar.c 27686 2010-03-23 15:25:33Z blendix $
+ * $Id: view3d_toolbar.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,21 +41,11 @@
 #include "BLI_editVert.h"
 #include "BLI_rand.h"
 
-#include "BKE_action.h"
-#include "BKE_brush.h"
 #include "BKE_context.h"
-#include "BKE_curve.h"
-#include "BKE_customdata.h"
-#include "BKE_depsgraph.h"
 #include "BKE_idprop.h"
-#include "BKE_mesh.h"
-#include "BKE_object.h"
 #include "BKE_global.h"
-#include "BKE_scene.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
-#include "BIF_gl.h"
 
 #include "WM_api.h"
 #include "WM_types.h"

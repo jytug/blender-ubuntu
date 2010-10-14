@@ -1,5 +1,5 @@
 /*
- * $Id: KX_Scene.cpp 29494 2010-06-16 19:07:20Z moguri $
+ * $Id: KX_Scene.cpp 31599 2010-08-26 23:49:46Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -68,7 +68,6 @@
 #include "SG_Tree.h"
 #include "DNA_group_types.h"
 #include "DNA_scene_types.h"
-#include "BKE_anim.h"
 
 #include "KX_SG_NodeRelationships.h"
 

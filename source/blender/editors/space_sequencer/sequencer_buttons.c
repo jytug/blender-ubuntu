@@ -1,5 +1,5 @@
 /**
- * $Id: sequencer_buttons.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: sequencer_buttons.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,10 +33,7 @@
 #include "BLI_blenlib.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_main.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 
 #include "ED_screen.h"

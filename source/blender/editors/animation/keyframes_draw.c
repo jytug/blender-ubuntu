@@ -1,5 +1,5 @@
 /**
- * $Id: keyframes_draw.c 29958 2010-07-05 02:00:24Z aligorith $
+ * $Id: keyframes_draw.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -53,19 +53,14 @@
 #include "DNA_node_types.h"
 #include "DNA_particle_types.h"
 #include "DNA_world_types.h"
+#include "DNA_gpencil_types.h"
 
-#include "BKE_action.h"
-#include "BKE_depsgraph.h"
-#include "BKE_fcurve.h"
 #include "BKE_key.h"
 #include "BKE_material.h"
-#include "BKE_object.h"
 #include "BKE_global.h" 	// XXX remove me!
-#include "BKE_context.h"
 #include "BKE_utildefines.h"
 
 #include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "UI_resources.h"
 #include "UI_view2d.h"

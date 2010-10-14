@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_listbase.h 27901 2010-03-31 12:35:05Z campbellbarton $
+ * $Id: BLI_listbase.h 31307 2010-08-13 06:30:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,7 +26,7 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  * 
- * $Id: BLI_listbase.h 27901 2010-03-31 12:35:05Z campbellbarton $ 
+ * $Id: BLI_listbase.h 31307 2010-08-13 06:30:04Z campbellbarton $ 
 */
 
 #ifndef BLI_LISTBASE_H
@@ -45,6 +45,7 @@ void BLI_insertlink(struct ListBase *listbase, void *vprevlink, void *vnewlink);
 void *BLI_findlink(struct ListBase *listbase, int number);
 int BLI_findindex(struct ListBase *listbase, void *vlink);
 void *BLI_findstring(struct ListBase *listbase, const char *id, int offset);
+void *BLI_findstring_ptr(struct ListBase *listbase, const char *id, int offset);
 int BLI_findstringindex(struct ListBase *listbase, const char *id, int offset);
 void BLI_freelistN(struct ListBase *listbase);
 void BLI_addtail(struct ListBase *listbase, void *vlink);

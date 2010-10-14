@@ -1,5 +1,5 @@
 /**
- * $Id: anim_draw.c 28549 2010-05-03 15:56:44Z campbellbarton $
+ * $Id: anim_draw.c 31673 2010-08-31 11:31:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,7 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+#include "BLO_sys_types.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_object_types.h"

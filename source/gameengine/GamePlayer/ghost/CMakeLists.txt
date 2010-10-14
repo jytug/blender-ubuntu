@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -73,4 +73,3 @@ IF(WITH_FFMPEG)
 ENDIF(WITH_FFMPEG)
 
 BLENDERLIB_NOLIST(gp_ghost "${SRC}" "${INC}")
-#env.BlenderLib (libname='gp_ghost', sources=source_files, includes = incs, defines = [], libtype='player',priority=0, compileflags=cflags)

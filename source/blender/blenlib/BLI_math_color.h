@@ -1,5 +1,5 @@
 /**
- * $Id: BLI_math_color.h 27885 2010-03-30 23:32:16Z broken $
+ * $Id: BLI_math_color.h 31592 2010-08-26 09:12:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -75,6 +75,12 @@ float srgb_to_linearrgb(float c);
 float linearrgb_to_srgb(float c);
 void srgb_to_linearrgb_v3_v3(float *col_to, float *col_from);
 void linearrgb_to_srgb_v3_v3(float *col_to, float *col_from);
+
+/* rgba buffer convenience functions */
+void srgb_to_linearrgb_rgba_buf(float *col, int tot);
+void linearrgb_to_srgb_rgba_buf(float *col, int tot);
+void srgb_to_linearrgb_rgba_rgba_buf(float *col_to, float *col_from, int tot);
+void linearrgb_to_srgb_rgba_rgba_buf(float *col_to, float *col_from, int tot);
 	
 /************************** Other *************************/
 

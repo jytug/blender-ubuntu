@@ -1,5 +1,5 @@
 /**
- * $Id: KX_ConvertPhysicsObject.h 29068 2010-05-29 21:31:57Z dfelinto $
+ * $Id: KX_ConvertPhysicsObject.h 31636 2010-08-28 20:56:54Z ben2610 $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -53,7 +53,8 @@ typedef enum {
 	KX_BOUNDCONE,
 	KX_BOUNDMESH,
 	KX_BOUNDPOLYTOPE,
-	KX_BOUND_DYN_MESH
+	KX_BOUND_DYN_MESH,
+	KX_BOUNDCAPSULE
 } KX_BoundBoxClass;
 
 struct KX_BoxBounds
@@ -168,4 +169,3 @@ bool KX_ReInstanceBulletShapeFromMesh(KX_GameObject *gameobj, KX_GameObject *fro
 
 #endif
 #endif //KX_CONVERTPHYSICSOBJECTS
-

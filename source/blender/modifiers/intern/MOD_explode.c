@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_explode.c 29729 2010-06-27 05:39:55Z broken $
+* $Id: MOD_explode.c 31765 2010-09-05 12:17:35Z nazgul $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -187,7 +187,7 @@ static int edgesplit_get(EdgeHash *edgehash, int v1, int v2)
 static DerivedMesh * splitEdges(ExplodeModifierData *emd, DerivedMesh *dm){
 	DerivedMesh *splitdm;
 	MFace *mf=0,*df1=0,*df2=0,*df3=0;
-	MFace *mface=CDDM_get_faces(dm);
+	MFace *mface=dm->getFaceArray(dm);
 	MVert *dupve, *mv;
 	EdgeHash *edgehash;
 	EdgeHashIterator *ehi;

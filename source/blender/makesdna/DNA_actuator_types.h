@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_actuator_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_actuator_types.h 30526 2010-07-20 10:41:08Z campbellbarton $ 
+ * $Id: DNA_actuator_types.h 31028 2010-08-04 04:01:27Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,9 +37,6 @@ struct Scene;
 struct Group;
 struct Text;
 
-// for Sound3D
-#include "DNA_sound_types.h"
-
 /* ****************** ACTUATORS ********************* */
 
 /* unused now, moved to editobjectactuator in 2.02. Still needed for dna */
@@ -60,6 +57,18 @@ typedef struct bActionActuator {
 	short	strideaxis;		/* Displacement axis */
 	float	stridelength;	/* Displacement incurred by cycle */ // not in use
 } bActionActuator;												
+
+typedef struct Sound3D
+{
+	float min_gain;
+	float max_gain;
+	float reference_distance;
+	float max_distance;
+	float rolloff_factor;
+	float cone_inner_angle;
+	float cone_outer_angle;
+	float cone_outer_gain;
+} Sound3D;
 
 typedef struct bSoundActuator {
 	short flag, sndnr;

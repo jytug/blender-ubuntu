@@ -1,5 +1,5 @@
 /**
- * $Id: editmesh_mods.c 30446 2010-07-17 18:08:14Z campbellbarton $
+ * $Id: editmesh_mods.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -55,14 +55,9 @@ editmesh_mods.c, UI level access, no geometry changes
 #include "BKE_context.h"
 #include "BKE_displist.h"
 #include "BKE_depsgraph.h"
-#include "BKE_DerivedMesh.h"
-#include "BKE_customdata.h"
-#include "BKE_global.h"
 #include "BKE_mesh.h"
 #include "BKE_material.h"
 #include "BKE_paint.h"
-#include "BKE_texture.h"
-#include "BKE_utildefines.h"
 #include "BKE_report.h"
 
 #include "IMB_imbuf_types.h"
@@ -82,7 +77,6 @@ editmesh_mods.c, UI level access, no geometry changes
 #include "ED_view3d.h"
 
 #include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "mesh_intern.h"
 
@@ -2150,7 +2144,7 @@ static void mouse_mesh_shortest_path(bContext *C, short mval[2])
 			if(ese && ese->type == EDITEDGE) {
 				eed_act = (EditEdge*)ese->data;
 				if (eed_act != eed) {
-					if (edgetag_shortest_path(vc.scene, em, eed_act, eed)) {
+					if (edgetag_shortest_path(vc.scene, em, eed_act, eed)) { /* <- this is where the magic happens */
 						EM_remove_selection(em, eed_act, EDITEDGE);
 						path = 1;
 					}
@@ -2163,13 +2157,19 @@ static void mouse_mesh_shortest_path(bContext *C, short mval[2])
 		}
 
 		/* even if this is selected it may not be in the selection list */
-		if(edgetag_context_check(vc.scene, eed)==EDGE_MODE_SELECT)
+		if(edgetag_context_check(vc.scene, eed)==0) {
 			EM_remove_selection(em, eed, EDITEDGE);
+		}
 		else {
 			/* other modes need to keep the last edge tagged */
-			if(eed_act)
-				EM_select_edge(eed_act, 0);
+			if(eed_act) {
+				if(vc.scene->toolsettings->edge_mode!=EDGE_MODE_SELECT) {
+					/* for non-select modes, always de-select the previous active edge */
+					EM_select_edge(eed_act, 0);
+				}
+			}
 
+			/* set the new edge active */
 			EM_select_edge(eed, 1);
 			EM_store_selection(em, eed, EDITEDGE);
 		}
@@ -2208,6 +2208,16 @@ static int mesh_shortest_path_select_invoke(bContext *C, wmOperator *op, wmEvent
 	
 	return OPERATOR_FINISHED;
 }
+
+static int mesh_shortest_path_select_poll(bContext *C)
+{
+	if(ED_operator_editmesh_view3d(C)) {
+		Object *obedit= CTX_data_edit_object(C);
+		EditMesh *em= BKE_mesh_get_editmesh(obedit->data);
+		return (em->selectmode & SCE_SELECT_EDGE);
+	}
+	return 0;
+}
 	
 void MESH_OT_select_shortest_path(wmOperatorType *ot)
 {
@@ -2218,7 +2228,7 @@ void MESH_OT_select_shortest_path(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->invoke= mesh_shortest_path_select_invoke;
-	ot->poll= ED_operator_editmesh_view3d;
+	ot->poll= mesh_shortest_path_select_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -3420,7 +3430,7 @@ static int select_all_exec(bContext *C, wmOperator *op)
 void MESH_OT_select_all(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Select/Deselect All";
+	ot->name= "Select or Deselect All";
 	ot->description= "Change selection of all vertices, edges or faces";
 	ot->idname= "MESH_OT_select_all";
 	

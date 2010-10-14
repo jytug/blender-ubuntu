@@ -1,5 +1,5 @@
 /**
- * $Id: keyframes_edit.c 27997 2010-04-05 03:37:28Z aligorith $
+ * $Id: keyframes_edit.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -48,7 +48,6 @@
 #include "DNA_scene_types.h"
 #include "DNA_world_types.h"
 
-#include "BKE_action.h"
 #include "BKE_fcurve.h"
 #include "BKE_key.h"
 #include "BKE_material.h"

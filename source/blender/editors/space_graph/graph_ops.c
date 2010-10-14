@@ -1,5 +1,5 @@
 /**
- * $Id: graph_ops.c 30532 2010-07-20 11:54:17Z aligorith $
+ * $Id: graph_ops.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "DNA_scene_types.h"
 
@@ -37,7 +36,6 @@
 
 #include "BKE_context.h"
 #include "BKE_sound.h"
-#include "BKE_utildefines.h"
 
 #include "UI_view2d.h"
 

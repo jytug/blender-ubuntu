@@ -1,5 +1,5 @@
 /**
- * $Id: PyObjectPlus.cpp 30446 2010-07-17 18:08:14Z campbellbarton $
+ * $Id: PyObjectPlus.cpp 30688 2010-07-24 09:26:05Z moguri $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -278,7 +278,7 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 		// the attribute has no field correspondance, handover processing to function.
 		if (attrdef->m_getFunction == NULL)
 			return NULL;
-		return (*attrdef->m_getFunction)(ref, attrdef);
+		return (*attrdef->m_getFunction)(ptr, attrdef);
 	}
 	ptr += attrdef->m_offset;
 	if (attrdef->m_length > 1)

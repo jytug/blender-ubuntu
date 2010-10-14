@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_text.h (mar-2001 nzc)
  *	
- * $Id: BKE_text.h 26841 2010-02-12 13:34:04Z campbellbarton $ 
+ * $Id: BKE_text.h 30881 2010-07-29 22:34:46Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -92,7 +92,7 @@ void	unindent		(struct Text *text);
 void 	comment			(struct Text *text);
 void 	indent			(struct Text *text);
 void	uncomment		(struct Text *text);
-int	setcurr_tab		(struct Text *text);
+int	setcurr_tab_spaces	(struct Text *text, int space);
 
 void	txt_add_marker						(struct Text *text, struct TextLine *line, int start, int end, char color[4], int group, int flags);
 short	txt_clear_marker_region				(struct Text *text, struct TextLine *line, int start, int end, int group, int flags);

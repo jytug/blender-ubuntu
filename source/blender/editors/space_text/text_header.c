@@ -1,5 +1,5 @@
 /**
- * $Id: text_header.c 27686 2010-03-23 15:25:33Z blendix $
+ * $Id: text_header.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,24 +49,15 @@
 #include "BLI_blenlib.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_library.h"
-#include "BKE_main.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
-#include "BKE_text.h"
 
 #include "ED_screen.h"
 
 #include "WM_types.h"
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 
 
 #ifndef DISABLE_PYTHON
-#include "BPY_extern.h"
 // XXX #include "BPY_menus.h"
 #endif
 

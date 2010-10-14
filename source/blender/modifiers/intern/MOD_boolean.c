@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_boolean.c 29318 2010-06-07 19:16:56Z nicholasbishop $
+* $Id: MOD_boolean.c 31028 2010-08-04 04:01:27Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,6 +30,7 @@
 *
 */
 
+#include "DNA_object_types.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"

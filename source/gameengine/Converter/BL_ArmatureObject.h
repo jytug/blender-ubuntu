@@ -1,5 +1,5 @@
 /**
- * $Id: BL_ArmatureObject.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BL_ArmatureObject.h 31575 2010-08-25 09:25:11Z ben2610 $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -94,7 +94,7 @@ public:
 	BL_ArmatureConstraint* GetConstraint(int index);
 	// for pose channel python API
 	void LoadChannels();
-	size_t GetChannelNumber() const { return m_constraintNumber; }
+	size_t GetChannelNumber() const { return m_channelNumber; }
 	BL_ArmatureChannel* GetChannel(bPoseChannel* channel);
 	BL_ArmatureChannel* GetChannel(const char* channel);
 	BL_ArmatureChannel* GetChannel(int index);

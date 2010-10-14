@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_multires.c 29164 2010-06-02 18:04:31Z blendix $
+* $Id: MOD_multires.c 31832 2010-09-09 00:14:51Z nicholasbishop $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -38,6 +38,8 @@
 #include "BKE_paint.h"
 #include "BKE_particle.h"
 
+#include "DNA_mesh_types.h"
+
 static void initData(ModifierData *md)
 {
 	MultiresModifierData *mmd = (MultiresModifierData*)md;
@@ -66,6 +68,15 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *dm,
 	int sculpting= (ob->mode & OB_MODE_SCULPT) && ss;
 	MultiresModifierData *mmd = (MultiresModifierData*)md;
 	DerivedMesh *result;
+	Mesh *me= (Mesh*)ob->data;
+
+	if(mmd->totlvl) {
+		if(!CustomData_get_layer(&me->fdata, CD_MDISPS)) {
+			/* multires always needs a displacement layer */
+			CustomData_add_layer(&me->fdata, CD_MDISPS, CD_CALLOC, NULL, me->totface);
+			return dm;
+		}
+	}
 
 	result = multires_dm_create_from_derived(mmd, 0, dm, ob, useRenderParams, isFinalCalc);
 

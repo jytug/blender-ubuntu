@@ -1,5 +1,5 @@
 /* 
- * $Id: screen.c 28359 2010-04-22 19:57:18Z campbellbarton $
+ * $Id: screen.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,10 +41,6 @@
 #include "BLI_blenlib.h"
 
 #include "BKE_screen.h"
-
-#ifndef DISABLE_PYTHON
-#include "BPY_extern.h"
-#endif
 
 /* ************ Spacetype/regiontype handling ************** */
 

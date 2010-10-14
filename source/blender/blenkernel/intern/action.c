@@ -1,5 +1,5 @@
 /**
- * $Id: action.c 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: action.c 31517 2010-08-22 14:15:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,6 +37,7 @@
 #include "DNA_armature_types.h"
 #include "DNA_constraint_types.h"
 #include "DNA_scene_types.h"
+#include "DNA_object_types.h"
 
 #include "BKE_animsys.h"
 #include "BKE_action.h"
@@ -367,20 +368,12 @@ void action_groups_remove_channel (bAction *act, FCurve *fcu)
 /* Find a group with the given name */
 bActionGroup *action_groups_find_named (bAction *act, const char name[])
 {
-	bActionGroup *grp;
-	
 	/* sanity checks */
 	if (ELEM3(NULL, act, act->groups.first, name) || (name[0] == 0))
 		return NULL;
 		
 	/* do string comparisons */
-	for (grp= act->groups.first; grp; grp= grp->next) {
-		if (strcmp(grp->name, name) == 0)
-			return grp;
-	}
-	
-	/* not found */
-	return NULL;
+	return BLI_findstring(&act->groups, name, offsetof(bActionGroup, name));
 }
 
 /* *************** Pose channels *************** */

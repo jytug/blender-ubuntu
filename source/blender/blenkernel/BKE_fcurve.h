@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_fcurve.h 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: BKE_fcurve.h 31547 2010-08-24 06:40:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -161,7 +161,6 @@ struct FModifier *add_fmodifier(ListBase *modifiers, int type);
 struct FModifier *copy_fmodifier(struct FModifier *src);
 void copy_fmodifiers(ListBase *dst, ListBase *src);
 int remove_fmodifier(ListBase *modifiers, struct FModifier *fcm);
-int remove_fmodifier_index(ListBase *modifiers, int index);
 void free_fmodifiers(ListBase *modifiers);
 
 struct FModifier *find_active_fmodifier(ListBase *modifiers);

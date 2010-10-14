@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_SinusFactory.h 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_SinusFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -37,12 +37,16 @@ private:
 	/**
 	 * The frequence of the sine wave.
 	 */
-	double m_frequency;
+	const float m_frequency;
 
 	/**
 	 * The target sample rate for output.
 	 */
-	AUD_SampleRate m_sampleRate;
+	const AUD_SampleRate m_sampleRate;
+
+	// hide copy constructor and operator=
+	AUD_SinusFactory(const AUD_SinusFactory&);
+	AUD_SinusFactory& operator=(const AUD_SinusFactory&);
 
 public:
 	/**
@@ -50,21 +54,15 @@ public:
 	 * \param frequency The desired frequency.
 	 * \param sampleRate The target sample rate for playback.
 	 */
-	AUD_SinusFactory(double frequency,
+	AUD_SinusFactory(float frequency,
 					 AUD_SampleRate sampleRate = AUD_RATE_44100);
 
 	/**
 	 * Returns the frequency of the sine wave.
 	 */
-	double getFrequency();
+	float getFrequency() const;
 
-	/**
-	 * Sets the frequency.
-	 * \param frequency The new frequency.
-	 */
-	void setFrequency(double frequency);
-
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_SINUSFACTORY

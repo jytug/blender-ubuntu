@@ -1,5 +1,5 @@
 /**
- * $Id: interface_ops.c 29917 2010-07-04 09:13:00Z campbellbarton $
+ * $Id: interface_ops.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,7 +39,6 @@
 #include "BLI_math_color.h"
 
 #include "BKE_context.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"

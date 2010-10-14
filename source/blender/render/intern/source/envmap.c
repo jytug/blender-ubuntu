@@ -1,5 +1,5 @@
 /* 
- * $Id: envmap.c 28395 2010-04-23 23:57:00Z campbellbarton $
+ * $Id: envmap.c 30936 2010-08-01 12:47:49Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -46,7 +46,6 @@
 
 #include "BKE_library.h"
 #include "BKE_main.h"
-#include "BKE_global.h"
 #include "BKE_image.h"   // BKE_write_ibuf 
 #include "BKE_texture.h"
 #include "BKE_utildefines.h"
@@ -508,7 +507,7 @@ void make_envmaps(Render *re)
 	
 	/* 5 = hardcoded max recursion level */
 	while(depth<5) {
-		tex= G.main->tex.first;
+		tex= re->main->tex.first;
 		while(tex) {
 			if(tex->id.us && tex->type==TEX_ENVMAP) {
 				if(tex->env && tex->env->object) {

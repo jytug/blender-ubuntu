@@ -1,5 +1,5 @@
 /**
- * $Id: rayobject_qbvh.cpp 28202 2010-04-15 10:28:32Z blendix $
+ * $Id: rayobject_qbvh.cpp 31369 2010-08-16 09:24:18Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,7 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+#include "MEM_guardedalloc.h"
 #include "vbvh.h"
 #include "svbvh.h"
 #include "reorganize.h"

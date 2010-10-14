@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_ReadDevice.cpp 25643 2010-01-01 05:09:30Z nexyon $
+ * $Id: AUD_ReadDevice.cpp 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -23,20 +23,16 @@
  * ***** END LGPL LICENSE BLOCK *****
  */
 
-#include "AUD_Mixer.h"
+#include "AUD_DefaultMixer.h"
 #include "AUD_ReadDevice.h"
 #include "AUD_IReader.h"
 
 #include <cstring>
 
-AUD_ReadDevice::AUD_ReadDevice(AUD_DeviceSpecs specs)
+AUD_ReadDevice::AUD_ReadDevice(AUD_DeviceSpecs specs) :
+	m_playing(false)
 {
 	m_specs = specs;
-
-	m_mixer = new AUD_Mixer(); AUD_NEW("mixer")
-	m_mixer->setSpecs(m_specs);
-
-	m_playing = false;
 
 	create();
 }

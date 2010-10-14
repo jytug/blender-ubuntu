@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_ButterworthFactory.h 25643 2010-01-01 05:09:30Z nexyon $
+ * $Id: AUD_ButterworthFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -37,7 +37,11 @@ private:
 	/**
 	 * The attack value in seconds.
 	 */
-	float m_frequency;
+	const float m_frequency;
+
+	// hide copy constructor and operator=
+	AUD_ButterworthFactory(const AUD_ButterworthFactory&);
+	AUD_ButterworthFactory& operator=(const AUD_ButterworthFactory&);
 
 public:
 	/**
@@ -47,13 +51,7 @@ public:
 	 */
 	AUD_ButterworthFactory(AUD_IFactory* factory, float frequency);
 
-	/**
-	 * Creates a new butterworth factory.
-	 * \param frequency The cutoff frequency.
-	 */
-	AUD_ButterworthFactory(float frequency);
-
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_BUTTERWORTHFACTORY

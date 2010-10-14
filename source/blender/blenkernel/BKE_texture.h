@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_texture.h (mar-2001 nzc)
  *	
- * $Id: BKE_texture.h 29608 2010-06-22 09:13:30Z broken $ 
+ * $Id: BKE_texture.h 31742 2010-09-03 14:53:54Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -61,12 +61,16 @@ void init_colorband(struct ColorBand *coba, int rangetype);
 struct ColorBand *add_colorband(int rangetype);
 int do_colorband(struct ColorBand *coba, float in, float out[4]);
 void colorband_table_RGBA(struct ColorBand *coba, float **array, int *size);
+int vergcband(const void *a1, const void *a2);
+struct CBData *colorband_element_add(struct ColorBand *coba, float position);
+int colorband_element_remove(struct ColorBand *coba, int index);
 
 void default_tex(struct Tex *tex);
 struct Tex *add_texture(const char *name);
 void tex_set_type(struct Tex *tex, int type);
 void default_mtex(struct MTex *mtex);
 struct MTex *add_mtex(void);
+struct MTex *add_mtex_id(struct ID *id, int slot);
 struct Tex *copy_texture(struct Tex *tex);
 void make_local_texture(struct Tex *tex);
 void autotexname(struct Tex *tex);

@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_SystemCocoa.mm 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: GHOST_SystemCocoa.mm 30945 2010-08-01 16:25:00Z damien78 $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -1299,6 +1299,11 @@ GHOST_TUns8 GHOST_SystemCocoa::handleQuitRequest()
 			NSArray *windowsList = [NSApp orderedWindows];
 			if ([windowsList count]) {
 				[[windowsList objectAtIndex:0] makeKeyAndOrderFront:nil];
+				//Handle the modifiers keyes changed state issue
+				//as recovering from the quit dialog is like application
+				//gaining focus back.
+				//Main issue fixed is Cmd modifier not being cleared
+				handleApplicationBecomeActiveEvent();
 			}
 		}
 

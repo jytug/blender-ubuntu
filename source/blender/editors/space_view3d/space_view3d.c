@@ -1,5 +1,5 @@
 /**
- * $Id: space_view3d.c 30218 2010-07-12 10:47:41Z blendix $
+ * $Id: space_view3d.c 31777 2010-09-06 05:40:52Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,12 +38,8 @@
 #include "BLI_math.h"
 #include "BLI_rand.h"
 
-#include "BKE_action.h"
 #include "BKE_context.h"
-#include "BKE_global.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
-#include "BKE_image.h"
 
 #include "ED_screen.h"
 #include "ED_object.h"
@@ -211,6 +207,7 @@ static SpaceLink *view3d_new(const bContext *C)
 	v3d->far= 500.0f;
 
 	v3d->twtype= V3D_MANIP_TRANSLATE;
+	v3d->around= V3D_CENTROID;
 	
 	/* header */
 	ar= MEM_callocN(sizeof(ARegion), "header for view3d");
@@ -273,7 +270,6 @@ static void view3d_free(SpaceLink *sl)
 	if(vd->localvd) MEM_freeN(vd->localvd);
 	
 	if(vd->properties_storage) MEM_freeN(vd->properties_storage);
-	
 }
 
 
@@ -413,16 +409,31 @@ static int view3d_mat_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
 
 static int view3d_ima_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
 {
+	if(drag->type==WM_DRAG_ID) {
+		ID *id= (ID *)drag->poin;
+		if( GS(id->name)==ID_IM )
+			return 1;
+	}
+	else if(drag->type==WM_DRAG_PATH){
+		if(ELEM(drag->icon, 0, ICON_FILE_IMAGE))	/* rule might not work? */
+			return 1;
+	}
+	return 0;
+}
+
+
+static int view3d_ima_bg_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+{
 	if( ED_view3d_give_base_under_cursor(C, event->mval) ) {
-		if(drag->type==WM_DRAG_ID) {
-			ID *id= (ID *)drag->poin;
-			if( GS(id->name)==ID_IM )
-				return 1;
-		}
-		else if(drag->type==WM_DRAG_PATH){
-			if(ELEM(drag->icon, 0, ICON_FILE_IMAGE))	/* rule might not work? */
-				return 1;
-		}
+		return 0;
+	}
+	return view3d_ima_drop_poll(C, drag, event);
+}
+
+static int view3d_ima_ob_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+{
+	if( ED_view3d_give_base_under_cursor(C, event->mval) ) {
+		return view3d_ima_drop_poll(C, drag, event);
 	}
 	return 0;
 }
@@ -465,7 +476,8 @@ static void view3d_dropboxes(void)
 	
 	WM_dropbox_add(lb, "OBJECT_OT_add_named_cursor", view3d_ob_drop_poll, view3d_ob_drop_copy);
 	WM_dropbox_add(lb, "OBJECT_OT_drop_named_material", view3d_mat_drop_poll, view3d_id_drop_copy);
-	WM_dropbox_add(lb, "MESH_OT_drop_named_image", view3d_ima_drop_poll, view3d_id_path_drop_copy);
+	WM_dropbox_add(lb, "MESH_OT_drop_named_image", view3d_ima_ob_drop_poll, view3d_id_path_drop_copy);
+	WM_dropbox_add(lb, "VIEW3D_OT_add_background_image", view3d_ima_bg_drop_poll, view3d_id_path_drop_copy);
 }
 
 
@@ -517,6 +529,37 @@ static void *view3d_main_area_duplicate(void *poin)
 	return NULL;
 }
 
+static void view3d_recalc_used_layers(ARegion *ar, wmNotifier *wmn)
+{
+	wmWindow *win= wmn->wm->winactive;
+	ScrArea *sa;
+
+	if (!win) return;
+
+	sa= win->screen->areabase.first;
+
+	while(sa) {
+		if(sa->spacetype == SPACE_VIEW3D)
+			if(BLI_findindex(&sa->regionbase, ar) >= 0) {
+				View3D *v3d= sa->spacedata.first;
+				Scene *scene= wmn->reference;
+				Base *base;
+
+				v3d->lay_used= 0;
+				base= scene->base.first;
+				while(base) {
+					v3d->lay_used|= base->lay;
+
+					base= base->next;
+				}
+
+				break;
+			}
+
+		sa= sa->next;
+	}
+}
+
 static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
@@ -540,6 +583,10 @@ static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
 			break;
 		case NC_SCENE:
 			switch(wmn->data) {
+				case ND_LAYER_CONTENT:
+					view3d_recalc_used_layers(ar, wmn);
+					ED_region_tag_redraw(ar);
+					break;
 				case ND_FRAME:
 				case ND_TRANSFORM:
 				case ND_OB_ACTIVE:
@@ -681,6 +728,7 @@ static void view3d_header_area_listener(ARegion *ar, wmNotifier *wmn)
 				case ND_MODE:
 				case ND_LAYER:
 				case ND_TOOLSETTINGS:
+				case ND_LAYER_CONTENT:
 					ED_region_tag_redraw(ar);
 					break;
 			}
@@ -732,6 +780,7 @@ static void view3d_buttons_area_listener(ARegion *ar, wmNotifier *wmn)
 				case ND_OB_SELECT:
 				case ND_MODE:
 				case ND_LAYER:
+				case ND_LAYER_CONTENT:
 					ED_region_tag_redraw(ar);
 					break;
 			}

@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_texture_types.h (mar-2001 nzc)
  *
- * $Id: DNA_texture_types.h 29982 2010-07-05 10:18:59Z campbellbarton $ 
+ * $Id: DNA_texture_types.h 31229 2010-08-11 03:31:56Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,7 +32,7 @@
 #define DNA_TEXTURE_TYPES_H
 
 #include "DNA_ID.h"
-#include "DNA_image_types.h"
+#include "DNA_image_types.h" /* ImageUser */
 
 struct AnimData;
 struct Ipo;

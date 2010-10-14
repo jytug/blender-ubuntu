@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_SDLDevice.h 25643 2010-01-01 05:09:30Z nexyon $
+ * $Id: AUD_SDLDevice.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -43,6 +43,10 @@ private:
 	 * \param length The length in bytes to be filled.
 	 */
 	static void SDL_mix(void *data, Uint8* buffer, int length);
+
+	// hide copy constructor and operator=
+	AUD_SDLDevice(const AUD_SDLDevice&);
+	AUD_SDLDevice& operator=(const AUD_SDLDevice&);
 
 protected:
 	virtual void playing(bool playing);

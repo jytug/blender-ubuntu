@@ -1,5 +1,5 @@
 /**
- * $Id: pbvh.c 30325 2010-07-14 14:11:03Z jwilkins $
+ * $Id: pbvh.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,6 +23,8 @@
 
 
 #include "DNA_meshdata_types.h"
+
+#include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
 #include "BLI_ghash.h"

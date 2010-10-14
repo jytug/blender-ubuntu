@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_SumFactory.h 25656 2010-01-01 18:45:21Z nexyon $
+ * $Id: AUD_SumFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -33,14 +33,19 @@
  */
 class AUD_SumFactory : public AUD_EffectFactory
 {
+private:
+	// hide copy constructor and operator=
+	AUD_SumFactory(const AUD_SumFactory&);
+	AUD_SumFactory& operator=(const AUD_SumFactory&);
+
 public:
 	/**
 	 * Creates a new sum factory.
 	 * \param factory The input factory.
 	 */
-	AUD_SumFactory(AUD_IFactory* factory = 0);
+	AUD_SumFactory(AUD_IFactory* factory);
 
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_SUMFACTORY

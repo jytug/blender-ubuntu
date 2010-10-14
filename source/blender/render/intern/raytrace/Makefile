@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 28202 2010-04-15 10:28:32Z blendix $
+# $Id: Makefile 31029 2010-08-04 08:42:18Z sgefant $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -62,4 +62,8 @@ endif
 
 ifeq ($(WITH_OPENEXR),true)
     CPPFLAGS += -DWITH_OPENEXR
+endif
+
+ifeq ($(WITH_BF_RAYOPTIMIZATION), true)
+    CPPFLAGS += -D__SSE__
 endif

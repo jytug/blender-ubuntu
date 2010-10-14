@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -44,4 +44,3 @@ SET(INC
 ADD_DEFINITIONS(-DGLEW_STATIC)
 
 BLENDERLIB(bf_oglrasterizer "${SRC}" "${INC}")
-#env.BlenderLib ( 'bf_oglrasterizer', Split(sources), Split(incs), [], libtype=['game','player'], priority=[40, 120] )

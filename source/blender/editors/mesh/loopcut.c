@@ -1,5 +1,5 @@
 /**
- * $Id: loopcut.c 28317 2010-04-21 04:21:27Z broken $
+ * $Id: loopcut.c 31704 2010-09-01 17:03:31Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,7 +51,6 @@
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_scene.h"
-#include "BKE_utildefines.h"
 #include "BKE_mesh.h"
 
 #include "BIF_gl.h"
@@ -60,7 +59,6 @@
 #include "IMB_imbuf_types.h"
 
 #include "ED_screen.h"
-#include "ED_util.h"
 #include "ED_space_api.h"
 #include "ED_view3d.h"
 #include "ED_mesh.h"
@@ -280,6 +278,8 @@ static void ringsel_finish(bContext *C, wmOperator *op)
 					em->selectmode &= ~SCE_SELECT_FACE;
 				CTX_data_tool_settings(C)->selectmode= em->selectmode;
 				EM_selectmode_set(em);
+
+				WM_event_add_notifier(C, NC_SCENE|ND_TOOLSETTINGS, CTX_data_scene(C));
 			}
 			
 			DAG_id_flush_update(lcd->ob->data, OB_RECALC_DATA);

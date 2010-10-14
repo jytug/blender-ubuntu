@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_material.h 27359 2010-03-09 09:17:45Z campbellbarton $
+ * $Id: BKE_material.h 31737 2010-09-03 07:25:37Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,6 +35,7 @@
 extern "C" {
 #endif
 
+struct Main;
 struct Material;
 struct ID;
 struct Object;
@@ -56,6 +57,9 @@ void automatname(struct Material *);
 
 struct Material ***give_matarar(struct Object *ob);
 short *give_totcolp(struct Object *ob);
+struct Material ***give_matarar_id(struct ID *id); /* same but for ID's */
+short *give_totcolp_id(struct ID *id);
+
 struct Material *give_current_material(struct Object *ob, int act);
 struct ID *material_from(struct Object *ob, int act);
 void assign_material(struct Object *ob, struct Material *ma, int act);
@@ -66,12 +70,16 @@ int find_material_index(struct Object *ob, struct Material *ma);
 int object_add_material_slot(struct Object *ob);
 int object_remove_material_slot(struct Object *ob);
 
+/* rna api */
+void material_append_id(struct ID *id, struct Material *ma);
+struct Material *material_pop_id(struct ID *id, int index);
+
 /* rendering */
 
 void init_render_material(struct Material *, int, float *);
-void init_render_materials(int, float *);
+void init_render_materials(struct Main *, int, float *);
 void end_render_material(struct Material *);
-void end_render_materials(void);
+void end_render_materials(struct Main *);
 
 int material_in_material(struct Material *parmat, struct Material *mat);
 

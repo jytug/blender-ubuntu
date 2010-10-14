@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_mirror.c 28152 2010-04-12 22:33:43Z campbellbarton $
+* $Id: MOD_mirror.c 31028 2010-08-04 04:01:27Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,8 +30,8 @@
 *
 */
 
-
 #include "DNA_meshdata_types.h"
+#include "DNA_object_types.h"
 
 #include "BLI_math.h"
 

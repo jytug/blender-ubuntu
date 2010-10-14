@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PolygonMaterial.cpp 29240 2010-06-05 15:31:55Z campbellbarton $
+ * $Id: KX_PolygonMaterial.cpp 31373 2010-08-16 12:14:09Z nexyon $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -233,7 +233,7 @@ PyAttributeDef KX_PolygonMaterial::Attributes[] = {
 	KX_PYATTRIBUTE_FLOAT_RW("shininess", 0.0f, 1000.0f, KX_PolygonMaterial, m_shininess),
 	KX_PYATTRIBUTE_FLOAT_RW("specularity", 0.0f, 1000.0f, KX_PolygonMaterial, m_specularity),
 	
-	KX_PYATTRIBUTE_RW_FUNCTION("diffuse", KX_PolygonMaterial, pyattr_get_texture, pyattr_set_diffuse),
+	KX_PYATTRIBUTE_RW_FUNCTION("diffuse", KX_PolygonMaterial, pyattr_get_diffuse, pyattr_set_diffuse),
 	KX_PYATTRIBUTE_RW_FUNCTION("specular",KX_PolygonMaterial, pyattr_get_specular, pyattr_set_specular),	
 	
 	KX_PYATTRIBUTE_RO_FUNCTION("tface",	KX_PolygonMaterial, pyattr_get_tface), /* How the heck is this even useful??? - Campbell */

@@ -1,5 +1,5 @@
 /**
-* $Id: icons.c 30531 2010-07-20 11:32:30Z jwilkins $
+* $Id: icons.c 30733 2010-07-26 02:35:43Z nicholasbishop $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -178,7 +178,7 @@ void BKE_previewimg_free_id(ID *id)
 		Image *img  = (Image*)id;
 		BKE_previewimg_free(&img->preview);
 	} else if (GS(id->name) == ID_BR) {
-		Brush *br  = (Brush*)br;
+		Brush *br  = (Brush*)id;
 		BKE_previewimg_free(&br->preview);
 	}
 }

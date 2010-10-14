@@ -1,7 +1,7 @@
 /**
  * A general (pointer -> pointer) hash table ADT
  * 
- * $Id: BLI_ghash.h 28640 2010-05-07 07:54:25Z campbellbarton $
+ * $Id: BLI_ghash.h 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,12 +36,11 @@
 extern "C" {
 #endif
 
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "BKE_utildefines.h"
-#include "MEM_guardedalloc.h"
 
 #include "BLI_mempool.h"
 #include "BLI_blenlib.h"

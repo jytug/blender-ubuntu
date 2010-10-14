@@ -1,5 +1,5 @@
 /**
- * $Id: buttons_ops.c 29921 2010-07-04 10:02:30Z campbellbarton $
+ * $Id: buttons_ops.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,7 +35,6 @@
 #include "BLI_fileops.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h" /* G.sce only */
 
 #include "WM_api.h"
 #include "WM_types.h"

@@ -1,7 +1,7 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
 #
-# $Id: Makefile 28911 2010-05-21 21:26:03Z sgefant $
+# $Id: Makefile 31223 2010-08-10 21:22:26Z gsrb3d $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -17,7 +17,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
-# Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
 # All rights reserved.
@@ -71,6 +71,14 @@ endif
 
 ifeq ($(WITH_TIFF), true)
   CPPFLAGS += -DWITH_TIFF
+endif
+
+ifeq ($(WITH_CINEON), true)
+  CPPFLAGS += -DWITH_CINEON
+endif
+
+ifeq ($(WITH_HDR), true)
+  CPPFLAGS += -DWITH_HDR
 endif
 
 CPPFLAGS += -I$(OPENGL_HEADERS)

@@ -1,5 +1,5 @@
 /**
- * $Id: screendump.c 29854 2010-07-01 19:28:45Z campbellbarton $
+ * $Id: screendump.c 31162 2010-08-08 08:33:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,7 +44,6 @@
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_report.h"
-#include "BKE_utildefines.h"
 #include "BKE_writeavi.h"
 
 #include "BIF_gl.h"

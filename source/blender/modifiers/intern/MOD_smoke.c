@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_smoke.c 28756 2010-05-14 07:09:15Z broken $
+* $Id: MOD_smoke.c 31028 2010-08-04 04:01:27Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -33,6 +33,8 @@
 #include "stddef.h"
 
 #include "MEM_guardedalloc.h"
+
+#include "DNA_object_types.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"

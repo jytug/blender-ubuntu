@@ -1,5 +1,5 @@
 /**
- * $Id: physics_ops.c 30445 2010-07-17 18:02:10Z campbellbarton $
+ * $Id: physics_ops.c 30927 2010-07-31 19:26:21Z theeth $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -114,7 +114,7 @@ static void keymap_particle(wmKeyConfig *keyconf)
 	
 	WM_keymap_add_item(keymap, "PARTICLE_OT_weight_set", KKEY, KM_PRESS, KM_SHIFT, 0);
 
-	ED_object_generic_keymap(keyconf, keymap, 1);
+	ED_object_generic_keymap(keyconf, keymap, 2);
 }
 
 /******************************* boids *************************************/

@@ -1,5 +1,5 @@
 /**
- * $Id: UI_interface.h 30325 2010-07-14 14:11:03Z jwilkins $
+ * $Id: UI_interface.h 31630 2010-08-28 12:34:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -135,7 +135,7 @@ typedef struct uiLayout uiLayout;
 #define UI_MAKE_RIGHT	8192
 
 	/* button align flag, for drawing groups together */
-#define UI_BUT_ALIGN		(15<<14)
+#define UI_BUT_ALIGN		(UI_BUT_ALIGN_TOP|UI_BUT_ALIGN_LEFT|UI_BUT_ALIGN_RIGHT|UI_BUT_ALIGN_DOWN)
 #define UI_BUT_ALIGN_TOP	(1<<14)
 #define UI_BUT_ALIGN_LEFT	(1<<15)
 #define UI_BUT_ALIGN_RIGHT	(1<<16)
@@ -151,9 +151,10 @@ typedef struct uiLayout uiLayout;
 #define UI_BUT_UNDO			(1<<25)
 #define UI_BUT_IMMEDIATE	(1<<26)
 #define UI_BUT_NO_TOOLTIP	(1<<27)
+#define UI_BUT_NO_UTF8		(1<<28)
 
-#define UI_BUT_VEC_SIZE_LOCK (1<<28) /* used to flag if color hsv-circle should keep luminance */
-#define UI_BUT_COLOR_CUBIC	(1<<29) /* cubic saturation for the color wheel */
+#define UI_BUT_VEC_SIZE_LOCK (1<<29) /* used to flag if color hsv-circle should keep luminance */
+#define UI_BUT_COLOR_CUBIC	(1<<30) /* cubic saturation for the color wheel */
 
 #define UI_PANEL_WIDTH			340
 #define UI_COMPACT_PANEL_WIDTH	160
@@ -669,17 +670,17 @@ uiBlock *uiLayoutAbsoluteBlock(uiLayout *layout);
 void uiTemplateHeader(uiLayout *layout, struct bContext *C, int menus);
 void uiTemplateDopeSheetFilter(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr);
 void uiTemplateID(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, char *propname,
-	char *newop, char *openop, char *unlinkop, char *filterop);
+	char *newop, char *openop, char *unlinkop);
 void uiTemplateIDBrowse(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, char *propname,
-				  char *newop, char *openop, char *unlinkop, char *filterop);
+				  char *newop, char *openop, char *unlinkop);
 void uiTemplateIDPreview(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, char *propname,
-	char *newop, char *openop, char *unlinkop, char *filterop, int rows, int cols);
+	char *newop, char *openop, char *unlinkop, int rows, int cols);
 void uiTemplateAnyID(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, char *propname, 
 	char *proptypename, char *text);
 void uiTemplatePathBuilder(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, char *propname, 
 	struct PointerRNA *root_ptr, char *text);
-uiLayout *uiTemplateModifier(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, int compact);
-uiLayout *uiTemplateConstraint(uiLayout *layout, struct PointerRNA *ptr, int compact);
+uiLayout *uiTemplateModifier(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr);
+uiLayout *uiTemplateConstraint(uiLayout *layout, struct PointerRNA *ptr);
 void uiTemplatePreview(uiLayout *layout, struct ID *id, struct ID *parent, struct MTex *slot);
 void uiTemplateColorRamp(uiLayout *layout, struct PointerRNA *ptr, char *propname, int expand);
 void uiTemplateHistogram(uiLayout *layout, struct PointerRNA *ptr, char *propname, int expand);
@@ -687,7 +688,6 @@ void uiTemplateWaveform(uiLayout *layout, struct PointerRNA *ptr, char *propname
 void uiTemplateVectorscope(uiLayout *layout, struct PointerRNA *ptr, char *propname, int expand);
 void uiTemplateCurveMapping(uiLayout *layout, struct PointerRNA *ptr, char *propname, int type, int levels, int brush);
 void uiTemplateColorWheel(uiLayout *layout, struct PointerRNA *ptr, char *propname, int value_slider, int lock, int lock_luminosity, int cubic);
-void uiTemplateTriColorSet(uiLayout *layout, struct PointerRNA *ptr, char *propname);
 void uiTemplateLayers(uiLayout *layout, struct PointerRNA *ptr, char *propname,
 			  PointerRNA *used_ptr, char *used_propname, int active_layer);
 void uiTemplateImage(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, char *propname, struct PointerRNA *userptr, int compact);

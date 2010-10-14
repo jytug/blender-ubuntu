@@ -1,5 +1,5 @@
 /* 
- * $Id: geometry.c 30446 2010-07-17 18:08:14Z campbellbarton $
+ * $Id: geometry.c 31332 2010-08-14 05:33:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -835,7 +835,7 @@ PyObject *Geometry_Init(void)
 	PyObject *submodule;
 
 	submodule = PyModule_Create(&M_Geometry_module_def);
-	PyDict_SetItemString(PySys_GetObject("modules"), M_Geometry_module_def.m_name, submodule);
+	PyDict_SetItemString(PyImport_GetModuleDict(), M_Geometry_module_def.m_name, submodule);
 
 	return (submodule);
 }

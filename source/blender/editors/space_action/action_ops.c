@@ -1,5 +1,5 @@
 /**
- * $Id: action_ops.c 30445 2010-07-17 18:02:10Z campbellbarton $
+ * $Id: action_ops.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,14 +29,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "DNA_space_types.h"
 
 #include "BLI_blenlib.h"
 
-#include "BKE_context.h"
-#include "BKE_utildefines.h"
 
 
 #include "ED_transform.h"

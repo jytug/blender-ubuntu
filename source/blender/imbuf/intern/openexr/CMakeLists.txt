@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31006 2010-08-03 11:25:34Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -38,9 +38,8 @@ SET(INC
 	${OPENEXR_INC}
 )
 
-IF(WITH_OPENEXR)
+IF(WITH_IMAGE_OPENEXR)
 	ADD_DEFINITIONS(-DWITH_OPENEXR)
-ENDIF(WITH_OPENEXR)
+ENDIF(WITH_IMAGE_OPENEXR)
 
 BLENDERLIB(bf_openexr "${SRC}" "${INC}")                 
-#env.BlenderLib ('bf_openexr', source_files, incs, defs, libtype=['core','player'], priority = [90, 200])

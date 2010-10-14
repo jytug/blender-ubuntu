@@ -1,5 +1,5 @@
 /**
- * $Id: BL_ArmatureObject.cpp 28640 2010-05-07 07:54:25Z campbellbarton $
+ * $Id: BL_ArmatureObject.cpp 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,6 +30,7 @@
 #include "BL_ArmatureObject.h"
 #include "BL_ActionActuator.h"
 #include "KX_BlenderSceneConverter.h"
+#include "MEM_guardedalloc.h"
 #include "BLI_blenlib.h"
 #include "BLI_ghash.h"
 #include "BLI_math.h"
@@ -114,6 +115,11 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 			pchan->constraints.first = NULL;
 			pchan->constraints.last = NULL;
 		}
+
+		// fails to link, props are not used in the BGE yet.
+		/* if(pchan->prop)
+			pchan->prop= IDP_CopyProperty(pchan->prop); */
+		pchan->prop= NULL;
 	}
 
 	BLI_ghash_free(ghash, NULL, NULL);

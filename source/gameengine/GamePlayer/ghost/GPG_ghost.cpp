@@ -1,5 +1,5 @@
 /**
-* $Id: GPG_ghost.cpp 30526 2010-07-20 10:41:08Z campbellbarton $
+* $Id: GPG_ghost.cpp 31599 2010-08-26 23:49:46Z campbellbarton $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

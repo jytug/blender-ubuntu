@@ -1,6 +1,6 @@
 /* display list (or rather multi purpose list) stuff */
 /* 
-	$Id: BKE_displist.h 29762 2010-06-28 11:07:02Z nazgul $
+	$Id: BKE_displist.h 31028 2010-08-04 04:01:27Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -83,7 +83,7 @@ extern void copy_displist(struct ListBase *lbn, struct ListBase *lb);
 extern void free_disp_elem(DispList *dl);
 extern DispList *find_displist_create(struct ListBase *lb, int type);
 extern DispList *find_displist(struct ListBase *lb, int type);
-extern void addnormalsDispList(struct Object *ob, struct ListBase *lb);
+extern void addnormalsDispList(struct ListBase *lb);
 extern void count_displist(struct ListBase *lb, int *totvert, int *totface);
 extern void freedisplist(struct ListBase *lb);
 extern int displist_has_faces(struct ListBase *lb);

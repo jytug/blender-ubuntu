@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_anim.h (mar-2001 nzc);
  *	
- * $Id: BKE_anim.h 28323 2010-04-21 11:59:47Z campbellbarton $ 
+ * $Id: BKE_anim.h 31028 2010-08-04 04:01:27Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,8 +31,6 @@
 #ifndef BKE_ANIM_H
 #define BKE_ANIM_H
 
-#define MAX_DUPLI_RECUR 8
-
 struct Path;
 struct Object;
 struct PartEff;
@@ -41,8 +39,6 @@ struct ListBase;
 struct bAnimVizSettings;
 struct bMotionPath;
 struct bPoseChannel;
-
-#include "DNA_object_types.h"
 
 /* ---------------------------------------------------- */
 /* Animation Visualisation */
@@ -54,7 +50,7 @@ void animviz_free_motionpath(struct bMotionPath *mpath);
 
 struct bMotionPath *animviz_verify_motionpaths(struct Scene *scene, struct Object *ob, struct bPoseChannel *pchan);
 
-void animviz_get_object_motionpaths(Object *ob, ListBase *targets);
+void animviz_get_object_motionpaths(struct Object *ob, ListBase *targets);
 void animviz_calc_motionpaths(struct Scene *scene, ListBase *targets);
 
 /* ---------------------------------------------------- */

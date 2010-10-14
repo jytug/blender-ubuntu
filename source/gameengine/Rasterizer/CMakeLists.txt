@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 27231 2010-03-03 06:38:47Z dfelinto $
+# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -43,4 +43,3 @@ SET(INC
 ADD_DEFINITIONS(-DGLEW_STATIC)
 
 BLENDERLIB(bf_rasterizer "${SRC}" "${INC}")
-#env.BlenderLib ( 'bf_rasterizer', sources, Split(incs), [], libtype=['game','player'], priority=[35,115], compileflags = cflags )

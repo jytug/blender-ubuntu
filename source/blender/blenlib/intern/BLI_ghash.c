@@ -1,5 +1,5 @@
 /**
- * $Id: BLI_ghash.c 28640 2010-05-07 07:54:25Z campbellbarton $
+ * $Id: BLI_ghash.c 31412 2010-08-17 11:10:48Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,10 +28,10 @@
  * A general (pointer -> pointer) hash table ADT
  */
 
+#include "MEM_guardedalloc.h"
 
 #include "BLI_ghash.h"
 #include "BLO_sys_types.h" // for intptr_t support
-
 /***/
 
 unsigned int hashsizes[]= {

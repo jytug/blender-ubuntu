@@ -1,5 +1,5 @@
 /**
- * $Id: transform_input.c 30587 2010-07-21 15:22:11Z blendix $
+ * $Id: transform_input.c 30766 2010-07-26 19:00:15Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -237,7 +237,7 @@ void InputAngle(TransInfo *t, MouseInput *mi, short mval[2], float output[3])
 	if( (dx1*dy2-dx2*dy1)>0.0 ) dphi= -dphi;
 
 	/* If the angle is zero, because of lack of precision close to the 1.0 value in acos
-	 * approximate the angle with the oposite side of the normalized triangle
+	 * approximate the angle with the opposite side of the normalized triangle
 	 * This is a good approximation here since the smallest acos value seems to be around
 	 * 0.02 degree and lower values don't even have a 0.01% error compared to the approximation
 	 * */

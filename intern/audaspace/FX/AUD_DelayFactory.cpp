@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_DelayFactory.cpp 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_DelayFactory.cpp 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -29,30 +29,16 @@
 
 AUD_DelayFactory::AUD_DelayFactory(AUD_IFactory* factory, float delay) :
 		AUD_EffectFactory(factory),
-		m_delay(delay) {}
+		m_delay(delay)
+{
+}
 
-AUD_DelayFactory::AUD_DelayFactory(float delay) :
-		AUD_EffectFactory(0),
-		m_delay(delay) {}
-
-float AUD_DelayFactory::getDelay()
+float AUD_DelayFactory::getDelay() const
 {
 	return m_delay;
 }
 
-void AUD_DelayFactory::setDelay(float delay)
+AUD_IReader* AUD_DelayFactory::createReader() const
 {
-	m_delay = delay;
-}
-
-AUD_IReader* AUD_DelayFactory::createReader()
-{
-	AUD_IReader* reader = getReader();
-
-	if(reader != 0)
-	{
-		reader = new AUD_DelayReader(reader, m_delay); AUD_NEW("reader")
-	}
-
-	return reader;
+	return new AUD_DelayReader(getReader(), m_delay);
 }

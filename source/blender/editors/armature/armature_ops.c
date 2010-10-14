@@ -1,5 +1,5 @@
 /**
- * $Id: armature_ops.c 30445 2010-07-17 18:02:10Z campbellbarton $
+ * $Id: armature_ops.c 31673 2010-08-31 11:31:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,15 +29,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "MEM_guardedalloc.h"
-
+#include "BLO_sys_types.h"
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
 
-#include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_access.h"
 

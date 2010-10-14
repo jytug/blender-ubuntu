@@ -1,6 +1,6 @@
 /**
  *
- * $Id: imagetexture.c 29516 2010-06-17 07:20:12Z broken $
+ * $Id: imagetexture.c 31730 2010-09-03 03:30:20Z gsrb3d $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

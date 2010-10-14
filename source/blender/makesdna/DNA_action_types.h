@@ -1,5 +1,5 @@
 /*  
- * $Id: DNA_action_types.h 29964 2010-07-05 04:37:30Z aligorith $
+ * $Id: DNA_action_types.h 31028 2010-08-04 04:01:27Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,9 +33,8 @@
 
 #include "DNA_listBase.h"
 #include "DNA_ID.h"
-#include "DNA_gpencil_types.h"
 #include "DNA_view2d_types.h"
-#include "DNA_userdef_types.h"
+#include "DNA_userdef_types.h" /* ThemeWireColor */
 
 struct SpaceLink;
 struct Object;

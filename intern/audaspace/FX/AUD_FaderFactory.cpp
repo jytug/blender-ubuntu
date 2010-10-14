@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_FaderFactory.cpp 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_FaderFactory.cpp 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -31,54 +31,26 @@ AUD_FaderFactory::AUD_FaderFactory(AUD_IFactory* factory, AUD_FadeType type,
 		AUD_EffectFactory(factory),
 		m_type(type),
 		m_start(start),
-		m_length(length) {}
+		m_length(length)
+{
+}
 
-AUD_FaderFactory::AUD_FaderFactory(AUD_FadeType type,
-								   float start, float length) :
-		AUD_EffectFactory(0),
-		m_type(type),
-		m_start(start),
-		m_length(length) {}
-
-AUD_FadeType AUD_FaderFactory::getType()
+AUD_FadeType AUD_FaderFactory::getType() const
 {
 	return m_type;
 }
 
-void AUD_FaderFactory::setType(AUD_FadeType type)
-{
-	m_type = type;
-}
-
-float AUD_FaderFactory::getStart()
+float AUD_FaderFactory::getStart() const
 {
 	return m_start;
 }
 
-void AUD_FaderFactory::setStart(float start)
-{
-	m_start = start;
-}
-
-float AUD_FaderFactory::getLength()
+float AUD_FaderFactory::getLength() const
 {
 	return m_length;
 }
 
-void AUD_FaderFactory::setLength(float length)
+AUD_IReader* AUD_FaderFactory::createReader() const
 {
-	m_length = length;
-}
-
-AUD_IReader* AUD_FaderFactory::createReader()
-{
-	AUD_IReader* reader = getReader();
-
-	if(reader != 0)
-	{
-		reader = new AUD_FaderReader(reader, m_type, m_start, m_length);
-		AUD_NEW("reader")
-	}
-
-	return reader;
+	return new AUD_FaderReader(getReader(), m_type, m_start, m_length);
 }

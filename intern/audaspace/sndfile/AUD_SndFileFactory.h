@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_SndFileFactory.h 22687 2009-08-21 22:06:19Z gsrb3d $
+ * $Id: AUD_SndFileFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -30,6 +30,8 @@
 #include "AUD_Reference.h"
 class AUD_Buffer;
 
+#include <string>
+
 /**
  * This factory reads a sound file via libsndfile.
  */
@@ -39,33 +41,32 @@ private:
 	/**
 	 * The filename of the sound source file.
 	 */
-	char* m_filename;
+	std::string m_filename;
 
 	/**
 	 * The buffer to read from.
 	 */
 	AUD_Reference<AUD_Buffer> m_buffer;
 
+	// hide copy constructor and operator=
+	AUD_SndFileFactory(const AUD_SndFileFactory&);
+	AUD_SndFileFactory& operator=(const AUD_SndFileFactory&);
+
 public:
 	/**
 	 * Creates a new factory.
 	 * \param filename The sound file path.
 	 */
-	AUD_SndFileFactory(const char* filename);
+	AUD_SndFileFactory(std::string filename);
 
 	/**
 	 * Creates a new factory.
 	 * \param buffer The buffer to read from.
 	 * \param size The size of the buffer.
 	 */
-	AUD_SndFileFactory(unsigned char* buffer, int size);
+	AUD_SndFileFactory(const data_t* buffer, int size);
 
-	/**
-	 * Destroys the factory.
-	 */
-	~AUD_SndFileFactory();
-
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_SNDFILEFACTORY

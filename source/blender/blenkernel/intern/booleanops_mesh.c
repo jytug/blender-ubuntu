@@ -1,7 +1,7 @@
 #if 0
 
 /**
- * $Id: booleanops_mesh.c 27642 2010-03-21 13:42:25Z campbellbarton $
+ * $Id: booleanops_mesh.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,6 @@
  */
 #include "CSG_BooleanOps.h"
 
-#include "MEM_guardedalloc.h"
 
 
 

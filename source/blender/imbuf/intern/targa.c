@@ -24,13 +24,14 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * $Id: targa.c 29644 2010-06-23 10:24:35Z blendix $
+ * $Id: targa.c 31364 2010-08-16 05:46:10Z campbellbarton $
  */
 
 #ifdef WIN32
 #include <io.h>
 #endif
 #include "BLI_blenlib.h"
+#include "MEM_guardedalloc.h"
 
 #include "imbuf.h"
 

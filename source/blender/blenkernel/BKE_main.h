@@ -8,7 +8,7 @@
  *
  * Oops... this should be a _types.h file.
  *
- * $Id: BKE_main.h 26841 2010-02-12 13:34:04Z campbellbarton $ 
+ * $Id: BKE_main.h 31028 2010-08-04 04:01:27Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -58,7 +58,6 @@ typedef struct Main {
 	ListBase mat;
 	ListBase tex;
 	ListBase image;
-	ListBase wave;
 	ListBase latt;
 	ListBase lamp;
 	ListBase camera;

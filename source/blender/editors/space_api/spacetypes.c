@@ -1,5 +1,5 @@
 /**
- * $Id: spacetypes.c 28503 2010-04-29 07:06:00Z campbellbarton $
+ * $Id: spacetypes.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,6 @@
 #include "UI_interface.h"
 #include "UI_view2d.h"
 
-#include "BIF_gl.h"
 
 #include "ED_anim_api.h"
 #include "ED_armature.h"

@@ -1,5 +1,5 @@
 /**
- * $Id: undofile.c 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: undofile.c 31168 2010-08-08 13:11:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,10 +36,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_listBase.h"
-#include "DNA_userdef_types.h"
 
-#include "BKE_utildefines.h"
-#include "BKE_global.h"
 
 #include "BLO_undofile.h"
 

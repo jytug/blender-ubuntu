@@ -1,5 +1,5 @@
 /*
-* $Id: cdderivedmesh.c 30311 2010-07-14 10:46:12Z blendix $
+* $Id: cdderivedmesh.c 31352 2010-08-15 15:14:08Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -241,7 +241,8 @@ static void cdDM_drawVerts(DerivedMesh *dm)
 	else {	/* use OpenGL VBOs or Vertex Arrays instead for better, faster rendering */
 		GPU_vertex_setup(dm);
 		if( !GPU_buffer_legacy(dm) ) {
-			glDrawArrays(GL_POINTS,0,dm->drawObject->nelements);
+			if(dm->drawObject->nelements)	glDrawArrays(GL_POINTS,0, dm->drawObject->nelements);
+			else							glDrawArrays(GL_POINTS,0, dm->drawObject->nlooseverts);
 		}
 		GPU_buffer_unbind();
 	}
@@ -1673,6 +1674,11 @@ DerivedMesh *CDDM_from_template(DerivedMesh *source,
 	CDDerivedMesh *cddm = cdDM_create("CDDM_from_template dest");
 	DerivedMesh *dm = &cddm->dm;
 
+	/* ensure these are created if they are made on demand */
+	source->getVertDataArray(source, CD_ORIGINDEX);
+	source->getEdgeDataArray(source, CD_ORIGINDEX);
+	source->getFaceDataArray(source, CD_ORIGINDEX);
+
 	/* this does a copy of all non mvert/medge/mface layers */
 	DM_from_template(dm, source, DM_TYPE_CDDM, numVerts, numEdges, numFaces);
 
@@ -1771,14 +1777,10 @@ void CDDM_calc_normals(DerivedMesh *dm)
 	for(i = 0; i < numVerts; i++, mv++) {
 		float *no = temp_nors[i];
 		
-		if (normalize_v3(no) == 0.0) {
-			VECCOPY(no, mv->co);
-			normalize_v3(no);
-		}
+		if (normalize_v3(no) == 0.0)
+			normalize_v3_v3(no, mv->co);
 
-		mv->no[0] = (short)(no[0] * 32767.0);
-		mv->no[1] = (short)(no[1] * 32767.0);
-		mv->no[2] = (short)(no[2] * 32767.0);
+		normal_float_to_short_v3(mv->no, no);
 	}
 	
 	MEM_freeN(temp_nors);

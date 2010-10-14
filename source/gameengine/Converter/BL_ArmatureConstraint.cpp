@@ -1,5 +1,5 @@
 /**
- * $Id: BL_ArmatureConstraint.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: BL_ArmatureConstraint.cpp 31599 2010-08-26 23:49:46Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or

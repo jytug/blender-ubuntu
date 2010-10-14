@@ -1,5 +1,5 @@
 /**
- * $Id: buttons_header.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: buttons_header.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,20 +30,15 @@
 #include <stdio.h>
 
 
-#include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
 
 #include "BKE_context.h"
-#include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 #include "ED_screen.h"
 #include "ED_types.h"
 
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"

@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_array.c 29318 2010-06-07 19:16:56Z nicholasbishop $
+* $Id: MOD_array.c 31364 2010-08-16 05:46:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -32,12 +32,15 @@
 
 /* Array modifier: duplicates the object multiple times along an axis */
 
-#include "DNA_curve_types.h"
-#include "DNA_meshdata_types.h"
+#include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
 #include "BLI_ghash.h"
 #include "BLI_edgehash.h"
+
+#include "DNA_curve_types.h"
+#include "DNA_meshdata_types.h"
+#include "DNA_object_types.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_displist.h"

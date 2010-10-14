@@ -1,5 +1,5 @@
 /**
- * $Id: space_logic.c 28791 2010-05-16 16:28:50Z dfelinto $
+ * $Id: space_logic.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,12 +37,10 @@
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
-#include "BKE_utildefines.h"
 
 #include "ED_screen.h"
 
 #include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 
 #include "WM_api.h"
@@ -296,17 +294,7 @@ static void logic_header_area_init(wmWindowManager *wm, ARegion *ar)
 
 static void logic_header_area_draw(const bContext *C, ARegion *ar)
 {
-	/* clear */
-	UI_ThemeClearColor(ED_screen_area_active(C)?TH_HEADER:TH_HEADERDESEL);
-	glClear(GL_COLOR_BUFFER_BIT);
-	
-	/* set view2d view matrix for scrolling (without scrollers) */
-	UI_view2d_view_ortho(C, &ar->v2d);
-	
-	logic_header_buttons(C, ar);
-	
-	/* restore view matrix? */
-	UI_view2d_view_restore(C);
+	ED_region_header(C, ar);
 }
 
 /**************************** spacetype *****************************/

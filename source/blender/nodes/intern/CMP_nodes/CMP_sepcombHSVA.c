@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_sepcombHSVA.c 27655 2010-03-22 09:30:00Z campbellbarton $
+ * $Id: CMP_sepcombHSVA.c 31358 2010-08-15 22:08:49Z scourage $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -64,7 +64,7 @@ static void node_composit_exec_sephsva(void *data, bNode *node, bNodeStack **in,
 	if(in[0]->data==NULL) {
 		float h, s, v;
 	
-		rgb_to_hsv(in[0]->vec[0], in[0]->vec[1], in[0]->vec[2], &h, &s, &v);
+      rgb_to_hsv(in[0]->vec[0], in[0]->vec[1], in[0]->vec[2], &h, &s, &v);
 		
 		out[0]->vec[0] = h;
 		out[1]->vec[0] = s;

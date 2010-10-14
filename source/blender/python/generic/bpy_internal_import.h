@@ -1,5 +1,5 @@
 /* 
- * $Id: bpy_internal_import.h 29159 2010-06-02 14:40:58Z campbellbarton $
+ * $Id: bpy_internal_import.h 31056 2010-08-05 03:25:45Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,5 +60,7 @@ extern PyMethodDef bpy_reload_meth[];
 struct Main *bpy_import_main_get(void);
 void bpy_import_main_set(struct Main *maggie);
 
+/* name namespace function for bpy & bge */
+PyObject *bpy_namespace_dict_new(const char *filename);
 
 #endif				/* EXPP_bpy_import_h */

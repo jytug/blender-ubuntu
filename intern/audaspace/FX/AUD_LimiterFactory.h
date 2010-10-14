@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_LimiterFactory.h 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_LimiterFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -37,12 +37,16 @@ private:
 	/**
 	 * The start time.
 	 */
-	float m_start;
+	const float m_start;
 
 	/**
 	 * The end time.
 	 */
-	float m_end;
+	const float m_end;
+
+	// hide copy constructor and operator=
+	AUD_LimiterFactory(const AUD_LimiterFactory&);
+	AUD_LimiterFactory& operator=(const AUD_LimiterFactory&);
 
 public:
 	/**
@@ -52,33 +56,20 @@ public:
 	 * \param end The desired end time, a negative value signals that it should
 	 *            play to the end.
 	 */
-	AUD_LimiterFactory(AUD_IFactory* factory = 0,
+	AUD_LimiterFactory(AUD_IFactory* factory,
 					   float start = 0, float end = -1);
 
 	/**
 	 * Returns the start time.
 	 */
-	float getStart();
-
-	/**
-	 * Sets the start time.
-	 * \param start The new start time.
-	 */
-	void setStart(float start);
+	float getStart() const;
 
 	/**
 	 * Returns the end time.
 	 */
-	float getEnd();
+	float getEnd() const;
 
-	/**
-	 * Sets the end time.
-	 * \param end The new end time, a negative value signals that it should play
-	 *            to the end.
-	 */
-	void setEnd(float end);
-
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_LIMITERFACTORY

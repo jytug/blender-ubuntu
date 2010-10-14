@@ -1,5 +1,5 @@
 /**
- * $Id: space_script.c 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: space_script.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,6 @@
 #include "BLI_math.h"
 #include "BLI_rand.h"
 
-#include "BKE_colortools.h"
 #include "BKE_context.h"
 #include "BKE_screen.h"
 

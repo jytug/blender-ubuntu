@@ -1,5 +1,5 @@
 /* 
- * $Id: occlusion.c 28202 2010-04-15 10:28:32Z blendix $
+ * $Id: occlusion.c 30745 2010-07-26 06:34:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1390,8 +1390,7 @@ static void sample_occ_tree(Render *re, OcclusionTree *tree, OccFace *exclude, f
 	if(onlyshadow)
 		envcolor= WO_AOPLAIN;
 
-	VECCOPY(nn, n);
-	negate_v3(nn);
+	negate_v3_v3(nn, n);
 
 	occ_lookup(tree, thread, exclude, co, nn, &occ, (tree->doindirect)? rad: NULL, (env && envcolor)? bn: NULL);
 

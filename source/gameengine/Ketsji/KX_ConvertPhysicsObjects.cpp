@@ -1,5 +1,5 @@
 /**
- * $Id: KX_ConvertPhysicsObjects.cpp 29068 2010-05-29 21:31:57Z dfelinto $
+ * $Id: KX_ConvertPhysicsObjects.cpp 31730 2010-09-03 03:30:20Z gsrb3d $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -181,6 +181,14 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 	case KX_BOUNDPOLYTOPE:
 		{
 			shapeInfo->SetMesh(meshobj, dm,true);
+			bm = shapeInfo->CreateBulletShape(ci.m_margin);
+			break;
+		}
+	case KX_BOUNDCAPSULE:
+		{
+			shapeInfo->m_radius = objprop->m_boundobject.c.m_radius;
+			shapeInfo->m_height = objprop->m_boundobject.c.m_height;
+			shapeInfo->m_shapeType = PHY_SHAPE_CAPSULE;
 			bm = shapeInfo->CreateBulletShape(ci.m_margin);
 			break;
 		}

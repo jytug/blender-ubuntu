@@ -1,6 +1,6 @@
 /* ipo.c
  * 
- * $Id: ipo.c 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: ipo.c 31785 2010-09-06 10:35:32Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,6 +54,7 @@
 #include "DNA_sequence_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_world_types.h"
+#include "DNA_object_types.h"
 
 #include "BLI_math.h" /* windows needs for M_PI */
 #include "BLI_blenlib.h"
@@ -1300,13 +1301,14 @@ static void icu_to_fcurves (ID *id, ListBase *groups, ListBase *list, IpoCurve *
 				/* correct times for rotation drivers 
 				 *	- need to go from degrees to radians...
 				 * 	- there's only really 1 target to worry about 
+				 *  - were also degrees/10
 				 */
 				if (fcu->driver && fcu->driver->variables.first) {
 					DriverVar *dvar= fcu->driver->variables.first;
 					DriverTarget *dtar= &dvar->targets[0];
 					
 					if (ELEM3(dtar->transChan, DTAR_TRANSCHAN_ROTX, DTAR_TRANSCHAN_ROTY, DTAR_TRANSCHAN_ROTZ)) {
-						const float fac= (float)M_PI / 180.0f;
+						const float fac= (float)M_PI / 18.0f;
 						
 						dst->vec[0][0] *= fac;
 						dst->vec[1][0] *= fac;

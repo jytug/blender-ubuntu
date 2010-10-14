@@ -1,5 +1,5 @@
 /**
- * $Id: gpu_extensions.c 30407 2010-07-16 10:13:04Z blendix $
+ * $Id: gpu_extensions.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,18 +32,13 @@
 
 #include "GL/glew.h"
 
-#include "DNA_listBase.h"
 #include "DNA_image_types.h"
-#include "DNA_userdef_types.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "BKE_image.h"
 #include "BKE_global.h"
 #include "BKE_utildefines.h"
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
 
 #include "BLI_blenlib.h"
 

@@ -1,7 +1,7 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
 #
-# $Id: nan_compile.mk 30250 2010-07-13 00:57:19Z campbellbarton $
+# $Id: nan_compile.mk 31237 2010-08-11 14:51:52Z pidhash $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -88,7 +88,6 @@ ifeq ($(OS),darwin)
         CFLAGS  += -pipe -fPIC -funsigned-char
         CCFLAGS += -pipe -fPIC -funsigned-char
     endif
-
 
     CFLAGS += -arch $(MACOSX_ARCHITECTURE) #-isysroot $(MACOSX_SDK) -mmacosx-version-min=$(MACOSX_MIN_VERS)
     CCFLAGS += -arch $(MACOSX_ARCHITECTURE) #-isysroot $(MACOSX_SDK) -mmacosx-version-min=$(MACOSX_MIN_VERS)
@@ -177,6 +176,9 @@ ifeq ($(OS),linux)
     REL_CFLAGS  += -O2
     REL_CCFLAGS += -O2
     NAN_DEPEND = true
+  ifeq ($(WITH_BF_RAYOPTIMIZATION), true) 
+    CCFLAGS += -msse
+  endif
   ifeq ($(CPU),alpha)
     CFLAGS += -mieee
   endif

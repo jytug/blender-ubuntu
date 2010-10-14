@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_ChannelMapperFactory.h 25643 2010-01-01 05:09:30Z nexyon $
+ * $Id: AUD_ChannelMapperFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -40,10 +40,12 @@ private:
 	 */
 	float **m_mapping[9];
 
+	// hide copy constructor and operator=
+	AUD_ChannelMapperFactory(const AUD_ChannelMapperFactory&);
+	AUD_ChannelMapperFactory& operator=(const AUD_ChannelMapperFactory&);
+
 public:
-	AUD_ChannelMapperFactory(AUD_IReader* reader, AUD_DeviceSpecs specs);
 	AUD_ChannelMapperFactory(AUD_IFactory* factory, AUD_DeviceSpecs specs);
-	AUD_ChannelMapperFactory(AUD_DeviceSpecs specs);
 
 	virtual ~AUD_ChannelMapperFactory();
 
@@ -59,7 +61,7 @@ public:
 	 */
 	void deleteMapping(int ic);
 
-	virtual AUD_IReader* createReader();
+	virtual AUD_IReader* createReader() const;
 };
 
 #endif //AUD_CHANNELMAPPERFACTORY

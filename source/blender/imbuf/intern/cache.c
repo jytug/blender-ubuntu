@@ -1,5 +1,5 @@
 /*
- * $Id: cache.c 28656 2010-05-07 22:04:48Z gsrb3d $
+ * $Id: cache.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -19,6 +19,8 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+#include "MEM_guardedalloc.h"
 
 #include "BLI_ghash.h"
 #include "BLI_listbase.h"

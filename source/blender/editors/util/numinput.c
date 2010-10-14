@@ -1,5 +1,5 @@
 /**
- * $Id: numinput.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: numinput.c 31166 2010-08-08 13:03:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,8 +30,6 @@
 #include <math.h>			/* fabs */
 #include <stdio.h>			/* for sprintf		*/
 
-#include "BKE_global.h"		/* for G			*/
-#include "BKE_utildefines.h"	/* ABS */
 
 #include "WM_types.h"
 

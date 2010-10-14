@@ -1,5 +1,5 @@
 /**
- * $Id: bpy_props.h 29240 2010-06-05 15:31:55Z campbellbarton $
+ * $Id: bpy_props.h 31838 2010-09-09 06:29:44Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,32 +28,6 @@
 #include <Python.h>
 
 PyObject *BPY_rna_props( void );
-
-/* functions for setting up new props - experemental */
-PyObject *BPy_BoolProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_BoolVectorProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_IntProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_IntVectorProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_FloatProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_FloatVectorProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_StringProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_EnumProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_PointerProperty(PyObject *self, PyObject *args, PyObject *kw);
-PyObject *BPy_CollectionProperty(PyObject *self, PyObject *args, PyObject *kw);
-
-PyObject *BPy_RemoveProperty(PyObject *self, PyObject *args, PyObject *kw);
-
-extern char BPy_BoolProperty_doc[];
-extern char BPy_BoolVectorProperty_doc[];
-extern char BPy_IntProperty_doc[];
-extern char BPy_IntVectorProperty_doc[];
-extern char BPy_FloatProperty_doc[];
-extern char BPy_FloatVectorProperty_doc[];
-extern char BPy_StringProperty_doc[];
-extern char BPy_EnumProperty_doc[];
-extern char BPy_PointerProperty_doc[];
-extern char BPy_CollectionProperty_doc[];\
-extern char BPy_RemoveProperty_doc[];
 
 #define PYRNA_STACK_ARRAY 32
 

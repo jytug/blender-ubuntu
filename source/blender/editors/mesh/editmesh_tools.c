@@ -1,4 +1,4 @@
- /* $Id: editmesh_tools.c 30588 2010-07-21 15:23:49Z blendix $
+ /* $Id: editmesh_tools.c 31585 2010-08-26 00:06:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,8 +37,6 @@ editmesh_tool.c: UI called tools for editmesh, geometry changes here, otherwise 
 #include <math.h>
 #include <float.h>
 
-#include "MEM_guardedalloc.h"
-
 #include "BLO_sys_types.h" // for intptr_t support
 
 #include "DNA_meshdata_types.h"
@@ -46,6 +44,8 @@ editmesh_tool.c: UI called tools for editmesh, geometry changes here, otherwise 
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_key_types.h"
+
+#include "MEM_guardedalloc.h"
 
 #include "RNA_define.h"
 #include "RNA_access.h"
@@ -59,19 +59,13 @@ editmesh_tool.c: UI called tools for editmesh, geometry changes here, otherwise 
 #include "BLI_heap.h"
 
 #include "BKE_context.h"
-#include "BKE_customdata.h"
 #include "BKE_depsgraph.h"
 #include "BKE_global.h"
 #include "BKE_key.h"
-#include "BKE_library.h"
 #include "BKE_mesh.h"
-#include "BKE_object.h"
-#include "BKE_utildefines.h"
 #include "BKE_bmesh.h"
 #include "BKE_report.h"
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -1038,7 +1032,7 @@ void MESH_OT_spin(wmOperatorType *ot)
 	RNA_def_boolean(ot->srna, "dupli", 0, "Dupli", "Make Duplicates");
 	RNA_def_float(ot->srna, "degrees", 90.0f, -FLT_MAX, FLT_MAX, "Degrees", "Degrees", -360.0f, 360.0f);
 
-	RNA_def_float_vector(ot->srna, "center", 3, NULL, -FLT_MAX, FLT_MAX, "Center", "Center in global view space", -FLT_MAX, FLT_MAX);
+	RNA_def_float_vector_xyz(ot->srna, "center", 3, NULL, -FLT_MAX, FLT_MAX, "Center", "Center in global view space", -FLT_MAX, FLT_MAX);
 	RNA_def_float_vector(ot->srna, "axis", 3, NULL, -1.0f, 1.0f, "Axis", "Axis in global view space", -FLT_MAX, FLT_MAX);
 
 }
@@ -1145,7 +1139,7 @@ void MESH_OT_screw(wmOperatorType *ot)
 	RNA_def_int(ot->srna, "steps", 9, 0, INT_MAX, "Steps", "Steps", 0, 256);
 	RNA_def_int(ot->srna, "turns", 1, 0, INT_MAX, "Turns", "Turns", 0, 256);
 
-	RNA_def_float_vector(ot->srna, "center", 3, NULL, -FLT_MAX, FLT_MAX, "Center", "Center in global view space", -FLT_MAX, FLT_MAX);
+	RNA_def_float_vector_xyz(ot->srna, "center", 3, NULL, -FLT_MAX, FLT_MAX, "Center", "Center in global view space", -FLT_MAX, FLT_MAX);
 	RNA_def_float_vector(ot->srna, "axis", 3, NULL, -1.0f, 1.0f, "Axis", "Axis in global view space", -FLT_MAX, FLT_MAX);
 }
 

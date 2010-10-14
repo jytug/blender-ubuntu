@@ -39,7 +39,7 @@ class EditExternally(bpy.types.Operator):
         # use image editor in the preferences when available.
         if not image_editor:
             if system == 'Windows':
-                image_editor = ["start"] # not tested!
+                image_editor = ["start"]  # not tested!
             elif system == 'Darwin':
                 image_editor = ["open"]
             else:
@@ -56,13 +56,15 @@ class EditExternally(bpy.types.Operator):
         return image_editor
 
     def execute(self, context):
+        import os
         import subprocess
-        filepath = self.properties.filepath
-        image_editor = self._editor_guess(context)
+        filepath = bpy.path.abspath(self.filepath)
 
-        cmd = []
-        cmd.extend(image_editor)
-        cmd.append(bpy.utils.expandpath(filepath))
+        if not os.path.exists(filepath):
+            self.report('ERROR', "Image path '%s' not found." % filepath)
+            return {'CANCELLED'}
+
+        cmd = self._editor_guess(context) + [filepath]
 
         subprocess.Popen(cmd)
 
@@ -75,7 +77,7 @@ class EditExternally(bpy.types.Operator):
             self.report({'ERROR'}, "Image not found on disk")
             return {'CANCELLED'}
 
-        self.properties.filepath = filepath
+        self.filepath = filepath
         self.execute(context)
 
         return {'FINISHED'}
@@ -90,8 +92,8 @@ class SaveDirty(bpy.types.Operator):
     def execute(self, context):
         unique_paths = set()
         for image in bpy.data.images:
-            if image.dirty:
-                filepath = bpy.utils.expandpath(image.filepath)
+            if image.is_dirty:
+                filepath = bpy.path.abspath(image.filepath)
                 if "\\" not in filepath and "/" not in filepath:
                     self.report({'WARNING'}, "Invalid path: " + filepath)
                 elif filepath in unique_paths:
@@ -114,7 +116,7 @@ class ProjectEdit(bpy.types.Operator):
         import os
         import subprocess
 
-        EXT = "png" # could be made an option but for now ok
+        EXT = "png"  # could be made an option but for now ok
 
         for image in bpy.data.images:
             image.tag = True
@@ -133,7 +135,7 @@ class ProjectEdit(bpy.types.Operator):
 
         filepath = os.path.basename(bpy.data.filepath)
         filepath = os.path.splitext(filepath)[0]
-        # filepath = bpy.utils.clean_name(filepath) # fixes <memory> rubbish, needs checking
+        # filepath = bpy.path.clean_name(filepath) # fixes <memory> rubbish, needs checking
 
         if filepath.startswith(".") or filepath == "":
             # TODO, have a way to check if the file is saved, assume .B25.blend
@@ -145,19 +147,19 @@ class ProjectEdit(bpy.types.Operator):
         obj = context.object
 
         if obj:
-            filepath += "_" + bpy.utils.clean_name(obj.name)
+            filepath += "_" + bpy.path.clean_name(obj.name)
 
         filepath_final = filepath + "." + EXT
         i = 0
 
-        while os.path.exists(bpy.utils.expandpath(filepath_final)):
+        while os.path.exists(bpy.path.abspath(filepath_final)):
             filepath_final = filepath + ("%.3d.%s" % (i, EXT))
             i += 1
 
         image_new.name = os.path.basename(filepath_final)
         ProjectEdit._proj_hack[0] = image_new.name
 
-        image_new.filepath_raw = filepath_final # TODO, filepath raw is crummy
+        image_new.filepath_raw = filepath_final  # TODO, filepath raw is crummy
         image_new.file_format = 'PNG'
         image_new.save()
 
@@ -173,7 +175,7 @@ class ProjectApply(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        image_name = ProjectEdit._proj_hack[0] # TODO, deal with this nicer
+        image_name = ProjectEdit._proj_hack[0]  # TODO, deal with this nicer
 
         try:
             image = bpy.data.images[image_name]
@@ -186,23 +188,13 @@ class ProjectApply(bpy.types.Operator):
 
         return {'FINISHED'}
 
-classes = [
-    EditExternally,
-    SaveDirty,
-    ProjectEdit,
-    ProjectApply]
-
 
 def register():
-    register = bpy.types.register
-    for cls in classes:
-        register(cls)
+    pass
 
 
 def unregister():
-    unregister = bpy.types.unregister
-    for cls in classes:
-        unregister(cls)
+    pass
 
 if __name__ == "__main__":
     register()

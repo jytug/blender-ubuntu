@@ -26,10 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  * allocimbuf.c
  *
- * $Id: scaling.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: scaling.c 31709 2010-09-01 21:06:25Z dingto $
  */
 
 #include "BLI_blenlib.h"
+#include "MEM_guardedalloc.h"
 
 #include "imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -959,7 +960,7 @@ static struct ImBuf *scaledowny(struct ImBuf *ibuf, int newy)
 	}
 	if (ibuf->rect_float) {
 		do_float = 1;
-		_newrectf = MEM_mallocN(newy * ibuf->x * sizeof(float) * 4, "scaldownyf");
+		_newrectf = MEM_mallocN(newy * ibuf->x * sizeof(float) * 4, "scaledownyf");
 		if (_newrectf==NULL) {
 			if (_newrect) MEM_freeN(_newrect);
 			return(ibuf);

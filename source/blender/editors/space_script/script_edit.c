@@ -1,5 +1,5 @@
 /**
- * $Id: script_edit.c 29440 2010-06-14 03:52:10Z campbellbarton $
+ * $Id: script_edit.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,15 +30,10 @@
 #include <stdio.h>
 
 
-#include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
 
 #include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_screen.h"
-#include "BKE_utildefines.h"
-#include "BKE_report.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -90,13 +85,9 @@ static int script_reload_exec(bContext *C, wmOperator *op)
 #ifndef DISABLE_PYTHON
 	/* TODO, this crashes on netrender and keying sets, need to look into why
 	 * disable for now unless running in debug mode */
-	if(G.f & G_DEBUG) {
-		BPY_eval_string(C, "__import__('bpy').utils.load_scripts(reload_scripts=True)");
-	}
-	else {
-		BKE_reportf(op->reports, RPT_ERROR, "reloading is currently unstable, only operates in debug mode.\n");
-		return OPERATOR_CANCELLED;
-	}
+	WM_cursor_wait(1);
+	BPY_eval_string(C, "__import__('bpy').utils.load_scripts(reload_scripts=True)");
+	WM_cursor_wait(0);
 	return OPERATOR_FINISHED;
 #endif
 	return OPERATOR_CANCELLED;

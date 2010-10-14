@@ -2,7 +2,7 @@
  *
  * Functions for struct-dna, the genetic file dot c!
  *
- * $Id: dna_genfile.c 30446 2010-07-17 18:08:14Z campbellbarton $
+ * $Id: dna_genfile.c 30705 2010-07-25 01:45:53Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -110,7 +110,7 @@ DONE:
  - pointer conversion (32-64 bits)
 
 IMPORTANT:
- - do not use #defines in structs for array lenghts, this cannot be read by the dna functions
+ - do not use #defines in structs for array lengths, this cannot be read by the dna functions
  - do not use uint, but unsigned int instead, ushort and ulong are allowed
  - only use a long in Blender if you want this to be the size of a pointer. so it is
    32 bits or 64 bits, dependant at the cpu architecture

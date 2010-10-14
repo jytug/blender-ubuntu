@@ -1,5 +1,5 @@
 /**
- * $Id: view2d.c 28731 2010-05-11 21:46:20Z campbellbarton $
+ * $Id: view2d.c 31364 2010-08-16 05:46:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,7 +44,6 @@
 #include "WM_api.h"
 
 #include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "BLF_api.h"
 

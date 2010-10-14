@@ -1,5 +1,5 @@
 /**
- * $Id: MEM_guardedalloc.h 28571 2010-05-04 12:31:24Z joeedh $
+ * $Id: MEM_guardedalloc.h 30705 2010-07-25 01:45:53Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -63,7 +63,7 @@
 extern "C" {
 #endif
 
-	/** Returns the lenght of the allocated memory segment pointed at
+	/** Returns the length of the allocated memory segment pointed at
 	 * by vmemh. If the pointer was not previously allocated by this
 	 * module, the result is undefined.*/
 	size_t MEM_allocN_len(void *vmemh);

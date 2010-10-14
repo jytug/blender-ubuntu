@@ -1,5 +1,5 @@
 /**
- * $Id: rna_internal_types.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: rna_internal_types.h 30999 2010-08-03 05:14:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -87,6 +87,7 @@ typedef EnumPropertyItem *(*PropEnumItemFunc)(struct bContext *C, struct Pointer
 typedef PointerRNA (*PropPointerGetFunc)(struct PointerRNA *ptr);
 typedef StructRNA* (*PropPointerTypeFunc)(struct PointerRNA *ptr);
 typedef void (*PropPointerSetFunc)(struct PointerRNA *ptr, const PointerRNA value);
+typedef int (*PropPointerPollFunc)(struct PointerRNA *ptr, const PointerRNA value);
 typedef void (*PropCollectionBeginFunc)(struct CollectionPropertyIterator *iter, struct PointerRNA *ptr);
 typedef void (*PropCollectionNextFunc)(struct CollectionPropertyIterator *iter);
 typedef void (*PropCollectionEndFunc)(struct CollectionPropertyIterator *iter);
@@ -257,6 +258,7 @@ typedef struct PointerPropertyRNA {
 	PropPointerGetFunc get;
 	PropPointerSetFunc set;
 	PropPointerTypeFunc typef;
+	PropPointerPollFunc poll; /* unlike operators, 'set' can still run if poll fails, used for filtering display */
 
 	struct StructRNA *type;
 } PointerPropertyRNA;

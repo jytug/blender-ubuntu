@@ -1,5 +1,5 @@
 /**
- * $Id: image_ops.c 30584 2010-07-21 14:09:45Z blendix $
+ * $Id: image_ops.c 31788 2010-09-06 13:28:57Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,6 +33,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_object_types.h"
+#include "DNA_node_types.h"
 #include "DNA_packedFile_types.h"
 #include "DNA_scene_types.h"
 
@@ -40,7 +41,6 @@
 #include "BKE_context.h"
 #include "BKE_image.h"
 #include "BKE_global.h"
-#include "BKE_image.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
@@ -647,9 +647,13 @@ static const EnumPropertyItem image_file_type_items[] = {
 #ifdef WITH_TIFF
 		{R_TIFF, "TIFF", 0, "Tiff", ""},
 #endif
+#ifdef WITH_DDS
 		{R_RADHDR, "RADIANCE_HDR", 0, "Radiance HDR", ""},
+#endif
+#ifdef WITH_CINEON
 		{R_CINEON, "CINEON", 0, "Cineon", ""},
 		{R_DPX, "DPX", 0, "DPX", ""},
+#endif
 #ifdef WITH_OPENEXR
 		{R_OPENEXR, "OPENEXR", 0, "OpenEXR", ""},
 	/* saving sequences of multilayer won't work, they copy buffers  */
@@ -735,7 +739,22 @@ static int open_exec(bContext *C, wmOperator *op)
 static int open_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
 	SpaceImage *sima= CTX_wm_space_image(C);
-	char *path= (sima && sima->image)? sima->image->name: U.textudir;
+	char *path=U.textudir;
+	Image *ima= NULL;
+
+	if(sima) {
+		 ima= sima->image;
+	}
+
+	if (ima==NULL) {
+		 Tex *tex= CTX_data_pointer_get_type(C, "texture", &RNA_Texture).data;
+		 if(tex && tex->type==TEX_IMAGE)
+			 ima= tex->ima;
+	}
+
+	if(ima)
+		path= ima->name;
+	
 
 	if(!RNA_property_is_set(op->ptr, "relative_path"))
 		RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
@@ -827,14 +846,14 @@ void IMAGE_OT_replace(wmOperatorType *ot)
 
 /* assumes name is FILE_MAX */
 /* ima->name and ibuf->name should end up the same */
-static void save_image_doit(bContext *C, SpaceImage *sima, Scene *scene, wmOperator *op, char *path)
+static void save_image_doit(bContext *C, SpaceImage *sima, Scene *scene, wmOperator *op, char *path, int do_newpath)
 {
 	Image *ima= ED_space_image(sima);
 	void *lock;
 	ImBuf *ibuf= ED_space_image_acquire_buffer(sima, &lock);
 
 	if (ibuf) {
-		int relative= RNA_boolean_get(op->ptr, "relative_path");
+		int relative= (RNA_struct_find_property(op->ptr, "relative_path") && RNA_boolean_get(op->ptr, "relative_path"));
 		int save_copy= (RNA_struct_find_property(op->ptr, "copy") && RNA_boolean_get(op->ptr, "copy"));
 
 		BLI_path_abs(path, G.sce);
@@ -860,8 +879,10 @@ static void save_image_doit(bContext *C, SpaceImage *sima, Scene *scene, wmOpera
 					BLI_path_rel(path, G.sce); /* only after saving */
 
 				if(!save_copy) {
-					BLI_strncpy(ima->name, path, sizeof(ima->name));
-					BLI_strncpy(ibuf->name, path, sizeof(ibuf->name));
+					if(do_newpath) {
+						BLI_strncpy(ima->name, path, sizeof(ima->name));
+						BLI_strncpy(ibuf->name, path, sizeof(ibuf->name));
+					}
 
 					/* should be function? nevertheless, saving only happens here */
 					for(ibuf= ima->ibufs.first; ibuf; ibuf= ibuf->next)
@@ -878,9 +899,10 @@ static void save_image_doit(bContext *C, SpaceImage *sima, Scene *scene, wmOpera
 				BLI_path_rel(path, G.sce); /* only after saving */
 
 			if(!save_copy) {
-
-				BLI_strncpy(ima->name, path, sizeof(ima->name));
-				BLI_strncpy(ibuf->name, path, sizeof(ibuf->name));
+				if(do_newpath) {
+					BLI_strncpy(ima->name, path, sizeof(ima->name));
+					BLI_strncpy(ibuf->name, path, sizeof(ibuf->name));
+				}
 
 				ibuf->userflags &= ~IB_BITMAPDIRTY;
 
@@ -933,7 +955,7 @@ static int save_as_exec(bContext *C, wmOperator *op)
 	sima->imtypenr= RNA_enum_get(op->ptr, "file_type");
 	RNA_string_get(op->ptr, "filepath", str);
 
-	save_image_doit(C, sima, scene, op, str);
+	save_image_doit(C, sima, scene, op, str, TRUE);
 
 	return OPERATOR_FINISHED;
 }
@@ -1032,7 +1054,7 @@ static int save_exec(bContext *C, wmOperator *op)
 
 	/* if exists, saves over without fileselect */
 	
-	BLI_strncpy(name, ibuf->name, FILE_MAX);
+	BLI_strncpy(name, ima->name, FILE_MAX);
 	if(name[0]==0)
 		BLI_strncpy(name, G.ima, FILE_MAX);
 	else
@@ -1049,7 +1071,7 @@ static int save_exec(bContext *C, wmOperator *op)
 		BKE_image_release_renderresult(scene, ima);
 		ED_space_image_release_buffer(sima, lock);
 		
-		save_image_doit(C, sima, scene, op, name);
+		save_image_doit(C, sima, scene, op, name, FALSE);
 	}
 	else {
 		ED_space_image_release_buffer(sima, lock);
@@ -1244,7 +1266,7 @@ static int new_exec(bContext *C, wmOperator *op)
 void IMAGE_OT_new(wmOperatorType *ot)
 {
 	PropertyRNA *prop;
-	float default_color[4]= {0.0f, 0.0f, 0.0f, 1.0f};
+	static float default_color[4]= {0.0f, 0.0f, 0.0f, 1.0f};
 	
 	/* identifiers */
 	ot->name= "New";
@@ -1281,7 +1303,7 @@ static int pack_test(bContext *C, wmOperator *op)
 		return 0;
 
 	if(ima->source==IMA_SRC_SEQUENCE || ima->source==IMA_SRC_MOVIE) {
-		BKE_report(op->reports, RPT_ERROR, "Can't pack movie or image sequence.");
+		BKE_report(op->reports, RPT_ERROR, "Packing movies or image sequences not supported.");
 		return 0;
 	}
 
@@ -1458,7 +1480,7 @@ static int unpack_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 
 	if(ima->source==IMA_SRC_SEQUENCE || ima->source==IMA_SRC_MOVIE) {
-		BKE_report(op->reports, RPT_ERROR, "Can't unpack movie or image sequence.");
+		BKE_report(op->reports, RPT_ERROR, "Unpacking movies or image sequences not supported.");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -1483,7 +1505,7 @@ static int unpack_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		return OPERATOR_CANCELLED;
 
 	if(ima->source==IMA_SRC_SEQUENCE || ima->source==IMA_SRC_MOVIE) {
-		BKE_report(op->reports, RPT_ERROR, "Can't unpack movie or image sequence.");
+		BKE_report(op->reports, RPT_ERROR, "Unpacking movies or image sequences not supported.");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -2059,8 +2081,10 @@ void IMAGE_OT_cycle_render_slot(wmOperatorType *ot)
 
 void ED_image_update_frame(const bContext *C)
 {
-	Main *mainp = CTX_data_main(C);
+	Main *mainp= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
+	wmWindowManager *wm= CTX_wm_manager(C);
+	wmWindow *win;
 	Tex *tex;
 	
 	/* texture users */
@@ -2073,41 +2097,40 @@ void ED_image_update_frame(const bContext *C)
 		}
 	}
 	
-#if 0
 	/* image window, compo node users */
-	if(G.curscreen) {
-		ScrArea *sa;
-		for(sa= G.curscreen->areabase.first; sa; sa= sa->next) {
-			if(sa->spacetype==SPACE_VIEW3D) {
-				View3D *v3d= sa->spacedata.first;
-				if(v3d->bgpic)
-					if(v3d->bgpic->iuser.flag & IMA_ANIM_ALWAYS)
-						BKE_image_user_calc_frame(&v3d->bgpic->iuser, scene->r.cfra, 0);
-			}
-			else if(sa->spacetype==SPACE_IMAGE) {
-				SpaceImage *sima= sa->spacedata.first;
-				if(sima->iuser.flag & IMA_ANIM_ALWAYS)
-					BKE_image_user_calc_frame(&sima->iuser, scene->r.cfra, 0);
-			}
-			else if(sa->spacetype==SPACE_NODE) {
-				SpaceNode *snode= sa->spacedata.first;
-				if((snode->treetype==NTREE_COMPOSIT) && (snode->nodetree)) {
-					bNode *node;
-					for(node= snode->nodetree->nodes.first; node; node= node->next) {
-						if(node->id && node->type==CMP_NODE_IMAGE) {
-							Image *ima= (Image *)node->id;
-							ImageUser *iuser= node->storage;
-							if(ELEM(ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE))
-								if(iuser->flag & IMA_ANIM_ALWAYS)
-									BKE_image_user_calc_frame(iuser, scene->r.cfra, 0);
+	if(wm) {
+		for(win= wm->windows.first; win; win= win->next) {
+			ScrArea *sa;
+			for(sa= win->screen->areabase.first; sa; sa= sa->next) {
+				if(sa->spacetype==SPACE_VIEW3D) {
+					View3D *v3d= sa->spacedata.first;
+					BGpic *bgpic;
+					for(bgpic= v3d->bgpicbase.first; bgpic; bgpic= bgpic->next)
+						if(bgpic->iuser.flag & IMA_ANIM_ALWAYS)
+							BKE_image_user_calc_frame(&bgpic->iuser, scene->r.cfra, 0);
+				}
+				else if(sa->spacetype==SPACE_IMAGE) {
+					SpaceImage *sima= sa->spacedata.first;
+					if(sima->iuser.flag & IMA_ANIM_ALWAYS)
+						BKE_image_user_calc_frame(&sima->iuser, scene->r.cfra, 0);
+				}
+				else if(sa->spacetype==SPACE_NODE) {
+					SpaceNode *snode= sa->spacedata.first;
+					if((snode->treetype==NTREE_COMPOSIT) && (snode->nodetree)) {
+						bNode *node;
+						for(node= snode->nodetree->nodes.first; node; node= node->next) {
+							if(node->id && node->type==CMP_NODE_IMAGE) {
+								Image *ima= (Image *)node->id;
+								ImageUser *iuser= node->storage;
+								if(ELEM(ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE))
+									if(iuser->flag & IMA_ANIM_ALWAYS)
+										BKE_image_user_calc_frame(iuser, scene->r.cfra, 0);
+							}
 						}
 					}
 				}
 			}
 		}
 	}
-#endif
 }
-
-
 

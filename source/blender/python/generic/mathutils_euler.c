@@ -1,5 +1,5 @@
 /*
- * $Id: mathutils_euler.c 28786 2010-05-16 10:09:07Z campbellbarton $
+ * $Id: mathutils_euler.c 31657 2010-08-30 08:37:35Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -250,7 +250,7 @@ static PyObject *Euler_Rotate(EulerObject * self, PyObject *args)
 		PyErr_SetString(PyExc_TypeError, "euler.rotate(): expected angle (float) and axis (x,y,z)");
 		return NULL;
 	}
-	if(ELEM3(*axis, 'X', 'Y', 'Z') && axis[1]=='\0'){
+	if(!(ELEM3(*axis, 'X', 'Y', 'Z') && axis[1]=='\0')){
 		PyErr_SetString(PyExc_TypeError, "euler.rotate(): expected axis to be 'X', 'Y' or 'Z'");
 		return NULL;
 	}
@@ -615,13 +615,13 @@ static int Euler_setOrder( EulerObject * self, PyObject * value, void * type )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef Euler_getseters[] = {
-	{"x", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler X axis in radians. **type** float", (void *)0},
-	{"y", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler Y axis in radians. **type** float", (void *)1},
-	{"z", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler Z axis in radians. **type** float", (void *)2},
-	{"order", (getter)Euler_getOrder, (setter)Euler_setOrder, "Euler rotation order. **type** string in ['XYZ', 'XZY', 'YXZ', 'YZX', 'ZXY', 'ZYX']", (void *)NULL},
+	{"x", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler X axis in radians.\n\n:type: float", (void *)0},
+	{"y", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler Y axis in radians.\n\n:type: float", (void *)1},
+	{"z", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler Z axis in radians.\n\n:type: float", (void *)2},
+	{"order", (getter)Euler_getOrder, (setter)Euler_setOrder, "Euler rotation order.\n\n:type: string in ['XYZ', 'XZY', 'YXZ', 'YZX', 'ZXY', 'ZYX']", (void *)NULL},
 
 	{"is_wrapped", (getter)BaseMathObject_getWrapped, (setter)NULL, BaseMathObject_Wrapped_doc, NULL},
-	{"_owner", (getter)BaseMathObject_getOwner, (setter)NULL, BaseMathObject_Owner_doc, NULL},
+	{"owner", (getter)BaseMathObject_getOwner, (setter)NULL, BaseMathObject_Owner_doc, NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 

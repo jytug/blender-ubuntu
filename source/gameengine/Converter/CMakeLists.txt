@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -64,10 +64,9 @@ SET(INC
 )
 
 IF(WITH_PYTHON)
-	SET(INC ${INC} ${PYTHON_INC})
+	LIST(APPEND INC ${PYTHON_INC})
 ELSE(WITH_PYTHON)
 	ADD_DEFINITIONS(-DDISABLE_PYTHON)
 ENDIF(WITH_PYTHON)
 
 BLENDERLIB(bf_converter "${SRC}" "${INC}")
-#env.BlenderLib ( 'bf_converter', sources, Split(incs), [], libtype=['game','player'], priority=[5,70] )

@@ -1,5 +1,5 @@
 /**
- * $Id: logic_ops.c 30136 2010-07-09 00:14:46Z dfelinto $
+ * $Id: logic_ops.c 31161 2010-08-08 08:14:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,7 +28,6 @@
 #include <stddef.h>
 
 #include "DNA_object_types.h"
-#include "DNA_scene_types.h"
 #include "DNA_sensor_types.h"
 #include "DNA_controller_types.h"
 #include "DNA_actuator_types.h"

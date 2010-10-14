@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_colortools.h 28696 2010-05-10 01:46:44Z broken $ 
+ * $Id: BKE_colortools.h 30882 2010-07-30 00:06:59Z broken $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -53,9 +53,11 @@ void				curvemapping_free(struct CurveMapping *cumap);
 struct CurveMapping	*curvemapping_copy(struct CurveMapping *cumap);
 void				curvemapping_set_black_white(struct CurveMapping *cumap, float *black, float *white);
 
+#define CURVEMAP_SLOPE_NEGATIVE	0
+#define CURVEMAP_SLOPE_POSITIVE	1
+void				curvemap_reset(struct CurveMap *cuma, struct rctf *clipr, int preset, int slope);
 void				curvemap_remove(struct CurveMap *cuma, int flag);
 void				curvemap_insert(struct CurveMap *cuma, float x, float y);
-void				curvemap_reset(struct CurveMap *cuma, struct rctf *clipr, int preset);
 void				curvemap_sethandle(struct CurveMap *cuma, int type);
 
 void				curvemapping_changed(struct CurveMapping *cumap, int rem_doubles);

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 27381 2010-03-10 08:17:18Z campbellbarton $
+# $Id: CMakeLists.txt 31683 2010-08-31 23:55:41Z moguri $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -34,8 +34,9 @@ ENDIF(WITH_BUILDINFO)
 SET(INC 
 	.
 	.. 
+	../../../intern/guardedalloc
 	../../../source/blender/makesdna
-	../../../source/blender/makesrna  
+	../../../source/blender/makesrna
 )
 
 IF(WITH_GAMEENGINE)

@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_effect.h (mar-2001 nzc)
  *	
- * $Id: BKE_effect.h 26841 2010-02-12 13:34:04Z campbellbarton $ 
+ * $Id: BKE_effect.h 31207 2010-08-10 05:41:51Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,7 +31,6 @@
 #ifndef BKE_EFFECT_H
 #define BKE_EFFECT_H
 
-#include "DNA_object_types.h"
 #include "DNA_modifier_types.h"
 
 struct Object;

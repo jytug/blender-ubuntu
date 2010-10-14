@@ -1,5 +1,5 @@
 /**
- * $Id: mesh_intern.h 30056 2010-07-06 19:26:38Z bdiego $
+ * $Id: mesh_intern.h 31710 2010-09-01 21:11:33Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,7 +71,7 @@ void MESH_OT_separate(struct wmOperatorType *ot);
 void MESH_OT_primitive_plane_add(struct wmOperatorType *ot);
 void MESH_OT_primitive_cube_add(struct wmOperatorType *ot);
 void MESH_OT_primitive_circle_add(struct wmOperatorType *ot);
-void MESH_OT_primitive_tube_add(struct wmOperatorType *ot);
+void MESH_OT_primitive_cylinder_add(struct wmOperatorType *ot);
 void MESH_OT_primitive_cone_add(struct wmOperatorType *ot);
 void MESH_OT_primitive_grid_add(struct wmOperatorType *ot);
 void MESH_OT_primitive_monkey_add(struct wmOperatorType *ot);

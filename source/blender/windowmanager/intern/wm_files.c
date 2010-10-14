@@ -1,5 +1,5 @@
 /**
- * $Id: wm_files.c 30501 2010-07-19 15:39:12Z xat $
+ * $Id: wm_files.c 31787 2010-09-06 12:54:54Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -179,21 +179,23 @@ static void wm_window_match_do(bContext *C, ListBase *oldwmlist)
 		
 		/* we've read file without wm..., keep current one entirely alive */
 		if(G.main->wm.first==NULL) {
-			bScreen *screen= CTX_wm_screen(C);
-			
-			/* match oldwm to new dbase, only old files */
-			
-			for(wm= oldwmlist->first; wm; wm= wm->id.next) {
-				
-				for(win= wm->windows.first; win; win= win->next) {
-					/* all windows get active screen from file */
-					if(screen->winid==0)
-						win->screen= screen;
-					else 
-						win->screen= ED_screen_duplicate(win, screen);
+			/* when loading without UI, no matching needed */
+			if(!(G.fileflags & G_FILE_NO_UI)) {
+				bScreen *screen= CTX_wm_screen(C);
+
+				/* match oldwm to new dbase, only old files */
+				for(wm= oldwmlist->first; wm; wm= wm->id.next) {
 					
-					BLI_strncpy(win->screenname, win->screen->id.name+2, 21);
-					win->screen->winid= win->winid;
+					for(win= wm->windows.first; win; win= win->next) {
+						/* all windows get active screen from file */
+						if(screen->winid==0)
+							win->screen= screen;
+						else 
+							win->screen= ED_screen_duplicate(win, screen);
+						
+						BLI_strncpy(win->screenname, win->screen->id.name+2, 21);
+						win->screen->winid= win->winid;
+					}
 				}
 			}
 			
@@ -312,7 +314,7 @@ void WM_read_file(bContext *C, char *name, ReportList *reports)
 		CTX_wm_window_set(C, CTX_wm_manager(C)->windows.first);
 
 		ED_editors_init(C);
-		DAG_on_load_update();
+		DAG_on_load_update(CTX_data_main(C));
 
 #ifndef DISABLE_PYTHON
 		/* run any texts that were loaded in and flagged as modules */
@@ -332,6 +334,9 @@ void WM_read_file(bContext *C, char *name, ReportList *reports)
 /* called on startup,  (context entirely filled with NULLs) */
 /* or called for 'New File' */
 /* op can be NULL */
+/* note: G.sce is used to store the last saved path so backup and restore after loading
+ * G.main->name is similar to G.sce but when loading from memory set the name to startup.blend 
+ * ...this could be changed but seems better then setting to "" */
 int WM_read_homefile(bContext *C, wmOperator *op)
 {
 	ListBase wmbase;
@@ -369,12 +374,17 @@ int WM_read_homefile(bContext *C, wmOperator *op)
 		if (wmbase.first == NULL) wm_clear_default_size(C);
 	}
 	
+	/* prevent buggy files that had G_FILE_RELATIVE_REMAP written out by mistake. Screws up autosaves otherwise
+	 * can remove this eventually, only in a 2.53 and older, now its not written */
+	G.fileflags &= ~G_FILE_RELATIVE_REMAP;
+
 	/* match the read WM with current WM */
 	wm_window_match_do(C, &wmbase); 
 	WM_check(C); /* opens window(s), checks keymaps */
 
 	strcpy(G.sce, scestr); /* restore */
-	
+	G.main->name[0]= '\0';
+
 	wm_init_userdef(C);
 	
 	/* When loading factory settings, the reset solid OpenGL lights need to be applied. */
@@ -392,7 +402,7 @@ int WM_read_homefile(bContext *C, wmOperator *op)
 	BKE_write_undo(C, "original");	/* save current state */
 
 	ED_editors_init(C);
-	DAG_on_load_update();
+	DAG_on_load_update(CTX_data_main(C));
 	
 	WM_event_add_notifier(C, NC_WM|ND_FILEREAD, NULL);
 	CTX_wm_window_set(C, NULL); /* exits queues */
@@ -520,7 +530,7 @@ static ImBuf *blend_file_thumb(const char *path, Scene *scene, int **thumb_pt)
 		return NULL;
 
 	/* gets scaled to BLEN_THUMB_SIZE */
-	ibuf= ED_view3d_draw_offscreen_imbuf_simple(scene, BLEN_THUMB_SIZE * 2, BLEN_THUMB_SIZE * 2, OB_SOLID);
+	ibuf= ED_view3d_draw_offscreen_imbuf_simple(scene, BLEN_THUMB_SIZE * 2, BLEN_THUMB_SIZE * 2, IB_rect, OB_SOLID);
 	
 	if(ibuf) {		
 		float aspect= (scene->r.xsch*scene->r.xasp) / (scene->r.ysch*scene->r.yasp);

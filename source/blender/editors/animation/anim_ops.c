@@ -1,5 +1,5 @@
 /**
- * $Id: anim_ops.c 30532 2010-07-20 11:54:17Z aligorith $
+ * $Id: anim_ops.c 31673 2010-08-31 11:31:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,6 +28,8 @@
 
 #include <stdlib.h>
 #include <math.h>
+
+#include "BLO_sys_types.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_scene_types.h"

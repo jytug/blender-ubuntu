@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 29068 2010-05-29 21:31:57Z dfelinto $
+# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -70,7 +70,7 @@ ELSE(WITH_SDL)
 ENDIF(WITH_SDL)
 
 IF(WITH_PYTHON)
-	SET(INC ${INC} ${PYTHON_INC})
+	LIST(APPEND INC ${PYTHON_INC})
 ELSE(WITH_PYTHON)
 	ADD_DEFINITIONS(-DDISABLE_PYTHON)
 ENDIF(WITH_PYTHON)
@@ -80,4 +80,3 @@ IF(WITH_FFMPEG)
 ENDIF(WITH_FFMPEG)
 
 BLENDERLIB(bf_ketsji "${SRC}" "${INC}")
-#env.BlenderLib ( 'bf_ketsji', sources, Split(incs), [], libtype=['game','player'], priority=[25, 72], compileflags = cflags )

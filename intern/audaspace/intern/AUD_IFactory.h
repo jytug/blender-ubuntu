@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_IFactory.h 22328 2009-08-09 23:23:19Z gsrb3d $
+ * $Id: AUD_IFactory.h 31372 2010-08-16 11:41:07Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -49,7 +49,7 @@ public:
 	 * \exception AUD_Exception An exception may be thrown if there has been
 	 *            a more unexpected error during reader creation.
 	 */
-	virtual AUD_IReader* createReader()=0;
+	virtual AUD_IReader* createReader() const=0;
 };
 
 #endif //AUD_IFACTORY

@@ -1,5 +1,5 @@
 /*
-* $Id: customdata.c 29163 2010-06-02 17:58:28Z campbellbarton $
+* $Id: customdata.c 31540 2010-08-23 22:16:45Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -1213,7 +1213,7 @@ static CustomDataLayer *customData_add_layer__internal(CustomData *data,
 	data->layers[index].flag = flag;
 	data->layers[index].data = newlayerdata;
 
-	if(name) {
+	if(name || (name=typeInfo->defaultname)) {
 		strcpy(data->layers[index].name, name);
 		CustomData_set_layer_unique_name(data, index);
 	}
@@ -1254,7 +1254,7 @@ void *CustomData_add_layer(CustomData *data, int type, int alloctype,
 
 /*same as above but accepts a name*/
 void *CustomData_add_layer_named(CustomData *data, int type, int alloctype,
-						   void *layerdata, int totelem, char *name)
+						   void *layerdata, int totelem, const char *name)
 {
 	CustomDataLayer *layer;
 	

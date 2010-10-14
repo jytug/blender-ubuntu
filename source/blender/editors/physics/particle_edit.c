@@ -1,5 +1,5 @@
 /*
- * $Id: particle_edit.c 29537 2010-06-18 04:39:32Z broken $
+ * $Id: particle_edit.c 31721 2010-09-02 08:06:53Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2098,6 +2098,7 @@ static void remove_tagged_keys(Scene *scene, Object *ob, ParticleSystem *psys)
 	ParticleData *pa;
 	HairKey *hkey, *nhkey, *new_hkeys=0;
 	POINT_P; KEY_K;
+	PTCacheEditKey *nkey, *new_keys;
 	ParticleSystemModifierData *psmd;
 	short new_totkey;
 
@@ -2133,9 +2134,10 @@ static void remove_tagged_keys(Scene *scene, Object *ob, ParticleSystem *psys)
 		}
 
 		if(new_totkey != pa->totkey) {
-			hkey= pa->hair;
 			nhkey= new_hkeys= MEM_callocN(new_totkey*sizeof(HairKey), "HairKeys");
+			nkey= new_keys= MEM_callocN(new_totkey*sizeof(PTCacheEditKey), "particle edit keys");
 
+			hkey= pa->hair;
 			LOOP_KEYS {
 				while(key->flag & PEK_TAG && hkey < pa->hair + pa->totkey) {
 					key++;
@@ -2144,29 +2146,36 @@ static void remove_tagged_keys(Scene *scene, Object *ob, ParticleSystem *psys)
 
 				if(hkey < pa->hair + pa->totkey) {
 					VECCOPY(nhkey->co, hkey->co);
+					nhkey->editflag = hkey->editflag;
 					nhkey->time= hkey->time;
 					nhkey->weight= hkey->weight;
+					
+					nkey->co= nhkey->co;
+					nkey->time= &nhkey->time;
+					/* these can be copied from old edit keys */
+					nkey->flag = key->flag;
+					nkey->ftime = key->ftime;
+					nkey->length = key->length;
+					VECCOPY(nkey->world_co, key->world_co);
 				}
-				hkey++;
+				nkey++;
 				nhkey++;
+				hkey++;
 			}
+
 			if(pa->hair)
 				MEM_freeN(pa->hair);
-			
-			pa->hair= new_hkeys;
-
-			point->totkey= pa->totkey= new_totkey;
 
 			if(point->keys)
 				MEM_freeN(point->keys);
-			key= point->keys= MEM_callocN(new_totkey*sizeof(PTCacheEditKey), "particle edit keys");
+			
+			pa->hair= new_hkeys;
+			point->keys= new_keys;
 
-			hkey = pa->hair;
-			LOOP_KEYS {
-				key->co= hkey->co;
-				key->time= &hkey->time;
-				hkey++;
-			}
+			point->totkey= pa->totkey= new_totkey;
+
+			/* flag for recalculating length */
+			point->flag |= PEP_EDIT_RECALC;
 		}
 	}
 }
@@ -3327,7 +3336,7 @@ static void brush_edit_apply(bContext *C, wmOperator *op, PointerRNA *itemptr)
 	RNA_float_get_array(itemptr, "mouse", mousef);
 	mouse[0] = mousef[0];
 	mouse[1] = mousef[1];
-	flip= RNA_boolean_get(itemptr, "flip");
+	flip= RNA_boolean_get(itemptr, "pen_flip");
 
 	if(bedit->first) {
 		bedit->lastmouse[0]= mouse[0];
@@ -4141,6 +4150,13 @@ static int clear_edited_exec(bContext *C, wmOperator *op)
 			WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE|NA_EDITED, ob);
 			DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 		}
+	}
+	else { /* some operation might have protected hair from editing so let's clear the flag */
+		psys->recalc |= PSYS_RECALC_RESET;
+		psys->flag &= ~PSYS_GLOBAL_HAIR;
+		psys->flag &= ~PSYS_EDITED;
+		WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE|NA_EDITED, ob);
+		DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
 	}
 
 	return OPERATOR_FINISHED;

@@ -1,5 +1,5 @@
 /**
- * $Id: ikplugin_api.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: ikplugin_api.c 31364 2010-08-16 05:46:10Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,7 +27,6 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#include "MEM_guardedalloc.h"
 
 #include "BIK_api.h"
 #include "BLI_blenlib.h"

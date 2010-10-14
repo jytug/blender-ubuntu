@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_SystemWin32.cpp 30060 2010-07-06 20:31:55Z elubie $
+ * $Id: GHOST_SystemWin32.cpp 31824 2010-09-08 08:25:38Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
 
 /**
 
- * $Id: GHOST_SystemWin32.cpp 30060 2010-07-06 20:31:55Z elubie $
+ * $Id: GHOST_SystemWin32.cpp 31824 2010-09-08 08:25:38Z jesterking $
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 7, 2001
@@ -207,17 +207,17 @@ GHOST_IWindow* GHOST_SystemWin32::createWindow(
 		}
 		else {
 			// An invalid window could be one that was used to test for AA
-			GHOST_Window *other_window = ((GHOST_WindowWin32*)window)->getNextWindow();
-
-			delete window;
-			window = 0;
+			window = ((GHOST_WindowWin32*)window)->getNextWindow();
 			
 			// If another window is found, let the wm know about that one, but not the old one
-			if (other_window)
-			{
-				m_windowManager->addWindow(other_window);
-				window = other_window;
+			if (window->getValid()) {
+				m_windowManager->addWindow(window);
 			}
+			else {
+				delete window;
+				window = 0;
+			}
+
 		}
 	}
 	return window;

@@ -1,5 +1,5 @@
 /**
- * $Id: rna_property.c 28677 2010-05-08 22:11:00Z dfelinto $
+ * $Id: rna_property.c 31493 2010-08-21 04:51:00Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -121,7 +121,7 @@ void RNA_def_gameproperty(BlenderRNA *brna)
 	RNA_def_property_enum_funcs(prop, NULL, "rna_GameProperty_type_set", NULL);
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 
-	prop= RNA_def_property(srna, "debug", PROP_BOOLEAN, PROP_NONE);
+	prop= RNA_def_property(srna, "show_debug", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", PROP_DEBUG);
 	RNA_def_property_ui_text(prop, "Debug", "Print debug information for this property");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);

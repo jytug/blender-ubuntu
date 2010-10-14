@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_sound_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_sound_types.h 27183 2010-02-28 11:02:06Z elubie $ 
+ * $Id: DNA_sound_types.h 31028 2010-08-04 04:01:27Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,18 +40,6 @@
 struct Ipo;
 struct PackedFile;
 struct SpaceLink;
-
-typedef struct Sound3D
-{
-	float min_gain;
-	float max_gain;
-	float reference_distance;
-	float max_distance;
-	float rolloff_factor;
-	float cone_inner_angle;
-	float cone_outer_angle;
-	float cone_outer_gain;
-} Sound3D;
 
 typedef struct bSound {
 	ID id;
@@ -114,22 +102,6 @@ typedef enum eSound_Type {
 /* spacesound->flag */
 #define SND_DRAWFRAMES	1
 #define SND_CFRA_NUM	2
-
-typedef struct SpaceSound {
-	struct SpaceLink *next, *prev;
-	ListBase regionbase;		/* storage of regions for inactive spaces */
-	int spacetype;
-	float blockscale;
-	struct ScrArea *area;
-	
-	View2D v2d;
-	
-	bSound *sound;
-	short mode, sndnr;
-	short xof, yof;
-	short flag, lock;
-	int pad2;
-} SpaceSound;
 
 #define SOUND_FLAGS_3D					(1 << 3)
 

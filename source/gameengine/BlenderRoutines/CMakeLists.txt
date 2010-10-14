@@ -44,10 +44,9 @@ IF(WITH_FFMPEG)
 ENDIF(WITH_FFMPEG)
 
 IF(WITH_PYTHON)
-	SET(INC ${INC} ${PYTHON_INC})
+	LIST(APPEND INC ${PYTHON_INC})
 ELSE(WITH_PYTHON)
 	ADD_DEFINITIONS(-DDISABLE_PYTHON)
 ENDIF(WITH_PYTHON)
 
 BLENDERLIB(bf_blroutines "${SRC}" "${INC}")
-#env.BlenderLib ( 'bf_bloutines', sources, Split(incs), [], libtype=['game', 'game2', 'player'], priority=[0, 0, 55] , compileflags=cxxflags)

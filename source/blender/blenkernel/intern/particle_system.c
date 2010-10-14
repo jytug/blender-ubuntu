@@ -1,7 +1,7 @@
 /* particle_system.c
  *
  *
- * $Id: particle_system.c 30442 2010-07-17 17:07:50Z blendix $
+ * $Id: particle_system.c 31829 2010-09-08 11:08:34Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -62,7 +62,6 @@
 #include "BLI_listbase.h"
 #include "BLI_threads.h"
 
-#include "BKE_anim.h"
 #include "BKE_animsys.h"
 #include "BKE_boids.h"
 #include "BKE_cdderivedmesh.h"
@@ -107,19 +106,25 @@
 /*			Reacting to system events			*/
 /************************************************/
 
-static int get_current_display_percentage(ParticleSystem *psys)
+static int particles_are_dynamic(ParticleSystem *psys) {
+	if(psys->pointcache->flag & PTCACHE_BAKED)
+		return 0;
+
+	if(psys->part->type == PART_HAIR)
+		return psys->flag & PSYS_HAIR_DYNAMICS;
+	else
+		return ELEM3(psys->part->phystype, PART_PHYS_NEWTON, PART_PHYS_BOIDS, PART_PHYS_FLUID);
+}
+int psys_get_current_display_percentage(ParticleSystem *psys)
 {
 	ParticleSettings *part=psys->part;
 
-	if(psys->renderdata || (part->child_nbr && part->childtype)
-		|| (psys->pointcache->flag & PTCACHE_BAKING))
+	if((psys->renderdata && !particles_are_dynamic(psys)) /* non-dynamic particles can be rendered fully */
+		|| (part->child_nbr && part->childtype)	/* display percentage applies to children */
+		|| (psys->pointcache->flag & PTCACHE_BAKING)) /* baking is always done with full amount */
 		return 100;
 
-	if(part->phystype==PART_PHYS_KEYED){
-		return psys->part->disp;
-	}
-	else
-		return psys->part->disp;
+	return psys->part->disp;
 }
 
 void psys_reset(ParticleSystem *psys, int mode)
@@ -182,7 +187,7 @@ static void realloc_particles(ParticleSimulationData *sim, int new_totpart)
 	else
 		totpart=new_totpart;
 
-	if(totpart && totpart != psys->totpart) {
+	if(totpart != psys->totpart) {
 		if(psys->edit && psys->free_edit) {
 			psys->free_edit(psys->edit);
 			psys->edit = NULL;
@@ -727,7 +732,7 @@ static void psys_thread_distribute_particle(ParticleThread *thread, ParticleData
 				pa->foffset=0.0;
 			else switch(distr){
 				case PART_DISTR_JIT:
-					pa->foffset*= ctx->jit[2*(int)ctx->jitoff[i]];
+					pa->foffset*= ctx->jit[p%(2*ctx->jitlevel)];
 					break;
 				case PART_DISTR_RAND:
 					pa->foffset*=BLI_frand();
@@ -1568,8 +1573,6 @@ void initialize_particle(ParticleSimulationData *sim, ParticleData *pa, int p)
 		/* TODO: needs some work to make most blendtypes generally usefull */
 		psys_get_texture(sim,ma,pa,&ptex,MAP_PA_INIT);
 	}
-	
-	pa->lifetime= part->lifetime*ptex.life;
 
 	if(part->type==PART_HAIR)
 		pa->time= 0.0f;
@@ -1584,25 +1587,6 @@ void initialize_particle(ParticleSimulationData *sim, ParticleData *pa, int p)
 
 		pa->time= part->sta + (part->end - part->sta)*ptex.time;
 	}
-
-
-	if(part->type==PART_HAIR){
-		pa->lifetime=100.0f;
-	}
-	else{
-#if 0 // XXX old animation system
-		icu=find_ipocurve(psys->part->ipo,PART_EMIT_LIFE);
-		if(icu){
-			calc_icu(icu,100*ptex.time);
-			pa->lifetime*=icu->curval;
-		}
-#endif // XXX old animation system
-
-		if(part->randlife!=0.0)
-			pa->lifetime*= 1.0f - part->randlife * BLI_frand();
-	}
-
-	pa->dietime= pa->time+pa->lifetime;
 
 	if(part->type!=PART_HAIR && part->distr!=PART_DISTR_GRID && part->from != PART_FROM_VERT){
 		if(ptex.exist < BLI_frand())
@@ -1696,6 +1680,7 @@ void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, 
 	part=psys->part;
 
 	ptex.ivel=1.0;
+	ptex.life=1.0;
 
 	/* we need to get every random even if they're not used so that they don't effect eachother */
 	r_vel[0] = 2.0f * (PSYS_FRAND(p + 10) - 0.5f);
@@ -1730,8 +1715,7 @@ void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, 
 		mul_qt_v3(rot, vtan);
 		mul_qt_v3(rot, utan);
 
-		VECCOPY(p_vel, state.vel);
-		speed=normalize_v3(p_vel);
+		speed= normalize_v3_v3(p_vel, state.vel);
 		mul_v3_fl(p_vel, dot_v3v3(r_vel, p_vel));
 		VECSUB(p_vel, r_vel, p_vel);
 		normalize_v3(p_vel);
@@ -1754,7 +1738,7 @@ void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, 
 			psys_particle_on_emitter(sim->psmd, part->from,pa->num, pa->num_dmcache, pa->fuv,pa->foffset,loc,nor,0,0,0,0);
 		
 		/* get possible textural influence */
-		psys_get_texture(sim, give_current_material(sim->ob,part->omat), pa, &ptex, MAP_PA_IVEL);
+		psys_get_texture(sim, give_current_material(sim->ob,part->omat), pa, &ptex, MAP_PA_IVEL|MAP_PA_LIFE);
 
 		//if(vg_vel && pa->num != -1)
 		//	ptex.ivel*=psys_particle_value_from_verts(sim->psmd->dm,part->from,pa,vg_vel);
@@ -1872,18 +1856,15 @@ void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, 
 
 		/*		*emitter object orientation		*/
 		if(part->ob_vel[0]!=0.0) {
-			VECCOPY(vec, ob->obmat[0]);
-			normalize_v3(vec);
+			normalize_v3_v3(vec, ob->obmat[0]);
 			VECADDFAC(vel, vel, vec, part->ob_vel[0]);
 		}
 		if(part->ob_vel[1]!=0.0) {
-			VECCOPY(vec, ob->obmat[1]);
-			normalize_v3(vec);
+			normalize_v3_v3(vec, ob->obmat[1]);
 			VECADDFAC(vel, vel, vec, part->ob_vel[1]);
 		}
 		if(part->ob_vel[2]!=0.0) {
-			VECCOPY(vec, ob->obmat[2]);
-			normalize_v3(vec);
+			normalize_v3_v3(vec, ob->obmat[2]);
 			VECADDFAC(vel, vel, vec, part->ob_vel[2]);
 		}
 
@@ -1980,7 +1961,24 @@ void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, 
 		}
 	}
 
+
+	if(part->type == PART_HAIR){
+		pa->lifetime = 100.0f;
+	}
+	else{
+		pa->lifetime = part->lifetime*ptex.life;
+
+		if(part->randlife != 0.0)
+			pa->lifetime *= 1.0f - part->randlife * PSYS_FRAND(p + 21);
+	}
+
 	pa->dietime = pa->time + pa->lifetime;
+
+	if(sim->psys->pointcache && sim->psys->pointcache->flag & PTCACHE_BAKED &&
+		sim->psys->pointcache->mem_cache.first) {
+		float dietime = psys_get_dietime_from_cache(sim->psys->pointcache, p);
+		pa->dietime = MIN2(pa->dietime, dietime);
+	}
 
 	if(pa->time > cfra)
 		pa->alive = PARS_UNBORN;
@@ -3057,7 +3055,7 @@ static void deflect_particle(ParticleSimulationData *sim, int p, float dfra, flo
 					
 					/* Stickness to surface */
 					normalize_v3(nor_vec);
-					madd_v3_v3fl(pa->state.vel, nor_vec, -pd->pdef_stickness);
+					madd_v3_v3fl(pa->state.vel, col.nor, -pd->pdef_stickness);
 				}
 
 				col.t = dt;
@@ -3255,7 +3253,7 @@ static void hair_step(ParticleSimulationData *sim, float cfra)
 	ParticleSystem *psys = sim->psys;
 /*	ParticleSettings *part = psys->part; */
 	PARTICLE_P;
-	float disp = (float)get_current_display_percentage(psys)/100.0f;
+	float disp = (float)psys_get_current_display_percentage(psys)/100.0f;
 
 	BLI_srandom(psys->seed);
 
@@ -3523,7 +3521,7 @@ static void cached_step(ParticleSimulationData *sim, float cfra)
 
 	psys_update_effectors(sim);
 	
-	disp= (float)get_current_display_percentage(psys)/100.0f;
+	disp= (float)psys_get_current_display_percentage(psys)/100.0f;
 
 	LOOP_PARTICLES {
 		pa->size = part->size;
@@ -3790,7 +3788,7 @@ static void system_step(ParticleSimulationData *sim, float cfra)
 
 /* 3. do dynamics */
 	/* set particles to be not calculated TODO: can't work with pointcache */
-	disp= (float)get_current_display_percentage(psys)/100.0f;
+	disp= (float)psys_get_current_display_percentage(psys)/100.0f;
 
 	BLI_srandom(psys->seed);
 	LOOP_PARTICLES {
@@ -4038,12 +4036,25 @@ void particle_system_update(Scene *scene, Object *ob, ParticleSystem *psys)
 				case PART_PHYS_NO:
 				case PART_PHYS_KEYED:
 				{
+					PARTICLE_P;
+
+					/* Particles without dynamics haven't been reset yet because they don't use pointcache */
+					if(psys->recalc & PSYS_RECALC_RESET)
+						psys_reset(psys, PSYS_RESET_ALL);
+
 					if(emit_particles(&sim, NULL, cfra)) {
 						free_keyed_keys(psys);
 						distribute_particles(&sim, part->from);
 						initialize_all_particles(&sim);
 					}
-					reset_all_particles(&sim, 0.0, cfra, 0);
+
+					LOOP_EXISTING_PARTICLES {
+						pa->size = part->size;
+						if(part->randsize > 0.0)
+							pa->size *= 1.0f - part->randsize * PSYS_FRAND(p + 1);
+
+						reset_particle(&sim, pa, 0.0, cfra);
+					}
 
 					if(part->phystype == PART_PHYS_KEYED) {
 						psys_count_keyed_targets(&sim);
@@ -4066,7 +4077,8 @@ void particle_system_update(Scene *scene, Object *ob, ParticleSystem *psys)
 	psys->cfra = cfra;
 	psys->recalc = 0;
 
-	/* save matrix for duplicators */
-	invert_m4_m4(psys->imat, ob->obmat);
+	/* save matrix for duplicators, at rendertime the actual dupliobject's matrix is used so don't update! */
+	if(psys->renderdata==0)
+		invert_m4_m4(psys->imat, ob->obmat);
 }
 

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 28133 2010-04-11 22:12:30Z campbellbarton $
+# $Id: CMakeLists.txt 31006 2010-08-03 11:25:34Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -34,7 +34,6 @@ ADD_SUBDIRECTORY(blenlib)
 ADD_SUBDIRECTORY(blenloader)
 ADD_SUBDIRECTORY(blenpluginapi)
 ADD_SUBDIRECTORY(imbuf)
-ADD_SUBDIRECTORY(imbuf/intern/cineon)
 ADD_SUBDIRECTORY(gpu)
 ADD_SUBDIRECTORY(makesdna)
 ADD_SUBDIRECTORY(makesrna)
@@ -43,13 +42,17 @@ ADD_SUBDIRECTORY(render)
 ADD_SUBDIRECTORY(blenfont)
 ADD_SUBDIRECTORY(ikplugin)
 
-IF(WITH_OPENEXR)
+IF(WITH_IMAGE_OPENEXR)
 	ADD_SUBDIRECTORY(imbuf/intern/openexr)
-ENDIF(WITH_OPENEXR)
+ENDIF(WITH_IMAGE_OPENEXR)
 
-IF(WITH_DDS)
+IF(WITH_IMAGE_DDS)
 	ADD_SUBDIRECTORY(imbuf/intern/dds)
-ENDIF(WITH_DDS)
+ENDIF(WITH_IMAGE_DDS)
+
+IF(WITH_IMAGE_CINEON)
+	ADD_SUBDIRECTORY(imbuf/intern/cineon)
+ENDIF(WITH_IMAGE_CINEON)
 
 IF(WITH_QUICKTIME)
 	ADD_SUBDIRECTORY(quicktime)

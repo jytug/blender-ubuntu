@@ -60,7 +60,6 @@ def guess_player_path(preset):
     elif preset == 'MPLAYER':
         player_path = "mplayer"
 
-
     return player_path
 
 
@@ -79,7 +78,7 @@ class PlayRenderedAnim(bpy.types.Operator):
 
         preset = prefs.filepaths.animation_player_preset
         player_path = prefs.filepaths.animation_player
-        file_path = bpy.utils.expandpath(rd.output_path)
+        file_path = bpy.path.abspath(rd.filepath)
         is_movie = rd.is_movie_format
 
         # try and guess a command line if it doesn't exist
@@ -105,7 +104,7 @@ class PlayRenderedAnim(bpy.types.Operator):
             # works for movies and images
             file = rd.frame_path(frame=scene.frame_start)
 
-        file = bpy.utils.expandpath(file) # expand '//'
+        file = bpy.path.abspath(file)  # expand '//'
 
         cmd = [player_path]
         # extra options, fps controls etc.
@@ -130,7 +129,7 @@ class PlayRenderedAnim(bpy.types.Operator):
                 opts += ["-mf", "fps=%.4f" % (rd.fps / rd.fps_base)]
             opts += ["-loop", "0", "-really-quiet", "-fs"]
             cmd.extend(opts)
-        else: # 'CUSTOM'
+        else:  # 'CUSTOM'
             cmd.append(file)
 
         # launch it
@@ -144,11 +143,11 @@ class PlayRenderedAnim(bpy.types.Operator):
 
 
 def register():
-    bpy.types.register(PlayRenderedAnim)
+    pass
 
 
 def unregister():
-    bpy.types.unregister(PlayRenderedAnim)
+    pass
 
 if __name__ == "__main__":
     register()

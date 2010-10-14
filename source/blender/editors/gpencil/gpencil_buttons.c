@@ -1,5 +1,5 @@
 /**
- * $Id: gpencil_buttons.c 30384 2010-07-15 16:56:04Z campbellbarton $
+ * $Id: gpencil_buttons.c 31437 2010-08-18 07:14:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
@@ -41,15 +40,12 @@
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_gpencil.h"
-#include "BKE_utildefines.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
 
 #include "RNA_access.h"
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "ED_gpencil.h"
 
@@ -164,7 +160,7 @@ static void gp_drawui_layer (uiLayout *layout, bGPdata *gpd, bGPDlayer *gpl)
 		/* frame locking */
 		// TODO: this needs its own icons...
 		icon= (gpl->flag & GP_LAYER_FRAMELOCK) ? ICON_RENDER_STILL : ICON_RENDER_ANIMATION;
-		uiItemR(subrow, &ptr, "frame_lock", 0, "", icon); 
+		uiItemR(subrow, &ptr, "lock_frame", 0, "", icon); 
 		
 		uiBlockSetEmboss(block, UI_EMBOSS);
 		
@@ -194,11 +190,11 @@ static void gp_drawui_layer (uiLayout *layout, bGPdata *gpd, bGPDlayer *gpl)
 		/* color */
 		subcol= uiLayoutColumn(col, 1);
 			uiItemR(subcol, &ptr, "color", 0, "", 0);
-			uiItemR(subcol, &ptr, "opacity", UI_ITEM_R_SLIDER, NULL, 0);
+			uiItemR(subcol, &ptr, "alpha", UI_ITEM_R_SLIDER, NULL, 0);
 			
 		/* stroke thickness */
 		subcol= uiLayoutColumn(col, 1);
-			uiItemR(subcol, &ptr, "line_thickness", UI_ITEM_R_SLIDER, NULL, 0);
+			uiItemR(subcol, &ptr, "line_width", UI_ITEM_R_SLIDER, NULL, 0);
 		
 		/* debugging options */
 		if (G.f & G_DEBUG) {
@@ -212,7 +208,7 @@ static void gp_drawui_layer (uiLayout *layout, bGPdata *gpd, bGPDlayer *gpl)
 		/* onion-skinning */
 		subcol= uiLayoutColumn(col, 1);
 			uiItemR(subcol, &ptr, "use_onion_skinning", 0, "Onion Skinning", 0);
-			uiItemR(subcol, &ptr, "max_ghost_range", 0, "Frames", 0); // XXX shorter name here? i.e. GStep
+			uiItemR(subcol, &ptr, "ghost_range_max", 0, "Frames", 0); // XXX shorter name here? i.e. GStep
 		
 		/* additional options... */
 		subcol= uiLayoutColumn(col, 1);
@@ -243,7 +239,7 @@ static void draw_gpencil_panel (bContext *C, uiLayout *layout, bGPdata *gpd, Poi
 	col= uiLayoutColumn(layout, 0);
 		/* current Grease Pencil block */
 		// TODO: show some info about who owns this?
-		uiTemplateID(col, C, ctx_ptr, "grease_pencil", "GPENCIL_OT_data_add", NULL, "GPENCIL_OT_data_unlink", NULL); 
+		uiTemplateID(col, C, ctx_ptr, "grease_pencil", "GPENCIL_OT_data_add", NULL, "GPENCIL_OT_data_unlink"); 
 		
 		/* add new layer button - can be used even when no data, since it can add a new block too */
 		uiItemO(col, NULL, 0, "GPENCIL_OT_layer_add");
