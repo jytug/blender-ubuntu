@@ -1,7 +1,10 @@
 blender (2.54-beta-svn31878-1) experimental; urgency=low
 
   * New Upstream Release
- 
+  * debian/patches
+    - removed no longer needed patches:
+       | 0005-freedesktop_deprecates_encoding.patch
+       | 0004-filter_docs_to_install.patch
 
  -- Kevin Roy <kiniou@gmail.com>  Thu, 14 Oct 2010 14:15:07 +0200
 
