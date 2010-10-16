@@ -9,7 +9,8 @@ Subject: [PATCH] install_in_usr_lib
  intern/ghost/intern/GHOST_SystemX11.cpp   |    2 +-
  source/blender/blenlib/BLI_path_util.h    |    2 +-
  source/blender/blenlib/intern/path_util.c |    2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+ source/creator/CMakeLists.txt             |    2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/intern/ghost/intern/GHOST_SystemX11.cpp b/intern/ghost/intern/GHOST_SystemX11.cpp
 index 9a5ac2b..a323212 100644
@@ -50,4 +51,17 @@ index 58e1c34..ee12985 100644
  	}
  	
  	if(!system_path[0])
+diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
+index e0ef7e3..4cdb868 100644
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -222,7 +222,7 @@ IF(WITH_INSTALL)
+ 		)
+ 		INSTALL(
+ 			DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts/
+-			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/blender/${BLENDER_VERSION}/scripts
++			DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
+ 			PATTERN ".svn" EXCLUDE
+ 			PATTERN "*.pyc" EXCLUDE
+ 		)
 -- 

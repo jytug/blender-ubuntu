@@ -8,7 +8,7 @@ Install relevant documentation
  1 files changed, 1 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index e0ef7e3..b7ec64e 100644
+index 4cdb868..f54b54b 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -216,9 +216,8 @@ IF(WITH_INSTALL)

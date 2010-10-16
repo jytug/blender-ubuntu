@@ -29,7 +29,7 @@ index 27d6259..506a038 100755
  
  import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 955d37f..6f89242 100644
+index 9f806ca..dff6431 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -209,7 +209,7 @@ IF(WITH_INSTALL)
@@ -37,7 +37,7 @@ index 955d37f..6f89242 100644
  		INSTALL(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
 -			DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-+            DESTINATION ${BLENDERPATH}/scripts
++            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
  		)
  		INSTALL(
  			FILES ${CMAKE_SOURCE_DIR}/doc/blender.1
