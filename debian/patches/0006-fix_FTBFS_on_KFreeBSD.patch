@@ -8,10 +8,10 @@ added __GNU__ and __GLIBC__ to conditional defined in order to compile on KFreeB
  1 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/source/blender/blenlib/intern/storage.c b/source/blender/blenlib/intern/storage.c
-index a31b171..f179543 100644
+index 647accd..cd77f56 100644
 --- a/source/blender/blenlib/intern/storage.c
 +++ b/source/blender/blenlib/intern/storage.c
-@@ -56,7 +56,7 @@
+@@ -51,7 +51,7 @@
  #include <sys/mount.h>
  #endif
  
@@ -20,7 +20,7 @@ index a31b171..f179543 100644
  #include <sys/vfs.h>
  #endif
  
-@@ -191,7 +191,7 @@ double BLI_diskfree(char *dir)
+@@ -186,7 +186,7 @@ double BLI_diskfree(char *dir)
  		if (slash) slash[1] = 0;
  	} else strcpy(name,"/");
  

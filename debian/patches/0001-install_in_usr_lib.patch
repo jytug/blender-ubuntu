@@ -9,8 +9,7 @@ Subject: [PATCH] install_in_usr_lib
  intern/ghost/intern/GHOST_SystemX11.cpp   |    2 +-
  source/blender/blenlib/BLI_path_util.h    |    2 +-
  source/blender/blenlib/intern/path_util.c |    2 +-
- source/creator/CMakeLists.txt             |    2 +-
- 4 files changed, 4 insertions(+), 4 deletions(-)
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/intern/ghost/intern/GHOST_SystemX11.cpp b/intern/ghost/intern/GHOST_SystemX11.cpp
 index 9a5ac2b..a323212 100644
@@ -26,7 +25,7 @@ index 9a5ac2b..a323212 100644
  
  const GHOST_TUns8* GHOST_SystemX11::getUserDir() const
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index 74fb673..1983de5 100644
+index d4af407..d4f8526 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
 @@ -84,7 +84,7 @@ char *BLI_get_folder_create(int folder_id, char *subfolder);
@@ -39,10 +38,10 @@ index 74fb673..1983de5 100644
  
  void BLI_setenv(const char *env, const char *val);
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index e1d736d..3452e46 100644
+index 58e1c34..ee12985 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -920,7 +920,7 @@ static int get_path_system(char *targetpath, char *folder_name, char *subfolder_
+@@ -922,7 +922,7 @@ static int get_path_system(char *targetpath, char *folder_name, char *subfolder_
  
  	system_base_path = (const char *)GHOST_getSystemDir();
  	if (system_base_path) {
@@ -51,17 +50,4 @@ index e1d736d..3452e46 100644
  	}
  	
  	if(!system_path[0])
-diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 2828825..420a02f 100644
---- a/source/creator/CMakeLists.txt
-+++ b/source/creator/CMakeLists.txt
-@@ -71,7 +71,7 @@ IF(NOT WITH_SDL)
- ENDIF(NOT WITH_SDL)
- 
- IF(UNIX AND NOT APPLE)
--	SET(BLENDERPATH ${CMAKE_INSTALL_PREFIX}/share/blender/${BLENDER_VERSION})
-+	SET(BLENDERPATH ${CMAKE_INSTALL_PREFIX}/lib/blender)
- 	# blender_path in creator.c
- 	ADD_DEFINITIONS(-DBLENDERPATH="${BLENDERPATH}")
- ENDIF(UNIX AND NOT APPLE)
 -- 
