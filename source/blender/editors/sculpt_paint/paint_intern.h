@@ -1,5 +1,5 @@
 /**
- * $Id: paint_intern.h 30656 2010-07-23 14:46:31Z blendix $
+ * $Id: paint_intern.h 32484 2010-10-15 05:18:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -99,7 +99,7 @@ void PAINT_OT_image_from_view(struct wmOperatorType *ot);
 
 /* paint_utils.c */
 int imapaint_pick_face(struct ViewContext *vc, struct Mesh *me, int *mval, unsigned int *index);
-void imapaint_pick_uv(struct Scene *scene, struct Object *ob, struct Mesh *mesh, unsigned int faceindex, int *xy, float *uv);
+void imapaint_pick_uv(struct Scene *scene, struct Object *ob, unsigned int faceindex, int *xy, float *uv);
 
 void paint_sample_color(struct Scene *scene, struct ARegion *ar, int x, int y);
 void BRUSH_OT_curve_preset(struct wmOperatorType *ot);

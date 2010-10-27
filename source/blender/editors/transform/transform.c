@@ -1,5 +1,5 @@
 /**
- * $Id: transform.c 31576 2010-08-25 09:30:52Z blendix $
+ * $Id: transform.c 32675 2010-10-24 06:16:44Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -298,7 +298,10 @@ static void viewRedrawForce(const bContext *C, TransInfo *t)
 	if (t->spacetype == SPACE_VIEW3D)
 	{
 		/* Do we need more refined tags? */
-		WM_event_add_notifier(C, NC_OBJECT|ND_TRANSFORM, NULL);
+		if(t->flag & T_POSE)
+			WM_event_add_notifier(C, NC_OBJECT|ND_POSE, NULL);
+		else
+			WM_event_add_notifier(C, NC_OBJECT|ND_TRANSFORM, NULL);
 		
 		/* for realtime animation record - send notifiers recognised by animation editors */
 		// XXX: is this notifier a lame duck?
@@ -381,7 +384,7 @@ void BIF_selectOrientation() {
 #endif
 }
 
-static void view_editmove(unsigned short event)
+static void view_editmove(unsigned short UNUSED(event))
 {
 #if 0 // TRANSFORM_FIX_ME
 	int refresh = 0;
@@ -478,6 +481,8 @@ static void view_editmove(unsigned short event)
  * */
 #define TFM_MODAL_PROPSIZE_UP	20
 #define TFM_MODAL_PROPSIZE_DOWN	21
+#define TFM_MODAL_AUTOIK_LEN_INC 22
+#define TFM_MODAL_AUTOIK_LEN_DEC 23
 
 /* called in transform_ops.c, on each regeneration of keymaps */
 wmKeyMap* transform_modal_keymap(wmKeyConfig *keyconf)
@@ -504,6 +509,8 @@ wmKeyMap* transform_modal_keymap(wmKeyConfig *keyconf)
 	{NUM_MODAL_INCREMENT_DOWN, "INCREMENT_DOWN", 0, "Numinput Increment Down", ""},
 	{TFM_MODAL_PROPSIZE_UP, "PROPORTIONAL_SIZE_UP", 0, "Increase Proportional Influence", ""},
 	{TFM_MODAL_PROPSIZE_DOWN, "PROPORTIONAL_SIZE_DOWN", 0, "Decrease Poportional Influence", ""},
+	{TFM_MODAL_AUTOIK_LEN_INC, "AUTOIK_CHAIN_LEN_UP", 0, "Increase Max AutoIK Chain Length", ""},
+	{TFM_MODAL_AUTOIK_LEN_DEC, "AUTOIK_CHAIN_LEN_DOWN", 0, "Decrease Max AutoIK Chain Length", ""},
 	{0, NULL, 0, NULL, NULL}};
 	
 	wmKeyMap *keymap= WM_modalkeymap_get(keyconf, "Transform Modal Map");
@@ -538,7 +545,12 @@ wmKeyMap* transform_modal_keymap(wmKeyConfig *keyconf)
 	WM_modalkeymap_add_item(keymap, PAGEDOWNKEY, KM_PRESS, 0, 0, TFM_MODAL_PROPSIZE_DOWN);
 	WM_modalkeymap_add_item(keymap, WHEELDOWNMOUSE, KM_PRESS, 0, 0, TFM_MODAL_PROPSIZE_UP);
 	WM_modalkeymap_add_item(keymap, WHEELUPMOUSE, KM_PRESS, 0, 0, TFM_MODAL_PROPSIZE_DOWN);
-
+	
+	WM_modalkeymap_add_item(keymap, PAGEUPKEY, KM_PRESS, KM_SHIFT, 0, TFM_MODAL_AUTOIK_LEN_INC);
+	WM_modalkeymap_add_item(keymap, PAGEDOWNKEY, KM_PRESS, KM_SHIFT, 0, TFM_MODAL_AUTOIK_LEN_DEC);
+	WM_modalkeymap_add_item(keymap, WHEELDOWNMOUSE, KM_PRESS, KM_SHIFT, 0, TFM_MODAL_AUTOIK_LEN_INC);
+	WM_modalkeymap_add_item(keymap, WHEELUPMOUSE, KM_PRESS, KM_SHIFT, 0, TFM_MODAL_AUTOIK_LEN_DEC);
+	
 	return keymap;
 }
 
@@ -730,6 +742,16 @@ int transformEvent(TransInfo *t, wmEvent *event)
 					t->prop_size*= 0.90909090f;
 					calculatePropRatio(t);
 				}
+				t->redraw |= TREDRAW_HARD;
+				break;
+			case TFM_MODAL_AUTOIK_LEN_INC:
+				if (t->flag & T_AUTOIK)
+					transform_autoik_update(t, 1);
+				t->redraw |= TREDRAW_HARD;
+				break;
+			case TFM_MODAL_AUTOIK_LEN_DEC:
+				if (t->flag & T_AUTOIK) 
+					transform_autoik_update(t, -1);
 				t->redraw |= TREDRAW_HARD;
 				break;
 			default:
@@ -1198,7 +1220,7 @@ static void drawArc(float size, float angle_start, float angle_end, int segments
 	glEnd();
 }
 
-static void drawHelpline(bContext *C, int x, int y, void *customdata)
+static void drawHelpline(bContext *UNUSED(C), int x, int y, void *customdata)
 {
 	TransInfo *t = (TransInfo*)customdata;
 
@@ -1330,16 +1352,16 @@ static void drawHelpline(bContext *C, int x, int y, void *customdata)
 	}
 }
 
-void drawTransformView(const struct bContext *C, struct ARegion *ar, void *arg)
+void drawTransformView(const struct bContext *C, struct ARegion *UNUSED(ar), void *arg)
 {
 	TransInfo *t = arg;
 
-	drawConstraint(C, t);
+	drawConstraint(t);
 	drawPropCircle(C, t);
 	drawSnapping(C, t);
 }
 
-void drawTransformPixel(const struct bContext *C, struct ARegion *ar, void *arg)
+void drawTransformPixel(const struct bContext *UNUSED(C), struct ARegion *UNUSED(ar), void *UNUSED(arg))
 {
 //	TransInfo *t = arg;
 //
@@ -1531,7 +1553,7 @@ int initTransform(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event, int
 				if ((ELEM(kmi->type, LEFTCTRLKEY, RIGHTCTRLKEY) && event->ctrl) ||
 					(ELEM(kmi->type, LEFTSHIFTKEY, RIGHTSHIFTKEY) && event->shift) ||
 					(ELEM(kmi->type, LEFTALTKEY, RIGHTALTKEY) && event->alt) ||
-					(kmi->type == COMMANDKEY && event->oskey)) {
+					(kmi->type == OSKEY && event->oskey)) {
 					t->modifiers |= MOD_SNAP_INVERT;
 				}
 				break;
@@ -1720,7 +1742,7 @@ void transformApply(const bContext *C, TransInfo *t)
 	}
 }
 
-void drawTransformApply(const struct bContext *C, struct ARegion *ar, void *arg)
+void drawTransformApply(const struct bContext *C, struct ARegion *UNUSED(ar), void *arg)
 {
 	TransInfo *t = arg;
 
@@ -1893,7 +1915,7 @@ static void protectedQuaternionBits(short protectflag, float *quat, float *oldqu
 
 /* ******************* TRANSFORM LIMITS ********************** */
 
-static void constraintTransLim(TransInfo *t, TransData *td)
+static void constraintTransLim(TransInfo *UNUSED(t), TransData *td)
 {
 	if (td->con) {
 		bConstraintTypeInfo *cti= get_constraint_typeinfo(CONSTRAINT_TYPE_LOCLIMIT);
@@ -1988,7 +2010,7 @@ static void constraintob_from_transdata(bConstraintOb *cob, TransData *td)
 	}
 }
 
-static void constraintRotLim(TransInfo *t, TransData *td)
+static void constraintRotLim(TransInfo *UNUSED(t), TransData *td)
 {
 	if (td->con) {
 		bConstraintTypeInfo *cti= get_constraint_typeinfo(CONSTRAINT_TYPE_ROTLIMIT);
@@ -2177,7 +2199,7 @@ void initWarp(TransInfo *t)
 		mul_m4_v3(t->viewmat, center);
 		sub_v3_v3(center, t->viewmat[3]);
 		if (i)
-			minmax_v3_v3v3(min, max, center);
+			minmax_v3v3_v3(min, max, center);
 		else {
 			copy_v3_v3(max, center);
 			copy_v3_v3(min, center);
@@ -2208,7 +2230,7 @@ int handleEventWarp(TransInfo *t, wmEvent *event)
 	return status;
 }
 
-int Warp(TransInfo *t, short mval[2])
+int Warp(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float vec[3], circumfac, dist, phi0, co, si, *curs, cursor[3], gcursor[3];
@@ -2306,7 +2328,7 @@ int Warp(TransInfo *t, short mval[2])
 
 /* ************************** SHEAR *************************** */
 
-void postInputShear(TransInfo *t, float values[3])
+void postInputShear(TransInfo *UNUSED(t), float values[3])
 {
 	mul_v3_fl(values, 0.05f);
 }
@@ -2356,7 +2378,7 @@ int handleEventShear(TransInfo *t, wmEvent *event)
 }
 
 
-int Shear(TransInfo *t, short mval[2])
+int Shear(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float vec[3];
@@ -2720,7 +2742,7 @@ void initToSphere(TransInfo *t)
 	t->val /= (float)t->total;
 }
 
-int ToSphere(TransInfo *t, short mval[2])
+int ToSphere(TransInfo *t, short UNUSED(mval[2]))
 {
 	float vec[3];
 	float ratio, radius;
@@ -2894,9 +2916,19 @@ static void ElementRotation(TransInfo *t, TransData *td, float mat[3][3], short 
 			
 			sub_v3_v3v3(vec, vec, td->center); // Translation needed from the initial location
 			
-			mul_m3_v3(pmtx, vec);	// To Global space
-			mul_m3_v3(td->smtx, vec);// To Pose space
-			
+			/* special exception, see TD_PBONE_LOCAL_MTX definition comments */
+			if(td->flag & TD_PBONE_LOCAL_MTX_P) {
+				/* do nothing */
+			}
+			else if (td->flag & TD_PBONE_LOCAL_MTX_C) {
+				mul_m3_v3(pmtx, vec);	// To Global space
+				mul_m3_v3(td->ext->l_smtx, vec);// To Pose space (Local Location)
+			}
+			else {
+				mul_m3_v3(pmtx, vec);	// To Global space
+				mul_m3_v3(td->smtx, vec);// To Pose space
+			}
+
 			protectedTransBits(td->protectflag, vec);
 			
 			add_v3_v3v3(td->loc, td->iloc, vec);
@@ -2995,7 +3027,7 @@ static void ElementRotation(TransInfo *t, TransData *td, float mat[3][3], short 
 				mat3_to_quat( quat,fmat);	// Actual transform
 				mul_qt_qtqt(tquat, quat, iquat);
 				
-				quat_to_axis_angle( td->ext->rotAxis, td->ext->rotAngle,quat); 
+				quat_to_axis_angle( td->ext->rotAxis, td->ext->rotAngle,tquat); 
 				
 				/* this function works on end result */
 				protectedAxisAngleBits(td->protectflag, td->ext->rotAxis, td->ext->rotAngle, td->ext->irotAxis, td->ext->irotAngle);
@@ -3055,7 +3087,7 @@ static void applyRotation(TransInfo *t, float angle, float axis[3])
 	}
 }
 
-int Rotation(TransInfo *t, short mval[2])
+int Rotation(TransInfo *t, short UNUSED(mval[2]))
 {
 	char str[64];
 	
@@ -3169,7 +3201,7 @@ static void applyTrackball(TransInfo *t, float axis1[3], float axis2[3], float a
 	}
 }
 
-int Trackball(TransInfo *t, short mval[2])
+int Trackball(TransInfo *t, short UNUSED(mval[2]))
 {
 	char str[128];
 	float axis1[3], axis2[3];
@@ -3388,7 +3420,7 @@ static void applyTranslation(TransInfo *t, float vec[3]) {
 }
 
 /* uses t->vec to store actual translation in */
-int Translation(TransInfo *t, short mval[2])
+int Translation(TransInfo *t, short UNUSED(mval[2]))
 {
 	char str[250];
 
@@ -3454,7 +3486,7 @@ void initShrinkFatten(TransInfo *t)
 
 
 
-int ShrinkFatten(TransInfo *t, short mval[2])
+int ShrinkFatten(TransInfo *t, short UNUSED(mval[2]))
 {
 	float vec[3];
 	float distance;
@@ -3529,7 +3561,7 @@ void initTilt(TransInfo *t)
 
 
 
-int Tilt(TransInfo *t, short mval[2])
+int Tilt(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	int i;
@@ -3601,7 +3633,7 @@ void initCurveShrinkFatten(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT;
 }
 
-int CurveShrinkFatten(TransInfo *t, short mval[2])
+int CurveShrinkFatten(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float ratio;
@@ -3669,7 +3701,7 @@ void initPushPull(TransInfo *t)
 }
 
 
-int PushPull(TransInfo *t, short mval[2])
+int PushPull(TransInfo *t, short UNUSED(mval[2]))
 {
 	float vec[3], axis[3];
 	float distance;
@@ -3802,7 +3834,7 @@ int handleEventBevel(TransInfo *t, wmEvent *event)
 	return 0;
 }
 
-int Bevel(TransInfo *t, short mval[2])
+int Bevel(TransInfo *t, short UNUSED(mval[2]))
 {
 	float distance,d;
 	int i;
@@ -3870,7 +3902,7 @@ void initBevelWeight(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT|T_NO_PROJECT;
 }
 
-int BevelWeight(TransInfo *t, short mval[2])
+int BevelWeight(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float weight;
@@ -3943,7 +3975,7 @@ void initCrease(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT|T_NO_PROJECT;
 }
 
-int Crease(TransInfo *t, short mval[2])
+int Crease(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float crease;
@@ -4137,7 +4169,7 @@ void initBoneEnvelope(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT|T_NO_PROJECT;
 }
 
-int BoneEnvelope(TransInfo *t, short mval[2])
+int BoneEnvelope(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float ratio;
@@ -4541,7 +4573,26 @@ static int createSlideVerts(TransInfo *t)
 	start[0] = t->mval[0];
 	start[1] = t->mval[1];
 	add_v3_v3v3(end, start, vec);
-	
+
+
+	/* Ensure minimum screen distance, when looking top down on edge loops */
+#define EDGE_SLIDE_MIN 30
+	if (len_squared_v2v2(start, end) < (EDGE_SLIDE_MIN * EDGE_SLIDE_MIN)) {
+		if(ABS(start[0]-end[0]) + ABS(start[1]-end[1]) < 4.0f) {
+			/* even more exceptional case, points are ontop of eachother */
+			end[0]= start[0];
+			end[1]= start[1] + EDGE_SLIDE_MIN;
+		}
+		else {
+			sub_v2_v2(end, start);
+			normalize_v2(end);
+			mul_v2_fl(end, EDGE_SLIDE_MIN);
+			add_v2_v2(end, start);
+		}
+	}
+#undef EDGE_SLIDE_MIN
+
+
 	sld->start[0] = (short) start[0];
 	sld->start[1] = (short) start[1];
 	sld->end[0] = (short) end[0];
@@ -4658,7 +4709,22 @@ void freeSlideVerts(TransInfo *t)
 {
 	TransDataSlideUv *suv;
 	SlideData *sld = t->customData;
+	Mesh *me = t->obedit->data;
 	int uvlay_idx;
+
+	if(me->drawflag & ME_DRAW_EDGELEN) {
+		TransDataSlideVert *tempsv;
+		LinkNode *look = sld->vertlist;
+		GHash *vertgh = sld->vhash;
+		while(look) {
+			tempsv  = BLI_ghash_lookup(vertgh,(EditVert*)look->link);
+			if(tempsv != NULL) {
+				tempsv->up->f &= !SELECT;
+				tempsv->down->f &= !SELECT;
+			}
+			look = look->next;
+		}
+	}
 
 	//BLI_ghash_free(edgesgh, freeGHash, NULL);
 	BLI_ghash_free(sld->vhash, NULL, (GHashValFreeFP)MEM_freeN);
@@ -4828,7 +4894,7 @@ int doEdgeSlide(TransInfo *t, float perc)
 	return 1;
 }
 
-int EdgeSlide(TransInfo *t, short mval[2])
+int EdgeSlide(TransInfo *t, short UNUSED(mval[2]))
 {
 	char str[50];
 	float final;
@@ -4887,7 +4953,7 @@ void initBoneRoll(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT|T_NO_PROJECT;
 }
 
-int BoneRoll(TransInfo *t, short mval[2])
+int BoneRoll(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	int i;
@@ -5023,7 +5089,7 @@ void initMirror(TransInfo *t)
 	}
 }
 
-int Mirror(TransInfo *t, short mval[2])
+int Mirror(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td;
 	float size[3], mat[3][3];
@@ -5100,7 +5166,7 @@ void initAlign(TransInfo *t)
 	initMouseInputMode(t, &t->mouse, INPUT_NONE);
 }
 
-int Align(TransInfo *t, short mval[2])
+int Align(TransInfo *t, short UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float center[3];
@@ -5203,7 +5269,7 @@ static void applySeqSlide(TransInfo *t, float val[2]) {
 	}
 }
 
-int SeqSlide(TransInfo *t, short mval[2])
+int SeqSlide(TransInfo *t, short UNUSED(mval[2]))
 {
 	char str[200];
 
@@ -5431,7 +5497,7 @@ static void headerTimeTranslate(TransInfo *t, char *str)
 	sprintf(str, "DeltaX: %s", &tvec[0]);
 }
 
-static void applyTimeTranslate(TransInfo *t, float sval)
+static void applyTimeTranslate(TransInfo *t, float UNUSED(sval))
 {
 	TransData *td = t->data;
 	TransData2D *td2d = t->data2d;
@@ -5733,7 +5799,7 @@ static void applyTimeScale(TransInfo *t) {
 	}
 }
 
-int TimeScale(TransInfo *t, short mval[2])
+int TimeScale(TransInfo *t, short UNUSED(mval[2]))
 {
 	char str[200];
 	
@@ -5754,7 +5820,7 @@ int TimeScale(TransInfo *t, short mval[2])
 
 /* ************************************ */
 
-void BIF_TransformSetUndo(char *str)
+void BIF_TransformSetUndo(char *UNUSED(str))
 {
 	// TRANSFORM_FIX_ME
 	//Trans.undostr= str;

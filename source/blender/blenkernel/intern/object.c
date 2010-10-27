@@ -1,7 +1,7 @@
 /* object.c
  *
  * 
- * $Id: object.c 31720 2010-09-02 07:24:38Z jhk $
+ * $Id: object.c 32713 2010-10-26 12:48:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -320,7 +320,7 @@ static void unlink_object__unlinkModifierLinks(void *userData, Object *ob, Objec
 	}
 }
 
-void unlink_object(Scene *scene, Object *ob)
+void unlink_object(Object *ob)
 {
 	Main *bmain= G.main;
 	Object *obt;
@@ -532,12 +532,10 @@ void unlink_object(Scene *scene, Object *ob)
 	}
 	
 	/* textures */
-	tex= bmain->tex.first;
-	while(tex) {
-		if(tex->env) {
-			if(tex->env->object == ob) tex->env->object= NULL;
-		}
-		tex= tex->id.next;
+	for(tex= bmain->tex.first; tex; tex= tex->id.next) {
+		if(tex->env && (ob==tex->env->object)) tex->env->object= NULL;
+		if(tex->pd  && (ob==tex->pd->object))  tex->pd->object= NULL;
+		if(tex->vd  && (ob==tex->vd->object))  tex->vd->object= NULL;
 	}
 
 	/* worlds */
@@ -1266,6 +1264,17 @@ static void copy_object_pose(Object *obn, Object *ob)
 	}
 }
 
+static void copy_object_transform(Object *ob_tar, Object *ob_src)
+{
+	copy_v3_v3(ob_tar->loc, ob_src->loc);
+	copy_v3_v3(ob_tar->rot, ob_src->rot);
+	copy_v3_v3(ob_tar->quat, ob_src->quat);
+	copy_v3_v3(ob_tar->rotAxis, ob_src->rotAxis);
+	ob_tar->rotAngle= ob_src->rotAngle;
+	ob_tar->rotmode= ob_src->rotmode;
+	copy_v3_v3(ob_tar->size, ob_src->size);
+}
+
 Object *copy_object(Object *ob)
 {
 	Object *obn;
@@ -1338,6 +1347,8 @@ Object *copy_object(Object *ob)
 
 	obn->gpulamp.first = obn->gpulamp.last = NULL;
 	obn->pc_ids.first = obn->pc_ids.last = NULL;
+
+	obn->mpath= NULL;
 	
 	return obn;
 }
@@ -1465,7 +1476,7 @@ static void armature_set_id_extern(Object *ob)
 {
 	bArmature *arm= ob->data;
 	bPoseChannel *pchan;
-	int lay= arm->layer_protected;
+	unsigned int lay= arm->layer_protected;
 	
 	for (pchan = ob->pose->chanbase.first; pchan; pchan=pchan->next) {
 		if(!(pchan->bone->layer & lay))
@@ -1530,22 +1541,22 @@ void object_make_proxy(Object *ob, Object *target, Object *gob)
 	
 	ob->recalc= target->recalc= OB_RECALC_ALL;
 	
-	/* copy transform */
+	/* copy transform
+	 * - gob means this proxy comes from a group, just apply the matrix
+	 *   so the object wont move from its dupli-transform.
+	 *
+	 * - no gob means this is being made from a linked object,
+	 *   this is closer to making a copy of the object - in-place. */
 	if(gob) {
-		VECCOPY(ob->loc, gob->loc);
-		VECCOPY(ob->rot, gob->rot);
-		VECCOPY(ob->size, gob->size);
-		
-		group_tag_recalc(gob->dup_group);
+		ob->rotmode= target->rotmode;
+		mul_m4_m4m4(ob->obmat, target->obmat, gob->obmat);
+		object_apply_mat4(ob, ob->obmat, FALSE);
 	}
 	else {
-		VECCOPY(ob->loc, target->loc);
-		VECCOPY(ob->rot, target->rot);
-		VECCOPY(ob->size, target->size);
+		copy_object_transform(ob, target);
+		ob->parent= target->parent;	/* libdata */
+		copy_m4_m4(ob->parentinv, target->parentinv);
 	}
-	
-	ob->parent= target->parent;	/* libdata */
-	copy_m4_m4(ob->parentinv, target->parentinv);
 	
 	/* copy animdata stuff - drivers only for now... */
 	object_copy_proxy_drivers(ob, target);
@@ -1606,7 +1617,7 @@ void disable_speed_curve(int val)
 
 // XXX THIS CRUFT NEEDS SERIOUS RECODING ASAP!
 /* ob can be NULL */
-float bsystem_time(struct Scene *scene, Object *ob, float cfra, float ofs)
+float bsystem_time(struct Scene *scene, Object *UNUSED(ob), float cfra, float ofs)
 {
 	/* returns float ( see BKE_curframe in scene.c) */
 	cfra += scene->r.subframe;
@@ -1635,7 +1646,7 @@ void object_scale_to_mat3(Object *ob, float mat[][3])
 	size_to_mat3( mat,vec);
 }
 
-// TODO: this should take rotation orders into account later...
+
 void object_rot_to_mat3(Object *ob, float mat[][3])
 {
 	float rmat[3][3], dmat[3][3];
@@ -1664,35 +1675,30 @@ void object_rot_to_mat3(Object *ob, float mat[][3])
 	}
 	
 	/* combine these rotations */
-	// XXX is this correct? if errors, change the order of multiplication...
 	mul_m3_m3m3(mat, dmat, rmat);
 }
 
-void object_mat3_to_rot(Object *ob, float mat[][3], int use_compat)
+void object_mat3_to_rot(Object *ob, float mat[][3], short use_compat)
 {
-	if (ob->rotmode == ROT_MODE_QUAT)
+	switch(ob->rotmode) {
+	case ROT_MODE_QUAT:
 		mat3_to_quat(ob->quat, mat);
-	else if (ob->rotmode == ROT_MODE_AXISANGLE)
+		break;
+	case ROT_MODE_AXISANGLE:
 		mat3_to_axis_angle(ob->rotAxis, &ob->rotAngle, mat);
-	else {
-		if(use_compat) {
-			float eul[3];
-			VECCOPY(eul, ob->rot);
-			mat3_to_compatible_eulO(ob->rot, eul, ob->rotmode, mat);
-		}
-		else
-			mat3_to_eulO(ob->rot, ob->rotmode, mat);
+		break;
+	default: /* euler */
+		if(use_compat)	mat3_to_compatible_eulO(ob->rot, ob->rot, ob->rotmode, mat);
+		else			mat3_to_eulO(ob->rot, ob->rotmode, mat);
 	}
 }
 
 /* see pchan_apply_mat4() for the equivalent 'pchan' function */
-void object_apply_mat4(Object *ob, float mat[][4])
+void object_apply_mat4(Object *ob, float mat[][4], short use_compat)
 {
-	float mat3[3][3];
-	copy_v3_v3(ob->loc, mat[3]);
-	mat4_to_size(ob->size, mat);
-	copy_m3_m4(mat3, mat);
-	object_mat3_to_rot(ob, mat3, 0);
+	float rot[3][3];
+	mat4_to_loc_rot_size(ob->loc, rot, ob->size, mat);
+	object_mat3_to_rot(ob, rot, use_compat);
 }
 
 void object_to_mat3(Object *ob, float mat[][3])	/* no parent */
@@ -1725,7 +1731,7 @@ int enable_cu_speed= 1;
 static void ob_parcurve(Scene *scene, Object *ob, Object *par, float mat[][4])
 {
 	Curve *cu;
-	float q[4], vec[4], dir[3], quat[4], radius, x1, ctime;
+	float vec[4], dir[3], quat[4], radius, ctime;
 	float timeoffs = 0.0, sf_orig = 0.0;
 	
 	unit_m4(mat);
@@ -1773,9 +1779,11 @@ static void ob_parcurve(Scene *scene, Object *ob, Object *par, float mat[][4])
 	
 	
 	/* vec: 4 items! */
-	 if( where_on_path(par, ctime, vec, dir, NULL, &radius, NULL) ) {
+	if( where_on_path(par, ctime, vec, dir, cu->flag & CU_FOLLOW ? quat:NULL, &radius, NULL) ) {
 
 		if(cu->flag & CU_FOLLOW) {
+#if 0
+			float x1, q[4];
 			vec_to_quat( quat,dir, ob->trackflag, ob->upflag);
 			
 			/* the tilt */
@@ -1786,8 +1794,11 @@ static void ob_parcurve(Scene *scene, Object *ob, Object *par, float mat[][4])
 			q[2]= -x1*dir[1];
 			q[3]= -x1*dir[2];
 			mul_qt_qtqt(quat, q, quat);
-			
-			quat_to_mat4( mat,quat);
+#else
+			quat_apply_track(quat, ob->trackflag, ob->upflag);
+#endif
+
+			quat_to_mat4(mat,quat);			
 		}
 		
 		if(cu->flag & CU_PATH_RADIUS) {

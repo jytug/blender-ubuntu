@@ -1,5 +1,5 @@
 /**
- * $Id: glutil.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: glutil.c 32471 2010-10-14 12:24:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -527,7 +527,8 @@ void glaDrawPixelsTex(float x, float y, int img_w, int img_h, int format, void *
 	glaDrawPixelsTexScaled(x, y, img_w, img_h, format, rect, 1.0f, 1.0f);
 }
 
-void glaDrawPixelsSafe_to32(float fx, float fy, int img_w, int img_h, int row_w, float *rectf, int gamma_correct)
+/* row_w is unused but kept for completeness */
+void glaDrawPixelsSafe_to32(float fx, float fy, int img_w, int img_h, int UNUSED(row_w), float *rectf, int gamma_correct)
 {
 	unsigned char *rect32;
 	

@@ -8,7 +8,7 @@
  *
  * Oops... this should be a _types.h file.
  *
- * $Id: BKE_main.h 31028 2010-08-04 04:01:27Z campbellbarton $ 
+ * $Id: BKE_main.h 32309 2010-10-05 00:05:14Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,6 +39,10 @@
 #define BKE_MAIN_H
 
 #include "DNA_listBase.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct Library;
 
@@ -79,6 +83,10 @@ typedef struct Main {
 	ListBase gpencil;
 } Main;
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

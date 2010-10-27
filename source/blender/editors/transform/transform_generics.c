@@ -1,5 +1,5 @@
 /**
- * $Id: transform_generics.c 31432 2010-08-18 03:24:52Z campbellbarton $
+ * $Id: transform_generics.c 32595 2010-10-19 11:15:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -306,7 +306,7 @@ static void animrecord_check_state (Scene *scene, ID *id, wmTimer *animtimer)
 static int fcu_test_selected(FCurve *fcu)
 {
 	BezTriple *bezt= fcu->bezt;
-	int i;
+	unsigned int i;
 
 	if (bezt==NULL) /* ignore baked */
 		return 0;
@@ -1177,6 +1177,13 @@ static void restoreElement(TransData *td) {
 		if (td->ext->rot) {
 			VECCOPY(td->ext->rot, td->ext->irot);
 		}
+		if(td->ext->rotAngle) {
+			*td->ext->rotAngle= td->ext->irotAngle;
+		}
+		if(td->ext->rotAxis) {
+			VECCOPY(td->ext->rotAxis, td->ext->irotAxis);
+		}
+		/* XXX, drotAngle & drotAxis not used yet */
 		if (td->ext->size) {
 			VECCOPY(td->ext->size, td->ext->isize);
 		}
@@ -1322,7 +1329,7 @@ void calculateCenterBound(TransInfo *t)
 		if (i) {
 			if (t->data[i].flag & TD_SELECTED) {
 				if (!(t->data[i].flag & TD_NOCENTER))
-					minmax_v3_v3v3(min, max, t->data[i].center);
+					minmax_v3v3_v3(min, max, t->data[i].center);
 			}
 			else {
 				/*
@@ -1567,21 +1574,8 @@ void calculatePropRatio(TransInfo *t)
 float get_drawsize(ARegion *ar, float *co)
 {
 	RegionView3D *rv3d= ar->regiondata;
-	float size, vec[3], len1, len2;
-	
-	/* size calculus, depending ortho/persp settings, like initgrabz() */
-	size= rv3d->persmat[0][3]*co[0]+ rv3d->persmat[1][3]*co[1]+ rv3d->persmat[2][3]*co[2]+ rv3d->persmat[3][3];
-	
-	VECCOPY(vec, rv3d->persinv[0]);
-	len1= normalize_v3(vec);
-	VECCOPY(vec, rv3d->persinv[1]);
-	len2= normalize_v3(vec);
-	
-	size*= 0.01f*(len1>len2?len1:len2);
-	
-	/* correct for window size to make widgets appear fixed size */
-	if(ar->winx > ar->winy) size*= 1000.0f/(float)ar->winx;
-	else size*= 1000.0f/(float)ar->winy;
-	
+	float vec[3]= {rv3d->persmat[0][3], rv3d->persmat[1][3], rv3d->persmat[2][3]};
+	float size= rv3d->pixsize * 5;
+	size *= dot_v3v3(vec, co) + rv3d->persmat[3][3];
 	return size;
 }

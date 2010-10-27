@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_curve.h (mar-2001 nzc)
  *	
- * $Id: BKE_curve.h 31098 2010-08-06 08:27:07Z campbellbarton $ 
+ * $Id: BKE_curve.h 32203 2010-09-30 06:58:19Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -69,7 +69,8 @@ void duplicateNurblist( struct ListBase *lb1,  struct ListBase *lb2);
 void test2DNurb( struct Nurb *nu);
 void minmaxNurb( struct Nurb *nu, float *min, float *max);
 
-void makeknots( struct Nurb *nu, short uv);
+void nurbs_knot_calc_u(struct Nurb *nu);
+void nurbs_knot_calc_v(struct Nurb *nu);
 
 void makeNurbfaces(struct Nurb *nu, float *coord_array, int rowstride);
 void makeNurbcurve(struct Nurb *nu, float *coord_array, float *tilt_array, float *radius_array, float *weight_array, int resolu, int stride);

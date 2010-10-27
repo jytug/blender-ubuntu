@@ -1,5 +1,5 @@
 /**
- * $Id: ED_object.h 30936 2010-08-01 12:47:49Z blendix $
+ * $Id: ED_object.h 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,10 @@
  */
 #ifndef ED_OBJECT_H
 #define ED_OBJECT_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct Base;
 struct bConstraint;
@@ -105,7 +109,7 @@ int object_is_libdata(struct Object *ob);
 int object_data_is_libdata(struct Object *ob);
 
 /* object motion paths */
-void ED_objects_clear_paths(struct bContext *C, struct Scene *scene);
+void ED_objects_clear_paths(struct bContext *C);
 void ED_objects_recalculate_paths(struct bContext *C, struct Scene *scene);
 
 /* constraints */
@@ -140,6 +144,10 @@ int ED_object_modifier_move_up(struct ReportList *reports, struct Object *ob, st
 int ED_object_modifier_convert(struct ReportList *reports, struct Main *bmain, struct Scene *scene, struct Object *ob, struct ModifierData *md);
 int ED_object_modifier_apply(struct ReportList *reports, struct Scene *scene, struct Object *ob, struct ModifierData *md, int mode);
 int ED_object_modifier_copy(struct ReportList *reports, struct Object *ob, struct ModifierData *md);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ED_OBJECT_H */
 

@@ -1,5 +1,5 @@
 /**
- * $Id: GPU_draw.h 28890 2010-05-20 16:08:06Z campbellbarton $
+ * $Id: GPU_draw.h 32499 2010-10-15 12:29:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -114,7 +114,7 @@ void GPU_paint_set_mipmap(int mipmap);
 void GPU_paint_update_image(struct Image *ima, int x, int y, int w, int h, int mipmap);
 void GPU_update_images_framechange(void);
 int GPU_update_image_time(struct Image *ima, double time);
-int GPU_verify_image(struct Image *ima, struct ImageUser *iuser, int tftile, int tfmode, int compare, int mipmap);
+int GPU_verify_image(struct Image *ima, struct ImageUser *iuser, int tftile, int compare, int mipmap);
 void GPU_free_image(struct Image *ima);
 void GPU_free_images(void);
 void GPU_free_images_anim(void);

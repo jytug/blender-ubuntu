@@ -1,5 +1,5 @@
 /**
- * $Id: nla_intern.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: nla_intern.h 32511 2010-10-16 08:03:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,7 +45,7 @@ void NLA_OT_properties(wmOperatorType *ot);
 /* nla_draw.c */
 
 void draw_nla_main_data(bAnimContext *ac, SpaceNla *snla, ARegion *ar);
-void draw_nla_channel_list(bContext *C, bAnimContext *ac, SpaceNla *snla, ARegion *ar);
+void draw_nla_channel_list(bContext *C, bAnimContext *ac, ARegion *ar);
 
 /* **************************************** */
 /* nla_header.c */

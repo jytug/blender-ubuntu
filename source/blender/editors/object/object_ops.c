@@ -1,5 +1,5 @@
 /**
- * $Id: object_ops.c 31471 2010-08-20 05:23:12Z campbellbarton $
+ * $Id: object_ops.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -378,7 +378,7 @@ void ED_keymap_object(wmKeyConfig *keyconf)
 	ED_object_generic_keymap(keyconf, keymap, 2);
 }
 
-void ED_object_generic_keymap(struct wmKeyConfig *keyconf, struct wmKeyMap *keymap, int do_pet)
+void ED_object_generic_keymap(struct wmKeyConfig *UNUSED(keyconf), struct wmKeyMap *keymap, int do_pet)
 {
 	wmKeyMapItem *kmi;
 

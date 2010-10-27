@@ -1,7 +1,7 @@
 /* particle.c
  *
  *
- * $Id: particle.c 31730 2010-09-03 03:30:20Z gsrb3d $
+ * $Id: particle.c 32532 2010-10-17 06:38:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -272,7 +272,7 @@ int psys_check_enabled(Object *ob, ParticleSystem *psys)
 	}
 
 	psmd= psys_get_modifier(ob, psys);
-	if(psys->renderdata) {
+	if(psys->renderdata || G.rendering) {
 		if(!(psmd->modifier.mode & eModifierMode_Render))
 			return 0;
 	}
@@ -380,12 +380,9 @@ void psys_free_settings(ParticleSettings *part)
 	fluid_free_settings(part->fluid);
 }
 
-void free_hair(Object *ob, ParticleSystem *psys, int dynamics)
+void free_hair(Object *UNUSED(ob), ParticleSystem *psys, int dynamics)
 {
 	PARTICLE_P;
-
-	if(psys->part->type != PART_HAIR)
-		return;
 
 	LOOP_PARTICLES {
 		if(pa->hair)
@@ -405,9 +402,10 @@ void free_hair(Object *ob, ParticleSystem *psys, int dynamics)
 			modifier_free((ModifierData*)psys->clmd);
 			
 			psys->clmd = NULL;
+			psys->pointcache = BKE_ptcache_add(&psys->ptcaches);
 		}
 		else {
-			cloth_free_modifier(ob, psys->clmd);
+			cloth_free_modifier(psys->clmd);
 		}
 	}
 
@@ -1054,7 +1052,7 @@ typedef struct ParticleInterpolationData {
 } ParticleInterpolationData;
 /* Assumes pointcache->mem_cache exists, so for disk cached particles call psys_make_temp_pointcache() before use */
 /* It uses ParticleInterpolationData->pm to store the current memory cache frame so it's thread safe. */
-static void get_pointcache_keys_for_time(Object *ob, PointCache *cache, PTCacheMem **cur, int index, float t, ParticleKey *key1, ParticleKey *key2)
+static void get_pointcache_keys_for_time(Object *UNUSED(ob), PointCache *cache, PTCacheMem **cur, int index, float t, ParticleKey *key1, ParticleKey *key2)
 {
 	static PTCacheMem *pm = NULL;
 
@@ -1649,7 +1647,7 @@ int psys_particle_dm_face_lookup(Object *ob, DerivedMesh *dm, int index, float *
 	return DMCACHE_NOTFOUND;
 }
 
-static int psys_map_index_on_dm(DerivedMesh *dm, int from, int index, int index_dmcache, float *fw, float foffset, int *mapindex, float *mapfw)
+static int psys_map_index_on_dm(DerivedMesh *dm, int from, int index, int index_dmcache, float *fw, float UNUSED(foffset), int *mapindex, float *mapfw)
 {
 	if(index < 0)
 		return 0;
@@ -1805,7 +1803,7 @@ ParticleSystemModifierData *psys_get_modifier(Object *ob, ParticleSystem *psys)
 /*			Particles on a shape				*/
 /************************************************/
 /* ready for future use */
-static void psys_particle_on_shape(int distr, int index, float *fuv, float *vec, float *nor, float *utan, float *vtan, float *orco, float *ornor)
+static void psys_particle_on_shape(int UNUSED(distr), int UNUSED(index), float *UNUSED(fuv), float *vec, float *nor, float *utan, float *vtan, float *orco, float *ornor)
 {
 	/* TODO */
 	float zerovec[3]={0.0f,0.0f,0.0f};
@@ -2187,7 +2185,7 @@ static void do_rough_end(float *loc, float mat[4][4], float t, float fac, float 
 	VECADDFAC(state->co,state->co,mat[0],rough[0]);
 	VECADDFAC(state->co,state->co,mat[1],rough[1]);
 }
-static void do_path_effectors(ParticleSimulationData *sim, int i, ParticleCacheKey *ca, int k, int steps, float *rootco, float effector, float dfra, float cfra, float *length, float *vec)
+static void do_path_effectors(ParticleSimulationData *sim, int i, ParticleCacheKey *ca, int k, int steps, float *UNUSED(rootco), float effector, float UNUSED(dfra), float UNUSED(cfra), float *length, float *vec)
 {
 	float force[3] = {0.0f,0.0f,0.0f};
 	ParticleKey eff_key;
@@ -3341,7 +3339,7 @@ static void psys_face_mat(Object *ob, DerivedMesh *dm, ParticleData *pa, float m
 	triatomat(v[0], v[1], v[2], (osface)? osface->uv: NULL, mat);
 }
 
-void psys_mat_hair_to_object(Object *ob, DerivedMesh *dm, short from, ParticleData *pa, float hairmat[][4])
+void psys_mat_hair_to_object(Object *UNUSED(ob), DerivedMesh *dm, short from, ParticleData *pa, float hairmat[][4])
 {
 	float vec[3];
 
@@ -3689,7 +3687,7 @@ static void get_cpa_texture(DerivedMesh *dm, Material *ma, int face_index, float
 			else
 				VECCOPY(texco,orco);
 
-			externtex(mtex, texco, &value, rgba, rgba+1, rgba+2, rgba+3);
+			externtex(mtex, texco, &value, rgba, rgba+1, rgba+2, rgba+3, 0);
 			if((event & mtex->pmapto) & MAP_PA_TIME){
 				if((setvars&MAP_PA_TIME)==0){
 					ptex->time=0.0;
@@ -3743,7 +3741,7 @@ void psys_get_texture(ParticleSimulationData *sim, Material *ma, ParticleData *p
 				psys_particle_on_emitter(sim->psmd,sim->psys->part->from,pa->num,pa->num_dmcache,pa->fuv,pa->foffset,co,0,0,0,texco, 0);
 			}
 
-			externtex(mtex, texco, &value, rgba, rgba+1, rgba+2, rgba+3);
+			externtex(mtex, texco, &value, rgba, rgba+1, rgba+2, rgba+3, 0);
 
 			if((event & mtex->pmapto) & MAP_PA_TIME){
 				/* the first time has to set the base value for time regardless of blend mode */
@@ -3820,7 +3818,7 @@ float psys_get_child_time(ParticleSystem *psys, ChildParticle *cpa, float cfra, 
 
 	return (cfra-time)/life;
 }
-float psys_get_child_size(ParticleSystem *psys, ChildParticle *cpa, float cfra, float *pa_time)
+float psys_get_child_size(ParticleSystem *psys, ChildParticle *cpa, float UNUSED(cfra), float *UNUSED(pa_time))
 {
 	ParticleSettings *part = psys->part;
 	float size; // time XXX
@@ -4251,7 +4249,7 @@ int psys_get_particle_state(ParticleSimulationData *sim, int p, ParticleKey *sta
 	}
 }
 
-void psys_get_dupli_texture(Object *ob, ParticleSettings *part, ParticleSystemModifierData *psmd, ParticleData *pa, ChildParticle *cpa, float *uv, float *orco)
+void psys_get_dupli_texture(Object *UNUSED(ob), ParticleSettings *part, ParticleSystemModifierData *psmd, ParticleData *pa, ChildParticle *cpa, float *uv, float *orco)
 {
 	MFace *mface;
 	MTFace *mtface;

@@ -4,7 +4,7 @@
  * This is external code. Streams bytes to output depending on the
  * endianness of the system.
  *
- * $Id: endian.c 28254 2010-04-18 10:28:37Z campbellbarton $ 
+ * $Id: endian.c 32517 2010-10-16 14:32:17Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -206,6 +206,8 @@ void awrite (AviMovie *movie, void *datain, int block, int size, FILE *fp, int t
 
 	MEM_freeN (data);
 #else /* WORDS_BIGENDIAN */
+	(void)movie; /* unused */
+	(void)type; /* unused */
 	fwrite (datain, block, size, fp);
 #endif /* WORDS_BIGENDIAN */
 }

@@ -1,7 +1,7 @@
 /**
  * sound.h (mar-2001 nzc)
  *
- * $Id: BKE_sound.h 30435 2010-07-17 13:41:22Z nexyon $
+ * $Id: BKE_sound.h 32536 2010-10-17 09:01:37Z nexyon $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

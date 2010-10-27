@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
+# $Id: CMakeLists.txt 32708 2010-10-25 21:57:45Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,8 +24,6 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.cpp)
-
 SET(INC
 	.
 	../../../source/kernel/gen_system
@@ -43,7 +41,6 @@ SET(INC
 	../../../source/blender/blenkernel
 	../../../source/blender/windowmanager
 	../../../source/blender
-	../../../source/blender/include
 	../../../source/blender/makesdna
 	../../../source/blender/makesrna
 	../../../source/gameengine/Rasterizer
@@ -56,11 +53,34 @@ SET(INC
 	../../../source/gameengine/Physics/Bullet
 	../../../source/gameengine/Physics/Dummy
 	../../../source/gameengine/Network/LoopBackNetwork
-	../../../source/blender/misc
 	../../../source/blender/blenloader
 	../../../source/blender/gpu
 	../../../source/blender/ikplugin
 	../../../extern/bullet2/src
+)
+
+SET(SRC
+	BL_ActionActuator.cpp
+	BL_ArmatureActuator.cpp
+	BL_ArmatureChannel.cpp
+	BL_ArmatureConstraint.cpp
+	BL_ArmatureObject.cpp
+	BL_BlenderDataConversion.cpp
+	BL_DeformableGameObject.cpp
+	BL_MeshDeformer.cpp
+	BL_ModifierDeformer.cpp
+	BL_ShapeActionActuator.cpp
+	BL_ShapeDeformer.cpp
+	BL_SkinDeformer.cpp
+	BlenderWorldInfo.cpp
+	KX_BlenderScalarInterpolator.cpp
+	KX_BlenderSceneConverter.cpp
+	KX_ConvertActuators.cpp
+	KX_ConvertControllers.cpp
+	KX_ConvertProperties.cpp
+	KX_ConvertSensors.cpp
+	KX_IpoConvert.cpp
+	KX_SoftBodyDeformer.cpp
 )
 
 IF(WITH_PYTHON)
@@ -68,5 +88,9 @@ IF(WITH_PYTHON)
 ELSE(WITH_PYTHON)
 	ADD_DEFINITIONS(-DDISABLE_PYTHON)
 ENDIF(WITH_PYTHON)
+
+IF(WITH_BULLET)
+	ADD_DEFINITIONS(-DUSE_BULLET)
+ENDIF(WITH_BULLET)
 
 BLENDERLIB(bf_converter "${SRC}" "${INC}")

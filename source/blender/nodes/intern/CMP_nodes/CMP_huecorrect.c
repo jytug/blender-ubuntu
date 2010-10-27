@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_huecorrect.c 30882 2010-07-30 00:06:59Z broken $
+ * $Id: CMP_huecorrect.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -98,7 +98,7 @@ static void do_huecorrect_fac(bNode *node, float *out, float *in, float *fac)
 	out[3]= in[3];
 }
 
-static void node_composit_exec_huecorrect(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_huecorrect(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	CompBuf *cbuf= in[1]->data;
 	CompBuf *stackbuf;

@@ -161,6 +161,10 @@ def execute(context):
     stdout.truncate(0)
     stderr.truncate(0)
 
+    # special exception. its possible the command loaded a new user interface
+    if hash(sc) != hash(context.space_data):
+        return
+
     bpy.ops.console.scrollback_append(text=sc.prompt + line, type='INPUT')
 
     if is_multiline:
@@ -264,7 +268,7 @@ def banner(context):
     add_scrollback("Execute:          Enter", 'OUTPUT')
     add_scrollback("Autocomplete:     Ctrl+Space", 'OUTPUT')
     add_scrollback("Ctrl +/-  Wheel:  Zoom", 'OUTPUT')
-    add_scrollback("Builtin Modules: bpy, bpy.data, bpy.ops, bpy.props, bpy.types, bpy.context, bgl, blf, mathutils, geometry", 'OUTPUT')
+    add_scrollback("Builtin Modules: bpy, bpy.data, bpy.ops, bpy.props, bpy.types, bpy.context, bgl, blf, mathutils", 'OUTPUT')
     add_scrollback("", 'OUTPUT')
     add_scrollback("  WARNING!!! Blender 2.5 API is subject to change, see API reference for more info.", 'ERROR')
     add_scrollback("", 'OUTPUT')

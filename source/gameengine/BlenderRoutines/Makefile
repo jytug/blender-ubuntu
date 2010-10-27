@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 31223 2010-08-10 21:22:26Z gsrb3d $
+# $Id: Makefile 32417 2010-10-11 18:47:28Z dfelinto $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -41,6 +41,8 @@ CPPFLAGS += -I$(NAN_MOTO)/include
 CPPFLAGS += -I$(NAN_GLEW)/include
 CPPFLAGS += -I$(OPENGL_HEADERS)
 CPPFLAGS += -I$(NAN_AUDASPACE)/include
+# path to the guarded memory allocator
+CPPFLAGS += -I$(NAN_GUARDEDALLOC)/include
 # because of kernel dependency on makesdna
 CPPFLAGS += -I../../blender/makesdna
 CPPFLAGS += -I../../blender/editors/include

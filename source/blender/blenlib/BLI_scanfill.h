@@ -3,7 +3,7 @@
  *
  * Filling meshes.
  *
- * $Id: BLI_scanfill.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BLI_scanfill.h 32484 2010-10-15 05:18:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -50,7 +50,7 @@ extern "C" {
 /* scanfill.c: used in displist only... */
 struct EditVert *BLI_addfillvert(float *vec);
 struct EditEdge *BLI_addfilledge(struct EditVert *v1, struct EditVert *v2);
-int BLI_edgefill(int mode, int mat_nr);
+int BLI_edgefill(int mat_nr);
 void BLI_end_edgefill(void);
 
 /* These callbacks are needed to make the lib finction properly */

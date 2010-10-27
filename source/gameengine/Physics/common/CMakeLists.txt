@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
+# $Id: CMakeLists.txt 32708 2010-10-25 21:57:45Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,12 +24,18 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(SRC PHY_IMotionState.cpp PHY_IController.cpp PHY_IPhysicsController.cpp PHY_IGraphicController.cpp PHY_IPhysicsEnvironment.cpp PHY_IVehicle.cpp)
-
 SET(INC
 	.
 	../Dummy
-	../../../intern/moto/include
+)
+
+SET(SRC
+	PHY_IMotionState.cpp
+	PHY_IController.cpp
+	PHY_IPhysicsController.cpp
+	PHY_IGraphicController.cpp
+	PHY_IPhysicsEnvironment.cpp
+	PHY_IVehicle.cpp
 )
 
 BLENDERLIB(bf_common "${SRC}" "${INC}")

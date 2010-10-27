@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31783 2010-09-06 10:15:41Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,12 +24,20 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC intern/*.c)
-
 SET(INC 
 	.
 	../../../intern/guardedalloc
 	${JPEG_INC}
+)
+
+SET(SRC
+	intern/avi.c
+	intern/avirgb.c
+	intern/codecs.c
+	intern/endian.c
+	intern/mjpeg.c
+	intern/options.c
+	intern/rgb32.c
 )
 
 BLENDERLIB(bf_avi "${SRC}" "${INC}")

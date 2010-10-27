@@ -1,5 +1,5 @@
 /**
- * $Id: dynlib.c 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: dynlib.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -87,7 +87,7 @@ char *PIL_dynlib_get_error_as_string(PILdynlib* lib) {
 			return buf;
 	}
 	
-	return err;
+	return NULL;
 }
 
 void PIL_dynlib_close(PILdynlib *lib) {
@@ -122,6 +122,7 @@ void *PIL_dynlib_find_symbol(PILdynlib* lib, char *symname) {
 }
 
 char *PIL_dynlib_get_error_as_string(PILdynlib* lib) {
+	(void)lib; /* unused */
 	return dlerror();
 }
 	

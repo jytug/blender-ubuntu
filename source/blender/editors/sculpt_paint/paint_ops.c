@@ -42,7 +42,7 @@
 //#include <stdio.h>
 
 /* Brush operators */
-static int brush_add_exec(bContext *C, wmOperator *op)
+static int brush_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	/*int type = RNA_enum_get(op->ptr, "type");*/
 	Paint *paint = paint_get_active(CTX_data_scene(C));
@@ -129,7 +129,7 @@ void BRUSH_OT_scale_size(wmOperatorType *ot)
 	RNA_def_float(ot->srna, "scalar", 1, 0, 2, "Scalar", "Factor to scale brush size by", 0, 2);
 }
 
-static int vertex_color_set_exec(bContext *C, wmOperator *op)
+static int vertex_color_set_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *obact = CTX_data_active_object(C);
@@ -154,7 +154,7 @@ void PAINT_OT_vertex_color_set(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
-static int brush_reset_exec(bContext *C, wmOperator *op)
+static int brush_reset_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Paint *paint = paint_get_active(CTX_data_scene(C));
 	struct Brush *brush = paint_brush(paint);
@@ -290,7 +290,7 @@ static void ed_keymap_paint_brush_switch(wmKeyMap *keymap, const char *path)
 	RNA_int_set(kmi->ptr, "value", 19);
 }
 
-static void ed_keymap_paint_brush_size(wmKeyMap *keymap, const char *path)
+static void ed_keymap_paint_brush_size(wmKeyMap *keymap, const char *UNUSED(path))
 {
 	wmKeyMapItem *kmi;
 
@@ -427,6 +427,9 @@ void ED_keymap_paint(wmKeyConfig *keyconf)
 	/* Image/Texture Paint mode */
 	keymap= WM_keymap_find(keyconf, "Image Paint", 0, 0);
 	keymap->poll= image_texture_paint_poll;
+
+	RNA_enum_set(WM_keymap_add_item(keymap, "PAINT_OT_image_paint_radial_control", FKEY, KM_PRESS, 0, 0)->ptr, "mode", WM_RADIALCONTROL_SIZE);
+	RNA_enum_set(WM_keymap_add_item(keymap, "PAINT_OT_image_paint_radial_control", FKEY, KM_PRESS, KM_SHIFT, 0)->ptr, "mode", WM_RADIALCONTROL_STRENGTH);
 
 	RNA_enum_set(WM_keymap_add_item(keymap, "PAINT_OT_texture_paint_radial_control", FKEY, KM_PRESS, 0, 0)->ptr, "mode", WM_RADIALCONTROL_SIZE);
 	RNA_enum_set(WM_keymap_add_item(keymap, "PAINT_OT_texture_paint_radial_control", FKEY, KM_PRESS, KM_SHIFT, 0)->ptr, "mode", WM_RADIALCONTROL_STRENGTH);

@@ -19,19 +19,28 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.c)
-
 SET(INC
+	../include
 	../../blenkernel
 	../../imbuf
 	../../gpu
 	../../blenlib
-	../include
-	../../../../intern/guardedalloc
 	../../makesdna
 	../../makesrna
 	../../windowmanager
 	../../render/extern/include
+	../../../../intern/guardedalloc
+)
+
+SET(SRC
+	paint_image.c
+	paint_ops.c
+	paint_stroke.c
+	paint_undo.c
+	paint_utils.c
+	paint_vertex.c
+	sculpt.c
+	sculpt_undo.c
 )
 
 IF(WIN32)

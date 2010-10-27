@@ -1,5 +1,5 @@
 /**
- * $Id: nla_channels.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: nla_channels.c 32479 2010-10-15 01:36:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -433,7 +433,7 @@ void NLA_OT_tracks_add (wmOperatorType *ot)
 /* ******************** Delete Tracks Operator ***************************** */
 /* Delete selected NLA Tracks */
 
-static int nlaedit_delete_tracks_exec (bContext *C, wmOperator *op)
+static int nlaedit_delete_tracks_exec (bContext *C, wmOperator *UNUSED(op))
 {
 	bAnimContext ac;
 	

@@ -1,5 +1,5 @@
 /**
- * $Id: wm_event_system.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: wm_event_system.h 32544 2010-10-18 00:25:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -84,7 +84,6 @@ enum {
 
 
 /* wm_event_system.c */
-void		wm_event_add			(wmWindow *win, wmEvent *event_to_add);
 void		wm_event_free_all		(wmWindow *win);
 void		wm_event_free			(wmEvent *event);
 void		wm_event_free_handler	(wmEventHandler *handler);

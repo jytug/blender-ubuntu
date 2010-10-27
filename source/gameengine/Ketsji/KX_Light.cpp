@@ -1,5 +1,5 @@
 /**
- * $Id: KX_Light.cpp 30805 2010-07-27 11:10:34Z blendix $
+ * $Id: KX_Light.cpp 32392 2010-10-10 07:01:56Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifdef WIN32
-
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786)
 #endif
 
@@ -181,7 +180,7 @@ GPULamp *KX_LightObject::GetGPULamp()
 	if(m_glsl)
 		return GPU_lamp_from_blender(m_blenderscene, GetBlenderObject(), GetBlenderGroupObject());
 	else
-		return false;
+		return NULL;
 }
 
 void KX_LightObject::Update()

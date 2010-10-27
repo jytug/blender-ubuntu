@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,8 +24,6 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.cpp)
-
 SET(INC
 	../../../../source/kernel/gen_system
 	../../../../intern/string
@@ -39,6 +37,13 @@ SET(INC
 	../../../../source/blender/blenkernel
 	../../../../source/blender/blenlib
 	../../../../source/blender/blenloader
+)
+
+SET(SRC
+	RAS_GLExtensionManager.cpp
+	RAS_ListRasterizer.cpp
+	RAS_OpenGLRasterizer.cpp
+	RAS_VAOpenGLRasterizer.cpp
 )
 
 ADD_DEFINITIONS(-DGLEW_STATIC)

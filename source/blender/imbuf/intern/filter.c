@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * filter.c
  *
- * $Id: filter.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: filter.c 32517 2010-10-16 14:32:17Z campbellbarton $
  */
 
 #include "BKE_utildefines.h"
@@ -380,7 +380,7 @@ void IMB_makemipmap(ImBuf *ibuf, int use_filter)
 
 	while(curmap < IB_MIPMAP_LEVELS) {
 		if(use_filter) {
-			ImBuf *nbuf= IMB_allocImBuf(hbuf->x, hbuf->y, 32, IB_rect, 0);
+			ImBuf *nbuf= IMB_allocImBuf(hbuf->x, hbuf->y, 32, IB_rect);
 			IMB_filterN(nbuf, hbuf);
 			ibuf->mipmap[curmap] = IMB_onehalf(nbuf);
 			IMB_freeImBuf(nbuf);

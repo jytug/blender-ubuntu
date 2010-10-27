@@ -1,5 +1,5 @@
 /**
- * $Id: image_render.c 31161 2010-08-08 08:14:07Z campbellbarton $
+ * $Id: image_render.c 32499 2010-10-15 12:29:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -149,7 +149,7 @@ void imagewindow_toggle_render(bContext *C)
 }
 
 /* NOTE: called while render, so no malloc allowed! */
-static void imagewindow_renderinfo_cb(void *handle, RenderStats *rs)
+static void imagewindow_renderinfo_cb(void *UNUSED(handle), RenderStats *UNUSED(rs))
 {
 	if(image_area) {
 		// XXX BIF_make_render_text(rs);

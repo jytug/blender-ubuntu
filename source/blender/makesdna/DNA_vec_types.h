@@ -1,7 +1,7 @@
 /**
  * vec_types.h    dec 2000 Nzc
  *
- * $Id: DNA_vec_types.h 27655 2010-03-22 09:30:00Z campbellbarton $ 
+ * $Id: DNA_vec_types.h 32232 2010-10-01 15:59:34Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,7 @@ typedef struct vec2f {
 } vec2f;
 
 /* not used at the moment */
-#if 0
+/*
 typedef struct vec2i {
 	int x, y;
 } vec2i;
@@ -75,7 +75,7 @@ typedef struct vec4f {
 typedef struct vec4d {
 	double x, y, z, w;
 } vec4d;
-#endif
+*/
 
 typedef struct rcti {
 	int xmin, xmax;

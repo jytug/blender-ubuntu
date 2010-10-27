@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PyMath.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_PyMath.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,7 +28,7 @@
  * Initialize Python thingies.
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786)
 #endif //WIN32
 

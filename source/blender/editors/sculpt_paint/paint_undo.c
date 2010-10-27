@@ -1,5 +1,5 @@
 /**
- * $Id: paint_undo.c 30656 2010-07-23 14:46:31Z blendix $
+ * $Id: paint_undo.c 32532 2010-10-17 06:38:56Z campbellbarton $
  *
  * Undo system for painting and sculpting.
  * 
@@ -31,6 +31,7 @@
 
 #include "BLI_listbase.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 
@@ -62,13 +63,13 @@ static UndoStack MeshUndoStack = {UNDO_PAINT_MESH, {NULL, NULL}, NULL};
 
 /* Generic */
 
-static void undo_restore(bContext *C, UndoStack *stack, UndoElem *uel)
+static void undo_restore(bContext *C, UndoStack *UNUSED(stack), UndoElem *uel)
 {
 	if(uel && uel->restore)
 		uel->restore(C, &uel->elems);
 }
 
-static void undo_elem_free(UndoStack *stack, UndoElem *uel)
+static void undo_elem_free(UndoStack *UNUSED(stack), UndoElem *uel)
 {
 	if(uel && uel->free) {
 		uel->free(&uel->elems);

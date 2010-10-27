@@ -1,7 +1,7 @@
 /**
  * Execute Python scripts
  *
- * $Id: SCA_PythonController.cpp 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: SCA_PythonController.cpp 32392 2010-10-10 07:01:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -214,7 +214,7 @@ SCA_IActuator* SCA_PythonController::LinkedActuatorFromPy(PyObject *value)
 	PyErr_Format(PyExc_ValueError, "'%s' not in this python controllers actuator list", _PyUnicode_AsString(value_str));
 	Py_DECREF(value_str);
 	
-	return false;
+	return NULL;
 }
 
 const char* SCA_PythonController::sPyGetCurrentController__doc__ = "getCurrentController()";

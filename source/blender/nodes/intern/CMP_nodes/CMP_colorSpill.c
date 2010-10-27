@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_colorSpill.c 30989 2010-08-02 17:34:44Z scourage $
+ * $Id: CMP_colorSpill.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -182,7 +182,7 @@ static void do_apply_spillmap_blue(bNode *node, float* out, float *in, float *ma
 	}
 }
 
-static void node_composit_exec_color_spill(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_color_spill(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	/*
 	Originally based on the information from the book "The Art and Science of Digital Composition" and 

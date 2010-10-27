@@ -1,5 +1,5 @@
 /**
- * $Id: text_header.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: text_header.c 32479 2010-10-15 01:36:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -101,7 +101,7 @@ static int properties_poll(bContext *C)
 	return (CTX_wm_space_text(C) != NULL);
 }
 
-static int properties_exec(bContext *C, wmOperator *op)
+static int properties_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	ScrArea *sa= CTX_wm_area(C);
 	ARegion *ar= text_has_properties_region(sa);

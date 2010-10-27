@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_idprop.h 29427 2010-06-12 17:30:21Z campbellbarton $
+ * $Id: BKE_idprop.h 32627 2010-10-21 07:39:18Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,7 +33,7 @@
 struct IDProperty;
 struct ID;
 
-typedef union {
+typedef union IDPropertyTemplate {
 	int i;
 	float f;
 	double d;

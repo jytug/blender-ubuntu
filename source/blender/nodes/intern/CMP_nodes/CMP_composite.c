@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_composite.c 27793 2010-03-27 15:35:34Z blendix $
+ * $Id: CMP_composite.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +40,7 @@ static bNodeSocketType cmp_node_composite_in[]= {
 };
 
 /* applies to render pipeline */
-static void node_composit_exec_composite(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_composite(void *data, bNode *node, bNodeStack **in, bNodeStack **UNUSED(out))
 {
 	/* image assigned to output */
 	/* stack order input sockets: col, alpha, z */

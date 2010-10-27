@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_smoke.c 31028 2010-08-04 04:01:27Z campbellbarton $
+* $Id: MOD_smoke.c 32618 2010-10-21 01:10:22Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -36,6 +36,7 @@
 
 #include "DNA_object_types.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"
 #include "BKE_smoke.h"
@@ -71,27 +72,31 @@ static void freeData(ModifierData *md)
 	smokeModifier_free (smd);
 }
 
-static void deformVerts(
-					 ModifierData *md, Object *ob, DerivedMesh *derivedData,
-	  float (*vertexCos)[3], int numVerts, int useRenderParams, int isFinalCalc)
+static void deformVerts(ModifierData *md, Object *ob,
+						DerivedMesh *derivedData,
+						float (*vertexCos)[3],
+						int UNUSED(numVerts),
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	SmokeModifierData *smd = (SmokeModifierData*) md;
-	DerivedMesh *dm = dm= get_cddm(md->scene, ob, NULL, derivedData, vertexCos);
+	DerivedMesh *dm = dm= get_cddm(ob, NULL, derivedData, vertexCos);
 
-	smokeModifier_do(smd, md->scene, ob, dm, useRenderParams, isFinalCalc);
+	smokeModifier_do(smd, md->scene, ob, dm);
 
 	if(dm != derivedData)
 		dm->release(dm);
 }
 
-static int dependsOnTime(ModifierData *md)
+static int dependsOnTime(ModifierData *UNUSED(md))
 {
 	return 1;
 }
 
-static void updateDepgraph(
-					 ModifierData *md, DagForest *forest, struct Scene *scene, Object *ob,
-	  DagNode *obNode)
+static void updateDepgraph(ModifierData *UNUSED(md), DagForest *UNUSED(forest),
+						struct Scene *UNUSED(scene),
+						Object *UNUSED(ob),
+						DagNode *UNUSED(obNode))
 {
 	/*SmokeModifierData *smd = (SmokeModifierData *) md;
 	if(smd && (smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain)
@@ -141,6 +146,7 @@ ModifierTypeInfo modifierType_Smoke = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     dependsOnTime,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

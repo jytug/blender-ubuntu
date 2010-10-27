@@ -1,5 +1,5 @@
 /**
- * $Id: sound_ops.c 31166 2010-08-08 13:03:07Z campbellbarton $
+ * $Id: sound_ops.c 32536 2010-10-17 09:01:37Z nexyon $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -280,7 +280,7 @@ static int unpack_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int unpack_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int unpack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 {
 	Editing* ed = CTX_data_scene(C)->ed;
 	bSound* sound;

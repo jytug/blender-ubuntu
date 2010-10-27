@@ -1,5 +1,5 @@
 /**
- * $Id: reorganize.h 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: reorganize.h 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,6 +35,7 @@
 #include "BKE_global.h"
 
 #ifdef _WIN32
+#undef INFINITY
 #define INFINITY FLT_MAX // in mingw math.h: (1.0F/0.0F). This generates compile error, though.
 #endif
 

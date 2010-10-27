@@ -1,5 +1,5 @@
 /**
- * $Id: UnixShell.c 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: UnixShell.c 32552 2010-10-18 06:52:10Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,7 +28,7 @@
  * NS api template, adapted to link to our own internals.
  */
 
-#define UNIXSH_VERSION "$Id: UnixShell.c 28254 2010-04-18 10:28:37Z campbellbarton $"
+#define UNIXSH_VERSION "$Id: UnixShell.c 32552 2010-10-18 06:52:10Z jesterking $"
 #define MOZ_X11 1
 
 /* -*- Mode: C; tab-width: 8; c-set-style: bsd -*- */
@@ -58,7 +58,7 @@
 /* --------------------------------------------------------------------- */
 
 /** If defined: write to the plugin log file */
-#ifndef NDEBUG
+#if defined(DEBUG)
 #define NZC_GENERATE_LOG
 #endif
 

@@ -1,5 +1,5 @@
 /**
- * $Id: PyObjectPlus.h 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: PyObjectPlus.h 32397 2010-10-10 20:59:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -461,6 +461,7 @@ typedef PyTypeObject * PyParentObject;				// Define the PyParent Object
 
 #else // DISABLE_PYTHON
 
+#ifdef WITH_CXX_GUARDEDALLOC
 #define Py_Header \
  public: \
 	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:PyObjectPlus"); } \
@@ -470,6 +471,16 @@ typedef PyTypeObject * PyParentObject;				// Define the PyParent Object
  public: \
 	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:PyObjectPlusPtr"); } \
 	void operator delete( void *mem ) { MEM_freeN(mem); } \
+
+#else // WITH_CXX_GUARDEDALLOC
+
+#define Py_Header \
+ public: \
+
+#define Py_HeaderPtr \
+ public: \
+
+#endif // WITH_CXX_GUARDEDALLOC
 
 #endif
 

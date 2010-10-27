@@ -1,5 +1,5 @@
 /**
- * $Id: editmesh_loop.c 31162 2010-08-08 08:33:47Z campbellbarton $
+ * $Id: editmesh_loop.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -69,9 +69,9 @@ editmesh_loop: tools with own drawing subloops, select, knife, subdiv
 #include "mesh_intern.h"
 
 /* **** XXX ******** */
-static void BIF_undo_push(const char *dummy) {}
+static void BIF_undo_push(const char *UNUSED(arg)) {}
 static void BIF_undo() {}
-static void error(const char *dummy) {}
+static void error(const char *UNUSED(arg)) {}
 static int qtest() {return 0;}
 /* **** XXX ******** */
 

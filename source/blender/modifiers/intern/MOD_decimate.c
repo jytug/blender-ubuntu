@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_decimate.c 28152 2010-04-12 22:33:43Z campbellbarton $
+* $Id: MOD_decimate.c 32668 2010-10-23 15:40:13Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -34,6 +34,7 @@
 
 #include "BLI_math.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_mesh.h"
 #include "BKE_modifier.h"
@@ -41,8 +42,9 @@
 
 #include "MEM_guardedalloc.h"
 
+#ifdef WITH_MOD_DECIMATE
 #include "LOD_decimation.h"
-
+#endif
 
 static void initData(ModifierData *md)
 {
@@ -59,9 +61,11 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tdmd->percent = dmd->percent;
 }
 
-static DerivedMesh *applyModifier(
-		ModifierData *md, Object *ob, DerivedMesh *derivedData,
-  int useRenderParams, int isFinalCalc)
+#ifdef WITH_MOD_DECIMATE
+static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
+						DerivedMesh *derivedData,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	DecimateModifierData *dmd = (DecimateModifierData*) md;
 	DerivedMesh *dm = derivedData, *result = NULL;
@@ -174,7 +178,15 @@ static DerivedMesh *applyModifier(
 exit:
 		return result;
 }
-
+#else // WITH_MOD_DECIMATE
+static DerivedMesh *applyModifier(ModifierData *UNUSED(md), Object *UNUSED(ob),
+						DerivedMesh *derivedData,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
+{
+	return derivedData;
+}
+#endif // WITH_MOD_DECIMATE
 
 ModifierTypeInfo modifierType_Decimate = {
 	/* name */              "Decimate",
@@ -194,6 +206,7 @@ ModifierTypeInfo modifierType_Decimate = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    0,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

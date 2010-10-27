@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_value.c 31023 2010-08-03 23:57:39Z jesterking $
+ * $Id: SHD_value.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,7 +35,7 @@ static bNodeSocketType sh_node_value_out[]= {
 	{	-1, 0, ""	}
 };
 
-static void node_shader_exec_value(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_value(void *UNUSED(data), bNode *node, bNodeStack **UNUSED(in), bNodeStack **out)
 {
 	bNodeSocket *sock= node->outputs.first;
 	

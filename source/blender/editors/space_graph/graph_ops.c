@@ -1,5 +1,5 @@
 /**
- * $Id: graph_ops.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: graph_ops.c 32479 2010-10-15 01:36:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -181,7 +181,7 @@ void GRAPH_OT_cursor_set(wmOperatorType *ot)
 
 /* Toggle Handles ----------------------------------------------------------------- */
 
-static int view_toggle_handles_exec (bContext *C, wmOperator *op)
+static int view_toggle_handles_exec (bContext *C, wmOperator *UNUSED(op))
 {
 	SpaceIpo *sipo= CTX_wm_space_graph(C);
 	ARegion *ar= CTX_wm_region(C);

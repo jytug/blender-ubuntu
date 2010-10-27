@@ -1,5 +1,5 @@
 /**
- * $Id: KX_GameObject.cpp 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: KX_GameObject.cpp 32414 2010-10-11 10:47:20Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,7 @@ typedef unsigned __int64 uint_ptr;
 typedef unsigned long uint_ptr;
 #endif
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // This warning tells us about truncation of __long__ stl-generated names.
 // It can occasionally cause DevStudio to have internal compiler warnings.
 #pragma warning( disable : 4786 )     
@@ -1496,6 +1496,7 @@ PyMethodDef KX_GameObject::Methods[] = {
 PyAttributeDef KX_GameObject::Attributes[] = {
 	KX_PYATTRIBUTE_RO_FUNCTION("name",		KX_GameObject, pyattr_get_name),
 	KX_PYATTRIBUTE_RO_FUNCTION("parent",	KX_GameObject, pyattr_get_parent),
+	KX_PYATTRIBUTE_RO_FUNCTION("life",		KX_GameObject, pyattr_get_life),
 	KX_PYATTRIBUTE_RW_FUNCTION("mass",		KX_GameObject, pyattr_get_mass,		pyattr_set_mass),
 	KX_PYATTRIBUTE_RW_FUNCTION("linVelocityMin",		KX_GameObject, pyattr_get_lin_vel_min, pyattr_set_lin_vel_min),
 	KX_PYATTRIBUTE_RW_FUNCTION("linVelocityMax",		KX_GameObject, pyattr_get_lin_vel_max, pyattr_set_lin_vel_max),
@@ -1574,11 +1575,11 @@ PyObject* KX_GameObject::PyReinstancePhysicsMesh(PyObject* args)
 		) {
 		return NULL;
 	}
-	
+#ifdef USE_BULLET
 	/* gameobj and mesh can be NULL */
 	if(KX_ReInstanceBulletShapeFromMesh(this, gameobj, mesh))
 		Py_RETURN_TRUE;
-
+#endif
 	Py_RETURN_FALSE;
 }
 
@@ -1785,6 +1786,19 @@ PyObject* KX_GameObject::pyattr_get_parent(void *self_v, const KX_PYATTRIBUTE_DE
 		return parent->GetProxy();
 	}
 	Py_RETURN_NONE;
+}
+
+PyObject* KX_GameObject::pyattr_get_life(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+{
+	KX_GameObject* self= static_cast<KX_GameObject*>(self_v);
+
+	CValue *life = self->GetProperty("::timebomb");
+	if (life)
+		// this convert the timebomb seconds to frames, hard coded 50.0 (assuming 50fps)
+		// value hardcoded in KX_Scene::AddReplicaObject()
+		return PyFloat_FromDouble(life->GetNumber() * 50.0);
+	else
+		Py_RETURN_NONE;
 }
 
 PyObject* KX_GameObject::pyattr_get_mass(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)

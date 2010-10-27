@@ -1,5 +1,5 @@
 /**
- * $Id: filesel.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: filesel.c 32729 2010-10-27 06:41:48Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -59,11 +59,13 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_linklist.h"
+#include "BLI_path_util.h"
 #include "BLI_storage_types.h"
 #include "BLI_dynstr.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
+#include "BKE_main.h"
 
 #include "BLF_api.h"
 
@@ -104,7 +106,8 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 	if (!sfile->params) {
 		sfile->params= MEM_callocN(sizeof(FileSelectParams), "fileselparams");
 		/* set path to most recently opened .blend */
-		BLI_split_dirfile(G.sce, sfile->params->dir, sfile->params->file);
+		BLI_split_dirfile(G.main->name, sfile->params->dir, sfile->params->file);
+		sfile->params->filter_glob[0] = '\0';
 	}
 
 	params = sfile->params;
@@ -141,8 +144,8 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 		}
 
 		if(params->dir[0]) {
-			BLI_cleanup_dir(G.sce, params->dir);
-			BLI_path_abs(params->dir, G.sce);
+			BLI_cleanup_dir(G.main->name, params->dir);
+			BLI_path_abs(params->dir, G.main->name);
 		}
 
 		params->filter = 0;
@@ -168,6 +171,14 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 			params->filter |= RNA_boolean_get(op->ptr, "filter_btx") ? BTXFILE : 0;
 		if(RNA_struct_find_property(op->ptr, "filter_collada"))
 			params->filter |= RNA_boolean_get(op->ptr, "filter_collada") ? COLLADAFILE : 0;
+		if (RNA_struct_find_property(op->ptr, "filter_glob")) {
+			RNA_string_get(op->ptr, "filter_glob", params->filter_glob);
+			params->filter |= (OPERATORFILE|FOLDERFILE);
+		}
+		else {
+			params->filter_glob[0] = '\0';
+		}
+
 		if (params->filter != 0) {
 			if (U.uiflag & USER_FILTERFILEEXTS) {
 				params->flag |= FILE_FILTER;
@@ -200,6 +211,7 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 		params->flag |= FILE_HIDE_DOT;
 		params->display = FILE_SHORTDISPLAY;
 		params->filter = 0;
+		params->filter_glob[0] = '\0';
 		params->sort = FILE_SORT_ALPHA;
 	}
 
@@ -453,7 +465,7 @@ int file_select_match(struct SpaceFile *sfile, const char *pattern)
 	return match;
 }
 
-void autocomplete_directory(struct bContext *C, char *str, void *arg_v)
+void autocomplete_directory(struct bContext *C, char *str, void *UNUSED(arg_v))
 {
 	SpaceFile *sfile= CTX_wm_space_file(C);
 
@@ -500,7 +512,7 @@ void autocomplete_directory(struct bContext *C, char *str, void *arg_v)
 	}
 }
 
-void autocomplete_file(struct bContext *C, char *str, void *arg_v)
+void autocomplete_file(struct bContext *C, char *str, void *UNUSED(arg_v))
 {
 	SpaceFile *sfile= CTX_wm_space_file(C);
 
@@ -531,5 +543,18 @@ void ED_fileselect_clear(struct bContext *C, struct SpaceFile *sfile)
 
 void ED_fileselect_exit(struct bContext *C, struct SpaceFile *sfile)
 {
-	thumbnails_stop(sfile->files, C);
+	if(!sfile) return;
+	if(sfile->op)
+		WM_event_fileselect_event(C, sfile->op, EVT_FILESELECT_EXTERNAL_CANCEL);
+	sfile->op = NULL;
+
+	folderlist_free(sfile->folders_prev);
+	folderlist_free(sfile->folders_next);
+	
+	if (sfile->files) {
+		ED_fileselect_clear(C, sfile);
+		MEM_freeN(sfile->files);
+		sfile->files= NULL;
+	}
+
 }

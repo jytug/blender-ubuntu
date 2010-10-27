@@ -24,7 +24,7 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * $Id: png.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: png.c 32517 2010-10-16 14:32:17Z campbellbarton $
  */
 
 
@@ -61,7 +61,8 @@ int imb_is_a_png(unsigned char *mem)
 }
 
 static void Flush(png_structp png_ptr) 
-{ 
+{
+	(void)png_ptr;
 }
 
 static void WriteData( png_structp png_ptr, png_bytep data, png_size_t length)
@@ -286,7 +287,7 @@ int imb_savepng(struct ImBuf *ibuf, char *name, int flags)
 	return(1);
 }
 
-struct ImBuf *imb_loadpng(unsigned char *mem, int size, int flags)
+struct ImBuf *imb_loadpng(unsigned char *mem, size_t size, int flags)
 {
 	struct ImBuf *ibuf = 0;
 	png_structp png_ptr;
@@ -317,7 +318,7 @@ struct ImBuf *imb_loadpng(unsigned char *mem, int size, int flags)
 		return 0;
 	}
 
-	ps.size = size;
+	ps.size = size; /* XXX, 4gig limit! */
 	ps.data = mem;
 	ps.seek = 0;
 
@@ -368,7 +369,7 @@ struct ImBuf *imb_loadpng(unsigned char *mem, int size, int flags)
 		longjmp(png_jmpbuf(png_ptr), 1);
 	}
 	
-	ibuf = IMB_allocImBuf(width, height, 8 * bytesperpixel, 0, 0);
+	ibuf = IMB_allocImBuf(width, height, 8 * bytesperpixel, 0);
 
 	if (ibuf) {
 		ibuf->ftype = PNG;

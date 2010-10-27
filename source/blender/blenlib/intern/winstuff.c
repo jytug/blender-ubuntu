@@ -1,5 +1,5 @@
 /**
- * $Id: winstuff.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: winstuff.c 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "MEM_guardedalloc.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
 #define WIN32_SKIP_HKEY_PROTECTION		// need to use HKEY

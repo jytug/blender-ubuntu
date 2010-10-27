@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_geom.c 28047 2010-04-06 10:24:57Z blendix $
+ * $Id: SHD_geom.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,7 +47,7 @@ static bNodeSocketType sh_node_geom_out[]= {
 };
 
 /* node execute callback */
-static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(in), bNodeStack **out)
 {
 	if(data) {
 		ShadeInput *shi= ((ShaderCallData *)data)->shi;

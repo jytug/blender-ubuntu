@@ -1,5 +1,5 @@
 /**
- * $Id: resources.c 31777 2010-09-06 05:40:52Z campbellbarton $
+ * $Id: resources.c 32600 2010-10-19 13:35:21Z campbellbarton $
  *
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
@@ -956,13 +956,11 @@ void UI_make_axis_color(char *src_col, char *dst_col, char axis)
 	switch(axis)
 	{
 		case 'x':
-		case 'X':
 			dst_col[0]= src_col[0]>219?255:src_col[0]+36;
 			dst_col[1]= src_col[1]<26?0:src_col[1]-26;
 			dst_col[2]= src_col[2]<26?0:src_col[2]-26;
 			break;
 		case 'y':
-		case 'Y':
 			dst_col[0]= src_col[0]<46?0:src_col[0]-36;
 			dst_col[1]= src_col[1]>189?255:src_col[1]+66;
 			dst_col[2]= src_col[2]<46?0:src_col[2]-36;

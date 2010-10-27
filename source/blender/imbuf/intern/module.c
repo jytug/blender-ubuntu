@@ -1,5 +1,5 @@
 /*
- * $Id: module.c 28656 2010-05-07 22:04:48Z gsrb3d $
+ * $Id: module.c 31935 2010-09-15 06:43:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -22,6 +22,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+#include <stddef.h>
 #include "IMB_imbuf.h"
 #include "IMB_filetype.h"
 

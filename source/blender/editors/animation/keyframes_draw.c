@@ -1,5 +1,5 @@
 /**
- * $Id: keyframes_draw.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: keyframes_draw.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -655,7 +655,7 @@ void draw_gpl_channel(View2D *v2d, bDopeSheet *ads, bGPDlayer *gpl, float ypos)
 	
 	BLI_dlrbTree_init(&keys);
 	
-		gpl_to_keylist(ads, gpl, &keys, NULL);
+		gpl_to_keylist(ads, gpl, &keys);
 	
 	BLI_dlrbTree_linkedlist_sync(&keys);
 	
@@ -898,7 +898,7 @@ void action_to_keylist(AnimData *adt, bAction *act, DLRBT_Tree *keys, DLRBT_Tree
 }
 
 
-void gpl_to_keylist(bDopeSheet *ads, bGPDlayer *gpl, DLRBT_Tree *keys, DLRBT_Tree *blocks)
+void gpl_to_keylist(bDopeSheet *UNUSED(ads), bGPDlayer *gpl, DLRBT_Tree *keys)
 {
 	bGPDframe *gpf;
 	ActKeyColumn *ak;

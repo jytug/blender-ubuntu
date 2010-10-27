@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_EventPrinter.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: GHOST_EventPrinter.cpp 32332 2010-10-05 19:10:15Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -255,9 +255,8 @@ void GHOST_EventPrinter::getKeyString(GHOST_TKey key, STR_String& str) const
 		case GHOST_kKeyRightAlt:
 			str = "RightAlt";
 			break;
-		case GHOST_kKeyCommand:
-            // APPLE only!
-			str = "Command";
+		case GHOST_kKeyOS:
+			str = "OS";
 			break;
 		case GHOST_kKeyGrLess:
             // PC german!

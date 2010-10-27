@@ -4,7 +4,7 @@
  * Some editing types needed in the lib (unfortunately) for
  * scanfill.c
  *
- * $Id: BLI_editVert.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BLI_editVert.h 32177 2010-09-28 19:53:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -68,7 +68,7 @@ typedef struct EditVert
 	unsigned char f, h, f1, f2; 
 	float bweight;
 	short fast;	/* only 0 or 1, for editmesh_fastmalloc, do not store temp data here! */
-	int hash;
+	int hash;     /* internal editmesh.c use only, don't touch! */
 	int keyindex; /* original index #, for restoring  key information */
 
 	void *data;		/* custom vertex data */

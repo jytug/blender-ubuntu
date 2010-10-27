@@ -1,5 +1,5 @@
 /**
- * $Id: rna_particle.c 31493 2010-08-21 04:51:00Z campbellbarton $
+ * $Id: rna_particle.c 32317 2010-10-05 09:32:35Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -325,15 +325,21 @@ static PointerRNA rna_particle_settings_get(PointerRNA *ptr)
 static void rna_particle_settings_set(PointerRNA *ptr, PointerRNA value)
 {
 	ParticleSystem *psys= (ParticleSystem*)ptr->data;
+	int old_type = 0;
 
-	if(psys->part)
+
+	if(psys->part) {
+		old_type = psys->part->type;
 		psys->part->id.us--;
+	}
 
 	psys->part = (ParticleSettings *)value.data;
 
 	if(psys->part) {
 		psys->part->id.us++;
 		psys_check_boid_data(psys);
+		if(old_type != psys->part->type)
+			psys->recalc |= PSYS_RECALC_TYPE;
 	}
 }
 static void rna_Particle_abspathtime_update(Main *bmain, Scene *scene, PointerRNA *ptr)

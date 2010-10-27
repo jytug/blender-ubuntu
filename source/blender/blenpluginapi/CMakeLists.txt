@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,10 +24,17 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC intern/*.c)
-
 SET(INC 
-	. .. ../../../intern/guardedalloc ../blenlib ../imbuf ../makesdna
+	.
+	..
+	../blenlib
+	../imbuf
+	../makesdna
+	../../../intern/guardedalloc
+)
+
+SET(SRC
+	intern/pluginapi.c
 )
 
 IF(WIN32)

@@ -1,5 +1,5 @@
 /**
- * $Id: openexr_api.h 28651 2010-05-07 15:18:04Z blendix $ 
+ * $Id: openexr_api.h 31937 2010-09-15 08:00:19Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -48,7 +48,7 @@ int		imb_is_a_openexr			(unsigned char *mem);
 	
 int		imb_save_openexr			(struct ImBuf *ibuf, char *name, int flags);
 
-struct ImBuf *imb_load_openexr		(unsigned char *mem, int size, int flags);
+struct ImBuf *imb_load_openexr		(unsigned char *mem, size_t size, int flags);
 
 #ifdef __cplusplus
 }

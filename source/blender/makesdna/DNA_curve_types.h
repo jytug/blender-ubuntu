@@ -3,7 +3,7 @@
  *
  * Curve stuff.
  *
- * $Id: DNA_curve_types.h 31275 2010-08-12 06:28:46Z campbellbarton $ 
+ * $Id: DNA_curve_types.h 32037 2010-09-21 06:09:14Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -141,7 +141,7 @@ typedef struct Nurb {
 
 typedef struct CharInfo {
 	short kern;
-	short mat_nr;
+	short mat_nr; /* index start at 1, unlike mesh & nurbs */
 	char flag;
 	char pad;
 	short pad2;

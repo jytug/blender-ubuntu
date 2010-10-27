@@ -1,5 +1,5 @@
 /**
- * $Id: rna_sensor.c 31423 2010-08-17 16:27:10Z campbellbarton $
+ * $Id: rna_sensor.c 31933 2010-09-15 04:42:01Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -156,6 +156,8 @@ static void rna_Sensor_keyboard_key_set(struct PointerRNA *ptr, int value)
 	
 	if (ISKEYBOARD(value))
 		ks->key = value;
+	else
+		ks->key = 0;
 }
 
 static void rna_Sensor_keyboard_modifier_set(struct PointerRNA *ptr, int value)
@@ -165,6 +167,8 @@ static void rna_Sensor_keyboard_modifier_set(struct PointerRNA *ptr, int value)
 	
 	if (ISKEYBOARD(value))
 		ks->qual = value;
+	else
+		ks->qual = 0;
 }
 		
 static void rna_Sensor_keyboard_modifier2_set(struct PointerRNA *ptr, int value)
@@ -174,6 +178,8 @@ static void rna_Sensor_keyboard_modifier2_set(struct PointerRNA *ptr, int value)
 	
 	if (ISKEYBOARD(value))
 		ks->qual2 = value;
+	else
+		ks->qual2 = 0;
 }
 
 static void rna_Sensor_tap_set(struct PointerRNA *ptr, int value)

@@ -93,7 +93,7 @@ class Mem_IStream: public IStream
 {
 public:
 	
-	Mem_IStream (unsigned char *exrbuf, int exrsize):
+	Mem_IStream (unsigned char *exrbuf, size_t exrsize):
     IStream("dummy"), _exrpos (0), _exrsize(exrsize)  { _exrbuf = exrbuf; }
 	
 	virtual bool	read (char c[], int n);
@@ -943,7 +943,7 @@ static int exr_is_renderresult(InputFile *file)
 	return 0;
 }
 
-struct ImBuf *imb_load_openexr(unsigned char *mem, int size, int flags)
+struct ImBuf *imb_load_openexr(unsigned char *mem, size_t size, int flags)
 {
 	struct ImBuf *ibuf = NULL;
 	InputFile *file = NULL;
@@ -975,7 +975,7 @@ struct ImBuf *imb_load_openexr(unsigned char *mem, int size, int flags)
 		}
 		else {
 		
-			ibuf = IMB_allocImBuf(width, height, 32, 0, 0);
+			ibuf = IMB_allocImBuf(width, height, 32, 0);
 			ibuf->ftype = OPENEXR;
 
 			/* openEXR is linear as per EXR spec */

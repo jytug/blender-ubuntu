@@ -1,7 +1,7 @@
 /* DNA_particle_types.h
  *
  *
- * $Id: DNA_boid_types.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: DNA_boid_types.h 31971 2010-09-16 20:06:10Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -187,8 +187,8 @@ typedef struct BoidState {
 typedef struct BoidSettings {
 	int options, last_state_id;
 
-	float landing_smoothness, rt;
-	float banking, height;
+	float landing_smoothness, height;
+	float banking, pitch;
 
 	float health, aggression;
 	float strength, accuracy, range;

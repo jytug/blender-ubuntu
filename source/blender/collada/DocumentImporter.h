@@ -1,5 +1,5 @@
 /**
- * $Id: DocumentImporter.h 29191 2010-06-03 17:41:33Z kazanbas $
+ * $Id: DocumentImporter.h 32309 2010-10-05 00:05:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,9 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+#ifndef __DOCUMENTIMPORTER_H__
+#define __DOCUMENTIMPORTER_H__
 struct Main;
 struct bContext;
 
@@ -29,3 +32,5 @@ class DocumentImporter
  public:
 	void import(bContext *C, const char *filename);
 };
+
+#endif

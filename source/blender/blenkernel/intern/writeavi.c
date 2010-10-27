@@ -2,7 +2,7 @@
  * Functions for writing avi-format files.
  * Added interface for generic movie support (ton)
  *
- * $Id: writeavi.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: writeavi.c 32551 2010-10-18 06:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,6 +40,7 @@
 #include "BLI_blenlib.h"
 
 #include "BKE_global.h"
+#include "BKE_main.h"
 #include "BKE_report.h"
 #include "BKE_utildefines.h"
 #include "BKE_writeavi.h"
@@ -119,7 +120,7 @@ static void filepath_avi (char *string, RenderData *rd)
 	if (string==NULL) return;
 
 	strcpy(string, rd->pic);
-	BLI_path_abs(string, G.sce);
+	BLI_path_abs(string, G.main->name);
 
 	BLI_make_existing_file(string);
 
@@ -136,6 +137,8 @@ static int start_avi(Scene *scene, RenderData *rd, int rectx, int recty, ReportL
 	AviFormat format;
 	int quality;
 	double framerate;
+	
+	(void)scene; /* unused */
 	
 	filepath_avi(name, rd);
 
@@ -175,7 +178,7 @@ static int start_avi(Scene *scene, RenderData *rd, int rectx, int recty, ReportL
 	return 1;
 }
 
-static int append_avi(RenderData *rd, int frame, int *pixels, int rectx, int recty, ReportList *reports)
+static int append_avi(RenderData *UNUSED(rd), int frame, int *pixels, int rectx, int recty, ReportList *UNUSED(reports))
 {
 	unsigned int *rt1, *rt2, *rectot;
 	int x, y;

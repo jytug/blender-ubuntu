@@ -1,5 +1,5 @@
 /**
- * $Id: IK_Solver.cpp 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: IK_Solver.cpp 32538 2010-10-17 11:20:12Z aligorith $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -45,6 +45,7 @@ public:
 	std::list<IK_QTask*> tasks;
 };
 
+// FIXME: locks still result in small "residual" changes to the locked axes...
 IK_QSegment *CreateSegment(int flag, bool translate)
 {
 	int ndof = 0;

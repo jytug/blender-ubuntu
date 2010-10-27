@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,8 +24,6 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC intern/*.c)
-
 SET(INC 
 	.
 	../makesdna
@@ -38,11 +36,55 @@ SET(INC
 	${FREETYPE_INCLUDE_DIRS}
 )
 
-IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
-SET(INC
-	${INC}
-	${BINRELOC_INC}
+SET(SRC
+	intern/BLI_args.c
+	intern/BLI_dynstr.c
+	intern/BLI_ghash.c
+	intern/BLI_heap.c
+	intern/BLI_kdopbvh.c
+	intern/BLI_kdtree.c
+	intern/BLI_linklist.c
+	intern/BLI_memarena.c
+	intern/BLI_mempool.c
+	intern/DLRB_tree.c
+	intern/boxpack2d.c
+	intern/bpath.c
+	intern/cpu.c
+	intern/dynlib.c
+	intern/edgehash.c
+	intern/fileops.c
+	intern/fnmatch.c
+	intern/freetypefont.c
+	intern/graph.c
+	intern/gsqueue.c
+	intern/jitter.c
+	intern/listbase.c
+	intern/math_base.c
+	intern/math_base_inline.c
+	intern/math_color.c
+	intern/math_geom.c
+	intern/math_geom_inline.c
+	intern/math_matrix.c
+	intern/math_rotation.c
+	intern/math_vector.c
+	intern/math_vector_inline.c
+	intern/noise.c
+	intern/path_util.c
+	intern/pbvh.c
+	intern/rand.c
+	intern/rct.c
+	intern/scanfill.c
+	intern/storage.c
+	intern/string.c
+	intern/threads.c
+	intern/time.c
+	intern/uvproject.c
+	intern/voxel.c
+	intern/winstuff.c
 )
+
+IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+	LIST(APPEND INC "${BINRELOC_INC}")
 ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 IF(WIN32)
@@ -50,7 +92,7 @@ IF(WIN32)
 ENDIF(WIN32)
 
 IF(WITH_OPENMP)
-		ADD_DEFINITIONS(-DPARALLEL=1)
+	ADD_DEFINITIONS(-DPARALLEL=1)
 ENDIF(WITH_OPENMP)
 
 BLENDERLIB(bf_blenlib "${SRC}" "${INC}")

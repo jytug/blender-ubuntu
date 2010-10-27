@@ -1,5 +1,5 @@
 /**
- * $Id: wm_keymap.c 31777 2010-09-06 05:40:52Z campbellbarton $
+ * $Id: wm_keymap.c 32506 2010-10-16 02:40:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -118,7 +118,7 @@ void WM_keyconfig_free(wmKeyConfig *keyconf)
 	MEM_freeN(keyconf);
 }
 
-void WM_keyconfig_userdef(wmWindowManager *wm)
+void WM_keyconfig_userdef(void)
 {
 	wmKeyMap *km;
 	wmKeyMapItem *kmi;
@@ -419,7 +419,7 @@ char *WM_keymap_item_to_string(wmKeyMapItem *kmi, char *str, int len)
 	return str;
 }
 
-static wmKeyMapItem *wm_keymap_item_find_handlers(const bContext *C, ListBase *handlers, const char *opname, int opcontext, IDProperty *properties, int compare_props, int hotkey, wmKeyMap **keymap_r)
+static wmKeyMapItem *wm_keymap_item_find_handlers(const bContext *C, ListBase *handlers, const char *opname, int UNUSED(opcontext), IDProperty *properties, int compare_props, int hotkey, wmKeyMap **keymap_r)
 {
 	wmWindowManager *wm= CTX_wm_manager(C);
 	wmEventHandler *handler;

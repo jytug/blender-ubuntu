@@ -92,7 +92,7 @@ void BLI_bpathIterator_init( struct BPathIterator *bpi, char *base_path ) {
 	bpi->seqdata.seqar = NULL;
 	bpi->seqdata.scene = NULL;
 	
-	bpi->base_path= base_path ? base_path : G.sce;
+	bpi->base_path= base_path ? base_path : G.main->name;
 
 	BLI_bpathIterator_step(bpi);
 }
@@ -171,7 +171,7 @@ static struct VFont *vf_stepdata__internal(struct VFont *vf, int step_next) {
 		vf = vf->id.next;
 	
 	while (vf) {
-		if (vf->packedfile==NULL && BLI_streq(vf->name, "<builtin>")==0) {
+		if (vf->packedfile==NULL && strcmp(vf->name, FO_BUILTIN_NAME)!=0) {
 			break;
 		}
 		
@@ -633,7 +633,7 @@ static int findFileRecursive(char *filename_new, const char *dirname, const char
 		if (S_ISREG(status.st_mode)) { /* is file */
 			if (strncmp(filename, de->d_name, FILE_MAX)==0) { /* name matches */
 				/* open the file to read its size */
-				size = BLI_filepathsize(path);
+				size = status.st_size;
 				if ((size > 0) && (size > *filesize)) { /* find the biggest file */
 					*filesize = size;
 					BLI_strncpy(filename_new, path, FILE_MAX);

@@ -1,5 +1,5 @@
 /**
- * $Id: transform_constraints.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: transform_constraints.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -593,7 +593,7 @@ void setUserConstraint(TransInfo *t, short orientation, int mode, const char fte
 
 /*----------------- DRAWING CONSTRAINTS -------------------*/
 
-void drawConstraint(const struct bContext *C, TransInfo *t)
+void drawConstraint(TransInfo *t)
 {
 	TransCon *tc = &(t->con);
 

@@ -19,17 +19,22 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.c)
-
 SET(INC
+	../include
 	../../blenkernel
 	../../blenlib
-	../include
-	../../../../intern/guardedalloc
 	../../makesdna
 	../../makesrna
 	../../windowmanager
 	../../editors/interface
+	../../../../intern/guardedalloc
+)
+
+SET(SRC
+	logic_buttons.c
+	logic_ops.c
+	logic_window.c
+	space_logic.c
 )
 
 IF(WITH_GAMEENGINE)

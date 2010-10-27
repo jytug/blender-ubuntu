@@ -1,5 +1,5 @@
 /**
- * $Id: rna_boid.c 31460 2010-08-19 15:49:30Z campbellbarton $
+ * $Id: rna_boid.c 31971 2010-09-16 20:06:10Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -478,6 +478,12 @@ static void rna_def_boid_settings(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "banking");
 	RNA_def_property_range(prop, 0.0, 2.0);
 	RNA_def_property_ui_text(prop, "Banking", "Amount of rotation around velocity vector on turns");
+	RNA_def_property_update(prop, 0, "rna_Boids_reset");
+
+	prop= RNA_def_property(srna, "pitch", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "pitch");
+	RNA_def_property_range(prop, 0.0, 2.0);
+	RNA_def_property_ui_text(prop, "Pitch", "Amount of rotation around side vector");
 	RNA_def_property_update(prop, 0, "rna_Boids_reset");
 
 	prop= RNA_def_property(srna, "height", PROP_FLOAT, PROP_NONE);

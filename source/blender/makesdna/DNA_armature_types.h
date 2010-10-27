@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_armature_types.h 30221 2010-07-12 11:04:51Z blendix $
+ * $Id: DNA_armature_types.h 32573 2010-10-19 01:21:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -91,7 +91,7 @@ typedef struct bArmature {
 	
 	int			pad;
 	
-	int			layer, layer_protected;		/* for buttons to work, both variables in this order together */
+	unsigned int layer, layer_protected;		/* for buttons to work, both variables in this order together */
 	
 // XXX depreceated... old animaton system (armature only viz) ---
 	short		ghostep, ghostsize;		/* number of frames to ghosts to show, and step between them  */

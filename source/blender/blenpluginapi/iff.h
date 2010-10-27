@@ -1,5 +1,5 @@
 /* Copyright (c) 1999, Not a Number / NeoGeo b.v. 
- * $Id: iff.h 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: iff.h 32517 2010-10-16 14:32:17Z campbellbarton $
  * 
  * All rights reserved.
  * 
@@ -81,7 +81,7 @@ typedef struct ImBuf {
 	int refcounter; /* reference counter for multiple users */
 } ImBuf;
 
-LIBIMPORT struct ImBuf *allocImBuf(short,short,uchar,uint,uchar);
+LIBIMPORT struct ImBuf *allocImBuf(short,short,uchar,uint);
 LIBIMPORT struct ImBuf *dupImBuf(struct ImBuf *);
 LIBIMPORT void freeImBuf(struct ImBuf*);
 

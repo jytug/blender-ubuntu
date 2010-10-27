@@ -1,5 +1,5 @@
 /**
- * $Id: action.c 31517 2010-08-22 14:15:28Z campbellbarton $
+ * $Id: action.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1091,7 +1091,7 @@ void copy_pose_result(bPose *to, bPose *from)
 /* For the calculation of the effects of an Action at the given frame on an object 
  * This is currently only used for the Action Constraint 
  */
-void what_does_obaction (Scene *scene, Object *ob, Object *workob, bPose *pose, bAction *act, char groupname[], float cframe)
+void what_does_obaction (Scene *UNUSED(scene), Object *ob, Object *workob, bPose *pose, bAction *act, char groupname[], float cframe)
 {
 	bActionGroup *agrp= action_groups_find_named(act, groupname);
 	

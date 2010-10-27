@@ -3,7 +3,7 @@
  *
  * This is external code. Converts between rgb32 and avi.
  *
- * $Id: rgb32.c 28254 2010-04-18 10:28:37Z campbellbarton $ 
+ * $Id: rgb32.c 32532 2010-10-17 06:38:56Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,6 +41,8 @@ void *avi_converter_from_rgb32 (AviMovie *movie, int stream, unsigned char *buff
 	int y, x, rowstridea, rowstrideb;
 	unsigned char *buf;
 
+	(void)stream; /* unused */
+
 	buf = MEM_mallocN (movie->header->Height * movie->header->Width * 3, "fromrgb32buf");
 	*size = movie->header->Height * movie->header->Width * 3;
 
@@ -64,6 +66,8 @@ void *avi_converter_to_rgb32 (AviMovie *movie, int stream, unsigned char *buffer
 	int i;
 	unsigned char *buf;
 	unsigned char *to, *from;
+
+	(void)stream; /* unused */
 
 	buf= MEM_mallocN (movie->header->Height * movie->header->Width * 4, "torgb32buf");
 	*size= movie->header->Height * movie->header->Width * 4;

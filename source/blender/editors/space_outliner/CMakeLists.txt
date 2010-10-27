@@ -19,18 +19,22 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.c)
-
 SET(INC
+	../include
 	../../blenkernel
 	../../blenlib
 	../../imbuf
-	../include
-	../../../../intern/guardedalloc
-	../../../../intern/opennl/extern
 	../../makesdna
 	../../makesrna
 	../../windowmanager
+	../../../../intern/guardedalloc
+	../../../../intern/opennl/extern
+)
+
+SET(SRC
+	outliner.c
+	outliner_ops.c
+	space_outliner.c
 )
 
 BLENDERLIB(bf_editor_space_outliner "${SRC}" "${INC}")

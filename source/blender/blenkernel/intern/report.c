@@ -1,5 +1,5 @@
 /**
- * $Id: report.c 31730 2010-09-03 03:30:20Z gsrb3d $
+ * $Id: report.c 32296 2010-10-04 01:18:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -127,6 +127,7 @@ void BKE_reportf(ReportList *reports, ReportType type, const char *format, ...)
 		va_start(args, format);
 		vprintf(format, args);
 		va_end(args);
+		fprintf(stdout, "\n"); /* otherise each report needs to include a \n */
 		fflush(stdout); /* this ensures the message is printed before a crash */
 	}
 

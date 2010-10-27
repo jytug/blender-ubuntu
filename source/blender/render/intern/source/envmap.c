@@ -1,5 +1,5 @@
 /* 
- * $Id: envmap.c 30936 2010-08-01 12:47:49Z blendix $
+ * $Id: envmap.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -86,7 +86,7 @@ static void envmap_split_ima(EnvMap *env, ImBuf *ibuf)
 	
 	if (env->type == ENV_CUBE) {
 		for(part=0; part<6; part++) {
-			env->cube[part]= IMB_allocImBuf(dx, dx, 24, IB_rect|IB_rectfloat, 0);
+			env->cube[part]= IMB_allocImBuf(dx, dx, 24, IB_rect|IB_rectfloat);
 		}
 		IMB_float_from_rect(ibuf);
 		
@@ -458,7 +458,7 @@ static void render_envmap(Render *re, EnvMap *env)
 			int y;
 			float *alpha;
 			
-			ibuf= IMB_allocImBuf(envre->rectx, envre->recty, 24, IB_rect|IB_rectfloat, 0);
+			ibuf= IMB_allocImBuf(envre->rectx, envre->recty, 24, IB_rect|IB_rectfloat);
 			memcpy(ibuf->rect_float, rl->rectf, ibuf->channels * ibuf->x * ibuf->y * sizeof(float));
 			
 			if (re->scene->r.color_mgt_flag & R_COLOR_MANAGEMENT)

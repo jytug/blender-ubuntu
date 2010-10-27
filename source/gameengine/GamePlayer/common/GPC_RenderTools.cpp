@@ -1,5 +1,5 @@
 /**
- * $Id: GPC_RenderTools.cpp 27231 2010-03-03 06:38:47Z dfelinto $
+ * $Id: GPC_RenderTools.cpp 32532 2010-10-17 06:38:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -284,8 +284,9 @@ void GPC_RenderTools::RenderText2D(RAS_TEXT_RENDER_MODE mode,
 										 int width,
 										 int height)
 {
+	/*
 	STR_String tmpstr(text);
-	char* s = tmpstr.Ptr();
+	char* s = tmpstr.Ptr(); */
 
 	// Save and change OpenGL settings
 	int texture2D;

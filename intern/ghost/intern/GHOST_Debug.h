@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_Debug.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: GHOST_Debug.h 32554 2010-10-18 07:03:38Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -34,11 +34,11 @@
 #ifndef _GHOST_DEBUG_H_
 #define _GHOST_DEBUG_H_
 
-#ifdef WIN32
-	#ifdef _DEBUG
+#if defined(WIN32) && !defined(FREE_WINDOWS)
+	#ifdef DEBUG
 		#pragma warning (disable:4786) // suppress stl-MSVC debug info warning
 		// #define GHOST_DEBUG
-	#endif // _DEBUG
+	#endif // DEBUG
 #endif // WIN32
 
 #ifdef BF_GHOST_DEBUG 

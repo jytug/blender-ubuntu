@@ -1,6 +1,6 @@
 /**
  *
- * $Id: BLI_kdopbvh.h 28202 2010-04-15 10:28:32Z blendix $
+ * $Id: BLI_kdopbvh.h 32641 2010-10-21 22:45:54Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -90,7 +90,7 @@ int BLI_bvhtree_update_node(BVHTree *tree, int index, float *co, float *co_movin
 void BLI_bvhtree_update_tree(BVHTree *tree);
 
 /* collision/overlap: check two trees if they overlap, alloc's *overlap with length of the int return value */
-BVHTreeOverlap *BLI_bvhtree_overlap(BVHTree *tree1, BVHTree *tree2, int *result);
+BVHTreeOverlap *BLI_bvhtree_overlap(BVHTree *tree1, BVHTree *tree2, unsigned int *result);
 
 float BLI_bvhtree_getepsilon(BVHTree *tree);
 

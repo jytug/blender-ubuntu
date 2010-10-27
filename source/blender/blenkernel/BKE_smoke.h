@@ -1,7 +1,7 @@
 /**
  * BKE_smoke.h
  *
- * $Id: BKE_smoke.h 28756 2010-05-14 07:09:15Z broken $
+ * $Id: BKE_smoke.h 32618 2010-10-21 01:10:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,7 @@
 
 typedef float (*bresenham_callback) (float *result, float *input, int res[3], int *pixel, float *tRay, float correct);
 
-void smokeModifier_do(struct SmokeModifierData *smd, struct Scene *scene, struct Object *ob, struct DerivedMesh *dm, int useRenderParams, int isFinalCalc);
+void smokeModifier_do(struct SmokeModifierData *smd, struct Scene *scene, struct Object *ob, struct DerivedMesh *dm);
 
 void smokeModifier_free (struct SmokeModifierData *smd);
 void smokeModifier_reset(struct SmokeModifierData *smd);

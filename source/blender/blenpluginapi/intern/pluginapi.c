@@ -1,5 +1,5 @@
 /**
- * $Id: pluginapi.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: pluginapi.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -101,10 +101,9 @@ LIBEXPORT void freeT(void *vmemh)
 LIBEXPORT struct ImBuf *allocImBuf(short x,
 						 short y,
 						 uchar d,
-						 uint flags,
-						 uchar bitmap)
+						 uint flags)
 {
-	return IMB_allocImBuf(x, y, d, flags, bitmap);
+	return IMB_allocImBuf(x, y, d, flags);
 }
 
 

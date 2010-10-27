@@ -1,5 +1,5 @@
 /**
- * $Id: TEX_image.c 26958 2010-02-16 15:45:19Z blendix $
+ * $Id: TEX_image.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,7 @@ static bNodeSocketType outputs[]= {
 	{ -1, 0, "" }
 };
 
-static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, short thread)
+static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **UNUSED(in), short UNUSED(thread))
 {
 	float x = p->co[0];
 	float y = p->co[1];

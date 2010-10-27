@@ -1,5 +1,5 @@
 /**
- * $Id: rna_wm.c 31847 2010-09-09 17:41:36Z campbellbarton $
+ * $Id: rna_wm.c 32635 2010-10-21 11:20:44Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -175,7 +175,7 @@ EnumPropertyItem event_type_items[] = {
 	{RIGHTCTRLKEY,	"RIGHT_CTRL",	0, "Right Ctrl", ""},
 	{RIGHTSHIFTKEY,	"RIGHT_SHIFT",	0, "Right Shift", ""},
 	{0, "", 0, NULL, NULL},
-	{COMMANDKEY,	"COMMAND",	0, "Command", ""},
+	{OSKEY,	"OSKEY",	0, "OS Key", ""},
 	{0, "", 0, NULL, NULL},
 	{ESCKEY, "ESC", 0, "Esc", ""},
 	{TABKEY, "TAB", 0, "Tab", ""},
@@ -697,7 +697,7 @@ static int operator_poll(bContext *C, wmOperatorType *ot)
 	return visible;
 }
 
-static int operator_exec(bContext *C, wmOperator *op)
+static int operator_execute(bContext *C, wmOperator *op)
 {
 	PointerRNA opr;
 	ParameterList list;
@@ -707,6 +707,30 @@ static int operator_exec(bContext *C, wmOperator *op)
 
 	RNA_pointer_create(&CTX_wm_screen(C)->id, op->type->ext.srna, op, &opr);
 	func= RNA_struct_find_function(&opr, "execute");
+
+	RNA_parameter_list_create(&list, &opr, func);
+	RNA_parameter_set_lookup(&list, "context", &C);
+	op->type->ext.call(&opr, func, &list);
+
+	RNA_parameter_get_lookup(&list, "result", &ret);
+	result= *(int*)ret;
+
+	RNA_parameter_list_free(&list);
+
+	return result;
+}
+
+/* same as execute() but no return value */
+static int operator_check(bContext *C, wmOperator *op)
+{
+	PointerRNA opr;
+	ParameterList list;
+	FunctionRNA *func;
+	void *ret;
+	int result;
+
+	RNA_pointer_create(&CTX_wm_screen(C)->id, op->type->ext.srna, op, &opr);
+	func= RNA_struct_find_function(&opr, "check");
 
 	RNA_parameter_list_create(&list, &opr, func);
 	RNA_parameter_set_lookup(&list, "context", &C);
@@ -796,7 +820,7 @@ static StructRNA *rna_Operator_register(const bContext *C, ReportList *reports, 
 	wmOperatorType dummyot = {0};
 	wmOperator dummyop= {0};
 	PointerRNA dummyotr;
-	int have_function[5];
+	int have_function[6];
 
 	/* setup dummy operator & operator type to store static properties in */
 	dummyop.type= &dummyot;
@@ -804,6 +828,9 @@ static StructRNA *rna_Operator_register(const bContext *C, ReportList *reports, 
 	dummyot.name= _operator_name; /* only assigne the pointer, string is NULL'd */
 	dummyot.description= _operator_descr; /* only assigne the pointer, string is NULL'd */
 	RNA_pointer_create(NULL, &RNA_Operator, &dummyop, &dummyotr);
+
+	/* clear incase they are left unset */
+	_operator_idname[0]= _operator_name[0]= _operator_descr[0]= '\0';
 
 	/* validate the python class */
 	if(validate(&dummyotr, data, have_function) != 0)
@@ -846,11 +873,11 @@ static StructRNA *rna_Operator_register(const bContext *C, ReportList *reports, 
 	dummyot.ext.free= free;
 
 	dummyot.pyop_poll=	(have_function[0])? operator_poll: NULL;
-	dummyot.exec=		(have_function[1])? operator_exec: NULL;
-	dummyot.invoke=		(have_function[2])? operator_invoke: NULL;
-	dummyot.modal=		(have_function[3])? operator_modal: NULL;
-	dummyot.ui=			(have_function[4])? operator_draw: NULL;
-
+	dummyot.exec=		(have_function[1])? operator_execute: NULL;
+	dummyot.check=		(have_function[2])? operator_check: NULL;
+	dummyot.invoke=		(have_function[3])? operator_invoke: NULL;
+	dummyot.modal=		(have_function[4])? operator_modal: NULL;
+	dummyot.ui=			(have_function[5])? operator_draw: NULL;
 	WM_operatortype_append_ptr(operator_wrapper, (void *)&dummyot);
 
 	/* update while blender is running */
@@ -1072,7 +1099,7 @@ static void rna_def_operator(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "bl_description", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "type->description");
 	RNA_def_property_string_maxlength(prop, 1024); /* else it uses the pointer size! */
-	RNA_def_property_flag(prop, PROP_REGISTER);
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
 
 	prop= RNA_def_property(srna, "bl_options", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "type->flag");
@@ -1127,7 +1154,7 @@ static void rna_def_macro_operator(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "bl_description", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "type->description");
 	RNA_def_property_string_maxlength(prop, 1024); /* else it uses the pointer size! */
-	RNA_def_property_flag(prop, PROP_REGISTER);
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
 
 	prop= RNA_def_property(srna, "bl_options", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "type->flag");

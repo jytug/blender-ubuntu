@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 32392 2010-10-10 07:01:56Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -37,7 +37,10 @@ ADD_SUBDIRECTORY(Physics/Dummy)
 ADD_SUBDIRECTORY(Rasterizer)
 ADD_SUBDIRECTORY(Rasterizer/RAS_OpenGLRasterizer)
 ADD_SUBDIRECTORY(SceneGraph)
-ADD_SUBDIRECTORY(Physics/Bullet)
+
+IF(WITH_BULLET)
+	ADD_SUBDIRECTORY(Physics/Bullet)
+ENDIF(WITH_BULLET)
 
 IF(WITH_PYTHON)
 	ADD_SUBDIRECTORY(VideoTexture)

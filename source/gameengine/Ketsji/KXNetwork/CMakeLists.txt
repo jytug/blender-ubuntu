@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,8 +24,6 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.cpp)
-
 SET(INC
 	.
 	../../../../source/kernel/gen_system
@@ -36,6 +34,14 @@ SET(INC
 	../../../../source/gameengine/Expressions
 	../../../../source/gameengine/SceneGraph
 	../../../../source/gameengine/Network
+)
+
+SET(SRC
+	KX_NetworkEventManager.cpp
+	KX_NetworkMessageActuator.cpp
+	KX_NetworkMessageSensor.cpp
+	KX_NetworkObjectActuator.cpp
+	KX_NetworkObjectSensor.cpp
 )
 
 IF(WITH_PYTHON)

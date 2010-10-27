@@ -1,5 +1,5 @@
 /**
- * $Id: EventToBuf.c 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: EventToBuf.c 32332 2010-10-05 19:10:15Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -125,7 +125,7 @@ static char *keytype_to_string(GHOST_TKey key) {
 	K(KeyRightControl);
 	K(KeyLeftAlt);
 	K(KeyRightAlt);
-	K(KeyCommand);
+	K(KeyOS);
 
 	K(KeyCapsLock);
 	K(KeyNumLock);

@@ -1,5 +1,5 @@
 /*
-* $Id: BKE_customdata.h 31540 2010-08-23 22:16:45Z campbellbarton $
+* $Id: BKE_customdata.h 32341 2010-10-06 09:53:06Z jesterking $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -31,6 +31,10 @@
 
 #ifndef BKE_CUSTOMDATA_H
 #define BKE_CUSTOMDATA_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct ID;
 struct CustomData;
@@ -294,6 +298,10 @@ void CustomData_external_read(struct CustomData *data,
 	struct ID *id, CustomDataMask mask, int totelem);
 void CustomData_external_reload(struct CustomData *data,
 	struct ID *id, CustomDataMask mask, int totelem);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_normal.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SHD_normal.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,7 +42,7 @@ static bNodeSocketType sh_node_normal_out[]= {
 };
 
 /* generates normal, does dot product */
-static void node_shader_exec_normal(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_normal(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	bNodeSocket *sock= node->outputs.first;
 	float vec[3];

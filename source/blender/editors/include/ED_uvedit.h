@@ -1,5 +1,5 @@
 /**
- * $Id: ED_uvedit.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: ED_uvedit.h 32491 2010-10-15 09:07:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +41,6 @@ void ED_operatortypes_uvedit(void);
 void ED_keymap_uvedit(struct wmKeyConfig *keyconf);
 
 void ED_uvedit_assign_image(struct Scene *scene, struct Object *obedit, struct Image *ima, struct Image *previma);
-void ED_uvedit_set_tile(struct bContext *C, struct Scene *scene, struct Object *obedit, struct Image *ima, int curtile, int dotile);
 int ED_uvedit_minmax(struct Scene *scene, struct Image *ima, struct Object *obedit, float *min, float *max);
 
 int ED_uvedit_test_silent(struct Object *obedit);

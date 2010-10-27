@@ -1,5 +1,5 @@
 /**
- * $Id: rna_access.c 31836 2010-09-09 06:06:37Z campbellbarton $
+ * $Id: rna_access.c 32708 2010-10-25 21:57:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -364,7 +364,8 @@ static PropertyRNA *typemap[IDP_NUMTYPES] =
 	 (PropertyRNA*)&rna_IDProperty_float,
 	 NULL, NULL, NULL,
 	 (PropertyRNA*)&rna_IDProperty_group, NULL,
-	 (PropertyRNA*)&rna_IDProperty_double};
+	 (PropertyRNA*)&rna_IDProperty_double,
+	 (PropertyRNA*)&rna_IDProperty_idp_array};
 
 static PropertyRNA *arraytypemap[IDP_NUMTYPES] =
 	{NULL, (PropertyRNA*)&rna_IDProperty_int_array,
@@ -1267,6 +1268,14 @@ static void rna_property_update(bContext *C, Main *bmain, Scene *scene, PointerR
 
 }
 
+/* must keep in sync with 'rna_property_update'
+ * note, its possible this returns a false positive in the case of PROP_CONTEXT_UPDATE
+ * but this isnt likely to be a performance problem. */
+int RNA_property_update_check(PropertyRNA *prop)
+{
+	return (prop->magic != RNA_MAGIC || prop->update || prop->noteflag);
+}
+
 void RNA_property_update(bContext *C, PointerRNA *ptr, PropertyRNA *prop)
 {
 	rna_property_update(C, CTX_data_main(C), CTX_data_scene(C), ptr, prop);
@@ -2066,7 +2075,7 @@ void RNA_property_collection_begin(PointerRNA *ptr, PropertyRNA *prop, Collectio
 
 void RNA_property_collection_next(CollectionPropertyIterator *iter)
 {
-	CollectionPropertyRNA *cprop= (CollectionPropertyRNA*)iter->prop;
+	CollectionPropertyRNA *cprop= (CollectionPropertyRNA*)rna_ensure_property(iter->prop);
 
 	if(iter->idprop) {
 		rna_iterator_array_next(iter);
@@ -2080,7 +2089,7 @@ void RNA_property_collection_next(CollectionPropertyIterator *iter)
 
 void RNA_property_collection_end(CollectionPropertyIterator *iter)
 {
-	CollectionPropertyRNA *cprop= (CollectionPropertyRNA*)iter->prop;
+	CollectionPropertyRNA *cprop= (CollectionPropertyRNA*)rna_ensure_property(iter->prop);
 
 	if(iter->idprop)
 		rna_iterator_array_end(iter);
@@ -2272,7 +2281,7 @@ int RNA_property_collection_lookup_index(PointerRNA *ptr, PropertyRNA *prop, Poi
 
 int RNA_property_collection_lookup_int(PointerRNA *ptr, PropertyRNA *prop, int key, PointerRNA *r_ptr)
 {
-	CollectionPropertyRNA *cprop= (CollectionPropertyRNA*)prop;
+	CollectionPropertyRNA *cprop= (CollectionPropertyRNA*)rna_ensure_property(prop);
 
 	if(cprop->lookupint) {
 		/* we have a callback defined, use it */
@@ -2302,7 +2311,7 @@ int RNA_property_collection_lookup_int(PointerRNA *ptr, PropertyRNA *prop, int k
 
 int RNA_property_collection_lookup_string(PointerRNA *ptr, PropertyRNA *prop, const char *key, PointerRNA *r_ptr)
 {
-	CollectionPropertyRNA *cprop= (CollectionPropertyRNA*)prop;
+	CollectionPropertyRNA *cprop= (CollectionPropertyRNA*)rna_ensure_property(prop);
 
 	if(cprop->lookupstring) {
 		/* we have a callback defined, use it */
@@ -2863,6 +2872,7 @@ static char *rna_path_token(const char **path, char *fixedbuf, int fixedlen, int
 {
 	const char *p;
 	char *buf;
+	char quote= '\0';
 	int i, j, len, escape;
 
 	len= 0;
@@ -2874,9 +2884,30 @@ static char *rna_path_token(const char **path, char *fixedbuf, int fixedlen, int
 
 		p= *path;
 
-		escape= 0;
-		while(*p && (*p != ']' || escape)) {
-			escape= (*p == '\\');
+		/* 2 kinds of lookups now, quoted or unquoted */
+		quote= *p;
+
+		if(quote != '\'' && quote != '"')
+			quote= 0;
+
+		if(quote==0) {
+			while(*p && (*p != ']')) {
+				len++;
+				p++;
+			}
+		}
+		else {
+			escape= 0;
+			/* skip the first quote */
+			len++;
+			p++;
+			while(*p && (*p != quote || escape)) {
+				escape= (*p == '\\');
+				len++;
+				p++;
+			}
+			
+			/* skip the last quoted char to get the ']' */
 			len++;
 			p++;
 		}
@@ -2906,7 +2937,7 @@ static char *rna_path_token(const char **path, char *fixedbuf, int fixedlen, int
 	/* copy string, taking into account escaped ] */
 	if(bracket) {
 		for(p=*path, i=0, j=0; i<len; i++, p++) {
-			if(*p == '\\' && *(p+1) == ']');
+			if(*p == '\\' && *(p+1) == quote);
 			else buf[j++]= *p;
 		}
 
@@ -3004,6 +3035,7 @@ int RNA_path_resolve_full(PointerRNA *ptr, const char *path, PointerRNA *r_ptr, 
 			if(nextptr.data) {
 				curptr= nextptr;
 				prop= NULL; /* now we have a PointerRNA, the prop is our parent so forget it */
+				if(index) *index= -1;
 			}
 			else
 				return 0;
@@ -3046,6 +3078,7 @@ int RNA_path_resolve_full(PointerRNA *ptr, const char *path, PointerRNA *r_ptr, 
 				if(nextptr.data) {
 					curptr= nextptr;
 					prop= NULL;  /* now we have a PointerRNA, the prop is our parent so forget it */
+					if(index) *index= -1;
 				}
 				else
 					return 0;

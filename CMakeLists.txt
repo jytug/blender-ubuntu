@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31799 2010-09-07 02:10:51Z campbellbarton $
+# $Id: CMakeLists.txt 32668 2010-10-23 15:40:13Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -66,10 +66,9 @@ GET_BLENDER_VERSION()
 
 # Blender internal features
 OPTION(WITH_INTERNATIONAL "Enable I18N   (International fonts and text)" ON)
-OPTION(WITH_LCMS          "Enable color correction with lcms" OFF)
 OPTION(WITH_PYTHON        "Enable Embedded Python API" ON)
 OPTION(WITH_BUILDINFO     "Include extra build details" ON)
-OPTION(WITH_FLUID        "Enable Elbeem (Fluid Simulation)" ON)
+OPTION(WITH_IK_ITASC      "Enable ITASC IK solver" ON)
 OPTION(WITH_FFTW3         "Enable FFTW3 support (Used for smoke and audio effects)" OFF)
 OPTION(WITH_BULLET        "Enable Bullet (Physics Engine)" ON)
 OPTION(WITH_GAMEENGINE    "Enable Game Engine" ON)
@@ -80,6 +79,11 @@ IF(UNIX AND NOT APPLE)
 ELSE()
 	OPTION(WITH_OPENMP        "Enable OpenMP (has to be supported by the compiler)" OFF)
 ENDIF()
+
+# Modifiers
+OPTION(WITH_MOD_FLUID        	"Enable Elbeem Modifier (Fluid Simulation)" ON)
+OPTION(WITH_MOD_DECIMATE       	"Enable Decimate Modifier" ON)
+OPTION(WITH_MOD_BOOLEAN        	"Enable Boolean Modifier" ON)
 
 # Image format support
 OPTION(WITH_IMAGE_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
@@ -125,12 +129,11 @@ IF(APPLE)
 	OPTION(WITH_LIBS10.5  "Use 10.5 libs (needed for 64bit builds)" OFF)
 ENDIF(APPLE)
 
-IF(NOT WITH_BULLET AND WITH_GAMEENGINE)
-	MESSAGE("WARNING: WITH_GAMEENGINE needs WITH_BULLET")
-ENDIF(NOT WITH_BULLET AND WITH_GAMEENGINE)
+# only for developers who want to make this functional
+# OPTION(WITH_LCMS          "Enable color correction with lcms" OFF)
 
 IF(NOT WITH_GAMEENGINE AND WITH_PLAYER)
-	MESSAGE("WARNING: WITH_PLAYER needs WITH_GAMEENGINE")
+	MESSAGE(FATAL_ERROR "WITH_PLAYER needs WITH_GAMEENGINE")
 ENDIF(NOT WITH_GAMEENGINE AND WITH_PLAYER)
 
 IF(NOT WITH_INSTALL AND WITH_PYTHON_INSTALL)
@@ -148,7 +151,7 @@ TEST_SSE_SUPPORT()
 # On Macs: 
 #   cmake -D PYTHON_INC=/System/Library/Frameworks/Python.framework/Versions/3.1/include/python3.1 -D PYTHON_LIBPATH=/System/Library/Frameworks/Python.framework/Versions/3.1/lib/python3.1/config -G Xcode ../blender
 #
-# When changing any of this remember to update the notes in doc/blender-cmake.txt
+# When changing any of this remember to update the notes in doc/build_systems/cmake.txt
 
 #-----------------------------------------------------------------------------
 #Platform specifics
@@ -296,6 +299,7 @@ IF(UNIX AND NOT APPLE)
 
 	FIND_PACKAGE(X11 REQUIRED)
 
+	# OpenSuse needs lutil, ArchLinux not, for now keep, can avoid by using --as-needed
 	SET(LLIBS "-lutil -lc -lm -lpthread -lstdc++ ${X11_X11_LIB} ${X11_Xinput_LIB}")
 
 	IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -313,12 +317,12 @@ IF(UNIX AND NOT APPLE)
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 	ENDIF(WITH_OPENMP)
 
-
-	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing -Wno-char-subscripts")
+	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing")
 
 	SET(PLATFORM_LINKFLAGS "-pthread")
 
 	# Better warnings
+	# note: -Wunused-parameter is added below for all GCC compilers
 	SET(C_WARNINGS "-Wall -Wno-char-subscripts -Wpointer-arith -Wcast-align -Wdeclaration-after-statement -Wno-unknown-pragmas")
 	SET(CXX_WARNINGS "-Wall -Wno-invalid-offsetof -Wno-sign-compare")
 
@@ -330,12 +334,12 @@ IF(WIN32)
 
 	# this file is included anyway when building under Windows with cl.exe
 	#  INCLUDE(${CMAKE_ROOT}/Modules/Platform/Windows-cl.cmake)
-  
+
 	SET(LIBDIR ${CMAKE_SOURCE_DIR}/../lib/windows)
 
 	# Setup 64bit and 64bit windows systems
 	IF(CMAKE_CL_64)
-		message("64 bit compiler detected.")
+		MESSAGE("64 bit compiler detected.")
 		SET(LIBDIR ${CMAKE_SOURCE_DIR}/../lib/win64)
 	ENDIF(CMAKE_CL_64)
 	
@@ -362,15 +366,6 @@ IF(WIN32)
 	SET(JPEG_LIBPATH ${JPEG}/lib)
 
 	SET(WINTAB_INC ${LIBDIR}/wintab/include) 
-
-	IF(WITH_PYTHON)
-		SET(PYTHON ${LIBDIR}/python)
-		SET(PYTHON_VERSION 3.1)
-		SET(PYTHON_INC "${PYTHON}/include/python${PYTHON_VERSION}")
-		# SET(PYTHON_BINARY python) # not used yet
-		SET(PYTHON_LIB python31)
-		SET(PYTHON_LIBPATH ${PYTHON}/lib)
-	ENDIF(WITH_PYTHON)
 
 	IF(WITH_OPENAL)
 		SET(OPENAL ${LIBDIR}/openal)
@@ -411,8 +406,8 @@ IF(WIN32)
 			SET(LLIBS kernel32 user32 gdi32 comdlg32 advapi32 shell32 ole32 oleaut32 uuid ws2_32 vfw32 winmm)
 		ENDIF(CMAKE_CL_64)
 		
-		SET(CMAKE_CXX_FLAGS "/D_CRT_NONSTDC_NO_DEPRECATE /D_CRT_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_DEPRECATE /wd4800 /wd4244 /wd4305" CACHE STRING "MSVC MT C++ flags " FORCE)
-		SET(CMAKE_C_FLAGS   "/D_CRT_NONSTDC_NO_DEPRECATE /D_CRT_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_DEPRECATE /wd4800 /wd4244 /wd4305" CACHE STRING "MSVC MT C++ flags " FORCE)
+		SET(CMAKE_CXX_FLAGS "/D_CRT_NONSTDC_NO_DEPRECATE /D_CRT_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_DEPRECATE /we4013 /wd4800 /wd4244 /wd4305 /wd4065 /wd4267" CACHE STRING "MSVC MT C++ flags " FORCE)
+		SET(CMAKE_C_FLAGS   "/D_CRT_NONSTDC_NO_DEPRECATE /D_CRT_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_DEPRECATE /we4013 /wd4800 /wd4244 /wd4305 /wd4065 /wd4267" CACHE STRING "MSVC MT C++ flags " FORCE)
 
 		IF(CMAKE_CL_64)
 			SET(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
@@ -485,14 +480,16 @@ IF(WIN32)
 			SET(OPENCOLLADA_INC ${OPENCOLLADA}/include)
 			SET(OPENCOLLADA_LIBPATH ${OPENCOLLADA}/lib)
 			SET(OPENCOLLADA_LIB OpenCOLLADASaxFrameworkLoader OpenCOLLADAFramework OpenCOLLADABaseUtils OpenCOLLADAStreamWriter MathMLSolver GeneratedSaxParser xml2 buffer ftoa)
-			#pcre is bundled with openCollada
-			#SET(PCRE ${LIBDIR}/pcre)
-			#SET(PCRE_LIBPATH ${PCRE}/lib)
 			SET(PCRE_LIB pcre)
 		ENDIF(WITH_OPENCOLLADA)
 		
-		# TODO: IF(WITH_LCMS)
-        
+		IF(WITH_LCMS)
+			SET(LCMS ${LIBDIR}/lcms)
+			SET(LCMS_INCLUDE_DIR ${LCMS}/include)
+			SET(LCMS_LIBPATH ${LCMS}/lib)
+			SET(LCMS_LIB lcms)
+		ENDIF(WITH_LCMS)
+
 		IF(WITH_FFMPEG)
 			SET(FFMPEG ${LIBDIR}/ffmpeg)
 			SET(FFMPEG_INC ${FFMPEG}/include ${FFMPEG}/include/msvc)
@@ -528,32 +525,37 @@ IF(WIN32)
 			SET(JACK_LIBPATH ${JACK}/lib)
 		ENDIF(WITH_JACK)
 
+		IF(WITH_PYTHON)
+			SET(PYTHON ${LIBDIR}/python)
+			SET(PYTHON_VERSION 3.1)
+			SET(PYTHON_INC "${PYTHON}/include/python${PYTHON_VERSION}")
+			# SET(PYTHON_BINARY python) # not used yet
+			SET(PYTHON_LIB python31)
+			SET(PYTHON_LIBPATH ${PYTHON}/lib)
+		ENDIF(WITH_PYTHON)
+
 		# MSVC only, Mingw doesnt need
 		IF(CMAKE_CL_64)
 			SET(PLATFORM_LINKFLAGS "/MACHINE:X64 /NODEFAULTLIB:libc.lib;MSVCRT.lib ")
 		ELSE(CMAKE_CL_64)
 			SET(PLATFORM_LINKFLAGS "/NODEFAULTLIB:libc.lib ")
 		ENDIF(CMAKE_CL_64)
-	  
+
 		SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:libcmt.lib;libc.lib ")
 
 	ELSE(MSVC) # MINGW
 		SET(LLIBS "-lshell32 -lshfolder -lgdi32 -lmsvcrt -lwinmm -lmingw32 -lm -lws2_32 -lz -lstdc++ -lole32 -luuid")
+		SET(PLATFORM_CFLAGS "-pipe -funsigned-char -fno-strict-aliasing")
 
-		SET(CMAKE_CXX_FLAGS                "-pipe -funsigned-char -fno-strict-aliasing" CACHE STRING "Mingw C++ flags ")
-		SET(CMAKE_C_FLAGS                  "-pipe -funsigned-char -fno-strict-aliasing" CACHE STRING "Mingw C flags ")
+		# Better warnings
+		SET(C_WARNINGS "-Wall -Wno-char-subscripts -Wpointer-arith -Wcast-align -Wdeclaration-after-statement -Wno-unknown-pragmas")
+		SET(CXX_WARNINGS "-Wall -Wno-invalid-offsetof -Wno-sign-compare")
 
-		SET(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g" CACHE STRING "Mingw debug C++ flags ")
-		SET(CMAKE_CXX_FLAGS_RELEASE        "   -O2" CACHE STRING "Mingw release C++ flags ")
-		SET(CMAKE_CXX_FLAGS_MINSIZEREL     "   -Os" CACHE STRING "Mingw minsize release C++ flags ")
-		SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "Mingw release, debug C++ flags ")
-
-		SET(CMAKE_C_FLAGS_DEBUG            "-O0 -g" CACHE STRING "Mingw debug C flags ")
-		SET(CMAKE_C_FLAGS_RELEASE          "-O2"    CACHE STRING "Mingw release C flags ")
-		SET(CMAKE_C_FLAGS_MINSIZEREL       "-Os"    CACHE STRING "Mingw minsize release C flags ")
-		SET(CMAKE_C_FLAGS_RELWITHDEBINFO   "-O2 -g" CACHE STRING "Mingw release, debug C++ flags ")
 		ADD_DEFINITIONS(-DFREE_WINDOWS)
-		
+
+		SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
+		SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_DEBUG")
+
 		IF(WITH_OPENMP)
 			SET(LLIBS "${LLIBS} -lgomp")
 			SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
@@ -597,9 +599,6 @@ IF(WIN32)
 			SET(OPENCOLLADA_INC ${OPENCOLLADA}/include)
 			SET(OPENCOLLADA_LIBPATH ${OPENCOLLADA}/lib ${OPENCOLLADA}/lib)
 			SET(OPENCOLLADA_LIB OpenCOLLADAStreamWriter OpenCOLLADASaxFrameworkLoader OpenCOLLADAFramework OpenCOLLADABaseUtils GeneratedSaxParser UTF MathMLSolver expat pcre buffer ftoa)
-			#pcre is bundled with openCollada
-			#SET(PCRE ${LIBDIR}/pcre)
-			#SET(PCRE_LIBPATH ${PCRE}/lib)
 			SET(PCRE_LIB pcre)
 		ENDIF(WITH_OPENCOLLADA)
 		
@@ -615,6 +614,9 @@ IF(WIN32)
 			SET(OPENEXR_INC ${OPENEXR}/include ${OPENEXR}/include/OpenEXR)
 			SET(OPENEXR_LIB Half IlmImf Imath IlmThread)
 			SET(OPENEXR_LIBPATH ${OPENEXR}/lib)
+
+			# TODO, gives linking errors, force off
+			SET(WITH_IMAGE_OPENEXR OFF)
 		ENDIF(WITH_IMAGE_OPENEXR)
 
 		IF(WITH_IMAGE_TIFF)
@@ -633,6 +635,15 @@ IF(WIN32)
 			# TODO, gives linking errors, force off
 			SET(WITH_JACK OFF)
 		ENDIF(WITH_JACK)
+
+		IF(WITH_PYTHON)
+			SET(PYTHON ${LIBDIR}/python)
+			SET(PYTHON_VERSION 3.1)
+			SET(PYTHON_INC "${PYTHON}/include/python${PYTHON_VERSION}")
+			# SET(PYTHON_BINARY python) # not used yet
+			SET(PYTHON_LIB python31mw)
+			SET(PYTHON_LIBPATH ${PYTHON}/lib)
+		ENDIF(WITH_PYTHON)
 
 	ENDIF(MSVC)
 
@@ -902,6 +913,26 @@ INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
 # Extra compile flags
+
+IF((NOT WIN32) AND (NOT MSVC))
+	# used for internal debug checks
+	SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+	SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
+	
+	# assert() checks for this.
+	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
+	SET(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} -DNDEBUG")
+	SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DNDEBUG")
+
+	SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DNDEBUG")
+	SET(CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL} -DNDEBUG")
+	SET(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DNDEBUG")
+ENDIF((NOT WIN32) AND (NOT MSVC))
+
+IF(CMAKE_COMPILER_IS_GNUCC)
+	SET(C_WARNINGS "${C_WARNINGS} -Wunused-parameter -Werror=declaration-after-statement -Werror=implicit-function-declaration -Werror=return-type")
+ENDIF(CMAKE_COMPILER_IS_GNUCC)
+
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PLATFORM_CFLAGS} ${C_WARNINGS}")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PLATFORM_CFLAGS} ${CXX_WARNINGS}")
 
@@ -913,9 +944,9 @@ ENDIF(WITH_CXX_GUARDEDALLOC)
 #-----------------------------------------------------------------------------
 # Libraries
 FILE(WRITE ${CMAKE_BINARY_DIR}/cmake_blender_libs.txt "")
+ADD_SUBDIRECTORY(source)
 ADD_SUBDIRECTORY(intern)
 ADD_SUBDIRECTORY(extern)
-ADD_SUBDIRECTORY(source)
 
 
 #-----------------------------------------------------------------------------

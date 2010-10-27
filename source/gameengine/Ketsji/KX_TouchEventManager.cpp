@@ -1,5 +1,5 @@
 /**
- * $Id: KX_TouchEventManager.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_TouchEventManager.cpp 32613 2010-10-20 12:33:00Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -109,6 +109,13 @@ bool	 KX_TouchEventManager::newBroadphaseResponse(void *client_data,
 			}
 		}
 		return false;
+
+	// quiet the compiler
+	case KX_ClientObjectInfo::STATIC:
+	case KX_ClientObjectInfo::ACTOR:
+	case KX_ClientObjectInfo::RESERVED1:
+		/* do nothing*/
+		break;
 	}
 	return true;
 }

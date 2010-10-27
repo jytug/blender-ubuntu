@@ -1,5 +1,5 @@
 /*
- * $Id: mathutils_matrix.c 31539 2010-08-23 22:10:13Z campbellbarton $
+ * $Id: mathutils_matrix.c 32713 2010-10-26 12:48:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -68,7 +68,7 @@ static int mathutils_matrix_vector_set(BaseMathObject *bmo, int subtype)
 	for(i=0; i < self->colSize; i++)
 		self->matrix[subtype][i]= bmo->data[i];
 
-	BaseMath_WriteCallback(self);
+	(void)BaseMath_WriteCallback(self);
 	return 1;
 }
 
@@ -92,7 +92,7 @@ static int mathutils_matrix_vector_set_index(BaseMathObject *bmo, int subtype, i
 
 	self->matrix[subtype][index]= bmo->data[index];
 
-	BaseMath_WriteCallback(self);
+	(void)BaseMath_WriteCallback(self);
 	return 1;
 }
 
@@ -108,7 +108,7 @@ Mathutils_Callback mathutils_matrix_vector_cb = {
 //----------------------------------mathutils.Matrix() -----------------
 //mat is a 1D array of floats - row[0][0],row[0][1], row[1][0], etc.
 //create a new matrix type
-static PyObject *Matrix_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *Matrix_new(PyTypeObject *UNUSED(type), PyObject *args, PyObject *kwds)
 {
 	PyObject *argObject, *m, *s;
 	MatrixObject *mat;
@@ -116,6 +116,11 @@ static PyObject *Matrix_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	float matrix[16] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 	float scalar;
+
+	if(kwds && PyDict_Size(kwds)) {
+		PyErr_SetString(PyExc_TypeError, "mathutils.Matrix(): takes no keyword args");
+		return NULL;
+	}
 
 	argSize = PyTuple_GET_SIZE(args);
 	if(argSize > MATRIX_MAX_DIM) {	//bad arg nums
@@ -937,6 +942,7 @@ PyObject *Matrix_scalePart(MatrixObject * self)
 	scale[2]= tmat[2][2];
 	return newVectorObject(scale, 3, Py_NEW, NULL);
 }
+
 /*---------------------------Matrix.invert() ---------------------*/
 static char Matrix_Invert_doc[] =
 ".. method:: invert()\n"
@@ -999,9 +1005,44 @@ PyObject *Matrix_Invert(MatrixObject * self)
 		return NULL;
 	}
 	
-	BaseMath_WriteCallback(self);
+	(void)BaseMath_WriteCallback(self);
 	Py_INCREF(self);
 	return (PyObject *)self;
+}
+
+/*---------------------------Matrix.decompose() ---------------------*/
+static char Matrix_decompose_doc[] =
+".. method:: decompose()\n"
+"\n"
+"   Return the location, rotaion and scale components of this matrix.\n"
+"\n"
+"   :return: loc, rot, scale triple.\n"
+"   :rtype: (:class:`Vector`, :class:`Quaternion`, :class:`Vector`)";
+static PyObject *Matrix_decompose(MatrixObject * self)
+{
+	PyObject *ret;
+	float loc[3];
+	float rot[3][3];
+	float quat[4];
+	float size[3];
+
+	if(self->colSize != 4 || self->rowSize != 4) {
+		PyErr_SetString(PyExc_AttributeError, "Matrix.decompose(): inappropriate matrix size - expects 4x4 matrix\n");
+		return NULL;
+	}
+
+	if(!BaseMath_ReadCallback(self))
+		return NULL;
+
+	mat4_to_loc_rot_size(loc, rot, size, (float (*)[4])self->contigPtr);
+	mat3_to_quat(quat, rot);
+
+	ret= PyTuple_New(3);
+	PyTuple_SET_ITEM(ret, 0, newVectorObject(loc, 3, Py_NEW, NULL));
+	PyTuple_SET_ITEM(ret, 1, newQuaternionObject(quat, Py_NEW, NULL));
+	PyTuple_SET_ITEM(ret, 2, newVectorObject(size, 3, Py_NEW, NULL));
+
+	return ret;
 }
 
 
@@ -1061,7 +1102,7 @@ PyObject *Matrix_Transpose(MatrixObject * self)
 		transpose_m4((float (*)[4])self->contigPtr);
 	}
 
-	BaseMath_WriteCallback(self);
+	(void)BaseMath_WriteCallback(self);
 	Py_INCREF(self);
 	return (PyObject *)self;
 }
@@ -1142,7 +1183,7 @@ static char Matrix_copy_doc[] =
 "   :return: an instance of itself\n"
 "   :rtype: :class:`Matrix`\n";
 
-PyObject *Matrix_copy(MatrixObject * self)
+PyObject *Matrix_copy(MatrixObject *self)
 {
 	if(!BaseMath_ReadCallback(self))
 		return NULL;
@@ -1297,7 +1338,7 @@ static int Matrix_ass_item(MatrixObject * self, int i, PyObject * ob)
 			self->matrix[i][y] = vec[y];
 		}
 		
-		BaseMath_WriteCallback(self);
+		(void)BaseMath_WriteCallback(self);
 		return 0;
 	}else{
 		PyErr_SetString(PyExc_TypeError, "matrix[attribute] = x: expects a sequence of column size\n");
@@ -1398,7 +1439,7 @@ static int Matrix_ass_slice(MatrixObject * self, int begin, int end, PyObject * 
 			self->matrix[begin + (int)floor(x / self->colSize)][x % self->colSize] = mat[x];
 		}
 		
-		BaseMath_WriteCallback(self);
+		(void)BaseMath_WriteCallback(self);
 		return 0;
 	}else{
 		PyErr_SetString(PyExc_TypeError, "matrix[begin:end] = []: illegal argument type for built-in operation\n");
@@ -1680,17 +1721,17 @@ static PyNumberMethods Matrix_NumMethods = {
 		0,				/* nb_index */
 };
 
-static PyObject *Matrix_getRowSize( MatrixObject * self, void *type )
+static PyObject *Matrix_getRowSize(MatrixObject *self, void *UNUSED(closure))
 {
 	return PyLong_FromLong((long) self->rowSize);
 }
 
-static PyObject *Matrix_getColSize( MatrixObject * self, void *type )
+static PyObject *Matrix_getColSize(MatrixObject *self, void *UNUSED(closure))
 {
 	return PyLong_FromLong((long) self->colSize);
 }
 
-static PyObject *Matrix_getMedianScale( MatrixObject * self, void *type )
+static PyObject *Matrix_getMedianScale(MatrixObject *self, void *UNUSED(closure))
 {
 	float mat[3][3];
 
@@ -1710,7 +1751,7 @@ static PyObject *Matrix_getMedianScale( MatrixObject * self, void *type )
 	return PyFloat_FromDouble(mat3_to_scale(mat));
 }
 
-static PyObject *Matrix_getIsNegative( MatrixObject * self, void *type )
+static PyObject *Matrix_getIsNegative(MatrixObject *self, void *UNUSED(closure))
 {
 	if(!BaseMath_ReadCallback(self))
 		return NULL;
@@ -1750,6 +1791,7 @@ static struct PyMethodDef Matrix_methods[] = {
 	{"translation_part", (PyCFunction) Matrix_TranslationPart, METH_NOARGS, Matrix_TranslationPart_doc},
 	{"rotation_part", (PyCFunction) Matrix_RotationPart, METH_NOARGS, Matrix_RotationPart_doc},
 	{"scale_part", (PyCFunction) Matrix_scalePart, METH_NOARGS, Matrix_scalePart_doc},
+	{"decompose", (PyCFunction) Matrix_decompose, METH_NOARGS, Matrix_decompose_doc},
 	{"resize4x4", (PyCFunction) Matrix_Resize4x4, METH_NOARGS, Matrix_Resize4x4_doc},
 	{"to_4x4", (PyCFunction) Matrix_to_4x4, METH_NOARGS, Matrix_to_4x4_doc},
 	{"to_3x3", (PyCFunction) Matrix_to_3x3, METH_NOARGS, Matrix_to_3x3_doc},

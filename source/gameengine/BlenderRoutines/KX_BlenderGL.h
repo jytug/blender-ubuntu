@@ -1,5 +1,5 @@
 /**
- * $Id: KX_BlenderGL.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_BlenderGL.h 32387 2010-10-09 13:46:34Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +41,7 @@ void	BL_SwapBuffers(struct wmWindow *win);
 
 void	BL_warp_pointer(struct wmWindow *win,int x,int y);
 
-void	BL_MakeScreenShot(struct ARegion *ar, const char* filename);
+void	BL_MakeScreenShot(struct ScrArea *curarea, const char* filename);
 
 void	BL_HideMouse(struct wmWindow *win);
 void	BL_NormalMouse(struct wmWindow *win);

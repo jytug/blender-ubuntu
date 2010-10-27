@@ -1,5 +1,5 @@
 /**
- * $Id: makesdna.c 31776 2010-09-06 05:35:09Z campbellbarton $
+ * $Id: makesdna.c 31990 2010-09-18 03:46:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -46,7 +46,7 @@
  * numbers give more output.
  * */
 
-#define DNA_VERSION_DATE "$Id: makesdna.c 31776 2010-09-06 05:35:09Z campbellbarton $"
+#define DNA_VERSION_DATE "$Id: makesdna.c 31990 2010-09-18 03:46:13Z campbellbarton $"
 
 #include <string.h>
 #include <stdlib.h>
@@ -421,7 +421,11 @@ int preprocess_include(char *maindata, int len)
 	int a, newlen, comment = 0;
 	char *cp, *temp, *md;
 	
-	temp= MEM_mallocN(len, "preprocess_include");
+	/* note: len + 1, last character is a dummy to prevent
+	 * comparisons using uninitialized memory */
+	temp= MEM_mallocN(len + 1, "preprocess_include");
+	temp[len]= ' ';
+
 	memcpy(temp, maindata, len);
 	
 	// remove all c++ comments
@@ -1054,6 +1058,7 @@ int make_structDNA(char *baseDirectory, FILE *file)
 	MEM_freeN(names);
 	MEM_freeN(types);
 	MEM_freeN(typelens);
+    MEM_freeN(alphalens);
 	MEM_freeN(structs);
 
 	if (debugSDNA > -1) printf("done.\n");

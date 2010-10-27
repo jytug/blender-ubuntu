@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_view3d_types.h (mar-2001 nzc)
  *
- * $Id: DNA_view3d_types.h 31870 2010-09-11 04:39:00Z campbellbarton $ 
+ * $Id: DNA_view3d_types.h 32573 2010-10-19 01:21:22Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -139,7 +139,7 @@ typedef struct View3D {
 	
 	float viewquat[4], dist, pad1;	/* XXX depricated */
 	
-	int lay_used; /* used while drawing */
+	unsigned int lay_used; /* used while drawing */
 	
 	short persp;	/* XXX depricated */
 	short view;	/* XXX depricated */
@@ -153,7 +153,8 @@ typedef struct View3D {
 	
 	char ob_centre_bone[32];		/* optional string for armature bone to define center */
 	
-	int lay, layact;
+	unsigned int lay;
+	int layact;
 	
 	/**
 	 * The drawing mode for the 3d display. Set to OB_WIRE, OB_SOLID,
@@ -228,7 +229,6 @@ typedef struct View3D {
 #define RV3D_CAMOB				2
 
 /* RegionView3d->rflag */
-#define RV3D_FLYMODE				2
 #define RV3D_CLIPPING				4
 #define RV3D_NAVIGATING				8
 #define RV3D_GPULIGHT_UPDATE		16

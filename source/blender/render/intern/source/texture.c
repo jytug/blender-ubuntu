@@ -1,5 +1,5 @@
 /*
- * $Id: texture.c 31112 2010-08-06 16:59:19Z blendix $
+ * $Id: texture.c 32534 2010-10-17 08:59:23Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -771,7 +771,7 @@ static int plugintex(Tex *tex, float *texvec, float *dxt, float *dyt, int osatex
 		if (pit->version < 6) {
 			texres->tin = pit->result[0];
 		} else {
-			texres->tin = result[0];
+			texres->tin = result[0]; /* XXX, assigning garbage value, fixme! */
 		}
 
 		if(rgbnor & TEX_NOR) {
@@ -3016,7 +3016,7 @@ void do_lamp_tex(LampRen *la, float *lavec, ShadeInput *shi, float *colf, int ef
 
 /* ------------------------------------------------------------------------- */
 
-int externtex(MTex *mtex, float *vec, float *tin, float *tr, float *tg, float *tb, float *ta)
+int externtex(MTex *mtex, float *vec, float *tin, float *tr, float *tg, float *tb, float *ta, const int thread)
 {
 	Tex *tex;
 	TexResult texr;
@@ -3042,7 +3042,7 @@ int externtex(MTex *mtex, float *vec, float *tin, float *tr, float *tg, float *t
 		do_2d_mapping(mtex, texvec, NULL, NULL, dxt, dyt);
 	}
 	
-	rgb= multitex(tex, texvec, dxt, dyt, 0, &texr, 0, mtex->which_output);
+	rgb= multitex(tex, texvec, dxt, dyt, 0, &texr, thread, mtex->which_output);
 	
 	if(rgb) {
 		texr.tin= (0.35*texr.tr+0.45*texr.tg+0.2*texr.tb);

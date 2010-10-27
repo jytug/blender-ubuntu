@@ -1,4 +1,4 @@
-/* $Id: VideoBase.cpp 21229 2009-06-29 02:25:54Z campbellbarton $
+/* $Id: VideoBase.cpp 32613 2010-10-20 12:33:00Z campbellbarton $
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -82,6 +82,8 @@ void VideoBase::process (BYTE * sample)
 				// finish
 				break;
 			}
+		case None:
+			break; /* assert? */
 		}
 	}
 }

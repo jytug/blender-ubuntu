@@ -1,5 +1,5 @@
 /**
- * $Id: wm.c 31673 2010-08-31 11:31:21Z campbellbarton $
+ * $Id: wm.c 32506 2010-10-16 02:40:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -57,8 +57,10 @@
 #include "MEM_guardedalloc.h"
 
 #include "ED_screen.h"
-#include "BPY_extern.h"
 
+#ifndef DISABLE_PYTHON
+#include "BPY_extern.h"
+#endif
 
 /* ****************************************************** */
 
@@ -203,7 +205,7 @@ void WM_keymap_init(bContext *C)
 		/* create default key config */
 		wm_window_keymap(wm->defaultconf);
 		ED_spacetypes_keymap(wm->defaultconf);
-		WM_keyconfig_userdef(wm);
+		WM_keyconfig_userdef();
 
 		wm->initialized |= WM_INIT_KEYMAP;
 	}
@@ -229,7 +231,7 @@ void WM_check(bContext *C)
 		}
 
 		/* case: no open windows at all, for old file reads */
-		wm_window_add_ghostwindows(wm);
+		wm_window_add_ghostwindows(C, wm);
 
 		/* case: fileread */
 		if((wm->initialized & WM_INIT_WINDOW) == 0) {

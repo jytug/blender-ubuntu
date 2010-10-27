@@ -1,7 +1,7 @@
 /** anim.c
  *
  *
- * $Id: anim.c 31736 2010-09-03 06:18:23Z jhk $
+ * $Id: anim.c 32573 2010-10-19 01:21:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -640,29 +640,19 @@ int where_on_path(Object *ob, float ctime, float *vec, float *dir, float *quat, 
 	/* Need to verify the quat interpolation is correct - XXX */
 
 	if (quat) {
-		//float totfac, q1[4], q2[4];
+		float totfac, q1[4], q2[4];
 
-		/* checks for totfac are needed when 'fac' is 1.0 key_curve_position_weights can assign zero
-		 * to more then one index in data which can give divide by zero error */
-/*
-		totfac= data[0]+data[1];
-		if(totfac>0.000001)	interp_qt_qtqt(q1, p0->quat, p1->quat, data[0] / totfac);
-		else				QUATCOPY(q1, p1->quat);
+		totfac= data[0]+data[3];
+		if(totfac>FLT_EPSILON)	interp_qt_qtqt(q1, p0->quat, p3->quat, data[3] / totfac);
+		else					QUATCOPY(q1, p1->quat);
 
-		normalize_qt(q1);
-
-		totfac= data[2]+data[3];
-		if(totfac>0.000001)	interp_qt_qtqt(q2, p2->quat, p3->quat, data[2] / totfac);
-		else				QUATCOPY(q1, p3->quat);
-		normalize_qt(q2);
+		totfac= data[1]+data[2];
+		if(totfac>FLT_EPSILON)	interp_qt_qtqt(q2, p1->quat, p2->quat, data[2] / totfac);
+		else					QUATCOPY(q2, p3->quat);
 
 		totfac = data[0]+data[1]+data[2]+data[3];
-		if(totfac>0.000001)	interp_qt_qtqt(quat, q1, q2, (data[0]+data[1]) / totfac);
-		else				QUATCOPY(quat, q2);
-		normalize_qt(quat);
-		*/
-		// XXX - find some way to make quat interpolation work correctly, above code fails in rare but nasty cases.
-		QUATCOPY(quat, p1->quat);
+		if(totfac>FLT_EPSILON)	interp_qt_qtqt(quat, q1, q2, (data[1]+data[2]) / totfac);
+		else					QUATCOPY(quat, q2);
 	}
 
 	if(radius)
@@ -853,7 +843,8 @@ static void vertex_duplilist(ListBase *lb, ID *id, Scene *scene, Object *par, fl
 	GroupObject * go = NULL;
 	EditMesh *em;
 	float vec[3], no[3], pmat[4][4];
-	int lay, totvert, a, oblay;
+	int totvert, a, oblay;
+	unsigned int lay;
 	
 	copy_m4_m4(pmat, par->obmat);
 	
@@ -1148,7 +1139,7 @@ static void face_duplilist(ListBase *lb, ID *id, Scene *scene, Object *par, floa
 	dm->release(dm);
 }
 
-static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *par, float par_space_mat[][4], ParticleSystem *psys, int level, int animated)
+static void new_particle_duplilist(ListBase *lb, ID *UNUSED(id), Scene *scene, Object *par, float par_space_mat[][4], ParticleSystem *psys, int level, int animated)
 {
 	GroupObject *go;
 	Object *ob=0, **oblist=0, obcopy, *obcopylist=0;
@@ -1163,8 +1154,9 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 	float ctime, pa_time, scale = 1.0f;
 	float tmat[4][4], mat[4][4], pamat[4][4], vec[3], size=0.0;
 	float (*obmat)[4], (*oldobmat)[4];
-	int lay, a, b, counter, hair = 0;
+	int a, b, counter, hair = 0;
 	int totpart, totchild, totgroup=0, pa_num;
+	unsigned int lay;
 
 	if(psys==0) return;
 	
@@ -1357,18 +1349,24 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 				VECCOPY(vec, obmat[3]);
 				obmat[3][0] = obmat[3][1] = obmat[3][2] = 0.0f;
 				
-				copy_m4_m4(mat, pamat);
+				/* Normal particles and cached hair live in global space so we need to
+				 * remove the real emitter's transformation before 2nd order duplication.
+				 */
+				if(par_space_mat)
+					mul_m4_m4m4(mat, pamat, psys->imat);
+				else
+					copy_m4_m4(mat, pamat);
 
 				mul_m4_m4m4(tmat, obmat, mat);
 				mul_mat3_m4_fl(tmat, size*scale);
-
-				if(part->draw & PART_DRAW_GLOBAL_OB)
-					VECADD(tmat[3], tmat[3], vec);
 
 				if(par_space_mat)
 					mul_m4_m4m4(mat, tmat, par_space_mat);
 				else
 					copy_m4_m4(mat, tmat);
+
+				if(part->draw & PART_DRAW_GLOBAL_OB)
+					VECADD(mat[3], mat[3], vec);
 
 				dob= new_dupli_object(lb, ob, mat, ob->lay, counter, OB_DUPLIPARTS, animated);
 				copy_m4_m4(dob->omat, oldobmat);

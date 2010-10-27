@@ -1,7 +1,7 @@
 /**
  * Compatibility-like things for windows.
  *
- * $Id: BLI_winstuff.h 30351 2010-07-14 22:16:56Z jesterking $ 
+ * $Id: BLI_winstuff.h 32724 2010-10-26 23:32:59Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,6 +41,7 @@
 #define WIN32_LEAN_AND_MEAN
 
 #ifndef WIN32_SKIP_HKEY_PROTECTION
+#undef HKEY
 #define HKEY WIN32_HKEY				// prevent competing definitions
 #include <windows.h>
 #undef HKEY

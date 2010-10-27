@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_solidify.c 30299 2010-07-14 08:24:24Z campbellbarton $
+* $Id: MOD_solidify.c 32620 2010-10-21 04:21:09Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -179,35 +179,34 @@ static void copyData(ModifierData *md, ModifierData *target)
 	strcpy(tsmd->defgrp_name, smd->defgrp_name);
 }
 
-static CustomDataMask requiredDataMask(Object *ob, ModifierData *md)
+static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 {
 	SolidifyModifierData *smd = (SolidifyModifierData*) md;
 	CustomDataMask dataMask = 0;
 
 	/* ask for vertexgroups if we need them */
-	if(smd->defgrp_name[0]) dataMask |= (1 << CD_MDEFORMVERT);
+	if(smd->defgrp_name[0]) dataMask |= CD_MASK_MDEFORMVERT;
 
 	return dataMask;
 }
 
 
-static DerivedMesh *applyModifier(ModifierData *md,
-						   Object *ob, 
-						   DerivedMesh *dm,
-						   int useRenderParams,
-						   int isFinalCalc)
+static DerivedMesh *applyModifier(ModifierData *md, Object *ob, 
+						DerivedMesh *dm,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	int i;
 	DerivedMesh *result;
-	SolidifyModifierData *smd = (SolidifyModifierData*) md;
+	const SolidifyModifierData *smd = (SolidifyModifierData*) md;
 
 	MFace *mf, *mface, *orig_mface;
 	MEdge *ed, *medge, *orig_medge;
 	MVert *mv, *mvert, *orig_mvert;
 
-	int numVerts = dm->getNumVerts(dm);
-	int numEdges = dm->getNumEdges(dm);
-	int numFaces = dm->getNumFaces(dm);
+	const int numVerts = dm->getNumVerts(dm);
+	const int numEdges = dm->getNumEdges(dm);
+	const int numFaces = dm->getNumFaces(dm);
 
 	/* use for edges */
 	int *new_vert_arr= NULL;
@@ -221,13 +220,13 @@ static DerivedMesh *applyModifier(ModifierData *md,
 
 	float (*vert_nors)[3]= NULL;
 
-	float ofs_orig=				- (((-smd->offset_fac + 1.0f) * 0.5f) * smd->offset);
-	float ofs_new= smd->offset	- (((-smd->offset_fac + 1.0f) * 0.5f) * smd->offset);
+	float const ofs_orig=				- (((-smd->offset_fac + 1.0f) * 0.5f) * smd->offset);
+	float const ofs_new= smd->offset	- (((-smd->offset_fac + 1.0f) * 0.5f) * smd->offset);
 
 	/* weights */
 	MDeformVert *dvert= NULL, *dv= NULL;
-	int defgrp_invert = ((smd->flag & MOD_SOLIDIFY_VGROUP_INV) != 0);
-	int defgrp_index= defgroup_name_index(ob, smd->defgrp_name);
+	const int defgrp_invert = ((smd->flag & MOD_SOLIDIFY_VGROUP_INV) != 0);
+	const int defgrp_index= defgroup_name_index(ob, smd->defgrp_name);
 
 	if (defgrp_index >= 0)
 		dvert = dm->getVertDataArray(dm, CD_MDEFORMVERT);
@@ -322,7 +321,7 @@ static DerivedMesh *applyModifier(ModifierData *md,
 		dm_calc_normal(dm, vert_nors);
 	}
 
-	result = CDDM_from_template(dm, numVerts * 2, (numEdges * 2) + newEdges, (numFaces * 2) + newFaces);
+	result = CDDM_from_template(dm, numVerts * 2, (numEdges * 2) + newEdges, (numFaces * 2) + newFaces);	
 
 	mface = result->getFaceArray(result);
 	medge = result->getEdgeArray(result);
@@ -442,11 +441,11 @@ static DerivedMesh *applyModifier(ModifierData *md,
 				j= 2;
 			}
 
-			for(; j>=0; j--) {
+			do {
 				vidx = *(&mf->v1 + j);
 				vert_accum[vidx] += face_angles[j];
 				vert_angles[vidx]+= shell_angle_to_dist(angle_normalized_v3v3(vert_nors[vidx], face_nors[i])) * face_angles[j];
-			}
+			} while(j--);
 		}
 
 		/* vertex group support */
@@ -630,7 +629,7 @@ static DerivedMesh *applyModifier(ModifierData *md,
 
 static DerivedMesh *applyModifierEM(ModifierData *md,
 							 Object *ob,
-							 struct EditMesh *editData,
+							 struct EditMesh *UNUSED(editData),
 							 DerivedMesh *derivedData)
 {
 	return applyModifier(md, ob, derivedData, 0, 1);
@@ -661,6 +660,7 @@ ModifierTypeInfo modifierType_Solidify = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    0,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

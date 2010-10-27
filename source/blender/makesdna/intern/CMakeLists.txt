@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 31991 2010-09-18 03:55:56Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -28,7 +28,15 @@ INCLUDE_DIRECTORIES(../../../../intern/guardedalloc ..)
 FILE(GLOB INC_FILES ../*.h)
 
 # Build makesdna executable
-SET(SRC makesdna.c ../../../../intern/guardedalloc/intern/mallocn.c ../../../../intern/guardedalloc/intern/mmap_win.c)
+SET(SRC
+	makesdna.c
+	../../../../intern/guardedalloc/intern/mallocn.c
+)
+
+IF(WIN32)
+	LIST(APPEND SRC ../../../../intern/guardedalloc/intern/mmap_win.c)
+ENDIF(WIN32)
+
 ADD_EXECUTABLE(makesdna ${SRC} ${INC_FILES})
 
 # Output dna.c

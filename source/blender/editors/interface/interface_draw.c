@@ -1,5 +1,5 @@
 /**
- * $Id: interface_draw.c 31228 2010-08-11 02:31:54Z broken $
+ * $Id: interface_draw.c 32707 2010-10-25 18:12:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,6 +33,7 @@
 #include "DNA_screen_types.h"
 
 #include "BLI_math.h"
+#include "BLI_rect.h"
 
 #include "BKE_colortools.h"
 #include "BKE_texture.h"
@@ -48,6 +49,7 @@
 
 #include "UI_interface.h"
 
+/* own include */
 #include "interface_intern.h"
 
 #define UI_RB_ALPHA 16
@@ -76,7 +78,7 @@ int uiGetRoundBox(void)
 	return roundboxtype;
 }
 
-void gl_round_box(int mode, float minx, float miny, float maxx, float maxy, float rad)
+void uiDrawBox(int mode, float minx, float miny, float maxx, float maxy, float rad)
 {
 	float vec[7][2]= {{0.195, 0.02}, {0.383, 0.067}, {0.55, 0.169}, {0.707, 0.293},
 					  {0.831, 0.45}, {0.924, 0.617}, {0.98, 0.805}};
@@ -146,7 +148,7 @@ static void round_box_shade_col(float *col1, float *col2, float fac)
 
 /* linear horizontal shade within button or in outline */
 /* view2d scrollers use it */
-void gl_round_box_shade(int mode, float minx, float miny, float maxx, float maxy, float rad, float shadetop, float shadedown)
+void uiDrawBoxShade(int mode, float minx, float miny, float maxx, float maxy, float rad, float shadetop, float shadedown)
 {
 	float vec[7][2]= {{0.195, 0.02}, {0.383, 0.067}, {0.55, 0.169}, {0.707, 0.293},
 					  {0.831, 0.45}, {0.924, 0.617}, {0.98, 0.805}};
@@ -253,7 +255,7 @@ void gl_round_box_shade(int mode, float minx, float miny, float maxx, float maxy
 
 /* linear vertical shade within button or in outline */
 /* view2d scrollers use it */
-void gl_round_box_vertical_shade(int mode, float minx, float miny, float maxx, float maxy, float rad, float shadeLeft, float shadeRight)
+void uiDrawBoxVerticalShade(int mode, float minx, float miny, float maxx, float maxy, float rad, float shadeLeft, float shadeRight)
 {
 	float vec[7][2]= {{0.195, 0.02}, {0.383, 0.067}, {0.55, 0.169}, {0.707, 0.293},
 					  {0.831, 0.45}, {0.924, 0.617}, {0.98, 0.805}};
@@ -371,7 +373,7 @@ void uiRoundRect(float minx, float miny, float maxx, float maxy, float rad)
 	glEnable( GL_LINE_SMOOTH );
 	glEnable( GL_BLEND );
 
-	gl_round_box(GL_LINE_LOOP, minx, miny, maxx, maxy, rad);
+	uiDrawBox(GL_LINE_LOOP, minx, miny, maxx, maxy, rad);
    
 	glDisable( GL_BLEND );
 	glDisable( GL_LINE_SMOOTH );
@@ -397,7 +399,7 @@ void uiRoundRectFakeAA(float minx, float miny, float maxx, float maxy, float rad
 	
 	/* draw lots of lines on top of each other */
 	for (i=passes; i>=(-passes); i--) {
-		gl_round_box(GL_LINE_LOOP, minx, miny, maxx, maxy, rad+(i*raddiff));
+		uiDrawBox(GL_LINE_LOOP, minx, miny, maxx, maxy, rad+(i*raddiff));
 	}
 	
 	glDisable( GL_BLEND );
@@ -419,13 +421,13 @@ void uiRoundBox(float minx, float miny, float maxx, float maxy, float rad)
 	}
 	
 	/* solid part */
-	gl_round_box(GL_POLYGON, minx, miny, maxx, maxy, rad);
+	uiDrawBox(GL_POLYGON, minx, miny, maxx, maxy, rad);
 	
 	/* set antialias line */
 	glEnable( GL_LINE_SMOOTH );
 	glEnable( GL_BLEND );
 	
-	gl_round_box(GL_LINE_LOOP, minx, miny, maxx, maxy, rad);
+	uiDrawBox(GL_LINE_LOOP, minx, miny, maxx, maxy, rad);
 	
 	glDisable( GL_BLEND );
 	glDisable( GL_LINE_SMOOTH );
@@ -459,7 +461,7 @@ void uiEmboss(float x1, float y1, float x2, float y2, int sel)
 
 /* ************** SPECIAL BUTTON DRAWING FUNCTIONS ************* */
 
-void ui_draw_but_IMAGE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *rect)
+void ui_draw_but_IMAGE(ARegion *UNUSED(ar), uiBut *UNUSED(but), uiWidgetColors *UNUSED(wcol), rcti *rect)
 {
 	extern char datatoc_splash_png[];
 	extern int datatoc_splash_png_size;
@@ -516,7 +518,7 @@ static void ui_draw_but_CHARTAB(uiBut *but)
 	int charmax = G.charmax;
 	
 	/* <builtin> font in use. There are TTF <builtin> and non-TTF <builtin> fonts */
-	if(!strcmp(G.selfont->name, "<builtin>"))
+	if(!strcmp(G.selfont->name, FO_BUILTIN_NAME))
 	{
 		if(G.ui_international == TRUE)
 		{
@@ -547,8 +549,8 @@ static void ui_draw_but_CHARTAB(uiBut *but)
 
 	cs = G.charstart;
 
-	/* Set the font, in case it is not <builtin> font */
-	if(G.selfont && strcmp(G.selfont->name, "<builtin>"))
+	/* Set the font, in case it is not FO_BUILTIN_NAME font */
+	if(G.selfont && strcmp(G.selfont->name, FO_BUILTIN_NAME))
 	{
 		char tmpStr[256];
 
@@ -563,7 +565,7 @@ static void ui_draw_but_CHARTAB(uiBut *but)
 			int err;
 
 			strcpy(tmpStr, G.selfont->name);
-			BLI_path_abs(tmpStr, G.sce);
+			BLI_path_abs(tmpStr, G.main->name);
 			err = FTF_SetFont((unsigned char *)tmpStr, 0, 14.0);
 		}
 	}
@@ -604,9 +606,9 @@ static void ui_draw_but_CHARTAB(uiBut *but)
 			memset(wstr, 0, sizeof(wchar_t)*2);
 			memset(ustr, 0, 16);
 
-			// Set the font to be either unicode or <builtin>				
+			// Set the font to be either unicode or FO_BUILTIN_NAME	
 			wstr[0] = cs;
-			if(strcmp(G.selfont->name, "<builtin>"))
+			if(strcmp(G.selfont->name, FO_BUILTIN_NAME))
 			{
 				wcs2utf8s((char *)ustr, (wchar_t *)wstr);
 			}
@@ -623,7 +625,7 @@ static void ui_draw_but_CHARTAB(uiBut *but)
 				}
 			}
 
-			if((G.selfont && strcmp(G.selfont->name, "<builtin>")) || (G.selfont && !strcmp(G.selfont->name, "<builtin>") && G.ui_international == TRUE))
+			if((G.selfont && strcmp(G.selfont->name, FO_BUILTIN_NAME)) || (G.selfont && !strcmp(G.selfont->name, FO_BUILTIN_NAME) && G.ui_international == TRUE))
 			{
 				float wid;
 				float llx, lly, llz, urx, ury, urz;
@@ -710,7 +712,7 @@ static void draw_scope_end(rctf *rect, GLint *scissor)
 	/* outline */
 	glColor4f(0.f, 0.f, 0.f, 0.5f);
 	uiSetRoundBox(15);
-	gl_round_box(GL_LINE_LOOP, rect->xmin-1, rect->ymin, rect->xmax+1, rect->ymax+1, 3.0f);
+	uiDrawBox(GL_LINE_LOOP, rect->xmin-1, rect->ymin, rect->xmax+1, rect->ymax+1, 3.0f);
 }
 
 void histogram_draw_one(float r, float g, float b, float alpha, float x, float y, float w, float h, float *data, int res)
@@ -746,7 +748,7 @@ void histogram_draw_one(float r, float g, float b, float alpha, float x, float y
 	glDisable(GL_LINE_SMOOTH);
 }
 
-void ui_draw_but_HISTOGRAM(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *recti)
+void ui_draw_but_HISTOGRAM(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wcol), rcti *recti)
 {
 	Histogram *hist = (Histogram *)but->poin;
 	int res = hist->x_resolution;
@@ -771,7 +773,7 @@ void ui_draw_but_HISTOGRAM(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *
 	
 	glColor4f(0.f, 0.f, 0.f, 0.3f);
 	uiSetRoundBox(15);
-	gl_round_box(GL_POLYGON, rect.xmin-1, rect.ymin-1, rect.xmax+1, rect.ymax+1, 3.0f);
+	uiDrawBox(GL_POLYGON, rect.xmin-1, rect.ymin-1, rect.xmax+1, rect.ymax+1, 3.0f);
 	
 	glColor4f(1.f, 1.f, 1.f, 0.08f);
 	/* draw grid lines here */
@@ -799,7 +801,7 @@ void ui_draw_but_HISTOGRAM(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *
 	draw_scope_end(&rect, scissor);
 }
 
-void ui_draw_but_WAVEFORM(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *recti)
+void ui_draw_but_WAVEFORM(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wcol), rcti *recti)
 {
 	Scopes *scopes = (Scopes *)but->poin;
 	rctf rect;
@@ -840,7 +842,7 @@ void ui_draw_but_WAVEFORM(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *r
 	
 	glColor4f(0.f, 0.f, 0.f, 0.3f);
 	uiSetRoundBox(15);
-	gl_round_box(GL_POLYGON, rect.xmin-1, rect.ymin-1, rect.xmax+1, rect.ymax+1, 3.0f);
+	uiDrawBox(GL_POLYGON, rect.xmin-1, rect.ymin-1, rect.xmax+1, rect.ymax+1, 3.0f);
 	
 
 	/* need scissor test, waveform can draw outside of boundary */
@@ -1022,7 +1024,7 @@ void vectorscope_draw_target(float centerx, float centery, float diam, float r, 
 	glEnd();
 }
 
-void ui_draw_but_VECTORSCOPE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *recti)
+void ui_draw_but_VECTORSCOPE(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wcol), rcti *recti)
 {
 	Scopes *scopes = (Scopes *)but->poin;
 	rctf rect;
@@ -1051,7 +1053,7 @@ void ui_draw_but_VECTORSCOPE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti
 	
 	glColor4f(0.f, 0.f, 0.f, 0.3f);
 	uiSetRoundBox(15);
-	gl_round_box(GL_POLYGON, rect.xmin-1, rect.ymin-1, rect.xmax+1, rect.ymax+1, 3.0f);
+	uiDrawBox(GL_POLYGON, rect.xmin-1, rect.ymin-1, rect.xmax+1, rect.ymax+1, 3.0f);
 
 	/* need scissor test, hvectorscope can draw outside of boundary */
 	glGetIntegerv(GL_VIEWPORT, scissor);
@@ -1104,7 +1106,7 @@ void ui_draw_but_VECTORSCOPE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti
 	glDisable(GL_BLEND);
 }
 
-void ui_draw_but_COLORBAND(uiBut *but, uiWidgetColors *wcol, rcti *rect)
+void ui_draw_but_COLORBAND(uiBut *but, uiWidgetColors *UNUSED(wcol), rcti *rect)
 {
 	ColorBand *coba;
 	CBData *cbd;
@@ -1237,7 +1239,7 @@ void ui_draw_but_NORMAL(uiBut *but, uiWidgetColors *wcol, rcti *rect)
 	/* backdrop */
 	glColor3ubv((unsigned char*)wcol->inner);
 	uiSetRoundBox(15);
-	gl_round_box(GL_POLYGON, rect->xmin, rect->ymin, rect->xmax, rect->ymax, 5.0f);
+	uiDrawBox(GL_POLYGON, rect->xmin, rect->ymin, rect->xmax, rect->ymax, 5.0f);
 	
 	/* sphere color */
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffn);
@@ -1354,6 +1356,7 @@ void ui_draw_but_CURVE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *rect
 	CurveMapPoint *cmp;
 	float fx, fy, fac[2], zoomx, zoomy, offsx, offsy;
 	GLint scissor[4];
+	rcti scissor_new;
 	int a;
 
 	cumap= (CurveMapping *)(but->editcumap? but->editcumap: but->poin);
@@ -1361,7 +1364,12 @@ void ui_draw_but_CURVE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *rect
 	
 	/* need scissor test, curve can draw outside of boundary */
 	glGetIntegerv(GL_VIEWPORT, scissor);
-	glScissor(ar->winrct.xmin + rect->xmin, ar->winrct.ymin+rect->ymin, rect->xmax-rect->xmin, rect->ymax-rect->ymin);
+	scissor_new.xmin= ar->winrct.xmin + rect->xmin;
+	scissor_new.ymin= ar->winrct.ymin + rect->ymin;
+	scissor_new.xmax= ar->winrct.xmin + rect->xmax;
+	scissor_new.ymax= ar->winrct.ymin + rect->ymax;
+	BLI_isect_rcti(&scissor_new, &ar->winrct, &scissor_new);
+	glScissor(scissor_new.xmin, scissor_new.ymin, scissor_new.xmax-scissor_new.xmin, scissor_new.ymax-scissor_new.ymin);
 	
 	/* calculate offset and zoom */
 	zoomx= (rect->xmax-rect->xmin-2.0*but->aspect)/(cumap->curr.xmax - cumap->curr.xmin);
@@ -1403,7 +1411,7 @@ void ui_draw_but_CURVE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *rect
 	if (but->a1 != -1) {
 		if (but->a1 == UI_GRAD_H) {
 			rcti grid;
-			float col[3];
+			float col[3]= {0.0f, 0.0f, 0.0f}; /* dummy arg */
 			
 			grid.xmin = rect->xmin + zoomx*(-offsx);
 			grid.xmax = rect->xmax + zoomx*(-offsx);
@@ -1584,13 +1592,13 @@ void ui_dropshadow(rctf *rct, float radius, float aspect, int select)
 		glColor4ub(0, 0, 0, alpha);
 		alpha+= 2;
 		
-		gl_round_box(GL_POLYGON, rct->xmin - a, rct->ymin - a, rct->xmax + a, rct->ymax-10.0f + a, rad+a);
+		uiDrawBox(GL_POLYGON, rct->xmin - a, rct->ymin - a, rct->xmax + a, rct->ymax-10.0f + a, rad+a);
 	}
 	
 	/* outline emphasis */
 	glEnable( GL_LINE_SMOOTH );
 	glColor4ub(0, 0, 0, 100);
-	gl_round_box(GL_LINE_LOOP, rct->xmin-0.5f, rct->ymin-0.5f, rct->xmax+0.5f, rct->ymax+0.5f, radius);
+	uiDrawBox(GL_LINE_LOOP, rct->xmin-0.5f, rct->ymin-0.5f, rct->xmax+0.5f, rct->ymax+0.5f, radius);
 	glDisable( GL_LINE_SMOOTH );
 	
 	glDisable(GL_BLEND);

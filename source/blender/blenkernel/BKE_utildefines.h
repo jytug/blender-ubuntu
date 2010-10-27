@@ -1,5 +1,5 @@
 /* 
- * $Id: BKE_utildefines.h 28968 2010-05-24 21:52:18Z campbellbarton $
+ * $Id: BKE_utildefines.h 32613 2010-10-20 12:33:00Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,8 +38,21 @@
 #define TRUE 1
 #endif
 
-/* Macro to convert a value to string in the preprocessor */
-#define QUOTE(x) #x
+/* Macro to convert a value to string in the preprocessor
+ * STRINGIFY_ARG: gives the defined name in the string
+ * STRINGIFY: gives the defined value. */
+#define STRINGIFY_ARG(x) #x
+#define STRINGIFY(x) STRINGIFY_ARG(x)
+
+/* useful for debugging */
+#define AT __FILE__ ":" STRINGIFY(__LINE__)
+
+
+#ifdef __GNUC__
+#  define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
+#else
+#  define UNUSED(x) UNUSED_ ## x
+#endif
 
 /* these values need to be hardcoded in structs, dna does not recognize defines */
 /* also defined in DNA_space_types.h */
@@ -249,8 +262,8 @@ behaviour, though it may not be the best in practice.
 #define V_GROW(vec) \
 	V_SIZE(vec) > _##vec##_count ? _##vec##_count++ : \
 	((_##vec##_tmp = MEM_callocN(sizeof(*vec)*(_##vec##_count*2+2), #vec " " __FILE__ " ")),\
-	(vec && memcpy(_##vec##_tmp, vec, sizeof(*vec) * _##vec##_count)),\
-	(vec && (MEM_freeN(vec),1)),\
+	(void)(vec && memcpy(_##vec##_tmp, vec, sizeof(*vec) * _##vec##_count)),\
+	(void)(vec && (MEM_freeN(vec),1)),\
 	(vec = _##vec##_tmp),\
 	_##vec##_count++)
 

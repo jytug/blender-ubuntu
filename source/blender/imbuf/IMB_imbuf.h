@@ -39,7 +39,7 @@
  *     posix-compliant.
  */
 /*
- * $Id: IMB_imbuf.h 30229 2010-07-12 14:57:24Z campbellbarton $ 
+ * $Id: IMB_imbuf.h 32517 2010-10-16 14:32:17Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -93,7 +93,7 @@ void IMB_exit(void);
  *
  * @attention Defined in readimage.c
  */
-struct ImBuf *IMB_ibImageFromMemory(unsigned char *mem, int size, int flags);
+struct ImBuf *IMB_ibImageFromMemory(unsigned char *mem, size_t size, int flags);
 
 /**
  *
@@ -117,9 +117,8 @@ void IMB_freeImBuf(struct ImBuf *ibuf);
  *
  * @attention Defined in allocimbuf.c
  */
-struct ImBuf *IMB_allocImBuf(short x, short y,
-						 unsigned char d, unsigned int flags,
-						 unsigned char bitmap);
+struct ImBuf *IMB_allocImBuf(unsigned int x, unsigned int y,
+						 unsigned char d, unsigned int flags);
 
 /**
  *
@@ -272,13 +271,13 @@ struct ImBuf *IMB_onehalf(struct ImBuf *ibuf1);
  *
  * @attention Defined in scaling.c
  */
-struct ImBuf *IMB_scaleImBuf(struct ImBuf *ibuf, short newx, short newy);
+struct ImBuf *IMB_scaleImBuf(struct ImBuf *ibuf, unsigned int newx, unsigned int newy);
 
 /**
  *
  * @attention Defined in scaling.c
  */
-struct ImBuf *IMB_scalefastImBuf(struct ImBuf *ibuf, short newx, short newy);
+struct ImBuf *IMB_scalefastImBuf(struct ImBuf *ibuf, unsigned int newx, unsigned int newy);
 
 /**
  *

@@ -1,5 +1,5 @@
 /**
- * $Id: KX_BlenderRenderTools.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: KX_BlenderRenderTools.h 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,7 @@
 #ifndef __KX_BLENDERRENDERTOOLS
 #define __KX_BLENDERRENDERTOOLS
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // don't show stl-warnings
 #pragma warning (disable:4786)
 #endif

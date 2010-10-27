@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_surface.c 28152 2010-04-12 22:33:43Z campbellbarton $
+* $Id: MOD_surface.c 32462 2010-10-14 06:29:17Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -36,6 +36,7 @@
 
 #include "BLI_math.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_cdderivedmesh.h"
 
 #include "MOD_modifiertypes.h"
@@ -76,14 +77,17 @@ static void freeData(ModifierData *md)
 	}
 }
 
-static int dependsOnTime(ModifierData *md)
+static int dependsOnTime(ModifierData *UNUSED(md))
 {
 	return 1;
 }
 
-static void deformVerts(
-					  ModifierData *md, Object *ob, DerivedMesh *derivedData,
-		float (*vertexCos)[3], int numVerts, int useRenderParams, int isFinalCalc)
+static void deformVerts(ModifierData *md, Object *ob,
+						DerivedMesh *derivedData,
+						float (*vertexCos)[3],
+						int UNUSED(numVerts),
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	SurfaceModifierData *surmd = (SurfaceModifierData*) md;
 	unsigned int numverts = 0, i = 0;
@@ -93,7 +97,7 @@ static void deformVerts(
 
 	/* if possible use/create DerivedMesh */
 	if(derivedData) surmd->dm = CDDM_copy(derivedData);
-	else surmd->dm = get_dm(md->scene, ob, NULL, NULL, NULL, 0);
+	else surmd->dm = get_dm(ob, NULL, NULL, NULL, 0);
 	
 	if(!ob->pd)
 	{
@@ -178,6 +182,7 @@ ModifierTypeInfo modifierType_Surface = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    0,
 	/* dependsOnTime */     dependsOnTime,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

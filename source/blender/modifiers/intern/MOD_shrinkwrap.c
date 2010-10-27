@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_shrinkwrap.c 31320 2010-08-13 15:26:37Z campbellbarton $
+* $Id: MOD_shrinkwrap.c 32619 2010-10-21 01:55:39Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -32,6 +32,7 @@
 
 #include <string.h>
 
+#include "BKE_utildefines.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"
 #include "BKE_shrinkwrap.h"
@@ -71,23 +72,23 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tsmd->subsurfLevels = smd->subsurfLevels;
 }
 
-static CustomDataMask requiredDataMask(Object *ob, ModifierData *md)
+static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 {
 	ShrinkwrapModifierData *smd = (ShrinkwrapModifierData *)md;
 	CustomDataMask dataMask = 0;
 
 	/* ask for vertexgroups if we need them */
 	if(smd->vgroup_name[0])
-		dataMask |= (1 << CD_MDEFORMVERT);
+		dataMask |= CD_MASK_MDEFORMVERT;
 
 	if(smd->shrinkType == MOD_SHRINKWRAP_PROJECT
 	&& smd->projAxis == MOD_SHRINKWRAP_PROJECT_OVER_NORMAL)
-		dataMask |= (1 << CD_MVERT);
+		dataMask |= CD_MASK_MVERT;
 		
 	return dataMask;
 }
 
-static int isDisabled(ModifierData *md, int useRenderParams)
+static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
 	ShrinkwrapModifierData *smd = (ShrinkwrapModifierData*) md;
 	return !smd->target;
@@ -102,14 +103,19 @@ static void foreachObjectLink(ModifierData *md, Object *ob, ObjectWalkFunc walk,
 	walk(userData, ob, &smd->auxTarget);
 }
 
-static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts, int useRenderParams, int isFinalCalc)
+static void deformVerts(ModifierData *md, Object *ob,
+						DerivedMesh *derivedData,
+						float (*vertexCos)[3],
+						int numVerts,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	DerivedMesh *dm = derivedData;
 	CustomDataMask dataMask = requiredDataMask(ob, md);
 
 	/* ensure we get a CDDM with applied vertex coords */
 	if(dataMask)
-		dm= get_cddm(md->scene, ob, NULL, dm, vertexCos);
+		dm= get_cddm(ob, NULL, dm, vertexCos);
 
 	shrinkwrapModifier_deform((ShrinkwrapModifierData*)md, md->scene, ob, dm, vertexCos, numVerts);
 
@@ -124,7 +130,7 @@ static void deformVertsEM(ModifierData *md, Object *ob, struct EditMesh *editDat
 
 	/* ensure we get a CDDM with applied vertex coords */
 	if(dataMask)
-		dm= get_cddm(md->scene, ob, editData, dm, vertexCos);
+		dm= get_cddm(ob, editData, dm, vertexCos);
 
 	shrinkwrapModifier_deform((ShrinkwrapModifierData*)md, md->scene, ob, dm, vertexCos, numVerts);
 
@@ -132,7 +138,10 @@ static void deformVertsEM(ModifierData *md, Object *ob, struct EditMesh *editDat
 		dm->release(dm);
 }
 
-static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *scene, Object *ob, DagNode *obNode)
+static void updateDepgraph(ModifierData *md, DagForest *forest,
+						struct Scene *UNUSED(scene),
+						Object *UNUSED(ob),
+						DagNode *obNode)
 {
 	ShrinkwrapModifierData *smd = (ShrinkwrapModifierData*) md;
 
@@ -166,6 +175,7 @@ ModifierTypeInfo modifierType_Shrinkwrap = {
 	/* isDisabled */        isDisabled,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     0,
 };

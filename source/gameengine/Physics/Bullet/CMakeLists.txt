@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
+# $Id: CMakeLists.txt 32705 2010-10-25 17:08:40Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,7 +24,8 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(SRC CcdPhysicsEnvironment.cpp CcdPhysicsController.cpp CcdGraphicController.cpp)
+# since this includes bullet we get errors from the headers too
+REMOVE_STRICT_FLAGS()
 
 SET(INC
 	.
@@ -45,5 +46,15 @@ SET(INC
 	../../../../source/blender/blenkernel
 	${PYTHON_INC}
 )
+
+SET(SRC
+	CcdPhysicsEnvironment.cpp
+	CcdPhysicsController.cpp
+	CcdGraphicController.cpp
+)
+
+IF(WITH_BULLET)
+	ADD_DEFINITIONS(-DUSE_BULLET)
+ENDIF(WITH_BULLET)
 
 BLENDERLIB(bf_bullet "${SRC}" "${INC}")

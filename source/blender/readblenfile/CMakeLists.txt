@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,10 +24,18 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC intern/*.c)
-
 SET(INC 
-	.  ../blenloader ../blenloader/intern ../blenkernel ../blenlib ../makesdna ../../kernel/gen_messaging
+	.
+	../blenloader
+	../blenloader/intern
+	../blenkernel
+	../blenlib
+	../makesdna
+	../../kernel/gen_messaging
+)
+
+SET(SRC
+	intern/BLO_readblenfile.c
 )
 
 BLENDERLIB(bf_readblenfile "${SRC}" "${INC}")

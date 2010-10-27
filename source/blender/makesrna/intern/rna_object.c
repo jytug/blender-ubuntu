@@ -1,5 +1,5 @@
 /**
- * $Id: rna_object.c 31673 2010-08-31 11:31:21Z campbellbarton $
+ * $Id: rna_object.c 32694 2010-10-25 07:12:29Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -143,7 +143,8 @@ static void rna_Object_internal_update(Main *bmain, Scene *scene, PointerRNA *pt
 
 static void rna_Object_matrix_world_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-	object_apply_mat4(ptr->id.data, ((Object *)ptr->id.data)->obmat);
+	/* dont use compat so we get pradictable rotation */
+	object_apply_mat4(ptr->id.data, ((Object *)ptr->id.data)->obmat, FALSE);
 	rna_Object_internal_update(bmain, scene, ptr);
 }
 
@@ -177,7 +178,8 @@ static void rna_Object_matrix_local_set(PointerRNA *ptr, const float values[16])
 		copy_m4_m4(ob->obmat, (float(*)[4])values);
 	}
 
-	object_apply_mat4(ob, ob->obmat);
+	/* dont use compat so we get pradictable rotation */
+	object_apply_mat4(ob, ob->obmat, FALSE);
 }
 
 void rna_Object_internal_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
@@ -216,6 +218,7 @@ static void rna_Object_dependency_update(Main *bmain, Scene *scene, PointerRNA *
 {
 	DAG_id_flush_update(ptr->id.data, OB_RECALC_OB);
 	DAG_scene_sort(bmain, scene);
+	WM_main_add_notifier(NC_OBJECT|ND_PARENT, ptr->id.data);
 }
 
 /* when changing the selection flag the scene needs updating */
@@ -768,6 +771,12 @@ static void rna_MaterialSlot_name_get(PointerRNA *ptr, char *str)
 		strcpy(str, "");
 }
 
+static void rna_MaterialSlot_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+{
+	rna_Object_internal_update(bmain, scene, ptr);
+	WM_main_add_notifier(NC_OBJECT|ND_OB_SHADING, ptr->id.data);
+}
+
 /* why does this have to be so complicated?, can't all this crap be
  * moved to in BGE conversion function? - Campbell *
  *
@@ -1142,13 +1151,13 @@ static void rna_def_material_slot(BlenderRNA *brna)
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_pointer_funcs(prop, "rna_MaterialSlot_material_get", "rna_MaterialSlot_material_set", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Material", "Material datablock used by this material slot");
-	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_Object_internal_update");
+	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_MaterialSlot_update");
 
 	prop= RNA_def_property(srna, "link", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, link_items);
 	RNA_def_property_enum_funcs(prop, "rna_MaterialSlot_link_get", "rna_MaterialSlot_link_set", NULL);
 	RNA_def_property_ui_text(prop, "Link", "Link material to object or the object's data");
-	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_Object_internal_update");
+	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_MaterialSlot_update");
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_funcs(prop, "rna_MaterialSlot_name_get", "rna_MaterialSlot_name_length", NULL);
@@ -1483,6 +1492,7 @@ static void rna_def_object_particle_systems(BlenderRNA *brna, PropertyRNA *cprop
 	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, NULL);
 	
 	prop= RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_int_funcs(prop, "rna_Object_active_particle_system_index_get", "rna_Object_active_particle_system_index_set", "rna_Object_active_particle_system_index_range");
 	RNA_def_property_ui_text(prop, "Active Particle System Index", "Index of active particle system slot");
 	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_Object_particle_update");
@@ -1518,6 +1528,7 @@ static void rna_def_object_vertex_groups(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_update(prop, NC_GEOM|ND_DATA, "rna_Object_internal_update_data");
 
 	prop= RNA_def_property(srna, "active_index", PROP_INT, PROP_NONE);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_int_sdna(prop, NULL, "actdef");
 	RNA_def_property_int_funcs(prop, "rna_Object_active_vertex_group_index_get", "rna_Object_active_vertex_group_index_set", "rna_Object_active_vertex_group_index_range");
 	RNA_def_property_ui_text(prop, "Active Vertex Group Index", "Active index in vertex group array");
@@ -1736,18 +1747,20 @@ static void rna_def_object(BlenderRNA *brna)
 	RNA_def_property_pointer_funcs(prop, "rna_Object_active_material_get", "rna_Object_active_material_set", NULL, NULL);
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Active Material", "Active material being displayed");
-	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_Object_internal_update");
+	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_MaterialSlot_update");
 
 	prop= RNA_def_property(srna, "active_material_index", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_int_sdna(prop, NULL, "actcol");
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_int_funcs(prop, "rna_Object_active_material_index_get", "rna_Object_active_material_index_set", "rna_Object_active_material_index_range");
 	RNA_def_property_ui_text(prop, "Active Material Index", "Index of active material slot");
-	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, NULL);
+	RNA_def_property_update(prop, NC_MATERIAL|ND_SHADING, NULL);
 	
 	/* transform */
 	prop= RNA_def_property(srna, "location", PROP_FLOAT, PROP_TRANSLATION);
 	RNA_def_property_float_sdna(prop, NULL, "loc");
 	RNA_def_property_editable_array_func(prop, "rna_Object_location_editable");
+	RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, 3);
 	RNA_def_property_ui_text(prop, "Location", "Location of the object");
 	RNA_def_property_update(prop, NC_OBJECT|ND_TRANSFORM, "rna_Object_internal_update");
 	
@@ -1785,6 +1798,7 @@ static void rna_def_object(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "scale", PROP_FLOAT, PROP_XYZ);
 	RNA_def_property_float_sdna(prop, NULL, "size");
 	RNA_def_property_editable_array_func(prop, "rna_Object_scale_editable");
+	RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, 3);
 	RNA_def_property_float_array_default(prop, default_scale);
 	RNA_def_property_ui_text(prop, "Scale", "Scaling of the object");
 	RNA_def_property_update(prop, NC_OBJECT|ND_TRANSFORM, "rna_Object_internal_update");
@@ -1792,6 +1806,7 @@ static void rna_def_object(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "dimensions", PROP_FLOAT, PROP_XYZ_LENGTH);
 	RNA_def_property_array(prop, 3);
 	RNA_def_property_float_funcs(prop, "rna_Object_dimensions_get", "rna_Object_dimensions_set", NULL);
+	RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, 3);
 	RNA_def_property_ui_text(prop, "Dimensions", "Absolute bounding box dimensions of the object");
 	RNA_def_property_update(prop, NC_OBJECT|ND_TRANSFORM, "rna_Object_internal_update");
 	
@@ -2139,7 +2154,7 @@ static void rna_def_object(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Pose", "Current pose for armatures");
 
 	/* shape keys */
-	prop= RNA_def_property(srna, "show_shape_key", PROP_BOOLEAN, PROP_NONE);
+	prop= RNA_def_property(srna, "show_only_shape_key", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "shapeflag", OB_SHAPE_LOCK);
 	RNA_def_property_ui_text(prop, "Shape Key Lock", "Always show the current Shape for this Object");
 	RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);

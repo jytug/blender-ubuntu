@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_shapekey.c 28152 2010-04-12 22:33:43Z campbellbarton $
+* $Id: MOD_shapekey.c 32532 2010-10-17 06:38:56Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -34,6 +34,7 @@
 
 #include "DNA_key_types.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_key.h"
 #include "BKE_particle.h"
@@ -42,9 +43,12 @@
 
 #include "MEM_guardedalloc.h"
 
-static void deformVerts(
-					 ModifierData *md, Object *ob, DerivedMesh *derivedData,
-	  float (*vertexCos)[3], int numVerts, int useRenderParams, int isFinalCalc)
+static void deformVerts(ModifierData *md, Object *ob,
+						DerivedMesh *UNUSED(derivedData),
+						float (*vertexCos)[3],
+						int numVerts,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	KeyBlock *kb= ob_get_keyblock(ob);
 	float (*deformedVerts)[3];
@@ -58,9 +62,11 @@ static void deformVerts(
 	}
 }
 
-static void deformVertsEM(
-					   ModifierData *md, Object *ob, struct EditMesh *editData,
-	DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
+static void deformVertsEM(ModifierData *md, Object *ob,
+						struct EditMesh *UNUSED(editData),
+						DerivedMesh *derivedData,
+						float (*vertexCos)[3],
+						int numVerts)
 {
 	Key *key= ob_get_key(ob);
 
@@ -68,15 +74,19 @@ static void deformVertsEM(
 		deformVerts(md, ob, derivedData, vertexCos, numVerts, 0, 0);
 }
 
-static void deformMatricesEM(
-						  ModifierData *md, Object *ob, struct EditMesh *editData,
-	   DerivedMesh *derivedData, float (*vertexCos)[3],
-						 float (*defMats)[3][3], int numVerts)
+static void deformMatricesEM(ModifierData *UNUSED(md), Object *ob,
+						struct EditMesh *UNUSED(editData),
+						DerivedMesh *UNUSED(derivedData),
+						float (*vertexCos)[3],
+						float (*defMats)[3][3],
+						int numVerts)
 {
 	Key *key= ob_get_key(ob);
 	KeyBlock *kb= ob_get_keyblock(ob);
 	float scale[3][3];
 	int a;
+	
+	(void)vertexCos; /* unused */
 
 	if(kb && kb->totelem==numVerts && kb!=key->refkey) {
 		scale_m3_fl(scale, kb->curval);
@@ -107,6 +117,7 @@ ModifierTypeInfo modifierType_ShapeKey = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    0,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

@@ -367,6 +367,7 @@ data_path_update = [
     ("PoseBone", "ik_limit_z", "use_ik_limit_z"),
     ("PoseBone", "ik_lin_control", "use_ik_linear_control"),
     ("PoseBone", "ik_rot_control", "use_ik_rotation_control"),
+    ("Bone", "use_hinge", "use_inherit_rotation"),
     ("SPHFluidSettings", "spring_k", "spring_force"),
     ("SPHFluidSettings", "stiffness_k", "stiffness"),
     ("SPHFluidSettings", "stiffness_knear", "stiffness_near"),
@@ -674,6 +675,10 @@ data_path_update = [
     ("SequenceCrop", "top", "max_y"),
     ("SequenceCrop", "bottom", "min_x"),
     ("SequenceCrop", "left", "min_y"),
+    ("Sequence", "speed_fader", "speed_factor"),
+    ("SpeedControlSequence", "global_speed", "multiply_speed"),
+    ("SpeedControlSequence", "use_curve_velocity", "use_as_speed"),
+    ("SpeedControlSequence", "use_curve_compress_y", "scale_to_length"),
     ]
 
 

@@ -1,5 +1,5 @@
 /**
- * $Id: BL_ModifierDeformer.cpp 28973 2010-05-25 08:42:11Z dfelinto $
+ * $Id: BL_ModifierDeformer.cpp 32259 2010-10-02 16:42:12Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,7 +27,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786)
 #endif //WIN32
 
@@ -127,11 +127,10 @@ bool BL_ModifierDeformer::HasArmatureDeformer(Object *ob)
 	if (!ob->modifiers.first)
 		return false;
 
-	ModifierData* md;
-	for (md = (ModifierData*)ob->modifiers.first; md; md = (ModifierData*)md->next) {
-		if (md->type == eModifierType_Armature )
-			return true;
-	}
+	ModifierData* md = (ModifierData*)ob->modifiers.first;
+	if(md->type == eModifierType_Armature )
+		return true;
+
 	return false;
 }
 

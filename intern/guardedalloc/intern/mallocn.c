@@ -1,5 +1,5 @@
 /**
- * $Id: mallocn.c 28571 2010-05-04 12:31:24Z joeedh $
+ * $Id: mallocn.c 32544 2010-10-18 00:25:32Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
 
 /**
 
- * $Id: mallocn.c 28571 2010-05-04 12:31:24Z joeedh $
+ * $Id: mallocn.c 32544 2010-10-18 00:25:32Z campbellbarton $
  * Copyright (C) 2001 NaN Technologies B.V.
  * Guarded memory allocation, and boundary-write detection.
  */
@@ -855,5 +855,19 @@ int MEM_get_memory_blocks_in_use(void)
 
 	return _totblock;
 }
+
+#ifndef NDEBUG
+const char *MEM_name_ptr(void *vmemh)
+{
+	if (vmemh) {
+		MemHead *memh= vmemh;
+		memh--;
+		return memh->name;
+	}
+	else {
+		return "MEM_name_ptr(NULL)";
+	}
+}
+#endif
 
 /* eof */

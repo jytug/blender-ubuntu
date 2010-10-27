@@ -1,5 +1,5 @@
 /**
- * $Id: ED_types.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: ED_types.h 32467 2010-10-14 09:31:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,11 +34,6 @@
 #define DESELECT 0
 #define SELECT	 1
 #define ACTIVE	 2
-
-/* nonstandard define, sometimes in math.h */
-#ifndef MAXFLOAT
-#define MAXFLOAT  ((float)3.40282347e+38)
-#endif
 
 /* buttons */
 #define XIC 20

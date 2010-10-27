@@ -1,5 +1,5 @@
 /**
- * $Id: readblenentry.c 31626 2010-08-28 02:07:55Z moguri $
+ * $Id: readblenentry.c 32506 2010-10-16 02:40:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,6 +28,7 @@
  * .blend file reading entry point
  */
 
+#include <stddef.h>
 #include "BLI_storage.h" /* _LARGEFILE_SOURCE */
 
 #include <stdlib.h>
@@ -283,7 +284,7 @@ BlendFileData *BLO_read_from_memfile(Main *oldmain, const char *filename, MemFil
 		strcpy(fd->relabase, filename);
 		
 		/* clear ob->proxy_from pointers in old main */
-		blo_clear_proxy_pointers_from_lib(fd, oldmain);
+		blo_clear_proxy_pointers_from_lib(oldmain);
 
 		/* separate libraries from old main */
 		blo_split_main(&mainlist, oldmain);

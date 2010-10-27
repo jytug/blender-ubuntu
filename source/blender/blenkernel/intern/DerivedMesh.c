@@ -1,5 +1,5 @@
 /**
- * $Id: DerivedMesh.c 31352 2010-08-15 15:14:08Z campbellbarton $
+ * $Id: DerivedMesh.c 32617 2010-10-21 01:08:12Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -238,6 +238,15 @@ void DM_to_mesh(DerivedMesh *dm, Mesh *me)
 		CustomData_add_layer(&tmp.edata, CD_MEDGE, CD_ASSIGN, dm->dupEdgeArray(dm), totedge);
 	if(!CustomData_has_layer(&tmp.fdata, CD_MFACE))
 		CustomData_add_layer(&tmp.fdata, CD_MFACE, CD_ASSIGN, dm->dupFaceArray(dm), totface);
+
+	/* object had got displacement layer, should copy this layer to save sculpted data */
+	/* NOTE: maybe some other layers should be copied? nazgul */
+	if(CustomData_has_layer(&me->fdata, CD_MDISPS)) {
+		if (totface == me->totface) {
+			MDisps *mdisps = CustomData_get_layer(&me->fdata, CD_MDISPS);
+			CustomData_add_layer(&tmp.fdata, CD_MDISPS, CD_DUPLICATE, mdisps, totface);
+		}
+	}
 
 	mesh_update_customdata_pointers(&tmp);
 
@@ -508,7 +517,7 @@ static void emDM_drawMappedEdges(DerivedMesh *dm, int (*setDrawOptions)(void *us
 		glEnd();
 	}
 }
-static void emDM_drawEdges(DerivedMesh *dm, int drawLooseEdges, int drawAllEdges)
+static void emDM_drawEdges(DerivedMesh *dm, int UNUSED(drawLooseEdges), int UNUSED(drawAllEdges))
 {
 	emDM_drawMappedEdges(dm, NULL, NULL);
 }
@@ -617,11 +626,15 @@ static void emDM_foreachMappedFaceCenter(DerivedMesh *dm, void (*func)(void *use
 		func(userData, i, cent, emdm->vertexCos?emdm->faceNos[i]:efa->n);
 	}
 }
-static void emDM_drawMappedFaces(DerivedMesh *dm, int (*setDrawOptions)(void *userData, int index, int *drawSmooth_r), void *userData, int useColors)
+
+/* note, material function is ignored for now. */
+static void emDM_drawMappedFaces(DerivedMesh *dm, int (*setDrawOptions)(void *userData, int index, int *drawSmooth_r), void *userData, int UNUSED(useColors), int (*setMaterial)(int, void *attribs))
 {
 	EditMeshDerivedMesh *emdm= (EditMeshDerivedMesh*) dm;
 	EditFace *efa;
 	int i, draw;
+	
+	(void)setMaterial; /* unused */
 
 	if (emdm->vertexCos) {
 		EditVert *eve;
@@ -1315,8 +1328,7 @@ static void emDM_release(DerivedMesh *dm)
 	}
 }
 
-static DerivedMesh *getEditMeshDerivedMesh(EditMesh *em, Object *ob,
-										   float (*vertexCos)[3])
+static DerivedMesh *getEditMeshDerivedMesh(EditMesh *em, float (*vertexCos)[3])
 {
 	EditMeshDerivedMesh *emdm = MEM_callocN(sizeof(*emdm), "emdm");
 
@@ -1661,16 +1673,25 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 	DerivedMesh *dm, *orcodm, *clothorcodm, *finaldm;
 	int numVerts = me->totvert;
 	int required_mode;
+	int isPrevDeform= FALSE;
+	int skipVirtualArmature = (useDeform < 0);
 
-	md = firstmd = (useDeform<0) ? ob->modifiers.first : modifiers_getVirtualModifierList(ob);
+	if(!skipVirtualArmature) {
+		firstmd = modifiers_getVirtualModifierList(ob);
+	}
+	else {
+		/* game engine exception */
+		firstmd = ob->modifiers.first;
+		if(firstmd && firstmd->type == eModifierType_Armature)
+			firstmd = firstmd->next;
+	}
+
+	md = firstmd;
 
 	modifiers_clearErrors(ob);
 
 	if(useRenderParams) required_mode = eModifierMode_Render;
 	else required_mode = eModifierMode_Realtime;
-
-	/* we always want to keep original indices */
-	dataMask |= CD_MASK_ORIGINDEX;
 
 	datamasks = modifiers_calcDataMasks(scene, ob, md, dataMask, required_mode);
 	curr = datamasks;
@@ -1778,9 +1799,25 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 				}
 			}
 
+			/* if this is not the last modifier in the stack then recalculate the normals
+			 * to avoid giving bogus normals to the next modifier see: [#23673] */
+			if(isPrevDeform &&  mti->dependsOnNormals && mti->dependsOnNormals(md)) {
+				/* XXX, this covers bug #23673, but we may need normal calc for other types */
+				if(dm->type == DM_TYPE_CDDM) {
+					CDDM_apply_vert_coords(dm, deformedVerts);
+					CDDM_calc_normals(dm);
+				}
+			}
+
 			mti->deformVerts(md, ob, dm, deformedVerts, numVerts, useRenderParams, useDeform);
 		} else {
 			DerivedMesh *ndm;
+
+			/* determine which data layers are needed by following modifiers */
+			if(curr->next)
+				nextmask= (CustomDataMask)GET_INT_FROM_POINTER(curr->next->link);
+			else
+				nextmask= dataMask;
 
 			/* apply vertex coordinates or build a DerivedMesh as necessary */
 			if(dm) {
@@ -1803,28 +1840,25 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 				if((dataMask & CD_MASK_WEIGHT_MCOL) && (ob->mode & OB_MODE_WEIGHT_PAINT))
 					add_weight_mcol_dm(ob, dm);
 
-				/* constructive modifiers need to have an origindex
-				 * otherwise they wont have anywhere to copy the data from */
-				if(needMapping) {
-					int *index, i;
+				/* Constructive modifiers need to have an origindex
+				 * otherwise they wont have anywhere to copy the data from.
+				 *
+				 * Also create ORIGINDEX data if any of the following modifiers
+				 * requests it, this way Mirror, Solidify etc will keep ORIGINDEX
+				 * data by using generic DM_copy_vert_data() functions.
+				 */
+				if(needMapping || (nextmask & CD_MASK_ORIGINDEX)) {
+					/* calc */
 					DM_add_vert_layer(dm, CD_ORIGINDEX, CD_CALLOC, NULL);
 					DM_add_edge_layer(dm, CD_ORIGINDEX, CD_CALLOC, NULL);
 					DM_add_face_layer(dm, CD_ORIGINDEX, CD_CALLOC, NULL);
 
-					index = DM_get_vert_data_layer(dm, CD_ORIGINDEX);
-					for(i=0; i<dm->numVertData; i++) *index++= i;
-					index = DM_get_edge_data_layer(dm, CD_ORIGINDEX);
-					for(i=0; i<dm->numEdgeData; i++) *index++= i;
-					index = DM_get_face_data_layer(dm, CD_ORIGINDEX);
-					for(i=0; i<dm->numFaceData; i++) *index++= i;
+					range_vni(DM_get_vert_data_layer(dm, CD_ORIGINDEX), dm->numVertData, 0);
+					range_vni(DM_get_edge_data_layer(dm, CD_ORIGINDEX), dm->numEdgeData, 0);
+					range_vni(DM_get_face_data_layer(dm, CD_ORIGINDEX), dm->numFaceData, 0);
 				}
 			}
 
-			/* determine which data layers are needed by following modifiers */
-			if(curr->next)
-				nextmask= (CustomDataMask)GET_INT_FROM_POINTER(curr->next->link);
-			else
-				nextmask= dataMask;
 			
 			/* set the DerivedMesh to only copy needed data */
 			mask= (CustomDataMask)GET_INT_FROM_POINTER(curr->link);
@@ -1861,7 +1895,7 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 					orcodm= create_orco_dm(ob, me, NULL, CD_ORCO);
 
 				nextmask &= ~CD_MASK_ORCO;
-				DM_set_only_copy(orcodm, nextmask);
+				DM_set_only_copy(orcodm, nextmask | CD_MASK_ORIGINDEX);
 				ndm = mti->applyModifier(md, ob, orcodm, useRenderParams, 0);
 
 				if(ndm) {
@@ -1877,7 +1911,7 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 					clothorcodm= create_orco_dm(ob, me, NULL, CD_CLOTH_ORCO);
 
 				nextmask &= ~CD_MASK_CLOTH_ORCO;
-				DM_set_only_copy(clothorcodm, nextmask);
+				DM_set_only_copy(clothorcodm, nextmask | CD_MASK_ORIGINDEX);
 				ndm = mti->applyModifier(md, ob, clothorcodm, useRenderParams, 0);
 
 				if(ndm) {
@@ -1887,6 +1921,8 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 				}
 			}
 		}
+
+		isPrevDeform= (mti->type == eModifierTypeType_OnlyDeform);
 
 		/* grab modifiers until index i */
 		if((index >= 0) && (modifiers_indexInObject(ob, md) >= index))
@@ -1988,14 +2024,11 @@ static void editmesh_calc_modifiers(Scene *scene, Object *ob, EditMesh *em, Deri
 	modifiers_clearErrors(ob);
 
 	if(cage_r && cageIndex == -1) {
-		*cage_r = getEditMeshDerivedMesh(em, ob, NULL);
+		*cage_r = getEditMeshDerivedMesh(em, NULL);
 	}
 
 	dm = NULL;
 	md = modifiers_getVirtualModifierList(ob);
-	
-	/* we always want to keep original indices */
-	dataMask |= CD_MASK_ORIGINDEX;
 
 	datamasks = modifiers_calcDataMasks(scene, ob, md, dataMask, required_mode);
 
@@ -2074,7 +2107,7 @@ static void editmesh_calc_modifiers(Scene *scene, Object *ob, EditMesh *em, Deri
 					orcodm= create_orco_dm(ob, ob->data, em, CD_ORCO);
 
 				mask &= ~CD_MASK_ORCO;
-				DM_set_only_copy(orcodm, mask);
+				DM_set_only_copy(orcodm, mask | CD_MASK_ORIGINDEX);
 
 				if (mti->applyModifierEM)
 					ndm = mti->applyModifierEM(md, ob, em, orcodm);
@@ -2089,9 +2122,11 @@ static void editmesh_calc_modifiers(Scene *scene, Object *ob, EditMesh *em, Deri
 			}
 
 			/* set the DerivedMesh to only copy needed data */
-			DM_set_only_copy(dm, (CustomDataMask)GET_INT_FROM_POINTER(curr->link));
+			mask= (CustomDataMask)GET_INT_FROM_POINTER(curr->link); /* CD_MASK_ORCO may have been cleared above */
 
-			if(((CustomDataMask)GET_INT_FROM_POINTER(curr->link)) & CD_MASK_ORIGSPACE)
+			DM_set_only_copy(dm, mask | CD_MASK_ORIGINDEX);
+
+			if(mask & CD_MASK_ORIGSPACE)
 				if(!CustomData_has_layer(&dm->faceData, CD_ORIGSPACE))
 					DM_add_face_layer(dm, CD_ORIGSPACE, CD_DEFAULT, NULL);
 			
@@ -2121,7 +2156,7 @@ static void editmesh_calc_modifiers(Scene *scene, Object *ob, EditMesh *em, Deri
 				*cage_r = dm;
 			} else {
 				*cage_r =
-					getEditMeshDerivedMesh(em, ob,
+					getEditMeshDerivedMesh(em,
 						deformedVerts ? MEM_dupallocN(deformedVerts) : NULL);
 			}
 		}
@@ -2145,7 +2180,7 @@ static void editmesh_calc_modifiers(Scene *scene, Object *ob, EditMesh *em, Deri
 	} else if (!deformedVerts && cage_r && *cage_r) {
 		*final_r = *cage_r;
 	} else {
-		*final_r = getEditMeshDerivedMesh(em, ob, deformedVerts);
+		*final_r = getEditMeshDerivedMesh(em, deformedVerts);
 		deformedVerts = NULL;
 	}
 
@@ -2202,7 +2237,7 @@ static void mesh_build_data(Scene *scene, Object *ob, CustomDataMask dataMask)
 	Object *obact = scene->basact?scene->basact->object:NULL;
 	int editing = paint_facesel_test(ob);
 	/* weight paint and face select need original indicies because of selection buffer drawing */
-	int needMapping = (ob==obact) && (editing || (ob->mode & (OB_MODE_WEIGHT_PAINT|OB_MODE_VERTEX_PAINT)) || editing);
+	int needMapping = (ob==obact) && (editing || (ob->mode & (OB_MODE_WEIGHT_PAINT|OB_MODE_VERTEX_PAINT)));
 
 	clear_mesh_caches(ob);
 
@@ -2361,9 +2396,9 @@ DerivedMesh *editmesh_get_derived_cage(Scene *scene, Object *obedit, EditMesh *e
 	return em->derivedCage;
 }
 
-DerivedMesh *editmesh_get_derived_base(Object *obedit, EditMesh *em)
+DerivedMesh *editmesh_get_derived_base(Object *UNUSED(obedit), EditMesh *em)
 {
-	return getEditMeshDerivedMesh(em, obedit, NULL);
+	return getEditMeshDerivedMesh(em, NULL);
 }
 
 
@@ -2449,7 +2484,7 @@ int editmesh_get_first_deform_matrices(Scene *scene, Object *ob, EditMesh *em, f
 
 		if(mti->type==eModifierTypeType_OnlyDeform && mti->deformMatricesEM) {
 			if(!defmats) {
-				dm= getEditMeshDerivedMesh(em, ob, NULL);
+				dm= getEditMeshDerivedMesh(em, NULL);
 				deformedVerts= editmesh_getVertexCos(em, &numVerts);
 				defmats= MEM_callocN(sizeof(*defmats)*numVerts, "defmats");
 

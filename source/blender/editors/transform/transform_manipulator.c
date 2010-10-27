@@ -1,5 +1,5 @@
 /**
-* $Id: transform_manipulator.c 31515 2010-08-22 10:52:30Z campbellbarton $
+* $Id: transform_manipulator.c 32601 2010-10-19 14:11:46Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -100,16 +100,6 @@
 #define MAN_RGB		0
 #define MAN_GHOST	1
 #define MAN_MOVECOL	2
-
-
-static int is_mat4_flipped(float mat[][4])
-{
-	float vec[3];
-
-	cross_v3_v3v3(vec, mat[0], mat[1]);
-	if( dot_v3v3(vec, mat[2]) < 0.0 ) return 1;
-	return 0;
-}
 
 /* transform widget center calc helper for below */
 static void calc_tw_center(Scene *scene, float *co)
@@ -318,7 +308,7 @@ int calc_manipulator_stats(const bContext *C)
 					while(a--) {
 						/* exceptions
 						 * if handles are hidden then only check the center points.
-						 * If 2 or more are selected then only use the center point too.
+						 * If the center knot is selected then only use this as the center point.
 						 */
 						if (cu->drawflag & CU_HIDE_HANDLES) {
 							if (bezt->f2 & SELECT) {
@@ -326,17 +316,13 @@ int calc_manipulator_stats(const bContext *C)
 								totsel++;
 							}
 						}
-						else if ( (bezt->f1 & SELECT) + (bezt->f2 & SELECT) + (bezt->f3 & SELECT) > SELECT ) {
+						else if (bezt->f2 & SELECT) {
 							calc_tw_center(scene, bezt->vec[1]);
 							totsel++;
 						}
 						else {
 							if(bezt->f1) {
 								calc_tw_center(scene, bezt->vec[0]);
-								totsel++;
-							}
-							if(bezt->f2) {
-								calc_tw_center(scene, bezt->vec[1]);
 								totsel++;
 							}
 							if(bezt->f3) {
@@ -562,17 +548,12 @@ void test_manipulator_axis(const bContext *C)
 
 static float screen_aligned(RegionView3D *rv3d, float mat[][4])
 {
-	float vec[3], size;
-
-	VECCOPY(vec, mat[0]);
-	size= normalize_v3(vec);
-
 	glTranslatef(mat[3][0], mat[3][1], mat[3][2]);
 
 	/* sets view screen aligned */
 	glRotatef( -360.0f*saacos(rv3d->viewquat[0])/(float)M_PI, rv3d->viewquat[1], rv3d->viewquat[2], rv3d->viewquat[3]);
 
-	return size;
+	return len_v3(mat[0]); /* draw scale */
 }
 
 
@@ -758,7 +739,7 @@ static void preOrthoFront(int ortho, float twmat[][4], int axis)
 		orthogonalize_m4(omat, axis);
 		glPushMatrix();
 		glMultMatrixf(omat);
-		glFrontFace( is_mat4_flipped(omat)?GL_CW:GL_CCW);
+		glFrontFace(is_negative_m4(omat) ? GL_CW:GL_CCW);
 	}
 }
 
@@ -855,12 +836,12 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 		// XXX mul_m4_m3m4(matt, t->mat, rv3d->twmat);
 		if (ortho) {
 			glMultMatrixf(matt);
-			glFrontFace( is_mat4_flipped(matt)?GL_CW:GL_CCW);
+			glFrontFace(is_negative_m4(matt) ? GL_CW:GL_CCW);
 		}
 	}
 	else {
 		if (ortho) {
-			glFrontFace( is_mat4_flipped(rv3d->twmat)?GL_CW:GL_CCW);
+			glFrontFace(is_negative_m4(rv3d->twmat) ? GL_CW:GL_CCW);
 			glMultMatrixf(rv3d->twmat);
 		}
 	}
@@ -1121,11 +1102,11 @@ static void draw_manipulator_scale(View3D *v3d, RegionView3D *rv3d, int moving, 
 		copy_m4_m4(matt, rv3d->twmat); // to copy the parts outside of [3][3]
 		// XXX mul_m4_m3m4(matt, t->mat, rv3d->twmat);
 		glMultMatrixf(matt);
-		glFrontFace( is_mat4_flipped(matt)?GL_CW:GL_CCW);
+		glFrontFace(is_negative_m4(matt) ? GL_CW:GL_CCW);
 	}
 	else {
 		glMultMatrixf(rv3d->twmat);
-		glFrontFace( is_mat4_flipped(rv3d->twmat)?GL_CW:GL_CCW);
+		glFrontFace(is_negative_m4(rv3d->twmat) ? GL_CW:GL_CCW);
 	}
 
 	/* axis */
@@ -1202,7 +1183,7 @@ static void draw_cylinder(GLUquadricObj *qobj, float len, float width)
 }
 
 
-static void draw_manipulator_translate(View3D *v3d, RegionView3D *rv3d, int moving, int drawflags, int combo, int colcode)
+static void draw_manipulator_translate(View3D *v3d, RegionView3D *rv3d, int UNUSED(moving), int drawflags, int combo, int colcode)
 {
 	GLUquadricObj *qobj;
 	float cylen= 0.01f*(float)U.tw_handlesize;
@@ -1332,7 +1313,7 @@ static void draw_manipulator_rotate_cyl(View3D *v3d, RegionView3D *rv3d, int mov
 		glMultMatrixf(rv3d->twmat);
 	}
 
-	glFrontFace( is_mat4_flipped(rv3d->twmat)?GL_CW:GL_CCW);
+	glFrontFace(is_negative_m4(rv3d->twmat) ? GL_CW:GL_CCW);
 
 	/* axis */
 	if( (G.f & G_PICKSEL)==0 ) {

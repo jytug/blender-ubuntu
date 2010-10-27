@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_image.c 27891 2010-03-31 07:00:59Z broken $
+ * $Id: CMP_image.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -62,38 +62,62 @@ static CompBuf *node_composit_get_image(RenderData *rd, Image *ima, ImageUser *i
 	ImBuf *ibuf;
 	CompBuf *stackbuf;
 	int type;
-	
-	ibuf= BKE_image_get_ibuf(ima, iuser);
-	if(ibuf==NULL)
-		return NULL;
 
-	if (!(rd->color_mgt_flag & R_COLOR_MANAGEMENT)) {
-		int profile = IB_PROFILE_NONE;
-		
-		/* temporarily set profile to none to not disturb actual */
-		SWAP(int, ibuf->profile, profile);
-		
-		if (ibuf->rect_float != NULL) {
-			imb_freerectfloatImBuf(ibuf);
-		}
-		IMB_float_from_rect(ibuf);
-		
-		SWAP(int, ibuf->profile, profile);
+	float *rect;
+	int alloc= FALSE;
+
+	ibuf= BKE_image_get_ibuf(ima, iuser);
+	if(ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL)) {
+		return NULL;
 	}
-	
+
 	if (ibuf->rect_float == NULL) {
 		IMB_float_from_rect(ibuf);
 	}
 
+	/* now we need a float buffer from the image
+	 * with matching color management */
+	if(ibuf->channels == 4) {
+		if(rd->color_mgt_flag & R_COLOR_MANAGEMENT) {
+			if(ibuf->profile != IB_PROFILE_NONE) {
+				rect= ibuf->rect_float;
+			}
+			else {
+				rect= MEM_mapallocN(sizeof(float) * 4 * ibuf->x * ibuf->y, "node_composit_get_image");
+				srgb_to_linearrgb_rgba_rgba_buf(rect, ibuf->rect_float, ibuf->x * ibuf->y);
+				alloc= TRUE;
+			}
+		}
+		else {
+			if(ibuf->profile == IB_PROFILE_NONE) {
+				rect= ibuf->rect_float;
+			}
+			else {
+				rect= MEM_mapallocN(sizeof(float) * 4 * ibuf->x * ibuf->y, "node_composit_get_image");
+				linearrgb_to_srgb_rgba_rgba_buf(rect, ibuf->rect_float, ibuf->x * ibuf->y);
+				alloc= TRUE;
+			}
+		}
+	}
+	else {
+		/* non-rgba passes can't use color profiles */
+		rect= ibuf->rect_float;
+	}
+	/* done coercing into the correct color management */
+
+
 	type= ibuf->channels;
 	
 	if(rd->scemode & R_COMP_CROP) {
-		stackbuf= get_cropped_compbuf(&rd->disprect, ibuf->rect_float, ibuf->x, ibuf->y, type);
+		stackbuf= get_cropped_compbuf(&rd->disprect, rect, ibuf->x, ibuf->y, type);
+		if(alloc)
+			MEM_freeN(rect);
 	}
 	else {
 		/* we put imbuf copy on stack, cbuf knows rect is from other ibuf when freed! */
-		stackbuf= alloc_compbuf(ibuf->x, ibuf->y, type, 0);
-		stackbuf->rect= ibuf->rect_float;
+		stackbuf= alloc_compbuf(ibuf->x, ibuf->y, type, FALSE);
+		stackbuf->rect= rect;
+		stackbuf->malloc= alloc;
 	}
 	
 	/*code to respect the premul flag of images; I'm
@@ -191,7 +215,7 @@ void outputs_multilayer_get(RenderData *rd, RenderLayer *rl, bNodeStack **out, I
 };
 
 
-static void node_composit_exec_image(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_image(void *data, bNode *node, bNodeStack **UNUSED(in), bNodeStack **out)
 {
 	
 	/* image assigned to output */
@@ -354,7 +378,7 @@ void node_composit_rlayers_out(RenderData *rd, RenderLayer *rl, bNodeStack **out
 	   out[RRES_OUT_ENV]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_ENVIRONMENT);
 };
 
-static void node_composit_exec_rlayers(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_rlayers(void *data, bNode *node, bNodeStack **UNUSED(in), bNodeStack **out)
 {
    Scene *sce= (Scene *)node->id;
    Render *re= (sce)? RE_GetRender(sce->id.name): NULL;

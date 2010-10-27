@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_math.c 27655 2010-03-22 09:30:00Z campbellbarton $
+ * $Id: CMP_math.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -151,7 +151,7 @@ static void do_math(bNode *node, float *out, float *in, float *in2)
 	}
 }
 
-static void node_composit_exec_math(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_math(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	CompBuf *cbuf=in[0]->data;
 	CompBuf *cbuf2=in[1]->data;

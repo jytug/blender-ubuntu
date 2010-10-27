@@ -1,5 +1,5 @@
 /**
- * $Id: transform_ndofinput.c 27676 2010-03-23 14:09:09Z campbellbarton $
+ * $Id: transform_ndofinput.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -65,7 +65,7 @@ static void resetNDofInput(NDofInput *n)
 }
 
  
-int handleNDofInput(NDofInput *n, wmEvent *event)
+int handleNDofInput(NDofInput *UNUSED(n), wmEvent *UNUSED(event))
 {
 	int retval = 0;
 	// TRANSFORM_FIX_ME

@@ -1,5 +1,5 @@
 /**
- * $Id: rayshade.c 30899 2010-07-30 11:50:00Z blendix $
+ * $Id: rayshade.c 32726 2010-10-27 02:18:24Z broken $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -697,17 +697,9 @@ static void ray_fadeout(Isect *is, ShadeInput *shi, float *col, float *blendcol,
  * note: 'col' must be initialized */
 static void traceray(ShadeInput *origshi, ShadeResult *origshr, short depth, float *start, float *vec, float *col, ObjectInstanceRen *obi, VlakRen *vlr, int traflag)
 {
-	ShadeInput shi;
-	ShadeResult shr;
+	ShadeInput shi= {0};
 	Isect isec;
-	float f, f1, fr, fg, fb;
-	float ref[3];
 	float dist_mir = origshi->mat->dist_mir;
-
-	/* Warning, This is not that nice, and possibly a bit slow for every ray,
-	however some variables were not initialized properly in, unless using shade_input_initialize(...), we need to do a memset */
-	memset(&shi, 0, sizeof(ShadeInput)); 
-	/* end warning! - Campbell */
 	
 	VECCOPY(isec.start, start);
 	VECCOPY(isec.vec, vec );
@@ -721,11 +713,12 @@ static void traceray(ShadeInput *origshi, ShadeResult *origshr, short depth, flo
 	RE_RC_INIT(isec, shi);
 
 	if(RE_rayobject_raycast(R.raytree, &isec)) {
+		ShadeResult shr= {{0}};
 		float d= 1.0f;
-		
+
 		shi.mask= origshi->mask;
 		shi.osatex= origshi->osatex;
-		shi.depth= 1;					/* only used to indicate tracing */
+		shi.depth= origshi->depth + 1;					/* only used to indicate tracing */
 		shi.thread= origshi->thread;
 		//shi.sample= 0; // memset above, so dont need this
 		shi.xs= origshi->xs;
@@ -737,16 +730,15 @@ static void traceray(ShadeInput *origshi, ShadeResult *origshr, short depth, flo
 		shi.light_override= origshi->light_override;
 		shi.mat_override= origshi->mat_override;
 		
-		memset(&shr, 0, sizeof(ShadeResult));
-		
 		shade_ray(&isec, &shi, &shr);
 		if (traflag & RAY_TRA)
 			d= shade_by_transmission(&isec, &shi, &shr);
 		
 		if(depth>0) {
+			float fr, fg, fb, f, f1;
 
 			if((shi.mat->mode_l & MA_TRANSP) && shr.alpha < 1.0f) {
-				float nf, f, f1, refract[3], tracol[4];
+				float nf, f, refract[3], tracol[4];
 				
 				tracol[0]= shi.r;
 				tracol[1]= shi.g;
@@ -799,6 +791,7 @@ static void traceray(ShadeInput *origshi, ShadeResult *origshr, short depth, flo
 			
 			if(f!=0.0f) {
 				float mircol[4];
+				float ref[3];
 				
 				reflection(ref, shi.vn, shi.view, NULL);			
 				traceray(origshi, origshr, depth-1, shi.co, ref, mircol, shi.obi, shi.vlr, 0);
@@ -1465,8 +1458,8 @@ void ray_trace(ShadeInput *shi, ShadeResult *shr)
 	float diff[3];
 	int do_tra, do_mir;
 	
-	do_tra= ((shi->mat->mode & MA_TRANSP) && (shi->mat->mode & MA_RAYTRANSP) && shr->alpha!=1.0f);
-	do_mir= ((shi->mat->mode & MA_RAYMIRROR) && shi->ray_mirror!=0.0f);
+	do_tra= ((shi->mat->mode & MA_TRANSP) && (shi->mat->mode & MA_RAYTRANSP) && shr->alpha!=1.0f && (shi->depth <= shi->mat->ray_depth_tra));
+	do_mir= ((shi->mat->mode & MA_RAYMIRROR) && shi->ray_mirror!=0.0f && (shi->depth <= shi->mat->ray_depth));
 	
 	/* raytrace mirror amd refract like to separate the spec color */
 	if(shi->combinedflag & SCE_PASS_SPEC)
@@ -1577,7 +1570,7 @@ static void ray_trace_shadow_tra(Isect *is, ShadeInput *origshi, int depth, int 
 		memset(&shi, 0, sizeof(ShadeInput)); 
 		/* end warning! - Campbell */
 		
-		shi.depth= 1;					/* only used to indicate tracing */
+		shi.depth= origshi->depth + 1;					/* only used to indicate tracing */
 		shi.mask= origshi->mask;
 		shi.thread= origshi->thread;
 		shi.passflag= SCE_PASS_COMBINED;

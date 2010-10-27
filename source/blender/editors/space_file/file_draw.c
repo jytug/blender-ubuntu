@@ -1,5 +1,5 @@
 /**
- * $Id: file_draw.c 31656 2010-08-30 08:28:48Z campbellbarton $
+ * $Id: file_draw.c 32551 2010-10-18 06:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,6 +40,7 @@
 
 #include "BKE_context.h"
 #include "BKE_global.h"
+#include "BKE_main.h"
 
 #include "BLF_api.h"
 
@@ -79,7 +80,7 @@ enum {
 } eFile_ButEvents;
 
 
-static void do_file_buttons(bContext *C, void *arg, int event)
+static void do_file_buttons(bContext *C, void *UNUSED(arg), int event)
 {
 	switch(event) {
 		case B_FS_FILENAME:
@@ -172,6 +173,10 @@ void file_draw_buttons(const bContext *C, ARegion *ar)
 	
 	/* Text input fields for directory and file. */
 	if (available_w > 0) {
+		int overwrite_alert= file_draw_check_exists(sfile);
+		/* callbacks for operator check functions */
+		uiBlockSetFunc(block, file_draw_check_cb, NULL, NULL);
+
 		but = uiDefBut(block, TEX, B_FS_DIRNAME, "",
 				 min_x, line1_y, line1_w-chan_offs, btn_h, 
 				 params->dir, 0.0, (float)FILE_MAX-1, 0, 0, 
@@ -182,9 +187,17 @@ void file_draw_buttons(const bContext *C, ARegion *ar)
 		but = uiDefBut(block, TEX, B_FS_FILENAME, "",
 				 min_x, line2_y, line2_w-chan_offs, btn_h,
 				 params->file, 0.0, (float)FILE_MAXFILE-1, 0, 0, 
-				 "File name.");
+				 overwrite_alert ?"File name, overwrite existing." : "File name.");
 		uiButSetCompleteFunc(but, autocomplete_file, NULL);
 		uiButSetFlag(but, UI_BUT_NO_UTF8);
+		
+		/* check if this overrides a file and if the operator option is used */
+		if(overwrite_alert) {
+			uiButSetFlag(but, UI_BUT_REDALERT);
+		}
+		
+		/* clear func */
+		uiBlockSetFunc(block, NULL, NULL, NULL);
 	}
 	
 	/* Filename number increment / decrement buttons. */
@@ -421,7 +434,7 @@ static void file_draw_preview(uiBlock *block, struct direntry *file, int sx, int
 	}
 }
 
-static void renamebutton_cb(bContext *C, void *arg1, char *oldname)
+static void renamebutton_cb(bContext *C, void *UNUSED(arg1), char *oldname)
 {
 	char newname[FILE_MAX+12];
 	char orgname[FILE_MAX+12];
@@ -433,9 +446,9 @@ static void renamebutton_cb(bContext *C, void *arg1, char *oldname)
 	struct direntry *file = (struct direntry *)arg1;
 #endif
 
-	BLI_make_file_string(G.sce, orgname, sfile->params->dir, oldname);
+	BLI_make_file_string(G.main->name, orgname, sfile->params->dir, oldname);
 	BLI_strncpy(filename, sfile->params->renameedit, sizeof(filename));
-	BLI_make_file_string(G.sce, newname, sfile->params->dir, filename);
+	BLI_make_file_string(G.main->name, newname, sfile->params->dir, filename);
 
 	if( strcmp(orgname, newname) != 0 ) {
 		if (!BLI_exists(newname)) {

@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_cloth.c 31364 2010-08-16 05:46:10Z campbellbarton $
+* $Id: MOD_cloth.c 32619 2010-10-21 01:55:39Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -36,6 +36,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_cloth.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_global.h"
@@ -61,7 +62,9 @@ static void initData(ModifierData *md)
 }
 
 static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
-		DerivedMesh *derivedData, int useRenderParams, int isFinalCalc)
+						DerivedMesh *dm,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	ClothModifierData *clmd = (ClothModifierData*) md;
 	DerivedMesh *result=NULL;
@@ -72,17 +75,17 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		initData(md);
 		
 		if(!clmd->sim_parms || !clmd->coll_parms)
-			return derivedData;
+			return dm;
 	}
 
-	result = clothModifier_do(clmd, md->scene, ob, derivedData, useRenderParams, isFinalCalc);
+	result = clothModifier_do(clmd, md->scene, ob, dm);
 
 	if(result)
 	{
 		CDDM_calc_normals(result);
 		return result;
 	}
-	return derivedData;
+	return dm;
 }
 
 static void updateDepgraph(
@@ -111,16 +114,16 @@ static void updateDepgraph(
 	}
 }
 
-static CustomDataMask requiredDataMask(Object *ob, ModifierData *md)
+static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 {
 	CustomDataMask dataMask = 0;
 	ClothModifierData *clmd = (ClothModifierData*)md;
 
 	if(cloth_uses_vgroup(clmd))
-		dataMask |= (1 << CD_MDEFORMVERT);
+		dataMask |= CD_MASK_MDEFORMVERT;
 
 	if(clmd->sim_parms->shapekey_rest != 0)
-		dataMask |= (1 << CD_CLOTH_ORCO);
+		dataMask |= CD_MASK_CLOTH_ORCO;
 
 	return dataMask;
 }
@@ -150,7 +153,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tclmd->clothObject = NULL;
 }
 
-static int dependsOnTime(ModifierData *md)
+static int dependsOnTime(ModifierData *UNUSED(md))
 {
 	return 1;
 }
@@ -201,6 +204,7 @@ ModifierTypeInfo modifierType_Cloth = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     dependsOnTime,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

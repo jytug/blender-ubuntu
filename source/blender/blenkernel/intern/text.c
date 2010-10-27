@@ -1,7 +1,7 @@
 /* text.c
  *
  *
- * $Id: text.c 31316 2010-08-13 14:23:44Z blendix $
+ * $Id: text.c 32629 2010-10-21 08:32:53Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -241,7 +241,7 @@ int reopen_text(Text *text)
 	if (!text || !text->name) return 0;
 	
 	BLI_strncpy(str, text->name, FILE_MAXDIR+FILE_MAXFILE);
-	BLI_path_abs(str, G.sce);
+	BLI_path_abs(str, G.main->name);
 	
 	fp= fopen(str, "r");
 	if(fp==NULL) return 0;
@@ -991,8 +991,8 @@ void txt_move_to (Text *text, unsigned int line, unsigned int ch, short sel)
 		if ((*linep)->next) *linep= (*linep)->next;
 		else break;
 	}
-	if (ch>(*linep)->len)
-		ch= (*linep)->len;
+	if (ch>(unsigned int)((*linep)->len))
+		ch= (unsigned int)((*linep)->len);
 	*charp= ch;
 	
 	if(!sel) txt_pop_sel(text);

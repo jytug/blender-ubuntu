@@ -1,5 +1,5 @@
 /**
- * $Id: math_base.c 27655 2010-03-22 09:30:00Z campbellbarton $
+ * $Id: math_base.c 32579 2010-10-19 04:25:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,7 +52,8 @@ double round(double x)
 		y += 1.0;
 	return copysign(y, x);
 }
-
+#else /* OpenSuse 11.1 seems to need this. */
+double round(double x);
 #endif
 
 
