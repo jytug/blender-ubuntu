@@ -1,5 +1,5 @@
 /**
- * $Id: gpu_material.c 31341 2010-08-15 09:34:18Z blendix $
+ * $Id: gpu_material.c 32361 2010-10-07 10:04:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -605,7 +605,7 @@ static void shade_one_light(GPUShadeInput *shi, GPUShadeResult *shr, GPULamp *la
 	Material *ma= shi->mat;
 	GPUMaterial *mat= shi->gpumat;
 	GPUNodeLink *lv, *dist, *visifac, *is, *inp, *i, *vn, *view;
-	GPUNodeLink *outcol, *specfac, *t, *shadfac;
+	GPUNodeLink *outcol, *specfac, *t, *shadfac= NULL;
 	float one = 1.0f;
 
 	if((lamp->mode & LA_ONLYSHADOW) && !(ma->mode & MA_SHADOW))

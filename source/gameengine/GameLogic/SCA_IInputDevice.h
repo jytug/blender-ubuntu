@@ -2,7 +2,7 @@
  * Interface for input devices. The defines for keyboard/system/mouse events
  * here are for internal use in the KX module.
  *
- * $Id: SCA_IInputDevice.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: SCA_IInputDevice.h 32613 2010-10-20 12:33:00Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,7 +47,6 @@ public:
 		KX_JUSTACTIVATED,
 		KX_ACTIVE,
 		KX_JUSTRELEASED,
-		KX_MAX_INPUTSTATUS
 	};
 
 	SCA_InputEvent(SCA_EnumInputs status=KX_NO_INPUTSTATUS,int eventval=0)

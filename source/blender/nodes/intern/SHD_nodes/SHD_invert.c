@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_invert.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SHD_invert.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,7 @@ static bNodeSocketType sh_node_invert_out[]= {
 	{ -1, 0, "" } 
 };
 
-static void node_shader_exec_invert(void *data, bNode *node, bNodeStack **in, 
+static void node_shader_exec_invert(void *UNUSED(data), bNode *UNUSED(node), bNodeStack **in, 
 bNodeStack **out) 
 {
 	float col[3], facm;
@@ -64,7 +64,7 @@ bNodeStack **out)
 	VECCOPY(out[0]->vec, col);
 }
 
-static int gpu_shader_invert(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
+static int gpu_shader_invert(GPUMaterial *mat, bNode *UNUSED(node), GPUNodeStack *in, GPUNodeStack *out)
 {
 	return GPU_stack_link(mat, "invert", in, out);
 }

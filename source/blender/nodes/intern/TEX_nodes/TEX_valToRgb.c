@@ -1,5 +1,5 @@
 /**
- * $Id: TEX_valToRgb.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: TEX_valToRgb.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -87,7 +87,7 @@ static bNodeSocketType rgbtobw_out[]= {
 };
 
 
-static void rgbtobw_valuefn(float *out, TexParams *p, bNode *node, bNodeStack **in, short thread)
+static void rgbtobw_valuefn(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack **in, short thread)
 {
 	float cin[4];
 	tex_input_rgba(cin, in[0], p, thread);

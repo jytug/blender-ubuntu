@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_node.h 31063 2010-08-05 10:50:38Z campbellbarton $
+ * $Id: BKE_node.h 31902 2010-09-13 06:08:26Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -192,7 +192,7 @@ int				nodeSetActiveID(struct bNodeTree *ntree, short idtype, struct ID *id);
 void			nodeClearActiveID(struct bNodeTree *ntree, short idtype);
 
 void			NodeTagChanged(struct bNodeTree *ntree, struct bNode *node);
-void			NodeTagIDChanged(struct bNodeTree *ntree, struct ID *id);
+int				NodeTagIDChanged(struct bNodeTree *ntree, struct ID *id);
 
 /* ************** Groups ****************** */
 

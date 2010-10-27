@@ -1,5 +1,5 @@
 /**
- * $Id: RE_render_ext.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: RE_render_ext.h 32075 2010-09-23 12:03:34Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,7 +51,7 @@ struct ImBuf;
 //void    RE_zbufferall_radio(struct RadView *vw, struct RNode **rg_elem, int rg_totelem, struct Render *re);
 
 /* particle.c, effect.c, editmesh_modes.c and brush.c, returns 1 if rgb, 0 otherwise */
-int	externtex(struct MTex *mtex, float *vec, float *tin, float *tr, float *tg, float *tb, float *ta);
+int	externtex(struct MTex *mtex, float *vec, float *tin, float *tr, float *tg, float *tb, float *ta, const int thread);
 
 /* particle.c */
 void texture_rgb_blend(float *in, float *tex, float *out, float fact, float facg, int blendtype);

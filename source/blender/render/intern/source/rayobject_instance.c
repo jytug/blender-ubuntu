@@ -1,5 +1,5 @@
 /**
- * $Id: rayobject_instance.c 29477 2010-06-15 20:00:01Z jaguarandi $
+ * $Id: rayobject_instance.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +41,7 @@ static void RE_rayobject_instance_free(RayObject *o);
 static void RE_rayobject_instance_bb(RayObject *o, float *min, float *max);
 static float RE_rayobject_instance_cost(RayObject *o);
 
-static void RE_rayobject_instance_hint_bb(RayObject *o, RayHint *hint, float *min, float *max)
+static void RE_rayobject_instance_hint_bb(RayObject *UNUSED(o), RayHint *UNUSED(hint), float *UNUSED(min), float *UNUSED(max))
 {}
 
 static RayObjectAPI instance_api =

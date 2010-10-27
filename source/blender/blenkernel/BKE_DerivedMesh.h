@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_DerivedMesh.h 28117 2010-04-10 22:12:10Z campbellbarton $
+ * $Id: BKE_DerivedMesh.h 32321 2010-10-05 11:25:34Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -280,7 +280,8 @@ struct DerivedMesh {
 	void (*drawMappedFaces)(DerivedMesh *dm,
 							int (*setDrawOptions)(void *userData, int index,
 												  int *drawSmooth_r),
-							void *userData, int useColors);
+							void *userData, int useColors,
+							int (*setMaterial)(int, void *attribs));
 
 	/* Draw mapped faces using MTFace 
 	 *  o Drawing options too complicated to enumerate, look at code.

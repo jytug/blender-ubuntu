@@ -1,5 +1,5 @@
 /**
- * $Id: MOD_util.h 31223 2010-08-10 21:22:26Z gsrb3d $
+ * $Id: MOD_util.h 32462 2010-10-14 06:29:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,9 +40,9 @@ struct ModifierData;
 void get_texture_value(struct Tex *texture, float *tex_co, struct TexResult *texres);
 void modifier_vgroup_cache(struct ModifierData *md, float (*vertexCos)[3]);
 void validate_layer_name(const struct CustomData *data, int type, char *name, char *outname);
-struct DerivedMesh *get_cddm(struct Scene *scene, struct Object *ob, struct EditMesh *em, struct DerivedMesh *dm, float (*vertexCos)[3]);
-struct DerivedMesh *get_dm(struct Scene *scene, struct Object *ob, struct EditMesh *em, struct DerivedMesh *dm, float (*vertexCos)[3], int orco);
+struct DerivedMesh *get_cddm(struct Object *ob, struct EditMesh *em, struct DerivedMesh *dm, float (*vertexCos)[3]);
+struct DerivedMesh *get_dm(struct Object *ob, struct EditMesh *em, struct DerivedMesh *dm, float (*vertexCos)[3], int orco);
 
-void modifier_type_init(struct ModifierTypeInfo *types[], ModifierType type);
+void modifier_type_init(struct ModifierTypeInfo *types[]);
 
 #endif /* MOD_UTIL_H */

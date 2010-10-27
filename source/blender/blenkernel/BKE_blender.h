@@ -3,7 +3,7 @@
  *	
  * Blender util stuff?
  *
- * $Id: BKE_blender.h 31859 2010-09-10 16:29:19Z ton $ 
+ * $Id: BKE_blender.h 32736 2010-10-27 11:33:04Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,14 +44,14 @@ struct ReportList;
 struct Scene;
 struct Main;
 
-#define BLENDER_VERSION			254
+#define BLENDER_VERSION			255
 #define BLENDER_SUBVERSION		0
 
 #define BLENDER_MINVERSION		250
 #define BLENDER_MINSUBVERSION	0
 
-int BKE_read_file(struct bContext *C, char *dir, void *type_r, struct ReportList *reports);
-int BKE_read_file_from_memory(struct bContext *C, char* filebuf, int filelength, void *type_r, struct ReportList *reports);
+int BKE_read_file(struct bContext *C, char *dir, struct ReportList *reports);
+int BKE_read_file_from_memory(struct bContext *C, char* filebuf, int filelength, struct ReportList *reports);
 int BKE_read_file_from_memfile(struct bContext *C, struct MemFile *memfile, struct ReportList *reports);
 
 void free_blender(void);

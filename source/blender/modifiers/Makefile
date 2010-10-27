@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 31223 2010-08-10 21:22:26Z gsrb3d $
+# $Id: Makefile 32668 2010-10-23 15:40:13Z campbellbarton $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -30,5 +30,5 @@
 
 SOURCEDIR = source/blender/modifiers
 DIRS = intern
-
+CFLAGS += -DWITH_MOD_BOOLEAN -DWITH_MOD_BOOLEAN
 include nan_subdirs.mk

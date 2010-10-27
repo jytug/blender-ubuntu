@@ -1,5 +1,5 @@
 /**
- * $Id: bpy_interface.c 31747 2010-09-04 09:27:21Z jesterking $
+ * $Id: bpy_interface.c 32728 2010-10-27 06:05:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,13 +23,12 @@
  * ***** END GPL LICENSE BLOCK *****
  */
  
-
-
 /* grr, python redefines */
 #ifdef _POSIX_C_SOURCE
 #undef _POSIX_C_SOURCE
 #endif
 
+#include <Python.h>
 
 #include "bpy.h"
 #include "bpy_rna.h"
@@ -43,6 +42,7 @@
 #include "BLI_math_base.h"
 #include "BLI_string.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_context.h"
 #include "BKE_text.h"
 #include "BKE_font.h" /* only for utf8towchar */
@@ -52,6 +52,7 @@
 #include "BPY_extern.h"
 
 #include "../generic/bpy_internal_import.h" // our own imports
+#include "../generic/py_capi_utils.h"
 
 /* for internal use, when starting and ending python scripts */
 
@@ -103,7 +104,8 @@ void bpy_context_set(bContext *C, PyGILState_STATE *gilstate)
 	}
 }
 
-void bpy_context_clear(bContext *C, PyGILState_STATE *gilstate)
+/* context should be used but not now because it causes some bugs */
+void bpy_context_clear(bContext *UNUSED(C), PyGILState_STATE *gilstate)
 {
 	py_call_level--;
 
@@ -170,15 +172,7 @@ void BPY_start_python_path(void)
 	/* cmake/MSVC debug build crashes without this, why only
 	   in this case is unknown.. */
 	{
-		char *envpath = getenv("PYTHONPATH");
-
-		if(envpath && envpath[0]) {
-			char *newenvpath = BLI_sprintfN("%s;%s", py_path_bundle, envpath);
-			BLI_setenv("PYTHONPATH", newenvpath);
-			MEM_freeN(newenvpath);
-		}
-		else
-			BLI_setenv("PYTHONPATH", py_path_bundle);	
+		BLI_setenv("PYTHONPATH", py_path_bundle);	
 	}
 #endif
 
@@ -220,25 +214,10 @@ void BPY_start_python( int argc, char **argv )
 	/* sigh, why do python guys not have a char** version anymore? :( */
 	{
 		int i;
-#if 0
 		PyObject *py_argv= PyList_New(argc);
 		for (i=0; i<argc; i++)
-			PyList_SET_ITEM(py_argv, i, PyUnicode_FromString(argv[i]));
+			PyList_SET_ITEM(py_argv, i, PyC_UnicodeFromByte(argv[i])); /* should fix bug #20021 - utf path name problems, by replacing PyUnicode_FromString */
 
-#else	// should fix bug #20021 - utf path name problems
-		PyObject *py_argv= PyList_New(0);
-		for (i=0; i<argc; i++) {
-			PyObject *item= PyUnicode_Decode(argv[i], strlen(argv[i]), Py_FileSystemDefaultEncoding, NULL);
-			if(item==NULL) { // should never happen
-				PyErr_Print();
-				PyErr_Clear();
-			}
-			else {
-				PyList_Append(py_argv, item);
-				Py_DECREF(item);
-			}
-		}
-#endif
 		PySys_SetObject("argv", py_argv);
 		Py_DECREF(py_argv);
 	}
@@ -255,8 +234,8 @@ void BPY_start_python( int argc, char **argv )
 		//PyObject *m = PyImport_AddModule("__builtin__");
 		//PyObject *d = PyModule_GetDict(m);
 		PyObject *d = PyEval_GetBuiltins(  );
-		PyDict_SetItemString(d, "reload",		item=PyCFunction_New(bpy_reload_meth, NULL));	Py_DECREF(item);
-		PyDict_SetItemString(d, "__import__",	item=PyCFunction_New(bpy_import_meth, NULL));	Py_DECREF(item);
+		PyDict_SetItemString(d, "reload",		item=PyCFunction_New(&bpy_reload_meth, NULL));	Py_DECREF(item);
+		PyDict_SetItemString(d, "__import__",	item=PyCFunction_New(&bpy_import_meth, NULL));	Py_DECREF(item);
 	}
 	
 	pyrna_alloc_types();
@@ -314,7 +293,6 @@ int BPY_run_python_script( bContext *C, const char *fn, struct Text *text, struc
 	if (text) {
 		char fn_dummy[FILE_MAXDIR];
 		bpy_text_filename_get(fn_dummy, text);
-		py_dict = bpy_namespace_dict_new(fn_dummy);
 		
 		if( !text->compiled ) {	/* if it wasn't already compiled, do it now */
 			char *buf = txt_to_buf( text );
@@ -328,31 +306,36 @@ int BPY_run_python_script( bContext *C, const char *fn, struct Text *text, struc
 				BPY_free_compiled_text( text );
 			}
 		}
-		if(text->compiled)
-			py_result =  PyEval_EvalCode( text->compiled, py_dict, py_dict );
+
+		if(text->compiled) {
+			py_dict = PyC_DefaultNameSpace(fn_dummy);
+			py_result =  PyEval_EvalCode(text->compiled, py_dict, py_dict);
+		}
 		
 	}
 	else {
 		FILE *fp= fopen(fn, "r");
 
-		py_dict = bpy_namespace_dict_new(fn);
-
 		if(fp) {
+			py_dict = PyC_DefaultNameSpace(fn);
+
 #ifdef _WIN32
 			/* Previously we used PyRun_File to run directly the code on a FILE 
 			 * object, but as written in the Python/C API Ref Manual, chapter 2,
 			 * 'FILE structs for different C libraries can be different and 
 			 * incompatible'.
 			 * So now we load the script file data to a buffer */
-			char *pystring;
+			{
+				char *pystring;
 
-			fclose(fp);
+				fclose(fp);
 
-			pystring= MEM_mallocN(strlen(fn) + 32, "pystring");
-			pystring[0]= '\0';
-			sprintf(pystring, "exec(open(r'%s').read())", fn);
-			py_result = PyRun_String( pystring, Py_file_input, py_dict, py_dict );
-			MEM_freeN(pystring);
+				pystring= MEM_mallocN(strlen(fn) + 32, "pystring");
+				pystring[0]= '\0';
+				sprintf(pystring, "exec(open(r'%s').read())", fn);
+				py_result = PyRun_String( pystring, Py_file_input, py_dict, py_dict );
+				MEM_freeN(pystring);
+			}
 #else
 			py_result = PyRun_File(fp, fn, Py_file_input, py_dict, py_dict);
 			fclose(fp);
@@ -479,7 +462,7 @@ int BPY_run_python_script_space(const char *modulename, const char *func)
 	
 	gilstate = PyGILState_Ensure();
 	
-	py_dict = bpy_namespace_dict_new("<dummy>");
+	py_dict = PyC_DefaultNameSpace("<dummy>");
 	
 	PyObject *module = PyImport_ImportModule(scpt->script.filename);
 	if (module==NULL) {
@@ -531,7 +514,7 @@ int BPY_eval_button(bContext *C, const char *expr, double *value)
 
 	bpy_context_set(C, &gilstate);
 	
-	py_dict= bpy_namespace_dict_new("<blender button>");
+	py_dict= PyC_DefaultNameSpace("<blender button>");
 
 	mod = PyImport_ImportModule("math");
 	if (mod) {
@@ -602,7 +585,7 @@ int BPY_eval_string(bContext *C, const char *expr)
 
 	bpy_context_set(C, &gilstate);
 
-	py_dict= bpy_namespace_dict_new("<blender string>");
+	py_dict= PyC_DefaultNameSpace("<blender string>");
 
 	retval = PyRun_String(expr, Py_eval_input, py_dict, py_dict);
 

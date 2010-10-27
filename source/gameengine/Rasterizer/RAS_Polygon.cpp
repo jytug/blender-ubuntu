@@ -1,5 +1,5 @@
 /**
- * $Id: RAS_Polygon.cpp 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: RAS_Polygon.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786)
 #endif
 

@@ -1,6 +1,6 @@
 /*
  * Value.h: interface for the CValue class.
- * $Id: Value.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: Value.h 31950 2010-09-15 16:13:32Z campbellbarton $
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -13,7 +13,7 @@
  *
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786)
 #endif //WIN32
 

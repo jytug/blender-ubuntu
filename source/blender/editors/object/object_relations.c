@@ -1,5 +1,5 @@
 /**
- * $Id: object_relations.c 31627 2010-08-28 07:07:02Z nazgul $
+ * $Id: object_relations.c 32694 2010-10-25 07:12:29Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -57,6 +57,7 @@
 #include "BKE_depsgraph.h"
 #include "BKE_displist.h"
 #include "BKE_global.h"
+#include "BKE_fcurve.h"
 #include "BKE_lattice.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
@@ -82,6 +83,7 @@
 
 #include "ED_armature.h"
 #include "ED_curve.h"
+#include "ED_keyframing.h"
 #include "ED_object.h"
 #include "ED_screen.h"
 #include "ED_view3d.h"
@@ -353,7 +355,7 @@ static int make_proxy_exec (bContext *C, wmOperator *op)
 }
 
 /* Generic itemf's for operators that take library args */
-static EnumPropertyItem *proxy_group_object_itemf(bContext *C, PointerRNA *ptr, int *free)
+static EnumPropertyItem *proxy_group_object_itemf(bContext *C, PointerRNA *UNUSED(ptr), int *free)
 {
 	EnumPropertyItem *item= NULL, item_tmp;
 	int totitem= 0;
@@ -421,12 +423,15 @@ static int parent_clear_exec(bContext *C, wmOperator *op)
 	
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
 
+		if(ob->parent == NULL)
+			continue;
+		
 		if(type == 0) {
 			ob->parent= NULL;
 		}			
 		else if(type == 1) {
 			ob->parent= NULL;
-			object_apply_mat4(ob, ob->obmat);
+			object_apply_mat4(ob, ob->obmat, TRUE);
 		}
 		else if(type == 2)
 			unit_m4(ob->parentinv);
@@ -543,6 +548,17 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 			}
 			else cu->flag |= CU_FOLLOW;
 			
+			/* if follow, add F-Curve for ctime (i.e. "eval_time") so that path-follow works */
+			if(partype == PAR_FOLLOW) {
+				/* get or create F-Curve */
+				bAction *act = verify_adt_action(&cu->id, 1);
+				FCurve *fcu = verify_fcurve(act, NULL, "eval_time", 0, 1);
+				
+				/* setup dummy 'generator' modifier here to get 1-1 correspondance still working */
+				if (!fcu->bezt && !fcu->fpt && !fcu->modifiers.first)
+					add_fmodifier(&fcu->modifiers, FMODIFIER_TYPE_GENERATOR);
+			}
+			
 			/* fall back on regular parenting now (for follow only) */
 			if(partype == PAR_FOLLOW)
 				partype= PAR_OBJECT;
@@ -569,8 +585,8 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 				Object workob;
 				
 				/* apply transformation of previous parenting */
-				object_apply_mat4(ob, ob->obmat);
-				
+				/* object_apply_mat4(ob, ob->obmat); */ /* removed because of bug [#23577] */
+
 				/* set the parent (except for follow-path constraint option) */
 				if(partype != PAR_PATH_CONST)
 					ob->parent= par;
@@ -638,11 +654,11 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 				}
 				else if(pararm && ob->type==OB_MESH && par->type == OB_ARMATURE) {
 					if(partype == PAR_ARMATURE_NAME)
-						create_vgroups_from_armature(scene, ob, par, ARM_GROUPS_NAME, 0);
+						create_vgroups_from_armature(op->reports, scene, ob, par, ARM_GROUPS_NAME, 0);
 					else if(partype == PAR_ARMATURE_ENVELOPE)
-						create_vgroups_from_armature(scene, ob, par, ARM_GROUPS_ENVELOPE, 0);
+						create_vgroups_from_armature(op->reports, scene, ob, par, ARM_GROUPS_ENVELOPE, 0);
 					else if(partype == PAR_ARMATURE_AUTO)
-						create_vgroups_from_armature(scene, ob, par, ARM_GROUPS_AUTO, 0);
+						create_vgroups_from_armature(op->reports, scene, ob, par, ARM_GROUPS_AUTO, 0);
 					
 					/* get corrected inverse */
 					ob->partype= PAROBJECT;
@@ -665,11 +681,12 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 	DAG_scene_sort(bmain, scene);
 	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_OBJECT|ND_TRANSFORM, NULL);
+	WM_event_add_notifier(C, NC_OBJECT|ND_PARENT, NULL);
 	
 	return OPERATOR_FINISHED;
 }
 
-static int parent_set_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int parent_set_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(event))
 {
 	Object *ob= CTX_data_active_object(C);
 	uiPopupMenu *pup= uiPupMenuBegin(C, "Set Parent To", 0);
@@ -776,7 +793,7 @@ void OBJECT_OT_parent_no_inverse_set(wmOperatorType *ot)
 
 /************************ Clear Slow Parent Operator *********************/
 
-static int object_slow_parent_clear_exec(bContext *C, wmOperator *op)
+static int object_slow_parent_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
@@ -818,7 +835,7 @@ void OBJECT_OT_slow_parent_clear(wmOperatorType *ot)
 
 /********************** Make Slow Parent Operator *********************/
 
-static int object_slow_parent_set_exec(bContext *C, wmOperator *op)
+static int object_slow_parent_set_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
@@ -889,7 +906,7 @@ static int object_track_clear_exec(bContext *C, wmOperator *op)
 		}
 		
 		if(type == 1)
-			object_apply_mat4(ob, ob->obmat);
+			object_apply_mat4(ob, ob->obmat, TRUE);
 	}
 	CTX_DATA_END;
 
@@ -1108,7 +1125,7 @@ static int move_to_layer_exec(bContext *C, wmOperator *op)
 	
 	/* warning, active object may be hidden now */
 	
-	WM_event_add_notifier(C, NC_SCENE|NC_OBJECT|ND_DRAW, scene); /* is NC_SCENE needed ? */
+	WM_event_add_notifier(C, NC_OBJECT|ND_DRAW, scene);
 	WM_event_add_notifier(C, NC_SCENE|ND_LAYER_CONTENT, scene);
 
 	DAG_scene_sort(bmain, scene);
@@ -1137,7 +1154,7 @@ void OBJECT_OT_move_to_layer(wmOperatorType *ot)
 
 /************************** Link to Scene Operator *****************************/
 
-void link_to_scene(Main *bmain, unsigned short nr)
+void link_to_scene(Main *UNUSED(bmain), unsigned short UNUSED(nr))
 {
 #if 0
 	Scene *sce= (Scene*) BLI_findlink(&bmain->scene, G.curscreen->scenenr-1);
@@ -1341,7 +1358,7 @@ void OBJECT_OT_make_links_data(wmOperatorType *ot)
 
 /**************************** Make Single User ********************************/
 
-static void single_object_users__forwardModifierLinks(void *userData, Object *ob, Object **obpoin)
+static void single_object_users__forwardModifierLinks(void *UNUSED(userData), Object *UNUSED(ob), Object **obpoin)
 {
 	ID_NEW(*obpoin);
 }
@@ -1535,7 +1552,7 @@ void single_obdata_users(Main *bmain, Scene *scene, int flag)
 	}
 }
 
-void single_ipo_users(Scene *scene, int flag)
+void single_ipo_users(Scene *UNUSED(scene), int UNUSED(flag))
 {
 #if 0 // XXX old animation system
 	Object *ob;
@@ -1889,7 +1906,7 @@ void OBJECT_OT_make_single_user(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	ot->prop= RNA_def_enum(ot->srna, "type", type_items, 0, "Type", "");
+	ot->prop= RNA_def_enum(ot->srna, "type", type_items, SELECT, "Type", "");
 
 	RNA_def_boolean(ot->srna, "object", 0, "Object", "Make single user objects");
 	RNA_def_boolean(ot->srna, "obdata", 0, "Object Data", "Make single user object data");

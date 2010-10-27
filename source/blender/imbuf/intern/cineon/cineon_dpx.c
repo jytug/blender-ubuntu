@@ -27,7 +27,7 @@
  * cineon.c
  * contributors: joeedh
  * I hearby donate this code and all rights to the Blender Foundation.
- * $Id: cineon_dpx.c 31533 2010-08-23 11:46:12Z ton $
+ * $Id: cineon_dpx.c 32532 2010-10-17 06:38:56Z campbellbarton $
  */
  
 #include <stdio.h>
@@ -88,7 +88,7 @@ static struct ImBuf *imb_load_dpx_cineon(unsigned char *mem, int use_cineon, int
 		return NULL;
 	}
 	
-	ibuf = IMB_allocImBuf(width, height, 32, IB_rectfloat | flags, 0);
+	ibuf = IMB_allocImBuf(width, height, 32, IB_rectfloat | flags);
 
 	row = MEM_mallocN(sizeof(unsigned short)*width*depth, "row in cineon_dpx.c");
 	frow = ibuf->rect_float+width*height*4;
@@ -125,6 +125,8 @@ static int imb_save_dpx_cineon(ImBuf *buf, char *filename, int use_cineon, int f
 	int i, j;
 	int index;
 	float *fline;
+	
+	(void)flags; /* unused */
 
 	cineon_conversion_parameters(&conversion);
 

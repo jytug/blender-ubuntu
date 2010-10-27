@@ -1,5 +1,5 @@
 /**
- * $Id: KX_BlenderMouseDevice.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_BlenderMouseDevice.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // annoying warnings about truncated STL debug info
 #pragma warning (disable :4786)
 #endif 

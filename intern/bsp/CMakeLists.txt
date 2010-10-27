@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31545 2010-08-24 04:29:23Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,9 +24,17 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC intern ../container ../moto/include ../memutil)
+SET(INC
+	./intern
+	../container
+	../moto/include
+	../memutil
+)
 
-FILE(GLOB SRC intern/*.cpp)
+SET(SRC
+	intern/BSP_CSGMesh.cpp
+	intern/BSP_MeshPrimitives.cpp
+	intern/CSG_BooleanOps.cpp
+)
 
 BLENDERLIB(bf_intern_bsp "${SRC}" "${INC}")
-#, libtype='core', priority=15 )

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,13 +24,17 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.cpp)
-
 SET(INC
 	.
 	../../../source/kernel/gen_system
 	../../../intern/string
 	../../../intern/moto/include
+)
+
+SET(SRC
+	NG_NetworkMessage.cpp
+	NG_NetworkObject.cpp
+	NG_NetworkScene.cpp
 )
 
 BLENDERLIB(bf_ngnetwork "${SRC}" "${INC}")

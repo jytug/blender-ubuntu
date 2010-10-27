@@ -1,5 +1,5 @@
 /**
- * $Id: blf_lang.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: blf_lang.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -118,11 +118,13 @@ void BLF_lang_init(void)
 
 void BLF_lang_encoding(char *str)
 {
+	(void)str;
 	return;
 }
 
 void BLF_lang_set(char *str)
 {
+	(void)str;
 	return;
 }
 

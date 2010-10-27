@@ -1,7 +1,7 @@
 /**
  * blenkernel/DNA_userdef_types.h (mar-2001 nzc)
  *
- *	$Id: DNA_userdef_types.h 31708 2010-09-01 21:02:27Z khughes $
+ *	$Id: DNA_userdef_types.h 32309 2010-10-05 00:05:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,6 +34,10 @@
 
 #include "DNA_listBase.h"
 #include "DNA_texture_types.h" /* ColorBand */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* themes; defines in BIF_resource.h */
 struct ColorBand;
@@ -557,5 +561,9 @@ extern UserDef U; /* from blenkernel blender.c */
 #define TH_ROUNDED  	2
 #define TH_OLDSKOOL 	3
 #define TH_SHADED   	4
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

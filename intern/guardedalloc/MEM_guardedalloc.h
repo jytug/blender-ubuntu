@@ -1,5 +1,5 @@
 /**
- * $Id: MEM_guardedalloc.h 30705 2010-07-25 01:45:53Z campbellbarton $
+ * $Id: MEM_guardedalloc.h 32544 2010-10-18 00:25:32Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -150,6 +150,10 @@ extern "C" {
 	/*get the peak memory usage in bytes, including mmap allocations*/
 	uintptr_t MEM_get_peak_memory(void);
 
+#ifndef NDEBUG
+const char *MEM_name_ptr(void *vmemh);
+#endif
+	
 #ifdef __cplusplus
 }
 #endif

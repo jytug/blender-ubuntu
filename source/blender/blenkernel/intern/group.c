@@ -1,5 +1,5 @@
 /* 
- * $Id: group.c 31316 2010-08-13 14:23:44Z blendix $
+ * $Id: group.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,6 +42,7 @@
 
 #include "BLI_blenlib.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_global.h"
 #include "BKE_group.h"
 #include "BKE_library.h"
@@ -327,7 +328,7 @@ static void group_replaces_nla(Object *parent, Object *target, char mode)
 you can draw everything, leaves tags in objects to signal it needs further updating */
 
 /* note: does not work for derivedmesh and render... it recreates all again in convertblender.c */
-void group_handle_recalc_and_update(Scene *scene, Object *parent, Group *group)
+void group_handle_recalc_and_update(Scene *scene, Object *UNUSED(parent), Group *group)
 {
 	GroupObject *go;
 	

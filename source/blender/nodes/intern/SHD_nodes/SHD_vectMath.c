@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_vectMath.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SHD_vectMath.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,7 +44,7 @@ static bNodeSocketType sh_node_vect_math_out[]= {
 	{ -1, 0, "" } 
 };
 
-static void node_shader_exec_vect_math(void *data, bNode *node, bNodeStack **in, bNodeStack **out) 
+static void node_shader_exec_vect_math(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out) 
 { 
 	float vec1[3], vec2[3];
 	

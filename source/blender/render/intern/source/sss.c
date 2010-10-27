@@ -1,5 +1,5 @@
 /* 
- * $Id: sss.c 30936 2010-08-01 12:47:49Z blendix $
+ * $Id: sss.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -466,7 +466,7 @@ static void compute_radiance(ScatterTree *tree, float *co, float *rad)
 
 /* building */
 
-static void sum_leaf_radiance(ScatterTree *tree, ScatterNode *node)
+static void sum_leaf_radiance(ScatterTree *UNUSED(tree), ScatterNode *node)
 {
 	ScatterPoint *p;
 	float rad, totrad= 0.0f, inv;
@@ -540,7 +540,7 @@ static void sum_leaf_radiance(ScatterTree *tree, ScatterNode *node)
 	}
 }
 
-static void sum_branch_radiance(ScatterTree *tree, ScatterNode *node)
+static void sum_branch_radiance(ScatterTree *UNUSED(tree), ScatterNode *node)
 {
 	ScatterNode *subnode;
 	float rad, totrad= 0.0f, inv;

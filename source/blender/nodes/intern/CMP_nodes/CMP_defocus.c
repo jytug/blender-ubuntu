@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_defocus.c 29826 2010-06-30 15:15:31Z blendix $
+ * $Id: CMP_defocus.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -791,7 +791,7 @@ static void defocus_blur(bNode *node, CompBuf *new, CompBuf *img, CompBuf *zbuf,
 }
 
 
-static void node_composit_exec_defocus(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_defocus(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	CompBuf *new, *old, *zbuf_use = NULL, *img = in[0]->data, *zbuf = in[1]->data;
 	NodeDefocus *nqd = node->storage;

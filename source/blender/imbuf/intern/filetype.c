@@ -1,5 +1,5 @@
 /*
- * $Id: filetype.c 31006 2010-08-03 11:25:34Z campbellbarton $
+ * $Id: filetype.c 32532 2010-10-17 06:38:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -22,6 +22,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+#include <stddef.h>
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 #include "IMB_filetype.h"
@@ -44,7 +45,7 @@ static int imb_ftype_default(ImFileType *type, ImBuf *ibuf) { return (ibuf->ftyp
 #if defined(__APPLE__) && defined(IMBUF_COCOA)
 static int imb_ftype_cocoa(ImFileType *type, ImBuf *ibuf) { return (ibuf->ftype & TIF); }
 #endif
-static int imb_ftype_iris(ImFileType *type, ImBuf *ibuf) { return (ibuf->ftype == IMAGIC); }
+static int imb_ftype_iris(ImFileType *type, ImBuf *ibuf) { (void)type; return (ibuf->ftype == IMAGIC); }
 #ifdef WITH_QUICKTIME
 static int imb_ftype_quicktime(ImFileType *type, ImBuf *ibuf) { return 0; } // XXX
 #endif

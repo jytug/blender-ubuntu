@@ -23,7 +23,7 @@ bl_addon_info = {
     'author': 'Bassam Kurdali, Fabian Fricke, wiseman303',
     'version': (0, 40),
     'blender': (2, 5, 4),
-    'api': 31989,
+    'api': 32411,
     'location': 'View3D > Ctrl/C',
     'description': 'Copy Attributes Menu from Blender 2.4',
     'wiki_url': 'http://wiki.blender.org/index.php/Extensions:2.5/Py/'\
@@ -159,7 +159,7 @@ def pVisLocExec(bone, active, context):
 
 def pVisRotExec(bone, active, context):
     rotcopy(bone, getmat(bone, active,
-      context, not context.active_object.data.bones[bone.name].use_hinge))
+      context, not context.active_object.data.bones[bone.name].use_inherit_rotation))
 
 
 def pVisScaExec(bone, active, context):
@@ -236,9 +236,8 @@ class CopySelectedPoseConstraints(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        props = self.properties
         for idx, const in enumerate(context.active_pose_bone.constraints):
-            layout.prop(props, 'selection', index=idx, text=const.name,
+            layout.prop(self, "selection", index=idx, text=const.name,
                toggle=True)
 
     def execute(self, context):
@@ -306,6 +305,7 @@ def obDrw(ob, active, context):
     ob.show_texture_space = active.show_texture_space
     ob.show_transparent = active.show_transparent
     ob.show_wire = active.show_wire
+    ob.show_x_ray = active.show_x_ray
     ob.empty_draw_type = active.empty_draw_type
     ob.empty_draw_size = active.empty_draw_size
 
@@ -489,9 +489,8 @@ class CopySelectedObjectConstraints(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        props = self.properties
         for idx, const in enumerate(context.active_object.constraints):
-            layout.prop(props, 'selection', index=idx, text=const.name,
+            layout.prop(self, "selection", index=idx, text=const.name,
                toggle=True)
 
     def execute(self, context):
@@ -520,9 +519,8 @@ class CopySelectedObjectModifiers(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        props = self.properties
         for idx, const in enumerate(context.active_object.modifiers):
-            layout.prop(props, 'selection', index=idx, text=const.name,
+            layout.prop(self, 'selection', index=idx, text=const.name,
                toggle=True)
 
     def execute(self, context):
@@ -652,8 +650,8 @@ class MESH_OT_CopyFaceSettings(bpy.types.Operator):
 
     def execute(self, context):
         mesh = context.object.data
-        mode = self.properties.get('mode', 'MODE')
-        layername = self.properties.get('layer')
+        mode = getattr(self, 'mode', 'MODE')
+        layername = getattr(self, 'layer', None)
 
         # Switching out of edit mode updates the selected state of faces and
         # makes the data from the uv texture and vertex color layers available.
@@ -727,21 +725,28 @@ def _add_tface_buttons(self, context):
 
 def register():
     ''' mostly to get the keymap working '''
-    km = bpy.context.window_manager.keyconfigs['Blender'].\
-       keymaps['Object Mode']
+    kc = bpy.context.window_manager.keyconfigs['Blender']
+    km = kc.keymaps.get("Object Mode")
+    if km is None:
+         km = kc.keymaps.new(name="Object Mode")
     kmi = km.items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
     kmi.properties.name = 'VIEW3D_MT_copypopup'
-    km = bpy.context.window_manager.keyconfigs['Blender'].keymaps['Pose']
-    try:
-        kmi = km.items['pose.copy']
+    km = kc.keymaps.get("Pose")
+    if km is None:
+        km = kc.keymaps.new(name="Pose")
+
+    kmi = km.items.get("pose.copy")
+    if kmi is not None:
         kmi.idname = 'wm.call_menu'
-    except KeyError:
+    else:
         kmi = km.items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
     kmi.properties.name = 'VIEW3D_MT_posecopypopup'
     for menu in _layer_menus:
         bpy.types.register(menu)
     bpy.types.DATA_PT_texface.append(_add_tface_buttons)
-    km = bpy.context.window_manager.keyconfigs.active.keymaps['Mesh']
+    km = kc.keymaps.get("Mesh")
+    if km is None:
+        km = kc.keymaps.new(name="Mesh")
     kmi = km.items.new('wm.call_menu', 'C', 'PRESS')
     kmi.ctrl = True
     kmi.properties.name = 'MESH_MT_CopyFaceSettings'

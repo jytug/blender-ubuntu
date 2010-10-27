@@ -1,5 +1,5 @@
 /**
-* $Id: sequencer.c 31598 2010-08-26 23:30:15Z campbellbarton $
+* $Id: sequencer.c 32638 2010-10-21 17:00:38Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -61,8 +61,6 @@
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
-
-
 
 #include "BKE_context.h"
 #include "BKE_sound.h"
@@ -554,7 +552,7 @@ void calc_sequence(Scene *scene, Sequence *seq)
 }
 
 /* note: caller should run calc_sequence(scene, seq) after */
-void reload_sequence_new_file(Main *bmain, Scene *scene, Sequence * seq, int lock_range)
+void reload_sequence_new_file(Scene *scene, Sequence * seq, int lock_range)
 {
 	char str[FILE_MAXDIR+FILE_MAXFILE];
 	int prev_startdisp, prev_enddisp;
@@ -579,7 +577,7 @@ void reload_sequence_new_file(Main *bmain, Scene *scene, Sequence * seq, int loc
 	if (seq->type != SEQ_SCENE && seq->type != SEQ_META &&
 		seq->type != SEQ_IMAGE) {
 		BLI_join_dirfile(str, seq->strip->dir, seq->strip->stripdata->name);
-		BLI_path_abs(str, G.sce);
+		BLI_path_abs(str, G.main->name);
 	}
 
 	if (seq->type == SEQ_IMAGE) {
@@ -621,7 +619,7 @@ void reload_sequence_new_file(Main *bmain, Scene *scene, Sequence * seq, int loc
 		seq->strip->len = seq->len;
 	} else if (seq->type == SEQ_SCENE) {
 		/* 'seq->scenenr' should be replaced with something more reliable */
-		Scene * sce = bmain->scene.first;
+		Scene * sce = G.main->scene.first;
 		int nr = 1;
 		
 		while(sce) {
@@ -1005,7 +1003,7 @@ static int get_shown_sequences(	ListBase * seqbasep, int cfra, int chanshown, Se
 		}
 	}
 
-	for (;b <= chanshown; b++) {
+	for (;b <= chanshown && b >= 0; b++) {
 		if (video_seq_is_rendered(seq_arr[b])) {
 			seq_arr_out[cnt++] = seq_arr[b];
 		}
@@ -1021,7 +1019,7 @@ static int get_shown_sequences(	ListBase * seqbasep, int cfra, int chanshown, Se
 
 #define PROXY_MAXFILE (2*FILE_MAXDIR+FILE_MAXFILE)
 
-static int seq_proxy_get_fname(Scene *scene, Sequence * seq, int cfra, char * name, int render_size)
+static int seq_proxy_get_fname(Scene *UNUSED(scene), Sequence * seq, int cfra, char * name, int render_size)
 {
 	int frameno;
 	char dir[FILE_MAXDIR];
@@ -1044,7 +1042,7 @@ static int seq_proxy_get_fname(Scene *scene, Sequence * seq, int cfra, char * na
 
 	if (seq->flag & SEQ_USE_PROXY_CUSTOM_FILE) {
 		BLI_join_dirfile(name, dir, seq->strip->proxy->file);
-		BLI_path_abs(name, G.sce);
+		BLI_path_abs(name, G.main->name);
 
 		return TRUE;
 	}
@@ -1071,7 +1069,7 @@ static int seq_proxy_get_fname(Scene *scene, Sequence * seq, int cfra, char * na
 			 render_size);
 	}
 
-	BLI_path_abs(name, G.sce);
+	BLI_path_abs(name, G.main->name);
 	BLI_path_frame(name, frameno, 0);
 
 
@@ -1444,7 +1442,7 @@ static void color_balance(Sequence * seq, ImBuf* ibuf, float mul)
 */
 
 int input_have_to_preprocess(
-	Scene *scene, Sequence * seq, float cfra, int seqrectx, int seqrecty)
+	Scene *UNUSED(scene), Sequence * seq, float UNUSED(cfra), int UNUSED(seqrectx), int UNUSED(seqrecty))
 {
 	float mul;
 
@@ -1476,7 +1474,7 @@ int input_have_to_preprocess(
 }
 
 static ImBuf * input_preprocess(
-	Scene *scene, Sequence *seq, float cfra, int seqrectx, int seqrecty,
+	Scene *scene, Sequence *seq, float UNUSED(cfra), int seqrectx, int seqrecty,
 	ImBuf * ibuf)
 {
 	float mul;
@@ -1521,9 +1519,9 @@ static ImBuf * input_preprocess(
 			ImBuf * i;
 
 			if (ibuf->rect_float) {
-				i = IMB_allocImBuf(dx, dy,32, IB_rectfloat, 0);
+				i = IMB_allocImBuf(dx, dy,32, IB_rectfloat);
 			} else {
-				i = IMB_allocImBuf(dx, dy,32, IB_rect, 0);
+				i = IMB_allocImBuf(dx, dy,32, IB_rect);
 			}
 
 			IMB_rectcpy(i, ibuf, 
@@ -1787,7 +1785,7 @@ finish:
 
 	if (!out) {
 		out = IMB_allocImBuf(
-			(short)seqrectx, (short)seqrecty, 32, IB_rect, 0);
+			(short)seqrectx, (short)seqrecty, 32, IB_rect);
 	}
 
 	return out;
@@ -1803,7 +1801,8 @@ static ImBuf * seq_render_scene_strip_impl(
 	Object *oldcamera;
 	ListBase oldmarkers;
 	
-	/* Hack! This function can be called from do_render_seq(), in that case
+	/* Old info:
+	   Hack! This function can be called from do_render_seq(), in that case
 	   the seq->scene can already have a Render initialized with same name,
 	   so we have to use a default name. (compositor uses scene name to
 	   find render).
@@ -1815,9 +1814,27 @@ static ImBuf * seq_render_scene_strip_impl(
 	   and since G.rendering is uhm, gone... (Peter)
 	*/
 
+	/* New info:
+	   Using the same name for the renders works just fine as the do_render_seq()
+	   render is not used while the scene strips are rendered.
+	   
+	   However rendering from UI (through sequencer_preview_area_draw) can crash in
+	   very many cases since other renders (material preview, an actual render etc.)
+	   can be started while this sequence preview render is running. The only proper
+	   solution is to make the sequencer preview render a proper job, which can be
+	   stopped when needed. This would also give a nice progress bar for the preview
+	   space so that users know there's something happening.
+
+	   As a result the active scene now only uses OpenGL rendering for the sequencer
+	   preview. This is far from nice, but is the only way to prevent crashes at this
+	   time. 
+
+	   -jahka
+	*/
+
 	int rendering = G.rendering;
 	int doseq;
-	int doseq_gl= G.rendering ? /*(scene->r.seq_flag & R_SEQ_GL_REND)*/ 0 : (scene->r.seq_flag & R_SEQ_GL_PREV);
+	int doseq_gl= G.rendering ? /*(scene->r.seq_flag & R_SEQ_GL_REND)*/ 0 : /*(scene->r.seq_flag & R_SEQ_GL_PREV)*/ 1;
 	int have_seq= FALSE;
 	Scene *sce= seq->scene; /* dont refer to seq->scene above this point!, it can be NULL */
 	int sce_valid= FALSE;
@@ -1850,26 +1867,33 @@ static ImBuf * seq_render_scene_strip_impl(
 #endif
 	
 	if(sequencer_view3d_cb && BLI_thread_is_main() && doseq_gl && (seq->scene == scene || have_seq==0) && seq->scene->camera) {
+		/* for old scened this can be uninitialized, should probably be added to do_versions at some point if the functionality stays */
+		if(scene->r.seq_prev_type==0)
+			scene->r.seq_prev_type = 3 /* ==OB_SOLID */; 
+
 		/* opengl offscreen render */
 		scene_update_for_newframe(bmain, seq->scene, seq->scene->lay);
-		ibuf= sequencer_view3d_cb(seq->scene, seqrectx, seqrecty, IB_rect,
-					  scene->r.seq_prev_type);
+		ibuf= sequencer_view3d_cb(seq->scene, seqrectx, seqrecty, IB_rect, scene->r.seq_prev_type);
 	}
 	else {
-		Render *re;
+		Render *re = RE_GetRender(sce->id.name);
 		RenderResult rres;
-		
-		if(rendering)
-			re= RE_NewRender(" do_build_seq_ibuf");
-		else
-			re= RE_NewRender(sce->id.name);
-		
-		RE_BlenderFrame(re, bmain, sce, NULL, sce->lay, frame);
+
+		/* XXX: this if can be removed when sequence preview rendering uses the job system */
+		if(rendering || scene != sce) {
+			if(re==NULL)
+				re= RE_NewRender(sce->id.name);
+			
+			RE_BlenderFrame(re, bmain, sce, NULL, sce->lay, frame);
+
+			/* restore previous state after it was toggled on & off by RE_BlenderFrame */
+			G.rendering = rendering;
+		}
 		
 		RE_AcquireResultImage(re, &rres);
 		
 		if(rres.rectf) {
-			ibuf= IMB_allocImBuf(rres.rectx, rres.recty, 32, IB_rectfloat, 0);
+			ibuf= IMB_allocImBuf(rres.rectx, rres.recty, 32, IB_rectfloat);
 			memcpy(ibuf->rect_float, rres.rectf, 4*sizeof(float)*rres.rectx*rres.recty);
 			if(rres.rectz) {
 				addzbuffloatImBuf(ibuf);
@@ -1881,7 +1905,7 @@ static ImBuf * seq_render_scene_strip_impl(
 			IMB_convert_profile(ibuf, IB_PROFILE_SRGB);			
 		}
 		else if (rres.rect32) {
-			ibuf= IMB_allocImBuf(rres.rectx, rres.recty, 32, IB_rect, 0);
+			ibuf= IMB_allocImBuf(rres.rectx, rres.recty, 32, IB_rect);
 			memcpy(ibuf->rect, rres.rect32, 4*rres.rectx*rres.recty);
 		}
 		
@@ -1993,7 +2017,7 @@ static ImBuf * seq_render_strip(Main *bmain, Scene *scene, Sequence * seq, float
 
 		if(ibuf == 0 && s_elem) {
 			BLI_join_dirfile(name, seq->strip->dir, s_elem->name);
-			BLI_path_abs(name, G.sce);
+			BLI_path_abs(name, G.main->name);
 
 			ibuf = seq_proxy_fetch(scene, seq, cfra, render_size);
 		}
@@ -2029,7 +2053,7 @@ static ImBuf * seq_render_strip(Main *bmain, Scene *scene, Sequence * seq, float
 				BLI_join_dirfile(name, 
 						 seq->strip->dir, 
 						 seq->strip->stripdata->name);
-				BLI_path_abs(name, G.sce);
+				BLI_path_abs(name, G.main->name);
 					
 				seq->anim = openanim(
 					name, IB_rect | 
@@ -2070,7 +2094,7 @@ static ImBuf * seq_render_strip(Main *bmain, Scene *scene, Sequence * seq, float
 
 	if (!ibuf) {
 	        ibuf = IMB_allocImBuf(
-			(short)seqrectx, (short)seqrecty, 32, IB_rect, 0);
+			(short)seqrectx, (short)seqrecty, 32, IB_rect);
 	}
 
 	if (ibuf->x != seqrectx || ibuf->y != seqrecty) {
@@ -2204,7 +2228,7 @@ static ImBuf* seq_render_strip_stack(
 			if (i == 0) {
 				out = IMB_allocImBuf(
 					(short)seqrectx, (short)seqrecty, 
-					32, IB_rect, 0);
+					32, IB_rect);
 			}
 			break;
 		case 0:
@@ -3210,7 +3234,7 @@ void seq_offset_animdata(Scene *scene, Sequence *seq, int ofs)
 
 	for (fcu= scene->adt->action->curves.first; fcu; fcu= fcu->next) {
 		if(strstr(fcu->rna_path, "sequence_editor.sequences_all[") && strstr(fcu->rna_path, str)) {
-			int i;
+			unsigned int i;
 			for (i = 0; i < fcu->totvert; i++) {
 				BezTriple *bezt= &fcu->bezt[i];
 				bezt->vec[0][0] += ofs;
@@ -3483,7 +3507,7 @@ Sequence *sequencer_add_movie_strip(bContext *C, ListBase *seqbasep, SeqLoadInfo
 	struct anim *an;
 
 	BLI_strncpy(path, seq_load->path, sizeof(path));
-	BLI_path_abs(path, G.sce);
+	BLI_path_abs(path, G.main->name);
 
 	an = openanim(path, IB_rect);
 
@@ -3531,8 +3555,9 @@ Sequence *sequencer_add_movie_strip(bContext *C, ListBase *seqbasep, SeqLoadInfo
 }
 
 
-static Sequence *seq_dupli(struct Scene *scene, Sequence *seq, int dupe_flag)
+static Sequence *seq_dupli(struct Scene *scene, struct Scene *scene_to, Sequence *seq, int dupe_flag)
 {
+	Scene *sce_audio= scene_to ? scene_to : scene;
 	Sequence *seqn = MEM_dupallocN(seq);
 
 	seq->tmp = seqn;
@@ -3566,7 +3591,7 @@ static Sequence *seq_dupli(struct Scene *scene, Sequence *seq, int dupe_flag)
 	} else if(seq->type == SEQ_SCENE) {
 		seqn->strip->stripdata = 0;
 		if(seq->scene_sound)
-			seqn->scene_sound = sound_scene_add_scene_sound(scene, seqn, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
+			seqn->scene_sound = sound_scene_add_scene_sound(sce_audio, seqn, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
 	} else if(seq->type == SEQ_MOVIE) {
 		seqn->strip->stripdata =
 				MEM_dupallocN(seq->strip->stripdata);
@@ -3575,7 +3600,7 @@ static Sequence *seq_dupli(struct Scene *scene, Sequence *seq, int dupe_flag)
 		seqn->strip->stripdata =
 				MEM_dupallocN(seq->strip->stripdata);
 		if(seq->scene_sound)
-			seqn->scene_sound = sound_add_scene_sound(scene, seqn, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
+			seqn->scene_sound = sound_add_scene_sound(sce_audio, seqn, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
 
 		seqn->sound->id.us++;
 	} else if(seq->type == SEQ_IMAGE) {
@@ -3610,13 +3635,13 @@ static Sequence *seq_dupli(struct Scene *scene, Sequence *seq, int dupe_flag)
 	return seqn;
 }
 
-Sequence * seq_dupli_recursive(struct Scene *scene, Sequence * seq, int dupe_flag)
+Sequence * seq_dupli_recursive(struct Scene *scene, struct Scene *scene_to, Sequence * seq, int dupe_flag)
 {
-	Sequence * seqn = seq_dupli(scene, seq, dupe_flag);
+	Sequence * seqn = seq_dupli(scene, scene_to, seq, dupe_flag);
 	if (seq->type == SEQ_META) {
 		Sequence *s;
 		for(s= seq->seqbase.first; s; s = s->next) {
-			Sequence *n = seq_dupli_recursive(scene, s, dupe_flag);
+			Sequence *n = seq_dupli_recursive(scene, scene_to, s, dupe_flag);
 			if (n) {
 				BLI_addtail(&seqn->seqbase, n);
 			}
@@ -3625,7 +3650,7 @@ Sequence * seq_dupli_recursive(struct Scene *scene, Sequence * seq, int dupe_fla
 	return seqn;
 }
 
-void seqbase_dupli_recursive(Scene *scene, ListBase *nseqbase, ListBase *seqbase, int dupe_flag)
+void seqbase_dupli_recursive(Scene *scene, Scene *scene_to, ListBase *nseqbase, ListBase *seqbase, int dupe_flag)
 {
 	Sequence *seq;
 	Sequence *seqn = 0;
@@ -3634,7 +3659,7 @@ void seqbase_dupli_recursive(Scene *scene, ListBase *nseqbase, ListBase *seqbase
 	for(seq= seqbase->first; seq; seq= seq->next) {
 		seq->tmp= NULL;
 		if((seq->flag & SELECT) || (dupe_flag & SEQ_DUPE_ALL)) {
-			seqn = seq_dupli(scene, seq, dupe_flag);
+			seqn = seq_dupli(scene, scene_to, seq, dupe_flag);
 			if (seqn) { /*should never fail */
 				if(dupe_flag & SEQ_DUPE_CONTEXT) {
 					seq->flag &= ~SEQ_ALLSEL;
@@ -3643,7 +3668,7 @@ void seqbase_dupli_recursive(Scene *scene, ListBase *nseqbase, ListBase *seqbase
 
 				BLI_addtail(nseqbase, seqn);
 				if(seq->type==SEQ_META)
-					seqbase_dupli_recursive(scene, &seqn->seqbase, &seq->seqbase, dupe_flag);
+					seqbase_dupli_recursive(scene, scene_to, &seqn->seqbase, &seq->seqbase, dupe_flag);
 
 				if(dupe_flag & SEQ_DUPE_CONTEXT) {
 					if (seq == last_seq) {

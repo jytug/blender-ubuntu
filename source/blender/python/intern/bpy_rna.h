@@ -1,5 +1,5 @@
 /**
- * $Id: bpy_rna.h 31856 2010-09-10 14:54:50Z campbellbarton $
+ * $Id: bpy_rna.h 32456 2010-10-13 23:25:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -99,8 +99,9 @@ void pyrna_alloc_types(void);
 void pyrna_free_types(void);
 
 /* primitive type conversion */
-int pyrna_py_to_array(PointerRNA *ptr, PropertyRNA *prop, ParameterList *parms, char *param_data, PyObject *py, const char *error_prefix);
+int pyrna_py_to_array(PointerRNA *ptr, PropertyRNA *prop, char *param_data, PyObject *py, const char *error_prefix);
 int pyrna_py_to_array_index(PointerRNA *ptr, PropertyRNA *prop, int arraydim, int arrayoffset, int index, PyObject *py, const char *error_prefix);
+PyObject *pyrna_array_index(PointerRNA *ptr, PropertyRNA *prop, int index);
 
 PyObject *pyrna_py_from_array(PointerRNA *ptr, PropertyRNA *prop);
 PyObject *pyrna_py_from_array_index(BPy_PropertyArrayRNA *self, PointerRNA *ptr, PropertyRNA *prop, int index);

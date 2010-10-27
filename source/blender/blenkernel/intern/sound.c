@@ -1,7 +1,7 @@
 /**
  * sound.c (mar-2001 nzc)
  *
- * $Id: sound.c 31372 2010-08-16 11:41:07Z nexyon $
+ * $Id: sound.c 32551 2010-10-18 06:41:16Z campbellbarton $
  */
 
 #include <string.h>
@@ -110,6 +110,8 @@ void sound_init(struct Main *bmain)
 		
 #ifdef WITH_JACK
 	AUD_setSyncCallback(sound_sync_callback, bmain);
+#else
+	(void)bmain; /* unused */
 #endif
 }
 
@@ -129,7 +131,7 @@ struct bSound* sound_new_file(struct Main *bmain, char* filename)
 
 	strcpy(str, filename);
 
-	path = /*bmain ? bmain->name :*/ G.sce;
+	path = /*bmain ? bmain->name :*/ G.main->name;
 
 	BLI_path_abs(str, path);
 
@@ -234,7 +236,7 @@ void sound_delete_cache(struct bSound* sound)
 	}
 }
 
-void sound_load(struct Main *bmain, struct bSound* sound)
+void sound_load(struct Main *UNUSED(bmain), struct bSound* sound)
 {
 	if(sound)
 	{
@@ -264,7 +266,8 @@ void sound_load(struct Main *bmain, struct bSound* sound)
 			if(sound->id.lib)
 				path = sound->id.lib->filepath;
 			else
-				path = /*bmain ? bmain->name :*/ G.sce;
+				// XXX this should be fixed!
+				path = /*bmain ? bmain->name :*/ G.main->name;
 
 			BLI_path_abs(fullpath, path);
 
@@ -433,9 +436,11 @@ void sound_seek_scene(struct bContext *C)
 
 	if(scene->audio.flag & AUDIO_SCRUB && !CTX_wm_screen(C)->animtimer)
 	{
-		// AUD_XXX TODO: fix scrubbing, it currently doesn't stop playing
 		if(scene->audio.flag & AUDIO_SYNC)
+		{
+			AUD_seek(scene->sound_scene_handle, CFRA / FPS);
 			AUD_seekSequencer(scene->sound_scene_handle, CFRA / FPS);
+		}
 		else
 			AUD_seek(scene->sound_scene_handle, CFRA / FPS);
 		AUD_resume(scene->sound_scene_handle);

@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_setalpha.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: CMP_setalpha.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +40,7 @@ static bNodeSocketType cmp_node_setalpha_out[]= {
 	{	-1, 0, ""	}
 };
 
-static void node_composit_exec_setalpha(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_setalpha(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	/* stack order out: RGBA image */
 	/* stack order in: col, alpha */

@@ -1,5 +1,5 @@
 /**
- * $Id: KX_MouseFocusSensor.cpp 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_MouseFocusSensor.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,7 +28,7 @@
  * KX_MouseFocusSensor determines mouse in/out/over events.
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // This warning tells us about truncation of __long__ stl-generated names.
 // It can occasionally cause DevStudio to have internal compiler warnings.
 #pragma warning( disable : 4786 )     

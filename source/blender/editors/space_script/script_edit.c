@@ -1,5 +1,5 @@
 /**
- * $Id: script_edit.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: script_edit.c 32669 2010-10-23 16:03:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -60,6 +60,8 @@ static int run_pyfile_exec(bContext *C, wmOperator *op)
 		ED_region_tag_redraw(ar);
 		return OPERATOR_FINISHED;
 	}
+#else
+	(void)C; /* unused */
 #endif
 	return OPERATOR_CANCELLED; /* FAIL */
 }
@@ -80,7 +82,7 @@ void SCRIPT_OT_python_file_run(wmOperatorType *ot)
 }
 
 
-static int script_reload_exec(bContext *C, wmOperator *op)
+static int script_reload_exec(bContext *C, wmOperator *UNUSED(op))
 {
 #ifndef DISABLE_PYTHON
 	/* TODO, this crashes on netrender and keying sets, need to look into why
@@ -89,6 +91,8 @@ static int script_reload_exec(bContext *C, wmOperator *op)
 	BPY_eval_string(C, "__import__('bpy').utils.load_scripts(reload_scripts=True)");
 	WM_cursor_wait(0);
 	return OPERATOR_FINISHED;
+#else
+	(void)C; /* unused */
 #endif
 	return OPERATOR_CANCELLED;
 }

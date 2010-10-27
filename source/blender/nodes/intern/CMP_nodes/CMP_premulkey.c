@@ -1,5 +1,5 @@
 /**
-* $Id: CMP_premulkey.c 26841 2010-02-12 13:34:04Z campbellbarton $
+* $Id: CMP_premulkey.c 32517 2010-10-16 14:32:17Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -41,7 +41,7 @@ static bNodeSocketType cmp_node_premulkey_out[]= {
 	{	-1, 0, ""	}
 };
 
-static void node_composit_exec_premulkey(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_premulkey(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	if(out[0]->hasoutput==0)
 		return;

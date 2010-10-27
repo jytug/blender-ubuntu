@@ -1,5 +1,5 @@
 /**
- * $Id: MOD_none.c 31223 2010-08-10 21:22:26Z gsrb3d $
+ * $Id: MOD_none.c 32462 2010-10-14 06:29:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,13 +34,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+#include "BKE_utildefines.h"
 #include "MOD_modifiertypes.h"
 
 /* We only need to define isDisabled; because it always returns 1,
  * no other functions will be called
  */
 
-static int isDisabled(ModifierData *md, int userRenderParams)
+static int isDisabled(ModifierData *UNUSED(md), int UNUSED(userRenderParams))
 {
 	return 1;
 }
@@ -65,6 +66,7 @@ ModifierTypeInfo modifierType_None = {
 	/* isDisabled */        isDisabled,
 	/* updateDepgraph */    0,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

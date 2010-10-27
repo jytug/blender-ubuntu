@@ -1,5 +1,5 @@
 /**
- * $Id: scanfill.c 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: scanfill.c 32484 2010-10-15 05:18:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -747,7 +747,7 @@ static void scanfill(PolyFill *pf, int mat_nr)
 
 
 
-int BLI_edgefill(int mode, int mat_nr)
+int BLI_edgefill(int mat_nr)
 {
 	/*
 	  - fill works with its own lists, so create that first (no faces!)

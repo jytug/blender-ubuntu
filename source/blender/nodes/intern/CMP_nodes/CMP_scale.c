@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_scale.c 30134 2010-07-08 20:58:34Z bdiego $
+ * $Id: CMP_scale.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -75,7 +75,7 @@ static void node_composit_exec_scale(void *data, bNode *node, bNodeStack **in, b
 		newx= MIN2(newx, CMP_SCALE_MAX);
 		newy= MIN2(newy, CMP_SCALE_MAX);
 
-		ibuf= IMB_allocImBuf(cbuf->x, cbuf->y, 32, 0, 0);
+		ibuf= IMB_allocImBuf(cbuf->x, cbuf->y, 32, 0);
 		if(ibuf) {
 			ibuf->rect_float= cbuf->rect;
 			IMB_scaleImBuf(ibuf, newx, newy);

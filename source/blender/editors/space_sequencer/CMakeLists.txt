@@ -19,18 +19,27 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.c)
-
 SET(INC
+	../include
 	../../blenkernel
 	../../blenlib
 	../../imbuf
-	../include
-	../../../../intern/guardedalloc
 	../../makesdna
 	../../makesrna
 	../../windowmanager
+	../../../../intern/guardedalloc
 	../../../../intern/audaspace/intern
+)
+
+SET(SRC
+	sequencer_add.c
+	sequencer_buttons.c
+	sequencer_draw.c
+	sequencer_edit.c
+	sequencer_ops.c
+	sequencer_scopes.c
+	sequencer_select.c
+	space_sequencer.c
 )
 
 BLENDERLIB(bf_editor_space_sequencer "${SRC}" "${INC}")

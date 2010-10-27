@@ -1,5 +1,5 @@
 /**
- * $Id: math_color.c 31592 2010-08-26 09:12:10Z campbellbarton $
+ * $Id: math_color.c 32463 2010-10-14 08:15:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * */
 
+#include <assert.h>
 
 #include "BLI_math.h"
 
@@ -133,6 +134,8 @@ void rgb_to_ycc(float r, float g, float b, float *ly, float *lcb, float *lcr, in
 		cb=(-0.16874f*sr)-(0.33126f*sg)+(0.5f*sb)+128.0f;
 		cr=(0.5f*sr)-(0.41869f*sg)-(0.08131f*sb)+128.0f;
 		break;
+	default:
+		assert(!"invalid colorspace");
 	}
 	
 	*ly=y;
@@ -163,6 +166,8 @@ void ycc_to_rgb(float y, float cb, float cr, float *lr, float *lg, float *lb, in
 		g=y-0.34414f*cb - 0.71414f*cr + 135.45984f;
 		b=y+1.772f*cb - 226.816f;
 		break;
+	default:
+		assert(!"invalid colorspace");
 	}
 	*lr=r/255.0f;
 	*lg=g/255.0f;
@@ -172,13 +177,16 @@ void ycc_to_rgb(float y, float cb, float cr, float *lr, float *lg, float *lb, in
 void hex_to_rgb(char *hexcol, float *r, float *g, float *b)
 {
 	unsigned int ri, gi, bi;
-	
+
 	if (hexcol[0] == '#') hexcol++;
-	
-	if (sscanf(hexcol, "%02x%02x%02x", &ri, &gi, &bi)) {
+
+	if (sscanf(hexcol, "%02x%02x%02x", &ri, &gi, &bi)==3) {
 		*r = ri / 255.0f;
 		*g = gi / 255.0f;		
 		*b = bi / 255.0f;
+		CLAMP(*r, 0.0f, 1.0f);
+		CLAMP(*g, 0.0f, 1.0f);
+		CLAMP(*b, 0.0f, 1.0f);
 	}
 }
 
@@ -225,6 +233,26 @@ void rgb_to_hsv(float r, float g, float b, float *lh, float *ls, float *lv)
 	*lh = h / 360.0f;
 	if(*lh < 0.0f) *lh= 0.0f;
 	*lv = v;
+}
+
+void rgb_to_hsv_compat(float r, float g, float b, float *lh, float *ls, float *lv)
+{
+	float orig_h= *lh;
+	float orig_s= *ls;
+
+	rgb_to_hsv(r, g, b, lh, ls, lv);
+
+	if(*lv <= 0.0f) {
+		*lh= orig_h;
+		*ls= orig_s;
+	}
+	else if (*ls <= 0.0f) {
+		*lh= orig_h;
+	}
+
+	if(*lh==0.0f && orig_h >= 1.0f) {
+		*lh= 1.0f;
+	}
 }
 
 /*http://brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html */
@@ -393,6 +421,7 @@ void srgb_to_linearrgb_rgba_rgba_buf(float *col_to, float *col_from, int tot)
 {
 	while(tot--) {
 		srgb_to_linearrgb_v3_v3(col_to, col_from);
+		col_to[3]= col_from[3];
 		col_to += 4;
 		col_from += 4;
 	}
@@ -402,6 +431,7 @@ void linearrgb_to_srgb_rgba_rgba_buf(float *col_to, float *col_from, int tot)
 {
 	while(tot--) {
 		linearrgb_to_srgb_v3_v3(col_to, col_from);
+		col_to[3]= col_from[3];
 		col_to += 4;
 		col_from += 4;
 	}
@@ -464,3 +494,28 @@ void lift_gamma_gain_to_asc_cdl(float *lift, float *gamma, float *gain, float *o
 	}
 }
 
+/* ******************************************** other ************************************************* */
+
+/* Applies an hue offset to a float rgb color */
+void rgb_float_set_hue_float_offset(float rgb[3], float hue_offset)
+{
+	float hsv[3];
+	
+	rgb_to_hsv(rgb[0], rgb[1], rgb[2], hsv, hsv+1, hsv+2);
+	
+	hsv[0]+= hue_offset;
+	if(hsv[0]>1.0)		hsv[0]-=1.0;
+	else if(hsv[0]<0.0)	hsv[0]+= 1.0;
+	
+	hsv_to_rgb(hsv[0], hsv[1], hsv[2], rgb, rgb+1, rgb+2);
+}
+
+/* Applies an hue offset to a byte rgb color */
+void rgb_byte_set_hue_float_offset(char rgb[3], float hue_offset)
+{
+	float rgb_float[3];
+	
+	rgb_byte_to_float(rgb, rgb_float);
+	rgb_float_set_hue_float_offset(rgb_float, hue_offset);
+	rgb_float_to_byte(rgb_float, rgb);
+}

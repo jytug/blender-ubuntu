@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31003 2010-08-03 08:12:55Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,8 +24,6 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.cpp)
-
 SET(INC
 	.
 	../../../source/kernel/gen_system
@@ -38,6 +36,19 @@ SET(INC
 	../../../intern/guardedalloc
 	../Expressions
 	${PYTHON_INC}
+)
+
+SET(SRC
+	RAS_2DFilterManager.cpp
+	RAS_BucketManager.cpp
+	RAS_FramingManager.cpp
+	RAS_IPolygonMaterial.cpp
+	RAS_IRenderTools.cpp
+	RAS_MaterialBucket.cpp
+	RAS_MeshObject.cpp
+	RAS_Polygon.cpp
+	RAS_TexVert.cpp
+	RAS_texmatrix.cpp
 )
 
 ADD_DEFINITIONS(-DGLEW_STATIC)

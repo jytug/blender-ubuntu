@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_array.c 31364 2010-08-16 05:46:10Z campbellbarton $
+* $Id: MOD_array.c 32618 2010-10-21 01:10:22Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -101,8 +101,8 @@ static void foreachObjectLink(
 	walk(userData, ob, &amd->offset_ob);
 }
 
-static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *scene,
-					 Object *ob, DagNode *obNode)
+static void updateDepgraph(ModifierData *md, DagForest *forest,
+	struct Scene *UNUSED(scene), Object *UNUSED(ob), DagNode *obNode)
 {
 	ArrayModifierData *amd = (ArrayModifierData*) md;
 
@@ -729,26 +729,27 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
 		  return result;
 }
 
-static DerivedMesh *applyModifier(
-		ModifierData *md, Object *ob, DerivedMesh *derivedData,
-  int useRenderParams, int isFinalCalc)
+static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
+						DerivedMesh *dm,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	DerivedMesh *result;
 	ArrayModifierData *amd = (ArrayModifierData*) md;
 
-	result = arrayModifier_doArray(amd, md->scene, ob, derivedData, 0);
+	result = arrayModifier_doArray(amd, md->scene, ob, dm, 0);
 
-	if(result != derivedData)
+	if(result != dm)
 		CDDM_calc_normals(result);
 
 	return result;
 }
 
-static DerivedMesh *applyModifierEM(
-		ModifierData *md, Object *ob, struct EditMesh *editData,
-  DerivedMesh *derivedData)
+static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
+						struct EditMesh *UNUSED(editData),
+						DerivedMesh *dm)
 {
-	return applyModifier(md, ob, derivedData, 0, 1);
+	return applyModifier(md, ob, dm, 0, 1);
 }
 
 
@@ -775,6 +776,7 @@ ModifierTypeInfo modifierType_Array = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     0,
 };

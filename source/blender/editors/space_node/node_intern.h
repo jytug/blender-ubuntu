@@ -1,5 +1,5 @@
 /**
- * $Id: node_intern.h 29319 2010-06-07 20:03:40Z campbellbarton $
+ * $Id: node_intern.h 32491 2010-10-15 09:07:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +41,7 @@ ARegion *node_has_buttons_region(ScrArea *sa);
 
 /* node_header.c */
 void node_header_buttons(const bContext *C, ARegion *ar);
-void node_menus_register(struct ARegionType *art);
+void node_menus_register(void);
 
 /* node_draw.c */
 void drawnodespace(const bContext *C, ARegion *ar, View2D *v2d);

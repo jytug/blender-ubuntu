@@ -1,5 +1,5 @@
 /**
- * $Id: wm_init_exit.c 31389 2010-08-16 17:17:33Z campbellbarton $
+ * $Id: wm_init_exit.c 32669 2010-10-23 16:03:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -134,7 +134,7 @@ void WM_init(bContext *C, int argc, char **argv)
 	WM_read_homefile(C, NULL);
 
 	/* note: there is a bug where python needs initializing before loading the
-	 * .B25.blend because it may contain PyDrivers. It also needs to be after
+	 * startup.blend because it may contain PyDrivers. It also needs to be after
 	 * initializing space types and other internal data.
 	 *
 	 * However cant redo this at the moment. Solution is to load python
@@ -145,6 +145,9 @@ void WM_init(bContext *C, int argc, char **argv)
 	BPY_set_context(C); /* necessary evil */
 	BPY_start_python(argc, argv);
 	BPY_load_user_modules(C);
+#else
+	(void)argc; /* unused */
+	(void)argv; /* unused */
 #endif
 
 	wm_init_reports(C); /* reports cant be initialized before the wm */
@@ -167,10 +170,10 @@ void WM_init(bContext *C, int argc, char **argv)
 	
 	read_history();
 
-	if(G.sce[0] == 0)
-		BLI_make_file_string("/", G.sce, BLI_getDefaultDocumentFolder(), "untitled.blend");
+	if(G.main->name[0] == 0)
+		BLI_make_file_string("/", G.main->name, BLI_getDefaultDocumentFolder(), "untitled.blend");
 
-	BLI_strncpy(G.lib, G.sce, FILE_MAX);
+	BLI_strncpy(G.lib, G.main->name, FILE_MAX);
 
 }
 
@@ -212,7 +215,7 @@ int WM_init_game(bContext *C)
 	wmWindow* win;
 
 	ScrArea *sa;
-	ARegion *ar;
+	ARegion *ar= NULL;
 
 	Scene *scene= CTX_data_scene(C);
 

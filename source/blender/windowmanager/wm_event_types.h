@@ -1,5 +1,5 @@
 /*
- * $Id: wm_event_types.h 29660 2010-06-23 18:47:56Z blendix $
+ * $Id: wm_event_types.h 32332 2010-10-05 19:10:15Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -204,7 +204,7 @@
 #define	ENDKEY		170
 
 #define UNKNOWNKEY	171
-#define COMMANDKEY	172
+#define OSKEY		172
 #define GRLESSKEY	173
 
 /* for event checks */
@@ -215,7 +215,7 @@
 #define ISKEYBOARD(event)	(event >=' ' && event <=320)
 
 	/* test whether the event is a modifier key */
-#define ISKEYMODIFIER(event)	((event >= LEFTCTRLKEY && event <= LEFTSHIFTKEY) || event == COMMANDKEY)
+#define ISKEYMODIFIER(event)	((event >= LEFTCTRLKEY && event <= LEFTSHIFTKEY) || event == OSKEY)
 
 	/* test whether the event is a mouse button */
 #define ISMOUSE(event)	(event >= LEFTMOUSE && event <= MOUSEROTATE)
@@ -269,10 +269,11 @@
 #define EVT_FILESELECT	0x5020
 
 /* event->val */
-#define EVT_FILESELECT_OPEN			1
-#define EVT_FILESELECT_FULL_OPEN	2
-#define EVT_FILESELECT_EXEC			3
-#define EVT_FILESELECT_CANCEL		4	
+#define EVT_FILESELECT_OPEN					1
+#define EVT_FILESELECT_FULL_OPEN			2
+#define EVT_FILESELECT_EXEC					3
+#define EVT_FILESELECT_CANCEL				4
+#define EVT_FILESELECT_EXTERNAL_CANCEL		5
 
 /* event->type */
 #define EVT_BUT_OPEN	0x5021

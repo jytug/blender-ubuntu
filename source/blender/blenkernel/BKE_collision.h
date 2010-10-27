@@ -1,7 +1,7 @@
 /**
  * BKE_cloth.h
  *
- * $Id: BKE_collision.h 31207 2010-08-10 05:41:51Z campbellbarton $
+ * $Id: BKE_collision.h 32629 2010-10-21 08:32:53Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -136,7 +136,7 @@ void interpolateOnTriangle ( float to[3], float v1[3], float v2[3], float v3[3],
 /////////////////////////////////////////////////
 // used in effect.c
 /////////////////////////////////////////////////
-struct Object **get_collisionobjects(struct Scene *scene, struct Object *self, struct Group *group, int *numcollobj);
+struct Object **get_collisionobjects(struct Scene *scene, struct Object *self, struct Group *group, unsigned int *numcollobj);
 
 typedef struct ColliderCache {
 	struct ColliderCache *next, *prev;

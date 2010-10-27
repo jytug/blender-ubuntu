@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_bevel.c 31364 2010-08-16 05:46:10Z campbellbarton $
+* $Id: MOD_bevel.c 32619 2010-10-21 01:55:39Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -66,20 +66,21 @@ static void copyData(ModifierData *md, ModifierData *target)
 	strncpy(tbmd->defgrp_name, bmd->defgrp_name, 32);
 }
 
-static CustomDataMask requiredDataMask(Object *ob, ModifierData *md)
+static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 {
 	BevelModifierData *bmd = (BevelModifierData *)md;
 	CustomDataMask dataMask = 0;
 
 	/* ask for vertexgroups if we need them */
-	if(bmd->defgrp_name[0]) dataMask |= (1 << CD_MDEFORMVERT);
+	if(bmd->defgrp_name[0]) dataMask |= CD_MASK_MDEFORMVERT;
 
 	return dataMask;
 }
 
-static DerivedMesh *applyModifier(
-		ModifierData *md, Object *ob, DerivedMesh *derivedData,
-  int useRenderParams, int isFinalCalc)
+static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
+						DerivedMesh *derivedData,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	DerivedMesh *result;
 	BME_Mesh *bm;
@@ -107,9 +108,9 @@ static DerivedMesh *applyModifier(
 	return result;
 }
 
-static DerivedMesh *applyModifierEM(
-		ModifierData *md, Object *ob, EditMesh *editData,
-  DerivedMesh *derivedData)
+static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
+						EditMesh *UNUSED(editData),
+						DerivedMesh *derivedData)
 {
 	return applyModifier(md, ob, derivedData, 0, 1);
 }
@@ -136,6 +137,7 @@ ModifierTypeInfo modifierType_Bevel = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    0,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

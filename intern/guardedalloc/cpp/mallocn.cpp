@@ -1,5 +1,5 @@
 /**
- * $Id: mallocn.cpp 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: mallocn.cpp 32382 2010-10-08 20:40:42Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
 
 void* operator new (size_t size)
 {
-	return MEM_mallocN(size, "c++/anonymous");
+	return MEM_mallocN(size, "C++/anonymous");
 }
 
 /* not default but can be used when needing to set a string */

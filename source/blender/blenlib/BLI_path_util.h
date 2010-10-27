@@ -3,7 +3,7 @@
  *
  * Some types for dealing with directories
  *
- * $Id: BLI_path_util.h 31007 2010-08-03 12:34:42Z campbellbarton $
+ * $Id: BLI_path_util.h 32729 2010-10-27 06:41:48Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,6 +44,7 @@ char *BLI_getDefaultDocumentFolder(void);
 
 char *BLI_get_folder(int folder_id, char *subfolder);
 char *BLI_get_folder_create(int folder_id, char *subfolder);
+char *BLI_get_user_folder_notest(int folder_id, char *subfolder);
 
 /* folder_id */
 
@@ -87,6 +88,14 @@ char *BLI_get_folder_create(int folder_id, char *subfolder);
 #define BLENDER_SYSTEM_FORMAT			"%s/blender/%s"
 #endif
 
+#ifdef WIN32
+#define SEP '\\'
+#define ALTSEP '/'
+#else
+#define SEP '/'
+#define ALTSEP '\\'
+#endif
+
 void BLI_setenv(const char *env, const char *val);
 void BLI_setenv_if_new(const char *env, const char* val);
 
@@ -97,9 +106,15 @@ void BLI_split_dirfile(const char *string, char *dir, char *file);
 void BLI_join_dirfile(char *string, const char *dir, const char *file);
 char *BLI_path_basename(char *path);
 int BKE_rebase_path(char *abs, int abs_size, char *rel, int rel_size, const char *base_dir, const char *src_dir, const char *dest_dir);
+char *BLI_last_slash(const char *string);
+int	  BLI_add_slash(char *string);
+void  BLI_del_slash(char *string);
+char *BLI_first_slash(char *string);
+
 void BLI_getlastdir(const char* dir, char *last, int maxlen);
 int BLI_testextensie(const char *str, const char *ext);
 int BLI_testextensie_array(const char *str, const char **ext_array);
+int BLI_testextensie_glob(const char *str, const char *ext_fnmatch);
 int BLI_replace_extension(char *path, int maxlen, const char *ext);
 void BLI_uniquename(struct ListBase *list, void *vlink, const char defname[], char delim, short name_offs, short len);
 void BLI_newname(char * name, int add);

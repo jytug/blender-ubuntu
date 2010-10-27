@@ -1,6 +1,6 @@
 /* ipo.c
  * 
- * $Id: ipo.c 31785 2010-09-06 10:35:32Z jhk $
+ * $Id: ipo.c 32684 2010-10-24 12:54:52Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -317,7 +317,7 @@ static char *constraint_adrcodes_to_paths (int adrcode, int *array_index)
  * NOTE: as we don't have access to the keyblock where the data comes from (for now), 
  *	 	we'll just use numerical indicies for now... 
  */
-static char *shapekey_adrcodes_to_paths (int adrcode, int *array_index)
+static char *shapekey_adrcodes_to_paths (int adrcode, int *UNUSED(array_index))
 {
 	static char buf[128];
 	
@@ -331,7 +331,7 @@ static char *shapekey_adrcodes_to_paths (int adrcode, int *array_index)
 }
 
 /* MTex (Texture Slot) types */
-static char *mtex_adrcodes_to_paths (int adrcode, int *array_index)
+static char *mtex_adrcodes_to_paths (int adrcode, int *UNUSED(array_index))
 {
 	char *base=NULL, *prop=NULL;
 	static char buf[128];
@@ -1123,7 +1123,8 @@ static void icu_to_fcurves (ID *id, ListBase *groups, ListBase *list, IpoCurve *
 {
 	AdrBit2Path *abp;
 	FCurve *fcu;
-	int i=0, totbits;
+	unsigned int i=0;
+	int totbits;
 	
 	/* allocate memory for a new F-Curve */
 	fcu= MEM_callocN(sizeof(FCurve), "FCurve");

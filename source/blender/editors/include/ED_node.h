@@ -1,5 +1,5 @@
 /**
- * $Id: ED_node.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: ED_node.h 32483 2010-10-15 04:27:09Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +40,7 @@ void ED_init_node_butfuncs(void);
 
 /* node_draw.c */
 void ED_node_changed_update(struct ID *id, struct bNode *node);
-void ED_node_generic_update(struct Main *bmain, struct Scene *scene, struct bNodeTree *ntree, struct bNode *node);
+void ED_node_generic_update(struct Main *bmain, struct bNodeTree *ntree, struct bNode *node);
 
 /* node_edit.c */
 void ED_node_shader_default(struct Material *ma);

@@ -1,5 +1,5 @@
 /**
- * $Id: object_lattice.c 31209 2010-08-10 06:36:42Z nazgul $
+ * $Id: object_lattice.c 32479 2010-10-15 01:36:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -259,7 +259,7 @@ int make_regular_poll(bContext *C)
 	return (ob && ob->type==OB_LATTICE);
 }
 
-int make_regular_exec(bContext *C, wmOperator *op)
+int make_regular_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob= CTX_data_edit_object(C);
 	Lattice *lt;

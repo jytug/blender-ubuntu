@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_LogicManager.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: SCA_LogicManager.h 32386 2010-10-09 10:45:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,7 @@
 #ifndef __KX_LOGICMANAGER
 #define __KX_LOGICMANAGER
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786)
 #endif 
 
@@ -127,6 +127,7 @@ public:
 	void	RegisterMeshName(const STR_String& meshname,void* mesh);
 	void	UnregisterMeshName(const STR_String& meshname,void* mesh);
 	GEN_Map<STR_HashedString,void*>&	GetMeshMap() { return m_mapStringToMeshes; };
+	GEN_Map<STR_HashedString,void*>&	GetActionMap() { return m_mapStringToActions; };
 	
 	void	RegisterActionName(const STR_String& actname,void* action);
 

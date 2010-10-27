@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_output.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SHD_output.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,7 @@ static bNodeSocketType sh_node_output_in[]= {
 	{	-1, 0, ""	}
 };
 
-static void node_shader_exec_output(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_output(void *data, bNode *node, bNodeStack **in, bNodeStack **UNUSED(out))
 {
 	if(data) {
 		ShadeInput *shi= ((ShaderCallData *)data)->shi;
@@ -62,7 +62,7 @@ static void node_shader_exec_output(void *data, bNode *node, bNodeStack **in, bN
 	}	
 }
 
-static int gpu_shader_output(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
+static int gpu_shader_output(GPUMaterial *mat, bNode *UNUSED(node), GPUNodeStack *in, GPUNodeStack *out)
 {
 	GPUNodeLink *outlink;
 

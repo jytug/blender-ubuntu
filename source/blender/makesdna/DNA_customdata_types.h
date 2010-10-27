@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_customdata_types.h 28009 2010-04-05 11:11:15Z blendix $
+ * $Id: DNA_customdata_types.h 32309 2010-10-05 00:05:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,10 @@
 
 #ifndef DNA_CUSTOMDATA_TYPES_H
 #define DNA_CUSTOMDATA_TYPES_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* descriptor and storage for a custom data layer */
 typedef struct CustomDataLayer {
@@ -127,5 +131,9 @@ typedef struct CustomData {
 /* Limits */
 #define MAX_MTFACE 8
 #define MAX_MCOL   8
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

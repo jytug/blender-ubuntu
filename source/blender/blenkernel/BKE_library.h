@@ -3,7 +3,7 @@
  *	
  * Library
  *
- * $Id: BKE_library.h 31028 2010-08-04 04:01:27Z campbellbarton $ 
+ * $Id: BKE_library.h 32309 2010-10-05 00:05:14Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,6 +32,10 @@
  */
 #ifndef BKE_LIBRARY_TYPES_H
 #define BKE_LIBRARY_TYPES_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct ListBase;
 struct ID;
@@ -84,5 +88,9 @@ void set_free_windowmanager_cb(void (*func)(struct bContext *, struct wmWindowMa
 
 /* use when "" is given to new_id() */
 #define ID_FALLBACK_NAME "Untitled"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

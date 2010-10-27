@@ -24,7 +24,7 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * $Id: targa.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: targa.c 32532 2010-10-17 06:38:56Z campbellbarton $
  */
 
 #ifdef WIN32
@@ -238,6 +238,8 @@ int imb_savetarga(struct ImBuf * ibuf, char *name, int flags)
 	char buf[20];
 	FILE *fildes;
 	short ok = 0;
+	
+	(void)flags; /* unused */
 
 	if (ibuf == 0) return (0);
 	if (ibuf->rect == 0) return (0);
@@ -359,7 +361,7 @@ static void complete_partial_load(struct ImBuf *ibuf, unsigned int *rect)
 	}
 }
 
-static void decodetarga(struct ImBuf *ibuf, unsigned char *mem, int mem_size, int psize)
+static void decodetarga(struct ImBuf *ibuf, unsigned char *mem, size_t mem_size, int psize)
 {
 	unsigned char *mem_end = mem+mem_size;
 	int count, col, size;
@@ -470,7 +472,7 @@ partial_load:
 	complete_partial_load(ibuf, rect);
 }
 
-static void ldtarga(struct ImBuf * ibuf,unsigned char * mem, int mem_size, int psize)
+static void ldtarga(struct ImBuf * ibuf,unsigned char * mem, size_t mem_size, int psize)
 {
 	unsigned char *mem_end = mem+mem_size;
 	int col,size;
@@ -527,7 +529,7 @@ partial_load:
 }
 
 
-struct ImBuf *imb_loadtarga(unsigned char *mem, int mem_size, int flags)
+struct ImBuf *imb_loadtarga(unsigned char *mem, size_t mem_size, int flags)
 {
 	TARGA tga;
 	struct ImBuf * ibuf;
@@ -537,8 +539,8 @@ struct ImBuf *imb_loadtarga(unsigned char *mem, int mem_size, int flags)
 	
 	if (checktarga(&tga,mem) == 0) return(0);
 
-	if (flags & IB_test) ibuf = IMB_allocImBuf(tga.xsize,tga.ysize,tga.pixsize, 0, 0);
-	else ibuf = IMB_allocImBuf(tga.xsize,tga.ysize,(tga.pixsize + 0x7) & ~0x7, IB_rect, 0);
+	if (flags & IB_test) ibuf = IMB_allocImBuf(tga.xsize,tga.ysize,tga.pixsize, 0);
+	else ibuf = IMB_allocImBuf(tga.xsize,tga.ysize,(tga.pixsize + 0x7) & ~0x7, IB_rect);
 
 	if (ibuf == 0) return(0);
 	ibuf->ftype = TGA;

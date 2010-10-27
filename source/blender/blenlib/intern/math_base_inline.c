@@ -1,5 +1,5 @@
 /**
- * $Id: math_base_inline.c 27629 2010-03-20 18:52:03Z campbellbarton $
+ * $Id: math_base_inline.c 32118 2010-09-25 11:30:46Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -120,6 +120,11 @@ MINLINE float minf(float a, float b)
 MINLINE float maxf(float a, float b)
 {
 	return (a > b)? a: b;
+}
+
+MINLINE float signf(float f)
+{
+	return (f < 0.f)? -1.f: 1.f;
 }
 
 #endif /* BLI_MATH_BASE_INLINE */

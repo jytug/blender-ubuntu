@@ -1,5 +1,5 @@
 /**
- * $Id: BLI_math_base.h 29623 2010-06-22 15:20:06Z blendix $
+ * $Id: BLI_math_base.h 32648 2010-10-22 10:17:55Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -70,6 +70,11 @@ extern "C" {
 #define M_LN10          2.30258509299404568402
 #endif
 
+/* non-standard defines, used in some places */
+#ifndef MAXFLOAT
+#define MAXFLOAT  ((float)3.40282347e+38)
+#endif
+
 #ifndef sqrtf
 #define sqrtf(a) ((float)sqrt(a))
 #endif
@@ -123,6 +128,7 @@ extern "C" {
 #ifndef FREE_WINDOWS
 #define isnan(n) _isnan(n)
 #define finite _finite
+#define hypot _hypot
 #endif
 #endif
 
@@ -154,6 +160,8 @@ MINLINE float interpf(float a, float b, float t);
 
 MINLINE float minf(float a, float b);
 MINLINE float maxf(float a, float b);
+
+MINLINE float signf(float f);
 
 MINLINE float power_of_2(float f);
 

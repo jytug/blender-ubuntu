@@ -1,5 +1,5 @@
 /**
- * $Id: RAS_MeshObject.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: RAS_MeshObject.h 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,7 @@
 #ifndef __RAS_MESHOBJECT
 #define __RAS_MESHOBJECT
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // disable the STL warnings ("debug information length > 255")
 #pragma warning (disable:4786)
 #endif

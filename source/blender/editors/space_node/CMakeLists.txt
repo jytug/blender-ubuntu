@@ -19,20 +19,30 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.c)
-
 SET(INC
+	../include
 	../../blenkernel
 	../../blenlib
 	../../imbuf
-	../include
-	../../../../intern/guardedalloc
-	../../../../intern/opennl/extern
 	../../makesdna
 	../../makesrna
 	../../nodes
-	../../render/extern/include
 	../../windowmanager
+	../../render/extern/include
+	../../../../intern/guardedalloc
+	../../../../intern/opennl/extern
+)
+
+SET(SRC
+	drawnode.c
+	node_buttons.c
+	node_draw.c
+	node_edit.c
+	node_header.c
+	node_ops.c
+	node_select.c
+	node_state.c
+	space_node.c
 )
 
 IF(WIN32)

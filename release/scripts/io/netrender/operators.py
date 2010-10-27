@@ -20,6 +20,7 @@ import bpy
 import sys, os
 import http, http.client, http.server, urllib, socket
 import webbrowser
+import json
 
 import netrender
 from netrender.utils import *
@@ -205,10 +206,10 @@ class RENDER_OT_netclientstatus(bpy.types.Operator):
             conn.request("GET", "/status")
 
             response = conn.getresponse()
-            response.read()
+            content = response.read()
             print( response.status, response.reason )
 
-            jobs = (netrender.model.RenderJob.materialize(j) for j in eval(str(response.read(), encoding='utf8')))
+            jobs = (netrender.model.RenderJob.materialize(j) for j in json.loads(str(content, encoding='utf8')))
 
             while(len(netsettings.jobs) > 0):
                 netsettings.jobs.remove(0)
@@ -307,10 +308,10 @@ class RENDER_OT_netclientslaves(bpy.types.Operator):
             conn.request("GET", "/slaves")
 
             response = conn.getresponse()
-            response.read()
+            content = response.read()
             print( response.status, response.reason )
 
-            slaves = (netrender.model.RenderSlave.materialize(s) for s in eval(str(response.read(), encoding='utf8')))
+            slaves = (netrender.model.RenderSlave.materialize(s) for s in json.loads(str(content, encoding='utf8')))
 
             while(len(netsettings.slaves) > 0):
                 netsettings.slaves.remove(0)
@@ -416,7 +417,7 @@ class netclientdownload(bpy.types.Operator):
             for frame in job.frames:
                 client.requestResult(conn, job.id, frame.number)
                 response = conn.getresponse()
-                response.read()
+                buf = response.read()
 
                 if response.status != http.client.OK:
                     print("missing", frame.number)
@@ -424,12 +425,9 @@ class netclientdownload(bpy.types.Operator):
 
                 print("got back", frame.number)
 
-                f = open(os.path.join(netsettings.path, "%06d.exr" % frame.number), "wb")
-                buf = response.read(1024)
+                f = open(os.path.join(bpy.path.abspath(netsettings.path), "%06d.exr" % frame.number), "wb")
 
-                while buf:
-                    f.write(buf)
-                    buf = response.read(1024)
+                f.write(buf)
 
                 f.close()
 

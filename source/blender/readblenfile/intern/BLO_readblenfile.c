@@ -1,5 +1,5 @@
 /*
- * $Id: BLO_readblenfile.c 29953 2010-07-04 23:26:55Z campbellbarton $
+ * $Id: BLO_readblenfile.c 31935 2010-09-15 06:43:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -132,7 +132,8 @@ blo_read_runtime(
 	ReportList *reports)
 {
 	BlendFileData *bfd= NULL;
-	int fd, actualsize, datastart;
+	size_t actualsize;
+	int fd, datastart;
 	char buf[8];
 
 	fd= open(path, O_BINARY|O_RDONLY, 0);

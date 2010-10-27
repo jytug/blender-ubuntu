@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_mapping.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SHD_mapping.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +41,7 @@ static bNodeSocketType sh_node_mapping_out[]= {
 };
 
 /* do the regular mapping options for blender textures */
-static void node_shader_exec_mapping(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_mapping(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	TexMapping *texmap= node->storage;
 	float *vec= out[0]->vec;

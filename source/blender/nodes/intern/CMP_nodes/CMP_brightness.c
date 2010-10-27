@@ -1,5 +1,5 @@
 /**
-* $Id: CMP_brightness.c 26841 2010-02-12 13:34:04Z campbellbarton $
+* $Id: CMP_brightness.c 32517 2010-10-16 14:32:17Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -77,7 +77,7 @@ static void do_brightnesscontrast(bNode *node, float *out, float *in)
 	}
 }
 
-static void node_composit_exec_brightcontrast(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_brightcontrast(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	if(out[0]->hasoutput==0)
 		return;

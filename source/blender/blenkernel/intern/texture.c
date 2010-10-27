@@ -1,7 +1,7 @@
 /* texture.c
  *
  *
- * $Id: texture.c 31742 2010-09-03 14:53:54Z campbellbarton $
+ * $Id: texture.c 32593 2010-10-19 10:26:53Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1337,13 +1337,11 @@ int BKE_texture_dependsOnTime(const struct Tex *texture)
 	else if(	texture->ima && 
 			ELEM(texture->ima->source, IMA_SRC_SEQUENCE, IMA_SRC_MOVIE)) {
 		return 1;
-	} 
-#if 0 // XXX old animation system
-	else if(texture->ipo) {
-		// assume any ipo means the texture is animated
+	}
+	else if(texture->adt) {
+		// assume anything in adt means the texture is animated
 		return 1;
 	}
-#endif // XXX old animation system
 	return 0;
 }
 

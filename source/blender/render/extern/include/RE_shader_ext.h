@@ -1,5 +1,5 @@
 /**
- * $Id: RE_shader_ext.h 29020 2010-05-27 08:22:16Z broken $
+ * $Id: RE_shader_ext.h 32603 2010-10-19 16:10:30Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,7 +52,7 @@ typedef struct ShadeResult
 	float emit[3];
 	float diff[3];		/* no ramps, shadow, etc */
 	float spec[3];
-	float shad[3];
+	float shad[4];		/* shad[3] is shadow intensity */
 	float ao[3];
 	float env[3];
 	float indirect[3];

@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_translate.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: CMP_translate.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,7 @@ static bNodeSocketType cmp_node_translate_out[]= {
 	{	-1, 0, ""	}
 };
 
-static void node_composit_exec_translate(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_translate(void *UNUSED(data), bNode *UNUSED(node), bNodeStack **in, bNodeStack **out)
 {
 	if(in[0]->data) {
 		CompBuf *cbuf= in[0]->data;

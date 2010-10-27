@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_particlesystem.c 28181 2010-04-13 22:43:48Z campbellbarton $
+* $Id: MOD_particlesystem.c 32619 2010-10-21 01:55:39Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -34,6 +34,7 @@
 
 #include "DNA_material_types.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_material.h"
 #include "BKE_modifier.h"
@@ -94,17 +95,17 @@ static CustomDataMask requiredDataMask(Object *ob, ModifierData *md)
 			mtex=ma->mtex[i];
 			if(mtex && (ma->septex & (1<<i))==0)
 				if(mtex->pmapto && (mtex->texco & TEXCO_UV))
-					dataMask |= (1 << CD_MTFACE);
+					dataMask |= CD_MASK_MTFACE;
 		}
 	}
 
 	if(psmd->psys->part->tanfac!=0.0)
-		dataMask |= (1 << CD_MTFACE);
+		dataMask |= CD_MASK_MTFACE;
 
 	/* ask for vertexgroups if we need them */
 	for(i=0; i<PSYS_TOT_VG; i++){
 		if(psmd->psys->vgroup[i]){
-			dataMask |= (1 << CD_MDEFORMVERT);
+			dataMask |= CD_MASK_MDEFORMVERT;
 			break;
 		}
 	}
@@ -119,9 +120,12 @@ static CustomDataMask requiredDataMask(Object *ob, ModifierData *md)
 }
 
 /* saves the current emitter state for a particle system and calculates particles */
-static void deformVerts(
-						   ModifierData *md, Object *ob, DerivedMesh *derivedData,
-		float (*vertexCos)[3], int numVerts, int useRenderParams, int isFinalCalc)
+static void deformVerts(ModifierData *md, Object *ob,
+						DerivedMesh *derivedData,
+						float (*vertexCos)[3],
+						int UNUSED(numVerts),
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	DerivedMesh *dm = derivedData;
 	ParticleSystemModifierData *psmd= (ParticleSystemModifierData*) md;
@@ -137,7 +141,7 @@ static void deformVerts(
 		return;
 
 	if(dm==0) {
-		dm= get_dm(md->scene, ob, NULL, NULL, vertexCos, 1);
+		dm= get_dm(ob, NULL, NULL, vertexCos, 1);
 
 		if(!dm)
 			return;
@@ -227,6 +231,7 @@ ModifierTypeInfo modifierType_ParticleSystem = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    0,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

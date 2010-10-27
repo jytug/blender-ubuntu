@@ -1,5 +1,5 @@
 /**
- * $Id: BLI_math_color.h 31592 2010-08-26 09:12:10Z campbellbarton $
+ * $Id: BLI_math_color.h 32449 2010-10-13 13:53:49Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -61,6 +61,7 @@ void cpack_to_rgb(unsigned int col, float *r, float *g, float *b);
 void rgb_to_yuv(float r, float g, float b, float *ly, float *lu, float *lv);
 void rgb_to_ycc(float r, float g, float b, float *ly, float *lcb, float *lcr, int colorspace);
 void rgb_to_hsv(float r, float g, float b, float *lh, float *ls, float *lv);
+void rgb_to_hsv_compat(float r, float g, float b, float *lh, float *ls, float *lv);
 unsigned int rgb_to_cpack(float r, float g, float b);
 unsigned int hsv_to_cpack(float h, float s, float v);
 
@@ -86,7 +87,10 @@ void linearrgb_to_srgb_rgba_rgba_buf(float *col_to, float *col_from, int tot);
 
 int constrain_rgb(float *r, float *g, float *b);
 void minmax_rgb(short c[3]);
-	
+
+void rgb_float_set_hue_float_offset(float * rgb, float hue_offset);
+void rgb_byte_set_hue_float_offset(char * rgb, float hue_offset);
+
 /***************** lift/gamma/gain / ASC-CDL conversion *****************/
 
 void lift_gamma_gain_to_asc_cdl(float *lift, float *gamma, float *gain, float *offset, float *slope, float *power);

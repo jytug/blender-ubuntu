@@ -1,5 +1,5 @@
 /**
- * $Id: DocumentExporter.h 29191 2010-06-03 17:41:33Z kazanbas $
+ * $Id: DocumentExporter.h 32309 2010-10-05 00:05:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,10 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+#ifndef __DOCUMENTEXPORTER_H__
+#define __DOCUMENTEXPORTER_H__
+
 struct Scene;
 
 class DocumentExporter
@@ -29,3 +33,5 @@ class DocumentExporter
 	void exportCurrentScene(Scene *sce, const char* filename);
 	void exportScenes(const char* filename);
 };
+
+#endif

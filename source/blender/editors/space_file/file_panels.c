@@ -1,5 +1,5 @@
 /**
- * $Id: file_panels.c 29440 2010-06-14 03:52:10Z campbellbarton $
+ * $Id: file_panels.c 32511 2010-10-16 08:03:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,7 +49,7 @@
 
 #include <string.h>
 
-static void file_panel_cb(bContext *C, void *arg_entry, void *arg_unused)
+static void file_panel_cb(bContext *C, void *arg_entry, void *UNUSED(arg_v))
 {
 	PointerRNA ptr;
 	char *entry= (char*)arg_entry;
@@ -151,7 +151,7 @@ static void file_panel_recent(const bContext *C, Panel *pa)
 }
 
 
-static int file_panel_operator_poll(const bContext *C, PanelType *pt)
+static int file_panel_operator_poll(const bContext *C, PanelType *UNUSED(pt))
 {
 	SpaceFile *sfile= CTX_wm_space_file(C);
 	return (sfile && sfile->op);
@@ -170,7 +170,9 @@ static void file_panel_operator(const bContext *C, Panel *pa)
 	SpaceFile *sfile= CTX_wm_space_file(C);
 	wmOperator *op= sfile->op;
 	int empty= 1, flag;
-
+	
+	uiBlockSetFunc(uiLayoutGetBlock(pa->layout), file_draw_check_cb, NULL, NULL);
+	
 	if(op->type->ui) {
 		op->layout= pa->layout;
 		op->type->ui((bContext*)C, op);
@@ -197,6 +199,8 @@ static void file_panel_operator(const bContext *C, Panel *pa)
 		if(empty)
 			uiItemL(pa->layout, "No properties.", 0);
 	}
+	
+	uiBlockSetFunc(uiLayoutGetBlock(pa->layout), NULL, NULL, NULL);
 }
 
 void file_panels_register(ARegionType *art)

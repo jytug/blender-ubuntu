@@ -1,5 +1,5 @@
 /**
- * $Id: rayobject.cpp 28202 2010-04-15 10:28:32Z blendix $
+ * $Id: rayobject.cpp 32669 2010-10-23 16:03:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -533,7 +533,11 @@ float RE_rayobject_cost(RayObject *r)
 		r = RE_rayobject_align( r );
 		return r->api->cost( r );
 	}
-	else assert(0);
+	else
+	{
+		assert(0);
+		return 1.0; /* XXX, better default value? */
+	}
 }
 
 void RE_rayobject_hint_bb(RayObject *r, RayHint *hint, float *min, float *max)

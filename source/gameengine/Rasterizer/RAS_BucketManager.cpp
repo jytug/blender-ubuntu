@@ -1,5 +1,5 @@
 /**
- * $Id: RAS_BucketManager.cpp 29494 2010-06-16 19:07:20Z moguri $
+ * $Id: RAS_BucketManager.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // don't show these anoying STL warnings
 #pragma warning (disable:4786)
 #endif

@@ -1,5 +1,5 @@
 /**
- * $Id: view3d_draw.c 31870 2010-09-11 04:39:00Z campbellbarton $
+ * $Id: view3d_draw.c 32732 2010-10-27 08:55:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -571,93 +571,74 @@ static void drawcursor(Scene *scene, ARegion *ar, View3D *v3d)
 	}
 }
 
-/* Draw a live substitute of the view icon, which is always shown */
+/* Draw a live substitute of the view icon, which is always shown
+ * colors copied from transform_manipulator.c, we should keep these matching. */
 static void draw_view_axis(RegionView3D *rv3d)
 {
 	const float k = U.rvisize;   /* axis size */
 	const float toll = 0.5;      /* used to see when view is quasi-orthogonal */
 	const float start = k + 1.0; /* axis center in screen coordinates, x=y */
 	float ydisp = 0.0;          /* vertical displacement to allow obj info text */
-	
-	/* rvibright ranges approx. from original axis icon color to gizmo color */
-	float bright = U.rvibright / 15.0f;
-	
-	unsigned char col[3];
-	unsigned char gridcol[3];
-	float colf[3];
-	
-	float vec[4];
+
+	float vec[3];
 	float dx, dy;
-	float h, s, v;
 	
 	/* thickness of lines is proportional to k */
-	/*	(log(k)-1) gives a more suitable thickness, but fps decreased by about 3 fps */
-	glLineWidth(k / 10);
-	//glLineWidth(log(k)-1); // a bit slow
-	
-	UI_GetThemeColor3ubv(TH_GRID, (char *)gridcol);
-	
+	glLineWidth(2);
+
 	/* X */
-	vec[0] = vec[3] = 1;
+	vec[0] = 1;
 	vec[1] = vec[2] = 0;
 	mul_qt_v3(rv3d->viewquat, vec);
-	
-	UI_make_axis_color((char *)gridcol, (char *)col, 'x');
-	rgb_to_hsv(col[0]/255.0f, col[1]/255.0f, col[2]/255.0f, &h, &s, &v);
-	s = s<0.5 ? s+0.5 : 1.0;
-	v = 0.3;
-	v = (v<1.0-(bright) ? v+bright : 1.0);
-	hsv_to_rgb(h, s, v, colf, colf+1, colf+2);
-	glColor3fv(colf);
-	
 	dx = vec[0] * k;
 	dy = vec[1] * k;
-	fdrawline(start, start + ydisp, start + dx, start + dy + ydisp);
+
+	glColor3ub(220, 0, 0);
+	glBegin(GL_LINES);
+	glVertex2f(start, start + ydisp);
+	glVertex2f(start + dx, start + dy + ydisp);
+	glEnd();
+
 	if (fabs(dx) > toll || fabs(dy) > toll) {
 		BLF_draw_default(start + dx + 2, start + dy + ydisp + 2, 0.0f, "x");
 	}
 	
 	/* Y */
-	vec[1] = vec[3] = 1;
+	vec[1] = 1;
 	vec[0] = vec[2] = 0;
 	mul_qt_v3(rv3d->viewquat, vec);
-	
-	UI_make_axis_color((char *)gridcol, (char *)col, 'y');
-	rgb_to_hsv(col[0]/255.0f, col[1]/255.0f, col[2]/255.0f, &h, &s, &v);
-	s = s<0.5 ? s+0.5 : 1.0;
-	v = 0.3;
-	v = (v<1.0-(bright) ? v+bright : 1.0);
-	hsv_to_rgb(h, s, v, colf, colf+1, colf+2);
-	glColor3fv(colf);
-	
 	dx = vec[0] * k;
 	dy = vec[1] * k;
-	fdrawline(start, start + ydisp, start + dx, start + dy + ydisp);
+
+	glColor3ub(0, 220, 0);
+	glBegin(GL_LINES);
+	glVertex2f(start, start + ydisp);
+	glVertex2f(start + dx, start + dy + ydisp);
+	glEnd();
+
 	if (fabs(dx) > toll || fabs(dy) > toll) {
 		BLF_draw_default(start + dx + 2, start + dy + ydisp + 2, 0.0f, "y");
 	}
 	
 	/* Z */
-	vec[2] = vec[3] = 1;
+	vec[2] = 1;
 	vec[1] = vec[0] = 0;
 	mul_qt_v3(rv3d->viewquat, vec);
-	
-	UI_make_axis_color((char *)gridcol, (char *)col, 'z');
-	rgb_to_hsv(col[0]/255.0f, col[1]/255.0f, col[2]/255.0f, &h, &s, &v);
-	s = s<0.5 ? s+0.5 : 1.0;
-	v = 0.5;
-	v = (v<1.0-(bright) ? v+bright : 1.0);
-	hsv_to_rgb(h, s, v, colf, colf+1, colf+2);
-	glColor3fv(colf);
-	
 	dx = vec[0] * k;
 	dy = vec[1] * k;
-	fdrawline(start, start + ydisp, start + dx, start + dy + ydisp);
+
+	glColor3ub(30, 30, 220);
+	glBegin(GL_LINES);
+	glVertex2f(start, start + ydisp);
+	glVertex2f(start + dx, start + dy + ydisp);
+	glEnd();
+
 	if (fabs(dx) > toll || fabs(dy) > toll) {
 		BLF_draw_default(start + dx + 2, start + dy + ydisp + 2, 0.0f, "z");
 	}
-	
+
 	/* restore line-width */
+	
 	glLineWidth(1.0);
 }
 
@@ -862,7 +843,7 @@ static void view3d_get_viewborder_size(Scene *scene, ARegion *ar, float size_r[2
 	}
 }
 
-void view3d_calc_camera_border(Scene *scene, ARegion *ar, RegionView3D *rv3d, View3D *v3d, rctf *viewborder_r)
+void view3d_calc_camera_border(Scene *scene, ARegion *ar, RegionView3D *rv3d, View3D *v3d, rctf *viewborder_r, short do_shift)
 {
 	float zoomfac, size[2];
 	float dx= 0.0f, dy= 0.0f;
@@ -901,12 +882,13 @@ void view3d_calc_camera_border(Scene *scene, ARegion *ar, RegionView3D *rv3d, Vi
 	viewborder_r->xmax-= dx;
 	viewborder_r->ymax-= dy;
 	
-	if(v3d->camera && v3d->camera->type==OB_CAMERA) {
+	if(do_shift && v3d->camera && v3d->camera->type==OB_CAMERA) {
 		Camera *cam= v3d->camera->data;
 		float w = viewborder_r->xmax - viewborder_r->xmin;
 		float h = viewborder_r->ymax - viewborder_r->ymin;
 		float side = MAX2(w, h);
-		
+
+		if(do_shift == -1) side *= -1;
 		viewborder_r->xmin+= cam->shiftx*side;
 		viewborder_r->xmax+= cam->shiftx*side;
 		viewborder_r->ymin+= cam->shifty*side;
@@ -926,55 +908,8 @@ void view3d_set_1_to_1_viewborder(Scene *scene, ARegion *ar)
 	rv3d->camzoom= CLAMPIS(rv3d->camzoom, RV3D_CAMZOOM_MIN, RV3D_CAMZOOM_MAX);
 }
 
-
-static void drawviewborder_flymode(ARegion *ar)	
-{
-	/* draws 4 edge brackets that frame the safe area where the
-	mouse can move during fly mode without spinning the view */
-	float x1, x2, y1, y2;
-	
-	x1= 0.45*(float)ar->winx;
-	y1= 0.45*(float)ar->winy;
-	x2= 0.55*(float)ar->winx;
-	y2= 0.55*(float)ar->winy;
-	cpack(0);
-	
-	
-	glBegin(GL_LINES);
-	/* bottom left */
-	glVertex2f(x1,y1); 
-	glVertex2f(x1,y1+5);
-	
-	glVertex2f(x1,y1); 
-	glVertex2f(x1+5,y1);
-	
-	/* top right */
-	glVertex2f(x2,y2); 
-	glVertex2f(x2,y2-5);
-	
-	glVertex2f(x2,y2); 
-	glVertex2f(x2-5,y2);
-	
-	/* top left */
-	glVertex2f(x1,y2); 
-	glVertex2f(x1,y2-5);
-	
-	glVertex2f(x1,y2); 
-	glVertex2f(x1+5,y2);
-	
-	/* bottom right */
-	glVertex2f(x2,y1); 
-	glVertex2f(x2,y1+5);
-	
-	glVertex2f(x2,y1); 
-	glVertex2f(x2-5,y1);
-	glEnd();	
-}
-
-
 static void drawviewborder(Scene *scene, ARegion *ar, View3D *v3d)
 {
-	extern void gl_round_box(int mode, float minx, float miny, float maxx, float maxy, float rad);          // interface_panel.c
 	float fac, a;
 	float x1, x2, y1, y2;
 	float x1i, x2i, y1i, y2i;
@@ -988,7 +923,7 @@ static void drawviewborder(Scene *scene, ARegion *ar, View3D *v3d)
 	if(v3d->camera->type==OB_CAMERA)
 		ca = v3d->camera->data;
 	
-	view3d_calc_camera_border(scene, ar, rv3d, v3d, &viewborder);
+	view3d_calc_camera_border(scene, ar, rv3d, v3d, &viewborder, FALSE);
 	/* the offsets */
 	x1= viewborder.xmin;
 	y1= viewborder.ymin;
@@ -1061,7 +996,7 @@ static void drawviewborder(Scene *scene, ARegion *ar, View3D *v3d)
 		UI_ThemeColorBlendShade(TH_WIRE, TH_BACK, 0.25, 0);
 		
 		uiSetRoundBox(15);
-		gl_round_box(GL_LINE_LOOP, x1, y1, x2, y2, 12.0);
+		uiDrawBox(GL_LINE_LOOP, x1, y1, x2, y2, 12.0);
 	}
 
 	setlinestyle(0);
@@ -1187,7 +1122,7 @@ ImBuf *view3d_read_backbuf(ViewContext *vc, short xmin, short ymin, short xmax, 
 	if(ymax >= vc->ar->winy) ymaxc= vc->ar->winy-1; else ymaxc= ymax;
 	if(yminc > ymaxc) return NULL;
 	
-	ibuf= IMB_allocImBuf((xmaxc-xminc+1), (ymaxc-yminc+1), 32, IB_rect,0);
+	ibuf= IMB_allocImBuf((xmaxc-xminc+1), (ymaxc-yminc+1), 32, IB_rect);
 
 	view3d_validate_backbuf(vc); 
 	
@@ -1207,7 +1142,7 @@ ImBuf *view3d_read_backbuf(ViewContext *vc, short xmin, short ymin, short xmax, 
 	if(xminc==xmin && xmaxc==xmax && yminc==ymin && ymaxc==ymax) 
 		return ibuf;
 	
-	ibuf1= IMB_allocImBuf( (xmax-xmin+1),(ymax-ymin+1),32,IB_rect,0);
+	ibuf1= IMB_allocImBuf( (xmax-xmin+1),(ymax-ymin+1),32,IB_rect);
 	rd= ibuf->rect;
 	dr= ibuf1->rect;
 		
@@ -1325,7 +1260,7 @@ static void draw_bgpic(Scene *scene, ARegion *ar, View3D *v3d)
 			if(rv3d->persp==RV3D_CAMOB) {
 				rctf vb;
 
-				view3d_calc_camera_border(scene, ar, rv3d, v3d, &vb);
+				view3d_calc_camera_border(scene, ar, rv3d, v3d, &vb, FALSE);
 
 				x1= vb.xmin;
 				y1= vb.ymin;
@@ -1525,7 +1460,7 @@ static void draw_dupli_objects_color(Scene *scene, ARegion *ar, View3D *v3d, Bas
 {
 	RegionView3D *rv3d= ar->regiondata;
 	ListBase *lb;
-	DupliObject *dob_prev= NULL, *dob, *dob_next;
+	DupliObject *dob_prev= NULL, *dob, *dob_next= NULL;
 	Base tbase;
 	BoundBox bb, *bb_tmp; /* use a copy because draw_object, calls clear_mesh_caches */
 	GLuint displist=0;
@@ -1635,8 +1570,57 @@ static void draw_dupli_objects(Scene *scene, ARegion *ar, View3D *v3d, Base *bas
 	draw_dupli_objects_color(scene, ar, v3d, base, color);
 }
 
+void view3d_update_depths_rect(ARegion *ar, ViewDepths *d, rcti *rect)
+{
+	int x, y, w, h;	
+	rcti r= {0, ar->winx-1, 0, ar->winy-1};
+	/* clamp rect by area */
 
-void view3d_update_depths(ARegion *ar, View3D *v3d)
+	/* Constrain rect to depth bounds */
+	BLI_isect_rcti(&r, rect, rect);
+
+	/* assign values to compare with the ViewDepths */
+	x= rect->xmin;
+	y= rect->ymin;
+
+	w= rect->xmax - rect->xmin;
+	h= rect->ymax - rect->ymin;
+
+	if(w <= 0 || h <= 0) {
+		if(d->depths)
+			MEM_freeN(d->depths);
+		d->depths= NULL;
+
+		d->damaged= FALSE;
+	}
+	else if(	d->w != w ||
+		d->h != h ||
+		d->x != x ||
+		d->y != y ||
+		d->depths==NULL
+	) {
+		d->x= x;
+		d->y= y;
+		d->w= w;
+		d->h= h;
+
+		if(d->depths)
+			MEM_freeN(d->depths);
+
+		d->depths= MEM_mallocN(sizeof(float)*d->w*d->h,"View depths Subset");
+		
+		d->damaged= TRUE;
+	}
+
+	if(d->damaged) {
+		glReadPixels(ar->winrct.xmin+d->x,ar->winrct.ymin+d->y, d->w,d->h, GL_DEPTH_COMPONENT,GL_FLOAT, d->depths);
+		glGetDoublev(GL_DEPTH_RANGE,d->depth_range);
+		d->damaged= FALSE;
+	}
+}
+
+/* note, with nouveau drivers the glReadPixels() is very slow. [#24339] */
+void view3d_update_depths(ARegion *ar)
 {
 	RegionView3D *rv3d= ar->regiondata;
 	
@@ -1664,6 +1648,30 @@ void view3d_update_depths(ARegion *ar, View3D *v3d)
 			d->damaged= 0;
 		}
 	}
+}
+
+/* utility function to find the closest Z value, use for autodepth */
+float view3d_depth_near(ViewDepths *d)
+{
+	/* convert to float for comparisons */
+	const float near= (float)d->depth_range[0];
+	const float far_real= (float)d->depth_range[1];
+	float far= far_real;
+
+	const float *depths= d->depths;
+	float depth= FLT_MAX;
+	int i= (int)d->w * (int)d->h; /* cast to avoid short overflow */
+
+	/* far is both the starting 'far' value
+	 * and the closest value found. */	
+	while(i--) {
+		depth= *depths++;
+		if((depth < far) && (depth > near)) {
+			far= depth;
+		}
+	}
+
+	return far == far_real ? FLT_MAX : far;
 }
 
 void draw_depth_gpencil(Scene *scene, ARegion *ar, View3D *v3d)
@@ -1977,23 +1985,19 @@ static void view3d_main_area_setup_view(Scene *scene, View3D *v3d, ARegion *ar, 
 	mul_m4_m4m4(rv3d->persmat, rv3d->viewmat, rv3d->winmat);
 	invert_m4_m4(rv3d->persinv, rv3d->persmat);
 	invert_m4_m4(rv3d->viewinv, rv3d->viewmat);
-	
+
 	/* calculate pixelsize factor once, is used for lamps and obcenters */
 	{
-		float len1, len2, vec[3];
-		
-		copy_v3_v3(vec, rv3d->persinv[0]);
-		len1= normalize_v3(vec);
-		copy_v3_v3(vec, rv3d->persinv[1]);
-		len2= normalize_v3(vec);
-		
-		rv3d->pixsize= 2.0f*(len1>len2?len1:len2);
-		
-		/* correct for window size */
-		if(ar->winx > ar->winy) rv3d->pixsize/= (float)ar->winx;
-		else rv3d->pixsize/= (float)ar->winy;
+		/* note:  '1.0f / len_v3(v1)'  replaced  'len_v3(rv3d->viewmat[0])'
+		 * because of float point precission problems at large values [#23908] */
+		float v1[3]= {rv3d->persmat[0][0], rv3d->persmat[1][0], rv3d->persmat[2][0]};
+		float v2[3]= {rv3d->persmat[0][1], rv3d->persmat[1][1], rv3d->persmat[2][1]};
+		float len1= 1.0f / len_v3(v1);
+		float len2= 1.0f / len_v3(v2);
+
+		rv3d->pixsize = (2.0f * MAX2(len1, len2)) / (float)MAX2(ar->winx, ar->winy);
 	}
-	
+
 	/* set for opengl */
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(rv3d->winmat);
@@ -2143,7 +2147,7 @@ ImBuf *ED_view3d_draw_offscreen_imbuf(Scene *scene, View3D *v3d, ARegion *ar, in
 	}
 
 	/* read in pixels & stamp */
-	ibuf= IMB_allocImBuf(sizex, sizey, 32, flag, 0);
+	ibuf= IMB_allocImBuf(sizex, sizey, 32, flag);
 
 	if(ibuf->rect_float)
 		glReadPixels(0, 0, sizex, sizey, GL_RGBA, GL_FLOAT, ibuf->rect_float);
@@ -2266,6 +2270,7 @@ void view3d_main_area_draw(const bContext *C, ARegion *ar)
 	Object *ob;
 	float backcol[3];
 	int retopo= 0, sculptparticle= 0;
+	unsigned int lay_used;
 	Object *obact = OBACT;
 	char *grid_unit= NULL;
 
@@ -2368,8 +2373,12 @@ void view3d_main_area_draw(const bContext *C, ARegion *ar)
 		/* Transp and X-ray afterdraw stuff for sets is done later */
 	}
 
+	lay_used= 0;
+
 	/* then draw not selected and the duplis, but skip editmode object */
 	for(base= scene->base.first; base; base= base->next) {
+		lay_used |= base->lay & ((1<<20)-1);
+
 		if(v3d->lay & base->lay) {
 			
 			/* dupli drawing */
@@ -2383,10 +2392,24 @@ void view3d_main_area_draw(const bContext *C, ARegion *ar)
 		}
 	}
 
+	if(v3d->lay_used != lay_used) { /* happens when loading old files or loading with UI load */
+		ARegion *ar;
+		ScrArea *sa= CTX_wm_area(C);
+
+		/* find header and force tag redraw */
+		for(ar= sa->regionbase.first; ar; ar= ar->next)
+			if(ar->regiontype==RGN_TYPE_HEADER) {
+				ED_region_tag_redraw(ar);
+				break;
+			}
+
+		v3d->lay_used= lay_used;
+	}
+
 //	retopo= retopo_mesh_check() || retopo_curve_check();
 	sculptparticle= (obact && obact->mode & (OB_MODE_PARTICLE_EDIT)) && !scene->obedit;
 	if(retopo)
-		view3d_update_depths(ar, v3d);
+		view3d_update_depths(ar);
 	
 	/* draw selected and editmode */
 	for(base= scene->base.first; base; base= base->next) {
@@ -2397,7 +2420,7 @@ void view3d_main_area_draw(const bContext *C, ARegion *ar)
 	}
 	
 	if(!retopo && sculptparticle && !(obact && (obact->dtx & OB_DRAWXRAY))) {
-		view3d_update_depths(ar, v3d);
+		view3d_update_depths(ar);
 	}
 	
 //	REEB_draw();
@@ -2410,7 +2433,7 @@ void view3d_main_area_draw(const bContext *C, ARegion *ar)
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_VIEW);
 	
 	if(!retopo && sculptparticle && (obact && (OBACT->dtx & OB_DRAWXRAY))) {
-		view3d_update_depths(ar, v3d);
+		view3d_update_depths(ar);
 	}
 	
 	if(rv3d->rflag & RV3D_CLIPPING)
@@ -2443,8 +2466,8 @@ void view3d_main_area_draw(const bContext *C, ARegion *ar)
 	/* Draw particle edit brush XXX (removed) */
 	
 
-	if(rv3d->persp==RV3D_CAMOB) drawviewborder(scene, ar, v3d);
-	if(rv3d->rflag & RV3D_FLYMODE) drawviewborder_flymode(ar);
+	if(rv3d->persp==RV3D_CAMOB)
+		drawviewborder(scene, ar, v3d);
 
 	if ((v3d->flag2 & V3D_RENDER_OVERRIDE)==0) {
 		/* draw grease-pencil stuff - needed to get paint-buffer shown too (since it's 2D) */

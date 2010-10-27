@@ -2,7 +2,7 @@
  * Manager for mouse events
  *
  *
- * $Id: SCA_MouseManager.cpp 28393 2010-04-23 22:48:26Z dfelinto $
+ * $Id: SCA_MouseManager.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // This warning tells us about truncation of __long__ stl-generated names.
 // It can occasionally cause DevStudio to have internal compiler warnings.
 #pragma warning( disable : 4786 )     

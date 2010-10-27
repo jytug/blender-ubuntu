@@ -1,5 +1,5 @@
 /**
- * $Id: convertblender.c 31288 2010-08-12 13:58:10Z blendix $
+ * $Id: convertblender.c 32733 2010-10-27 10:36:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -321,7 +321,7 @@ u	|     |  F1 |  F2 |
 
 /* ------------------------------------------------------------------------- */
 
-static void split_v_renderfaces(ObjectRen *obr, int startvlak, int startvert, int usize, int vsize, int uIndex, int cyclu, int cyclv)
+static void split_v_renderfaces(ObjectRen *obr, int startvlak, int startvert, int usize, int vsize, int uIndex, int UNUSED(cyclu), int cyclv)
 {
 	int vLen = vsize-1+(!!cyclv);
 	int v;
@@ -2341,7 +2341,7 @@ static void init_render_mball(Render *re, ObjectRen *obr)
 	VertRen *ver;
 	VlakRen *vlr, *vlr1;
 	Material *ma;
-	float *data, *nors, *orco, mat[4][4], imat[3][3], xn, yn, zn;
+	float *data, *nors, *orco=NULL, mat[4][4], imat[3][3], xn, yn, zn;
 	int a, need_orco, vlakindex, *index;
 	ListBase dispbase= {NULL, NULL};
 
@@ -2375,7 +2375,7 @@ static void init_render_mball(Render *re, ObjectRen *obr)
 		}
 	}
 
-	for(a=0; a<dl->nr; a++, data+=3, nors+=3, orco+=3) {
+	for(a=0; a<dl->nr; a++, data+=3, nors+=3) {
 
 		ver= RE_findOrAddVert(obr, obr->totvert++);
 		VECCOPY(ver->co, data);
@@ -2393,7 +2393,7 @@ static void init_render_mball(Render *re, ObjectRen *obr)
 		normalize_v3(ver->n);
 		//if(ob->transflag & OB_NEG_SCALE) negate_v3(ver->n);
 		
-		if(need_orco) ver->orco= orco;
+		if(need_orco) ver->orco= orco+=3;
 	}
 
 	index= dl->index;
@@ -3747,6 +3747,10 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 			lar->sh_zfac= yn/xn;
 			/* pre-scale */
 			lar->sh_invcampos[2]*= lar->sh_zfac;
+
+			/* halfway shadow buffer doesn't work for volumetric effects */
+			if(lar->buftype == LA_SHADBUF_HALFWAY)
+				lar->buftype = LA_SHADBUF_REGULAR;
 
 		}
 	}
@@ -5182,7 +5186,7 @@ static void calculate_speedvector(float *vectors, int step, float winsq, float w
 
 static float *calculate_strandsurface_speedvectors(Render *re, ObjectInstanceRen *obi, StrandSurface *mesh)
 {
-	float winsq= re->winx*re->winy, winroot= sqrt(winsq), (*winspeed)[4];
+	float winsq= (float)re->winx*(float)re->winy, winroot= sqrt(winsq), (*winspeed)[4];  /* int's can wrap on large images */
 	float ho[4], prevho[4], nextho[4], winmat[4][4], vec[2];
 	int a;
 
@@ -5221,7 +5225,7 @@ static void calculate_speedvectors(Render *re, ObjectInstanceRen *obi, float *ve
 	StrandSurface *mesh= NULL;
 	float *speed, (*winspeed)[4]=NULL, ho[4], winmat[4][4];
 	float *co1, *co2, *co3, *co4, w[4];
-	float winsq= re->winx*re->winy, winroot= sqrt(winsq);
+	float winsq= (float)re->winx*(float)re->winy, winroot= sqrt(winsq);  /* int's can wrap on large images */
 	int a, *face, *index;
 
 	if(obi->flag & R_TRANSFORMED)
@@ -5288,7 +5292,7 @@ static int load_fluidsimspeedvectors(Render *re, ObjectInstanceRen *obi, float *
 	VertRen *ver= NULL;
 	float *speed, div, zco[2], avgvel[4] = {0.0, 0.0, 0.0, 0.0};
 	float zmulx= re->winx/2, zmuly= re->winy/2, len;
-	float winsq= re->winx*re->winy, winroot= sqrt(winsq);
+	float winsq= (float)re->winx*(float)re->winy, winroot= sqrt(winsq); /* int's can wrap on large images */
 	int a, j;
 	float hoco[4], ho[4], fsvec[4], camco[4];
 	float mat[4][4], winmat[4][4];

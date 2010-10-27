@@ -1,5 +1,5 @@
 /**
- * $Id: rna_image_api.c 31311 2010-08-13 09:47:14Z blendix $
+ * $Id: rna_image_api.c 32551 2010-10-18 06:41:16Z campbellbarton $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +41,7 @@
 #include "BKE_packedFile.h"
 #include "BKE_main.h"
 #include "BKE_utildefines.h"
-#include "BKE_global.h" /* grr: G.sce */
+#include "BKE_global.h" /* grr: G.main->name */
 
 #include "IMB_imbuf.h"
 
@@ -90,7 +90,7 @@ static void rna_Image_save(Image *image, ReportList *reports)
 	if(ibuf) {
 		char filename[FILE_MAXDIR + FILE_MAXFILE];
 		BLI_strncpy(filename, image->name, sizeof(filename));
-		BLI_path_abs(filename, G.sce);
+		BLI_path_abs(filename, G.main->name);
 
 		if(image->packedfile) {
 			if (writePackedFile(reports, image->name, image->packedfile, 0) != RET_OK) {

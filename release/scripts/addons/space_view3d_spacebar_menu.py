@@ -27,7 +27,7 @@ bl_addon_info = {
     "author": "JayDez, sim88, meta-androcto", "sam"
     "version": (1,5),
     "blender": (2, 5, 3),
-    "api": 31965,
+    "api": 32411,
     "location": "View3D > Spacebar",
     "description": "Context sensitive spacebar menu",
     "warning": "",
@@ -1233,7 +1233,7 @@ class VIEW3D_MT_EditArmatureTK(bpy.types.Menu):
 
         layout.separator()
 
-        layout.operator("armature.subdivide_multi", text="Subdivide")
+        layout.operator("armature.subdivide", text="Subdivide")
         layout.operator("armature.switch_direction", text="Switch Direction")
 
 class VIEW3D_MT_ArmatureName(bpy.types.Menu):
@@ -1417,7 +1417,7 @@ def edgeIntersect(context, operator):
         
     line = LineLineIntersect(verts[edges[0].vertices[0]].co, verts[edges[0].vertices[1]].co, verts[edges[1].vertices[0]].co, verts[edges[1].vertices[1]].co)
 
-    if (line == None):
+    if (line is None):
         operator.report({'ERROR'}, "Selected edges are parallel.")
         return
 

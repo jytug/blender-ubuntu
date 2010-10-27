@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31783 2010-09-06 10:15:41Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@ SET(INC
 	../../source/blender/blenloader
 )
 
-FILE(GLOB SRC   
+SET(SRC
 	gen_messaging/intern/messaging.c
 	gen_system/GEN_HashedPtr.cpp
 	gen_system/GEN_Matrix4x4.cpp

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31006 2010-08-03 11:25:34Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,8 +24,6 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(SRC openexr_api.cpp)
-
 SET(INC 
 	.
 	../../../blenkernel
@@ -36,6 +34,10 @@ SET(INC
 	../../../../../intern/guardedalloc
 	../../../makesdna
 	${OPENEXR_INC}
+)
+
+SET(SRC
+	openexr_api.cpp
 )
 
 IF(WITH_IMAGE_OPENEXR)

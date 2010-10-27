@@ -1,7 +1,7 @@
 /*
  * imbuf_coca.m
  *
- * $Id: imbuf_cocoa.m 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: imbuf_cocoa.m 32541 2010-10-17 18:56:36Z jesterking $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -93,7 +93,7 @@ struct ImBuf *imb_cocoaLoadImage(unsigned char *mem, int size, int flags)
 	[bitmapImage setSize:bitmapSize];
 	
 	/* allocate the image buffer */
-	ibuf = IMB_allocImBuf(bitmapSize.width, bitmapSize.height, 32/*RGBA*/, 0, 0);
+	ibuf = IMB_allocImBuf(bitmapSize.width, bitmapSize.height, 32/*RGBA*/, 0);
 	if (!ibuf) {
 		fprintf(stderr, 
 			"imb_cocoaLoadImage: could not allocate memory for the " \

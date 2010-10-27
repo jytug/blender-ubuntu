@@ -1,5 +1,5 @@
 /**
- * $Id: space_view3d.c 31777 2010-09-06 05:40:52Z campbellbarton $
+ * $Id: space_view3d.c 32610 2010-10-20 04:12:01Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -274,7 +274,7 @@ static void view3d_free(SpaceLink *sl)
 
 
 /* spacetype; init callback */
-static void view3d_init(struct wmWindowManager *wm, ScrArea *sa)
+static void view3d_init(struct wmWindowManager *UNUSED(wm), ScrArea *UNUSED(sa))
 {
 
 }
@@ -387,7 +387,7 @@ static void view3d_main_area_init(wmWindowManager *wm, ARegion *ar)
 	
 }
 
-static int view3d_ob_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int view3d_ob_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
 {
 	if(drag->type==WM_DRAG_ID) {
 		ID *id= (ID *)drag->poin;
@@ -397,7 +397,7 @@ static int view3d_ob_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
 	return 0;
 }
 
-static int view3d_mat_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int view3d_mat_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
 {
 	if(drag->type==WM_DRAG_ID) {
 		ID *id= (ID *)drag->poin;
@@ -407,7 +407,7 @@ static int view3d_mat_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
 	return 0;
 }
 
-static int view3d_ima_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int view3d_ima_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
 {
 	if(drag->type==WM_DRAG_ID) {
 		ID *id= (ID *)drag->poin;
@@ -529,39 +529,40 @@ static void *view3d_main_area_duplicate(void *poin)
 	return NULL;
 }
 
-static void view3d_recalc_used_layers(ARegion *ar, wmNotifier *wmn)
+static void view3d_recalc_used_layers(ARegion *ar, wmNotifier *wmn, Scene *scene)
 {
 	wmWindow *win= wmn->wm->winactive;
 	ScrArea *sa;
+	unsigned int lay_used= 0;
+	Base *base;
 
 	if (!win) return;
 
-	sa= win->screen->areabase.first;
+	base= scene->base.first;
+	while(base) {
+		lay_used |= base->lay & ((1<<20)-1); /* ignore localview */
 
-	while(sa) {
-		if(sa->spacetype == SPACE_VIEW3D)
-			if(BLI_findindex(&sa->regionbase, ar) >= 0) {
+		if (lay_used == (1<<20)-1)
+			break;
+
+		base= base->next;
+	}
+
+	for(sa= win->screen->areabase.first; sa; sa= sa->next) {
+		if(sa->spacetype == SPACE_VIEW3D) {
+			if(BLI_findindex(&sa->regionbase, ar) != -1) {
 				View3D *v3d= sa->spacedata.first;
-				Scene *scene= wmn->reference;
-				Base *base;
-
-				v3d->lay_used= 0;
-				base= scene->base.first;
-				while(base) {
-					v3d->lay_used|= base->lay;
-
-					base= base->next;
-				}
-
+				v3d->lay_used= lay_used;
 				break;
 			}
-
-		sa= sa->next;
+		}
 	}
 }
 
 static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
 {
+	bScreen *sc;
+
 	/* context changes */
 	switch(wmn->category) {
 		case NC_ANIMATION:
@@ -584,17 +585,21 @@ static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
 		case NC_SCENE:
 			switch(wmn->data) {
 				case ND_LAYER_CONTENT:
-					view3d_recalc_used_layers(ar, wmn);
+					view3d_recalc_used_layers(ar, wmn, wmn->reference);
 					ED_region_tag_redraw(ar);
 					break;
 				case ND_FRAME:
 				case ND_TRANSFORM:
 				case ND_OB_ACTIVE:
 				case ND_OB_SELECT:
+				case ND_OB_VISIBLE:
 				case ND_LAYER:
 				case ND_RENDER_OPTIONS:
 				case ND_MODE:
 					ED_region_tag_redraw(ar);
+					break;
+				case ND_WORLD:
+					/* handled by space_view3d_listener() for v3d access */
 					break;
 			}
 			if (wmn->action == NA_EDITED)
@@ -646,7 +651,7 @@ static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
 		case NC_WORLD:
 			switch(wmn->data) {
 				case ND_WORLD_DRAW:
-					ED_region_tag_redraw(ar);
+					/* handled by space_view3d_listener() for v3d access */
 					break;
 			}
 			break;
@@ -680,16 +685,28 @@ static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
 				ED_region_tag_redraw(ar);
 			break;
 		case NC_SCREEN:
-			if(wmn->data == ND_GPENCIL)	
-				ED_region_tag_redraw(ar);
-			else if(wmn->data==ND_ANIMPLAY)
-				ED_region_tag_redraw(ar);
+			switch(wmn->data) {
+				case ND_GPENCIL:
+				case ND_ANIMPLAY:
+					ED_region_tag_redraw(ar);
+					break;
+				case ND_SCREENBROWSE:
+				case ND_SCREENDELETE:
+				case ND_SCREENSET:
+					/* screen was changed, need to update used layers due to NC_SCENE|ND_LAYER_CONTENT */
+					/* updates used layers only for View3D in active screen */
+					sc= wmn->reference;
+					view3d_recalc_used_layers(ar, wmn, sc->scene);
+					ED_region_tag_redraw(ar);
+					break;
+			}
+
 			break;
 	}
 }
 
 /* concept is to retrieve cursor type context-less */
-static void view3d_main_area_cursor(wmWindow *win, ScrArea *sa, ARegion *ar)
+static void view3d_main_area_cursor(wmWindow *win, ScrArea *UNUSED(sa), ARegion *UNUSED(ar))
 {
 	Scene *scene= win->screen->scene;
 
@@ -725,6 +742,7 @@ static void view3d_header_area_listener(ARegion *ar, wmNotifier *wmn)
 				case ND_FRAME:
 				case ND_OB_ACTIVE:
 				case ND_OB_SELECT:
+				case ND_OB_VISIBLE:
 				case ND_MODE:
 				case ND_LAYER:
 				case ND_TOOLSETTINGS:
@@ -778,6 +796,7 @@ static void view3d_buttons_area_listener(ARegion *ar, wmNotifier *wmn)
 				case ND_FRAME:
 				case ND_OB_ACTIVE:
 				case ND_OB_SELECT:
+				case ND_OB_VISIBLE:
 				case ND_MODE:
 				case ND_LAYER:
 				case ND_LAYER_CONTENT:
@@ -871,12 +890,53 @@ static void view3d_props_area_listener(ARegion *ar, wmNotifier *wmn)
 	}
 }
 
+/*area (not region) level listener*/
+void space_view3d_listener(struct ScrArea *sa, struct wmNotifier *wmn)
+{
+	View3D *v3d = sa->spacedata.first;
+
+	/* context changes */
+	switch(wmn->category) {
+		case NC_SCENE:
+			switch(wmn->data) {
+				case ND_WORLD:
+					if(v3d->flag2 & V3D_RENDER_OVERRIDE)
+						ED_area_tag_redraw_regiontype(sa, RGN_TYPE_WINDOW);
+					break;
+			}
+			break;
+		case NC_WORLD:
+			switch(wmn->data) {
+				case ND_WORLD_DRAW:
+					if(v3d->flag2 & V3D_RENDER_OVERRIDE)
+						ED_area_tag_redraw_regiontype(sa, RGN_TYPE_WINDOW);
+					break;
+			}
+			break;
+
+	}
+
+#if 0 // removed since BKE_image_user_calc_frame is now called in draw_bgpic because screen_ops doesnt call the notifier.
+	if (wmn->category == NC_SCENE && wmn->data == ND_FRAME) {
+		View3D *v3d = area->spacedata.first;
+		BGpic *bgpic = v3d->bgpicbase.first;
+
+		for (; bgpic; bgpic = bgpic->next) {
+			if (bgpic->ima) {
+				Scene *scene = wmn->reference;
+				BKE_image_user_calc_frame(&bgpic->iuser, scene->r.cfra, 0);
+			}
+		}
+	}
+#endif
+}
+
 static int view3d_context(const bContext *C, const char *member, bContextDataResult *result)
 {
 	View3D *v3d= CTX_wm_view3d(C);
 	Scene *scene= CTX_data_scene(C);
 	Base *base;
-	int lay = v3d ? v3d->lay:scene->lay; /* fallback to the scene layer, allows duplicate and other oject operators to run outside the 3d view */
+	unsigned int lay = v3d ? v3d->lay:scene->lay; /* fallback to the scene layer, allows duplicate and other oject operators to run outside the 3d view */
 
 	if(CTX_data_dir(member)) {
 		static const char *dir[] = {
@@ -973,23 +1033,6 @@ static int view3d_context(const bContext *C, const char *member, bContextDataRes
 	return -1; /* found but not available */
 }
 
-/*area (not region) level listener*/
-#if 0 // removed since BKE_image_user_calc_frame is now called in draw_bgpic because screen_ops doesnt call the notifier.
-void space_view3d_listener(struct ScrArea *area, struct wmNotifier *wmn)
-{
-	if (wmn->category == NC_SCENE && wmn->data == ND_FRAME) {
-		View3D *v3d = area->spacedata.first;
-		BGpic *bgpic = v3d->bgpicbase.first;
-
-		for (; bgpic; bgpic = bgpic->next) {
-			if (bgpic->ima) {
-				Scene *scene = wmn->reference;
-				BKE_image_user_calc_frame(&bgpic->iuser, scene->r.cfra, 0);
-			}
-		}
-	}
-}
-#endif
 
 /* only called once, from space/spacetypes.c */
 void ED_spacetype_view3d(void)
@@ -1003,7 +1046,7 @@ void ED_spacetype_view3d(void)
 	st->new= view3d_new;
 	st->free= view3d_free;
 	st->init= view3d_init;
-//	st->listener = space_view3d_listener;
+	st->listener = space_view3d_listener;
 	st->duplicate= view3d_duplicate;
 	st->operatortypes= view3d_operatortypes;
 	st->keymap= view3d_keymap;

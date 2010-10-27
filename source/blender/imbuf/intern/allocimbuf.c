@@ -1,7 +1,7 @@
 /*
  * allocimbuf.c
  *
- * $Id: allocimbuf.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: allocimbuf.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,6 +31,8 @@
 
 /* It's become a bit messy... Basically, only the IMB_ prefixed files
  * should remain. */
+
+#include <stddef.h>
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -322,7 +324,7 @@ short imb_addtilesImBuf(ImBuf *ibuf)
 	return (ibuf->tiles != NULL);
 }
 
-ImBuf *IMB_allocImBuf(short x, short y, uchar d, unsigned int flags, uchar bitmap) /* XXX bitmap argument is deprecated */
+ImBuf *IMB_allocImBuf(unsigned int x, unsigned int y, uchar d, unsigned int flags)
 {
 	ImBuf *ibuf;
 
@@ -382,7 +384,7 @@ ImBuf *IMB_dupImBuf(ImBuf *ibuf1)
 	y = ibuf1->y;
 	if(ibuf1->flags & IB_fields) y *= 2;
 	
-	ibuf2 = IMB_allocImBuf(x, y, ibuf1->depth, flags, 0);
+	ibuf2 = IMB_allocImBuf(x, y, ibuf1->depth, flags);
 	if(ibuf2 == NULL) return NULL;
 
 	if(flags & IB_rect)

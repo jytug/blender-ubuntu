@@ -1,6 +1,6 @@
 /**
  *
- * $Id: threads.c 29622 2010-06-22 15:17:12Z blendix $
+ * $Id: threads.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -441,6 +441,8 @@ static void *exec_work_fnct(void *v_param)
 ThreadedWorker *BLI_create_worker(void *(*do_thread)(void *), int tot, int sleep_time)
 {
 	ThreadedWorker *worker;
+	
+	(void)sleep_time; /* unused */
 	
 	worker = MEM_callocN(sizeof(ThreadedWorker), "threadedworker");
 	

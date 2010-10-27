@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_invert.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: CMP_invert.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -75,7 +75,7 @@ static void do_invert_fac(bNode *node, float *out, float *in, float *fac)
 	QUATCOPY(out, col);
 }
 
-static void node_composit_exec_invert(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_invert(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	/* stack order in: fac, Image, Image */
 	/* stack order out: Image */

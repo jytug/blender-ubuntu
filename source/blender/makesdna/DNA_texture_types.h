@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_texture_types.h (mar-2001 nzc)
  *
- * $Id: DNA_texture_types.h 31229 2010-08-11 03:31:56Z campbellbarton $ 
+ * $Id: DNA_texture_types.h 32309 2010-10-05 00:05:14Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,6 +33,10 @@
 
 #include "DNA_ID.h"
 #include "DNA_image_types.h" /* ImageUser */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct AnimData;
 struct Ipo;
@@ -553,6 +557,10 @@ typedef struct TexMapping {
 #define TEX_VD_SMOKEDENSITY		0
 #define TEX_VD_SMOKEHEAT		1
 #define TEX_VD_SMOKEVEL			2
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

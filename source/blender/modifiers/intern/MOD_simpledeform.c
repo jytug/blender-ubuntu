@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_simpledeform.c 31028 2010-08-04 04:01:27Z campbellbarton $
+* $Id: MOD_simpledeform.c 32619 2010-10-21 01:55:39Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -290,14 +290,14 @@ static void copyData(ModifierData *md, ModifierData *target)
 	strcpy(tsmd->vgroup_name, smd->vgroup_name);
 }
 
-static CustomDataMask requiredDataMask(Object *ob, ModifierData *md)
+static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 {
 	SimpleDeformModifierData *smd = (SimpleDeformModifierData *)md;
 	CustomDataMask dataMask = 0;
 
 	/* ask for vertexgroups if we need them */
 	if(smd->vgroup_name[0])
-		dataMask |= (1 << CD_MDEFORMVERT);
+		dataMask |= CD_MASK_MDEFORMVERT;
 
 	return dataMask;
 }
@@ -308,7 +308,10 @@ static void foreachObjectLink(ModifierData *md, Object *ob, void (*walk)(void *u
 	walk(userData, ob, &smd->origin);
 }
 
-static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *scene, Object *ob, DagNode *obNode)
+static void updateDepgraph(ModifierData *md, DagForest *forest,
+						struct Scene *UNUSED(scene),
+						Object *UNUSED(ob),
+						DagNode *obNode)
 {
 	SimpleDeformModifierData *smd  = (SimpleDeformModifierData*)md;
 
@@ -316,7 +319,12 @@ static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *sc
 		dag_add_relation(forest, dag_get_node(forest, smd->origin), obNode, DAG_RL_OB_DATA, "SimpleDeform Modifier");
 }
 
-static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts, int useRenderParams, int isFinalCalc)
+static void deformVerts(ModifierData *md, Object *ob,
+						DerivedMesh *derivedData,
+						float (*vertexCos)[3],
+						int numVerts,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	DerivedMesh *dm = derivedData;
 	CustomDataMask dataMask = requiredDataMask(ob, md);
@@ -324,7 +332,7 @@ static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, 
 	/* we implement requiredDataMask but thats not really usefull since
 	   mesh_calc_modifiers pass a NULL derivedData */
 	if(dataMask)
-		dm= get_dm(md->scene, ob, NULL, dm, NULL, 0);
+		dm= get_dm(ob, NULL, dm, NULL, 0);
 
 	SimpleDeformModifier_do((SimpleDeformModifierData*)md, ob, dm, vertexCos, numVerts);
 
@@ -332,7 +340,11 @@ static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, 
 		dm->release(dm);
 }
 
-static void deformVertsEM(ModifierData *md, Object *ob, struct EditMesh *editData, DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
+static void deformVertsEM(ModifierData *md, Object *ob,
+						struct EditMesh *editData,
+						DerivedMesh *derivedData,
+						float (*vertexCos)[3],
+						int numVerts)
 {
 	DerivedMesh *dm = derivedData;
 	CustomDataMask dataMask = requiredDataMask(ob, md);
@@ -340,7 +352,7 @@ static void deformVertsEM(ModifierData *md, Object *ob, struct EditMesh *editDat
 	/* we implement requiredDataMask but thats not really usefull since
 	   mesh_calc_modifiers pass a NULL derivedData */
 	if(dataMask)
-		dm= get_dm(md->scene, ob, editData, dm, NULL, 0);
+		dm= get_dm(ob, editData, dm, NULL, 0);
 
 	SimpleDeformModifier_do((SimpleDeformModifierData*)md, ob, dm, vertexCos, numVerts);
 
@@ -372,6 +384,7 @@ ModifierTypeInfo modifierType_SimpleDeform = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     0,
 };

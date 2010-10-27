@@ -1,5 +1,5 @@
 /**
- * $Id: context.c 31713 2010-09-02 04:53:05Z campbellbarton $
+ * $Id: context.c 32152 2010-09-27 12:21:23Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -64,6 +64,7 @@ struct bContext {
 		struct ARegion *region;
 		struct ARegion *menu;
 		struct bContextStore *store;
+		const char *operator_poll_msg; /* reason for poll failing */
 	} wm;
 	
 	/* data context */
@@ -397,6 +398,16 @@ void CTX_wm_region_set(bContext *C, ARegion *region)
 void CTX_wm_menu_set(bContext *C, ARegion *menu)
 {
 	C->wm.menu= menu;
+}
+
+void CTX_wm_operator_poll_msg_set(bContext *C, const char *msg)
+{
+	C->wm.operator_poll_msg= msg;
+}
+
+const char *CTX_wm_operator_poll_msg_get(bContext *C)
+{
+	return C->wm.operator_poll_msg;
 }
 
 /* data context utility functions */

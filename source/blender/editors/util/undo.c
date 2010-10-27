@@ -1,5 +1,5 @@
 /**
- * $Id: undo.c 31627 2010-08-28 07:07:02Z nazgul $
+ * $Id: undo.c 32479 2010-10-15 01:36:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -196,14 +196,14 @@ void ED_undo_pop_op(bContext *C, wmOperator *op)
 	ed_undo_step(C, 0, op->type->name);
 }
 
-static int ed_undo_exec(bContext *C, wmOperator *op)
+static int ed_undo_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	/* "last operator" should disappear, later we can tie ths with undo stack nicer */
 	WM_operator_stack_clear(C);
 	return ed_undo_step(C, 1, NULL);
 }
 
-static int ed_redo_exec(bContext *C, wmOperator *op)
+static int ed_redo_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	return ed_undo_step(C, -1, NULL);
 }

@@ -1,5 +1,5 @@
 /**
- * $Id: nla.c 31278 2010-08-12 09:35:39Z campbellbarton $
+ * $Id: nla.c 32532 2010-10-17 06:38:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1585,7 +1585,7 @@ void BKE_nla_tweakmode_exit (AnimData *adt)
 
 /* Baking Tools ------------------------------------------- */
 
-void BKE_nla_bake (Scene *scene, ID *id, AnimData *adt, int flag)
+void BKE_nla_bake (Scene *scene, ID *UNUSED(id), AnimData *adt, int UNUSED(flag))
 {
 
 	/* verify that data is valid 

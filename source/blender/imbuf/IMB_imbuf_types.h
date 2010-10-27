@@ -11,7 +11,7 @@
  * are self-explanatory (e.g. IS_amiga tests whether the buffer
  * contains an Amiga-format file).
  *
- * $Id: IMB_imbuf_types.h 31007 2010-08-03 12:34:42Z campbellbarton $ 
+ * $Id: IMB_imbuf_types.h 32580 2010-10-19 04:29:05Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,7 +71,11 @@ typedef struct ImBuf {
 	struct ImBuf *next, *prev;	/**< allow lists of ImBufs, for caches or flipbooks */
 
 	/* dimensions */
-	short x, y;				/* width and Height of our image buffer */
+	int x, y;				/* width and Height of our image buffer.
+							 * Should be 'unsigned int' since most formats use this.
+							 * but this is problematic with texture math in imagetexture.c
+							 * avoid problems and use int. - campbell */
+
 	unsigned char depth;	/* Active amount of bits/bitplanes */
 	int channels;			/* amount of channels in rect_float (0 = 4 channel default) */
 

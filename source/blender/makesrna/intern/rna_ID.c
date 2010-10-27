@@ -1,5 +1,5 @@
 /**
- * $Id: rna_ID.c 31737 2010-09-03 07:25:37Z campbellbarton $
+ * $Id: rna_ID.c 32676 2010-10-24 07:02:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,7 @@
 #include "RNA_define.h"
 
 #include "DNA_ID.h"
+#include "DNA_vfont_types.h"
 
 #include "WM_types.h"
 
@@ -98,7 +99,8 @@ static int rna_ID_name_editable(PointerRNA *ptr)
 	ID *id= (ID*)ptr->data;
 	
 	if (GS(id->name) == ID_VF) {
-		if (strcmp(id->name+2, "<builtin>")==0)
+		VFont *vf= (VFont *)id;
+		if (strcmp(vf->name, FO_BUILTIN_NAME)==0)
 			return 0;
 	}
 	
@@ -252,6 +254,18 @@ void rna_ID_user_clear(ID *id)
 	id->flag &= ~LIB_FAKEUSER;
 }
 
+static void rna_IDPArray_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+{
+	IDProperty *prop= (IDProperty *)ptr->data;
+	rna_iterator_array_begin(iter, IDP_IDPArray(prop), sizeof(IDProperty), prop->len, 0, NULL);
+}
+
+static int rna_IDPArray_length(PointerRNA *ptr)
+{
+	IDProperty *prop= (IDProperty *)ptr->data;
+	return prop->len;
+}
+
 #else
 
 static void rna_def_ID_properties(BlenderRNA *brna)
@@ -301,6 +315,11 @@ static void rna_def_ID_properties(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "collection", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_EXPORT|PROP_IDPROPERTY);
 	RNA_def_property_struct_type(prop, "IDPropertyGroup");
+
+	prop= RNA_def_property(srna, "idp_array", PROP_COLLECTION, PROP_NONE);
+	RNA_def_property_struct_type(prop, "IDPropertyGroup");
+	RNA_def_property_collection_funcs(prop, "rna_IDPArray_begin", "rna_iterator_array_next", "rna_iterator_array_end", "rna_iterator_array_get", "rna_IDPArray_length", 0, 0);
+	RNA_def_property_flag(prop, PROP_EXPORT|PROP_IDPROPERTY);
 
 	// never tested, maybe its useful to have this?
 #if 0

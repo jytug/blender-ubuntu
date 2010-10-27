@@ -20,7 +20,7 @@
 
 import bpy
 
-
+# used for DopeSheet, NLA, and Graph Editors
 def dopesheet_filter(layout, context):
     dopesheet = context.space_data.dopesheet
     is_nla = context.area.type == 'NLA_EDITOR'
@@ -100,7 +100,7 @@ class DOPESHEET_HT_header(bpy.types.Header):
         if st.mode == 'DOPESHEET':
             dopesheet_filter(layout, context)
 
-        elif st.mode == 'ACTION':
+        elif st.mode in ('ACTION','SHAPEKEY'):
             layout.template_ID(st, "action", new="action.new")
 
         if st.mode != 'GPENCIL':
@@ -185,6 +185,9 @@ class DOPESHEET_MT_channel(bpy.types.Menu):
         layout.operator_context = 'INVOKE_REGION_CHANNELS'
 
         layout.column()
+        layout.operator("anim.channels_delete")
+
+        layout.separator()
         layout.operator("anim.channels_setting_toggle")
         layout.operator("anim.channels_setting_enable")
         layout.operator("anim.channels_setting_disable")

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31006 2010-08-03 11:25:34Z campbellbarton $
+# $Id: CMakeLists.txt 32532 2010-10-17 06:38:56Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,23 +24,23 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-ADD_SUBDIRECTORY(windowmanager)
 ADD_SUBDIRECTORY(editors)
-ADD_SUBDIRECTORY(avi)
-ADD_SUBDIRECTORY(nodes)
+ADD_SUBDIRECTORY(windowmanager)
 ADD_SUBDIRECTORY(blenkernel)
-ADD_SUBDIRECTORY(modifiers)
 ADD_SUBDIRECTORY(blenlib)
-ADD_SUBDIRECTORY(blenloader)
-ADD_SUBDIRECTORY(blenpluginapi)
-ADD_SUBDIRECTORY(imbuf)
-ADD_SUBDIRECTORY(gpu)
-ADD_SUBDIRECTORY(makesdna)
-ADD_SUBDIRECTORY(makesrna)
-ADD_SUBDIRECTORY(readblenfile)
 ADD_SUBDIRECTORY(render)
 ADD_SUBDIRECTORY(blenfont)
+ADD_SUBDIRECTORY(blenloader)
+ADD_SUBDIRECTORY(readblenfile)
+ADD_SUBDIRECTORY(blenpluginapi)
 ADD_SUBDIRECTORY(ikplugin)
+ADD_SUBDIRECTORY(gpu)
+ADD_SUBDIRECTORY(imbuf)
+ADD_SUBDIRECTORY(avi)
+ADD_SUBDIRECTORY(nodes)
+ADD_SUBDIRECTORY(modifiers)
+ADD_SUBDIRECTORY(makesdna)
+ADD_SUBDIRECTORY(makesrna)
 
 IF(WITH_IMAGE_OPENEXR)
 	ADD_SUBDIRECTORY(imbuf/intern/openexr)

@@ -3,7 +3,7 @@
  * various string, file, list operations.
  *
  *
- * $Id: string.c 31630 2010-08-28 12:34:22Z campbellbarton $
+ * $Id: string.c 32230 2010-10-01 13:30:09Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -311,8 +311,13 @@ int BLI_natstrcmp(const char *s1, const char *s2)
 			c1 = tolower(s1[d1]);
 			c2 = tolower(s2[d2]);
 		}
-		
-		if (c1<c2) {
+	
+		/* first check for '.' so "foo.bar" comes before "foo 1.bar" */	
+		if(c1=='.' && c2!='.')
+			return -1;
+		if(c1!='.' && c2=='.')
+			return 1;
+		else if (c1<c2) {
 			return -1;
 		} else if (c1>c2) {
 			return 1;

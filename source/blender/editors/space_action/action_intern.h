@@ -1,5 +1,5 @@
 /**
- * $Id: action_intern.h 28011 2010-04-05 11:47:55Z aligorith $
+ * $Id: action_intern.h 32511 2010-10-16 08:03:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +41,7 @@ struct bAnimListElem;
 
 /* ***************************************** */
 /* action_draw.c */
-void draw_channel_names(struct bContext *C, struct bAnimContext *ac, struct SpaceAction *saction, struct ARegion *ar); 
+void draw_channel_names(struct bContext *C, struct bAnimContext *ac, struct ARegion *ar); 
 void draw_channel_strips(struct bAnimContext *ac, struct SpaceAction *saction, struct ARegion *ar);
 
 struct ActKeysInc *init_aki_data(struct bAnimContext *ac, struct bAnimListElem *ale);

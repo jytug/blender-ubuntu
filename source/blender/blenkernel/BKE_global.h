@@ -5,7 +5,7 @@
  * any data in Blender. This block is not serialized, but built anew
  * for every fresh Blender run.
  *
- * $Id: BKE_global.h 28897 2010-05-21 03:25:38Z broken $ 
+ * $Id: BKE_global.h 32551 2010-10-18 06:41:16Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,9 +52,9 @@ typedef struct Global {
 	struct Main *main;
 	
 	/* strings: lastsaved */
-	char ima[256], sce[256], lib[256];
+	char ima[256], lib[256];
 
-	/* flag: if != 0 G.sce contains valid relative base path */
+	/* flag: if != 0 G.main->name contains valid relative base path */
 	int relbase_valid;
 
 	/* strings of recent opend files */

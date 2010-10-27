@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_exotic.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BKE_exotic.h 31934 2010-09-15 05:57:48Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,9 +34,6 @@
 struct Mesh;
 struct Scene;
 
-void mcol_to_rgba(unsigned int col, float *r, float *g, float *b, float *a);
-unsigned int *mcol_to_vcol(struct Mesh *me); // used in py_main.c
-
 /**
  * Reads all 3D fileformats other than Blender fileformat
  * @retval 0 The file could not be read.
@@ -46,7 +43,6 @@ unsigned int *mcol_to_vcol(struct Mesh *me); // used in py_main.c
 int BKE_read_exotic(struct Scene *scene, char *name);
 
 void write_dxf(struct Scene *scene, char *str);
-void write_vrml(struct Scene *scene, char *str);
 void write_stl(struct Scene *scene, char *str);
 
 #endif

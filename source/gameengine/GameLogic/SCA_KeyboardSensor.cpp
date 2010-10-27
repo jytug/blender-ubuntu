@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_KeyboardSensor.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_KeyboardSensor.cpp 32613 2010-10-20 12:33:00Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -156,6 +156,9 @@ bool SCA_KeyboardSensor::Evaluate()
 			case SCA_InputEvent::KX_ACTIVE:
 				active = true;
 				break;
+			case SCA_InputEvent::KX_NO_INPUTSTATUS:
+				/* do nothing */
+				break;
 			}
 		}
 
@@ -221,6 +224,9 @@ bool SCA_KeyboardSensor::Evaluate()
 				break;
 			case SCA_InputEvent::KX_JUSTACTIVATED:
 				qual_change = true;
+			case SCA_InputEvent::KX_ACTIVE:
+				/* do nothing */
+				break;
 			}
 		}
 		if (m_qual2 > 0 && qual==true) {
@@ -236,6 +242,9 @@ bool SCA_KeyboardSensor::Evaluate()
 				break;
 			case SCA_InputEvent::KX_JUSTACTIVATED:
 				qual_change = true;
+			case SCA_InputEvent::KX_ACTIVE:
+				/* do nothing */
+				break;
 			}
 		}
 		/* done reading qualifiers */

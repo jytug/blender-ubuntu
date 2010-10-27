@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4; indent-tabs-mode: t; -*-
 # vim: tabstop=4
-# $Id: getversion.py 27639 2010-03-21 01:14:04Z gsrb3d $
+# $Id: getversion.py 31998 2010-09-18 10:43:32Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@ import re
 
 nanblenderhome = os.getenv("NANBLENDERHOME")
 
-if nanblenderhome == None:
+if nanblenderhome is None:
     nanblenderhome = os.path.dirname(os.path.abspath(sys.argv[0])) + "/.."
 
 config = nanblenderhome + "/source/blender/blenkernel/BKE_blender.h"

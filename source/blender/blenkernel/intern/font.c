@@ -1,7 +1,7 @@
 /*  font.c
  *  
  * 
- * $Id: font.c 31675 2010-08-31 14:22:00Z campbellbarton $
+ * $Id: font.c 32676 2010-10-24 07:02:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -305,7 +305,7 @@ static VFontData *vfont_get_data(VFont *vfont)
 	if (!vfont->data) {
 		PackedFile *pf;
 		
-		if (BLI_streq(vfont->name, "<builtin>")) {
+		if (strcmp(vfont->name, FO_BUILTIN_NAME)==0) {
 			pf= get_builtin_packedfile();
 		} else {
 			if (vfont->packedfile) {
@@ -342,7 +342,7 @@ static VFontData *vfont_get_data(VFont *vfont)
 			if(!pf) {
 				printf("Font file doesn't exist: %s\n", vfont->name);
 
-				strcpy(vfont->name, "<builtin>");
+				strcpy(vfont->name, FO_BUILTIN_NAME);
 				pf= get_builtin_packedfile();
 			}
 		}
@@ -367,7 +367,7 @@ VFont *load_vfont(char *name)
 	int is_builtin;
 	struct TmpFont *tmpfnt;
 	
-	if (BLI_streq(name, "<builtin>")) {
+	if (strcmp(name, FO_BUILTIN_NAME)==0) {
 		strcpy(filename, name);
 		
 		pf= get_builtin_packedfile();
@@ -403,8 +403,8 @@ VFont *load_vfont(char *name)
 				vfont->packedfile = pf;
 			}
 			
-			// Do not add <builtin> to temporary listbase
-			if(strcmp(filename, "<builtin>"))
+			// Do not add FO_BUILTIN_NAME to temporary listbase
+			if(strcmp(filename, FO_BUILTIN_NAME))
 			{
 				tmpfnt= (struct TmpFont *) MEM_callocN(sizeof(struct TmpFont), "temp_font");
 				tmpfnt->pf= tpf;
@@ -443,10 +443,10 @@ VFont *get_builtin_font(void)
 	VFont *vf;
 	
 	for (vf= G.main->vfont.first; vf; vf= vf->id.next)
-		if (BLI_streq(vf->name, "<builtin>"))
+		if (strcmp(vf->name, FO_BUILTIN_NAME)==0)
 			return vf;
 	
-	return load_vfont("<builtin>");
+	return load_vfont(FO_BUILTIN_NAME);
 }
 
 static VChar *find_vfont_char(VFontData *vfd, intptr_t character)
@@ -514,11 +514,12 @@ static void buildchar(Curve *cu, unsigned long character, CharInfo *info, float 
 	float *fp, fsize, shear, x, si, co;
 	VFontData *vfd = NULL;
 	VChar *che = NULL;
-	int i, sel=0;
+	int i;
 
 	vfd= vfont_get_data(which_vfont(cu, info));	
 	if (!vfd) return;
 
+	/*
 	if (cu->selend < cu->selstart) {
 		if ((charidx >= (cu->selend)) && (charidx <= (cu->selstart-2)))
 			sel= 1;
@@ -527,6 +528,7 @@ static void buildchar(Curve *cu, unsigned long character, CharInfo *info, float 
 		if ((charidx >= (cu->selstart-1)) && (charidx <= (cu->selend-1)))
 			sel= 1;
 	}
+	*/
 
 	/* make a copy at distance ofsx,ofsy with shear*/
 	fsize= cu->fsize;
@@ -779,10 +781,10 @@ struct chartrans *BKE_text_to_curve(Scene *scene, Object *ob, int mode)
 
 		/*
 		 * The character wasn't in the current curve base so load it
-		 * But if the font is <builtin> then do not try loading since
+		 * But if the font is FO_BUILTIN_NAME then do not try loading since
 		 * whole font is in the memory already
 		 */
-		if(che == NULL && strcmp(vfont->name, "<builtin>"))	{
+		if(che == NULL && strcmp(vfont->name, FO_BUILTIN_NAME))	{
 			BLI_vfontchar_from_freetypefont(vfont, ascii);
 		}
 
@@ -1146,16 +1148,14 @@ struct chartrans *BKE_text_to_curve(Scene *scene, Object *ob, int mode)
 		return NULL;
 	}
 
-	if(mode==0) {
+	if(mode == FO_EDIT) {
 		/* make nurbdata */
-		unsigned long cha;
-		
 		freeNurblist(&cu->nurb);
 		
 		ct= chartransdata;
 		if (cu->sepchar==0) {
 			for (i= 0; i<slen; i++) {
-				cha = (uintptr_t) mem[i];
+				unsigned long cha = (uintptr_t) mem[i];
 				info = &(custrinfo[i]);
 				if (info->mat_nr > (ob->totcol)) {
 					/* printf("Error: Illegal material index (%d) in text object, setting to 0\n", info->mat_nr); */

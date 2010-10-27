@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31545 2010-08-24 04:29:23Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,9 +24,35 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC . intern extern ../moto/include ../container ../memutil ../../source/blender/makesdna ../guardedalloc ../../source/blender/blenlib)
+SET(INC	
+	.
+	./intern
+	./extern
+	../memutil
+	../container
+	../guardedalloc
+	../moto/include
+	../../source/blender/blenlib
+	../../source/blender/makesdna
+)
 
-FILE(GLOB SRC intern/*.cpp)
+SET(SRC
+	intern/BOP_BBox.cpp
+	intern/BOP_BSPNode.cpp
+	intern/BOP_BSPTree.cpp
+	intern/BOP_Edge.cpp
+	intern/BOP_Face.cpp
+	intern/BOP_Face2Face.cpp
+	intern/BOP_Interface.cpp
+	intern/BOP_MathUtils.cpp
+	intern/BOP_Merge.cpp
+	intern/BOP_Merge2.cpp
+	intern/BOP_Mesh.cpp
+	intern/BOP_Segment.cpp
+	intern/BOP_Splitter.cpp
+	intern/BOP_Tag.cpp
+	intern/BOP_Triangulator.cpp
+	intern/BOP_Vertex.cpp
+)
 
 BLENDERLIB(bf_intern_bop "${SRC}" "${INC}")
-#, libtype='common', priority=5 )

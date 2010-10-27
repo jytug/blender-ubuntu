@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_zcombine.c 27655 2010-03-22 09:30:00Z campbellbarton $
+ * $Id: CMP_zcombine.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -67,7 +67,7 @@ static void do_zcombine_mask(bNode *node, float *out, float *z1, float *z2)
 	}
 }
 
-static void do_zcombine_add(bNode *node, float *out, float *col1, float *col2, float *acol)
+static void do_zcombine_add(bNode *UNUSED(node), float *out, float *col1, float *col2, float *acol)
 {
 	float alpha= *acol;
 	float malpha= 1.0f - alpha;

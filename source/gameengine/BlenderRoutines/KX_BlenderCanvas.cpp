@@ -1,5 +1,5 @@
 /**
- * $Id: KX_BlenderCanvas.cpp 28393 2010-04-23 22:48:26Z dfelinto $
+ * $Id: KX_BlenderCanvas.cpp 32387 2010-10-09 13:46:34Z dfelinto $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -203,5 +203,11 @@ void KX_BlenderCanvas::SetMousePosition(int x,int y)
 
 void KX_BlenderCanvas::MakeScreenShot(const char* filename)
 {
-//	BL_MakeScreenShot(m_ar, filename);
+	ScrArea area_dummy= {0};
+	area_dummy.totrct.xmin = m_frame_rect.GetLeft();
+	area_dummy.totrct.xmax = m_frame_rect.GetRight();
+	area_dummy.totrct.ymin = m_frame_rect.GetBottom();
+	area_dummy.totrct.ymax = m_frame_rect.GetTop();
+
+	BL_MakeScreenShot(&area_dummy, filename);
 }

@@ -1,5 +1,5 @@
 /**
- * $Id: itasc_plugin.cpp 27024 2010-02-19 15:34:26Z campbellbarton $
+ * $Id: itasc_plugin.cpp 31891 2010-09-12 12:27:12Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,6 +32,7 @@
 #include <vector>
 
 // iTaSC headers
+#ifdef WITH_IK_ITASC
 #include "Armature.hpp"
 #include "MovingFrame.hpp"
 #include "CopyPose.hpp"
@@ -40,6 +41,7 @@
 #include "Scene.hpp"
 #include "Cache.hpp"
 #include "Distance.hpp"
+#endif
 
 #include "MEM_guardedalloc.h"
 

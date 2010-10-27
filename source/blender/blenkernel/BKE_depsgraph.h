@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_depsgraph.h 30936 2010-08-01 12:47:49Z blendix $
+ * $Id: BKE_depsgraph.h 32309 2010-10-05 00:05:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,10 @@
 
 #ifndef DEPSGRAPH_API
 #define DEPSGRAPH_API
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 #define DEPS_DEBUG
@@ -120,5 +124,9 @@ void	DAG_pose_sort(struct Object *ob);
 
 		/* callback for editors module to do updates */
 void	DAG_editors_update_cb(void (*func)(struct Main *bmain, struct ID *id));
+
+#ifdef __cplusplus
+}
+#endif
 		
 #endif

@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_dilate.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: CMP_dilate.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -110,7 +110,7 @@ static void morpho_erode(CompBuf *cbuf)
 	
 }
 
-static void node_composit_exec_dilateerode(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_dilateerode(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	/* stack order in: mask */
 	/* stack order out: mask */

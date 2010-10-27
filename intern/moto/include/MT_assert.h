@@ -1,5 +1,5 @@
 /**
-* $Id: MT_assert.h 26841 2010-02-12 13:34:04Z campbellbarton $
+* $Id: MT_assert.h 32552 2010-10-18 06:52:10Z jesterking $
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
 * This program is free software; you can redistribute it and/or
@@ -48,7 +48,7 @@
 MT_CDECL int MT_QueryAssert(const char *file, int line, const char *predicate, int *do_assert);
 
 
-#ifdef	NDEBUG
+#if !defined(DEBUG)
 #define MT_assert(predicate) ((void)0)
 #define BREAKPOINT() ((void)0)
 #else 
@@ -93,7 +93,7 @@ abort();
 }
 #endif /* windows */
 
-#endif /* NDEBUG */
+#endif /* !defined(DEBUG) */
 
 #endif
 

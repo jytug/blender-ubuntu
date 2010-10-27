@@ -1,5 +1,5 @@
 /**
- * $Id: BL_MeshDeformer.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: BL_MeshDeformer.h 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,7 @@
 #include "MT_Point3.h"
 #include <stdlib.h>
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786) // get rid of stupid stl-visual compiler debug warning
 #endif //WIN32
 

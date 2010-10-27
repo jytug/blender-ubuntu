@@ -1,5 +1,5 @@
 /**
- * $Id: BIK_api.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BIK_api.h 31891 2010-09-12 12:27:12Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -73,7 +73,6 @@ int BIK_get_solver_param(struct bPose *pose, struct bPoseChannel *pchan, int id,
 // number of solver available
 // 0 = iksolver
 // 1 = iTaSC
-#define BIK_SOLVER_COUNT		2
 
 /* for use in BIK_get_constraint_param */
 #define BIK_PARAM_CONSTRAINT_ERROR		0

@@ -1,5 +1,5 @@
 /**
- * $Id: wm_subwindow.c 29929 2010-07-04 12:24:19Z blendix $
+ * $Id: wm_subwindow.c 32506 2010-10-16 02:40:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,6 +40,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 
@@ -73,7 +74,7 @@ typedef struct wmSubWindow {
 /* ******************* open, free, set, get data ******************** */
 
 /* not subwindow itself */
-static void wm_subwindow_free(wmSubWindow *swin)
+static void wm_subwindow_free(wmSubWindow *UNUSED(swin))
 {
 	/* future fancy stuff */
 }

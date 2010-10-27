@@ -1,5 +1,5 @@
 /**
- * $Id: KX_TimeCategoryLogger.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: KX_TimeCategoryLogger.h 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,7 @@
 #ifndef __KX_TIME_CATEGORY_LOGGER_H
 #define __KX_TIME_CATEGORY_LOGGER_H
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786) // suppress stl-MSVC debug info warning
 #endif
 

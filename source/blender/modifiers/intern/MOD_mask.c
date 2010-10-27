@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_mask.c 31364 2010-08-16 05:46:10Z campbellbarton $
+* $Id: MOD_mask.c 32619 2010-10-21 01:55:39Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -55,9 +55,9 @@ static void copyData(ModifierData *md, ModifierData *target)
 	strcpy(tmmd->vgroup, mmd->vgroup);
 }
 
-static CustomDataMask requiredDataMask(Object *ob, ModifierData *md)
+static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *UNUSED(md))
 {
-	return (1 << CD_MDEFORMVERT);
+	return CD_MASK_MDEFORMVERT;
 }
 
 static void foreachObjectLink(
@@ -69,8 +69,10 @@ static void foreachObjectLink(
 	walk(userData, ob, &mmd->ob_arm);
 }
 
-static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *scene,
-					   Object *ob, DagNode *obNode)
+static void updateDepgraph(ModifierData *md, DagForest *forest,
+						struct Scene *UNUSED(scene),
+						Object *UNUSED(ob),
+						DagNode *obNode)
 {
 	MaskModifierData *mmd = (MaskModifierData *)md;
 
@@ -84,8 +86,9 @@ static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *sc
 }
 
 static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
-		DerivedMesh *derivedData,
-  int useRenderParams, int isFinalCalc)
+						DerivedMesh *derivedData,
+						int UNUSED(useRenderParams),
+						int UNUSED(isFinalCalc))
 {
 	MaskModifierData *mmd= (MaskModifierData *)md;
 	DerivedMesh *dm= derivedData, *result= NULL;
@@ -404,6 +407,7 @@ ModifierTypeInfo modifierType_Mask = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     0,
 };

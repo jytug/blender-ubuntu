@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_Types.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: GHOST_Types.h 32332 2010-10-05 19:10:15Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -96,7 +96,7 @@ typedef enum {
     GHOST_kModifierKeyRightAlt,
     GHOST_kModifierKeyLeftControl,
     GHOST_kModifierKeyRightControl,
-    GHOST_kModifierKeyCommand,		// APPLE only
+    GHOST_kModifierKeyOS,
     GHOST_kModifierKeyNumMasks
 } GHOST_TModifierKeyMask;
 
@@ -283,8 +283,8 @@ typedef enum {
 	GHOST_kKeyRightControl,
 	GHOST_kKeyLeftAlt,
 	GHOST_kKeyRightAlt,
-    GHOST_kKeyCommand,				// APPLE only!
-    GHOST_kKeyGrLess ,		// German PC only!
+	GHOST_kKeyOS,		// Command key on Apple, Windows key(s) on Windows
+	GHOST_kKeyGrLess ,		// German PC only!
 
 	GHOST_kKeyCapsLock,
 	GHOST_kKeyNumLock,

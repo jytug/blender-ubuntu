@@ -1,5 +1,5 @@
 /*
- * $Id: creator.c 31740 2010-09-03 09:21:40Z campbellbarton $
+ * $Id: creator.c 32669 2010-10-23 16:03:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -118,6 +118,10 @@ extern char build_time[];
 extern char build_rev[];
 extern char build_platform[];
 extern char build_type[];
+extern char build_cflags[];
+extern char build_cxxflags[];
+extern char build_linkflags[];
+extern char build_system[];
 #endif
 
 /*	Local Function prototypes */
@@ -138,7 +142,7 @@ static void setCallbacks(void);
 
 /* set breakpoints here when running in debug mode, useful to catch floating point errors */
 #if defined(__sgi) || defined(__linux__) || defined(_WIN32) || OSX_SSE_FPE
-static void fpe_handler(int sig)
+static void fpe_handler(int UNUSED(sig))
 {
 	// printf("SIGFPE trapped\n");
 }
@@ -175,7 +179,7 @@ static void strip_quotes(char *str)
 }
 #endif
 
-static int print_version(int argc, char **argv, void *data)
+static int print_version(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 	printf (BLEND_VERSION_STRING_FMT);
 #ifdef BUILD_DATE
@@ -184,13 +188,17 @@ static int print_version(int argc, char **argv, void *data)
 	printf ("\tbuild revision: %s\n", build_rev);
 	printf ("\tbuild platform: %s\n", build_platform);
 	printf ("\tbuild type: %s\n", build_type);
+	printf ("\tbuild c flags: %s\n", build_cflags);
+	printf ("\tbuild c++ flags: %s\n", build_cxxflags);
+	printf ("\tbuild link flags: %s\n", build_linkflags);
+	printf ("\tbuild system: %s\n", build_system);
 #endif
 	exit(0);
 
 	return 0;
 }
 
-static int print_help(int argc, char **argv, void *data)
+static int print_help(int UNUSED(argc), char **UNUSED(argv), void *data)
 {
 	bArgs *ba = (bArgs*)data;
 
@@ -317,30 +325,30 @@ double PIL_check_seconds_timer(void);
 	}
 }*/
 
-static int end_arguments(int argc, char **argv, void *data)
+static int end_arguments(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 	return -1;
 }
 
-static int enable_python(int argc, char **argv, void *data)
+static int enable_python(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 	G.f |= G_SCRIPT_AUTOEXEC;
 	return 0;
 }
 
-static int disable_python(int argc, char **argv, void *data)
+static int disable_python(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 	G.f &= ~G_SCRIPT_AUTOEXEC;
 	return 0;
 }
 
-static int background_mode(int argc, char **argv, void *data)
+static int background_mode(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 	G.background = 1;
 	return 0;
 }
 
-static int debug_mode(int argc, char **argv, void *data)
+static int debug_mode(int UNUSED(argc), char **UNUSED(argv), void *data)
 {
 	G.f |= G_DEBUG;		/* std output printf's */
 	printf(BLEND_VERSION_STRING_FMT);
@@ -354,7 +362,7 @@ static int debug_mode(int argc, char **argv, void *data)
 	return 0;
 }
 
-static int set_fpe(int argc, char **argv, void *data)
+static int set_fpe(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 #if defined(__sgi) || defined(__linux__) || defined(_WIN32) || OSX_SSE_FPE
 	/* zealous but makes float issues a heck of a lot easier to find!
@@ -379,7 +387,7 @@ static int set_fpe(int argc, char **argv, void *data)
 	return 0;
 }
 
-static int playback_mode(int argc, char **argv, void *data)
+static int playback_mode(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 	/* not if -b was given first */
 	if (G.background == 0) {
@@ -391,7 +399,7 @@ static int playback_mode(int argc, char **argv, void *data)
 	return -2;
 }
 
-static int prefsize(int argc, char **argv, void *data)
+static int prefsize(int argc, char **argv, void *UNUSED(data))
 {
 	int stax, stay, sizx, sizy;
 
@@ -410,32 +418,31 @@ static int prefsize(int argc, char **argv, void *data)
 	return 4;
 }
 
-static int with_borders(int argc, char **argv, void *data)
+static int with_borders(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
-	/* with borders XXX OLD CRUFT!*/
-
+	WM_setinitialstate_normal();
 	return 0;
 }
 
-static int without_borders(int argc, char **argv, void *data)
+static int without_borders(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
-	/* borderless, win + linux XXX OLD CRUFT */
-	/* XXX, fixme mein, borderless on OSX */
-
+	WM_setinitialstate_fullscreen();
 	return 0;
 }
 
-static int register_extension(int argc, char **argv, void *data)
+static int register_extension(int UNUSED(argc), char **UNUSED(argv), void *data)
 {
 #ifdef WIN32
 	char *path = BLI_argsArgv(data)[0];
 	RegisterBlendExtension(path);
+#else
+	(void)data; /* unused */
 #endif
 
 	return 0;
 }
 
-static int no_joystick(int argc, char **argv, void *data)
+static int no_joystick(int UNUSED(argc), char **UNUSED(argv), void *data)
 {
 	SYS_SystemHandle *syshandle = data;
 
@@ -449,19 +456,19 @@ static int no_joystick(int argc, char **argv, void *data)
 	return 0;
 }
 
-static int no_glsl(int argc, char **argv, void *data)
+static int no_glsl(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 	GPU_extensions_disable();
 	return 0;
 }
 
-static int no_audio(int argc, char **argv, void *data)
+static int no_audio(int UNUSED(argc), char **UNUSED(argv), void *UNUSED(data))
 {
 	sound_force_device(0);
 	return 0;
 }
 
-static int set_audio(int argc, char **argv, void *data)
+static int set_audio(int argc, char **argv, void *UNUSED(data))
 {
 	if (argc < 1) {
 		printf("-setaudio require one argument\n");
@@ -586,7 +593,7 @@ static int set_image_type(int argc, char **argv, void *data)
 	}
 }
 
-static int set_threads(int argc, char **argv, void *data)
+static int set_threads(int argc, char **argv, void *UNUSED(data))
 {
 	if (argc >= 1) {
 		if(G.background) {
@@ -717,7 +724,7 @@ static int render_frame(int argc, char **argv, void *data)
 	}
 }
 
-static int render_animation(int argc, char **argv, void *data)
+static int render_animation(int UNUSED(argc), char **UNUSED(argv), void *data)
 {
 	bContext *C = data;
 	if (CTX_data_scene(C)) {
@@ -846,12 +853,13 @@ static int run_python(int argc, char **argv, void *data)
 		return 0;
 	}
 #else
+	(void)argc; (void)argv; (void)data; /* unused */
 	printf("This blender was built without python support\n");
 	return 0;
 #endif /* DISABLE_PYTHON */
 }
 
-static int run_python_console(int argc, char **argv, void *data)
+static int run_python_console(int UNUSED(argc), char **argv, void *data)
 {
 #ifndef DISABLE_PYTHON
 	bContext *C = data;	
@@ -861,12 +869,13 @@ static int run_python_console(int argc, char **argv, void *data)
 
 	return 0;
 #else
+	(void)argv; (void)data; /* unused */
 	printf("This blender was built without python support\n");
 	return 0;
 #endif /* DISABLE_PYTHON */
 }
 
-static int load_file(int argc, char **argv, void *data)
+static int load_file(int UNUSED(argc), char **argv, void *data)
 {
 	bContext *C = data;
 
@@ -876,7 +885,7 @@ static int load_file(int argc, char **argv, void *data)
 	BLI_path_cwd(filename);
 
 	if (G.background) {
-		int retval = BKE_read_file(C, filename, NULL, NULL);
+		int retval = BKE_read_file(C, filename, NULL);
 
 		/*we successfully loaded a blend file, get sure that
 		pointcache works */
@@ -900,7 +909,10 @@ static int load_file(int argc, char **argv, void *data)
 	} else {
 		/* we are not running in background mode here, but start blender in UI mode with
 		   a file - this should do everything a 'load file' does */
-		WM_read_file(C, filename, NULL);
+		ReportList reports;
+		BKE_reports_init(&reports, RPT_PRINT);
+		WM_read_file(C, filename, &reports);
+		BKE_reports_clear(&reports);
 	}
 
 	G.file_loaded = 1;
@@ -996,7 +1008,7 @@ void setupArguments(bContext *C, bArgs *ba, SYS_SystemHandle *syshandle)
 	BLI_argsAdd(ba, 4, "-E", "--engine", "<engine>\n\tSpecify the render engine\n\tuse -E help to list available engines", set_engine, C);
 
 	BLI_argsAdd(ba, 4, "-F", "--render-format", format_doc, set_image_type, C);
-	BLI_argsAdd(ba, 4, "-t", "--threads", "<threads>\n\tUse amount of <threads> for rendering in background\n\t[1-" QUOTE(BLENDER_MAX_THREADS) "], 0 for systems processor count.", set_threads, NULL);
+	BLI_argsAdd(ba, 4, "-t", "--threads", "<threads>\n\tUse amount of <threads> for rendering in background\n\t[1-" STRINGIFY(BLENDER_MAX_THREADS) "], 0 for systems processor count.", set_threads, NULL);
 	BLI_argsAdd(ba, 4, "-x", "--use-extension", "<bool>\n\tSet option to add the file extension to the end of the file", set_extension, C);
 
 }
@@ -1038,11 +1050,15 @@ int main(int argc, char **argv)
 	BLI_where_am_i(bprogname, argv[0]);
 	
 #ifdef BUILD_DATE	
-    strip_quotes(build_date);
-    strip_quotes(build_time);
-    strip_quotes(build_rev);
-    strip_quotes(build_platform);
-    strip_quotes(build_type);
+	strip_quotes(build_date);
+	strip_quotes(build_time);
+	strip_quotes(build_rev);
+	strip_quotes(build_platform);
+	strip_quotes(build_type);
+	strip_quotes(build_cflags);
+	strip_quotes(build_cxxflags);
+	strip_quotes(build_linkflags);
+	strip_quotes(build_system);
 #endif
 
 	BLI_threadapi_init();

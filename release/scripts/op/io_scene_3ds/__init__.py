@@ -36,6 +36,7 @@ class Import3DS(bpy.types.Operator, ImportHelper):
     bl_label = 'Import 3DS'
 
     filename_ext = ".3ds"
+    filter_glob = StringProperty(default="*.3ds", options={'HIDDEN'})
 
     constrain_size = FloatProperty(name="Size Constraint", description="Scale the model by 10 until it reacehs the size constraint. Zero Disables.", min=0.0, max=1000.0, soft_min=0.0, soft_max=1000.0, default=10.0)
     use_image_search = BoolProperty(name="Image Search", description="Search subdirectories for any assosiated images (Warning, may be slow)", default=True)
@@ -73,9 +74,6 @@ def register():
 def unregister():
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
-
-if __name__ == "__main__":
-    register()
 
 # NOTES:
 # why add 1 extra vertex? and remove it when done? - "Answer - eekadoodle - would need to re-order UV's without this since face order isnt always what we give blender, BMesh will solve :D"

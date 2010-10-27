@@ -1,5 +1,5 @@
 /**
- * $Id: BL_BlenderDataConversion.cpp 31636 2010-08-28 20:56:54Z ben2610 $
+ * $Id: BL_BlenderDataConversion.cpp 32392 2010-10-10 07:01:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,7 +28,7 @@
  * Convert blender data to ketsji
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786)
 #endif
 
@@ -1766,9 +1766,11 @@ static KX_GameObject *gameobject_from_blenderobject(
 			BL_MeshDeformer *dcont = new BL_MeshDeformer((BL_DeformableGameObject*)gameobj,
 														  ob, meshobj);
 			((BL_DeformableGameObject*)gameobj)->SetDeformer(dcont);
+#ifdef USE_BULLET
 		} else if (bHasSoftBody) {
 			KX_SoftBodyDeformer *dcont = new KX_SoftBodyDeformer(meshobj, (BL_DeformableGameObject*)gameobj);
 			((BL_DeformableGameObject*)gameobj)->SetDeformer(dcont);
+#endif
 		}
 		
 		MT_Point3 min = MT_Point3(center) - MT_Vector3(extents);
@@ -2634,7 +2636,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 	sumolist->Release();
 
 	// convert world
-	KX_WorldInfo* worldinfo = new BlenderWorldInfo(blenderscene->world);
+	KX_WorldInfo* worldinfo = new BlenderWorldInfo(blenderscene, blenderscene->world);
 	converter->RegisterWorldInfo(worldinfo);
 	kxscene->SetWorldInfo(worldinfo);
 

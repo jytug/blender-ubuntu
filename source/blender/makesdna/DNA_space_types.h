@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_space_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_space_types.h 31270 2010-08-12 00:14:32Z campbellbarton $ 
+ * $Id: DNA_space_types.h 32441 2010-10-13 06:06:39Z nazgul $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -163,6 +163,8 @@ typedef struct FileSelectParams {
 	char renamefile[80];
 	char renameedit[80]; /* annoying but the first is only used for initialization */
 
+	char filter_glob[64]; /* list of filetypes to filter */
+
 	short type; /* XXXXX for now store type here, should be moved to the operator */
 	short flag; /* settings for filter, hiding dots files,...  */
 	short sort; /* sort order */
@@ -316,6 +318,8 @@ typedef struct SpaceText {
 
 	char findstr[256];		/* ST_MAX_FIND_STR */
 	char replacestr[256];	/* ST_MAX_FIND_STR */
+
+	void *drawcache; /* cache for faster drawing */
 } SpaceText;
 
 typedef struct Script {
@@ -725,6 +729,7 @@ enum FileSortTypeE {
 #define FOLDERFILE			(1<<11) /* represents folders for filtering */
 #define BTXFILE				(1<<12)
 #define COLLADAFILE			(1<<13)
+#define OPERATORFILE		(1<<14) /* from filter_glob operator property */
 
 /* SpaceImage->dt_uv */
 #define SI_UVDT_OUTLINE	0

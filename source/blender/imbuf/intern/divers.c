@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * allocimbuf.c
  *
- * $Id: divers.c 30229 2010-07-12 14:57:24Z campbellbarton $
+ * $Id: divers.c 32517 2010-10-16 14:32:17Z campbellbarton $
  */
 
 #include "BLI_blenlib.h"
@@ -50,8 +50,8 @@ void IMB_de_interlace(struct ImBuf *ibuf)
 	
 	if (ibuf->rect) {
 		/* make copies */
-		tbuf1 = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 32, IB_rect, 0);
-		tbuf2 = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 32, IB_rect, 0);
+		tbuf1 = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 32, IB_rect);
+		tbuf2 = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 32, IB_rect);
 		
 		ibuf->x *= 2;	
 		IMB_rectcpy(tbuf1, ibuf, 0, 0, 0, 0, ibuf->x, ibuf->y);
@@ -78,8 +78,8 @@ void IMB_interlace(struct ImBuf *ibuf)
 
 	if (ibuf->rect) {
 		/* make copies */
-		tbuf1 = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 32, IB_rect, 0);
-		tbuf2 = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 32, IB_rect, 0);
+		tbuf1 = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 32, IB_rect);
+		tbuf2 = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 32, IB_rect);
 
 		IMB_rectcpy(tbuf1, ibuf, 0, 0, 0, 0, ibuf->x, ibuf->y);
 		IMB_rectcpy(tbuf2, ibuf, 0, 0, 0, tbuf2->y, ibuf->x, ibuf->y);

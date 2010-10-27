@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_multires.h 31832 2010-09-09 00:14:51Z nicholasbishop $
+ * $Id: BKE_multires.h 32698 2010-10-25 08:03:05Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -70,6 +70,9 @@ void multires_stitch_grids(struct Object *);
 void multires_free(struct Multires *mr);
 void multires_load_old(struct Object *ob, struct Mesh *me);
 void multires_load_old_250(struct Mesh *);
+
+void multiresModifier_scale_disp(struct Scene *scene, struct Object *ob);
+void multiresModifier_prepare_join(struct Scene *scene, struct Object *ob, struct Object *to_ob);
 
 #endif
 

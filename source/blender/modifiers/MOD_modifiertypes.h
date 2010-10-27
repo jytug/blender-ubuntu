@@ -1,5 +1,5 @@
 /**
- * $Id: MOD_modifiertypes.h 31223 2010-08-10 21:22:26Z gsrb3d $
+ * $Id: MOD_modifiertypes.h 32462 2010-10-14 06:29:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -69,6 +69,6 @@ extern ModifierTypeInfo modifierType_Solidify;
 extern ModifierTypeInfo modifierType_Screw;
 
 /* MOD_util.c */
-void modifier_type_init(ModifierTypeInfo *types[], ModifierType type);
+void modifier_type_init(ModifierTypeInfo *types[]);
 
 #endif //MOD_MODIFIERTYPES_H

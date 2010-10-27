@@ -1,5 +1,5 @@
 /**
- * $Id: armature_intern.h 30290 2010-07-14 03:19:19Z aligorith $
+ * $Id: armature_intern.h 32482 2010-10-15 03:24:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,9 +51,7 @@ void ARMATURE_OT_align(struct wmOperatorType *ot);
 void ARMATURE_OT_calculate_roll(struct wmOperatorType *ot);
 void ARMATURE_OT_switch_direction(struct wmOperatorType *ot);
 
-void ARMATURE_OT_subdivs(struct wmOperatorType *ot);
-void ARMATURE_OT_subdivide_simple(struct wmOperatorType *ot);
-void ARMATURE_OT_subdivide_multi(struct wmOperatorType *ot);
+void ARMATURE_OT_subdivide(struct wmOperatorType *ot);
 
 void ARMATURE_OT_parent_set(struct wmOperatorType *ot);
 void ARMATURE_OT_parent_clear(struct wmOperatorType *ot);
@@ -66,6 +64,8 @@ void ARMATURE_OT_select_linked(struct wmOperatorType *ot);
 void ARMATURE_OT_delete(struct wmOperatorType *ot);
 void ARMATURE_OT_duplicate(struct wmOperatorType *ot);
 void ARMATURE_OT_extrude(struct wmOperatorType *ot);
+void ARMATURE_OT_hide(struct wmOperatorType *ot);
+void ARMATURE_OT_reveal(struct wmOperatorType *ot);
 void ARMATURE_OT_click_extrude(struct wmOperatorType *ot);
 void ARMATURE_OT_fill(struct wmOperatorType *ot);
 void ARMATURE_OT_merge(struct wmOperatorType *ot);

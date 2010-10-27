@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,20 +24,46 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC intern/*.c)
-
-
 SET(INC 
 	.
-	../makesdna
-	../../../intern/guardedalloc
-	../../../intern/memutil
-	../blenlib
 	../avi
+	../blenlib
 	../blenkernel
+	../makesdna
+	../../../intern/memutil
+	../../../intern/guardedalloc
 	${JPEG_INC}
 	${PNG_INC}
 	${ZLIB_INC}
+)
+
+SET(SRC
+	intern/allocimbuf.c
+	intern/anim_movie.c
+	intern/bmp.c
+	intern/cache.c
+	intern/divers.c
+	intern/filetype.c
+	intern/filter.c
+	intern/imageprocess.c
+	intern/iris.c
+	intern/jp2.c
+	intern/jpeg.c
+	intern/md5.c
+	intern/metadata.c
+	intern/module.c
+	intern/png.c
+	intern/radiance_hdr.c
+	intern/readimage.c
+	intern/rectop.c
+	intern/rotate.c
+	intern/scaling.c
+	intern/targa.c
+	intern/thumbs.c
+	intern/thumbs_blend.c
+	intern/tiff.c
+	intern/util.c
+	intern/writeimage.c
 )
 
 IF(WIN32)

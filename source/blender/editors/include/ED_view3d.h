@@ -1,5 +1,5 @@
 /**
- * $Id: ED_view3d.h 31598 2010-08-26 23:30:15Z campbellbarton $
+ * $Id: ED_view3d.h 32718 2010-10-26 20:51:11Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -63,6 +63,7 @@ typedef struct ViewContext {
 
 typedef struct ViewDepths {
 	unsigned short w, h;
+	short x, y; /* only for temp use for sub-rects, added to ar->winx/y */
 	float *depths;
 	double depth_range[2];
 	
@@ -105,7 +106,7 @@ int get_view3d_viewplane(struct View3D *v3d, struct RegionView3D *rv3d, int winx
 int get_view3d_ortho(struct View3D *v3d, struct RegionView3D *rv3d);
 void view3d_get_object_project_mat(struct RegionView3D *v3d, struct Object *ob, float pmat[4][4]);
 void view3d_project_float(struct ARegion *a, float *vec, float *adr, float mat[4][4]);
-void view3d_calc_camera_border(struct Scene *scene, struct ARegion *ar, struct RegionView3D *rv3d, struct View3D *v3d, struct rctf *viewborder_r);
+void view3d_calc_camera_border(struct Scene *scene, struct ARegion *ar, struct RegionView3D *rv3d, struct View3D *v3d, struct rctf *viewborder_r, short do_shift);
 
 /* drawobject.c itterators */
 void mesh_foreachScreenVert(struct ViewContext *vc, void (*func)(void *userData, struct EditVert *eve, int x, int y, int index), void *userData, int clipVerts);

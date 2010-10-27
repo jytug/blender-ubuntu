@@ -1,5 +1,5 @@
 /*
- * $Id: writefile.c 31787 2010-09-06 12:54:54Z campbellbarton $
+ * $Id: writefile.c 32551 2010-10-18 06:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2471,14 +2471,14 @@ int BLO_write_file(Main *mainvar, char *dir, int write_flags, ReportList *report
 		if(strcmp(dir1, dir2)==0)
 			write_flags &= ~G_FILE_RELATIVE_REMAP;
 		else
-			makeFilesAbsolute(G.sce, NULL);
+			makeFilesAbsolute(G.main->name, NULL);
 	}
 
-	BLI_make_file_string(G.sce, userfilename, BLI_get_folder_create(BLENDER_USER_CONFIG, NULL), BLENDER_STARTUP_FILE);
+	BLI_make_file_string(G.main->name, userfilename, BLI_get_folder_create(BLENDER_USER_CONFIG, NULL), BLENDER_STARTUP_FILE);
 	write_user_block= BLI_streq(dir, userfilename);
 
 	if(write_flags & G_FILE_RELATIVE_REMAP)
-		makeFilesRelative(dir, NULL); /* note, making relative to something OTHER then G.sce */
+		makeFilesRelative(dir, NULL); /* note, making relative to something OTHER then G.main->name */
 
 	/* actual file writing */
 	err= write_file_handle(mainvar, file, NULL,NULL, write_user_block, write_flags, thumb);
@@ -2530,7 +2530,7 @@ int BLO_write_file(Main *mainvar, char *dir, int write_flags, ReportList *report
 }
 
 /* return: success (1) */
-int BLO_write_file_mem(Main *mainvar, MemFile *compare, MemFile *current, int write_flags, ReportList *reports)
+int BLO_write_file_mem(Main *mainvar, MemFile *compare, MemFile *current, int write_flags)
 {
 	int err;
 

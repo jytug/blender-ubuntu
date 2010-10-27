@@ -24,9 +24,29 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC . src)
+SET(INC
+	.
+)
 
-FILE(GLOB SRC *.c except t1_generate_luts.c)
-ADD_DEFINITIONS(-DWITH_OPENJPEG)
+SET(SRC
+	bio.c
+	cio.c
+	dwt.c
+	event.c
+	image.c
+	j2k.c
+	j2k_lib.c
+	jp2.c
+	jpt.c
+	mct.c
+	mqc.c
+	openjpeg.c
+	pi.c
+	raw.c
+	t1.c
+	t2.c
+	tcd.c
+	tgt.c
+)
+
 BLENDERLIB(extern_openjpeg "${SRC}" "${INC}")
-#, libtype=['international','player'], priority=[5, 210])

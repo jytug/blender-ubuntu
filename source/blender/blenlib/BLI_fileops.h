@@ -1,7 +1,7 @@
 /**
  * blenlib/BLI_listBase.h    mar 2001 Nzc
  *
- * $Id: BLI_fileops.h 29259 2010-06-06 01:15:44Z campbellbarton $ 
+ * $Id: BLI_fileops.h 32729 2010-10-27 06:41:48Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,6 +36,10 @@
 #ifndef BLI_FILEOPS_H
 #define BLI_FILEOPS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void  BLI_recurdir_fileops(char *dirname);
 int BLI_link(char *file, char *to);
 int BLI_is_writable(char *filename);
@@ -50,14 +54,14 @@ int   BLI_gzip(char *from, char *to);
 int   BLI_delete(char *file, int dir, int recursive);
 int   BLI_move(char *file, char *to);
 int   BLI_touch(const char *file);
-char *BLI_last_slash(const char *string);
-int	  BLI_add_slash(char *string);
-void  BLI_del_slash(char *string);
-char *first_slash(char *string);
 
 /* only for the sane unix world: direct calls to system functions :( */
 #ifndef WIN32
 void BLI_setCmdCallBack(int (*f)(char*));
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_math.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SHD_math.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,7 @@ static bNodeSocketType sh_node_math_out[]= {
 	{ -1, 0, "" } 
 };
 
-static void node_shader_exec_math(void *data, bNode *node, bNodeStack **in, 
+static void node_shader_exec_math(void *UNUSED(data), bNode *node, bNodeStack **in, 
 bNodeStack **out) 
 {
 	switch(node->custom1){ 

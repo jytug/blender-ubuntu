@@ -1,5 +1,5 @@
 /**
- * $Id: collada.cpp 29191 2010-06-03 17:41:33Z kazanbas $
+ * $Id: collada.cpp 32309 2010-10-05 00:05:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,15 +21,15 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#include "BKE_main.h"
-#include "BKE_scene.h"
-#include "BKE_context.h"
 
 #include "DocumentExporter.h"
 #include "DocumentImporter.h"
 
 extern "C"
 {
+#include "BKE_scene.h"
+#include "BKE_context.h"
+
 	int collada_import(bContext *C, const char *filepath)
 	{
 		DocumentImporter imp;

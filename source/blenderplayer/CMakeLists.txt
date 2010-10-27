@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31545 2010-08-24 04:29:23Z campbellbarton $
+# $Id: CMakeLists.txt 32512 2010-10-16 09:27:02Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -65,7 +65,7 @@ IF(UNIX)
 		gp_ghost 
 		gp_common 
 		bf_intern_string 
-		bf_intern_ghost 
+		bf_intern_ghost
 		bf_rna
 		bf_blenkernel
 		bf_blenloader 
@@ -81,10 +81,10 @@ IF(UNIX)
 		bf_oglrasterizer 
 		bf_expressions 
 		bf_scenegraph
-        	bf_ikplugin
-        	bf_intern_itasc
-        	bf_intern_ik
-        	bf_intern_smoke
+		bf_ikplugin
+		bf_intern_itasc
+		bf_intern_ik
+		bf_intern_smoke
 		bf_modifiers
 		bf_intern_moto 
 		bf_kernel 
@@ -113,6 +113,9 @@ IF(UNIX)
 		blenkernel_blc
 		extern_binreloc
 		extern_glew
+		extern_minilzo
+		bf_intern_ghost # duplicate for linking
+		bf_blenkernel # duplicate for linking
 	)
   
 	IF(WITH_QUICKTIME)

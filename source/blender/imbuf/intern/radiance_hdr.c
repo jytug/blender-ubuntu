@@ -1,7 +1,7 @@
 /*
  * radiance_hdr.c
  *
- * $Id: radiance_hdr.c 31441 2010-08-18 10:42:00Z campbellbarton $
+ * $Id: radiance_hdr.c 32532 2010-10-17 06:38:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -173,7 +173,7 @@ int imb_is_a_hdr(unsigned char *buf)
 	return 0;
 }
 
-struct ImBuf *imb_loadhdr(unsigned char *mem, int size, int flags)
+struct ImBuf *imb_loadhdr(unsigned char *mem, size_t size, int flags)
 {
 	struct ImBuf* ibuf;
 	RGBE* sline;
@@ -202,8 +202,8 @@ struct ImBuf *imb_loadhdr(unsigned char *mem, int size, int flags)
 			ptr = (unsigned char *)strchr((char*)&mem[x+1], '\n');
 			ptr++;
 
-			if (flags & IB_test) ibuf = IMB_allocImBuf(width, height, 32, 0, 0);
-			else ibuf = IMB_allocImBuf(width, height, 32, (flags & IB_rect)|IB_rectfloat, 0);
+			if (flags & IB_test) ibuf = IMB_allocImBuf(width, height, 32, 0);
+			else ibuf = IMB_allocImBuf(width, height, 32, (flags & IB_rect)|IB_rectfloat);
 
 			if (ibuf==NULL) return NULL;
 			ibuf->ftype = RADHDR;
@@ -339,6 +339,8 @@ int imb_savehdr(struct ImBuf *ibuf, char *name, int flags)
 	float *fp= NULL;
 	int y, width=ibuf->x, height=ibuf->y;
 	unsigned char *cp= NULL;
+	
+	(void)flags; /* unused */
 	
 	if (file==NULL) return 0;
 

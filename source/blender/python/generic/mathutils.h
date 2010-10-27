@@ -1,5 +1,5 @@
 /* 
- * $Id: mathutils.h 30957 2010-08-02 00:08:01Z campbellbarton $
+ * $Id: mathutils.h 32709 2010-10-25 22:44:01Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -55,6 +55,7 @@ typedef struct {
 #include "mathutils_quat.h"
 #include "mathutils_euler.h"
 #include "mathutils_color.h"
+#include "mathutils_geometry.h"
 
 PyObject *BaseMathObject_getOwner( BaseMathObject * self, void * );
 PyObject *BaseMathObject_getWrapped( BaseMathObject *self, void * );

@@ -19,18 +19,25 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.c)
-
 SET(INC
+	../include
 	../../blenkernel
 	../../blenlib
 	../../imbuf
-	../include
-	../../../../intern/guardedalloc
 	../../makesdna
 	../../makesrna
-	../../render/extern/include
 	../../windowmanager
+	../../render/extern/include
+	../../../../intern/guardedalloc
+)
+
+SET(SRC
+	image_buttons.c
+	image_draw.c
+	image_header.c
+	image_ops.c
+	image_render.c
+	space_image.c
 )
 
 IF(WITH_IMAGE_OPENEXR)
@@ -40,6 +47,10 @@ ENDIF(WITH_IMAGE_OPENEXR)
 IF(WITH_IMAGE_TIFF)
 	ADD_DEFINITIONS(-DWITH_TIFF)
 ENDIF(WITH_IMAGE_TIFF)
+
+IF(WITH_IMAGE_CINEON)
+	ADD_DEFINITIONS(-DWITH_CINEON)
+ENDIF(WITH_IMAGE_CINEON)
 
 IF(WITH_LCMS)
 	SET(INC ${INC} ${LCMS_INCLUDE_DIR})

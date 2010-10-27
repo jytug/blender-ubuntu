@@ -67,10 +67,10 @@ class SelectPattern(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
 
-        layout.prop(self.properties, "pattern")
+        layout.prop(self, "pattern")
         row = layout.row()
-        row.prop(self.properties, "case_sensitive")
-        row.prop(self.properties, "extend")
+        row.prop(self, "case_sensitive")
+        row.prop(self, "extend")
 
 
 class SelectCamera(bpy.types.Operator):
@@ -256,7 +256,7 @@ class ShapeTransfer(bpy.types.Operator):
             ob.active_shape_key_index = len(me.shape_keys.keys) - 1
             ob.show_shape_key = True
 
-        from geometry import BarycentricTransform
+        from mathutils.geometry import BarycentricTransform
         from mathutils import Vector
 
         if use_clamp and mode == 'OFFSET':

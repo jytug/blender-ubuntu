@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_SystemWin32.h 30526 2010-07-20 10:41:08Z campbellbarton $
+ * $Id: GHOST_SystemWin32.h 32683 2010-10-24 12:45:47Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -239,7 +239,7 @@ protected:
 	 * @param lParam	The lParam from the wndproc
 	 * @return The GHOST key (GHOST_kKeyUnknown if no match).
 	 */
-	virtual GHOST_TKey convertKey(WPARAM wParam, LPARAM lParam) const;
+	virtual GHOST_TKey convertKey(GHOST_IWindow *window, WPARAM wParam, LPARAM lParam) const;
 
 	/**
 	 * Creates modifier key event(s) and updates the key data stored locally (m_modifierKeys).
@@ -248,7 +248,7 @@ protected:
 	 * events generated for both keys.
 	 * @param window	The window receiving the event (the active window).
 	 */
-	void processModifierKeys(GHOST_IWindow *window);
+	//GHOST_EventKey* processModifierKeys(GHOST_IWindow *window);
 
 	/**
 	 * Creates mouse button event.
@@ -310,11 +310,26 @@ protected:
 	 * @param keys The new state of the modifier keys.
 	 */
 	inline virtual void storeModifierKeys(const GHOST_ModifierKeys& keys);
+	
+	/**
+	 * Check current key layout for AltGr
+	 */
+	inline virtual void keyboardAltGr(void);
 
 	/**
 	 * Windows call back routine for our window class.
 	 */
 	static LRESULT WINAPI s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	
+	/**
+	 * Low-level inspection of keyboard events
+	 */
+	static LRESULT CALLBACK s_llKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+	
+	/**
+	 * Check if any shiftkey is pressed
+	 */
+	inline virtual bool shiftPressed(void);
 
 	/** The current state of the modifier keys. */
 	GHOST_ModifierKeys m_modifierKeys;
@@ -324,11 +339,12 @@ protected:
 	__int64 m_freq;
 	/** High frequency timer variable. */
 	__int64 m_start;
-	/** Stores the capability of this system to distinguish left and right modifier keys. */
-	bool m_separateLeftRight;
-	/** Stores the initialization state of the member m_leftRightDistinguishable. */
-	bool m_separateLeftRightInitialized;
-	
+	/** AltGr on current keyboard layout. */
+	bool m_hasAltGr;
+	/** holding hook handle for low-level keyboard handling */
+	HHOOK m_llKeyboardHook;
+	bool m_prevKeyStatus[255]; /* VK_* codes 0x01-0xFF, with 0xFF reserved */
+	bool m_curKeyStatus[255]; /* VK_* codes 0x01-0xFF, with 0xFF reserved */
 };
 
 inline void GHOST_SystemWin32::retrieveModifierKeys(GHOST_ModifierKeys& keys) const
@@ -339,6 +355,28 @@ inline void GHOST_SystemWin32::retrieveModifierKeys(GHOST_ModifierKeys& keys) co
 inline void GHOST_SystemWin32::storeModifierKeys(const GHOST_ModifierKeys& keys)
 {
 	m_modifierKeys = keys;
+}
+
+inline void GHOST_SystemWin32::keyboardAltGr(void)
+{
+	HKL keylayout = GetKeyboardLayout(0); // get keylayout for current thread
+	int i;
+	SHORT s;
+	for(m_hasAltGr = false, i = 32; i < 256; ++i) {
+		s = VkKeyScanEx((char)i, keylayout);
+		// s == -1 means no key that translates passed char code
+		// high byte contains shift state. bit 2 ctrl pressed, bit 4 alt pressed
+		// if both are pressed, we have AltGr keycombo on keylayout
+		if(s!=-1 && (s & 0x600) == 0x600) {
+			m_hasAltGr = true;
+			break;
+		}
+	}
+}
+
+inline bool GHOST_SystemWin32::shiftPressed(void)
+{
+	return (m_curKeyStatus[VK_SHIFT] || m_curKeyStatus[VK_RSHIFT] || m_curKeyStatus[VK_LSHIFT]);
 }
 
 #endif // _GHOST_SYSTEM_WIN32_H_

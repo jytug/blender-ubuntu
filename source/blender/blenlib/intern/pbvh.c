@@ -1,5 +1,5 @@
 /**
- * $Id: pbvh.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: pbvh.c 32506 2010-10-16 02:40:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1399,7 +1399,7 @@ int BLI_pbvh_node_raycast(PBVH *bvh, PBVHNode *node, float (*origco)[3],
 
 //#include <GL/glew.h>
 
-void BLI_pbvh_node_draw(PBVHNode *node, void *data)
+void BLI_pbvh_node_draw(PBVHNode *node, void *UNUSED(data))
 {
 #if 0
 	/* XXX: Just some quick code to show leaf nodes in different colors */

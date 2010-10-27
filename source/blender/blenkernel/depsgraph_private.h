@@ -1,5 +1,5 @@
 /**
- * $Id: depsgraph_private.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: depsgraph_private.h 32573 2010-10-19 01:21:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -64,8 +64,8 @@ typedef struct DagNode
 	void * ob;
 	void * first_ancestor;
 	int ancestor_count;
-	int lay;			// accumulated layers of its relations + itself
-	int scelay;			// layers due to being in scene
+	unsigned int lay;			// accumulated layers of its relations + itself
+	unsigned int scelay;			// layers due to being in scene
 	int lasttime;		// if lasttime != DagForest->time, this node was not evaluated yet for flushing
 	int BFS_dist;		// BFS distance
 	int DFS_dist;		// DFS distance

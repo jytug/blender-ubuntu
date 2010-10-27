@@ -1,5 +1,5 @@
 /**
- * $Id: anim_markers.c 30445 2010-07-17 18:02:10Z campbellbarton $
+ * $Id: anim_markers.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -336,7 +336,7 @@ void draw_markers_time(const bContext *C, int flag)
 /* ************************** add markers *************************** */
 
 /* add TimeMarker at curent frame */
-static int ed_marker_add(bContext *C, wmOperator *op)
+static int ed_marker_add(bContext *C, wmOperator *UNUSED(op))
 {
 	ListBase *markers= context_get_markers(C);
 	TimeMarker *marker;
@@ -362,6 +362,7 @@ static int ed_marker_add(bContext *C, wmOperator *op)
 	BLI_addtail(markers, marker);
 	
 	WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+	WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
 	
 	return OPERATOR_FINISHED;
 }
@@ -488,7 +489,7 @@ static int ed_marker_move_invoke(bContext *C, wmOperator *op, wmEvent *evt)
 }
 
 /* note, init has to be called succesfully */
-static void ed_marker_move_apply(bContext *C, wmOperator *op)
+static void ed_marker_move_apply(wmOperator *op)
 {
 	MarkerMove *mm= op->customdata;
 	TimeMarker *marker;
@@ -507,10 +508,11 @@ static void ed_marker_move_apply(bContext *C, wmOperator *op)
 static void ed_marker_move_cancel(bContext *C, wmOperator *op)
 {
 	RNA_int_set(op->ptr, "frames", 0);
-	ed_marker_move_apply(C, op);
+	ed_marker_move_apply(op);
 	ed_marker_move_exit(C, op);	
 	
 	WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+	WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
 }
 
 
@@ -537,6 +539,7 @@ static int ed_marker_move_modal(bContext *C, wmOperator *op, wmEvent *evt)
 			if(WM_modal_tweak_exit(evt, mm->event_type)) {
 				ed_marker_move_exit(C, op);
 				WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+				WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
 				return OPERATOR_FINISHED;
 			}
 			
@@ -562,7 +565,7 @@ static int ed_marker_move_modal(bContext *C, wmOperator *op, wmEvent *evt)
 				
 				offs= (int)fac;
 				RNA_int_set(op->ptr, "frames", offs);
-				ed_marker_move_apply(C, op);
+				ed_marker_move_apply(op);
 				
 				/* cruft below is for header print */
 				for (a=0, marker= mm->markers->first; marker; marker= marker->next) {
@@ -614,6 +617,7 @@ static int ed_marker_move_modal(bContext *C, wmOperator *op, wmEvent *evt)
 				}
 				
 				WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+				WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
 				ED_area_headerprint(CTX_wm_area(C), str);
 			}
 	}
@@ -628,13 +632,14 @@ static int ed_marker_move_modal(bContext *C, wmOperator *op, wmEvent *evt)
 			outputNumInput(&mm->num, str_tx);
 
 			RNA_int_set(op->ptr, "frames", vec[0]);
-			ed_marker_move_apply(C, op);
+			ed_marker_move_apply(op);
 			// ed_marker_header_update(C, op, str, (int)vec[0]);
 			// strcat(str, str_tx);
 			sprintf(str, "Marker offset %s", str_tx);
 			ED_area_headerprint(CTX_wm_area(C), str);
 
 			WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+			WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
 		}
 	}
 
@@ -644,7 +649,7 @@ static int ed_marker_move_modal(bContext *C, wmOperator *op, wmEvent *evt)
 static int ed_marker_move_exec(bContext *C, wmOperator *op)
 {
 	if(ed_marker_move_init(C, op)) {
-		ed_marker_move_apply(C, op);
+		ed_marker_move_apply(op);
 		ed_marker_move_exit(C, op);
 		return OPERATOR_FINISHED;
 	}
@@ -692,7 +697,7 @@ callbacks:
 
 
 /* duplicate selected TimeMarkers */
-static void ed_marker_duplicate_apply(bContext *C, wmOperator *op)
+static void ed_marker_duplicate_apply(bContext *C)
 {
 	ListBase *markers= context_get_markers(C);
 	TimeMarker *marker, *newmarker;
@@ -726,7 +731,7 @@ static void ed_marker_duplicate_apply(bContext *C, wmOperator *op)
 
 static int ed_marker_duplicate_exec(bContext *C, wmOperator *op)
 {
-	ed_marker_duplicate_apply(C, op);
+	ed_marker_duplicate_apply(C);
 	ed_marker_move_exec(C, op);	/* assumes frs delta set */
 	
 	return OPERATOR_FINISHED;
@@ -735,7 +740,7 @@ static int ed_marker_duplicate_exec(bContext *C, wmOperator *op)
 
 static int ed_marker_duplicate_invoke(bContext *C, wmOperator *op, wmEvent *evt)
 {
-	ed_marker_duplicate_apply(C, op);
+	ed_marker_duplicate_apply(C);
 	return ed_marker_move_invoke(C, op, evt);
 }
 
@@ -840,6 +845,7 @@ static int ed_marker_select(bContext *C, wmEvent *evt, int extend, int camera)
 #endif
 
 	WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+	WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
 
 	/* allowing tweaks */
 	return OPERATOR_PASS_THROUGH;
@@ -935,6 +941,7 @@ static int ed_marker_border_select_exec(bContext *C, wmOperator *op)
 	}
 	
 	WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+	WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
 
 	return 1;
 }
@@ -1000,6 +1007,7 @@ static int ed_marker_select_all_exec(bContext *C, wmOperator *op)
 	}
 	
 	WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+	WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
 
 	return OPERATOR_FINISHED;
 }
@@ -1025,7 +1033,7 @@ static void MARKER_OT_select_all(wmOperatorType *ot)
 /* ******************************* remove marker ***************** */
 
 /* remove selected TimeMarkers */
-static int ed_marker_delete_exec(bContext *C, wmOperator *op)
+static int ed_marker_delete_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	ListBase *markers= context_get_markers(C);
 	TimeMarker *marker, *nmarker;
@@ -1042,8 +1050,10 @@ static int ed_marker_delete_exec(bContext *C, wmOperator *op)
 		}
 	}
 	
-	if (changed)
+	if (changed) {
 		WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+		WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
+	}
 	
 	return OPERATOR_FINISHED;
 }
@@ -1120,7 +1130,7 @@ static void MARKER_OT_make_links_scene(wmOperatorType *ot)
 /* ******************************* camera bind marker ***************** */
 
 /* remove selected TimeMarkers */
-static int ed_marker_camera_bind_exec(bContext *C, wmOperator *op)
+static int ed_marker_camera_bind_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene= CTX_data_scene(C);
 	ListBase *markers= context_get_markers(C);
@@ -1136,8 +1146,10 @@ static int ed_marker_camera_bind_exec(bContext *C, wmOperator *op)
 		}
 	}
 
-	if (changed)
+	if (changed) {
 		WM_event_add_notifier(C, NC_SCENE|ND_MARKERS, NULL);
+		WM_event_add_notifier(C, NC_ANIMATION|ND_MARKERS, NULL);
+	}
 
 	return OPERATOR_FINISHED;
 }

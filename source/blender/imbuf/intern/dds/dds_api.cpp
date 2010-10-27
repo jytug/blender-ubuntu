@@ -1,5 +1,5 @@
 /**
- * $Id: dds_api.cpp 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: dds_api.cpp 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -22,6 +22,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+#include <stddef.h>
 #include <dds_api.h>
 #include <Stream.h>
 #include <DirectDrawSurface.h>
@@ -64,7 +65,7 @@ int imb_is_a_dds(unsigned char *mem) // note: use at most first 32 bytes
 	return(1);
 }
 
-struct ImBuf *imb_load_dds(unsigned char *mem, int size, int flags)
+struct ImBuf *imb_load_dds(unsigned char *mem, size_t size, int flags)
 {
 	struct ImBuf * ibuf = 0;
 	DirectDrawSurface dds(mem, size); /* reads header */
@@ -103,7 +104,7 @@ struct ImBuf *imb_load_dds(unsigned char *mem, int size, int flags)
 	// TODO use the image RGB or RGBA tag to determine the bits per pixel
 	if (dds.hasAlpha()) bits_per_pixel = 32;
 	else bits_per_pixel = 24;
-	ibuf = IMB_allocImBuf(dds.width(), dds.height(), bits_per_pixel, 0, 0); 
+	ibuf = IMB_allocImBuf(dds.width(), dds.height(), bits_per_pixel, 0);
 	if (ibuf == 0) return(0); /* memory allocation failed */
 
 	ibuf->ftype = DDS;

@@ -19,6 +19,9 @@
 import sys, os, platform, shutil
 import http, http.client, http.server, urllib
 import subprocess, time
+import json
+
+import bpy
 
 from netrender.utils import *
 import netrender.model
@@ -29,8 +32,13 @@ BLENDER_PATH = sys.argv[0]
 CANCEL_POLL_SPEED = 2
 MAX_TIMEOUT = 10
 INCREMENT_TIMEOUT = 1
+try:
+    system = platform.system()
+except UnicodeDecodeError:
+    import sys
+    system = sys.platform
 
-if platform.system() == 'Windows' and platform.version() >= '5': # Error mode is only available on Win2k or higher, that's version 5
+if system in ('Windows', 'win32') and platform.version() >= '5': # Error mode is only available on Win2k or higher, that's version 5
     import ctypes
     def SetErrorMode():
         val = ctypes.windll.kernel32.SetErrorMode(0x0002)
@@ -111,13 +119,13 @@ def render_slave(engine, netsettings, threads):
     conn = clientConnection(netsettings.server_address, netsettings.server_port)
 
     if conn:
-        conn.request("POST", "/slave", repr(slave_Info().serialize()))
+        conn.request("POST", "/slave", json.dumps(slave_Info().serialize()))
         response = conn.getresponse()
         response.read()
 
         slave_id = response.getheader("slave-id")
 
-        NODE_PREFIX = os.path.join(netsettings.path, "slave_" + slave_id)
+        NODE_PREFIX = os.path.join(bpy.path.abspath(netsettings.path), "slave_" + slave_id)
         if not os.path.exists(NODE_PREFIX):
             os.mkdir(NODE_PREFIX)
 
@@ -130,7 +138,7 @@ def render_slave(engine, netsettings, threads):
             if response.status == http.client.OK:
                 timeout = 1 # reset timeout on new job
 
-                job = netrender.model.RenderJob.materialize(eval(str(response.read(), encoding='utf8')))
+                job = netrender.model.RenderJob.materialize(json.loads(str(response.read(), encoding='utf8')))
                 engine.update_stats("", "Network render processing job from master")
 
                 JOB_PREFIX = os.path.join(NODE_PREFIX, "job_" + job.id)
@@ -156,7 +164,7 @@ def render_slave(engine, netsettings, threads):
 
                 # announce log to master
                 logfile = netrender.model.LogFile(job.id, slave_id, [frame.number for frame in job.frames])
-                conn.request("POST", "/log", bytes(repr(logfile.serialize()), encoding='utf8'))
+                conn.request("POST", "/log", bytes(json.dumps(logfile.serialize()), encoding='utf8'))
                 response = conn.getresponse()
                 response.read()
 
@@ -187,7 +195,7 @@ def render_slave(engine, netsettings, threads):
                 cancelled = False
                 stdout = bytes()
                 run_t = time.time()
-                while not cancelled and process.poll() == None:
+                while not cancelled and process.poll() is None:
                     stdout += process.stdout.read(1024)
                     current_t = time.time()
                     cancelled = engine.test_break()
@@ -218,7 +226,7 @@ def render_slave(engine, netsettings, threads):
 
                 if cancelled:
                     # kill process if needed
-                    if process.poll() == None:
+                    if process.poll() is None:
                         try:
                             process.terminate()
                         except OSError:

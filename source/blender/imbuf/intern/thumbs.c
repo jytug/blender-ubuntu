@@ -1,5 +1,5 @@
 /**
- * $Id: thumbs.c 31291 2010-08-12 15:15:02Z blendix $ 
+ * $Id: thumbs.c 32517 2010-10-16 14:32:17Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -280,7 +280,7 @@ ImBuf* IMB_thumb_create(const char* path, ThumbSize size, ThumbSource source, Im
 			return NULL;
 		}
 		if (size == THB_FAIL) {
-			img = IMB_allocImBuf(1,1,32, IB_rect | IB_metadata, 0);
+			img = IMB_allocImBuf(1,1,32, IB_rect | IB_metadata);
 			if (!img) return 0;
 		} else {
 			if (THB_SOURCE_IMAGE == source || THB_SOURCE_BLEND == source) {

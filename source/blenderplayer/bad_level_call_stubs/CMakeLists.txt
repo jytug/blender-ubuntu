@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31683 2010-08-31 23:55:41Z moguri $
+# $Id: CMakeLists.txt 32674 2010-10-24 03:57:07Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,12 +24,8 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC stubs.c)
-
-IF(WITH_BUILDINFO)
-	ADD_DEFINITIONS(-DBUILD_DATE)
-	FILE(GLOB SRC ${SRC} ../../creator/buildinfo.c)
-ENDIF(WITH_BUILDINFO)
+# this warning on generated files gets annoying
+REMOVE_STRICT_FLAGS()
 
 SET(INC 
 	.
@@ -37,7 +33,19 @@ SET(INC
 	../../../intern/guardedalloc
 	../../../source/blender/makesdna
 	../../../source/blender/makesrna
+	../../../source/blender/blenkernel
 )
+
+SET(SRC
+	stubs.c
+)
+
+IF(WITH_BUILDINFO)
+	ADD_DEFINITIONS(-DBUILD_DATE)
+	LIST(APPEND SRC
+		../../creator/buildinfo.c
+	)
+ENDIF(WITH_BUILDINFO)
 
 IF(WITH_GAMEENGINE)
 	ADD_DEFINITIONS(-DGAMEBLENDER)

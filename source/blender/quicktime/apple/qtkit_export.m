@@ -1,5 +1,5 @@
 /**
- * $Id: qtkit_export.m 28242 2010-04-17 08:33:42Z damien78 $
+ * $Id: qtkit_export.m 32565 2010-10-18 17:55:11Z elubie $
  *
  * qtkit_export.m
  *
@@ -41,6 +41,7 @@
 #include "AUD_C-API.h"
 
 #include "BKE_global.h"
+#include "BKE_main.h"
 #include "BKE_scene.h"
 #include "BKE_report.h"
 
@@ -208,7 +209,7 @@ void makeqtstring (RenderData *rd, char *string) {
 	char txt[64];
 
 	strcpy(string, rd->pic);
-	BLI_path_abs(string, G.sce);
+	BLI_path_abs(string, G.main->name);
 
 	BLI_make_existing_file(string);
 
@@ -222,7 +223,7 @@ void filepath_qt(char *string, RenderData *rd) {
 	if (string==NULL) return;
 	
 	strcpy(string, rd->pic);
-	BLI_path_abs(string, G.sce);
+	BLI_path_abs(string, G.main->name);
 	
 	BLI_make_existing_file(string);
 	
@@ -587,6 +588,7 @@ int append_qt(struct RenderData *rd, int frame, int *pixels, int rectx, int rect
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	NSBitmapImageRep *blBitmapFormatImage;
 	NSImage *frameImage;
+	OSStatus err = noErr;
 	unsigned char *from_Ptr,*to_Ptr;
 	int y,from_i,to_i;
 	
@@ -628,8 +630,7 @@ int append_qt(struct RenderData *rd, int frame, int *pixels, int rectx, int rect
 	if (qtexport->audioFile) {
 		UInt32 audioPacketsConverted;
 		/* Append audio */
-		while (((double)qtexport->audioTotalExportedFrames / (double) qtexport->audioInputFormat.mSampleRate)
-			   < ((double)(frame - rd->sfra)) / (((double)rd->frs_sec) / rd->frs_sec_base)) {	
+		while (qtexport->audioTotalExportedFrames < qtexport->audioLastFrame) {	
 
 			qtexport->audioBufferList.mNumberBuffers = 1;
 			qtexport->audioBufferList.mBuffers[0].mNumberChannels = qtexport->audioOutputFormat.mChannelsPerFrame;
@@ -637,7 +638,7 @@ int append_qt(struct RenderData *rd, int frame, int *pixels, int rectx, int rect
 			qtexport->audioBufferList.mBuffers[0].mData = qtexport->audioOutputBuffer;
 			audioPacketsConverted = AUDIOOUTPUTBUFFERSIZE / qtexport->audioCodecMaxOutputPacketSize;
 			
-			AudioConverterFillComplexBuffer(qtexport->audioConverter, AudioConverterInputCallback,
+			err = AudioConverterFillComplexBuffer(qtexport->audioConverter, AudioConverterInputCallback,
 											NULL, &audioPacketsConverted, &qtexport->audioBufferList, qtexport->audioOutputPktDesc);
 			if (audioPacketsConverted) {
 				AudioFileWritePackets(qtexport->audioFile, false, qtexport->audioBufferList.mBuffers[0].mDataByteSize,
@@ -656,6 +657,12 @@ int append_qt(struct RenderData *rd, int frame, int *pixels, int rectx, int rect
 				
 				
 			}
+			else {
+				//Error getting audio packets
+				BKE_reportf(reports, RPT_ERROR, "Unable to get further audio packets from frame %i, error = 0x%x",qtexport->audioTotalExportedFrames,err);
+				break;
+			}
+
 		}
 	}
 	[pool drain];	

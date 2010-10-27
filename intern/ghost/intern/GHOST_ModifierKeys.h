@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_ModifierKeys.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: GHOST_ModifierKeys.h 32332 2010-10-05 19:10:15Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -96,8 +96,8 @@ struct GHOST_ModifierKeys
     GHOST_TUns8 m_LeftControl : 1;
     /** Bitfield that stores the appropriate key state. */
     GHOST_TUns8 m_RightControl : 1;
-    /** Bitfield that stores the appropriate key state. APPLE only! */
-    GHOST_TUns8 m_Command : 1;
+    /** Bitfield that stores the appropriate key state. */
+    GHOST_TUns8 m_OS : 1;
 };
 
 #endif // _GHOST_MODIFIER_KEYS_H_

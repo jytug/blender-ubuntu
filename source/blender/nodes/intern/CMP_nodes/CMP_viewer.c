@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_viewer.c 27541 2010-03-16 16:58:45Z blendix $
+ * $Id: CMP_viewer.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,7 +39,7 @@ static bNodeSocketType cmp_node_viewer_in[]= {
 };
 
 
-static void node_composit_exec_viewer(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_viewer(void *data, bNode *node, bNodeStack **in, bNodeStack **UNUSED(out))
 {
 	/* image assigned to output */
 	/* stack order input sockets: col, alpha, z */

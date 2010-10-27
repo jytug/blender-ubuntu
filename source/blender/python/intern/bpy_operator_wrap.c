@@ -1,6 +1,6 @@
 
 /**
- * $Id: bpy_operator_wrap.c 31847 2010-09-09 17:41:36Z campbellbarton $
+ * $Id: bpy_operator_wrap.c 32456 2010-10-13 23:25:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,9 +45,6 @@ static void operator_properties_init(wmOperatorType *ot)
 		PyErr_Print(); /* failed to register operator props */
 		PyErr_Clear();
 	}
-	
-	// see bpy_types.py:Operator, May redo this some other way!
-	PyObject_CallMethod(py_class, "easy_getsets", NULL);
 }
 
 void operator_wrapper(wmOperatorType *ot, void *userdata)
@@ -87,7 +84,7 @@ void macro_wrapper(wmOperatorType *ot, void *userdata)
 	operator_properties_init(ot);
 }
 
-PyObject *PYOP_wrap_macro_define(PyObject *self, PyObject *args)
+PyObject *PYOP_wrap_macro_define(PyObject *UNUSED(self), PyObject *args)
 {
 	wmOperatorType *ot;
 	wmOperatorTypeMacro *otmacro;

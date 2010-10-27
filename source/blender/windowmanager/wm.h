@@ -1,5 +1,5 @@
 /**
- * $Id: wm.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: wm.h 32506 2010-10-16 02:40:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -61,7 +61,7 @@ void wm_tweakevent_test(bContext *C, wmEvent *event, int action);
 /* wm_gesture.c */
 #define WM_LASSO_MIN_POINTS		1024
 void wm_gesture_draw(struct wmWindow *win);
-int wm_gesture_evaluate(bContext *C, wmGesture *gesture);
+int wm_gesture_evaluate(wmGesture *gesture);
 void wm_gesture_tag_redraw(bContext *C);
 
 /* wm_jobs.c */

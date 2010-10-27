@@ -1,5 +1,5 @@
 /**
- * $Id: RAS_OpenGLRasterizer.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: RAS_OpenGLRasterizer.h 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,7 @@
 #ifndef __RAS_OPENGLRASTERIZER
 #define __RAS_OPENGLRASTERIZER
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786)
 #endif
 

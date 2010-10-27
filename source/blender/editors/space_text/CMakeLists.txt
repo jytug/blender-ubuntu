@@ -19,21 +19,27 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.c)
-
 SET(INC
+	../include
 	../../blenfont
 	../../blenkernel
 	../../blenlib
-	../include
-	../../../../intern/guardedalloc
 	../../makesdna
 	../../makesrna
 	../../windowmanager
+	../../../../intern/guardedalloc
+)
+
+SET(SRC
+	space_text.c
+	text_draw.c
+	text_header.c
+	text_ops.c
+	text_python.c
 )
 
 IF(WITH_PYTHON)
-	SET(INC ${INC} ${PYTHON_INC} ../../python)
+	LIST(APPEND INC ${PYTHON_INC} ../../python)
 ELSE(WITH_PYTHON)
 	ADD_DEFINITIONS(-DDISABLE_PYTHON)
 ENDIF(WITH_PYTHON)

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31545 2010-08-24 04:29:23Z campbellbarton $
+# $Id: CMakeLists.txt 31991 2010-09-18 03:55:56Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -26,12 +26,18 @@
 
 SET(INC .)
 
-FILE(GLOB SRC intern/*.c)
+SET(SRC
+	./intern/mallocn.c
+)
+
+IF(WIN32)
+	LIST(APPEND SRC ./intern/mmap_win.c)
+ENDIF(WIN32)
 
 BLENDERLIB(bf_intern_guardedalloc "${SRC}" "${INC}")
 
-# Override C++ alloc optional
+# Override C++ alloc, optional.
 IF(WITH_CXX_GUARDEDALLOC)
-	FILE(GLOB SRC cpp/*.cpp)
+	SET(SRC cpp/mallocn.cpp)
 	BLENDERLIB(bf_intern_guardedalloc_cpp "${SRC}" "${INC}")
 ENDIF(WITH_CXX_GUARDEDALLOC)

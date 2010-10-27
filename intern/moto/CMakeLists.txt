@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31545 2010-08-24 04:29:23Z campbellbarton $
+# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,9 +24,23 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC include)
+SET(INC
+	include
+)
 
-FILE(GLOB SRC intern/*.cpp)
+SET(SRC
+	intern/MT_Assert.cpp
+	intern/MT_CmMatrix4x4.cpp
+	intern/MT_Matrix3x3.cpp
+	intern/MT_Matrix4x4.cpp
+	intern/MT_Plane3.cpp
+	intern/MT_Point3.cpp
+	intern/MT_Quaternion.cpp
+	intern/MT_Transform.cpp
+	intern/MT_Vector2.cpp
+	intern/MT_Vector3.cpp
+	intern/MT_Vector4.cpp
+	intern/MT_random.cpp
+)
 
 BLENDERLIB(bf_intern_moto "${SRC}" "${INC}")
-#, libtype=['intern','game','game2','player'], priority = [15, 55, 100, 135] )

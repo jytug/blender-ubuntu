@@ -1,5 +1,5 @@
 /**
- * $Id: KX_SoftBodyDeformer.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: KX_SoftBodyDeformer.h 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,7 @@
 #ifndef KX_SOFTBODYDEFORMER
 #define KX_SOFTBODYDEFORMER
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786) // get rid of stupid stl-visual compiler debug warning
 #endif //WIN32
 

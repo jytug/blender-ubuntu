@@ -1,5 +1,5 @@
 /**
- * $Id: rna_material.c 31817 2010-09-07 20:49:44Z dingto $
+ * $Id: rna_material.c 32241 2010-10-02 06:34:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1372,7 +1372,7 @@ static void rna_def_material_specularity(StructRNA *srna)
 	RNA_def_property_float_sdna(prop, NULL, "spec");
 	RNA_def_property_range(prop, 0, 1);
 	RNA_def_property_ui_text(prop, "Specular Intensity", "");
-	RNA_def_property_update(prop, 0, "rna_Material_update");
+	RNA_def_property_update(prop, 0, "rna_Material_draw_update");
 
 	/* NOTE: "har", "param", etc are used for multiple purposes depending on
 	 * settings. This should be fixed in DNA once, for RNA we just expose them
@@ -1383,7 +1383,7 @@ static void rna_def_material_specularity(StructRNA *srna)
 	RNA_def_property_int_sdna(prop, NULL, "har");
 	RNA_def_property_range(prop, 1, 511);
 	RNA_def_property_ui_text(prop, "Specular Hardness", "");
-	RNA_def_property_update(prop, 0, "rna_Material_update");
+	RNA_def_property_update(prop, 0, "rna_Material_draw_update");
 
 	prop= RNA_def_property(srna, "specular_ior", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "refrac");
@@ -1584,7 +1584,7 @@ void RNA_def_material(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0, FLT_MAX);
 	RNA_def_property_ui_range(prop, 0, 2.0f, 1, 2);
 	RNA_def_property_ui_text(prop, "Emit", "Amount of light to emit");
-	RNA_def_property_update(prop, 0, "rna_Material_update");
+	RNA_def_property_update(prop, 0, "rna_Material_draw_update");
 
 	prop= RNA_def_property(srna, "translucency", PROP_FLOAT, PROP_FACTOR);
 	RNA_def_property_range(prop, 0, 1);
@@ -1644,7 +1644,7 @@ void RNA_def_material(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "use_shadeless", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "mode", MA_SHLESS);
 	RNA_def_property_ui_text(prop, "Shadeless", "Makes this material insensitive to light or shadow");
-	RNA_def_property_update(prop, 0, "rna_Material_update");
+	RNA_def_property_update(prop, 0, "rna_Material_draw_update");
 	
 	prop= RNA_def_property(srna, "use_vertex_color_light", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "mode", MA_VERTEXCOL);

@@ -1,4 +1,4 @@
-/* $Id: BLI_storage.h 28651 2010-05-07 15:18:04Z blendix $ 
+/* $Id: BLI_storage.h 32009 2010-09-19 12:19:58Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,14 +40,20 @@
 #endif
 #endif
 
+#ifdef WIN32
+/* for size_t, only needed on win32 for some reason */
+#include <stddef.h>
+#endif
+
 struct direntry;
+
 
 void   BLI_adddirstrings(void);
 void   BLI_builddir(char *dirname, char *relname);
 int    BLI_compare(struct direntry *entry1, struct direntry *entry2);
 
-int    BLI_filesize(int file);
-int    BLI_filepathsize(const char *path);
+size_t BLI_filesize(int file);
+size_t BLI_filepathsize(const char *path);
 double BLI_diskfree(char *dir);
 char *BLI_getwdN(char *dir);
 

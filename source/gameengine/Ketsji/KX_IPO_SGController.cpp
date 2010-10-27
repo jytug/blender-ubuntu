@@ -1,5 +1,5 @@
 /**
- * $Id: KX_IPO_SGController.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_IPO_SGController.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,7 @@ typedef unsigned __int64 uint_ptr;
 typedef unsigned long uint_ptr;
 #endif
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // This warning tells us about truncation of __long__ stl-generated names.
 // It can occasionally cause DevStudio to have internal compiler warnings.
 #pragma warning( disable : 4786 )     

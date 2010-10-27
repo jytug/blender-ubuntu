@@ -1,5 +1,5 @@
 /**
- * $Id: rna_pose.c 31547 2010-08-24 06:40:28Z campbellbarton $
+ * $Id: rna_pose.c 32713 2010-10-26 12:48:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -550,7 +550,7 @@ static void rna_PoseChannel_matrix_local_get(PointerRNA *ptr, float *values)
 static void rna_PoseChannel_matrix_local_set(PointerRNA *ptr, const float *values)
 {
 	bPoseChannel *pchan= (bPoseChannel*)ptr->data;
-	pchan_apply_mat4(pchan, (float (*)[4])values);
+	pchan_apply_mat4(pchan, (float (*)[4])values, FALSE); /* no compat for pradictable result */
 }
 
 #else

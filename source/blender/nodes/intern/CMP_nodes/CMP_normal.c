@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_normal.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: CMP_normal.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,7 +52,7 @@ static void do_normal(bNode *node, float *out, float *in)
 }
 
 /* generates normal, does dot product */
-static void node_composit_exec_normal(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_normal(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	bNodeSocket *sock= node->outputs.first;
 	/* stack order input:  normal */

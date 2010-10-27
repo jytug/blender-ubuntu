@@ -1,5 +1,5 @@
 /**
- * $Id: gpencil_paint.c 31573 2010-08-25 08:31:52Z campbellbarton $
+ * $Id: gpencil_paint.c 32718 2010-10-26 20:51:11Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -662,7 +662,7 @@ static short gp_stroke_eraser_splitdel (bGPDframe *gpf, bGPDstroke *gps, int i)
 }
 
 /* eraser tool - check if part of stroke occurs within last segment drawn by eraser */
-static short gp_stroke_eraser_strokeinside (int mval[], int mvalo[], short rad, short x0, short y0, short x1, short y1)
+static short gp_stroke_eraser_strokeinside (int mval[], int UNUSED(mvalo[]), short rad, short x0, short y0, short x1, short y1)
 {
 	/* simple within-radius check for now */
 	if (edge_inside_circle(mval[0], mval[1], rad, x0, y0, x1, y1))
@@ -890,7 +890,7 @@ static tGPsdata *gp_session_initpaint (bContext *C)
 			
 			/* for camera view set the subrect */
 			if(rv3d->persp == RV3D_CAMOB) {
-				view3d_calc_camera_border(p->scene, p->ar, NULL, v3d, &p->subrect_data);
+				view3d_calc_camera_border(p->scene, p->ar, NULL, v3d, &p->subrect_data, -1); /* negative shift */
 				p->subrect= &p->subrect_data;
 			}
 
@@ -1250,7 +1250,7 @@ static int gpencil_draw_cancel (bContext *C, wmOperator *op)
 /* ------------------------------- */
 
 /* create a new stroke point at the point indicated by the painting context */
-static void gpencil_draw_apply (bContext *C, wmOperator *op, tGPsdata *p)
+static void gpencil_draw_apply (wmOperator *op, tGPsdata *p)
 {
 	/* handle drawing/erasing -> test for erasing first */
 	if (p->paintmode == GP_PAINTMODE_ERASER) {
@@ -1294,7 +1294,7 @@ static void gpencil_draw_apply (bContext *C, wmOperator *op, tGPsdata *p)
 }
 
 /* handle draw event */
-static void gpencil_draw_apply_event (bContext *C, wmOperator *op, wmEvent *event)
+static void gpencil_draw_apply_event (wmOperator *op, wmEvent *event)
 {
 	tGPsdata *p= op->customdata;
 	ARegion *ar= p->ar;
@@ -1343,7 +1343,7 @@ static void gpencil_draw_apply_event (bContext *C, wmOperator *op, wmEvent *even
 	RNA_float_set(&itemptr, "pressure", p->pressure);
 	
 	/* apply the current latest drawing point */
-	gpencil_draw_apply(C, op, p);
+	gpencil_draw_apply(op, p);
 	
 	/* force refresh */
 	ED_region_tag_redraw(p->ar); /* just active area for now, since doing whole screen is too slow */
@@ -1394,7 +1394,7 @@ static int gpencil_draw_exec (bContext *C, wmOperator *op)
 		}
 		
 		/* apply this data as necessary now (as per usual) */
-		gpencil_draw_apply(C, op, p);
+		gpencil_draw_apply(op, p);
 	}
 	RNA_END;
 	
@@ -1456,7 +1456,7 @@ static int gpencil_draw_invoke (bContext *C, wmOperator *op, wmEvent *event)
 		p->status= GP_STATUS_PAINTING;
 		
 		/* handle the initial drawing - i.e. for just doing a simple dot */
-		gpencil_draw_apply_event(C, op, event);
+		gpencil_draw_apply_event(op, event);
 	}
 	else {
 		/* toolbar invoked - don't start drawing yet... */
@@ -1516,7 +1516,7 @@ static int gpencil_draw_modal (bContext *C, wmOperator *op, wmEvent *event)
 			if (p->status == GP_STATUS_PAINTING) {
 				/* handle drawing event */
 				//printf("\t\tGP - add point\n");
-				gpencil_draw_apply_event(C, op, event);
+				gpencil_draw_apply_event(op, event);
 				
 				/* finish painting operation if anything went wrong just now */
 				if (p->status == GP_STATUS_ERROR) {

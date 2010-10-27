@@ -1,6 +1,6 @@
 /**
  *
- * $Id: DNA_modifier_types.h 31451 2010-08-19 05:58:22Z campbellbarton $ 
+ * $Id: DNA_modifier_types.h 32576 2010-10-19 01:57:15Z nicholasbishop $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -220,7 +220,8 @@ typedef struct ArrayModifierData {
 typedef struct MirrorModifierData {
 	ModifierData modifier;
 
-	short axis, flag;
+	short axis; /* deprecated, use flag instead */
+	short flag;
 	float tolerance;
 	struct Object *mirror_ob;
 } MirrorModifierData;

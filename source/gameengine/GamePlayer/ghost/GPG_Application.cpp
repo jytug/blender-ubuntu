@@ -1,5 +1,5 @@
 /**
- * $Id: GPG_Application.cpp 29068 2010-05-29 21:31:57Z dfelinto $
+ * $Id: GPG_Application.cpp 32522 2010-10-16 15:00:04Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -370,6 +370,7 @@ bool GPG_Application::startFullScreen(
 
 	fSystem->beginFullScreen(setting, &m_mainWindow, stereoVisual);
 	m_mainWindow->setCursorVisibility(false);
+	m_mainWindow->setState(GHOST_kWindowStateFullScreen);
 
 	success = initEngine(m_mainWindow, stereoMode);
 	if (success) {

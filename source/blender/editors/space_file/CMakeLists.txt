@@ -19,21 +19,29 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-FILE(GLOB SRC *.c)
-
 SET(INC
+	../include
 	../../blenfont
 	../../blenkernel
 	../../blenlib
 	../../blenloader
 	../../imbuf
-	../include
-	../../../../intern/audaspace/intern
-	../../../../intern/guardedalloc
 	../../makesdna
 	../../makesrna
-	../../render/extern/include
 	../../windowmanager
+	../../render/extern/include
+	../../../../intern/guardedalloc
+)
+
+SET(SRC
+	file_draw.c
+	file_ops.c
+	file_panels.c
+	filelist.c
+	filesel.c
+	fsmenu.c
+	space_file.c
+	writeimage.c
 )
 
 IF(WITH_IMAGE_OPENEXR)

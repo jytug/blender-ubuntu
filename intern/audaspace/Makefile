@@ -1,7 +1,7 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
 #
-# $Id: Makefile 31387 2010-08-16 17:04:46Z ton $
+# $Id: Makefile 32672 2010-10-24 00:09:23Z gsrb3d $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -57,6 +57,7 @@ ifeq ($(WITH_SNDFILE),true)
   DIRS += sndfile
 endif
 
+# Not in use currently, see also source/Makefile and r31375
 #ifeq ($(WITH_FFTW3),true)
 #  DIRS += fftw
 #endif

@@ -1,6 +1,6 @@
 /**
  *
- * $Id: bvhutils.c 27655 2010-03-22 09:30:00Z campbellbarton $
+ * $Id: bvhutils.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,7 +42,7 @@
 
 /* Math stuff for ray casting on mesh faces and for nearest surface */
 
-static float ray_tri_intersection(const BVHTreeRay *ray, const float m_dist, const float *v0, const float *v1, const float *v2)
+static float ray_tri_intersection(const BVHTreeRay *ray, const float UNUSED(m_dist), const float *v0, const float *v1, const float *v2)
 {
 	float dist;
 

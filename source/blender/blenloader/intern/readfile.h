@@ -1,5 +1,5 @@
 /*
- * $Id: readfile.h 27581 2010-03-17 21:38:53Z blendix $
+ * $Id: readfile.h 32506 2010-10-16 02:40:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -114,7 +114,7 @@ FileData *blo_openblenderfile(char *name, struct ReportList *reports);
 FileData *blo_openblendermemory(void *buffer, int buffersize, struct ReportList *reports);
 FileData *blo_openblendermemfile(struct MemFile *memfile, struct ReportList *reports);
 
-void blo_clear_proxy_pointers_from_lib(FileData *fd, Main *oldmain);
+void blo_clear_proxy_pointers_from_lib(Main *oldmain);
 void blo_make_image_pointer_map(FileData *fd, Main *oldmain);
 void blo_end_image_pointer_map(FileData *fd, Main *oldmain);
 void blo_add_library_pointer_map(ListBase *mainlist, FileData *fd);

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31006 2010-08-03 11:25:34Z campbellbarton $
+# $Id: CMakeLists.txt 32674 2010-10-24 03:57:07Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -23,6 +23,9 @@
 # Contributor(s): Jacques Beaurain.
 #
 # ***** END GPL LICENSE BLOCK *****
+
+# Otherwise we get warnings here that we cant fix in external projects
+REMOVE_STRICT_FLAGS()
 
 IF(WITH_BULLET)
 	ADD_SUBDIRECTORY(bullet2)

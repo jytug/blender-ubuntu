@@ -1,5 +1,5 @@
 /**
- * $Id: renderdatabase.c 30899 2010-07-30 11:50:00Z blendix $
+ * $Id: renderdatabase.c 32075 2010-09-23 12:03:34Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1019,7 +1019,7 @@ HaloRen *RE_inithalo(Render *re, ObjectRen *obr, Material *ma,   float *vec,   f
 				}
 			}
 
-			externtex(mtex, texvec, &tin, &tr, &tg, &tb, &ta);
+			externtex(mtex, texvec, &tin, &tr, &tg, &tb, &ta, 0);
 
 			yn= tin*mtex->colfac;
 			zn= tin*mtex->alphafac;
@@ -1151,7 +1151,7 @@ HaloRen *RE_inithalo_particle(Render *re, ObjectRen *obr, DerivedMesh *dm, Mater
 				VECCOPY(texvec, orco);
 			}
 
-			externtex(mtex, texvec, &tin, &tr, &tg, &tb, &ta);
+			externtex(mtex, texvec, &tin, &tr, &tg, &tb, &ta, 0);
 
 			//yn= tin*mtex->colfac;
 			//zn= tin*mtex->alphafac;

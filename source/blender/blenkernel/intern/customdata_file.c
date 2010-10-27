@@ -1,5 +1,5 @@
 /*
- * $Id: customdata_file.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: customdata_file.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -379,7 +379,7 @@ int cdf_write_open(CDataFile *cdf, char *filename)
 	return 1;
 }
 
-int cdf_write_layer(CDataFile *cdf, CDataFileLayer *blay)
+int cdf_write_layer(CDataFile *UNUSED(cdf), CDataFileLayer *UNUSED(blay))
 {
 	return 1;
 }

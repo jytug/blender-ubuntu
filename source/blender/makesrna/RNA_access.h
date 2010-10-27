@@ -1,5 +1,5 @@
 /**
- * $Id: RNA_access.h 31713 2010-09-02 04:53:05Z campbellbarton $
+ * $Id: RNA_access.h 32708 2010-10-25 21:57:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -681,6 +681,7 @@ int RNA_property_animated(PointerRNA *ptr, PropertyRNA *prop);
 
 void RNA_property_update(struct bContext *C, PointerRNA *ptr, PropertyRNA *prop);
 void RNA_property_update_main(struct Main *bmain, struct Scene *scene, PointerRNA *ptr, PropertyRNA *prop);
+int RNA_property_update_check(struct PropertyRNA *prop);
 
 /* Property Data */
 
@@ -834,7 +835,11 @@ char *RNA_string_get_alloc(PointerRNA *ptr, const char *name, char *fixedbuf, in
 int RNA_string_length(PointerRNA *ptr, const char *name);
 void RNA_string_set(PointerRNA *ptr, const char *name, const char *value);
 
+/**
+ * Retrieve the named property from PointerRNA.
+ */
 PointerRNA RNA_pointer_get(PointerRNA *ptr, const char *name);
+/* Set the property name of PointerRNA ptr to ptr_value */
 void RNA_pointer_set(PointerRNA *ptr, const char *name, PointerRNA ptr_value);
 void RNA_pointer_add(PointerRNA *ptr, const char *name);
 

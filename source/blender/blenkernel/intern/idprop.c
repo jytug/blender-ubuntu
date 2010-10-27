@@ -1,5 +1,5 @@
 /**
- * $Id: idprop.c 31307 2010-08-13 06:30:04Z campbellbarton $
+ * $Id: idprop.c 32334 2010-10-05 21:22:33Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -421,9 +421,7 @@ void IDP_SyncGroupValues(IDProperty *dest, IDProperty *src)
 	IDProperty *loop, *prop;
 	for (prop=src->data.group.first; prop; prop=prop->next) {
 		for (loop=dest->data.group.first; loop; loop=loop->next) {
-			if (BSTR_EQ(loop->name, prop->name)) {
-				int copy_done= 0;
-
+			if (strcmp(loop->name, prop->name)==0) {
 				if(prop->type==loop->type) {
 
 					switch (prop->type) {
@@ -431,11 +429,9 @@ void IDP_SyncGroupValues(IDProperty *dest, IDProperty *src)
 						case IDP_FLOAT:
 						case IDP_DOUBLE:
 							loop->data= prop->data;
-							copy_done= 1;
 							break;
 						case IDP_GROUP:
 							IDP_SyncGroupValues(loop, prop);
-							copy_done= 1;
 							break;
 						default:
 						{
@@ -702,7 +698,6 @@ IDProperty *IDP_New(int type, IDPropertyTemplate val, const char *name)
 		case IDP_STRING:
 		{
 			char *st = val.str;
-			int stlen;
 
 			prop = MEM_callocN(sizeof(IDProperty), "IDProperty string");
 			if (st == NULL) {
@@ -710,7 +705,7 @@ IDProperty *IDP_New(int type, IDPropertyTemplate val, const char *name)
 				prop->totallen = DEFAULT_ALLOC_FOR_NULL_STRINGS;
 				prop->len = 1; /*NULL string, has len of 1 to account for null byte.*/
 			} else {
-				stlen = strlen(st) + 1;
+				int stlen = strlen(st) + 1;
 				prop->data.pointer = MEM_callocN(stlen, "id property string 2");
 				prop->len = prop->totallen = stlen;
 				strcpy(prop->data.pointer, st);

@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_rgb.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: CMP_rgb.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,7 @@ static bNodeSocketType cmp_node_rgb_out[]= {
 	{	-1, 0, ""	}
 };
 
-static void node_composit_exec_rgb(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_rgb(void *UNUSED(data), bNode *node, bNodeStack **UNUSED(in), bNodeStack **out)
 {
 	bNodeSocket *sock= node->outputs.first;
 	

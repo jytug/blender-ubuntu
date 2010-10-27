@@ -1,5 +1,5 @@
 /**
- * $Id: meshlaplacian.h 29984 2010-07-05 11:48:13Z blendix $
+ * $Id: meshlaplacian.h 32404 2010-10-11 00:15:49Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,7 +66,7 @@ float laplacian_system_get_solution(int v);
 void heat_bone_weighting(struct Object *ob, struct Mesh *me, float (*verts)[3],
 	int numbones, struct bDeformGroup **dgrouplist,
 	struct bDeformGroup **dgroupflip, float (*root)[3], float (*tip)[3],
-	int *selected);
+	int *selected, const char **error);
 
 #ifdef RIGID_DEFORM
 /* As-Rigid-As-Possible Deformation */

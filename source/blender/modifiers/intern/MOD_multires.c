@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_multires.c 31832 2010-09-09 00:14:51Z nicholasbishop $
+* $Id: MOD_multires.c 32586 2010-10-19 07:10:12Z nazgul $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -59,6 +59,8 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tmmd->sculptlvl = mmd->sculptlvl;
 	tmmd->renderlvl = mmd->renderlvl;
 	tmmd->totlvl = mmd->totlvl;
+	tmmd->simple = mmd->simple;
+	tmmd->flags = mmd->flags;
 }
 
 static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *dm,
@@ -74,7 +76,6 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *dm,
 		if(!CustomData_get_layer(&me->fdata, CD_MDISPS)) {
 			/* multires always needs a displacement layer */
 			CustomData_add_layer(&me->fdata, CD_MDISPS, CD_CALLOC, NULL, me->totface);
-			return dm;
 		}
 	}
 
@@ -118,6 +119,7 @@ ModifierTypeInfo modifierType_Multires = {
 	/* isDisabled */        0,
 	/* updateDepgraph */    0,
 	/* dependsOnTime */     0,
+	/* dependsOnNormals */	0,
 	/* foreachObjectLink */ 0,
 	/* foreachIDLink */     0,
 };

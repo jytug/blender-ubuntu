@@ -1,5 +1,5 @@
 /**
- * $Id: BL_MeshDeformer.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: BL_MeshDeformer.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,7 +28,7 @@
  * Simple deformation controller that restores a mesh to its rest position
  */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(FREE_WINDOWS)
 // This warning tells us about truncation of __long__ stl-generated names.
 // It can occasionally cause DevStudio to have internal compiler warnings.
 #pragma warning( disable : 4786 )     

@@ -1,5 +1,5 @@
 /**
- * $Id: CMP_hueSatVal.c 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: CMP_hueSatVal.c 32517 2010-10-16 14:32:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -65,7 +65,7 @@ static void do_hue_sat_fac(bNode *node, float *out, float *in, float *fac)
 	}
 }
 
-static void node_composit_exec_hue_sat(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_composit_exec_hue_sat(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	/* stack order in: Fac, Image */
 	/* stack order out: Image */

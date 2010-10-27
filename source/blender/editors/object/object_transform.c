@@ -1,5 +1,5 @@
 /**
- * $Id: object_transform.c 31803 2010-09-07 03:58:50Z aligorith $
+ * $Id: object_transform.c 32698 2010-10-25 08:03:05Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,6 +47,7 @@
 #include "BKE_mesh.h"
 #include "BKE_object.h"
 #include "BKE_report.h"
+#include "BKE_multires.h"
 
 #include "RNA_define.h"
 #include "RNA_access.h"
@@ -64,20 +65,13 @@
 
 /*************************** Clear Transformation ****************************/
 
-static int object_location_clear_exec(bContext *C, wmOperator *op)
+static int object_location_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
-	KeyingSet *ks;
 	
-	/* get KeyingSet to use 
-	 *	- use the active KeyingSet if defined (and user wants to use it for all autokeying), 
-	 * 	  or otherwise key transforms only
-	 */
-	if (IS_AUTOKEY_FLAG(ONLYKEYINGSET) && (scene->active_keyingset))
-		ks = ANIM_scene_get_active_keyingset(scene);
-	else 
-		ks = ANIM_builtin_keyingset_get_named(NULL, "Location");
+	/* get KeyingSet to use */
+	KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, "Location");
 	
 	/* clear location of selected objects if not in weight-paint mode */
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
@@ -132,20 +126,13 @@ void OBJECT_OT_location_clear(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
-static int object_rotation_clear_exec(bContext *C, wmOperator *op)
+static int object_rotation_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
-	KeyingSet *ks;
 	
-	/* get KeyingSet to use 
-	 *	- use the active KeyingSet if defined (and user wants to use it for all autokeying), 
-	 * 	  or otherwise key transforms only
-	 */
-	if (IS_AUTOKEY_FLAG(ONLYKEYINGSET) && (scene->active_keyingset))
-		ks = ANIM_scene_get_active_keyingset(scene);
-	else 
-		ks = ANIM_builtin_keyingset_get_named(NULL, "Rotation");
+	/* get KeyingSet to use */
+	KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, "Rotation");
 	
 	/* clear rotation of selected objects if not in weight-paint mode */
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
@@ -284,20 +271,13 @@ void OBJECT_OT_rotation_clear(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
-static int object_scale_clear_exec(bContext *C, wmOperator *op)
+static int object_scale_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
-	KeyingSet *ks;
 	
-	/* get KeyingSet to use 
-	 *	- use the active KeyingSet if defined (and user wants to use it for all autokeying), 
-	 * 	  or otherwise key transforms only
-	 */
-	if (IS_AUTOKEY_FLAG(ONLYKEYINGSET) && (scene->active_keyingset))
-		ks = ANIM_scene_get_active_keyingset(scene);
-	else 
-		ks = ANIM_builtin_keyingset_get_named(NULL, "Scaling");
+	/* get KeyingSet to use */
+	KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, "Scaling");
 	
 	/* clear scales of selected objects if not in weight-paint mode */
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
@@ -357,7 +337,7 @@ void OBJECT_OT_scale_clear(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
-static int object_origin_clear_exec(bContext *C, wmOperator *op)
+static int object_origin_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain= CTX_data_main(C);
 	float *v1, *v3, mat[3][3];
@@ -411,7 +391,7 @@ static void ignore_parent_tx(Main *bmain, Scene *scene, Object *ob )
 	/* a change was made, adjust the children to compensate */
 	for(ob_child=bmain->object.first; ob_child; ob_child=ob_child->id.next) {
 		if(ob_child->parent == ob) {
-			object_apply_mat4(ob_child, ob_child->obmat);
+			object_apply_mat4(ob_child, ob_child->obmat, TRUE);
 			what_does_parent(scene, ob_child, &workob);
 			invert_m4_m4(ob_child->parentinv, workob.obmat);
 		}
@@ -478,8 +458,18 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 			object_to_mat3(ob, rsmat);
 		else if(apply_scale)
 			object_scale_to_mat3(ob, rsmat);
-		else if(apply_rot)
+		else if(apply_rot) {
+			float tmat[3][3], timat[3][3];
+
+			/* simple rotation matrix */
 			object_rot_to_mat3(ob, rsmat);
+
+			/* correct for scale, note mul_m3_m3m3 has swapped args! */
+			object_scale_to_mat3(ob, tmat);
+			invert_m3_m3(timat, tmat);
+			mul_m3_m3m3(rsmat, timat, rsmat);
+			mul_m3_m3m3(rsmat, rsmat, tmat);
+		}
 		else
 			unit_m3(rsmat);
 
@@ -501,6 +491,8 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 		/* apply to object data */
 		if(ob->type==OB_MESH) {
 			me= ob->data;
+			
+			multiresModifier_scale_disp(scene, ob);
 			
 			/* adjust data */
 			mvert= me->mvert;
@@ -578,14 +570,14 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 	return OPERATOR_FINISHED;
 }
 
-static int visual_transform_apply_exec(bContext *C, wmOperator *op)
+static int visual_transform_apply_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene= CTX_data_scene(C);
 	int change = 0;
 	
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
 		where_is_object(scene, ob);
-		object_apply_mat4(ob, ob->obmat);
+		object_apply_mat4(ob, ob->obmat, TRUE);
 		where_is_object(scene, ob);
 		
 		change = 1;

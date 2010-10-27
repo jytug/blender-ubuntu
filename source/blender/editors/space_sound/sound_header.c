@@ -1,5 +1,5 @@
 /**
- * $Id: sound_header.c 31161 2010-08-08 08:14:07Z campbellbarton $
+ * $Id: sound_header.c 32511 2010-10-16 08:03:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,6 +34,7 @@
 
 #include "BLI_blenlib.h"
 
+#include "BKE_utildefines.h"
 #include "BKE_context.h"
 
 #include "ED_screen.h"
@@ -53,12 +54,12 @@
 
 /* ************************ header area region *********************** */
 
-static void do_viewmenu(bContext *C, void *arg, int event)
+static void do_viewmenu(bContext *UNUSED(C), void *UNUSED(arg), int UNUSED(event))
 {
 	
 }
 
-static uiBlock *dummy_viewmenu(bContext *C, ARegion *ar, void *arg_unused)
+static uiBlock *dummy_viewmenu(bContext *C, ARegion *ar, void *UNUSED(arg))
 {
 	ScrArea *curarea= CTX_wm_area(C);
 	uiBlock *block;
@@ -84,7 +85,7 @@ static uiBlock *dummy_viewmenu(bContext *C, ARegion *ar, void *arg_unused)
 	return block;
 }
 
-static void do_sound_buttons(bContext *C, void *arg, int event)
+static void do_sound_buttons(bContext *UNUSED(C), void *UNUSED(arg), int event)
 {
 	switch(event) {
 	}
