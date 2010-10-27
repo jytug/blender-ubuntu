@@ -4,31 +4,33 @@ Subject: [PATCH] use_systemwide_libraries
 
 Don't try and use extern/libopenjpeg nor extern/glew
 ---
- CMakeLists.txt        |    5 +++++
+ CMakeLists.txt        |    6 ++++++
  extern/CMakeLists.txt |    6 ------
- 2 files changed, 5 insertions(+), 6 deletions(-)
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b54a088..9706189 100644
+index cf775ac..c759c11 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -313,6 +313,11 @@ IF(UNIX AND NOT APPLE)
+@@ -317,7 +317,13 @@ IF(UNIX AND NOT APPLE)
  		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
  	ENDIF(WITH_OPENMP)
  
 +	# Use system-wide GLEW:
 +	SET(LLIBS "${LLIBS} -lGLEW")
 +	SET(LLIBS "${LLIBS} -lopenjpeg")
-+
 +	ADD_DEFINITIONS(-DWITH_OPENJPEG)
++
+ 	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing")
++	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing -Wno-char-subscripts")
  
- 	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing -Wno-char-subscripts")
+ 	SET(PLATFORM_LINKFLAGS "-pthread")
  
 diff --git a/extern/CMakeLists.txt b/extern/CMakeLists.txt
-index 991c937..5c33212 100644
+index f643b68..349df06 100644
 --- a/extern/CMakeLists.txt
 +++ b/extern/CMakeLists.txt
-@@ -32,12 +32,6 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+@@ -35,12 +35,6 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
  	ADD_SUBDIRECTORY(binreloc)
  ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
  

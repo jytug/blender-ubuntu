@@ -13,10 +13,10 @@ Subject: [PATCH] install_in_usr_lib
  4 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/intern/ghost/intern/GHOST_SystemX11.cpp b/intern/ghost/intern/GHOST_SystemX11.cpp
-index 9a5ac2b..a323212 100644
+index 5a6f988..d25bff3 100644
 --- a/intern/ghost/intern/GHOST_SystemX11.cpp
 +++ b/intern/ghost/intern/GHOST_SystemX11.cpp
-@@ -1465,7 +1465,7 @@ void GHOST_SystemX11::putClipboard(GHOST_TInt8 *buffer, bool selection) const
+@@ -1478,7 +1478,7 @@ void GHOST_SystemX11::putClipboard(GHOST_TInt8 *buffer, bool selection) const
  
  const GHOST_TUns8* GHOST_SystemX11::getSystemDir() const
  {
@@ -26,10 +26,10 @@ index 9a5ac2b..a323212 100644
  
  const GHOST_TUns8* GHOST_SystemX11::getUserDir() const
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index d4af407..d4f8526 100644
+index 08ec4f8..0ebd3ee 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
-@@ -84,7 +84,7 @@ char *BLI_get_folder_create(int folder_id, char *subfolder);
+@@ -85,7 +85,7 @@ char *BLI_get_user_folder_notest(int folder_id, char *subfolder);
  #define BLENDER_SYSTEM_FORMAT			"%s/Blender/%s"
  #else
  #define BLENDER_USER_FORMAT			"%s/.blender/%s"
@@ -37,12 +37,12 @@ index d4af407..d4f8526 100644
 +#define BLENDER_SYSTEM_FORMAT			"%s/blender"
  #endif
  
- void BLI_setenv(const char *env, const char *val);
+ #ifdef WIN32
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 58e1c34..ee12985 100644
+index 15b14d6..df5109e 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -922,7 +922,7 @@ static int get_path_system(char *targetpath, char *folder_name, char *subfolder_
+@@ -938,7 +938,7 @@ static int get_path_system(char *targetpath, char *folder_name, char *subfolder_
  
  	system_base_path = (const char *)GHOST_getSystemDir();
  	if (system_base_path) {
@@ -52,10 +52,10 @@ index 58e1c34..ee12985 100644
  	
  	if(!system_path[0])
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index e0ef7e3..4cdb868 100644
+index 31e7a9f..a58e9ac 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -222,7 +222,7 @@ IF(WITH_INSTALL)
+@@ -229,7 +229,7 @@ IF(WITH_INSTALL)
  		)
  		INSTALL(
  			DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts/

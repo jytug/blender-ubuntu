@@ -8,10 +8,10 @@ Change where locales are installed
  1 files changed, 1 insertions(+), 1 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index f54b54b..9f806ca 100644
+index bd10be4..9a28f46 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -233,7 +233,7 @@ IF(WITH_INSTALL)
+@@ -240,7 +240,7 @@ IF(WITH_INSTALL)
  		IF(WITH_INTERNATIONAL)
  			INSTALL(
  				DIRECTORY ${CMAKE_SOURCE_DIR}/release/bin/.blender/locale/

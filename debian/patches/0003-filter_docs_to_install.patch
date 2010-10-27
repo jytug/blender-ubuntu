@@ -8,10 +8,10 @@ Install relevant documentation
  1 files changed, 1 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 4cdb868..f54b54b 100644
+index a58e9ac..bd10be4 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -216,9 +216,8 @@ IF(WITH_INSTALL)
+@@ -223,9 +223,8 @@ IF(WITH_INSTALL)
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
  		)
  		INSTALL(

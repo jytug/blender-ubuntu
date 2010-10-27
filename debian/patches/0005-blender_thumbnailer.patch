@@ -10,7 +10,7 @@ Subject: [PATCH] blender_thumbnailer
  2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/release/bin/blender-thumbnailer.py b/release/bin/blender-thumbnailer.py
-index 27d6259..506a038 100755
+index be87056..ba9a031 100755
 --- a/release/bin/blender-thumbnailer.py
 +++ b/release/bin/blender-thumbnailer.py
 @@ -1,4 +1,4 @@
@@ -29,10 +29,10 @@ index 27d6259..506a038 100755
  
  import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 9f806ca..dff6431 100644
+index 9a28f46..a2e04bf 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -209,7 +209,7 @@ IF(WITH_INSTALL)
+@@ -216,7 +216,7 @@ IF(WITH_INSTALL)
  		)
  		INSTALL(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
@@ -40,5 +40,5 @@ index 9f806ca..dff6431 100644
 +            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
  		)
  		INSTALL(
- 			FILES ${CMAKE_SOURCE_DIR}/doc/blender.1
+ 			FILES ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
 -- 
