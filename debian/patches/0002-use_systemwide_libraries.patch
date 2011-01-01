@@ -4,43 +4,75 @@ Subject: [PATCH] use_systemwide_libraries
 
 Don't try and use extern/libopenjpeg nor extern/glew
 ---
- CMakeLists.txt        |    6 ++++++
+ CMakeLists.txt        |   32 ++++++++++++++++++++++++++++++++
  extern/CMakeLists.txt |    6 ------
- 2 files changed, 6 insertions(+), 6 deletions(-)
+ 2 files changed, 32 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index cf775ac..c759c11 100644
+index 7ba3e41..2ea67f8 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -317,7 +317,13 @@ IF(UNIX AND NOT APPLE)
- 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
- 	ENDIF(WITH_OPENMP)
+@@ -344,6 +344,7 @@ if(UNIX AND NOT APPLE)
+ 		list(APPEND LLIBS -ldl)
  
+ 		# binreloc is linux only
++<<<<<<< HEAD
+ 		set(BINRELOC ${CMAKE_SOURCE_DIR}/extern/binreloc)
+ 		set(BINRELOC_INC ${BINRELOC}/include)
+ 	endif()
+@@ -380,6 +381,37 @@ if(UNIX AND NOT APPLE)
+ 	endif()
+ 
+ elseif(WIN32)
++=======
++		SET(BINRELOC ${CMAKE_SOURCE_DIR}/extern/binreloc)
++		SET(BINRELOC_INC ${BINRELOC}/include)
++	ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
++
++	IF(WITH_OPENMP)
++		LIST(APPEND LLIBS -lgomp)
++		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
++		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
++	ENDIF(WITH_OPENMP)
++
++	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing")
++
++	SET(PLATFORM_LINKFLAGS "-pthread")
++
++	# Better warnings
++	# note: -Wunused-parameter is added below for all GCC compilers
++	SET(C_WARNINGS "-Wall -Wno-char-subscripts -Wpointer-arith -Wcast-align -Wdeclaration-after-statement -Wno-unknown-pragmas")
++	SET(CXX_WARNINGS "-Wall -Wno-invalid-offsetof -Wno-sign-compare")
++
++	INCLUDE_DIRECTORIES(${JPEG_INCLUDE_DIR} ${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} )
++ENDIF(UNIX AND NOT APPLE)
++
 +	# Use system-wide GLEW:
 +	SET(LLIBS "${LLIBS} -lGLEW")
 +	SET(LLIBS "${LLIBS} -lopenjpeg")
++
 +	ADD_DEFINITIONS(-DWITH_OPENJPEG)
 +
- 	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing")
-+	SET(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing -Wno-char-subscripts")
++IF(WIN32)
++>>>>>>> use_systemwide_libraries
  
- 	SET(PLATFORM_LINKFLAGS "-pthread")
- 
+ 	# this file is included anyway when building under Windows with cl.exe
+ 	#  include(${CMAKE_ROOT}/Modules/Platform/Windows-cl.cmake)
 diff --git a/extern/CMakeLists.txt b/extern/CMakeLists.txt
-index f643b68..349df06 100644
+index 44d66d5..d6ca342 100644
 --- a/extern/CMakeLists.txt
 +++ b/extern/CMakeLists.txt
-@@ -35,12 +35,6 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
- 	ADD_SUBDIRECTORY(binreloc)
- ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+@@ -35,12 +35,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+ 	add_subdirectory(binreloc)
+ endif()
  
--ADD_SUBDIRECTORY(glew)
+-add_subdirectory(glew)
 -
--IF(WITH_IMAGE_OPENJPEG)
--	ADD_SUBDIRECTORY(libopenjpeg)
--ENDIF(WITH_IMAGE_OPENJPEG)
+-if(WITH_IMAGE_OPENJPEG)
+-	add_subdirectory(libopenjpeg)
+-endif()
 -
- IF(WITH_LZO)
- 	ADD_SUBDIRECTORY(lzo)
- ENDIF(WITH_LZO)
+ if(WITH_IMAGE_REDCODE)
+ 	add_subdirectory(libredcode)
+ endif()
 -- 
