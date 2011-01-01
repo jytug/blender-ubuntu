@@ -8,18 +8,18 @@ Install relevant documentation
  1 files changed, 1 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index a58e9ac..bd10be4 100644
+index b1e77d6..1daf21d 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -223,9 +223,8 @@ IF(WITH_INSTALL)
+@@ -232,9 +232,8 @@ if(WITH_INSTALL)
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
  		)
- 		INSTALL(
+ 		install(
 -			DIRECTORY ${CMAKE_SOURCE_DIR}/release/text/
 +            FILES ${CMAKE_SOURCE_DIR}/release/text/readme.html ${CMAKE_SOURCE_DIR}/release/text/copyright.txt
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/blender
 -			PATTERN ".svn" EXCLUDE
  		)
- 		INSTALL(
+ 		install(
  			DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts/
 -- 
