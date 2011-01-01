@@ -1,5 +1,5 @@
 /*
- * $Id: readfile.h 32506 2010-10-16 02:40:31Z campbellbarton $
+ * $Id: readfile.h 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -110,7 +110,7 @@ void blo_split_main(ListBase *mainlist, struct Main *main);
 
 BlendFileData *blo_read_file_internal(FileData *fd, const char *filename);
 
-FileData *blo_openblenderfile(char *name, struct ReportList *reports);
+FileData *blo_openblenderfile(const char *name, struct ReportList *reports);
 FileData *blo_openblendermemory(void *buffer, int buffersize, struct ReportList *reports);
 FileData *blo_openblendermemfile(struct MemFile *memfile, struct ReportList *reports);
 

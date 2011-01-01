@@ -1,5 +1,5 @@
 /**
- * $Id: space_action.c 32511 2010-10-16 08:03:28Z campbellbarton $
+ * $Id: space_action.c 33821 2010-12-20 19:09:22Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -425,6 +425,7 @@ static void action_refresh(const bContext *C, ScrArea *sa)
 	if (saction->flag & SACTION_TEMP_NEEDCHANSYNC) {
 		ANIM_sync_animchannels_to_data(C);
 		saction->flag &= ~SACTION_TEMP_NEEDCHANSYNC;
+		ED_area_tag_redraw(sa);
 	}
 	
 	/* region updates? */

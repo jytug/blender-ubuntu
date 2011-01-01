@@ -1,5 +1,5 @@
 /**
- * $Id: graph_draw.c 32511 2010-10-16 08:03:28Z campbellbarton $
+ * $Id: graph_draw.c 33799 2010-12-20 03:59:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -70,7 +70,7 @@
  */
 #define drawFCurveFade(fcu) ( ((fcu)->flag & FCURVE_SELECTED)? 1.0f : 0.25f )
 
-/* set the colour for some point from some value given packed into an int 
+/* set the color for some point from some value given packed into an int 
  *	- intV: integer value containing color info packed into an int
  *	- alpha: float value describing the 
  */
@@ -346,7 +346,7 @@ static void draw_fcurve_handles (SpaceIpo *sipo, FCurve *fcu)
 		BezTriple *bezt=fcu->bezt, *prevbezt=NULL;
 		int basecol= (sel)? TH_HANDLE_SEL_FREE : TH_HANDLE_FREE;
 		float *fp;
-		char col[4];
+		unsigned char col[4];
 		
 		/* if only selected keyframes have handles shown, skip the first round */
 		if ((sel == 0) && (sipo->flag & SIPO_SELVHANDLESONLY))
@@ -899,7 +899,7 @@ void graph_draw_curves (bAnimContext *ac, SpaceIpo *sipo, ARegion *ar, View2DGri
 		 *	- if the option to only show controls if the F-Curve is selected is enabled, we must obey this
 		 */
 		if (!(sipo->flag & SIPO_SELCUVERTSONLY) || (fcu->flag & FCURVE_SELECTED)) {
-			if (fcurve_needs_draw_fmodifier_controls(fcu, fcm)) {
+			if (fcurve_are_keyframes_usable(fcu) == 0) {
 				/* only draw controls if this is the active modifier */
 				if ((fcu->flag & FCURVE_ACTIVE) && (fcm)) {
 					switch (fcm->type) {

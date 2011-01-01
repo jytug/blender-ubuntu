@@ -1,7 +1,7 @@
 /**
  * Generate random pulses
  *
- * $Id: SCA_RandomSensor.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SCA_RandomSensor.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -56,7 +56,7 @@ public:
 	virtual bool IsPositiveTrigger();
 	virtual void Init();
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* --------------------------------------------------------------------- */
 	/* Python interface ---------------------------------------------------- */

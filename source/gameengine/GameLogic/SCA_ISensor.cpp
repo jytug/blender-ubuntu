@@ -1,7 +1,7 @@
 /**
  * Abstract class for sensor logic bricks
  *
- * $Id: SCA_ISensor.cpp 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: SCA_ISensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -300,7 +300,7 @@ void SCA_ISensor::Activate(class SCA_LogicManager* logicmgr)
 	} 
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ----------------------------------------------- */
 /* Python Functions						           */
@@ -427,6 +427,6 @@ int SCA_ISensor::pyattr_check_tap(void *self_v, const KX_PYATTRIBUTE_DEF *attrde
 		self->m_level = false;
 	return 0;
 }
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

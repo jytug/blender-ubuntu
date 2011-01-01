@@ -1,6 +1,6 @@
 /**
  *
- * $Id: BKE_bvhutils.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BKE_bvhutils.h 33233 2010-11-22 14:16:11Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -65,6 +65,7 @@ typedef struct BVHTreeFromMesh
 
 	/* Private data */
 	int cached;
+	void *em_evil;	/* var only for snapping */
 
 } BVHTreeFromMesh;
 

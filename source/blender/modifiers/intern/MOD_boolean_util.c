@@ -1,5 +1,5 @@
 /**
- * $Id: MOD_boolean_util.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: MOD_boolean_util.c 33490 2010-12-05 18:59:23Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -577,7 +577,7 @@ int NewBooleanMesh(Scene *scene, Base *base, Base *base_select, int int_op_type)
 	MEM_freeN(mat);
 
 	/* update dag */
-	DAG_id_flush_update(&ob_new->id, OB_RECALC_DATA);
+	DAG_id_tag_update(&ob_new->id, OB_RECALC_DATA);
 
 	return 1;
 }

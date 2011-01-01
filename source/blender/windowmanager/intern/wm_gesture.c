@@ -1,5 +1,5 @@
 /**
- * $Id: wm_gesture.c 32506 2010-10-16 02:40:31Z campbellbarton $
+ * $Id: wm_gesture.c 33875 2010-12-23 10:34:37Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -232,8 +232,12 @@ static void draw_filled_lasso(wmGesture *gt)
 	int i;
 	
 	for (i=0; i<gt->points; i++, lasso+=2) {
-		float co[3] = {(float)lasso[0], (float)lasso[1], 0.f};
-		
+		float co[3];
+
+		co[0]= (float)lasso[0];
+		co[1]= (float)lasso[1];
+		co[2]= 0.0f;
+
 		v = BLI_addfillvert(co);
 		if (lastv)
 			e = BLI_addfilledge(lastv, v);
@@ -321,8 +325,8 @@ void wm_gesture_draw(wmWindow *win)
 		
 		if(gt->type==WM_GESTURE_RECT)
 			wm_gesture_draw_rect(gt);
-		else if(gt->type==WM_GESTURE_TWEAK)
-			wm_gesture_draw_line(gt);
+//		else if(gt->type==WM_GESTURE_TWEAK)
+//			wm_gesture_draw_line(gt);
 		else if(gt->type==WM_GESTURE_CIRCLE)
 			wm_gesture_draw_circle(gt);
 		else if(gt->type==WM_GESTURE_CROSS_RECT) {

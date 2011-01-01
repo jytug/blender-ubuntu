@@ -1,7 +1,7 @@
 /**
  * Apply a constraint to a position or rotation value
  *
- * $Id: KX_ConstraintActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_ConstraintActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -557,7 +557,7 @@ bool KX_ConstraintActuator::IsValidMode(KX_ConstraintActuator::KX_CONSTRAINTTYPE
 	return res;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */

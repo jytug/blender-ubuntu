@@ -1,7 +1,7 @@
 /**
  * Quicktime_import.h
  *
- * $Id: quicktime_import.h 31730 2010-09-03 03:30:20Z gsrb3d $
+ * $Id: quicktime_import.h 33167 2010-11-19 02:14:18Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -62,7 +62,7 @@ char *get_valid_qtname(char *name);
 
 // quicktime movie import functions
 
-int		anim_is_quicktime (char *name);
+int		anim_is_quicktime (const char *name);
 int		startquicktime (struct anim *anim);
 void	free_anim_quicktime (struct anim *anim);
 ImBuf  *qtime_fetchibuf (struct anim *anim, int position);

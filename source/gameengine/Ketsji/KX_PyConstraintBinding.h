@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PyConstraintBinding.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_PyConstraintBinding.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,7 @@
 #ifndef PHY_PYTHON_CONSTRAINTBINDING
 #define PHY_PYTHON_CONSTRAINTBINDING
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 #include <Python.h>
 
@@ -37,7 +37,7 @@ PyObject*				initPythonConstraintBinding();
 void	PHY_RemovePythonConstraintBinding();
 void	PHY_SetActiveEnvironment(class	PHY_IPhysicsEnvironment* env);
 PHY_IPhysicsEnvironment*	PHY_GetActiveEnvironment();
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 #endif //PHY_PYTHON_CONSTRAINTBINDING
 

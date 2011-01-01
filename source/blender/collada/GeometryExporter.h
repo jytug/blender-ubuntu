@@ -1,5 +1,5 @@
 /**
- * $Id: GeometryExporter.h 32355 2010-10-06 20:40:16Z gsrb3d $
+ * $Id: GeometryExporter.h 33111 2010-11-16 22:27:31Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,6 +28,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
 #include "COLLADASWStreamWriter.h"
 #include "COLLADASWLibraryGeometries.h"
@@ -89,6 +90,8 @@ public:
 	COLLADASW::URI makeUrl(std::string id);
 	
 	/* int getTriCount(MFace *faces, int totface);*/
+private:
+	std::set<std::string> exportedGeometry;
 };
 
 struct GeometryFunctor {

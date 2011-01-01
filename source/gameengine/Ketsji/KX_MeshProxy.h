@@ -1,5 +1,5 @@
 /**
- * $Id: KX_MeshProxy.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_MeshProxy.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,7 @@
 #ifndef __KX_MESHPROXY
 #define __KX_MESHPROXY
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 #include "SCA_IObject.h"
 
@@ -74,7 +74,7 @@ public:
 	static PyObject * pyattr_get_numPolygons(void * self, const KX_PYATTRIBUTE_DEF * attrdef);
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 #endif //__KX_MESHPROXY
 

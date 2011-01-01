@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_PyInit.h 31398 2010-08-16 20:05:59Z nexyon $
+ * $Id: AUD_PyInit.h 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -26,7 +26,7 @@
 #ifndef AUD_PYINIT
 #define AUD_PYINIT
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #include "Python.h"
 
 #ifdef __cplusplus
@@ -36,7 +36,7 @@ extern "C" {
 /**
  * Initalizes the Python module.
  */
-extern PyObject* AUD_initPython();
+extern PyObject* AUD_initPython(void);
 
 #ifdef __cplusplus
 }

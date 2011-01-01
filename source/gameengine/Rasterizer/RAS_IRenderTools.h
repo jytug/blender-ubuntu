@@ -1,5 +1,5 @@
 /**
- * $Id: RAS_IRenderTools.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: RAS_IRenderTools.h 33707 2010-12-16 10:25:41Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -97,6 +97,28 @@ public:
 		double* oglmatrix,
 		int drawingmode
 	)=0;
+
+	/**
+	 * Renders 3D text string using BFL.
+	 * @param fontid	The id of the font.
+	 * @param text		The string to render.
+	 * @param size		The size of the text.
+	 * @param dpi		The resolution of the text.
+	 * @param color		The color of the object.
+	 * @param mat		The Matrix of the text object.
+	 * @param aspect	A scaling factor to compensate for the size.
+	 */
+	virtual 
+		void	
+	RenderText3D(int fontid,
+				 const char* text,
+				 int size,
+				 int dpi,
+				 float* color,
+				 double* mat,
+				 float aspect
+	) = 0;
+
 
 	/**
 	 * Renders 2D text string.

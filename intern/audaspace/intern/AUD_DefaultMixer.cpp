@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_DefaultMixer.cpp 31372 2010-08-16 11:41:07Z nexyon $
+ * $Id: AUD_DefaultMixer.cpp 33213 2010-11-21 14:40:50Z campbellbarton $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -24,7 +24,9 @@
  */
 
 #include "AUD_DefaultMixer.h"
+#ifdef WITH_SAMPLERATE
 #include "AUD_SRCResampleReader.h"
+#endif
 #include "AUD_ChannelMapperReader.h"
 #include "AUD_ChannelMapperFactory.h"
 
@@ -50,10 +52,12 @@ AUD_IReader* AUD_DefaultMixer::prepare(AUD_IReader* reader)
 		specs.channels = m_specs.channels;
 	}
 
+#ifdef WITH_SAMPLERATE
 	// resample
 	if(specs.rate != m_specs.rate)
 		reader = new AUD_SRCResampleReader(reader, m_specs.specs);
-
+#endif
+	
 	// rechannel
 	if(specs.channels != m_specs.channels)
 		reader = new AUD_ChannelMapperReader(reader,

@@ -1,5 +1,5 @@
 /**
- * $Id: math_vector.c 32611 2010-10-20 09:18:55Z campbellbarton $
+ * $Id: math_vector.c 33776 2010-12-19 07:05:29Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -231,6 +231,16 @@ void angle_quad_v3(float angles[4], const float v1[3], const float v2[3], const 
 /********************************* Geometry **********************************/
 
 /* Project v1 on v2 */
+void project_v2_v2v2(float c[2], const float v1[2], const float v2[2])
+{
+	float mul;
+	mul = dot_v2v2(v1, v2) / dot_v2v2(v2, v2);
+
+	c[0] = mul * v2[0];
+	c[1] = mul * v2[1];
+}
+
+/* Project v1 on v2 */
 void project_v3_v3v3(float c[3], const float v1[3], const float v2[3])
 {
 	float mul;
@@ -391,6 +401,13 @@ void add_vn_vn(float *array_tar, const float *array_src, const int size)
 void fill_vni(int *array_tar, const int size, const int val)
 {
 	int *tar= array_tar + (size-1);
+	int i= size;
+	while(i--) { *(tar--) = val; }
+}
+
+void fill_vn(float *array_tar, const int size, const float val)
+{
+	float *tar= array_tar + (size-1);
 	int i= size;
 	while(i--) { *(tar--) = val; }
 }

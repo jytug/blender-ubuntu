@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PyConstraintBinding.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_PyConstraintBinding.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,7 +37,7 @@
 
 #include "PyObjectPlus.h" 
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 // nasty glob variable to connect scripting language
 // if there is a better way (without global), please do so!
@@ -659,5 +659,5 @@ PHY_IPhysicsEnvironment*	PHY_GetActiveEnvironment()
 	return g_CurrentActivePhysicsEnvironment;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 

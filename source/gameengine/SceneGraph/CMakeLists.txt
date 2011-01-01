@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,18 +24,28 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC
+set(INC
 	.
 	../../../intern/moto/include
 )
 
-SET(SRC
+set(SRC
 	SG_BBox.cpp
 	SG_Controller.cpp
 	SG_IObject.cpp
 	SG_Node.cpp
 	SG_Spatial.cpp
 	SG_Tree.cpp
+
+	SG_BBox.h
+	SG_Controller.h
+	SG_DList.h
+	SG_IObject.h
+	SG_Node.h
+	SG_ParentRelation.h
+	SG_QList.h
+	SG_Spatial.h
+	SG_Tree.h
 )
 
-BLENDERLIB(bf_scenegraph "${SRC}" "${INC}")
+blender_add_lib(ge_scenegraph "${SRC}" "${INC}")

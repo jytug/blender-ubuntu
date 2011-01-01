@@ -2,7 +2,7 @@
 /*  key.c      
  *  
  * 
- * $Id: key.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: key.c 33918 2010-12-28 06:18:56Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1191,7 +1191,7 @@ static void do_curve_key(Scene *scene, Object *ob, Key *key, char *out, int tot)
 
 	if(key->slurph  && key->type!=KEY_RELATIVE) {
 		Nurb *nu;
-		int mode, i= 0, remain= 0, estep, count;
+		int mode=0, i= 0, remain= 0, estep=0, count=0;
 
 		delta= (float)key->slurph / tot;
 
@@ -1441,7 +1441,7 @@ Key *ob_get_key(Object *ob)
 	return NULL;
 }
 
-KeyBlock *add_keyblock(Key *key, char *name)
+KeyBlock *add_keyblock(Key *key, const char *name)
 {
 	KeyBlock *kb;
 	float curpos= -0.1;

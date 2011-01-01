@@ -1,5 +1,5 @@
 /**
- * $Id: rna_rna.c 31725 2010-09-02 14:43:22Z campbellbarton $
+ * $Id: rna_rna.c 33882 2010-12-24 07:30:15Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -115,11 +115,12 @@ static int rna_idproperty_known(CollectionPropertyIterator *iter, void *data)
 
 	/* function to skip any id properties that are already known by RNA,
 	 * for the second loop where we go over unknown id properties */
+	do {
+		for(prop= ptype->cont.properties.first; prop; prop=prop->next)
+			if((prop->flag & PROP_BUILTIN) == 0 && strcmp(prop->identifier, idprop->name) == 0)
+				return 1;
+	} while((ptype=ptype->base));
 
-	for(prop= ptype->cont.properties.first; prop; prop=prop->next)
-		if(strcmp(prop->identifier, idprop->name) == 0)
-			return 1;
-	
 	return 0;
 }
 
@@ -303,9 +304,8 @@ PointerRNA rna_builtin_properties_lookup_string(PointerRNA *ptr, const char *key
 {
 	StructRNA *srna;
 	PropertyRNA *prop;
-	PointerRNA propptr;
+	PointerRNA propptr= {{0}};
 
-	memset(&propptr, 0, sizeof(propptr));
 	srna= ptr->type;
 
 	do {
@@ -472,6 +472,12 @@ static int rna_Property_is_never_none_get(PointerRNA *ptr)
 {
 	PropertyRNA *prop= (PropertyRNA*)ptr->data;
 	return prop->flag & PROP_NEVER_NULL ? 1:0;
+}
+
+static int rna_Property_is_hidden_get(PointerRNA *ptr)
+{
+	PropertyRNA *prop= (PropertyRNA*)ptr->data;
+	return prop->flag & PROP_HIDDEN ? 1:0;
 }
 
 static int rna_Property_array_length_get(PointerRNA *ptr)
@@ -1010,6 +1016,11 @@ static void rna_def_property(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_boolean_funcs(prop, "rna_Property_is_never_none_get", NULL);
 	RNA_def_property_ui_text(prop, "Never None", "True when this value can't be set to None");
+
+	prop= RNA_def_property(srna, "is_hidden", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_boolean_funcs(prop, "rna_Property_is_hidden_get", NULL);
+	RNA_def_property_ui_text(prop, "Hidden", "True when the property is hidden");
 
 	prop= RNA_def_property(srna, "is_output", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);

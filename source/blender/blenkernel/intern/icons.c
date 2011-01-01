@@ -1,5 +1,5 @@
 /**
-* $Id: icons.c 30733 2010-07-26 02:35:43Z nicholasbishop $
+* $Id: icons.c 33442 2010-12-03 12:30:59Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -76,7 +76,7 @@ static void icon_free(void *val)
 
 /* create an id for a new icon and make sure that ids from deleted icons get reused
    after the integer number range is used up */
-static int get_next_free_id()
+static int get_next_free_id(void)
 {
 	int startId = gFirstIconId;
 

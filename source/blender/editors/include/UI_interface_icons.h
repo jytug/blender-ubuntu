@@ -1,5 +1,5 @@
 /**
- * $Id: UI_interface_icons.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: UI_interface_icons.h 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -62,11 +62,11 @@ void UI_icon_draw_preview_aspect_size(float x, float y, int icon_id, float aspec
 void UI_icon_draw_aspect(float x, float y, int icon_id, float aspect, float alpha);
 void UI_icon_draw_aspect_color(float x, float y, int icon_id, float aspect, float *rgb);
 void UI_icon_draw_size(float x, float y, int size, int icon_id, float alpha);
-void UI_icons_free();
+void UI_icons_free(void);
 void UI_icons_free_drawinfo(void *drawinfo);
 
 struct ListBase *UI_iconfile_list(void);
-int UI_iconfile_get_index(char *filename);
+int UI_iconfile_get_index(const char *filename);
 
 
 #endif /*  UI_INTERFACE_ICONS_H */

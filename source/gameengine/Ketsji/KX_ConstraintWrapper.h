@@ -1,5 +1,5 @@
 /**
- * $Id: KX_ConstraintWrapper.h 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: KX_ConstraintWrapper.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +40,7 @@ public:
 	virtual ~KX_ConstraintWrapper ();
 	int			getConstraintId() { return m_constraintId;};
 	
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	KX_PYMETHOD_NOARGS(KX_ConstraintWrapper,GetConstraintId);
 	KX_PYMETHOD(KX_ConstraintWrapper,SetParam);
 	KX_PYMETHOD(KX_ConstraintWrapper,GetParam);

@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_SequencerReader.cpp 31372 2010-08-16 11:41:07Z nexyon $
+ * $Id: AUD_SequencerReader.cpp 33904 2010-12-27 11:32:43Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -188,7 +188,16 @@ void AUD_SequencerReader::read(int & length, sample_t* & buffer)
 					delete strip->reader;
 
 				if(strip->old_sound)
-					strip->reader = m_mixer->prepare(strip->old_sound->createReader());
+				{
+					try
+					{
+						strip->reader = m_mixer->prepare(strip->old_sound->createReader());
+					}
+					catch(AUD_Exception)
+					{
+						strip->reader = NULL;
+					}
+				}
 				else
 					strip->reader = NULL;
 			}

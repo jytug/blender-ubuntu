@@ -1,5 +1,5 @@
 /**
- * $Id: BL_ShapeActionActuator.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BL_ShapeActionActuator.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -82,7 +82,7 @@ public:
 	bAction*	GetAction() { return m_action; }
 	void		SetAction(bAction* act) { m_action= act; }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	static PyObject*	pyattr_get_action(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static int			pyattr_set_action(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
@@ -125,7 +125,7 @@ public:
 
 	}
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 protected:
 

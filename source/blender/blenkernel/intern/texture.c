@@ -1,7 +1,7 @@
 /* texture.c
  *
  *
- * $Id: texture.c 32593 2010-10-19 10:26:53Z jhk $
+ * $Id: texture.c 33015 2010-11-11 17:03:09Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -573,6 +573,7 @@ void default_tex(Tex *tex)
 	tex->iuser.fie_ima= 2;
 	tex->iuser.ok= 1;
 	tex->iuser.frames= 100;
+	tex->iuser.sfra= 1;
 	
 	tex->preview = NULL;
 }
@@ -1285,8 +1286,7 @@ void BKE_free_pointdensity(PointDensity *pd)
 void BKE_free_voxeldatadata(struct VoxelData *vd)
 {
 	if (vd->dataset) {
-		if(vd->file_format != TEX_VD_SMOKE)
-			MEM_freeN(vd->dataset);
+		MEM_freeN(vd->dataset);
 		vd->dataset = NULL;
 	}
 

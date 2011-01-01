@@ -1,5 +1,5 @@
 /*
- * $Id: physics_pointcache.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: physics_pointcache.c 33767 2010-12-18 15:03:31Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -83,7 +83,7 @@ void bake_console_progress(void *UNUSED(arg), int nr)
 
 void bake_console_progress_end(void *UNUSED(arg))
 {
-	printf("\n");
+	printf("\rbake: done!\n");
 }
 
 static int ptcache_bake_all_exec(bContext *C, wmOperator *op)
@@ -103,6 +103,9 @@ static int ptcache_bake_all_exec(bContext *C, wmOperator *op)
 	baker.break_test = cache_break_test;
 	baker.break_data = NULL;
 
+	/* Disabled for now as this doesn't work properly,
+	 * and pointcache baking will be reimplemented with
+	 * the job system soon anyways. */
 	if (win) {
 		baker.progressbar = (void (*)(void *, int))WM_timecursor;
 		baker.progressend = (void (*)(void *))WM_cursor_restore;
@@ -113,7 +116,7 @@ static int ptcache_bake_all_exec(bContext *C, wmOperator *op)
 		baker.progresscontext = NULL;
 	}
 
-	BKE_ptcache_make_cache(&baker);
+	BKE_ptcache_bake(&baker);
 
 	WM_event_add_notifier(C, NC_SCENE|ND_FRAME, scene);
 	WM_event_add_notifier(C, NC_OBJECT|ND_POINTCACHE, NULL);
@@ -201,6 +204,9 @@ static int ptcache_bake_exec(bContext *C, wmOperator *op)
 	baker.break_test = cache_break_test;
 	baker.break_data = NULL;
 
+	/* Disabled for now as this doesn't work properly,
+	 * and pointcache baking will be reimplemented with
+	 * the job system soon anyways. */
 	if (win) {
 		baker.progressbar = (void (*)(void *, int))WM_timecursor;
 		baker.progressend = (void (*)(void *))WM_cursor_restore;
@@ -212,7 +218,7 @@ static int ptcache_bake_exec(bContext *C, wmOperator *op)
 		baker.progresscontext = NULL;
 	}
 
-	BKE_ptcache_make_cache(&baker);
+	BKE_ptcache_bake(&baker);
 
 	BLI_freelistN(&pidlist);
 

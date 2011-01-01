@@ -1,5 +1,5 @@
 /**
- * $Id: reeb.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: reeb.h 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -149,7 +149,7 @@ void angleToVCol(struct EditMesh *em, int index);
 void renormalizeWeight(struct EditMesh *em, float newmax);
 
 ReebGraph * generateReebGraph(struct EditMesh *me, int subdivisions);
-ReebGraph * newReebGraph();
+ReebGraph * newReebGraph(void);
 
 void initArcIterator(BArcIterator *iter, struct ReebArc *arc, struct ReebNode *head);
 void initArcIterator2(BArcIterator *iter, struct ReebArc *arc, int start, int end);
@@ -195,7 +195,7 @@ ReebGraph *BIF_graphForMultiNode(ReebGraph *rg, ReebNode *node);
 void REEB_freeGraph(ReebGraph *rg);
 void REEB_freeArc(BArc *barc);
 void REEB_exportGraph(ReebGraph *rg, int count);
-void REEB_draw();
+void REEB_draw(void);
 
 
 #endif /*REEB_H_*/

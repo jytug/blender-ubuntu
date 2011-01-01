@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 31223 2010-08-10 21:22:26Z gsrb3d $
+# $Id: Makefile 33004 2010-11-11 11:06:15Z ton $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -34,6 +34,8 @@ DIR = $(OCGDIR)/blender/$(LIBNAME)
 include nan_compile.mk
 
 CFLAGS += $(LEVEL_1_C_WARNINGS)
+CFLAGS += -DWITH_MOD_BOOLEAN
+CFLAGS += -DWITH_MOD_DECIMATE
 
 CPPFLAGS += -I..
 

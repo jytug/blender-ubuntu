@@ -1,5 +1,5 @@
 /**
- * $Id: makesrna.c 32252 2010-10-02 14:17:20Z blendix $
+ * $Id: makesrna.c 33784 2010-12-19 12:32:33Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "MEM_guardedalloc.h"
 
@@ -36,7 +37,7 @@
 
 #include "rna_internal.h"
 
-#define RNA_VERSION_DATE "$Id: makesrna.c 32252 2010-10-02 14:17:20Z blendix $"
+#define RNA_VERSION_DATE "$Id: makesrna.c 33784 2010-12-19 12:32:33Z campbellbarton $"
 
 #ifdef _WIN32
 #ifndef snprintf
@@ -47,14 +48,29 @@
 /* Replace if different */
 #define TMP_EXT ".tmp"
 
-static int replace_if_different(char *tmpfile)
+
+/* copied from BLI_file_older */
+#include <sys/stat.h>
+static int file_older(const char *file1, const char *file2)
+{
+	struct stat st1, st2;
+	// printf("compare: %s %s\n", file1, file2);
+
+	if(stat(file1, &st1)) return 0;
+	if(stat(file2, &st2)) return 0;
+
+	return (st1.st_mtime < st2.st_mtime);
+}
+const char *makesrna_path= NULL;
+
+static int replace_if_different(char *tmpfile, const char *dep_files[])
 {
 	// return 0; // use for testing had edited rna
 
 #define REN_IF_DIFF \
 	remove(orgfile); \
 	if(rename(tmpfile, orgfile) != 0) { \
-		fprintf(stderr, "%s:%d, rename error: \"%s\" -> \"%s\"\n", __FILE__, __LINE__, tmpfile, orgfile); \
+		fprintf(stderr, "%s:%d, Rename Error (%s): \"%s\" -> \"%s\"\n", __FILE__, __LINE__, strerror(errno), tmpfile, orgfile); \
 		return -1; \
 	} \
 	remove(tmpfile); \
@@ -77,6 +93,42 @@ static int replace_if_different(char *tmpfile)
 	if(fp_org==NULL) {
 		REN_IF_DIFF;
 	}
+
+
+	/* XXX, trick to work around dependancy problem
+	 * assumes dep_files is in the same dir as makesrna.c, which is true for now. */
+
+	if(1) {
+		/* first check if makesrna.c is newer then generated files
+		 * for development on makesrna.c you may want to disable this */
+		if(file_older(orgfile, __FILE__)) {
+			REN_IF_DIFF;
+		}
+
+		if(file_older(orgfile, makesrna_path)) {
+			REN_IF_DIFF;
+		}
+
+		/* now check if any files we depend on are newer then any generated files */
+		if(dep_files) {
+			int pass;
+			for(pass=0; dep_files[pass]; pass++) {
+				char from_path[4096]= __FILE__;
+				char *p1, *p2;
+
+				/* dir only */
+				p1= strrchr(from_path, '/');
+				p2= strrchr(from_path, '\\');
+				strcpy((p1 > p2 ? p1 : p2)+1, dep_files[pass]);
+				/* account for build deps, if makesrna.c (this file) is newer */
+				if(file_older(orgfile, from_path)) {
+					REN_IF_DIFF;
+				}
+			}
+		}
+	}
+	/* XXX end dep trick */
+
 
 	fp_new= fopen(tmpfile, "rb");
 
@@ -199,7 +251,7 @@ static void rna_sortlist(ListBase *listbase, int(*cmp)(const void*, const void*)
 
 static void rna_print_c_string(FILE *f, const char *str)
 {
-	static char *escape[] = {"\''", "\"\"", "\??", "\\\\","\aa", "\bb", "\ff", "\nn", "\rr", "\tt", "\vv", NULL};
+	static const char *escape[] = {"\''", "\"\"", "\??", "\\\\","\aa", "\bb", "\ff", "\nn", "\rr", "\tt", "\vv", NULL};
 	int i, j;
 
 	if(!str) {
@@ -292,7 +344,12 @@ static const char *rna_type_type_name(PropertyRNA *prop)
 		case PROP_FLOAT:
 			return "float";
 		case PROP_STRING:
-			return "char*";
+			if(prop->flag & PROP_THICK_WRAP) {
+				return "char*";
+			}
+			else {
+				return "const char*";
+			}
 		default:
 			return NULL;
 	}
@@ -913,7 +970,7 @@ static char *rna_def_property_lookup_int_func(FILE *f, StructRNA *srna, Property
 		fprintf(f, "			}\n");
 		fprintf(f, "		}\n");
 		fprintf(f, "		else {\n");
-		fprintf(f, "			while(index-- > 0)\n");
+		fprintf(f, "			while(index-- > 0 && internal->link)\n");
 		fprintf(f, "				internal->link= internal->link->next;\n");
 		fprintf(f, "		}\n");
 	}
@@ -1397,7 +1454,8 @@ static void rna_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
 	FunctionRNA *func;
 	PropertyDefRNA *dparm;
 	PropertyType type;
-	char *funcname, *ptrstr, *valstr;
+	const char *funcname, *valstr;
+	const char *ptrstr;
 	int flag, pout, cptr, first;
 
 	srna= dsrna->srna;
@@ -1478,7 +1536,7 @@ static void rna_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
 		if(dparm->prop==func->c_ret)
 			fprintf(f, "\t_retdata= _data;\n");
 		else  {
-			char *data_str;
+			const char *data_str;
 			if (cptr || (flag & PROP_DYNAMIC)) {
 				ptrstr= "**";
 				valstr= "*";
@@ -1803,7 +1861,7 @@ static void rna_generate_static_parameter_prototypes(BlenderRNA *brna, StructRNA
 	StructDefRNA *dsrna;
 	PropertyType type;
 	int flag, pout, cptr, first;
-	char *ptrstr;
+	const char *ptrstr;
 
 	dsrna= rna_find_struct_def(srna);
 	func= dfunc->func;
@@ -2249,8 +2307,8 @@ static void rna_generate_struct(BlenderRNA *brna, StructRNA *srna, FILE *f)
 }
 
 typedef struct RNAProcessItem {
-	char *filename;
-	char *api_filename;
+	const char *filename;
+	const char *api_filename;
 	void (*define)(BlenderRNA *brna);
 } RNAProcessItem;
 
@@ -2312,7 +2370,7 @@ RNAProcessItem PROCESS_ITEMS[]= {
 	{"rna_world.c", NULL, RNA_def_world},	
 	{NULL, NULL}};
 
-static void rna_generate(BlenderRNA *brna, FILE *f, char *filename, char *api_filename)
+static void rna_generate(BlenderRNA *brna, FILE *f, const char *filename, const char *api_filename)
 {
 	StructDefRNA *ds;
 	PropertyDefRNA *dp;
@@ -2609,6 +2667,7 @@ static int rna_preprocess(char *outfile)
 	FILE *file;
 	char deffile[4096];
 	int i, status;
+	const char *deps[3]; /* expand as needed */
 
 	/* define rna */
 	brna= RNA_create();
@@ -2649,7 +2708,7 @@ static int rna_preprocess(char *outfile)
 		}
 	}
 
-	replace_if_different(deffile);
+	replace_if_different(deffile, NULL);
 
 	rna_sort(brna);
 
@@ -2677,7 +2736,12 @@ static int rna_preprocess(char *outfile)
 			}
 		}
 
-		replace_if_different(deffile);
+		/* avoid unneeded rebuilds */
+		deps[0]= PROCESS_ITEMS[i].filename;
+		deps[1]= PROCESS_ITEMS[i].api_filename;
+		deps[2]= NULL;
+
+		replace_if_different(deffile, deps);
 	}
 
 	/* create RNA_blender.h */
@@ -2701,7 +2765,7 @@ static int rna_preprocess(char *outfile)
 		}
 	}
 
-	replace_if_different(deffile);
+	replace_if_different(deffile, NULL);
 
 	/* free RNA */
 	RNA_define_free(brna);
@@ -2726,6 +2790,7 @@ int main(int argc, char **argv)
 	}
 	else {
 		printf("Running makesrna, program versions %s\n",  RNA_VERSION_DATE);
+		makesrna_path= argv[0];
 		return_status= rna_preprocess(argv[1]);
 	}
 

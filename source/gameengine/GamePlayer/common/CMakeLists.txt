@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32708 2010-10-25 21:57:45Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC
+set(INC
 	.
 	../../../../intern/string
 	../../../../intern/ghost
@@ -37,6 +37,7 @@ SET(INC
 	../../../../source/blender/imbuf
 	../../../../source/gameengine/Ketsji
 	../../../../source/blender/blenlib
+	../../../../source/blender/blenfont
 	../../../../source/blender/blenkernel
 	../../../../source/blender
 	../../../../source/blender/makesdna
@@ -56,7 +57,7 @@ SET(INC
 	${ZLIB_INC}
 )
 
-SET(SRC 
+set(SRC 
 	bmfont.cpp
 	GPC_Canvas.cpp
 	GPC_Engine.cpp
@@ -67,8 +68,18 @@ SET(SRC
 	GPC_RawLogoArrays.cpp
 	GPC_RenderTools.cpp
 	GPC_System.cpp
+
+	GPC_Canvas.h
+	GPC_Engine.h
+	GPC_KeyboardDevice.h
+	GPC_MouseDevice.h
+	GPC_RawImage.h
+	GPC_RawLoadDotBlendArray.h
+	GPC_RawLogoArrays.h
+	GPC_RenderTools.h
+	GPC_System.h
 )
 
-ADD_DEFINITIONS(-DGLEW_STATIC)
+add_definitions(-DGLEW_STATIC)
 
-BLENDERLIB_NOLIST(gp_common "${SRC}" "${INC}")
+blender_add_lib_nolist(ge_player_common "${SRC}" "${INC}")

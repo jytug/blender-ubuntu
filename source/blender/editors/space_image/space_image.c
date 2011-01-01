@@ -1,5 +1,5 @@
 /**
- * $Id: space_image.c 32471 2010-10-14 12:24:08Z campbellbarton $
+ * $Id: space_image.c 33800 2010-12-20 05:26:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -225,9 +225,18 @@ void ED_space_image_uv_aspect(SpaceImage *sima, float *aspx, float *aspy)
 	
 	ED_space_image_aspect(sima, aspx, aspy);
 	ED_space_image_size(sima, &w, &h);
+
+	*aspx *= (float)w;
+	*aspy *= (float)h;
 	
-	*aspx *= (float)w/256.0f;
-	*aspy *= (float)h/256.0f;
+	if(*aspx < *aspy) {
+		*aspy= *aspy / *aspx;
+		*aspx= 1.0f;
+	}
+	else {
+		*aspx= *aspx / *aspy;
+		*aspy= 1.0f;		
+	}
 }
 
 void ED_image_uv_aspect(Image *ima, float *aspx, float *aspy)
@@ -256,11 +265,9 @@ int ED_space_image_show_paint(SpaceImage *sima)
 
 int ED_space_image_show_uvedit(SpaceImage *sima, Object *obedit)
 {
-	if(ED_space_image_show_render(sima))
+	if(sima && (ED_space_image_show_render(sima) || ED_space_image_show_paint(sima)))
 		return 0;
-	if(ED_space_image_show_paint(sima))
-		return 0;
-	
+
 	if(obedit && obedit->type == OB_MESH) {
 		EditMesh *em = BKE_mesh_get_editmesh(obedit->data);
 		int ret;
@@ -496,6 +503,7 @@ void image_keymap(struct wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "IMAGE_OT_scopes", PKEY, KM_PRESS, 0, 0);
 
 	WM_keymap_add_item(keymap, "IMAGE_OT_cycle_render_slot", JKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "IMAGE_OT_cycle_render_slot", JKEY, KM_PRESS, KM_ALT, 0)->ptr, "reverse", TRUE);
 	
 	keymap= WM_keymap_find(keyconf, "Image", SPACE_IMAGE, 0);
 	
@@ -633,19 +641,24 @@ static void image_listener(ScrArea *sa, wmNotifier *wmn)
 			switch(wmn->data) {
 				case ND_DATA:
 				case ND_SELECT:
+					image_scopes_tag_refresh(sa);
 					ED_area_tag_refresh(sa);
 					ED_area_tag_redraw(sa);
 					break;
 			}
 		case NC_OBJECT:
+		{
+			Object *ob= (Object *)wmn->reference;
 			switch(wmn->data) {
 				case ND_TRANSFORM:
-					if(sima->lock && (sima->flag & SI_DRAWSHADOW)) {
+				case ND_MODIFIER:
+					if(ob && (ob->mode & OB_MODE_EDIT) && sima->lock && (sima->flag & SI_DRAWSHADOW)) {
 						ED_area_tag_refresh(sa);
 						ED_area_tag_redraw(sa);
 					}
 					break;
 			}
+		}
 	}
 }
 

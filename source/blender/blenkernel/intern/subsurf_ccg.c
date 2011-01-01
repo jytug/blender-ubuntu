@@ -1,5 +1,5 @@
 /**
- * $Id: subsurf_ccg.c 32690 2010-10-25 02:58:32Z nicholasbishop $
+ * $Id: subsurf_ccg.c 33701 2010-12-16 03:39:51Z nicholasbishop $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1146,6 +1146,22 @@ static void ccgDM_drawVerts(DerivedMesh *dm) {
 	ccgFaceIterator_free(fi);
 	glEnd();
 }
+
+static void ccgdm_pbvh_update(CCGDerivedMesh *ccgdm)
+{
+	if(ccgdm->pbvh && ccgDM_use_grid_pbvh(ccgdm)) {
+		CCGFace **faces;
+		int totface;
+
+		BLI_pbvh_get_grid_updates(ccgdm->pbvh, 1, (void***)&faces, &totface);
+		if(totface) {
+			ccgSubSurf_updateFromFaces(ccgdm->ss, 0, faces, totface);
+			ccgSubSurf_updateNormals(ccgdm->ss, faces, totface);
+			MEM_freeN(faces);
+		}
+	}
+}
+
 static void ccgDM_drawEdges(DerivedMesh *dm, int drawLooseEdges, int UNUSED(drawAllEdges)) {
 	CCGDerivedMesh *ccgdm = (CCGDerivedMesh*) dm;
 	CCGSubSurf *ss = ccgdm->ss;
@@ -1154,6 +1170,8 @@ static void ccgDM_drawEdges(DerivedMesh *dm, int drawLooseEdges, int UNUSED(draw
 	int i, edgeSize = ccgSubSurf_getEdgeSize(ss);
 	int gridSize = ccgSubSurf_getGridSize(ss);
 	int useAging;
+
+	ccgdm_pbvh_update(ccgdm);
 
 	ccgSubSurf_getUseAgeCounts(ss, &useAging, NULL, NULL, NULL);
 
@@ -1245,23 +1263,8 @@ static void ccgDM_glNormalFast(float *a, float *b, float *c, float *d)
 	no[1] = b_dZ*a_cX - b_dX*a_cZ;
 	no[2] = b_dX*a_cY - b_dY*a_cX;
 
-	/* don't normalize, GL_NORMALIZE is be enabled */
+	/* don't normalize, GL_NORMALIZE is enabled */
 	glNormal3fv(no);
-}
-
-static void ccgdm_pbvh_update(CCGDerivedMesh *ccgdm)
-{
-	if(ccgdm->pbvh && ccgDM_use_grid_pbvh(ccgdm)) {
-		CCGFace **faces;
-		int totface;
-
-		BLI_pbvh_get_grid_updates(ccgdm->pbvh, 1, (void***)&faces, &totface);
-		if(totface) {
-			ccgSubSurf_updateFromFaces(ccgdm->ss, 0, faces, totface);
-			ccgSubSurf_updateNormals(ccgdm->ss, faces, totface);
-			MEM_freeN(faces);
-		}
-	}
 }
 
 	/* Only used by non-editmesh types */
@@ -1357,7 +1360,7 @@ static void ccgDM_drawMappedFacesGLSL(DerivedMesh *dm, int (*setMaterial)(int, v
 	CCGSubSurf *ss = ccgdm->ss;
 	CCGFaceIterator *fi = ccgSubSurf_getFaceIterator(ss);
 	GPUVertexAttribs gattribs;
-	DMVertexAttribs attribs;
+	DMVertexAttribs attribs= {{{0}}};
 	MTFace *tf = dm->getFaceDataArray(dm, CD_MTFACE);
 	int gridSize = ccgSubSurf_getGridSize(ss);
 	int gridFaces = gridSize - 1;
@@ -1373,8 +1376,6 @@ static void ccgDM_drawMappedFacesGLSL(DerivedMesh *dm, int (*setMaterial)(int, v
 	matnr = -1;
 	transp = GPU_get_material_blend_mode();
 	orig_transp = transp;
-
-	memset(&attribs, 0, sizeof(attribs));
 
 #define PASSATTRIB(dx, dy, vert) {												\
 	if(attribs.totorco) {														\

@@ -1,5 +1,5 @@
 /**
- * $Id: keyingsets.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: keyingsets.c 33868 2010-12-23 02:43:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -286,7 +286,7 @@ static int add_keyingset_button_exec (bContext *C, wmOperator *op)
 	Scene *scene= CTX_data_scene(C);
 	KeyingSet *ks = NULL;
 	PropertyRNA *prop= NULL;
-	PointerRNA ptr;
+	PointerRNA ptr= {{0}};
 	char *path = NULL;
 	short success= 0;
 	int index=0, pflag=0;
@@ -322,7 +322,6 @@ static int add_keyingset_button_exec (bContext *C, wmOperator *op)
 		ks= BLI_findlink(&scene->keyingsets, scene->active_keyingset-1);
 	
 	/* try to add to keyingset using property retrieved from UI */
-	memset(&ptr, 0, sizeof(PointerRNA));
 	uiContextActiveProperty(C, &ptr, &prop, &index);
 	
 	/* check if property is able to be added */
@@ -387,7 +386,7 @@ static int remove_keyingset_button_exec (bContext *C, wmOperator *op)
 	Scene *scene= CTX_data_scene(C);
 	KeyingSet *ks = NULL;
 	PropertyRNA *prop= NULL;
-	PointerRNA ptr;
+	PointerRNA ptr= {{0}};
 	char *path = NULL;
 	short success= 0;
 	int index=0;
@@ -408,7 +407,6 @@ static int remove_keyingset_button_exec (bContext *C, wmOperator *op)
 		ks= BLI_findlink(&scene->keyingsets, scene->active_keyingset-1);
 	
 	/* try to add to keyingset using property retrieved from UI */
-	memset(&ptr, 0, sizeof(PointerRNA));
 	uiContextActiveProperty(C, &ptr, &prop, &index);
 
 	if (ptr.id.data && ptr.data && prop) {
@@ -605,7 +603,7 @@ void ANIM_keyingset_info_unregister (const bContext *C, KeyingSetInfo *ksi)
 
 /* --------------- */
 
-void ANIM_keyingset_infos_exit ()
+void ANIM_keyingset_infos_exit (void)
 {
 	KeyingSetInfo *ksi, *next;
 	
@@ -694,7 +692,7 @@ KeyingSet *ANIM_get_keyingset_for_autokeying(Scene *scene, const char *tranformK
 /* Menu of All Keying Sets ----------------------------- */
 
 /* Create (and show) a menu containing all the Keying Sets which can be used in the current context */
-void ANIM_keying_sets_menu_setup (bContext *C, char title[], char op_name[])
+void ANIM_keying_sets_menu_setup (bContext *C, const char title[], const char op_name[])
 {
 	Scene *scene= CTX_data_scene(C);
 	KeyingSet *ks;
@@ -702,14 +700,14 @@ void ANIM_keying_sets_menu_setup (bContext *C, char title[], char op_name[])
 	uiLayout *layout;
 	int i = 0;
 	
-	pup= uiPupMenuBegin(C, title, 0);
+	pup= uiPupMenuBegin(C, title, ICON_NULL);
 	layout= uiPupMenuLayout(pup);
 	
 	/* active Keying Set 
 	 *	- only include entry if it exists
 	 */
 	if (scene->active_keyingset) {
-		uiItemIntO(layout, "Active Keying Set", 0, op_name, "type", i++);
+		uiItemIntO(layout, "Active Keying Set", ICON_NULL, op_name, "type", i++);
 		uiItemS(layout);
 	}
 	else
@@ -721,7 +719,7 @@ void ANIM_keying_sets_menu_setup (bContext *C, char title[], char op_name[])
 	if (scene->keyingsets.first) {
 		for (ks= scene->keyingsets.first; ks; ks= ks->next) {
 			if (ANIM_keyingset_context_ok_poll(C, ks))
-				uiItemIntO(layout, ks->name, 0, op_name, "type", i++);
+				uiItemIntO(layout, ks->name, ICON_NULL, op_name, "type", i++);
 		}
 		uiItemS(layout);
 	}
@@ -731,7 +729,7 @@ void ANIM_keying_sets_menu_setup (bContext *C, char title[], char op_name[])
 	for (ks= builtin_keyingsets.first; ks; ks= ks->next) {
 		/* only show KeyingSet if context is suitable */
 		if (ANIM_keyingset_context_ok_poll(C, ks))
-			uiItemIntO(layout, ks->name, 0, op_name, "type", i--);
+			uiItemIntO(layout, ks->name, ICON_NULL, op_name, "type", i--);
 	}
 	
 	uiPupMenuEnd(C, pup);
@@ -820,6 +818,7 @@ void ANIM_relative_keyingset_add_source (ListBase *dsources, ID *id, StructRNA *
 int ANIM_apply_keyingset (bContext *C, ListBase *dsources, bAction *act, KeyingSet *ks, short mode, float cfra)
 {
 	Scene *scene= CTX_data_scene(C);
+	ReportList *reports = CTX_wm_reports(C);
 	KS_Path *ksp;
 	int kflag=0, success= 0;
 	char *groupname= NULL;
@@ -915,9 +914,9 @@ int ANIM_apply_keyingset (bContext *C, ListBase *dsources, bAction *act, KeyingS
 		for (; i < arraylen; i++) {
 			/* action to take depends on mode */
 			if (mode == MODIFYKEY_MODE_INSERT)
-				success += insert_keyframe(ksp->id, act, groupname, ksp->rna_path, i, cfra, kflag2);
+				success += insert_keyframe(reports, ksp->id, act, groupname, ksp->rna_path, i, cfra, kflag2);
 			else if (mode == MODIFYKEY_MODE_DELETE)
-				success += delete_keyframe(ksp->id, act, groupname, ksp->rna_path, i, cfra, kflag2);
+				success += delete_keyframe(reports, ksp->id, act, groupname, ksp->rna_path, i, cfra, kflag2);
 		}
 		
 		/* set recalc-flags */
@@ -927,7 +926,7 @@ int ANIM_apply_keyingset (bContext *C, ListBase *dsources, bAction *act, KeyingS
 				{
 					Object *ob= (Object *)ksp->id;
 					
-					ob->recalc |= OB_RECALC_ALL; // XXX: only object transforms only?
+					ob->recalc |= OB_RECALC_OB|OB_RECALC_DATA|OB_RECALC_TIME; // XXX: only object transforms only?
 				}
 					break;
 			}

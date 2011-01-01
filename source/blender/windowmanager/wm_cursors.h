@@ -1,5 +1,5 @@
 /**
- * $Id: wm_cursors.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: wm_cursors.h 33435 2010-12-03 01:52:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,7 +47,7 @@ enum {
 	CURSOR_STD, 
 	CURSOR_NONE,
 	CURSOR_PENCIL,
-	CURSOR_COPY,
+	CURSOR_COPY
 };
 
 

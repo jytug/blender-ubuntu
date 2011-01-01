@@ -1,5 +1,5 @@
 /**
- * $Id: KX_BlenderSceneConverter.h 31626 2010-08-28 02:07:55Z moguri $
+ * $Id: KX_BlenderSceneConverter.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -174,7 +174,7 @@ public:
 
 
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	PyObject *GetPyNamespace();
 #endif
 	

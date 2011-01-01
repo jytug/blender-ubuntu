@@ -1,5 +1,5 @@
 /**
- * $Id: KX_Light.h 27380 2010-03-10 07:41:16Z campbellbarton $
+ * $Id: KX_Light.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -69,7 +69,7 @@ public:
 
 	virtual int GetGameObjectType() { return OBJ_LIGHT; }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	/* attributes */
 	static PyObject*	pyattr_get_color(void* self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static int			pyattr_set_color(void* self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject* value);

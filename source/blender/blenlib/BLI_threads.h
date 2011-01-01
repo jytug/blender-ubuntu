@@ -1,6 +1,6 @@
 /*
  *
- * $Id: BLI_threads.h 28411 2010-04-25 10:49:13Z blendix $
+ * $Id: BLI_threads.h 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -121,7 +121,7 @@ void BLI_insert_work(struct ThreadedWorker *worker, void *param);
 
 typedef struct ThreadQueue ThreadQueue;
 
-ThreadQueue *BLI_thread_queue_init();
+ThreadQueue *BLI_thread_queue_init(void);
 void BLI_thread_queue_free(ThreadQueue *queue);
 
 void BLI_thread_queue_push(ThreadQueue *queue, void *work);

@@ -1,5 +1,5 @@
 /**
- * $Id: mball_edit.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: mball_edit.c 33753 2010-12-17 19:05:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -94,8 +94,6 @@ MetaElem *add_metaball_primitive(bContext *C, float mat[4][4], int type, int UNU
 	Object *obedit= CTX_data_edit_object(C);
 	MetaBall *mball = (MetaBall*)obedit->data;
 	MetaElem *ml;
-
-	if(!obedit) return NULL;
 
 	/* Deselect all existing metaelems */
 	ml= mball->editelems->first;
@@ -284,7 +282,7 @@ static int duplicate_metaelems_exec(bContext *C, wmOperator *UNUSED(op))
 			ml= ml->prev;
 		}
 		WM_event_add_notifier(C, NC_GEOM|ND_DATA, mb);
-		DAG_id_flush_update(obedit->data, OB_RECALC_DATA);
+		DAG_id_tag_update(obedit->data, OB_RECALC_DATA);
 	}
 
 	return OPERATOR_FINISHED;
@@ -343,7 +341,7 @@ static int delete_metaelems_exec(bContext *C, wmOperator *UNUSED(op))
 			ml= next;
 		}
 		WM_event_add_notifier(C, NC_GEOM|ND_DATA, mb);
-		DAG_id_flush_update(obedit->data, OB_RECALC_DATA);
+		DAG_id_tag_update(obedit->data, OB_RECALC_DATA);
 	}
 
 	return OPERATOR_FINISHED;
@@ -393,7 +391,7 @@ static int hide_metaelems_exec(bContext *C, wmOperator *op)
 			}
 		}
 		WM_event_add_notifier(C, NC_GEOM|ND_DATA, mb);
-		DAG_id_flush_update(obedit->data, OB_RECALC_DATA);
+		DAG_id_tag_update(obedit->data, OB_RECALC_DATA);
 	}
 
 	return OPERATOR_FINISHED;
@@ -434,7 +432,7 @@ static int reveal_metaelems_exec(bContext *C, wmOperator *UNUSED(op))
 			ml= ml->next;
 		}
 		WM_event_add_notifier(C, NC_GEOM|ND_DATA, mb);
-		DAG_id_flush_update(obedit->data, OB_RECALC_DATA);
+		DAG_id_tag_update(obedit->data, OB_RECALC_DATA);
 	}
 	
 	return OPERATOR_FINISHED;
@@ -623,7 +621,7 @@ static void *get_data(bContext *C)
 }
 
 /* this is undo system for MetaBalls */
-void undo_push_mball(bContext *C, char *name)
+void undo_push_mball(bContext *C, const char *name)
 {
 	undo_editmode_push(C, name, get_data, free_undoMball, undoMball_to_editMball, editMball_to_undoMball, NULL);
 }

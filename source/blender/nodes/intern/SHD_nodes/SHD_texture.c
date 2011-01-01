@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_texture.c 26958 2010-02-16 15:45:19Z blendix $
+ * $Id: SHD_texture.c 33038 2010-11-12 12:45:55Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -58,6 +58,7 @@ static void node_shader_exec_texture(void *data, bNode *node, bNodeStack **in, b
 		
 		/* we should find out if a normal as output is needed, for now we do all */
 		texres.nor= nor;
+		texres.tr= texres.tg= texres.tb= 0.0f;
 		
 		if(in[0]->hasinput) {
 			nodestack_get_vec(vec, SOCK_VECTOR, in[0]);

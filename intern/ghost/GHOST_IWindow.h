@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_IWindow.h 29143 2010-06-01 20:21:40Z damien78 $
+ * $Id: GHOST_IWindow.h 33536 2010-12-07 11:57:34Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -305,6 +305,11 @@ public:
 	 */
 	virtual GHOST_TSuccess setCursorGrab(GHOST_TGrabCursorMode mode, GHOST_Rect *bounds) { return GHOST_kSuccess; };
 
+#ifdef WITH_CXX_GUARDEDALLOC
+public:
+	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GHOST:GHOST_IWindow"); }
+	void operator delete( void *mem ) { MEM_freeN(mem); }
+#endif
 };
 
 #endif // _GHOST_IWINDOW_H_

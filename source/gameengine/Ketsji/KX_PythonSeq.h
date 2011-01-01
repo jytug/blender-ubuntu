@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PythonSeq.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: KX_PythonSeq.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,7 +31,7 @@
 #ifndef _adr_py_seq_h_				// only process once,
 #define _adr_py_seq_h_				// even if multiply included
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 #include "PyObjectPlus.h"
 
@@ -61,6 +61,6 @@ typedef struct {
 
 PyObject *KX_PythonSeq_CreatePyObject(PyObject *base, short type);
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 #endif // _adr_py_seq_h_

@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * filter.c
  *
- * $Id: filter.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: filter.c 33665 2010-12-14 18:02:41Z ton $
  */
 
 #include "BKE_utildefines.h"
@@ -371,11 +371,48 @@ void IMB_filter_extend(struct ImBuf *ibuf, char *mask)
 	}
 }
 
+/* threadsafe version, only recreates existing maps */
+void IMB_remakemipmap(ImBuf *ibuf, int use_filter)
+{
+	ImBuf *hbuf = ibuf;
+	int curmap = 0;
+	
+	ibuf->miptot= 1;
+	
+	while(curmap < IB_MIPMAP_LEVELS) {
+		
+		if(ibuf->mipmap[curmap]) {
+			
+			if(use_filter) {
+				ImBuf *nbuf= IMB_allocImBuf(hbuf->x, hbuf->y, 32, IB_rect);
+				IMB_filterN(nbuf, hbuf);
+				imb_onehalf_no_alloc(ibuf->mipmap[curmap], nbuf);
+				IMB_freeImBuf(nbuf);
+			}
+			else
+				imb_onehalf_no_alloc(ibuf->mipmap[curmap], hbuf);
+		}
+		
+		ibuf->miptot= curmap+2;
+		hbuf= ibuf->mipmap[curmap];
+		if(hbuf)
+			hbuf->miplevel= curmap+1;
+		
+		if(!hbuf || (hbuf->x <= 2 && hbuf->y <= 2))
+			break;
+		
+		curmap++;
+	}
+}
+
+/* frees too (if there) and recreates new data */
 void IMB_makemipmap(ImBuf *ibuf, int use_filter)
 {
 	ImBuf *hbuf = ibuf;
 	int curmap = 0;
 
+	imb_freemipmapImBuf(ibuf);
+	
 	ibuf->miptot= 1;
 
 	while(curmap < IB_MIPMAP_LEVELS) {

@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_blenlib.h 27901 2010-03-31 12:35:05Z campbellbarton $
+ * $Id: BLI_blenlib.h 32845 2010-11-03 01:56:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -56,7 +56,7 @@
  * - The blenlib uses type defines from makesdna/, and functions from
  * standard libraries.
  * 
- * $Id: BLI_blenlib.h 27901 2010-03-31 12:35:05Z campbellbarton $ 
+ * $Id: BLI_blenlib.h 32845 2010-11-03 01:56:02Z campbellbarton $ 
 */
 
 #ifndef BLI_BLENLIB_H
@@ -83,8 +83,6 @@ extern "C" {
 #include "BLI_fileops.h"
 
 #include "BLI_rect.h"
-
-#include "BLI_scanfill.h"
 
 #include "BLI_noise.h"
 

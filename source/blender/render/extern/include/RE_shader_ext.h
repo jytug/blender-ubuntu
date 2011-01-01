@@ -1,5 +1,5 @@
 /**
- * $Id: RE_shader_ext.h 32603 2010-10-19 16:10:30Z jhk $
+ * $Id: RE_shader_ext.h 33912 2010-12-27 19:26:38Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -189,7 +189,11 @@ typedef struct ShadeInput
 /* node shaders... */
 struct Tex;
 struct MTex;
+/* this one uses nodes */
 int	multitex_ext(struct Tex *tex, float *texvec, float *dxt, float *dyt, int osatex, struct TexResult *texres);
+/* nodes disabled */
+int multitex_ext_safe(struct Tex *tex, float *texvec, struct TexResult *texres);
+/* only for internal node usage */
 int multitex_nodes(struct Tex *tex, float *texvec, float *dxt, float *dyt, int osatex, struct TexResult *texres,
 	short thread, short which_output, struct ShadeInput *shi, struct MTex *mtex);
 

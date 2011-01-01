@@ -1,5 +1,5 @@
 /**
- * $Id: rna_image_api.c 32551 2010-10-18 06:41:16Z campbellbarton $
+ * $Id: rna_image_api.c 33124 2010-11-17 09:45:45Z campbellbarton $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -53,7 +53,7 @@
 
 #include "MEM_guardedalloc.h"
 
-static void rna_Image_save_render(Image *image, bContext *C, ReportList *reports, char *path, Scene *scene)
+static void rna_Image_save_render(Image *image, bContext *C, ReportList *reports, const char *path, Scene *scene)
 {
 	ImBuf *ibuf;
 
@@ -73,9 +73,17 @@ static void rna_Image_save_render(Image *image, bContext *C, ReportList *reports
 		if (ibuf == NULL) {
 			BKE_reportf(reports, RPT_ERROR, "Couldn't acquire buffer from image");
 		}
-
-		if (!BKE_write_ibuf(NULL, ibuf, path, scene->r.imtype, scene->r.subimtype, scene->r.quality)) {
-			BKE_reportf(reports, RPT_ERROR, "Couldn't write image: %s", path);
+		else {
+			/* temp swap out the color */
+			const unsigned char imb_depth_back= ibuf->depth;
+			const float dither_back= ibuf->dither; 
+			ibuf->depth= scene->r.planes;
+			ibuf->dither= scene->r.dither_intensity;
+			if (!BKE_write_ibuf(NULL, ibuf, path, scene->r.imtype, scene->r.subimtype, scene->r.quality)) {
+				BKE_reportf(reports, RPT_ERROR, "Couldn't write image: %s", path);
+			}
+			ibuf->depth= imb_depth_back;
+			ibuf->dither= dither_back;
 		}
 
 		BKE_image_release_ibuf(image, lock);

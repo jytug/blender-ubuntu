@@ -1,5 +1,5 @@
 /*
-* $Id: modifier.c 32462 2010-10-14 06:29:17Z campbellbarton $
+* $Id: modifier.c 33837 2010-12-21 15:10:09Z ton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -216,7 +216,7 @@ int modifier_sameTopology(ModifierData *md)
 	return ( mti->type == eModifierTypeType_OnlyDeform || mti->type == eModifierTypeType_Nonconstructive);
 }
 
-void modifier_setError(ModifierData *md, char *format, ...)
+void modifier_setError(ModifierData *md, const char *format, ...)
 {
 	char buffer[2048];
 	va_list ap;
@@ -236,7 +236,8 @@ void modifier_setError(ModifierData *md, char *format, ...)
  * there
  * 
  * also used in transform_conversion.c, to detect CrazySpace [tm] (2nd arg
- * then is NULL)
+ * then is NULL) 
+ * also used for some mesh tools to give warnings
  */
 int modifiers_getCageIndex(struct Scene *scene, Object *ob, int *lastPossibleCageIndex_r, int virtual_)
 {

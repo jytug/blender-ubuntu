@@ -1,5 +1,5 @@
 /**
-* $Id: GPG_ghost.cpp 32552 2010-10-18 06:52:10Z jesterking $
+* $Id: GPG_ghost.cpp 33829 2010-12-21 06:58:44Z moguri $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,6 +71,11 @@ extern "C"
 	
 extern char bprogname[];	/* holds a copy of argv[0], from creator.c */
 extern char btempdir[];		/* use this to store a valid temp directory */
+
+// For BLF
+#include "BLF_api.h"
+extern int datatoc_bfont_ttf_size;
+extern char datatoc_bfont_ttf[];
 
 #ifdef __cplusplus
 }
@@ -389,6 +394,11 @@ int main(int argc, char** argv)
 	GEN_init_messaging_system();
 
 	IMB_init();
+
+	// Setup builtin font for BLF (mostly copied from creator.c, wm_init_exit.c and interface_style.c)
+	BLF_init(11, U.dpi);
+	BLF_lang_init();
+	BLF_load_mem("default", (unsigned char*)datatoc_bfont_ttf, datatoc_bfont_ttf_size);
  
 	// Parse command line options
 #if defined(DEBUG)
@@ -822,8 +832,9 @@ int main(int argc, char** argv)
 						
 						BLI_strncpy(pathname, maggie->name, sizeof(pathname));
 						BLI_strncpy(G.main->name, maggie->name, sizeof(G.main->name));
+#ifdef WITH_PYTHON
 						setGamePythonPath(G.main->name);
-
+#endif
 						if (firstTimeRunning)
 						{
 							firstTimeRunning = false;
@@ -932,7 +943,12 @@ int main(int argc, char** argv)
 		}
 	}
 
-	free_nodesystem();
+	// Cleanup
+	RNA_exit();
+	BLF_exit();
+	free_blender();
+
+	SYS_DeleteSystem(syshandle);
 
 	return error ? -1 : 0;
 }

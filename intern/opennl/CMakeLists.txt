@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,12 +24,15 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC
+# External project, better not fix warnings.
+remove_strict_flags()
+
+set(INC
 	extern
 	superlu
 )
 
-SET(SRC
+set(SRC
 	intern/opennl.c
 	superlu/colamd.c
 	superlu/get_perm_c.c
@@ -62,6 +65,14 @@ SET(SRC
 	superlu/sutil.c
 	superlu/util.c
 	superlu/xerbla.c
+
+	extern/ONL_opennl.h
+	superlu/BLO_sys_types.h
+	superlu/Cnames.h
+	superlu/colamd.h
+	superlu/ssp_defs.h
+	superlu/supermatrix.h
+	superlu/util.h
 )
 
-BLENDERLIB(bf_intern_opennl "${SRC}" "${INC}")
+blender_add_lib(bf_intern_opennl "${SRC}" "${INC}")

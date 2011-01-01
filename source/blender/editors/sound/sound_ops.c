@@ -1,5 +1,5 @@
 /**
- * $Id: sound_ops.c 32536 2010-10-17 09:01:37Z nexyon $
+ * $Id: sound_ops.c 33868 2010-12-23 02:43:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -203,7 +203,7 @@ void SOUND_OT_pack(wmOperatorType *ot)
 /********************* unpack operator *********************/
 
 // XXX this function is in image_ops.c too, exactly the same, should be moved to a generally accessible position
-static void unpack_menu(bContext *C, char *opname, char *abs_name, char *folder, PackedFile *pf)
+static void unpack_menu(bContext *C, const char *opname, const char *abs_name, const char *folder, PackedFile *pf)
 {
 	uiPopupMenu *pup;
 	uiLayout *layout;
@@ -214,7 +214,7 @@ static void unpack_menu(bContext *C, char *opname, char *abs_name, char *folder,
 	BLI_splitdirstring(local_name, fi);
 	sprintf(local_name, "//%s/%s", folder, fi);
 
-	pup= uiPupMenuBegin(C, "Unpack file", 0);
+	pup= uiPupMenuBegin(C, "Unpack file", ICON_NULL);
 	layout= uiPupMenuLayout(pup);
 
 	uiItemEnumO(layout, opname, "Remove Pack", 0, "method", PF_REMOVE);
@@ -275,7 +275,7 @@ static int unpack_exec(bContext *C, wmOperator *op)
 	if(G.fileflags & G_AUTOPACK)
 		BKE_report(op->reports, RPT_WARNING, "AutoPack is enabled, so image will be packed again on file save.");
 
-	unpackSound(op->reports, sound, method);
+	unpackSound(CTX_data_main(C), op->reports, sound, method);
 
 	return OPERATOR_FINISHED;
 }

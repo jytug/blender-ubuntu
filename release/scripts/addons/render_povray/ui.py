@@ -23,6 +23,7 @@ import properties_render
 properties_render.RENDER_PT_render.COMPAT_ENGINES.add('POVRAY_RENDER')
 properties_render.RENDER_PT_dimensions.COMPAT_ENGINES.add('POVRAY_RENDER')
 properties_render.RENDER_PT_antialiasing.COMPAT_ENGINES.add('POVRAY_RENDER')
+properties_render.RENDER_PT_shading.COMPAT_ENGINES.add('POVRAY_RENDER')
 properties_render.RENDER_PT_output.COMPAT_ENGINES.add('POVRAY_RENDER')
 del properties_render
 
@@ -103,7 +104,7 @@ class MaterialButtonsPanel():
     def poll(cls, context):
         mat = context.material
         rd = context.scene.render
-        return (rd.use_game_engine == False) and (rd.engine in cls.COMPAT_ENGINES)
+        return mat and (rd.use_game_engine == False) and (rd.engine in cls.COMPAT_ENGINES)
 
 ########################################MR######################################
 class MATERIAL_PT_povray_mirrorIOR(MaterialButtonsPanel, bpy.types.Panel):
@@ -208,17 +209,17 @@ class MATERIAL_PT_povray_caustics(MaterialButtonsPanel, bpy.types.Panel):
 
             col = split.column()
             col.prop(mat, "pov_refraction_type")
-            if mat.pov_refraction_type=="0":
-                mat.pov_fake_caustics = False
-                mat.pov_photons_refraction = False
-                mat.pov_photons_reflection = True
-            elif mat.pov_refraction_type=="1":
-                mat.pov_fake_caustics = True
-                mat.pov_photons_refraction = False
+##            if mat.pov_refraction_type=="0":
+##                mat.pov_fake_caustics = False
+##                mat.pov_photons_refraction = False
+##                mat.pov_photons_reflection = True
+            if mat.pov_refraction_type=="1":
+##                mat.pov_fake_caustics = True
+##                mat.pov_photons_refraction = False
                 col.prop(mat, "pov_fake_caustics_power", slider=True)
             elif mat.pov_refraction_type=="2":
-                mat.pov_fake_caustics = False
-                mat.pov_photons_refraction = True
+##                mat.pov_fake_caustics = False
+##                mat.pov_photons_refraction = True
                 col.prop(mat, "pov_photons_dispersion", slider=True)
             col.prop(mat, "pov_photons_reflection")
                 
@@ -287,3 +288,20 @@ class RENDER_PT_povray_radiosity(RenderButtonsPanel, bpy.types.Panel):
 
             col = split.column()
             col.prop(scene, "pov_radio_always_sample")
+
+class RENDER_PT_povray_baking(RenderButtonsPanel, bpy.types.Panel):
+    bl_label = "Baking"
+    COMPAT_ENGINES = {'POVRAY_RENDER'}
+
+    def draw_header(self, context):
+        scene = context.scene
+
+        self.layout.prop(scene, "pov_baking_enable", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        rd = scene.render
+
+        layout.active = scene.pov_baking_enable

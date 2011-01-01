@@ -1,7 +1,7 @@
 /**
  * Actuator sensor
  *
- * $Id: SCA_ActuatorSensor.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SCA_ActuatorSensor.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -56,7 +56,7 @@ public:
 	virtual void	ReParent(SCA_IObject* parent);
 	void Update();
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* --------------------------------------------------------------------- */
 	/* Python interface ---------------------------------------------------- */
@@ -64,7 +64,7 @@ public:
 
 	static int CheckActuator(void *self, const PyAttributeDef*);
 	
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 };
 
 #endif

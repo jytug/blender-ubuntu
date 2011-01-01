@@ -1,7 +1,7 @@
 /**
  * Assign, change, copy properties
  *
- * $Id: SCA_PropertyActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_PropertyActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -217,7 +217,7 @@ void SCA_PropertyActuator::Relink(GEN_Map<GEN_HashedPtr, void*> *obj_map)
 	}
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */

@@ -3,7 +3,7 @@
  *
  * Curve stuff.
  *
- * $Id: DNA_curve_types.h 32037 2010-09-21 06:09:14Z campbellbarton $ 
+ * $Id: DNA_curve_types.h 33822 2010-12-20 19:47:16Z nazgul $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -63,8 +63,8 @@ typedef struct PathPoint {
 #
 #
 typedef struct Path {
-	int len;
 	struct PathPoint *data;
+	int len;
 	float totdist;
 } Path;
 
@@ -189,11 +189,11 @@ typedef struct Curve {
 	float rot[3];
 
 	short texflag, pad1; /* keep a short because of give_obdata_texspace() */
-
-	short drawflag, twist_mode,  pad[2];
+	short drawflag, twist_mode;
 	float twist_smooth, smallcaps_scale;
 
-	short pathlen, totcol;
+	int pathlen;
+	short pad, totcol;
 	short flag, bevresol;
 	float width, ext1, ext2;
 	
@@ -314,21 +314,21 @@ typedef enum eBezTriple_Handle {
 	HD_AUTO,
 	HD_VECT,
 	HD_ALIGN,
-	HD_AUTO_ANIM,	/* not real handle type, but is just used as dummy item for anim code */
+	HD_AUTO_ANIM	/* not real handle type, but is just used as dummy item for anim code */
 } eBezTriple_Handle;
 
 /* interpolation modes (used only for BezTriple->ipo) */
 typedef enum eBezTriple_Interpolation {
 	BEZT_IPO_CONST = 0,	/* constant interpolation */
 	BEZT_IPO_LIN,		/* linear interpolation */
-	BEZT_IPO_BEZ,		/* bezier interpolation */
+	BEZT_IPO_BEZ		/* bezier interpolation */
 } eBezTriple_Interpolation;
 
 /* types of keyframe (used only for BezTriple->hide when BezTriple is used in F-Curves) */
 typedef enum eBezTriple_KeyframeType {
 	BEZT_KEYTYPE_KEYFRAME = 0,	/* default - 'proper' Keyframe */
 	BEZT_KEYTYPE_EXTREME,		/* 'extreme' keyframe */
-	BEZT_KEYTYPE_BREAKDOWN,		/* 'breakdown' keyframe */
+	BEZT_KEYTYPE_BREAKDOWN		/* 'breakdown' keyframe */
 } eBezTriple_KeyframeType;
 
 /* checks if the given BezTriple is selected */

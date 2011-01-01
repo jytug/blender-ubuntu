@@ -1,7 +1,7 @@
 //
 // Replace the mesh for this actuator's parent
 //
-// $Id: KX_TrackToActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+// $Id: KX_TrackToActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -417,7 +417,7 @@ bool KX_TrackToActuator::Update(double curtime, bool frame)
 	return result;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -486,6 +486,6 @@ int KX_TrackToActuator::pyattr_set_object(void *self, const struct KX_PYATTRIBUT
 	return PY_SET_ATTR_SUCCESS;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

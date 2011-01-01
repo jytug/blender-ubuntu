@@ -1,7 +1,7 @@
 /**
 * Set scene/camera stuff
 *
-* $Id: KX_SceneActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+* $Id: KX_SceneActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -210,7 +210,7 @@ KX_Scene* KX_SceneActuator::FindScene(char * sceneName)
 }
 
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -283,6 +283,6 @@ int KX_SceneActuator::pyattr_set_camera(void *self, const struct KX_PYATTRIBUTE_
 	return PY_SET_ATTR_SUCCESS;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

@@ -1,7 +1,7 @@
 /*
  * allocimbuf.h
  *
- * $Id: IMB_allocimbuf.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: IMB_allocimbuf.h 33468 2010-12-04 13:00:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,15 +39,11 @@
 
 struct ImBuf;
 
-short imb_addrectImBuf(struct ImBuf * ibuf);
-short imb_addrectfloatImBuf(struct ImBuf * ibuf);
 short imb_addplanesImBuf(struct ImBuf *ibuf);
 
 short imb_addencodedbufferImBuf(struct ImBuf *ibuf);
 short imb_enlargeencodedbufferImBuf(struct ImBuf *ibuf);
 
-void imb_freerectImBuf(struct ImBuf *ibuf);
-void imb_freerectfloatImBuf(struct ImBuf *ibuf);
 void imb_freeplanesImBuf(struct ImBuf *ibuf);
 
 short imb_addcmapImBuf(struct ImBuf *ibuf);

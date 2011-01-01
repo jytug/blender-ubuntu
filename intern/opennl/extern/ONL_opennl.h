@@ -1,5 +1,5 @@
 /*
- *  $Id: ONL_opennl.h 12477 2007-11-04 22:00:24Z blendix $
+ *  $Id: ONL_opennl.h 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  *  OpenNL: Numerical Library
  *  Copyright (C) 2004 Bruno Levy
@@ -136,7 +136,7 @@ void nlMatrixMultiply(NLfloat *x, NLfloat *y);
 /* Solve */
 
 void nlPrintMatrix(void);
-NLboolean nlSolve();
+NLboolean nlSolve(void);
 NLboolean nlSolveAdvanced(NLint *permutation, NLboolean solveAgain);
 
 #ifdef __cplusplus

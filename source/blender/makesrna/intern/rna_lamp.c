@@ -1,5 +1,5 @@
 /**
- * $Id: rna_lamp.c 31742 2010-09-03 14:53:54Z campbellbarton $
+ * $Id: rna_lamp.c 33490 2010-12-05 18:59:23Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -105,7 +105,7 @@ static void rna_Lamp_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	Lamp *la= ptr->id.data;
 
-	DAG_id_flush_update(&la->id, 0);
+	DAG_id_tag_update(&la->id, 0);
 	if(scene->gm.matmode == GAME_MAT_GLSL)
 		WM_main_add_notifier(NC_LAMP|ND_LIGHTING_DRAW, la);
 	else
@@ -116,7 +116,7 @@ static void rna_Lamp_draw_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	Lamp *la= ptr->id.data;
 
-	DAG_id_flush_update(&la->id, 0);
+	DAG_id_tag_update(&la->id, 0);
 	WM_main_add_notifier(NC_LAMP|ND_LIGHTING_DRAW, la);
 }
 
@@ -124,7 +124,7 @@ static void rna_Lamp_sky_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	Lamp *la= ptr->id.data;
 
-	DAG_id_flush_update(&la->id, 0);
+	DAG_id_tag_update(&la->id, 0);
 	WM_main_add_notifier(NC_LAMP|ND_SKY, la);
 }
 

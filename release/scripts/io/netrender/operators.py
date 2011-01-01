@@ -26,6 +26,7 @@ import netrender
 from netrender.utils import *
 import netrender.client as client
 import netrender.model
+import netrender.versioning as versioning
 
 class RENDER_OT_netslave_bake(bpy.types.Operator):
     '''NEED DESCRIPTION'''
@@ -61,12 +62,9 @@ class RENDER_OT_netslave_bake(bpy.types.Operator):
                     modifier.point_cache.use_disk_cache = True
                     modifier.point_cache.use_external = False
                 elif modifier.type == "SMOKE" and modifier.smoke_type == "TYPE_DOMAIN":
-                    modifier.domain_settings.point_cache_low.use_step = 1
-                    modifier.domain_settings.point_cache_low.use_disk_cache = True
-                    modifier.domain_settings.point_cache_low.use_external = False
-                    modifier.domain_settings.point_cache_high.use_step = 1
-                    modifier.domain_settings.point_cache_high.use_disk_cache = True
-                    modifier.domain_settings.point_cache_high.use_external = False
+                    modifier.domain_settings.point_cache.use_step = 1
+                    modifier.domain_settings.point_cache.use_disk_cache = True
+                    modifier.domain_settings.point_cache.use_external = False
 
             # particles modifier are stupid and don't contain data
             # we have to go through the object property
@@ -354,7 +352,7 @@ class RENDER_OT_netclientcancel(bpy.types.Operator):
         if conn:
             job = netrender.jobs[netsettings.active_job_index]
 
-            conn.request("POST", cancelURL(job.id))
+            conn.request("POST", cancelURL(job.id), json.dumps({'clear':False}))
 
             response = conn.getresponse()
             response.read()
@@ -381,7 +379,7 @@ class RENDER_OT_netclientcancelall(bpy.types.Operator):
         conn = clientConnection(netsettings.server_address, netsettings.server_port, self.report)
 
         if conn:
-            conn.request("POST", "/clear")
+            conn.request("POST", "/clear", json.dumps({'clear':False}))
 
             response = conn.getresponse()
             response.read()
@@ -460,6 +458,38 @@ class netclientscan(bpy.types.Operator):
 
     def invoke(self, context, event):
         return self.execute(context)
+
+class netclientvcsguess(bpy.types.Operator):
+    '''Guess VCS setting for the current file'''
+    bl_idname = "render.netclientvcsguess"
+    bl_label = "VCS Guess"
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        netsettings = context.scene.network_render
+        
+        system = versioning.SYSTEMS.get(netsettings.vcs_system, None)
+        
+        if system:
+            wpath, name = os.path.split(os.path.abspath(bpy.data.filepath))
+            
+            rpath = system.path(wpath)
+            revision = system.revision(wpath)
+            
+            netsettings.vcs_wpath = wpath
+            netsettings.vcs_rpath = rpath
+            netsettings.vcs_revision = revision
+            
+        
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return self.execute(context)
+
 
 class netclientweb(bpy.types.Operator):
     '''Open new window with information about running rendering jobs'''

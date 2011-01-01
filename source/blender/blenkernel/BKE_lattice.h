@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_lattice.h 29762 2010-06-28 11:07:02Z nazgul $
+ * $Id: BKE_lattice.h 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,7 +39,7 @@ struct BPoint;
 struct MDeformVert;
 
 void resizelattice(struct Lattice *lt, int u, int v, int w, struct Object *ltOb);
-struct Lattice *add_lattice(char *name);
+struct Lattice *add_lattice(const char *name);
 struct Lattice *copy_lattice(struct Lattice *lt);
 void free_lattice(struct Lattice *lt);
 void make_local_lattice(struct Lattice *lt);

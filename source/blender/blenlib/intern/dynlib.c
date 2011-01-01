@@ -1,5 +1,5 @@
 /**
- * $Id: dynlib.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: dynlib.c 33456 2010-12-03 19:42:40Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -63,7 +63,7 @@ PILdynlib *PIL_dynlib_open(char *name) {
 	}
 }
 
-void *PIL_dynlib_find_symbol(PILdynlib* lib, char *symname) {
+void *PIL_dynlib_find_symbol(PILdynlib* lib, const char *symname) {
 	return GetProcAddress(lib->handle, symname);
 }
 
@@ -117,7 +117,7 @@ PILdynlib *PIL_dynlib_open(char *name) {
 	}
 }
 
-void *PIL_dynlib_find_symbol(PILdynlib* lib, char *symname) {
+void *PIL_dynlib_find_symbol(PILdynlib* lib, const char *symname) {
 	return dlsym(lib->handle, symname);
 }
 

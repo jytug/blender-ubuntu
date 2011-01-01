@@ -1,5 +1,5 @@
 /**
- * $Id: meshlaplacian.h 32404 2010-10-11 00:15:49Z campbellbarton $
+ * $Id: meshlaplacian.h 33468 2010-12-04 13:00:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -78,9 +78,7 @@ void rigid_deform_end(int cancel);
 
 /* Harmonic Coordinates */
 
-void mesh_deform_bind(struct Scene *scene,
-	struct MeshDeformModifierData *mmd,
-	float *vertexcos, int totvert, float cagemat[][4]);
+/* mesh_deform_bind(...) defined in ED_armature.h */
 
 #endif
 

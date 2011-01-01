@@ -1,5 +1,5 @@
 /**
- * $Id: interface_icons.c 32544 2010-10-18 00:25:32Z campbellbarton $
+ * $Id: interface_icons.c 33868 2010-12-23 02:43:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -455,7 +455,7 @@ static void vicon_move_down_draw(int x, int y, int w, int h, float UNUSED(alpha)
 	glDisable(GL_LINE_SMOOTH);
 }
 
-static void init_brush_icons()
+static void init_brush_icons(void)
 {
 
 #define INIT_BRUSH_ICON(icon_id, name)					     \
@@ -500,14 +500,14 @@ static void init_brush_icons()
 #undef INIT_BRUSH_ICON
 }
 
-static void init_internal_icons()
+static void init_internal_icons(void)
 {
 	bTheme *btheme= U.themes.first;
 	ImBuf *bbuf= NULL;
 	int x, y, icontype;
 	char iconfilestr[FILE_MAXDIR+FILE_MAXFILE];
 	
-	if ((btheme!=NULL) && (strlen(btheme->tui.iconfile) > 0)) {
+	if ((btheme!=NULL) && btheme->tui.iconfile[0]) {
 		char *datadir= BLI_get_folder(BLENDER_DATAFILES, NULL);
 		if (datadir) {
 			BLI_make_file_string("/", iconfilestr, datadir, btheme->tui.iconfile);
@@ -682,7 +682,7 @@ static void free_iconfile_list(struct ListBase *list)
 	}
 }
 
-int UI_iconfile_get_index(char *filename)
+int UI_iconfile_get_index(const char *filename)
 {
 	IconFile *ifile;
 	ListBase *list=&(iconfilelist);
@@ -731,7 +731,7 @@ void UI_icons_free_drawinfo(void *drawinfo)
 	}
 }
 
-static DrawInfo *icon_create_drawinfo()
+static DrawInfo *icon_create_drawinfo(void)
 {
 	DrawInfo *di = NULL;
 
@@ -748,7 +748,7 @@ int UI_icon_get_width(int icon_id)
 
 	icon = BKE_icon_get(icon_id);
 	
-	if (!icon) {
+	if (icon==ICON_NULL) {
 		if (G.f & G_DEBUG)
 			printf("UI_icon_get_width: Internal error, no icon for icon ID: %d\n", icon_id);
 		return 0;
@@ -773,7 +773,7 @@ int UI_icon_get_height(int icon_id)
 
 	icon = BKE_icon_get(icon_id);
 	
-	if (!icon) {
+	if (icon==ICON_NULL) {
 		if (G.f & G_DEBUG)
 			printf("UI_icon_get_height: Internal error, no icon for icon ID: %d\n", icon_id);
 		return 0;
@@ -949,7 +949,7 @@ static void icon_draw_size(float x, float y, int icon_id, float aspect, float al
 	
 	icon = BKE_icon_get(icon_id);
 	
-	if (!icon) {
+	if (icon==ICON_NULL) {
 		if (G.f & G_DEBUG)
 			printf("icon_draw_mipmap: Internal error, no icon for icon ID: %d\n", icon_id);
 		return;
@@ -1026,30 +1026,46 @@ static int ui_id_brush_get_icon(bContext *C, ID *id, int preview)
 		BKE_icon_getid(id);
 		ui_id_icon_render(C, id, preview);
 	}
-	else if(!id->icon_id) {
-		/* no icon found, reset it */
-		
-		/* this is not nice, should probably make
-		   brushes be strictly in one paint mode only
-		   to avoid this kind of thing */
+	else {
 		Object *ob = CTX_data_active_object(C);
 		EnumPropertyItem *items;
-		int tool;
-		
-		if(ob && (ob->mode & OB_MODE_SCULPT)) {
+		int tool, mode = 0;
+
+		/* this is not nice, should probably make brushes be
+		   strictly in one paint mode only to avoid checking
+		   object mode here */
+
+		if(ob) {
+			if(ob->mode & OB_MODE_SCULPT)
+				mode = OB_MODE_SCULPT;
+			else if(ob->mode & (OB_MODE_VERTEX_PAINT|OB_MODE_WEIGHT_PAINT))
+				mode = OB_MODE_VERTEX_PAINT;
+			else if(ob->mode & OB_MODE_TEXTURE_PAINT)
+				mode = OB_MODE_TEXTURE_PAINT;
+		}
+
+		/* check if cached icon is OK */
+		if(!mode || (id->icon_id && mode == br->icon_mode))
+			return id->icon_id;
+
+		br->icon_mode = mode;
+
+		/* reset the icon */
+		if(mode == OB_MODE_SCULPT) {
 			items = brush_sculpt_tool_items;
 			tool = br->sculpt_tool;
 		}
-		else if(ob && (ob->mode & (OB_MODE_VERTEX_PAINT|OB_MODE_WEIGHT_PAINT))) {
+		else if(mode == OB_MODE_VERTEX_PAINT) {
 			items = brush_vertexpaint_tool_items;
 			tool = br->vertexpaint_tool;
 		}
-		else {
+		else if(mode == OB_MODE_TEXTURE_PAINT) {
 			items = brush_imagepaint_tool_items;
 			tool = br->imagepaint_tool;
 		}
 
-		RNA_enum_icon_from_value(items, tool, &id->icon_id);
+		if(!RNA_enum_icon_from_value(items, tool, &id->icon_id))
+			id->icon_id = 0;
 	}
 
 	return id->icon_id;

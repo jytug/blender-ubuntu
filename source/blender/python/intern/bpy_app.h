@@ -1,5 +1,5 @@
 /**
- * $Id: bpy_app.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: bpy_app.h 33348 2010-11-27 02:39:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,5 +27,9 @@
 #include <Python.h>
 
 PyObject *BPY_app_struct( void );
+
+/* bpy_driver.c */
+int bpy_pydriver_create_dict(void);
+extern PyObject *bpy_pydriver_Dict;
 
 #endif

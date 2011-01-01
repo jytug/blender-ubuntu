@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_vectMath.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: SHD_vectMath.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -101,7 +101,7 @@ static void node_shader_exec_vect_math(void *UNUSED(data), bNode *node, bNodeSta
 
 static int gpu_shader_vect_math(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
 {
-	static char *names[] = {"vec_math_add", "vec_math_sub",
+	static const char *names[] = {"vec_math_add", "vec_math_sub",
 		"vec_math_average", "vec_math_dot", "vec_math_cross",
 		"vec_math_normalize"};
 

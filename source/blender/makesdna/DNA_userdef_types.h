@@ -1,7 +1,7 @@
 /**
  * blenkernel/DNA_userdef_types.h (mar-2001 nzc)
  *
- *	$Id: DNA_userdef_types.h 32309 2010-10-05 00:05:14Z jesterking $
+ *	$Id: DNA_userdef_types.h 33799 2010-12-20 03:59:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -88,6 +88,7 @@ typedef struct uiFontStyle {
 
 
 /* this is fed to the layout engine and widget code */
+
 typedef struct uiStyle {
 	struct uiStyle *next, *prev;
 	
@@ -158,13 +159,13 @@ typedef struct ThemeSpace {
 	/* main window colors */
 	char back[4];
 	char title[4];
-	char text[4];	
+	char text[4];
 	char text_hi[4];
 	
 	/* header colors */
 	char header[4];
 	char header_title[4];
-	char header_text[4];	
+	char header_text[4];
 	char header_text_hi[4];
 
 	/* button/tool regions */
@@ -176,7 +177,7 @@ typedef struct ThemeSpace {
 	/* listview regions */
 	char list[4];
 	char list_title[4];
-	char list_text[4];	
+	char list_text[4];
 	char list_text_hi[4];
 	
 	/* float panel */
@@ -199,6 +200,7 @@ typedef struct ThemeSpace {
 	char edge_seam[4], edge_sharp[4], edge_facesel[4], edge_crease[4];
 	char face[4], face_select[4];	// solid faces
 	char face_dot[4];				// selected color
+	char extra_edge_len[4], extra_face_angle[4], extra_face_area[4], pad3[4];
 	char normal[4];
 	char vertex_normal[4];
 	char bone_solid[4], bone_pose[4];
@@ -376,6 +378,9 @@ typedef struct UserDef {
 	
 	short autokey_mode;		/* autokeying mode */
 	short autokey_flag;		/* flags for autokeying */
+	
+	short text_render, pad9;		/*options for text rendering*/
+	float pad10;
 
 	struct ColorBand coba_weight;	/* from texture.h */
 
@@ -425,6 +430,7 @@ extern UserDef U; /* from blenkernel blender.c */
 #define USER_FILENOUI			(1 << 23)
 #define USER_NONEGFRAMES		(1 << 24)
 #define USER_TXT_TABSTOSPACES_DISABLE	(1 << 25)
+#define USER_TOOLTIPS_PYTHON    (1 << 26)
 
 /* helper macro for checking frame clamping */
 #define FRAMENUMBER_MIN_CLAMP(cfra) \
@@ -468,6 +474,8 @@ extern UserDef U; /* from blenkernel blender.c */
 #define USER_ZOOM_INVERT		(1 << 25)
 #define USER_ZOOM_DOLLY_HORIZ	(1 << 26)
 #define USER_SPLASH_DISABLE		(1 << 27)
+#define USER_HIDE_RECENT		(1 << 28)
+#define USER_SHOW_THUMBNAILS	(1 << 29)
 
 /* Auto-Keying mode */
 	/* AUTOKEY_ON is a bitflag */
@@ -527,6 +535,9 @@ extern UserDef U; /* from blenkernel blender.c */
 #define USER_DRAW_FULL			2
 #define USER_DRAW_AUTOMATIC		3
 #define USER_DRAW_OVERLAP_FLIP	4
+
+/* text draw options*/
+#define USER_TEXT_DISABLE_AA	(1 << 0)
 
 /* tw_flag (transform widget) */
 

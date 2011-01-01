@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_genfile.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: DNA_genfile.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,7 +45,7 @@ char *DNA_struct_get_compareflags(struct SDNA *sdna, struct SDNA *newsdna);
 void *DNA_struct_reconstruct(struct SDNA *newsdna, struct SDNA *oldsdna, char *compflags, int oldSDNAnr, int blocks, void *data);
 
 int DNA_elem_array_size(const char *astr, int len);
-int DNA_elem_offset(struct SDNA *sdna, char *stype, char *vartype, char *name);
+int DNA_elem_offset(struct SDNA *sdna, const char *stype, const char *vartype, const char *name);
 
 #endif
 

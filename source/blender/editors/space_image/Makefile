@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 31223 2010-08-10 21:22:26Z gsrb3d $
+# $Id: Makefile 33427 2010-12-02 17:30:28Z gsrb3d $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -41,6 +41,7 @@ CPPFLAGS += -I$(OPENGL_HEADERS)
 # not very neat....
 CPPFLAGS += -I../../windowmanager
 CPPFLAGS += -I../../blenkernel
+CPPFLAGS += -I../../blenfont
 CPPFLAGS += -I../../blenlib
 CPPFLAGS += -I../../makesdna
 CPPFLAGS += -I../../makesrna

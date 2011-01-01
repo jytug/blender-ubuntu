@@ -1,5 +1,5 @@
 /*
- * $Id: sculpt_undo.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: sculpt_undo.c 33725 2010-12-17 01:40:47Z nicholasbishop $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,6 +51,8 @@
 
 #include "WM_api.h"
 #include "WM_types.h"
+
+#include "GPU_buffers.h"
 
 #include "ED_sculpt.h"
 #include "paint_intern.h"
@@ -169,7 +171,10 @@ static void sculpt_undo_restore(bContext *C, ListBase *lb)
 			multires_mark_as_modified(ob);
 
 		if(ss->modifiers_active || ((Mesh*)ob->data)->id.us > 1)
-			DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
+			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
+
+		/* for non-PBVH drawing, need to recreate VBOs */
+		GPU_drawobject_free(ob->derivedFinal);
 	}
 }
 
@@ -274,7 +279,7 @@ SculptUndoNode *sculpt_undo_push_node(SculptSession *ss, PBVHNode *node)
 	return unode;
 }
 
-void sculpt_undo_push_begin(char *name)
+void sculpt_undo_push_begin(const char *name)
 {
 	undo_paint_push_begin(UNDO_PAINT_MESH, name,
 		sculpt_undo_restore, sculpt_undo_free);

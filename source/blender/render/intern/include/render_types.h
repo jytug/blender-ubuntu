@@ -1,5 +1,5 @@
 /**
- * $Id: render_types.h 32733 2010-10-27 10:36:22Z campbellbarton $
+ * $Id: render_types.h 33894 2010-12-26 17:47:17Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -244,7 +244,7 @@ struct Render
 	int (*test_break)(void *handle);
 	void *tbh;
 	
-	void (*error)(void *handle, char *str);
+	void (*error)(void *handle, const char *str);
 	void *erh;
 	
 	RenderStats i;
@@ -433,7 +433,9 @@ typedef struct StrandBuffer {
 	int overrideuv;
 	int flag, maxdepth;
 	float adaptcos, minwidth, widthfade;
-
+	
+	float maxwidth;	/* for cliptest of strands in blender unit */
+	
 	float winmat[4][4];
 	int winx, winy;
 } StrandBuffer;

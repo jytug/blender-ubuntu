@@ -1,5 +1,5 @@
 /**
- * $Id: GeometryExporter.cpp 32355 2010-10-06 20:40:16Z gsrb3d $
+ * $Id: GeometryExporter.cpp 33111 2010-11-16 22:27:31Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -62,6 +62,11 @@ void GeometryExporter::operator()(Object *ob)
 	std::string geom_id = get_geometry_id(ob);
 	std::vector<Normal> nor;
 	std::vector<Face> norind;
+
+	// Skip if linked geometry was already exported from another reference
+	if (exportedGeometry.find(geom_id) != exportedGeometry.end())
+		return;
+	exportedGeometry.insert(geom_id);
 
 	bool has_color = (bool)CustomData_has_layer(&me->fdata, CD_MCOL);
 

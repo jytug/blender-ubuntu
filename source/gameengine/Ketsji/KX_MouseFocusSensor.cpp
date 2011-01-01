@@ -1,5 +1,5 @@
 /**
- * $Id: KX_MouseFocusSensor.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
+ * $Id: KX_MouseFocusSensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -347,7 +347,7 @@ const MT_Vector2& KX_MouseFocusSensor::HitUV() const
 	return m_hitUV;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -442,7 +442,7 @@ PyObject* KX_MouseFocusSensor::pyattr_get_hit_uv(void *self_v, const KX_PYATTRIB
 	return PyObjectFrom(self->HitUV());
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */
 

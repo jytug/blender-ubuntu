@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_ILogicBrick.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_ILogicBrick.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -169,7 +169,7 @@ CValue* SCA_ILogicBrick::GetEvent()
 
 
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* python stuff */
 
@@ -253,4 +253,4 @@ PyObject* SCA_ILogicBrick::BoolToPyArg(bool boolarg)
 	return PyLong_FromSsize_t(boolarg? KX_TRUE: KX_FALSE);	
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

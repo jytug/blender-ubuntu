@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_OpenALDevice.cpp 31727 2010-09-02 21:56:08Z jesterking $
+ * $Id: AUD_OpenALDevice.cpp 33846 2010-12-22 10:51:34Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -128,13 +128,15 @@ void AUD_OpenALDevice::updateStreams()
 
 	ALint info;
 	AUD_DeviceSpecs specs = m_specs;
+	ALCenum cerr;
 
 	while(1)
 	{
 		lock();
 
 		alcSuspendContext(m_context);
-
+		cerr = alcGetError(m_device);
+		if(cerr == ALC_NO_ERROR)
 		{
 			// for all sounds
 			for(AUD_HandleIterator it = m_playingSounds->begin(); it != m_playingSounds->end(); it++)
@@ -253,12 +255,12 @@ void AUD_OpenALDevice::updateStreams()
 						alSourcePlay(sound->source);
 				}
 			}
+
+			alcProcessContext(m_context);
 		}
 
-		alcProcessContext(m_context);
-
 		// stop thread
-		if(m_playingSounds->empty())
+		if(m_playingSounds->empty() || (cerr != ALC_NO_ERROR))
 		{
 			unlock();
 			m_playing = false;

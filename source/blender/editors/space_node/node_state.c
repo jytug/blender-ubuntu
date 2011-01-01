@@ -1,5 +1,5 @@
 /**
- * $Id: node_state.c 32511 2010-10-16 08:03:28Z campbellbarton $
+ * $Id: node_state.c 33572 2010-12-09 16:50:32Z sirdude $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -295,6 +295,7 @@ void NODE_OT_view_all(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "View All";
 	ot->idname= "NODE_OT_view_all";
+	ot->description= "Resize view so you can see all nodes";
 	
 	/* api callbacks */
 	ot->exec= node_view_all_exec;

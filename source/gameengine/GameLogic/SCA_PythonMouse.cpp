@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_PythonMouse.cpp 31649 2010-08-30 00:18:50Z moguri $
+ * $Id: SCA_PythonMouse.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,20 +35,20 @@ SCA_PythonMouse::SCA_PythonMouse(SCA_IInputDevice* mouse, RAS_ICanvas* canvas)
 m_mouse(mouse),
 m_canvas(canvas)
 {
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	m_event_dict = PyDict_New();
 #endif
 }
 
 SCA_PythonMouse::~SCA_PythonMouse()
 {
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	PyDict_Clear(m_event_dict);
 	Py_DECREF(m_event_dict);
 #endif
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */

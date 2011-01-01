@@ -1,5 +1,5 @@
 /**
- * $Id: math_color.c 32463 2010-10-14 08:15:10Z campbellbarton $
+ * $Id: math_color.c 33799 2010-12-20 03:59:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -326,14 +326,14 @@ void cpack_to_rgb(unsigned int col, float *r, float *g, float *b)
 	*b /= 255.0f;
 }
 
-void rgb_byte_to_float(char *in, float *out)
+void rgb_byte_to_float(const unsigned char *in, float *out)
 {
 	out[0]= ((float)in[0]) / 255.0f;
 	out[1]= ((float)in[1]) / 255.0f;
 	out[2]= ((float)in[2]) / 255.0f;
 }
 
-void rgb_float_to_byte(float *in, char *out)
+void rgb_float_to_byte(const float *in, unsigned char *out)
 {
 	int r, g, b;
 	
@@ -448,7 +448,7 @@ void minmax_rgb(short c[])
 }
 
 /*If the requested RGB shade contains a negative weight for
-  one of the primaries, it lies outside the colour gamut 
+  one of the primaries, it lies outside the color gamut 
   accessible from the given triple of primaries.  Desaturate
   it by adding white, equal quantities of R, G, and B, enough
   to make RGB all positive.  The function returns 1 if the
@@ -511,7 +511,7 @@ void rgb_float_set_hue_float_offset(float rgb[3], float hue_offset)
 }
 
 /* Applies an hue offset to a byte rgb color */
-void rgb_byte_set_hue_float_offset(char rgb[3], float hue_offset)
+void rgb_byte_set_hue_float_offset(unsigned char rgb[3], float hue_offset)
 {
 	float rgb_float[3];
 	

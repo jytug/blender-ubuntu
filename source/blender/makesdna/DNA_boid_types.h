@@ -1,7 +1,7 @@
 /* DNA_particle_types.h
  *
  *
- * $Id: DNA_boid_types.h 31971 2010-09-16 20:06:10Z jhk $
+ * $Id: DNA_boid_types.h 33416 2010-12-01 15:58:45Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -104,6 +104,10 @@ typedef enum BoidMode {
 	eBoidMode_Liftoff,
 	NUM_BOID_MODES
 } BoidMode;
+
+
+/* XXX WARNING!!! */
+/* BoidData is NOT in DNA, it gets saved via write_data. Do not change struct */
 typedef struct BoidData {
 	float health, acc[3];
 	short state_id, mode;

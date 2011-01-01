@@ -1,4 +1,4 @@
-/* $Id: PyTypeList.h 19820 2009-04-20 15:06:46Z blendix $
+/* $Id: PyTypeList.h 33829 2010-12-21 06:58:44Z moguri $
 -----------------------------------------------------------------------------
 This source file is part of blendTex library
 
@@ -41,6 +41,9 @@ typedef std::vector<PyTypeListItem*> PyTypeListType;
 class PyTypeList
 {
 public:
+	/// destructor
+	~PyTypeList();
+
 	/// check, if type is in list
 	bool in (PyTypeObject * type);
 

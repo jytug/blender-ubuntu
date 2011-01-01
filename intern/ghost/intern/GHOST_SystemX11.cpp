@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_SystemX11.cpp 32332 2010-10-05 19:10:15Z campbellbarton $
+ * $Id: GHOST_SystemX11.cpp 32820 2010-11-01 22:26:56Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -68,7 +68,7 @@
 #include <cstdlib> // for exit
 
 #ifndef PREFIX
-#  define PREFIX "/usr/local"
+#error "PREFIX not defined"
 #endif
 
 typedef struct NDOFPlatformInfo {

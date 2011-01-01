@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_sdna.h (mar-2001 nzc)
  *	
- * $Id: DNA_sdna_types.h 30526 2010-07-20 10:41:08Z campbellbarton $ 
+ * $Id: DNA_sdna_types.h 33448 2010-12-03 17:05:21Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,7 +38,7 @@ typedef struct SDNA {
 	int datalen;		/* length of data */
 
 	int nr_names;		/* total number of struct members */
-	char **names;		/* struct member names */
+	const char **names;		/* struct member names */
 
 	int pointerlen;		/* size of a pointer in bytes */
 

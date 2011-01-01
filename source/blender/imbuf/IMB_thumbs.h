@@ -1,5 +1,5 @@
 /**
- * $Id: IMB_thumbs.h 29124 2010-06-01 13:06:13Z campbellbarton $ 
+ * $Id: IMB_thumbs.h 33442 2010-12-03 12:30:59Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -69,7 +69,7 @@ void IMB_thumb_delete(const char* path, ThumbSize size);
 ImBuf* IMB_thumb_manage(const char* path, ThumbSize size, ThumbSource source);
 
 /* create the necessary dirs to store the thumbnails */
-void IMB_thumb_makedirs();
+void IMB_thumb_makedirs(void);
 
 /* special function for loading a thumbnail embedded into a blend file */
 ImBuf *IMB_loadblend_thumb(const char *path);

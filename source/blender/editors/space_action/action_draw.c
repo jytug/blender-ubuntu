@@ -1,5 +1,5 @@
 /**
- * $Id: action_draw.c 32511 2010-10-16 08:03:28Z campbellbarton $
+ * $Id: action_draw.c 33799 2010-12-20 03:59:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -162,9 +162,9 @@ void draw_channel_strips(bAnimContext *ac, SpaceAction *saction, ARegion *ar)
 	float act_start, act_end, y;
 	int height, items;
 	
-	char col1[3], col2[3];
-	char col1a[3], col2a[3];
-	char col1b[3], col2b[3];
+	unsigned char col1[3], col2[3];
+	unsigned char col1a[3], col2a[3];
+	unsigned char col1b[3], col2b[3];
 	
 	
 	/* get theme colors */
@@ -228,7 +228,7 @@ void draw_channel_strips(bAnimContext *ac, SpaceAction *saction, ARegion *ar)
 					switch (ale->type) {
 						case ANIMTYPE_SUMMARY:
 						{
-							// FIXME: hardcoded colours - reddish color from NLA
+							// FIXME: hardcoded colors - reddish color from NLA
 							glColor4f(0.8f, 0.2f, 0.0f, 0.4f);
 						}
 							break;

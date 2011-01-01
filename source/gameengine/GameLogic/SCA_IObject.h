@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_IObject.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SCA_IObject.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +41,7 @@ class SCA_ISensor;
 class SCA_IController;
 class SCA_IActuator;
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 template<class T> T PyVecTo(PyObject*);
 #endif
 

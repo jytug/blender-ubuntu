@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_texture_types.h (mar-2001 nzc)
  *
- * $Id: DNA_texture_types.h 32309 2010-10-05 00:05:14Z jesterking $ 
+ * $Id: DNA_texture_types.h 33491 2010-12-05 23:14:48Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -224,7 +224,7 @@ typedef struct Tex {
 	float vn_mexp;
 	short vn_distm, vn_coltype;
 
-	short noisedepth, noisetype;
+	short noisedepth, noisetype; /* noisedepth MUST be <= 30 else we get floating point exceptions */
 
 	/* newnoise: noisebasis type for clouds/marble/etc, noisebasis2 only used for distorted noise */
 	short noisebasis, noisebasis2;
@@ -552,6 +552,8 @@ typedef struct TexMapping {
 #define TEX_VD_RAW_16BIT		2
 #define TEX_VD_IMAGE_SEQUENCE	3
 #define TEX_VD_SMOKE			4
+/* for voxels which use VoxelData->source_path */
+#define TEX_VD_IS_SOURCE_PATH(_format) (ELEM3(_format, TEX_VD_BLENDERVOXEL, TEX_VD_RAW_8BIT, TEX_VD_RAW_16BIT))
 
 /* smoke data types */
 #define TEX_VD_SMOKEDENSITY		0

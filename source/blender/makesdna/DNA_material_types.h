@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_material_types.h (mar-2001 nzc)
  *
- * $Id: DNA_material_types.h 26984 2010-02-17 10:21:07Z aligorith $ 
+ * $Id: DNA_material_types.h 33540 2010-12-07 12:58:25Z jhk $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -300,6 +300,7 @@ typedef struct Material {
 #define TEXCO_TANGENT	4096
 	/* still stored in vertex->accum, 1 D */
 #define TEXCO_STRAND	8192
+#define TEXCO_PARTICLE	8192 /* strand is used for normal materials, particle for halo materials */
 #define TEXCO_STRESS	16384
 #define TEXCO_SPEED		32768
 

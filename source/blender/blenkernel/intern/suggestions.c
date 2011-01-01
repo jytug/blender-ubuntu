@@ -1,5 +1,5 @@
 /**
- * $Id: suggestions.c 27642 2010-03-21 13:42:25Z campbellbarton $
+ * $Id: suggestions.c 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,7 +54,7 @@ static int txttl_cmp(const char *first, const char *second, int len) {
 	return cmp;
 }
 
-static void txttl_free_suggest() {
+static void txttl_free_suggest(void) {
 	SuggItem *item, *prev;
 	for (item = suggestions.last; item; item=prev) {
 		prev = item->prev;
@@ -66,7 +66,7 @@ static void txttl_free_suggest() {
 	suggestions.top = 0;
 }
 
-static void txttl_free_docs() {
+static void txttl_free_docs(void) {
 	if (documentation) {
 		MEM_freeN(documentation);
 		documentation = NULL;

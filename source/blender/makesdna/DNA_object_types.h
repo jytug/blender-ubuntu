@@ -3,7 +3,7 @@
  *	
  * Object is a sort of wrapper for general info.
  *
- * $Id: DNA_object_types.h 31636 2010-08-28 20:56:54Z ben2610 $ 
+ * $Id: DNA_object_types.h 33743 2010-12-17 15:51:42Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -437,7 +437,8 @@ extern Object workob;
 #define OB_RECALC_DATA		2
 		/* time flag is set when time changes need recalc, so baked systems can ignore it */
 #define OB_RECALC_TIME		4
-#define OB_RECALC_ALL		7
+		/* only use for matching any flag, NOT as an argument since more flags may be added. */
+#define OB_RECALC_ALL		(OB_RECALC_OB|OB_RECALC_DATA|OB_RECALC_TIME)
 
 /* controller state */
 #define OB_MAX_STATES		30
@@ -556,6 +557,9 @@ typedef enum ObjectMode {
 	OB_MODE_PARTICLE_EDIT = 32,
 	OB_MODE_POSE = 64
 } ObjectMode;
+
+/* any mode where the brush system is used */
+#define OB_MODE_ALL_PAINT (OB_MODE_SCULPT|OB_MODE_VERTEX_PAINT|OB_MODE_WEIGHT_PAINT|OB_MODE_TEXTURE_PAINT)
 
 #define MAX_DUPLI_RECUR 8
 

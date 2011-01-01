@@ -1,7 +1,7 @@
 //
 // Add an object when this actuator is triggered
 //
-// $Id: KX_SCA_AddObjectActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+// $Id: KX_SCA_AddObjectActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -159,7 +159,7 @@ void KX_SCA_AddObjectActuator::Relink(GEN_Map<GEN_HashedPtr, void*> *obj_map)
 	}
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -246,7 +246,7 @@ PyObject* KX_SCA_AddObjectActuator::PyInstantAddObject()
 	Py_RETURN_NONE;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 void	KX_SCA_AddObjectActuator::InstantAddObject()
 {

@@ -1,7 +1,7 @@
 /**
  * 'Xnor' together all inputs
  *
- * $Id: SCA_XNORController.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_XNORController.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -91,7 +91,7 @@ CValue* SCA_XNORController::GetReplica()
 	return replica;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -128,6 +128,6 @@ PyAttributeDef SCA_XNORController::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

@@ -1,5 +1,5 @@
 /* 
- * $Id: render_preview.c 32551 2010-10-18 06:41:16Z campbellbarton $
+ * $Id: render_preview.c 33811 2010-12-20 13:02:33Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,6 +49,7 @@
 #include "DNA_world_types.h"
 #include "DNA_camera_types.h"
 #include "DNA_material_types.h"
+#include "DNA_node_types.h"
 #include "DNA_object_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_space_types.h"
@@ -94,7 +95,7 @@
 #define PR_YMAX		195
 
 /* XXX */
-static int qtest() {return 0;}
+static int qtest(void) {return 0;}
 /* XXX */
 
 ImBuf* get_brush_icon(Brush *brush)
@@ -147,6 +148,9 @@ typedef struct ShaderPreview {
 	ID *id;
 	ID *parent;
 	MTex *slot;
+	
+	/* node materials need full copy during preview render, glsl uses it too */
+	Material *matcopy;
 	
 	int sizex, sizey;
 	unsigned int *pr_rect;
@@ -306,6 +310,32 @@ static Object *find_object(ListBase *lb, const char *name)
 	return ob;
 }
 
+static int preview_mat_has_sss(Material *mat, bNodeTree *ntree)
+{
+	if(mat) {
+		if(mat->sss_flag & MA_DIFF_SSS)
+			return 1;
+		if(mat->nodetree)
+			if( preview_mat_has_sss(NULL, mat->nodetree))
+				return 1;
+	}
+	else if(ntree) {
+		bNode *node;
+		for(node= ntree->nodes.first; node; node= node->next) {
+			if(node->type==NODE_GROUP && node->id) {
+				if( preview_mat_has_sss(NULL, (bNodeTree *)node->id))
+					return 1;
+			}
+			else if(node->id && ELEM(node->type, SH_NODE_MATERIAL, SH_NODE_MATERIAL_EXT)) {
+				mat= (Material *)node->id;
+				if(mat->sss_flag & MA_DIFF_SSS)
+					return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 /* call this with a pointer to initialize preview scene */
 /* call this with NULL to restore assigned ID pointers in preview scene */
 static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPreview *sp)
@@ -329,9 +359,9 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 		
 		sce->r.color_mgt_flag = scene->r.color_mgt_flag;
 		/* exception: don't color manage texture previews or icons */
-		if((sp && sp->pr_method==PR_ICON_RENDER) || id_type == ID_TE)
+		if((id && sp->pr_method==PR_ICON_RENDER) || id_type == ID_TE)
 			sce->r.color_mgt_flag &= ~R_COLOR_MANAGEMENT;
-		if((sp && sp->pr_method==PR_ICON_RENDER) && id_type != ID_WO)
+		if((id && sp->pr_method==PR_ICON_RENDER) && id_type != ID_WO)
 			sce->r.alphamode= R_ALPHAPREMUL;
 		else
 			sce->r.alphamode= R_ADDSKY;
@@ -340,9 +370,14 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 		strcpy(sce->r.engine, scene->r.engine);
 		
 		if(id_type==ID_MA) {
-			Material *mat= (Material *)id;
+			Material *mat= NULL, *origmat= (Material *)id;
 			
 			if(id) {
+				/* work on a copy */
+				mat= localize_material(origmat);
+				sp->matcopy= mat;
+				BLI_addtail(&pr_main->mat, mat);
+				
 				init_render_material(mat, 0, NULL);		/* call that retrieves mode_l */
 				end_render_material(mat);
 				
@@ -353,7 +388,7 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 					sce->r.mode |= R_RAYTRACE;
 				if((mat->mode_l & MA_RAYTRANSP) && (mat->mode_l & MA_TRANSP))
 					sce->r.mode |= R_RAYTRACE;
-				if(mat->sss_flag & MA_DIFF_SSS)
+				if(preview_mat_has_sss(mat, NULL))
 					sce->r.mode |= R_SSS;
 				
 				/* turn off fake shadows if needed */
@@ -384,7 +419,7 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 				}
 
 				
-				if(sp && sp->pr_method==PR_ICON_RENDER) {
+				if(sp->pr_method==PR_ICON_RENDER) {
 					if (mat->material_type == MA_TYPE_HALO) {
 						sce->lay= 1<<MA_FLAT;
 					} 
@@ -394,12 +429,16 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 				}
 				else {
 					sce->lay= 1<<mat->pr_type;
-					if(mat->nodetree && sp->pr_method==PR_NODE_RENDER)
+					if(mat->nodetree && sp->pr_method==PR_NODE_RENDER) {
+						/* two previews, they get copied by wmJob */
 						ntreeInitPreview(mat->nodetree, sp->sizex, sp->sizey);
+						ntreeInitPreview(origmat->nodetree, sp->sizex, sp->sizey);
+					}
 				}
 			}
 			else {
 				sce->r.mode &= ~(R_OSA|R_RAYTRACE|R_SSS);
+				
 			}
 			
 			for(base= sce->base.first; base; base= base->next) {
@@ -428,7 +467,7 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 					if(mat && mat->mtex[0]) {
 						mat->mtex[0]->tex= tex;
 						
-						if(sp && sp->slot)
+						if(tex && sp->slot)
 							mat->mtex[0]->which_output = sp->slot->which_output;
 						
 						/* show alpha in this case */
@@ -444,7 +483,7 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 				}
 			}
 
-			if(tex && tex->nodetree && sp && sp->pr_method==PR_NODE_RENDER)
+			if(tex && tex->nodetree && sp->pr_method==PR_NODE_RENDER)
 				ntreeInitPreview(tex->nodetree, sp->sizex, sp->sizey);
 		}
 		else if(id_type==ID_LA) {
@@ -487,16 +526,16 @@ static int ed_preview_draw_rect(ScrArea *sa, Scene *sce, ID *id, int split, int 
 	Render *re;
 	RenderResult rres;
 	char name[32];
-	int gamma_correct=0;
+	int do_gamma_correct=0;
 	int offx=0, newx= rect->xmax-rect->xmin, newy= rect->ymax-rect->ymin;
 
 	if (id && GS(id->name) != ID_TE) {
 		/* exception: don't color manage texture previews - show the raw values */
-		if (sce) gamma_correct = sce->r.color_mgt_flag & R_COLOR_MANAGEMENT;
+		if (sce) do_gamma_correct = sce->r.color_mgt_flag & R_COLOR_MANAGEMENT;
 	}
 
-	if(!split || first) sprintf(name, "Preview %p", sa);
-	else sprintf(name, "SecondPreview %p", sa);
+	if(!split || first) sprintf(name, "Preview %p", (void *)sa);
+	else sprintf(name, "SecondPreview %p", (void *)sa);
 
 	if(split) {
 		if(first) {
@@ -518,7 +557,7 @@ static int ed_preview_draw_rect(ScrArea *sa, Scene *sce, ID *id, int split, int 
 			newrect->xmax= MAX2(newrect->xmax, rect->xmin + rres.rectx + offx);
 			newrect->ymax= MAX2(newrect->ymax, rect->ymin + rres.recty);
 
-			glaDrawPixelsSafe_to32(rect->xmin+offx, rect->ymin, rres.rectx, rres.recty, rres.rectx, rres.rectf, gamma_correct);
+			glaDrawPixelsSafe_to32(rect->xmin+offx, rect->ymin, rres.rectx, rres.recty, rres.rectx, rres.rectf, do_gamma_correct);
 
 			RE_ReleaseResultImage(re);
 			return 1;
@@ -736,7 +775,7 @@ void BIF_view3d_previewrender(Main *bmain, Scene *scene, ScrArea *sa)
 		
 		ri->status= 0;
 		
-		sprintf(name, "View3dPreview %p", sa);
+		sprintf(name, "View3dPreview %p", (void *)sa);
 		re= ri->re= RE_NewRender(name);
 		//RE_display_draw_cb(re, view3d_previewrender_progress);
 		//RE_stats_draw_cb(re, view3d_previewrender_stats);
@@ -903,10 +942,16 @@ static int shader_preview_break(void *spv)
 }
 
 /* outside thread, called before redraw notifiers, it moves finished preview over */
-static void shader_preview_updatejob(void *UNUSED(spv))
+static void shader_preview_updatejob(void *spv)
 {
-//	ShaderPreview *sp= spv;
+	ShaderPreview *sp= spv;
 	
+	if(sp->id && GS(sp->id->name) == ID_MA) {
+		Material *mat= (Material *)sp->id;
+		
+		if(sp->matcopy && mat->nodetree && sp->matcopy->nodetree)
+			ntreeLocalSync(sp->matcopy->nodetree, mat->nodetree);
+	}
 }
 
 static void shader_preview_render(ShaderPreview *sp, ID *id, int split, int first)
@@ -970,7 +1015,7 @@ static void shader_preview_render(ShaderPreview *sp, ID *id, int split, int firs
 		((Camera *)sce->camera->data)->lens *= (float)sp->sizey/(float)sizex;
 
 	/* entire cycle for render engine */
-	RE_PreviewRender(re, G.main, sce);
+	RE_PreviewRender(re, pr_main, sce);
 
 	((Camera *)sce->camera->data)->lens= oldlens;
 
@@ -987,7 +1032,7 @@ static void shader_preview_render(ShaderPreview *sp, ID *id, int split, int firs
 	}
 
 	/* unassign the pointers, reset vars */
-	preview_prepare_scene(sp->scene, NULL, GS(id->name), NULL);
+	preview_prepare_scene(sp->scene, NULL, GS(id->name), sp);
 }
 
 /* runs inside thread for material and icons */
@@ -1011,6 +1056,16 @@ static void shader_preview_startjob(void *customdata, short *stop, short *do_upd
 static void shader_preview_free(void *customdata)
 {
 	ShaderPreview *sp= customdata;
+	
+	if(sp->matcopy) {
+		/* node previews */
+		shader_preview_updatejob(sp);
+		
+		/* get rid of copied material */
+		BLI_remlink(&pr_main->mat, sp->matcopy);
+		free_material(sp->matcopy);
+		MEM_freeN(sp->matcopy);
+	}
 	
 	MEM_freeN(sp);
 }
@@ -1085,14 +1140,13 @@ static void icon_preview_startjob(void *customdata, short *stop, short *do_updat
 	if(idtype == ID_IM) {
 		Image *ima= (Image*)id;
 		ImBuf *ibuf= NULL;
-		ImageUser iuser;
+		ImageUser iuser= {0};
 
 		/* ima->ok is zero when Image cannot load */
 		if(ima==NULL || ima->ok==0)
 			return;
 
 		/* setup dummy image user */
-		memset(&iuser, 0, sizeof(ImageUser));
 		iuser.ok= iuser.framenr= 1;
 		iuser.scene= sp->scene;
 		

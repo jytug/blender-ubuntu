@@ -1,5 +1,5 @@
 /**
- * $Id: screen_ops.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: screen_ops.c 33868 2010-12-23 02:43:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,6 +54,7 @@
 #include "WM_types.h"
 
 #include "ED_util.h"
+#include "ED_image.h"
 #include "ED_screen.h"
 #include "ED_object.h"
 #include "ED_armature.h"
@@ -64,6 +65,7 @@
 #include "RNA_define.h"
 
 #include "UI_interface.h"
+#include "UI_resources.h"
 
 #include "wm_window.h"
 
@@ -116,6 +118,24 @@ int ED_operator_scene_editable(bContext *C)
 	return 0;
 }
 
+int ED_operator_objectmode(bContext *C)
+{
+	Scene *scene= CTX_data_scene(C);
+	Object *obact= CTX_data_active_object(C);
+
+	if(scene==NULL || scene->id.lib)
+		return 0;
+	if( CTX_data_edit_object(C) )
+		return 0;
+	
+	/* add a check for ob->mode too? */
+	if(obact && obact->mode)
+		return 0;
+	
+	return 1;
+}
+
+
 static int ed_spacetype_test(bContext *C, int type)
 {
 	if(ED_operator_areaactive(C)) {
@@ -132,15 +152,24 @@ int ED_operator_view3d_active(bContext *C)
 
 int ED_operator_region_view3d_active(bContext *C)
 {
-#if 0 // correct but messes up poll() for menu items.
 	if(CTX_wm_region_view3d(C))
 		return TRUE;
-#else
-	if(ed_spacetype_test(C, SPACE_VIEW3D))
-		return TRUE;
-#endif
+
 	CTX_wm_operator_poll_msg_set(C, "expected a view3d region");
 	return FALSE;	
+}
+
+/* generic for any view2d which uses anim_ops */
+int ED_operator_animview_active(bContext *C)
+{
+	if(ED_operator_areaactive(C)) {
+		SpaceLink *sl= (SpaceLink *)CTX_wm_space_data(C);
+		if (sl && (ELEM6(sl->spacetype, SPACE_SEQ, SPACE_SOUND, SPACE_ACTION, SPACE_NLA, SPACE_IPO, SPACE_TIME)))
+			return TRUE;
+	}
+
+	CTX_wm_operator_poll_msg_set(C, "expected an timeline/animation area to be active");
+	return 0;
 }
 
 int ED_operator_timeline_active(bContext *C)
@@ -217,6 +246,17 @@ int ED_operator_logic_active(bContext *C)
 	return ed_spacetype_test(C, SPACE_LOGIC);
 }
 
+int ED_operator_info_active(bContext *C)
+{
+	return ed_spacetype_test(C, SPACE_INFO);
+}
+
+
+int ED_operator_console_active(bContext *C)
+{
+	return ed_spacetype_test(C, SPACE_CONSOLE);
+}
+
 int ED_operator_object_active(bContext *C)
 {
 	Object *ob = ED_object_active_context(C);
@@ -227,6 +267,12 @@ int ED_operator_object_active_editable(bContext *C)
 {
 	Object *ob = ED_object_active_context(C);
 	return ((ob != NULL) && !(ob->id.lib) && !(ob->restrictflag & OB_RESTRICT_VIEW));
+}
+
+int ED_operator_object_active_editable_mesh(bContext *C)
+{
+	Object *ob = ED_object_active_context(C);
+	return ((ob != NULL) && !(ob->id.lib) && !(ob->restrictflag & OB_RESTRICT_VIEW) && ob->type == OB_MESH);
 }
 
 int ED_operator_editmesh(bContext *C)
@@ -263,7 +309,7 @@ int ED_operator_posemode(bContext *C)
 {
 	Object *obact= CTX_data_active_object(C);
 
-	if ((obact != CTX_data_edit_object(C))) {
+	if (obact && !(obact->mode & OB_MODE_EDIT)) {
 		Object *obpose;
 		if((obpose= ED_object_pose_armature(obact))) {
 			if((obact == obpose) || (obact->mode & OB_MODE_WEIGHT_PAINT)) {
@@ -275,23 +321,12 @@ int ED_operator_posemode(bContext *C)
 	return 0;
 }
 
-
+/* wrapper for ED_space_image_show_uvedit */
 int ED_operator_uvedit(bContext *C)
 {
+	SpaceImage *sima= CTX_wm_space_image(C);
 	Object *obedit= CTX_data_edit_object(C);
-	EditMesh *em= NULL;
-	
-	if(obedit && obedit->type==OB_MESH)
-		em= BKE_mesh_get_editmesh((Mesh *)obedit->data);
-	
-	if(em && (em->faces.first) && (CustomData_has_layer(&em->fdata, CD_MTFACE))) {
-		BKE_mesh_end_editmesh(obedit->data, em);
-		return 1;
-	}
-	
-	if(obedit)
-		BKE_mesh_end_editmesh(obedit->data, em);
-	return 0;
+	return ED_space_image_show_uvedit(sima, obedit);
 }
 
 int ED_operator_uvmap(bContext *C)
@@ -320,6 +355,14 @@ int ED_operator_editsurfcurve(bContext *C)
 	return 0;
 }
 
+int ED_operator_editsurfcurve_region_view3d(bContext *C)
+{
+	if(ED_operator_editsurfcurve(C) && CTX_wm_region_view3d(C))
+		return 1;
+
+	CTX_wm_operator_poll_msg_set(C, "expected a view3d region & editcurve");
+	return 0;
+}
 
 int ED_operator_editcurve(bContext *C)
 {
@@ -1611,6 +1654,7 @@ static int keyframe_jump_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene= CTX_data_scene(C);
 	Object *ob= CTX_data_active_object(C);
+	bDopeSheet ads= {0};
 	DLRBT_Tree keys;
 	ActKeyColumn *ak;
 	float cfra= (scene)? (float)(CFRA) : 0.0f;
@@ -1625,10 +1669,10 @@ static int keyframe_jump_exec(bContext *C, wmOperator *op)
 	BLI_dlrbTree_init(&keys);
 	
 	/* populate tree with keyframe nodes */
-	if (scene && scene->adt)
-		scene_to_keylist(NULL, scene, &keys, NULL);
-	if (ob && ob->adt)
-		ob_to_keylist(NULL, ob, &keys, NULL);
+	if (scene)
+		scene_to_keylist(&ads, scene, &keys, NULL);
+	if (ob)
+		ob_to_keylist(&ads, ob, &keys, NULL);
 	
 	/* build linked-list for searching */
 	BLI_dlrbTree_linkedlist_sync(&keys);
@@ -1692,6 +1736,10 @@ static int screen_set_exec(bContext *C, wmOperator *op)
 	ScrArea *sa= CTX_wm_area(C);
 	int tot= BLI_countlist(&CTX_data_main(C)->screen);
 	int delta= RNA_int_get(op->ptr, "delta");
+	
+	/* temp screens are for userpref or render display */
+	if(screen->temp)
+		return OPERATOR_CANCELLED;
 	
 	/* return to previous state before switching screens */
 	if(sa && sa->full)
@@ -2084,11 +2132,11 @@ static int repeat_history_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(ev
 	if(items==0)
 		return OPERATOR_CANCELLED;
 	
-	pup= uiPupMenuBegin(C, op->type->name, 0);
+	pup= uiPupMenuBegin(C, op->type->name, ICON_NULL);
 	layout= uiPupMenuLayout(pup);
 	
 	for (i=items-1, lastop= wm->operators.last; lastop; lastop= lastop->prev, i--)
-		uiItemIntO(layout, lastop->type->name, 0, op->type->idname, "index", i);
+		uiItemIntO(layout, lastop->type->name, ICON_NULL, op->type->idname, "index", i);
 	
 	uiPupMenuEnd(C, pup);
 	
@@ -2248,7 +2296,7 @@ static void SCREEN_OT_region_quadview(wmOperatorType *ot)
 	/* api callbacks */
 	//	ot->invoke= WM_operator_confirm;
 	ot->exec= region_quadview_exec;
-	ot->poll= ED_operator_areaactive;
+	ot->poll= ED_operator_region_view3d_active;
 	ot->flag= 0;
 }
 
@@ -2356,23 +2404,23 @@ static int header_toolbox_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *U
 	uiPopupMenu *pup;
 	uiLayout *layout;
 	
-	pup= uiPupMenuBegin(C, "Header", 0);
+	pup= uiPupMenuBegin(C, "Header", ICON_NULL);
 	layout= uiPupMenuLayout(pup);
 	
 	// XXX SCREEN_OT_region_flip doesn't work - gets wrong context for active region, so added custom operator
 	if (ar->alignment == RGN_ALIGN_TOP)
-		uiItemO(layout, "Flip to Bottom", 0, "SCREEN_OT_header_flip");	
+		uiItemO(layout, "Flip to Bottom", ICON_NULL, "SCREEN_OT_header_flip");
 	else
-		uiItemO(layout, "Flip to Top", 0, "SCREEN_OT_header_flip");
+		uiItemO(layout, "Flip to Top", ICON_NULL, "SCREEN_OT_header_flip");
 	
 	uiItemS(layout);
 	
 	/* file browser should be fullscreen all the time, but other regions can be maximised/restored... */
 	if (sa->spacetype != SPACE_FILE) {
 		if (sa->full) 
-			uiItemO(layout, "Tile Area", 0, "SCREEN_OT_screen_full_area");
+			uiItemO(layout, "Tile Area", ICON_NULL, "SCREEN_OT_screen_full_area");
 		else
-			uiItemO(layout, "Maximize Area", 0, "SCREEN_OT_screen_full_area");
+			uiItemO(layout, "Maximize Area", ICON_NULL, "SCREEN_OT_screen_full_area");
 	}
 	
 	uiPupMenuEnd(C, pup);
@@ -2547,7 +2595,7 @@ static int screen_animation_step(bContext *C, wmOperator *UNUSED(op), wmEvent *e
 			sound_seek_scene(C);
 		
 		/* since we follow drawflags, we can't send notifier but tag regions ourselves */
-		ED_update_for_newframe(C, 1);
+		ED_update_for_newframe(CTX_data_main(C), scene, screen, 1);
 		
 		for (sa= screen->areabase.first; sa; sa= sa->next) {
 			ARegion *ar;
@@ -2802,7 +2850,6 @@ static void SCREEN_OT_back_to_previous(struct wmOperatorType *ot)
 
 static int userpref_show_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *event)
 {
-	ScrArea *sa;
 	rcti rect;
 	int sizex, sizey;
 	
@@ -2817,9 +2864,6 @@ static int userpref_show_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *ev
 	
 	/* changes context! */
 	WM_window_open_temp(C, &rect, WM_WINDOW_USERPREFS);
-	
-	sa= CTX_wm_area(C);
-	
 	
 	return OPERATOR_FINISHED;
 }
@@ -2962,6 +3006,7 @@ void SCENE_OT_delete(wmOperatorType *ot)
 
 /* ****************  Assigning operatortypes to global list, adding handlers **************** */
 
+
 /* called in spacetypes.c */
 void ED_operatortypes_screen(void)
 {
@@ -3035,9 +3080,27 @@ static void keymap_modal_set(wmKeyConfig *keyconf)
 	
 }
 
+static int open_file_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
+{
+	if(drag->type==WM_DRAG_PATH) {
+		if(drag->icon==ICON_FILE_BLEND)
+		   return 1;
+	}
+	return 0;
+}
+
+static void open_file_drop_copy(wmDrag *drag, wmDropBox *drop)
+{
+	/* copy drag path to properties */
+	RNA_string_set(drop->ptr, "filepath", drag->path);
+	drop->opcontext= WM_OP_EXEC_DEFAULT;
+}
+
+
 /* called in spacetypes.c */
 void ED_keymap_screen(wmKeyConfig *keyconf)
 {
+	ListBase *lb;
 	wmKeyMap *keymap;
 	//wmKeyMapItem *kmi;
 	
@@ -3151,6 +3214,10 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "SCREEN_OT_animation_play", DOWNARROWKEY, KM_PRESS, KM_ALT, 0);
 #endif
 
+	/* dropbox for entire window */
+	lb= WM_dropboxmap_find("Window", 0, 0);
+	WM_dropbox_add(lb, "WM_OT_open_mainfile", open_file_drop_poll, open_file_drop_copy);
+	
 	keymap_modal_set(keyconf);
 }
 

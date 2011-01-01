@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_image_types.h (mar-2001 nzc)
  *
- * $Id: DNA_image_types.h 30889 2010-07-30 06:09:23Z campbellbarton $ 
+ * $Id: DNA_image_types.h 33204 2010-11-21 03:45:35Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,16 +44,20 @@ struct GPUTexture;
 /* ImageUser is in Texture, in Nodes, Background Image, Image Window, .... */
 /* should be used in conjunction with an ID * to Image. */
 typedef struct ImageUser {
+	struct Scene *scene;		/* to retrieve render result */
+
 	int framenr;				/* movies, sequences: current to display */
 	int frames;					/* total amount of frames to use */
 	int offset, sfra;			/* offset within movie, start frame in global time */
-	short fie_ima, cycl;		/* fields/image in movie, cyclic flag */
-	short flag, ok;
-	
+	char fie_ima, cycl;		/* fields/image in movie, cyclic flag */
+	char ok, pad;
+
 	short multi_index, layer, pass;	 /* listbase indices, for menu browsing or retrieve buffer */
-	short menunr;					/* localized menu entry, for handling browse event */
+
+	short flag;
 	
-	struct Scene *scene;		/* to retrieve render result */
+	int pad2;
+
 } ImageUser;
 
 /* iuser->flag */

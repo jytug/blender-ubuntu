@@ -1,5 +1,5 @@
 /*
- * $Id: SYS_SingletonSystem.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SYS_SingletonSystem.h 33157 2010-11-18 12:54:05Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,7 +33,6 @@
 
 #include "GEN_Map.h"
 #include "STR_HashedString.h"
-#include "GEN_DataCache.h"
 
 class SYS_SingletonSystem
 {

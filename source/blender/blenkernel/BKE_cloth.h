@@ -1,7 +1,7 @@
 /**
  * BKE_cloth.h
  *
- * $Id: BKE_cloth.h 32618 2010-10-21 01:10:22Z campbellbarton $
+ * $Id: BKE_cloth.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -252,7 +252,7 @@ typedef enum
 */
 typedef struct
 {
-	char		*name;
+	const char		*name;
 	CM_SOLVER_ID	id;
 	int	( *init ) ( struct Object *ob, struct ClothModifierData *clmd );
 	int	( *solver ) ( struct Object *ob, float framenr, struct ClothModifierData *clmd, struct ListBase *effectors );

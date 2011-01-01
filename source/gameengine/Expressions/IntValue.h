@@ -1,6 +1,6 @@
 /*
  * IntValue.h: interface for the CIntValue class.
- * $Id: IntValue.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: IntValue.h 32788 2010-10-31 04:11:39Z campbellbarton $
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -48,7 +48,7 @@ public:
 	void			AddConfigurationData(CValue* menuvalue);
 	virtual CValue*	GetReplica();
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	virtual PyObject*	ConvertValueToPython();
 #endif
 

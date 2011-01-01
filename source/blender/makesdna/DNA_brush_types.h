@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_brush_types.h 31037 2010-08-04 12:18:07Z campbellbarton $
+ * $Id: DNA_brush_types.h 33647 2010-12-14 01:19:51Z nicholasbishop $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -57,6 +57,9 @@ typedef struct Brush {
 	struct ImBuf *icon_imbuf;
 	PreviewImage *preview;
 	char icon_filepath[240];
+	int icon_mode;			/* store paint mode for which brush's icon was last generated */
+	int pad;
+
 
 	float normal_weight;
 

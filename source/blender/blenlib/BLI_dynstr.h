@@ -7,7 +7,7 @@
  * to build up dynamic strings using a DynStr object, then
  * convert it to a c-string and work with that.
  * 
- * $Id: BLI_dynstr.h 27159 2010-02-26 23:56:16Z campbellbarton $
+ * $Id: BLI_dynstr.h 33466 2010-12-04 11:44:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -75,7 +75,11 @@ void	BLI_dynstr_nappend				(DynStr *ds, const char *cstr, int len);
 	 * @param ds The DynStr to append to.
 	 * @param format The printf format string to use.
 	 */
-void	BLI_dynstr_appendf				(DynStr *ds, const char *format, ...);
+void	BLI_dynstr_appendf				(DynStr *ds, const char *format, ...)
+#ifdef __GNUC__
+__attribute__ ((format (printf, 2, 3)));
+#endif
+;
 void	BLI_dynstr_vappendf				(DynStr *ds, const char *format, va_list args);
 
 	/**

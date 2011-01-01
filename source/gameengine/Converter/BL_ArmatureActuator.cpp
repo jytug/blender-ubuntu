@@ -1,5 +1,5 @@
 /**
- * $Id: BL_ArmatureActuator.cpp 28307 2010-04-20 15:46:28Z campbellbarton $
+ * $Id: BL_ArmatureActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -175,7 +175,7 @@ bool BL_ArmatureActuator::Update(double curtime, bool frame)
 	return result;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python Integration Hooks					                                 */
@@ -257,5 +257,5 @@ PyObject* BL_ArmatureActuator::pyattr_get_constraint(void *self, const struct KX
 		return constraint->GetProxy();
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 

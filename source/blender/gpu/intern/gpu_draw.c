@@ -1,5 +1,5 @@
 /**
- * $Id: gpu_draw.c 32499 2010-10-15 12:29:02Z campbellbarton $
+ * $Id: gpu_draw.c 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -307,7 +307,7 @@ static void gpu_make_repbind(Image *ima)
 		ima->repbind= MEM_callocN(sizeof(int)*ima->totbind, "repbind");
 }
 
-static void gpu_clear_tpage()
+static void gpu_clear_tpage(void)
 {
 	if(GTS.lasttface==0)
 		return;
@@ -810,7 +810,8 @@ void GPU_free_unused_buffers(void)
 	BLI_freelistN(&image_free_queue);
 
 	/* vbo buffers */
-	GPU_buffer_pool_free_unused(0);
+	/* it's probably not necessary to free all buffers every frame */
+	/* GPU_buffer_pool_free_unused(0); */
 
 	BLI_unlock_thread(LOCK_OPENGL);
 }

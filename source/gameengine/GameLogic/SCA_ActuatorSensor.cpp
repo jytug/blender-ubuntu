@@ -1,7 +1,7 @@
 /**
  * Actuator sensor
  *
- * $Id: SCA_ActuatorSensor.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_ActuatorSensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -110,7 +110,7 @@ void SCA_ActuatorSensor::Update()
 	}
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -160,6 +160,6 @@ int SCA_ActuatorSensor::CheckActuator(void *self, const PyAttributeDef*)
 	return 1;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

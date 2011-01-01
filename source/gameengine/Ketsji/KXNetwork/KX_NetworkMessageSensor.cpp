@@ -1,5 +1,5 @@
 /**
- * $Id: KX_NetworkMessageSensor.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_NetworkMessageSensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -154,7 +154,7 @@ bool KX_NetworkMessageSensor::IsPositiveTrigger()
 	return m_IsUp;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* --------------------------------------------------------------------- */
 /* Python interface ---------------------------------------------------- */
@@ -215,4 +215,4 @@ PyObject* KX_NetworkMessageSensor::pyattr_get_subjects(void *self_v, const KX_PY
 	}
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

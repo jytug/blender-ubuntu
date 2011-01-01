@@ -1,5 +1,5 @@
 /**
- * $Id: nla_intern.h 32511 2010-10-16 08:03:28Z campbellbarton $
+ * $Id: nla_intern.h 33435 2010-12-03 01:52:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -60,7 +60,7 @@ enum {
 	NLAEDIT_LRSEL_TEST	= -1,
 	NLAEDIT_LRSEL_NONE,
 	NLAEDIT_LRSEL_LEFT,
-	NLAEDIT_LRSEL_RIGHT,
+	NLAEDIT_LRSEL_RIGHT
 } eNlaEdit_LeftRightSelect_Mode;
 
 /* --- */
@@ -78,7 +78,7 @@ enum {
 	NLAEDIT_SNAP_CFRA = 1,
 	NLAEDIT_SNAP_NEAREST_FRAME,
 	NLAEDIT_SNAP_NEAREST_SECOND,
-	NLAEDIT_SNAP_NEAREST_MARKER,	
+	NLAEDIT_SNAP_NEAREST_MARKER
 } eNlaEdit_Snap_Mode;
 
 /* --- */

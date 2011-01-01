@@ -3,7 +3,7 @@
  *
  *	Custom Data functions for Bmesh
  *
- * $Id: BME_Customdata.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: BME_Customdata.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,7 @@
 /********************* Layer type information **********************/
 typedef struct BME_LayerTypeInfo {
 	int size;
-	char *defaultname;
+	const char *defaultname;
 	void (*copy)(const void *source, void *dest, int count);
 	void (*free)(void *data, int count, int size);
 	void (*interp)(void **sources, float *weights, float *sub_weights, int count, void *dest);

@@ -1,5 +1,5 @@
 /* 
- * $Id: mathutils_matrix.h 28237 2010-04-16 16:19:36Z briggs $
+ * $Id: mathutils_matrix.h 33229 2010-11-22 10:39:28Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,10 +38,9 @@ extern PyTypeObject matrix_Type;
 
 typedef struct {
 	BASE_MATH_MEMBERS(contigPtr)
-
-	unsigned char rowSize;
-	unsigned int colSize;
 	float *matrix[MATRIX_MAX_DIM];		/* ptr to the contigPtr (accessor) */
+	unsigned short rowSize;
+	unsigned short colSize;
 } MatrixObject;
 
 /*struct data contains a pointer to the actual data that the

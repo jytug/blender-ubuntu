@@ -1,5 +1,5 @@
 /**
- * $Id: space_nla.c 32511 2010-10-16 08:03:28Z campbellbarton $
+ * $Id: space_nla.c 32915 2010-11-07 12:09:15Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -209,9 +209,13 @@ static void nla_channel_area_init(wmWindowManager *wm, ARegion *ar)
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_LIST, ar->winx, ar->winy);
 	
 	/* own keymap */
-	// TODO: cannot use generic copy, need special NLA version
+		/* own channels map first to override some channel keymaps */
 	keymap= WM_keymap_find(wm->defaultconf, "NLA Channels", SPACE_NLA, 0);
 	WM_event_add_keymap_handler_bb(&ar->handlers, keymap, &ar->v2d.mask, &ar->winrct);
+		/* now generic channels map for everything else that can apply */
+	keymap= WM_keymap_find(wm->defaultconf, "Animation Channels", 0, 0);
+	WM_event_add_keymap_handler_bb(&ar->handlers, keymap, &ar->v2d.mask, &ar->winrct);
+	
 	keymap= WM_keymap_find(wm->defaultconf, "NLA Generic", SPACE_NLA, 0);
 	WM_event_add_keymap_handler_bb(&ar->handlers, keymap, &ar->v2d.mask, &ar->winrct);
 }

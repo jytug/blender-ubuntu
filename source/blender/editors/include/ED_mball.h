@@ -1,5 +1,5 @@
 /**
- * $Id: ED_mball.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: ED_mball.h 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,5 +41,5 @@ void free_editMball(struct Object *obedit);
 void make_editMball(struct Object *obedit);
 void load_editMball(struct Object *obedit);
 
-void undo_push_mball(struct bContext *C, char *name);
+void undo_push_mball(struct bContext *C, const char *name);
 

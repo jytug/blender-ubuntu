@@ -1,5 +1,5 @@
 /* 
- * $Id: bpy_internal_import.c 32729 2010-10-27 06:41:48Z campbellbarton $
+ * $Id: bpy_internal_import.c 33448 2010-12-03 17:05:21Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -208,9 +208,9 @@ static PyObject *blender_import(PyObject *UNUSED(self), PyObject *args,  PyObjec
 	
 	PyObject *newmodule;
 	//PyObject_Print(args, stderr, 0);
-	static char *kwlist[] = {"name", "globals", "locals", "fromlist", "level", 0};
+	static const char *kwlist[] = {"name", "globals", "locals", "fromlist", "level", 0};
 	
-	if( !PyArg_ParseTupleAndKeywords( args, kw, "s|OOOi:bpy_import_meth", kwlist,
+	if( !PyArg_ParseTupleAndKeywords(args, kw, "s|OOOi:bpy_import_meth", (char **)kwlist,
 				   &name, &globals, &locals, &fromlist, &level) )
 		return NULL;
 

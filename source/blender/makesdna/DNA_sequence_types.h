@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_sequence_types.h (mar-2001 nzc)
  *
- * $Id: DNA_sequence_types.h 31171 2010-08-08 13:56:33Z schlaile $
+ * $Id: DNA_sequence_types.h 33366 2010-11-28 18:23:21Z schlaile $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,6 +42,7 @@ struct bSound;
 
 typedef struct StripElem {
 	char name[80];
+	int orig_width, orig_height;
 } StripElem;
 
 typedef struct StripCrop {
@@ -81,7 +82,6 @@ typedef struct Strip {
 	int startstill, endstill;
 	StripElem *stripdata;
 	char dir[160];
-	int orx, ory;
 	StripProxy *proxy;
 	StripCrop *crop;
 	StripTransform *transform;

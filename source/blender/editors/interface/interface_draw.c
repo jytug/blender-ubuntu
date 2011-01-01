@@ -1,5 +1,5 @@
 /**
- * $Id: interface_draw.c 32707 2010-10-25 18:12:28Z campbellbarton $
+ * $Id: interface_draw.c 33799 2010-12-20 03:59:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -386,7 +386,7 @@ void uiRoundRectFakeAA(float minx, float miny, float maxx, float maxy, float rad
 	float raddiff;
 	int i, passes=4;
 	
-	/* get the colour and divide up the alpha */
+	/* get the color and divide up the alpha */
 	glGetFloatv(GL_CURRENT_COLOR, color);
 	alpha = 1; //color[3];
 	color[3]= 0.5*alpha/(float)passes;
@@ -517,7 +517,7 @@ static void ui_draw_but_CHARTAB(uiBut *but)
 	int result = 0;
 	int charmax = G.charmax;
 	
-	/* <builtin> font in use. There are TTF <builtin> and non-TTF <builtin> fonts */
+	/* FO_BUILTIN_NAME font in use. There are TTF FO_BUILTIN_NAME and non-TTF FO_BUILTIN_NAME fonts */
 	if(!strcmp(G.selfont->name, FO_BUILTIN_NAME))
 	{
 		if(G.ui_international == TRUE)
@@ -808,7 +808,7 @@ void ui_draw_but_WAVEFORM(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wcol),
 	int i, c;
 	float w, w3, h, alpha, yofs;
 	GLint scissor[4];
-	float colors[3][3] = {{1,0,0},{0,1,0},{0,0,1}};
+	float colors[3][3]= MAT3_UNITY;
 	float colorsycc[3][3] = {{1,0,1},{1,1,0},{0,1,1}};
 	float colors_alpha[3][3], colorsycc_alpha[3][3]; /* colors  pre multiplied by alpha for speed up */
 	float min, max;
@@ -856,7 +856,7 @@ void ui_draw_but_WAVEFORM(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wcol),
 		sprintf(str,"%-3d",i*20);
 		str[3]='\0';
 		fdrawline(rect.xmin+22, yofs+(i/5.f)*h, rect.xmax+1, yofs+(i/5.f)*h);
-		BLF_draw_default(rect.xmin+1, yofs-5+(i/5.f)*h, 0, str);
+		BLF_draw_default(rect.xmin+1, yofs-5+(i/5.f)*h, 0, str, sizeof(str)-1);
 		/* in the loop because blf_draw reset it */
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -1342,7 +1342,7 @@ static void ui_draw_but_curve_grid(rcti *rect, float zoomx, float zoomy, float o
 	
 }
 
-static void glColor3ubvShade(char *col, int shade)
+static void glColor3ubvShade(unsigned char *col, int shade)
 {
 	glColor3ub(col[0]-shade>0?col[0]-shade:0, 
 			   col[1]-shade>0?col[1]-shade:0,
@@ -1379,7 +1379,7 @@ void ui_draw_but_CURVE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *rect
 	
 	/* backdrop */
 	if(cumap->flag & CUMA_DO_CLIP) {
-		glColor3ubvShade(wcol->inner, -20);
+		glColor3ubvShade((unsigned char *)wcol->inner, -20);
 		glRectf(rect->xmin, rect->ymin, rect->xmax, rect->ymax);
 		glColor3ubv((unsigned char*)wcol->inner);
 		glRectf(rect->xmin + zoomx*(cumap->clipr.xmin-offsx),
@@ -1393,13 +1393,13 @@ void ui_draw_but_CURVE(ARegion *ar, uiBut *but, uiWidgetColors *wcol, rcti *rect
 	}
 		
 	/* grid, every .25 step */
-	glColor3ubvShade(wcol->inner, -16);
+	glColor3ubvShade((unsigned char *)wcol->inner, -16);
 	ui_draw_but_curve_grid(rect, zoomx, zoomy, offsx, offsy, 0.25f);
 	/* grid, every 1.0 step */
-	glColor3ubvShade(wcol->inner, -24);
+	glColor3ubvShade((unsigned char *)wcol->inner, -24);
 	ui_draw_but_curve_grid(rect, zoomx, zoomy, offsx, offsy, 1.0f);
 	/* axes */
-	glColor3ubvShade(wcol->inner, -50);
+	glColor3ubvShade((unsigned char *)wcol->inner, -50);
 	glBegin(GL_LINES);
 	glVertex2f(rect->xmin, rect->ymin + zoomy*(-offsy));
 	glVertex2f(rect->xmax, rect->ymin + zoomy*(-offsy));

@@ -1,5 +1,5 @@
 /**
- * $Id: armature_intern.h 32482 2010-10-15 03:24:47Z campbellbarton $
+ * $Id: armature_intern.h 33468 2010-12-04 13:00:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -103,7 +103,6 @@ void POSE_OT_select_constraint_target(struct wmOperatorType *ot);
 void POSE_OT_select_grouped(struct wmOperatorType *ot);
 
 void POSE_OT_group_add(struct wmOperatorType *ot);
-void POSE_OT_group_remove(struct wmOperatorType *ot);
 void POSE_OT_group_remove(struct wmOperatorType *ot);
 void POSE_OT_group_assign(struct wmOperatorType *ot);
 void POSE_OT_group_unassign(struct wmOperatorType *ot);

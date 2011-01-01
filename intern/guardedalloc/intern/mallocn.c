@@ -1,5 +1,5 @@
 /**
- * $Id: mallocn.c 32544 2010-10-18 00:25:32Z campbellbarton $
+ * $Id: mallocn.c 33442 2010-12-03 12:30:59Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
 
 /**
 
- * $Id: mallocn.c 32544 2010-10-18 00:25:32Z campbellbarton $
+ * $Id: mallocn.c 33442 2010-12-03 12:30:59Z campbellbarton $
  * Copyright (C) 2001 NaN Technologies B.V.
  * Guarded memory allocation, and boundary-write detection.
  */
@@ -177,13 +177,13 @@ static void print_error(const char *str, ...)
 	if (error_callback) error_callback(buf);
 }
 
-static void mem_lock_thread()
+static void mem_lock_thread(void)
 {
 	if (thread_lock_callback)
 		thread_lock_callback();
 }
 
-static void mem_unlock_thread()
+static void mem_unlock_thread(void)
 {
 	if (thread_unlock_callback)
 		thread_unlock_callback();
@@ -502,7 +502,7 @@ static void MEM_printmemlist_internal( int pydict )
 	}
 	while(membl) {
 		if (pydict) {
-			fprintf(stderr, "{'len':" SIZET_FORMAT ", 'name':'''%s''', 'pointer':'%p'},\\\n", SIZET_ARG(membl->len), membl->name, membl+1);
+			fprintf(stderr, "{'len':" SIZET_FORMAT ", 'name':'''%s''', 'pointer':'%p'},\\\n", SIZET_ARG(membl->len), membl->name, (void *)(membl+1));
 		} else {
 #ifdef DEBUG_MEMCOUNTER
 			print_error("%s len: " SIZET_FORMAT " %p, count: %d\n", membl->name, SIZET_ARG(membl->len), membl+1, membl->_count);

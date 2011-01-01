@@ -1,5 +1,5 @@
 /**
- * $Id: editarmature_sketch.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: editarmature_sketch.c 33613 2010-12-12 16:15:49Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -104,10 +104,6 @@ typedef struct SK_StrokeIterator {
 /******************** PROTOTYPES ******************************/
 
 void initStrokeIterator(BArcIterator *iter, SK_Stroke *stk, int start, int end);
-
-void sk_deleteSelectedStrokes(SK_Sketch *sketch);
-
-SK_Point *sk_lastStrokePoint(SK_Stroke *stk);
 
 int sk_detectCutGesture(bContext *C, SK_Gesture *gest, SK_Sketch *sketch);
 void sk_applyCutGesture(bContext *C, SK_Gesture *gest, SK_Sketch *sketch);
@@ -287,7 +283,7 @@ int BIF_nbJointsTemplate(const bContext *C)
 	}
 }
 
-char * BIF_nameBoneTemplate(const bContext *C)
+const char * BIF_nameBoneTemplate(const bContext *C)
 {
 	ToolSettings *ts = CTX_data_tool_settings(C);
 	SK_Sketch *stk = contextSketch(C, 1);
@@ -2460,6 +2456,7 @@ static int sketch_delete(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(ev
 		sk_deleteSelectedStrokes(sketch);
 //			allqueue(REDRAWVIEW3D, 0);
 	}
+	WM_event_add_notifier(C, NC_SCREEN|ND_SKETCH|NA_REMOVED, NULL);
 	return OPERATOR_FINISHED;
 }
 

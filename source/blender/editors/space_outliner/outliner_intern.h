@@ -1,5 +1,5 @@
 /**
- * $Id: outliner_intern.h 28367 2010-04-23 04:16:08Z aligorith $
+ * $Id: outliner_intern.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,7 +49,7 @@ typedef struct TreeElement {
 	short index;		// index for data arrays
 	short idcode;		// from TreeStore id
 	short xend;			// width of item display, for select
-	char *name;
+	const char *name;
 	void *directdata;	// Armature Bones, Base, Sequence, Strip...
 	PointerRNA rnaptr;	// RNA Pointer
 }  TreeElement;

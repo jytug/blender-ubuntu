@@ -1,7 +1,7 @@
 /*
  * radiance_hdr.c
  *
- * $Id: radiance_hdr.c 32532 2010-10-17 06:38:56Z campbellbarton $
+ * $Id: radiance_hdr.c 33167 2010-11-19 02:14:18Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -333,7 +333,7 @@ static void writeHeader(FILE *file, int width, int height)
 	fputc(10, file);
 }
 
-int imb_savehdr(struct ImBuf *ibuf, char *name, int flags)
+int imb_savehdr(struct ImBuf *ibuf, const char *name, int flags)
 {
 	FILE* file = fopen(name, "wb");
 	float *fp= NULL;

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,14 +24,14 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC
+set(INC
 	.
 	../container
 	../memutil
 	../moto/include
 )
 
-SET(SRC
+set(SRC
 	intern/LOD_EdgeCollapser.cpp
 	intern/LOD_ExternNormalEditor.cpp
 	intern/LOD_FaceNormalEditor.cpp
@@ -40,6 +40,20 @@ SET(SRC
 	intern/LOD_QSDecimator.cpp
 	intern/LOD_QuadricEditor.cpp
 	intern/LOD_decimation.cpp
+
+	extern/LOD_decimation.h
+	intern/LOD_DecimationClass.h
+	intern/LOD_EdgeCollapser.h
+	intern/LOD_ExternBufferEditor.h
+	intern/LOD_ExternNormalEditor.h
+	intern/LOD_FaceNormalEditor.h
+	intern/LOD_ManMesh2.h
+	intern/LOD_MeshBounds.h
+	intern/LOD_MeshException.h
+	intern/LOD_MeshPrimitives.h
+	intern/LOD_QSDecimator.h
+	intern/LOD_Quadric.h
+	intern/LOD_QuadricEditor.h
 )
 
-BLENDERLIB(bf_intern_decimate "${SRC}" "${INC}")
+blender_add_lib(bf_intern_decimate "${SRC}" "${INC}")

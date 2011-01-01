@@ -1,6 +1,6 @@
 /*
  * ListValue.h: interface for the CListValue class.
- * $Id: ListValue.h 23562 2009-09-29 21:42:40Z campbellbarton $
+ * $Id: ListValue.h 32788 2010-10-31 04:11:39Z campbellbarton $
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -60,7 +60,7 @@ public:
 
 	bool CheckEqual(CValue* first,CValue* second);
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	virtual PyObject* py_repr(void) {
 		PyObject *py_proxy= this->GetProxy();
 		PyObject *py_list= PySequence_List(py_proxy);

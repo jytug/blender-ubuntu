@@ -1,5 +1,5 @@
 /**
- * $Id: ED_image.h 32607 2010-10-20 00:42:19Z nicholasbishop $
+ * $Id: ED_image.h 32834 2010-11-02 09:34:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,7 @@
 #define ED_IMAGE_H
 
 struct SpaceImage;
+struct Main;
 struct bContext;
 struct Image;
 struct ImageUser;
@@ -61,7 +62,7 @@ int ED_space_image_show_uvedit(struct SpaceImage *sima, struct Object *obedit);
 int ED_space_image_show_uvshadow(struct SpaceImage *sima, struct Object *obedit);
 
 /* UI level image (texture) updating... render calls own stuff (too) */
-void ED_image_update_frame(const struct bContext *C);
+void ED_image_update_frame(const struct Main *mainp, int cfra);
 
 /* image_render.c, export for screen_ops.c, render operator */
 void ED_space_image_output(struct bContext *C);

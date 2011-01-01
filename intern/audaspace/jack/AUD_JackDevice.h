@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_JackDevice.h 31372 2010-08-16 11:41:07Z nexyon $
+ * $Id: AUD_JackDevice.h 33846 2010-12-22 10:51:34Z nexyon $
  *
  * ***** BEGIN LGPL LICENSE BLOCK *****
  *
@@ -87,9 +87,14 @@ private:
 	static int jack_sync(jack_transport_state_t state, jack_position_t* pos, void* data);
 
 	/**
-	 * Last Jack Transport playing state.
+	 * Next Jack Transport state (-1 if not expected to change).
 	 */
-	bool m_playing;
+	jack_transport_state_t m_nextState;
+
+	/**
+	 * Current jack transport status.
+	 */
+	jack_transport_state_t m_state;
 
 	/**
 	 * Syncronisation state.

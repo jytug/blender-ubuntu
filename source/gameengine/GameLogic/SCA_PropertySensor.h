@@ -1,7 +1,7 @@
 /**
  * Property sensor
  *
- * $Id: SCA_PropertySensor.h 27764 2010-03-26 07:21:48Z dfelinto $
+ * $Id: SCA_PropertySensor.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -84,7 +84,7 @@ public:
 	virtual bool	IsPositiveTrigger();
 	virtual CValue*		FindIdentifier(const STR_String& identifiername);
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* --------------------------------------------------------------------- */
 	/* Python interface ---------------------------------------------------- */

@@ -1,5 +1,5 @@
 /**
- * $Id: outliner_ops.c 28691 2010-05-09 18:07:17Z billrey $
+ * $Id: outliner_ops.c 33603 2010-12-11 17:55:54Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -77,7 +77,7 @@ void outliner_keymap(wmKeyConfig *keyconf)
 	
 	WM_keymap_add_item(keymap, "OUTLINER_OT_item_rename", LEFTMOUSE, KM_DBL_CLICK, 0, 0);
 	
-	RNA_boolean_set(WM_keymap_add_item(keymap, "OUTLINER_OT_item_activate", LEFTMOUSE, KM_PRESS, 0, 0)->ptr, "extend", 0);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "OUTLINER_OT_item_activate", LEFTMOUSE, KM_RELEASE, 0, 0)->ptr, "extend", 0);
 	RNA_boolean_set(WM_keymap_add_item(keymap, "OUTLINER_OT_item_activate", LEFTMOUSE, KM_PRESS, KM_SHIFT, 0)->ptr, "extend", 1);
 	
 	RNA_boolean_set(WM_keymap_add_item(keymap, "OUTLINER_OT_item_openclose", RETKEY, KM_PRESS, 0, 0)->ptr, "all", 0);

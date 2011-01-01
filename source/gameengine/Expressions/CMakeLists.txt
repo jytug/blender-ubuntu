@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC
+set(INC
 	.
 	../../../source/kernel/gen_system
 	../../../intern/string
@@ -34,7 +34,7 @@ SET(INC
 	../../../source/blender/blenloader
 )
 
-SET(SRC
+set(SRC
 	BoolValue.cpp
 	ConstExpr.cpp
 	EXP_C-Api.cpp
@@ -54,12 +54,28 @@ SET(SRC
 	StringValue.cpp
 	Value.cpp
 	VectorValue.cpp
+
+	BoolValue.h
+	ConstExpr.h
+	EXP_C-Api.h
+	EmptyValue.h
+	ErrorValue.h
+	Expression.h
+	FloatValue.h
+	IdentifierExpr.h
+	IfExpr.h
+	InputParser.h
+	IntValue.h
+	KX_HashedPtr.h
+	KX_Python.h
+	ListValue.h
+	Operator1Expr.h
+	Operator2Expr.h
+	PyObjectPlus.h
+	StringValue.h
+	Value.h
+	VectorValue.h
+	VoidValue.h
 )
 
-IF(WITH_PYTHON)
-	LIST(APPEND INC ${PYTHON_INC})
-ELSE(WITH_PYTHON)
-	ADD_DEFINITIONS(-DDISABLE_PYTHON)
-ENDIF(WITH_PYTHON)
-
-BLENDERLIB(bf_expressions "${SRC}" "${INC}")
+blender_add_lib(ge_logic_expressions "${SRC}" "${INC}")

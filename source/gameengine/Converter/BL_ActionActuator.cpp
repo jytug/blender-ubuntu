@@ -1,5 +1,5 @@
 /**
-* $Id: BL_ActionActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+* $Id: BL_ActionActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -428,7 +428,7 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 	return keepgoing;
 };
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -674,4 +674,4 @@ PyObject* BL_ActionActuator::pyattr_get_channel_names(void *self_v, const KX_PYA
 	return ret;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC
+set(INC
 	.
 	../../../../source/kernel/gen_system
 	../../../../intern/string
@@ -36,18 +36,18 @@ SET(INC
 	../../../../source/gameengine/Network
 )
 
-SET(SRC
+set(SRC
 	KX_NetworkEventManager.cpp
 	KX_NetworkMessageActuator.cpp
 	KX_NetworkMessageSensor.cpp
 	KX_NetworkObjectActuator.cpp
 	KX_NetworkObjectSensor.cpp
+
+	KX_NetworkEventManager.h
+	KX_NetworkMessageActuator.h
+	KX_NetworkMessageSensor.h
+	KX_NetworkObjectActuator.h
+	KX_NetworkObjectSensor.h
 )
 
-IF(WITH_PYTHON)
-	LIST(APPEND INC ${PYTHON_INC})
-ELSE(WITH_PYTHON)
-	ADD_DEFINITIONS(-DDISABLE_PYTHON)
-ENDIF(WITH_PYTHON)
-
-BLENDERLIB(kx_network "${SRC}" "${INC}")
+blender_add_lib(ge_logic_network "${SRC}" "${INC}")

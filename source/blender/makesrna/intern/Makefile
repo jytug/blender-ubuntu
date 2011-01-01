@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 31388 2010-08-16 17:07:59Z ton $
+# $Id: Makefile 33344 2010-11-26 22:12:46Z mfoxdogg $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -52,6 +52,7 @@ CPPFLAGS += -I$(NAN_MEMUTIL)/include
 CPPFLAGS += -I../../../../intern/audaspace/intern
 CPPFLAGS += -I../../blenlib
 CPPFLAGS += -I../../blenkernel
+CPPFLAGS += -I../../blenfont
 CPPFLAGS += -I../../imbuf
 CPPFLAGS += -I../../ikplugin
 CPPFLAGS += -I../../makesdna

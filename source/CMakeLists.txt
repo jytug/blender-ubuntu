@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# $Id: CMakeLists.txt 33549 2010-12-08 08:43:06Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,13 +24,13 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-ADD_SUBDIRECTORY(blender)
-ADD_SUBDIRECTORY(kernel)
+add_subdirectory(blender)
 
-IF(WITH_GAMEENGINE)
-	ADD_SUBDIRECTORY(gameengine)
-ENDIF(WITH_GAMEENGINE)
+if(WITH_GAMEENGINE)
+	add_subdirectory(kernel)
+	add_subdirectory(gameengine)
+endif()
 	
-IF(WINDOWS)
-	ADD_SUBDIRECTORY(icons)
-ENDIF(WINDOWS)
+if(WINDOWS)
+	add_subdirectory(icons)
+endif()

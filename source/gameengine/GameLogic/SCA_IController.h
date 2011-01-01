@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_IController.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SCA_IController.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -99,11 +99,11 @@ public:
 	}
 	
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	static PyObject*	pyattr_get_state(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static PyObject*	pyattr_get_sensors(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static PyObject*	pyattr_get_actuators(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 };
 
 #endif

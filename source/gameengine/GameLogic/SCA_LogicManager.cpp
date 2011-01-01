@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_LogicManager.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_LogicManager.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -307,7 +307,7 @@ void SCA_LogicManager::AddTriggeredController(SCA_IController* controller, SCA_I
 {
 	controller->Activate(m_triggeredControllerSet);
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	// so that the controller knows which sensor has activited it
 	// only needed for python controller

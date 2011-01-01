@@ -1,7 +1,7 @@
 /**
  * Always trigger
  *
- * $Id: SCA_AlwaysSensor.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
+ * $Id: SCA_AlwaysSensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -94,7 +94,7 @@ bool SCA_AlwaysSensor::Evaluate()
 	return result;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */

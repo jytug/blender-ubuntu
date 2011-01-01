@@ -29,22 +29,19 @@ bl_addon_info = {
         "func=detail&aid=22842&group_id=153&atid=468",
     "category": "Add Mesh"}
 
-import bpy
-
-try:
-    init_data
-
-    reload(Boltfactory)
-except:
+if "bpy" in locals():
+    import imp
+    imp.reload(Boltfactory)
+else:
     from add_mesh_BoltFactory import Boltfactory
 
-init_data = True
+import bpy
 
 ################################################################################
 ##### REGISTER #####
 
 def add_mesh_bolt_button(self, context):
-    self.layout.operator(Boltfactory.add_mesh_bolt.bl_idname, text="BOLT", icon="PLUGIN")
+    self.layout.operator(Boltfactory.add_mesh_bolt.bl_idname, text="Bolt", icon="PLUGIN")
 
 
 def register():

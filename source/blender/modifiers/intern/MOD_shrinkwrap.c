@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_shrinkwrap.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_shrinkwrap.c 33756 2010-12-17 20:13:54Z blendix $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -117,7 +117,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 	if(dataMask)
 		dm= get_cddm(ob, NULL, dm, vertexCos);
 
-	shrinkwrapModifier_deform((ShrinkwrapModifierData*)md, md->scene, ob, dm, vertexCos, numVerts);
+	shrinkwrapModifier_deform((ShrinkwrapModifierData*)md, ob, dm, vertexCos, numVerts);
 
 	if(dm != derivedData)
 		dm->release(dm);
@@ -132,7 +132,7 @@ static void deformVertsEM(ModifierData *md, Object *ob, struct EditMesh *editDat
 	if(dataMask)
 		dm= get_cddm(ob, editData, dm, vertexCos);
 
-	shrinkwrapModifier_deform((ShrinkwrapModifierData*)md, md->scene, ob, dm, vertexCos, numVerts);
+	shrinkwrapModifier_deform((ShrinkwrapModifierData*)md, ob, dm, vertexCos, numVerts);
 
 	if(dm != derivedData)
 		dm->release(dm);

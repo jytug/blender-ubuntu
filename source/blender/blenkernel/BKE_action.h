@@ -4,7 +4,7 @@
  *
  *	Reevan McKay
  *
- * $Id: BKE_action.h 27916 2010-04-01 06:26:41Z aligorith $
+ * $Id: BKE_action.h 33934 2010-12-29 11:51:53Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -117,6 +117,8 @@ void action_groups_remove_channel(struct bAction *act, struct FCurve *fcu);
 /* Find a group with the given name */
 struct bActionGroup *action_groups_find_named(struct bAction *act, const char name[]);
 
+/* Clear all 'temp' flags on all groups */
+void action_groups_clear_tempflags(struct bAction *act);
 
 /* Pose API ----------------- */	
 	

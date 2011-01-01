@@ -2,7 +2,7 @@
 /*  material.c
  *
  * 
- * $Id: material.c 31743 2010-09-03 16:23:31Z campbellbarton $
+ * $Id: material.c 33796 2010-12-19 20:12:12Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,6 +44,7 @@
 #include "DNA_scene_types.h"
 
 #include "BLI_math.h"		
+#include "BLI_listbase.h"		
 
 #include "BKE_animsys.h"
 #include "BKE_displist.h"
@@ -185,7 +186,7 @@ void init_material(Material *ma)
 	ma->preview = NULL;
 }
 
-Material *add_material(char *name)
+Material *add_material(const char *name)
 {
 	Material *ma;
 
@@ -196,6 +197,7 @@ Material *add_material(char *name)
 	return ma;	
 }
 
+/* XXX keep synced with next function */
 Material *copy_material(Material *ma)
 {
 	Material *man;
@@ -203,9 +205,6 @@ Material *copy_material(Material *ma)
 	
 	man= copy_libblock(ma);
 	
-#if 0 // XXX old animation system
-	id_us_plus((ID *)man->ipo);
-#endif // XXX old animation system
 	id_lib_extern((ID *)man->group);
 	
 	for(a=0; a<MAX_MTEX; a++) {
@@ -225,6 +224,38 @@ Material *copy_material(Material *ma)
 		man->nodetree= ntreeCopyTree(ma->nodetree, 0);	/* 0 == full new tree */
 	}
 
+	man->gpumaterial.first= man->gpumaterial.last= NULL;
+	
+	return man;
+}
+
+/* XXX (see above) material copy without adding to main dbase */
+Material *localize_material(Material *ma)
+{
+	Material *man;
+	int a;
+	
+	man= copy_libblock(ma);
+	BLI_remlink(&G.main->mat, man);
+
+	for(a=0; a<MAX_MTEX; a++) {
+		if(ma->mtex[a]) {
+			man->mtex[a]= MEM_mallocN(sizeof(MTex), "copymaterial");
+			memcpy(man->mtex[a], ma->mtex[a], sizeof(MTex));
+			/* free_material decrements! */
+			id_us_plus((ID *)man->mtex[a]->tex);
+		}
+	}
+	
+	if(ma->ramp_col) man->ramp_col= MEM_dupallocN(ma->ramp_col);
+	if(ma->ramp_spec) man->ramp_spec= MEM_dupallocN(ma->ramp_spec);
+	
+	if (ma->preview) man->preview = BKE_previewimg_copy(ma->preview);
+	
+	if(ma->nodetree) {
+		man->nodetree= ntreeLocalize(ma->nodetree);
+	}
+	
 	man->gpumaterial.first= man->gpumaterial.last= NULL;
 	
 	return man;
@@ -445,7 +476,7 @@ Material ***give_matarar_id(ID *id)
 		return &(((Curve *)id)->mat);
 		break;
 	case ID_MB:
-		return &(((Curve *)id)->mat);
+		return &(((MetaBall *)id)->mat);
 		break;
 	}
 	return NULL;
@@ -461,7 +492,7 @@ short *give_totcolp_id(ID *id)
 		return &(((Curve *)id)->totcol);
 		break;
 	case ID_MB:
-		return &(((Curve *)id)->totcol);
+		return &(((MetaBall *)id)->totcol);
 		break;
 	}
 	return NULL;
@@ -492,6 +523,7 @@ Material *material_pop_id(ID *id, int index)
 		short *totcol= give_totcolp_id(id);
 		if(index >= 0 && index < (*totcol)) {
 			ret= (*matar)[index];
+			id_us_min((ID *)ret);			
 			if(*totcol <= 1) {
 				*totcol= 0;
 				MEM_freeN(*matar);
@@ -528,6 +560,10 @@ Material *give_current_material(Object *ob, int act)
 	/* if object cannot have material, totcolp==NULL */
 	totcolp= give_totcolp(ob);
 	if(totcolp==NULL || ob->totcol==0) return NULL;
+	
+	if(act<0) {
+		printf("no!\n");
+	}
 	
 	if(act>ob->totcol) act= ob->totcol;
 	else if(act<=0) act= 1;
@@ -589,66 +625,52 @@ Material *give_node_material(Material *ma)
 /* from misc_util: flip the bytes from x  */
 /*  #define GS(x) (((unsigned char *)(x))[0] << 8 | ((unsigned char *)(x))[1]) */
 
+void resize_object_material(Object *ob, const short totcol)
+{
+	Material **newmatar;
+	char *newmatbits;
+
+	if(totcol==0) {
+		if(ob->totcol) {
+			MEM_freeN(ob->mat);
+			MEM_freeN(ob->matbits);
+			ob->mat= NULL;
+			ob->matbits= NULL;
+		}
+	}
+	else if(ob->totcol<totcol) {
+		newmatar= MEM_callocN(sizeof(void *)*totcol, "newmatar");
+		newmatbits= MEM_callocN(sizeof(char)*totcol, "newmatbits");
+		if(ob->totcol) {
+			memcpy(newmatar, ob->mat, sizeof(void *)*ob->totcol);
+			memcpy(newmatbits, ob->matbits, sizeof(char)*ob->totcol);
+			MEM_freeN(ob->mat);
+			MEM_freeN(ob->matbits);
+		}
+		ob->mat= newmatar;
+		ob->matbits= newmatbits;
+	}
+	ob->totcol= totcol;
+	if(ob->totcol && ob->actcol==0) ob->actcol= 1;
+	if(ob->actcol>ob->totcol) ob->actcol= ob->totcol;
+}
+
 void test_object_materials(ID *id)
 {
 	/* make the ob mat-array same size as 'ob->data' mat-array */
 	Object *ob;
-	Mesh *me;
-	Curve *cu;
-	MetaBall *mb;
-	Material **newmatar;
-	char *newmatbits;
-	int totcol=0;
+	short *totcol;
 
-	if(id==0) return;
+	if(id==NULL || (totcol=give_totcolp_id(id))==NULL) {
+		return;
+	}
 
-	if( GS(id->name)==ID_ME ) {
-		me= (Mesh *)id;
-		totcol= me->totcol;
-	}
-	else if( GS(id->name)==ID_CU ) {
-		cu= (Curve *)id;
-		totcol= cu->totcol;
-	}
-	else if( GS(id->name)==ID_MB ) {
-		mb= (MetaBall *)id;
-		totcol= mb->totcol;
-	}
-	else return;
-
-	ob= G.main->object.first;
-	while(ob) {
-		
+	for(ob= G.main->object.first; ob; ob= ob->id.next) {
 		if(ob->data==id) {
-		
-			if(totcol==0) {
-				if(ob->totcol) {
-					MEM_freeN(ob->mat);
-					MEM_freeN(ob->matbits);
-					ob->mat= NULL;
-					ob->matbits= NULL;
-				}
-			}
-			else if(ob->totcol<totcol) {
-				newmatar= MEM_callocN(sizeof(void *)*totcol, "newmatar");
-				newmatbits= MEM_callocN(sizeof(char)*totcol, "newmatbits");
-				if(ob->totcol) {
-					memcpy(newmatar, ob->mat, sizeof(void *)*ob->totcol);
-					memcpy(newmatbits, ob->matbits, sizeof(char)*ob->totcol);
-					MEM_freeN(ob->mat);
-					MEM_freeN(ob->matbits);
-				}
-				ob->mat= newmatar;
-				ob->matbits= newmatbits;
-			}
-			ob->totcol= totcol;
-			if(ob->totcol && ob->actcol==0) ob->actcol= 1;
-			if(ob->actcol>ob->totcol) ob->actcol= ob->totcol;
+			resize_object_material(ob, *totcol);
 		}
-		ob= ob->id.next;
 	}
 }
-
 
 void assign_material(Object *ob, Material *ma, int act)
 {
@@ -1401,7 +1423,7 @@ void paste_matcopybuf(Material *ma)
 		MEM_freeN(ma->nodetree);
 	}
 
-	GPU_materials_free(ma);
+	GPU_material_free(ma);
 
 	id= (ma->id);
 	memcpy(ma, &matcopybuf, sizeof(Material));

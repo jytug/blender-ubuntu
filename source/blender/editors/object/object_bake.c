@@ -1,5 +1,5 @@
 /**
- * $Id: object_bake.c 32484 2010-10-15 05:18:45Z campbellbarton $
+ * $Id: object_bake.c 33641 2010-12-13 17:23:03Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -235,7 +235,7 @@ static void bake_freejob(void *bkv)
 	BakeRender *bkr= bkv;
 	finish_bake_internal(bkr);
 
-	if(bkr->tot==0) BKE_report(bkr->reports, RPT_ERROR, "No valid images found to bake to");
+	if(bkr->tot==0) BKE_report(bkr->reports, RPT_ERROR, "No objects or images found to bake to");
 	MEM_freeN(bkr);
 	G.rendering = 0;
 }
@@ -307,9 +307,7 @@ static int bake_image_exec(bContext *C, wmOperator *op)
 	}
 	else {
 		ListBase threads;
-		BakeRender bkr;
-
-		memset(&bkr, 0, sizeof(bkr));
+		BakeRender bkr= {0};
 
 		init_bake_internal(&bkr, C);
 		bkr.reports= op->reports;

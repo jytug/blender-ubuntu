@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PolygonMaterial.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: KX_PolygonMaterial.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -58,7 +58,7 @@ private:
 	unsigned int*	m_mcol;
 	Material*		m_material;
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	PyObject*		m_pymaterial;
 #endif
 
@@ -122,7 +122,7 @@ public:
 	}
 	virtual void GetMaterialRGBAColor(unsigned char *rgba) const;
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	KX_PYMETHOD_DOC(KX_PolygonMaterial, updateTexture);
 	KX_PYMETHOD_DOC(KX_PolygonMaterial, setTexture);
 	KX_PYMETHOD_DOC(KX_PolygonMaterial, activate);

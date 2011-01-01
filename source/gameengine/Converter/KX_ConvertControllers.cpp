@@ -1,5 +1,5 @@
 /**
- * $Id: KX_ConvertControllers.cpp 31056 2010-08-05 03:25:45Z campbellbarton $
+ * $Id: KX_ConvertControllers.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -153,7 +153,7 @@ void BL_ConvertControllers(
 				bPythonCont* pycont = (bPythonCont*) bcontr->data;
 				SCA_PythonController* pyctrl = new SCA_PythonController(gameobj, pycont->mode);
 				gamecontroller = pyctrl;
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 				pyctrl->SetNamespace(converter->GetPyNamespace());
 				
@@ -183,7 +183,7 @@ void BL_ConvertControllers(
 					}
 				}
 				
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 				break;
 			}
@@ -210,7 +210,7 @@ void BL_ConvertControllers(
 			
 			converter->RegisterGameController(gamecontroller, bcontr);
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 			if (bcontr->type==CONT_PYTHON) {
 				SCA_PythonController *pyctrl= static_cast<SCA_PythonController*>(gamecontroller);
 				/* not strictly needed but gives syntax errors early on and
@@ -225,7 +225,7 @@ void BL_ConvertControllers(
 					// pyctrl->Import();
 				}
 			}
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 			//done with gamecontroller
 			gamecontroller->Release();

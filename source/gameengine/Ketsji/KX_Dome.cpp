@@ -1,4 +1,4 @@
-/* $Id: KX_Dome.cpp 32279 2010-10-03 16:39:07Z gsrb3d $
+/* $Id: KX_Dome.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 -----------------------------------------------------------------------------
 
 This program is free software; you can redistribute it and/or modify it under
@@ -24,7 +24,7 @@ Developed as part of a Research and Development project for SAT - La Société d
 
 #include "KX_Dome.h"
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #include <structmember.h>
 #endif
 

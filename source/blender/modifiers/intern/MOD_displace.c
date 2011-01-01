@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_displace.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_displace.c 33684 2010-12-15 13:08:34Z ton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -148,6 +148,12 @@ static void updateDepgraph(ModifierData *md, DagForest *forest,
 		dag_add_relation(forest, curNode, obNode,
 				 DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Displace Modifier");
 	}
+	
+
+	if(dmd->texmapping == MOD_DISP_MAP_GLOBAL)
+		dag_add_relation(forest, obNode, obNode,
+						 DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Displace Modifier");
+	
 }
 
 static void get_texture_coords(DisplaceModifierData *dmd, Object *ob,

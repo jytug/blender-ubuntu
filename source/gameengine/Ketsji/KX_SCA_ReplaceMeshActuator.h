@@ -1,7 +1,7 @@
 //
 // Add object to the game world on action of this actuator
 //
-// $Id: KX_SCA_ReplaceMeshActuator.h 26841 2010-02-12 13:34:04Z campbellbarton $
+// $Id: KX_SCA_ReplaceMeshActuator.h 32788 2010-10-31 04:11:39Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -74,7 +74,7 @@ class KX_SCA_ReplaceMeshActuator : public SCA_IActuator
 
 	void	InstantReplaceMesh();
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* --------------------------------------------------------------------- */
 	/* Python interface ---------------------------------------------------- */
@@ -90,7 +90,7 @@ class KX_SCA_ReplaceMeshActuator : public SCA_IActuator
 
 	KX_PYMETHOD_DOC(KX_SCA_ReplaceMeshActuator,instantReplaceMesh);
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 }; 
 

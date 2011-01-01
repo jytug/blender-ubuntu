@@ -1,6 +1,6 @@
 /*
  * BoolValue.h: interface for the CBoolValue class.
- * $Id: BoolValue.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: BoolValue.h 32788 2010-10-31 04:11:39Z campbellbarton $
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -45,7 +45,7 @@ public:
 	
 	void				Configure(CValue* menuvalue);
 	virtual CValue*		GetReplica();
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	virtual PyObject*	ConvertValueToPython();
 #endif
 

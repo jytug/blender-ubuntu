@@ -1,7 +1,7 @@
 /**
 * global game stuff
 *
-* $Id: KX_GameActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+* $Id: KX_GameActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -124,7 +124,7 @@ bool KX_GameActuator::Update()
 		}
 	case KX_GAME_SAVECFG:
 		{
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 			if (m_ketsjiengine)
 			{
 				char mashal_path[512];
@@ -152,11 +152,11 @@ bool KX_GameActuator::Update()
 					delete [] marshal_buffer;
 			}
 			break;
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 		}
 	case KX_GAME_LOADCFG:
 		{
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 			if (m_ketsjiengine)
 			{
 				char mashal_path[512];
@@ -191,7 +191,7 @@ bool KX_GameActuator::Update()
 				}
 			}
 			break;
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 		}
 	default:
 		; /* do nothing? this is an internal error !!! */
@@ -201,7 +201,7 @@ bool KX_GameActuator::Update()
 }
 
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -241,4 +241,4 @@ PyAttributeDef KX_GameActuator::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

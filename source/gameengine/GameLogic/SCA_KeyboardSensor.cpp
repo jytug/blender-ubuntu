@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_KeyboardSensor.cpp 32613 2010-10-20 12:33:00Z campbellbarton $
+ * $Id: SCA_KeyboardSensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -408,7 +408,7 @@ void SCA_KeyboardSensor::LogKeystrokes(void)
 	}
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python Functions						       */
@@ -501,7 +501,7 @@ PyObject* SCA_KeyboardSensor::pyattr_get_events(void *self_v, const KX_PYATTRIBU
 	return resultlist;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* Accessed from python */
 

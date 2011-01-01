@@ -1,6 +1,6 @@
 /*  softbody.c
  *
- * $Id: softbody.c 32532 2010-10-17 06:38:56Z campbellbarton $
+ * $Id: softbody.c 33767 2010-12-18 15:03:31Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1659,7 +1659,7 @@ static void *exec_scan_for_ext_spring_forces(void *data)
 	return 0;
 }
 
-static void sb_sfesf_threads_run(Scene *scene, struct Object *ob, float timenow,int totsprings,int *UNUSED(ptr_to_break_func()))
+static void sb_sfesf_threads_run(Scene *scene, struct Object *ob, float timenow,int totsprings,int *UNUSED(ptr_to_break_func(void)))
 {
 	ListBase *do_effector = NULL;
 	ListBase threads;
@@ -2175,7 +2175,7 @@ static void sb_spring_force(Object *ob,int bpi,BodySpring *bs,float iks,float UN
 /* since this is definitely the most CPU consuming task here .. try to spread it */
 /* core function _softbody_calc_forces_slice_in_a_thread */
 /* result is int to be able to flag user break */
-static int _softbody_calc_forces_slice_in_a_thread(Scene *scene, Object *ob, float forcetime, float timenow,int ifirst,int ilast,int *UNUSED(ptr_to_break_func()),ListBase *do_effector,int do_deflector,float fieldfactor, float windfactor)
+static int _softbody_calc_forces_slice_in_a_thread(Scene *scene, Object *ob, float forcetime, float timenow,int ifirst,int ilast,int *UNUSED(ptr_to_break_func(void)),ListBase *do_effector,int do_deflector,float fieldfactor, float windfactor)
 {
 	float iks;
 	int bb,do_selfcollision,do_springcollision,do_aero;
@@ -2386,7 +2386,7 @@ static void *exec_softbody_calc_forces(void *data)
 	return 0;
 }
 
-static void sb_cf_threads_run(Scene *scene, Object *ob, float forcetime, float timenow,int totpoint,int *UNUSED(ptr_to_break_func()),struct ListBase *do_effector,int do_deflector,float fieldfactor, float windfactor)
+static void sb_cf_threads_run(Scene *scene, Object *ob, float forcetime, float timenow,int totpoint,int *UNUSED(ptr_to_break_func(void)),struct ListBase *do_effector,int do_deflector,float fieldfactor, float windfactor)
 {
 	ListBase threads;
 	SB_thread_context *sb_threads;
@@ -4134,7 +4134,7 @@ void sbObjectStep(Scene *scene, Object *ob, float cfra, float (*vertexCos)[3], i
 	}
 
 	/* try to read from cache */
-	cache_result = BKE_ptcache_read_cache(&pid, framenr, scene->r.frs_sec);
+	cache_result = BKE_ptcache_read(&pid, framenr, scene->r.frs_sec);
 
 	if(cache_result == PTCACHE_READ_EXACT || cache_result == PTCACHE_READ_INTERPOLATED) {
 		softbody_to_object(ob, vertexCos, numVerts, sb->local);
@@ -4142,7 +4142,7 @@ void sbObjectStep(Scene *scene, Object *ob, float cfra, float (*vertexCos)[3], i
 		BKE_ptcache_validate(cache, framenr);
 
 		if(cache_result == PTCACHE_READ_INTERPOLATED && cache->flag & PTCACHE_REDO_NEEDED)
-			BKE_ptcache_write_cache(&pid, framenr);
+			BKE_ptcache_write(&pid, framenr);
 
 		return;
 	}
@@ -4157,7 +4157,7 @@ void sbObjectStep(Scene *scene, Object *ob, float cfra, float (*vertexCos)[3], i
 
 	/* if on second frame, write cache for first frame */
 	if(cache->simframe == startframe && (cache->flag & PTCACHE_OUTDATED || cache->last_exact==0))
-		BKE_ptcache_write_cache(&pid, startframe);
+		BKE_ptcache_write(&pid, startframe);
 
 	softbody_update_positions(ob, sb, vertexCos, numVerts);
 
@@ -4170,6 +4170,6 @@ void sbObjectStep(Scene *scene, Object *ob, float cfra, float (*vertexCos)[3], i
 	softbody_to_object(ob, vertexCos, numVerts, 0);
 
 	BKE_ptcache_validate(cache, framenr);
-	BKE_ptcache_write_cache(&pid, framenr);
+	BKE_ptcache_write(&pid, framenr);
 }
 

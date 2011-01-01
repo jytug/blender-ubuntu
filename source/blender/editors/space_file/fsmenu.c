@@ -1,5 +1,5 @@
 /**
- * $Id: fsmenu.c 31950 2010-09-15 16:13:32Z campbellbarton $
+ * $Id: fsmenu.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -157,7 +157,7 @@ short fsmenu_can_save (struct FSMenu* fsmenu, FSMenuCategory category, int idx)
 	return fsme?fsme->save:0;
 }
 
-void fsmenu_insert_entry(struct FSMenu* fsmenu, FSMenuCategory category, char *path, int sorted, short save)
+void fsmenu_insert_entry(struct FSMenu* fsmenu, FSMenuCategory category, const char *path, int sorted, short save)
 {
 	FSMenuEntry *prev;
 	FSMenuEntry *fsme;

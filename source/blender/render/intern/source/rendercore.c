@@ -1,5 +1,5 @@
 /**
- * $Id: rendercore.c 32087 2010-09-23 21:38:01Z blendix $
+ * $Id: rendercore.c 33710 2010-12-16 12:49:48Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -96,8 +96,9 @@ void calc_view_vector(float *view, float x, float y)
 	}
 	else {
 		
-		if(R.r.mode & R_PANORAMA)
+		if(R.r.mode & R_PANORAMA) {
 			x-= R.panodxp;
+		}
 		
 		/* move x and y to real viewplane coords */
 		x= (x/(float)R.winx);

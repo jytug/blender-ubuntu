@@ -70,13 +70,10 @@ class DATA_PT_context_mesh(MeshButtonsPanel, bpy.types.Panel):
         mesh = context.mesh
         space = context.space_data
 
-        split = layout.split(percentage=0.65)
         if ob:
-            split.template_ID(ob, "data")
-            split.separator()
+            layout.template_ID(ob, "data", unlink="None")
         elif mesh:
-            split.template_ID(space, "pin_id")
-            split.separator()
+            layout.template_ID(space, "pin_id", unlink="None")
 
 
 class DATA_PT_normals(MeshButtonsPanel, bpy.types.Panel):
@@ -286,7 +283,7 @@ class DATA_PT_texface(MeshButtonsPanel, bpy.types.Panel):
         ob = context.active_object
         rd = context.scene.render
 
-        return (context.mode == 'EDIT_MESH') and (rd.engine == 'BLENDER_GAME') and ob and ob.type == 'MESH'
+        return (context.mode == 'EDIT_MESH') and ob and ob.type == 'MESH'
 
     def draw(self, context):
         layout = self.layout
@@ -297,6 +294,9 @@ class DATA_PT_texface(MeshButtonsPanel, bpy.types.Panel):
         tf = me.faces.active_tface
 
         if tf:
+            if context.scene.render.engine != 'BLENDER_GAME':
+                col.label(text="Options only supported in Game Engine")
+
             split = layout.split()
             col = split.column()
 
@@ -349,6 +349,7 @@ class DATA_PT_vertex_colors(MeshButtonsPanel, bpy.types.Panel):
 class DATA_PT_custom_props_mesh(MeshButtonsPanel, PropertyPanel, bpy.types.Panel):
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
     _context_path = "object.data"
+    _property_type = bpy.types.Mesh
 
 
 def register():

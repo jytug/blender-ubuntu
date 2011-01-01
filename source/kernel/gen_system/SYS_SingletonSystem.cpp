@@ -1,5 +1,5 @@
 /*
- * $Id: SYS_SingletonSystem.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SYS_SingletonSystem.cpp 33157 2010-11-18 12:54:05Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,7 @@
  * Used by SYS_System
  */
 #include "SYS_SingletonSystem.h"
-#include "GEN_DataCache.h"
+// #include "GEN_DataCache.h"
 
 SYS_SingletonSystem*	SYS_SingletonSystem::_instance = 0;
 

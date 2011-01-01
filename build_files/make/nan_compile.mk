@@ -1,7 +1,7 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
 #
-# $Id: nan_compile.mk 31237 2010-08-11 14:51:52Z pidhash $
+# $Id: nan_compile.mk 32871 2010-11-04 17:02:25Z nazgul $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -35,10 +35,12 @@ include nan_definitions.mk
 CPPFLAGS ?= $(NAN_CPPFLAGS)
 
 # common parts ---------------------------------------------------
+CFLAGS += -DWITH_PYTHON
+CCFLAGS += -DWITH_PYTHON
 
 # Uncomment next lines to enable integrated game engine
 ifneq ($(NAN_NO_KETSJI), true)
-    CFLAGS  += -DGAMEBLENDER=1
+    CFLAGS  += -DWITH_GAMEENGINE
     ifeq ($(NAN_USE_BULLET), true)
       CFLAGS  += -DUSE_BULLET
       CCFLAGS += -DUSE_BULLET
@@ -171,8 +173,8 @@ ifeq ($(OS),linux)
     CCC ?= g++
 #    CFLAGS += -pipe
 #    CCFLAGS += -pipe
-    CFLAGS  += -pipe -fPIC -funsigned-char -fno-strict-aliasing -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
-    CCFLAGS += -pipe -fPIC -funsigned-char -fno-strict-aliasing -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+    CFLAGS  += -pipe -fPIC -funsigned-char -fno-strict-aliasing -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE
+    CCFLAGS += -pipe -fPIC -funsigned-char -fno-strict-aliasing -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE
     REL_CFLAGS  += -O2
     REL_CCFLAGS += -O2
     NAN_DEPEND = true

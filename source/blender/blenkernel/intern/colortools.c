@@ -1,5 +1,5 @@
 /* 
- * $Id: colortools.c 32629 2010-10-21 08:32:53Z jesterking $
+ * $Id: colortools.c 33468 2010-12-04 13:00:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,7 @@
 
 #include "BKE_colortools.h"
 #include "BKE_curve.h"
-#include "BKE_ipo.h"
+#include "BKE_fcurve.h"
 #include "BKE_utildefines.h"
 
 #include "BLI_blenlib.h"
@@ -956,13 +956,11 @@ void curvemapping_table_RGBA(CurveMapping *cumap, float **array, int *size)
 
 DO_INLINE int get_bin_float(float f)
 {
-	int bin= (int)(f*255);
+	int bin= (int)((f*255) + 0.5);	/* 0.5 to prevent quantisation differences */
 
 	/* note: clamp integer instead of float to avoid problems with NaN */
 	CLAMP(bin, 0, 255);
-	
-	//return (int) (((f + 0.25) / 1.5) * 255);
-	
+
 	return bin;
 }
 

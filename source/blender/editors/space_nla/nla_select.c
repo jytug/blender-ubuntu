@@ -1,5 +1,5 @@
 /**
- * $Id: nla_select.c 31161 2010-08-08 08:14:07Z campbellbarton $
+ * $Id: nla_select.c 33563 2010-12-08 21:56:50Z sirdude $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -182,8 +182,9 @@ static int nlaedit_deselectall_exec(bContext *C, wmOperator *op)
 void NLA_OT_select_all_toggle (wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Select All";
+	ot->name= "Select or Deselect All";
 	ot->idname= "NLA_OT_select_all_toggle";
+	ot->description= "(De)Select all NLA-Strips";
 	
 	/* api callbacks */
 	ot->exec= nlaedit_deselectall_exec;
@@ -321,6 +322,7 @@ void NLA_OT_select_border(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Border Select";
 	ot->idname= "NLA_OT_select_border";
+	ot->description= "Use box selection to grab NLA-Strips";
 	
 	/* api callbacks */
 	ot->invoke= WM_border_select_invoke;

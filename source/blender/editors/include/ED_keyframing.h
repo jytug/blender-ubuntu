@@ -1,5 +1,5 @@
 /**
- * $Id: ED_keyframing.h 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: ED_keyframing.h 33917 2010-12-28 05:45:15Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,6 +47,7 @@ struct bConstraint;
 
 struct bContext;
 struct wmOperatorType;
+struct ReportList;
 
 struct PointerRNA;
 struct PropertyRNA;
@@ -93,7 +94,7 @@ int insert_vert_fcurve(struct FCurve *fcu, float x, float y, short flag);
  *	Use this to insert a keyframe using the current value being keyframed, in the 
  *	nominated F-Curve (no creation of animation data performed). Returns success.
  */
-short insert_keyframe_direct(struct PointerRNA ptr, struct PropertyRNA *prop, struct FCurve *fcu, float cfra, short flag);
+short insert_keyframe_direct(struct ReportList *reports, struct PointerRNA ptr, struct PropertyRNA *prop, struct FCurve *fcu, float cfra, short flag);
 
 /* -------- */
 
@@ -101,12 +102,12 @@ short insert_keyframe_direct(struct PointerRNA ptr, struct PropertyRNA *prop, st
  *	Use this to create any necessary animation data, and then insert a keyframe
  *	using the current value being keyframed, in the relevant place. Returns success.
  */
-short insert_keyframe(struct ID *id, struct bAction *act, const char group[], const char rna_path[], int array_index, float cfra, short flag);
+short insert_keyframe(struct ReportList *reports, struct ID *id, struct bAction *act, const char group[], const char rna_path[], int array_index, float cfra, short flag);
 
 /* Main Keyframing API call: 
  * 	Use this to delete keyframe on current frame for relevant channel. Will perform checks just in case.
  */
-short delete_keyframe(struct ID *id, struct bAction *act, const char group[], const char rna_path[], int array_index, float cfra, short flag);
+short delete_keyframe(struct ReportList *reports, struct ID *id, struct bAction *act, const char group[], const char rna_path[], int array_index, float cfra, short flag);
 
 /* ************ Keying Sets ********************** */
 
@@ -201,12 +202,19 @@ int ANIM_scene_get_keyingset_index(struct Scene *scene, struct KeyingSet *ks);
 struct KeyingSet *ANIM_get_keyingset_for_autokeying(struct Scene *scene, const char *tranformKSName);
 
 /* Create (and show) a menu containing all the Keying Sets which can be used in the current context */
-void ANIM_keying_sets_menu_setup(struct bContext *C, char title[], char op_name[]);
+void ANIM_keying_sets_menu_setup(struct bContext *C, const char title[], const char op_name[]);
 
 /* Check if KeyingSet can be used in the current context */
 short ANIM_keyingset_context_ok_poll(struct bContext *C, struct KeyingSet *ks);
 
 /* ************ Drivers ********************** */
+
+/* Flags for use by driver creation calls */
+typedef enum eCreateDriverFlags {
+	CREATEDRIVER_WITH_DEFAULT_DVAR 	= (1<<0),	/* create drivers with a default variable for nicer UI */
+} eCreateDriverFlags;
+
+/* -------- */
 
 /* Returns whether there is a driver in the copy/paste buffer to paste */
 short ANIM_driver_can_paste(void);
@@ -214,23 +222,23 @@ short ANIM_driver_can_paste(void);
 /* Main Driver Management API calls:
  * 	Add a new driver for the specified property on the given ID block
  */
-short ANIM_add_driver(struct ID *id, const char rna_path[], int array_index, short flag, int type);
+short ANIM_add_driver(struct ReportList *reports, struct ID *id, const char rna_path[], int array_index, short flag, int type);
 
 /* Main Driver Management API calls:
  * 	Remove the driver for the specified property on the given ID block (if available)
  */
-short ANIM_remove_driver(struct ID *id, const char rna_path[], int array_index, short flag);
+short ANIM_remove_driver(struct ReportList *reports, struct ID *id, const char rna_path[], int array_index, short flag);
 
 /* Main Driver Management API calls:
  * 	Make a copy of the driver for the specified property on the given ID block
  */
-short ANIM_copy_driver(struct ID *id, const char rna_path[], int array_index, short flag);
+short ANIM_copy_driver(struct ReportList *reports, struct ID *id, const char rna_path[], int array_index, short flag);
 
 /* Main Driver Management API calls:
  * 	Add a new driver for the specified property on the given ID block or replace an existing one
  *	with the driver + driver-curve data from the buffer 
  */
-short ANIM_paste_driver(struct ID *id, const char rna_path[], int array_index, short flag);
+short ANIM_paste_driver(struct ReportList *reports, struct ID *id, const char rna_path[], int array_index, short flag);
 
 /* ************ Auto-Keyframing ********************** */
 /* Notes:

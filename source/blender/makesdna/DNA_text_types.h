@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_text_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_text_types.h 26841 2010-02-12 13:34:04Z campbellbarton $ 
+ * $Id: DNA_text_types.h 33799 2010-12-20 03:59:22Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -48,7 +48,7 @@ typedef struct TextMarker {
 	int lineno, start, end, pad1; /* line number and start/end character indices */
 	
 	int group, flags; /* see BKE_text.h for flag defines */
-	char color[4], pad[4]; /* draw color of the marker */
+	unsigned char color[4], pad[4]; /* draw color of the marker */
 } TextMarker;
 
 typedef struct Text {

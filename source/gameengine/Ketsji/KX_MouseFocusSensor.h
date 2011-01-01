@@ -1,5 +1,5 @@
 /**
- * $Id: KX_MouseFocusSensor.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_MouseFocusSensor.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -94,7 +94,7 @@ class KX_MouseFocusSensor : public SCA_MouseSensor
 	const MT_Vector3& HitNormal() const;
 	const MT_Vector2& HitUV() const;
 	
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* --------------------------------------------------------------------- */
 	/* Python interface ---------------------------------------------------- */
@@ -109,7 +109,7 @@ class KX_MouseFocusSensor : public SCA_MouseSensor
 	static PyObject*	pyattr_get_hit_normal(void* self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static PyObject*	pyattr_get_hit_uv(void* self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 		
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 	/* --------------------------------------------------------------------- */
 	SCA_IObject*	m_hitObject;

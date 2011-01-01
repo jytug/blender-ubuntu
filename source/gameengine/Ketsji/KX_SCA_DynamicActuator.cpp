@@ -1,7 +1,7 @@
 //
 // Adjust dynamics settins for this object
 //
-// $Id: KX_SCA_DynamicActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+// $Id: KX_SCA_DynamicActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -37,7 +37,7 @@
 
 #include "KX_SCA_DynamicActuator.h"
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -77,7 +77,7 @@ PyAttributeDef KX_SCA_DynamicActuator::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Native functions                                                          */

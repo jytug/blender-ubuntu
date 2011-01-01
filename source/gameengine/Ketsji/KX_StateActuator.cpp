@@ -1,5 +1,5 @@
 /*
- * $Id: KX_StateActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_StateActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -124,7 +124,7 @@ void KX_StateActuator::Activate(SG_DList& head)
 	}
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -165,4 +165,4 @@ PyAttributeDef KX_StateActuator::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

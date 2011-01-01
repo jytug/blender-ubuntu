@@ -1,5 +1,5 @@
 /**
- * $Id: uvedit_draw.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: uvedit_draw.c 33799 2010-12-20 03:59:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,6 +47,7 @@
 
 #include "ED_image.h"
 #include "ED_mesh.h"
+#include "ED_uvedit.h"
 
 #include "UI_resources.h"
 
@@ -422,7 +423,7 @@ static void draw_uvs(SpaceImage *sima, Scene *scene, Object *obedit)
 	EditFace *efa, *efa_act;
 	MTFace *tf, *activetf = NULL;
 	DerivedMesh *finaldm, *cagedm;
-	char col1[4], col2[4];
+	unsigned char col1[4], col2[4];
 	float pointsize;
 	int drawfaces, interpedges, lastsel, sel;
 	Image *ima= sima->image;

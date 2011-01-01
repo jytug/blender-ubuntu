@@ -1,5 +1,5 @@
 /**
- * $Id: logic_buttons.c 32511 2010-10-16 08:03:28Z campbellbarton $
+ * $Id: logic_buttons.c 33563 2010-12-08 21:56:50Z sirdude $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -199,6 +199,7 @@ void LOGIC_OT_links_cut(wmOperatorType *ot)
 	
 	ot->name= "Cut links";
 	ot->idname= "LOGIC_OT_links_cut";
+	ot->description= "Remove logic brick connections";
 	
 	ot->invoke= WM_gesture_lines_invoke;
 	ot->modal= WM_gesture_lines_modal;

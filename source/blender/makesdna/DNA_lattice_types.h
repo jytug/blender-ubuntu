@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_lattice_types.h 31209 2010-08-10 06:36:42Z nazgul $ 
+ * $Id: DNA_lattice_types.h 33625 2010-12-13 06:31:49Z aligorith $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,6 +31,7 @@
 
 #include "DNA_ID.h"
 
+struct AnimData;
 struct BPoint;
 struct Ipo;
 struct Key;
@@ -46,17 +47,18 @@ typedef struct EditLatt {
 
 typedef struct Lattice {
 	ID id;
+	struct AnimData *adt;
 	
 	short pntsu, pntsv, pntsw, flag;
 	short opntsu, opntsv, opntsw, pad2;
-	char typeu, typev, typew, type;
+	char typeu, typev, typew, pad3;
 	int pad;
 	
 	float fu, fv, fw, du, dv, dw;
 	
 	struct BPoint *def;
 	
-	struct Ipo *ipo;
+	struct Ipo *ipo;  /* XXX: depreceated... old animation system */
 	struct Key *key;
 	
 	struct MDeformVert *dvert;

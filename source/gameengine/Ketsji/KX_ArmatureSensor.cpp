@@ -1,7 +1,7 @@
 /**
  * Armature sensor
  *
- * $Id: KX_ArmatureSensor.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_ArmatureSensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -149,7 +149,7 @@ bool KX_ArmatureSensor::Evaluate()
 	return (reset) ? true : false;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -201,4 +201,4 @@ PyObject* KX_ArmatureSensor::pyattr_get_constraint(void *self, const struct KX_P
 	Py_RETURN_NONE;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

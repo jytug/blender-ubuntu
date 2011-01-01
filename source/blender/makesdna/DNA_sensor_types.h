@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_sensor_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_sensor_types.h 28723 2010-05-11 06:56:59Z dfelinto $ 
+ * $Id: DNA_sensor_types.h 33324 2010-11-26 03:37:08Z dfelinto $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -206,6 +206,14 @@ typedef struct bJoystickSensor {
 #define SENS_RAY_NEG_Y_AXIS     4
 #define SENS_RAY_NEG_Z_AXIS     5
 //#define SENS_RAY_NEGATIVE_AXIS     1
+
+/* bRadarSensor->axis */
+#define SENS_RADAR_X_AXIS     0
+#define SENS_RADAR_Y_AXIS     1
+#define SENS_RADAR_Z_AXIS     2
+#define SENS_RADAR_NEG_X_AXIS     3
+#define SENS_RADAR_NEG_Y_AXIS     4
+#define SENS_RADAR_NEG_Z_AXIS     5
 
 /* bMessageSensor->type */
 #define SENS_MESG_MESG		0

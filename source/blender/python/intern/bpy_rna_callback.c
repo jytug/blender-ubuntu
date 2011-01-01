@@ -1,5 +1,5 @@
 /**
- * $Id: bpy_rna_callback.c 32456 2010-10-13 23:25:08Z campbellbarton $
+ * $Id: bpy_rna_callback.c 33264 2010-11-23 16:45:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -111,7 +111,7 @@ PyObject *pyrna_callback_remove(BPy_StructRNA *self, PyObject *args)
 	handle= PyCapsule_GetPointer(py_handle, RNA_CAPSULE_ID);
 
 	if(handle==NULL) {
-		PyErr_SetString(PyExc_ValueError, "callback_remove(handle): NULL handle given, invalid or already removed.");
+		PyErr_SetString(PyExc_ValueError, "callback_remove(handle): NULL handle given, invalid or already removed");
 		return NULL;
 	}
 

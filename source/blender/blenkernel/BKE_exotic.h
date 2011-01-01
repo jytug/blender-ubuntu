@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_exotic.h 31934 2010-09-15 05:57:48Z campbellbarton $
+ * $Id: BKE_exotic.h 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +40,7 @@ struct Scene;
  * @retval 1 The file was read succesfully.
  * @attention Used in filesel.c
  */
-int BKE_read_exotic(struct Scene *scene, char *name);
+int BKE_read_exotic(struct Scene *scene, const char *name);
 
 void write_dxf(struct Scene *scene, char *str);
 void write_stl(struct Scene *scene, char *str);

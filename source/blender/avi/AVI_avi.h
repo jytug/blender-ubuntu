@@ -19,7 +19,7 @@
  * function headers anyway. And, after all, it is someone else's
  * code. So we keep it like this.
  *
- * $Id: AVI_avi.h 30526 2010-07-20 10:41:08Z campbellbarton $ 
+ * $Id: AVI_avi.h 33167 2010-11-19 02:14:18Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -232,7 +232,7 @@ typedef enum {
 /**
  * Test whether this is an avi-format.
  */
-int AVI_is_avi (char *name);
+int AVI_is_avi (const char *name);
 
 
 /**
@@ -277,7 +277,7 @@ int AVI_get_stream (AviMovie *movie, int avist_type, int stream_num);
 /**
  * Open a movie stream from file.
  */
-AviError AVI_open_movie (char *name, AviMovie *movie);
+AviError AVI_open_movie (const char *name, AviMovie *movie);
 
 /**
  * Read a frame from a movie stream.

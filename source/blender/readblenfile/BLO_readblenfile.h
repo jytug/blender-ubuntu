@@ -1,5 +1,5 @@
 /**
- * $Id: BLO_readblenfile.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BLO_readblenfile.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -73,7 +73,7 @@ blo_read_runtime(
 	struct ReportList *reports);
 
 #define BLO_RESERVEDSIZE 12
-extern char *headerMagic;
+extern const char *headerMagic;
 
 #ifdef __cplusplus
 }

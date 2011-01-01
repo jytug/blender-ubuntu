@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PyMath.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
+ * $Id: KX_PyMath.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,7 +32,7 @@
 #pragma warning (disable : 4786)
 #endif //WIN32
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 #include "MT_Vector3.h"
 #include "MT_Vector4.h"
@@ -190,4 +190,4 @@ PyObject* PyObjectFrom(const MT_Tuple2 &vec)
 #endif
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

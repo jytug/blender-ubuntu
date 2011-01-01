@@ -1,5 +1,5 @@
 /**
- * $Id: meshlaplacian.c 32532 2010-10-17 06:38:56Z campbellbarton $
+ * $Id: meshlaplacian.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -63,9 +63,9 @@
 /* ************* XXX *************** */
 static void waitcursor(int UNUSED(val)) {}
 static void progress_bar(int UNUSED(dummy_val), const char *UNUSED(dummy)) {}
-static void start_progress_bar() {}
-static void end_progress_bar() {}
-static void error(char *str) { printf("error: %s\n", str); }
+static void start_progress_bar(void) {}
+static void end_progress_bar(void) {}
+static void error(const char *str) { printf("error: %s\n", str); }
 /* ************* XXX *************** */
 
 

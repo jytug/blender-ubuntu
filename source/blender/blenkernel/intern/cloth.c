@@ -49,7 +49,7 @@ void tstart ( void )
 void tend ( void )
 {
 }
-double tval()
+double tval( void )
 {
 	return 0;
 }
@@ -65,7 +65,7 @@ void tend ( void )
 {
 	gettimeofday ( &_tend,&tz );
 }
-double tval()
+double tval(void)
 {
 	double t1, t2;
 	t1 = ( double ) _tstart.tv_sec + ( double ) _tstart.tv_usec/ ( 1000*1000 );
@@ -468,10 +468,10 @@ DerivedMesh *clothModifier_do(ClothModifierData *clmd, Scene *scene, Object *ob,
 		BKE_ptcache_invalidate(cache);
 
 		/* do simulation */
-		if(!do_init_cloth(ob, clmd, result, framenr))
+		if(!do_init_cloth(ob, clmd, dm, framenr))
 			return result;
 
-		do_step_cloth(ob, clmd, result, framenr);
+		do_step_cloth(ob, clmd, dm, framenr);
 		cloth_to_object(ob, clmd, result);
 
 		return result;
@@ -492,19 +492,19 @@ DerivedMesh *clothModifier_do(ClothModifierData *clmd, Scene *scene, Object *ob,
 		framedelta= -1;
 
 	/* initialize simulation data if it didn't exist already */
-	if(!do_init_cloth(ob, clmd, result, framenr))
+	if(!do_init_cloth(ob, clmd, dm, framenr))
 		return result;
 
 	if((framenr == startframe) && (clmd->sim_parms->preroll == 0)) {
 		BKE_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
-		do_init_cloth(ob, clmd, result, framenr);
+		do_init_cloth(ob, clmd, dm, framenr);
 		BKE_ptcache_validate(cache, framenr);
 		cache->flag &= ~PTCACHE_REDO_NEEDED;
 		return result;
 	}
 
 	/* try to read from cache */
-	cache_result = BKE_ptcache_read_cache(&pid, (float)framenr+scene->r.subframe, scene->r.frs_sec);
+	cache_result = BKE_ptcache_read(&pid, (float)framenr+scene->r.subframe, scene->r.frs_sec);
 
 	if(cache_result == PTCACHE_READ_EXACT || cache_result == PTCACHE_READ_INTERPOLATED) {
 		implicit_set_positions(clmd);
@@ -513,7 +513,7 @@ DerivedMesh *clothModifier_do(ClothModifierData *clmd, Scene *scene, Object *ob,
 		BKE_ptcache_validate(cache, framenr);
 
 		if(cache_result == PTCACHE_READ_INTERPOLATED && cache->flag & PTCACHE_REDO_NEEDED)
-			BKE_ptcache_write_cache(&pid, framenr);
+			BKE_ptcache_write(&pid, framenr);
 
 		return result;
 	}
@@ -528,18 +528,18 @@ DerivedMesh *clothModifier_do(ClothModifierData *clmd, Scene *scene, Object *ob,
 
 	/* if on second frame, write cache for first frame */
 	if(cache->simframe == startframe && (cache->flag & PTCACHE_OUTDATED || cache->last_exact==0))
-		BKE_ptcache_write_cache(&pid, startframe);
+		BKE_ptcache_write(&pid, startframe);
 
 	clmd->sim_parms->timescale *= framenr - cache->simframe;
 
 	/* do simulation */
 	BKE_ptcache_validate(cache, framenr);
 
-	if(!do_step_cloth(ob, clmd, result, framenr)) {
+	if(!do_step_cloth(ob, clmd, dm, framenr)) {
 		BKE_ptcache_invalidate(cache);
 	}
 	else
-		BKE_ptcache_write_cache(&pid, framenr);
+		BKE_ptcache_write(&pid, framenr);
 
 	cloth_to_object (ob, clmd, result);
 
@@ -936,7 +936,7 @@ static void cloth_from_mesh ( ClothModifierData *clmd, DerivedMesh *dm )
 {
 	unsigned int numverts = dm->getNumVerts ( dm );
 	unsigned int numfaces = dm->getNumFaces ( dm );
-	MFace *mface = CDDM_get_faces(dm);
+	MFace *mface = dm->getFaceArray( dm );
 	unsigned int i = 0;
 
 	/* Allocate our vertices. */
@@ -1049,8 +1049,8 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 	unsigned int numverts = (unsigned int)dm->getNumVerts ( dm );
 	unsigned int numedges = (unsigned int)dm->getNumEdges ( dm );
 	unsigned int numfaces = (unsigned int)dm->getNumFaces ( dm );
-	MEdge *medge = CDDM_get_edges ( dm );
-	MFace *mface = CDDM_get_faces ( dm );
+	MEdge *medge = dm->getEdgeArray ( dm );
+	MFace *mface = dm->getFaceArray ( dm );
 	int index2 = 0; // our second vertex index
 	LinkNode **edgelist = NULL;
 	EdgeHash *edgehash = NULL;

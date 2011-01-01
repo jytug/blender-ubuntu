@@ -1,5 +1,5 @@
 /**
- * $Id: DocumentExporter.cpp 32416 2010-10-11 12:38:52Z jesterking $
+ * $Id: DocumentExporter.cpp 32862 2010-11-03 22:44:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -904,7 +904,7 @@ protected:
 void DocumentExporter::exportCurrentScene(Scene *sce, const char* filename)
 {
 	PointerRNA sceneptr, unit_settings;
-	PropertyRNA *system, *scale;
+	PropertyRNA *system; /* unused , *scale; */
 
 	clear_global_id_map();
 	

@@ -1,5 +1,5 @@
 /**
- * $Id: rna_texture.c 31493 2010-08-21 04:51:00Z campbellbarton $
+ * $Id: rna_texture.c 33906 2010-12-27 12:12:43Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -128,7 +128,7 @@ static void rna_Texture_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	Tex *tex= ptr->id.data;
 
-	DAG_id_flush_update(&tex->id, 0);
+	DAG_id_tag_update(&tex->id, 0);
 	WM_main_add_notifier(NC_TEXTURE, tex);
 }
 
@@ -153,7 +153,7 @@ static void rna_Texture_nodes_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	Tex *tex= ptr->id.data;
 
-	DAG_id_flush_update(&tex->id, 0);
+	DAG_id_tag_update(&tex->id, 0);
 	WM_main_add_notifier(NC_TEXTURE|ND_NODES, tex);
 }
 
@@ -168,7 +168,7 @@ void rna_TextureSlot_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	ID *id= ptr->id.data;
 
-	DAG_id_flush_update(id, 0);
+	DAG_id_tag_update(id, 0);
 
 	switch(GS(id->name)) {
 		case ID_MA: 
@@ -429,8 +429,8 @@ static void rna_def_mtex(BlenderRNA *brna)
 		{MTEX_BLEND_SAT, "SATURATION", 0, "Saturation", ""},
 		{MTEX_BLEND_VAL, "VALUE", 0, "Value", ""},
 		{MTEX_BLEND_COLOR, "COLOR", 0, "Color", ""},
-		{MTEX_SOFT_LIGHT, "SOFT LIGHT", 0, "Soft Light", ""}, 
-		{MTEX_LIN_LIGHT    , "LINEAR LIGHT", 0, "Linear Light", ""}, 
+		{MTEX_SOFT_LIGHT, "SOFT_LIGHT", 0, "Soft Light", ""}, 
+		{MTEX_LIN_LIGHT    , "LINEAR_LIGHT", 0, "Linear Light", ""}, 
 		{0, NULL, 0, NULL, NULL}};
 
 	static EnumPropertyItem output_node_items[] = {
@@ -473,7 +473,7 @@ static void rna_def_mtex(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
 	RNA_def_property_float_sdna(prop, NULL, "r");
 	RNA_def_property_array(prop, 3);
-	RNA_def_property_ui_text(prop, "Color", "The default color for textures that don't return RGB");
+	RNA_def_property_ui_text(prop, "Color", "The default color for textures that don't return RGB or when RGB to intensity is enabled");
 	RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
 
 	prop= RNA_def_property(srna, "blend_type", PROP_ENUM, PROP_NONE);
@@ -676,8 +676,8 @@ static void rna_def_texture_clouds(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "noise_depth", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "noisedepth");
-	RNA_def_property_range(prop, 0, INT_MAX);
-	RNA_def_property_ui_range(prop, 0, 6, 0, 2);
+	RNA_def_property_range(prop, 0, 30);
+	RNA_def_property_ui_range(prop, 0, 24, 0, 2);
 	RNA_def_property_ui_text(prop, "Noise Depth", "Sets the depth of the cloud calculation");
 	RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
 
@@ -811,8 +811,8 @@ static void rna_def_texture_marble(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "noise_depth", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "noisedepth");
-	RNA_def_property_range(prop, 0, INT_MAX);
-	RNA_def_property_ui_range(prop, 0, 6, 0, 2);
+	RNA_def_property_range(prop, 0, 30);
+	RNA_def_property_ui_range(prop, 0, 24, 0, 2);
 	RNA_def_property_ui_text(prop, "Noise Depth", "Sets the depth of the cloud calculation");
 	RNA_def_property_update(prop, 0, "rna_Texture_update");
 
@@ -866,8 +866,8 @@ static void rna_def_texture_magic(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "noise_depth", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "noisedepth");
-	RNA_def_property_range(prop, 0, INT_MAX);
-	RNA_def_property_ui_range(prop, 0, 6, 0, 2);
+	RNA_def_property_range(prop, 0, 30);
+	RNA_def_property_ui_range(prop, 0, 24, 0, 2);
 	RNA_def_property_ui_text(prop, "Noise Depth", "Sets the depth of the cloud calculation");
 	RNA_def_property_update(prop, 0, "rna_Texture_update");
 }
@@ -978,13 +978,6 @@ static void rna_def_texture_image(BlenderRNA *brna)
 		{TEX_CLIPCUBE, "CLIP_CUBE", 0, "Clip Cube", "Clips to cubic-shaped area around the image and sets exterior pixels as transparent"},
 		{TEX_REPEAT, "REPEAT", 0, "Repeat", "Causes the image to repeat horizontally and vertically"},
 		{TEX_CHECKER, "CHECKER", 0, "Checker", "Causes the image to repeat in checker board pattern"},
-		{0, NULL, 0, NULL, NULL}};
-		
-	static EnumPropertyItem prop_normal_space[] = {
-		{MTEX_NSPACE_CAMERA, "CAMERA", 0, "Camera", ""},
-		{MTEX_NSPACE_WORLD, "WORLD", 0, "World", ""},
-		{MTEX_NSPACE_OBJECT, "OBJECT", 0, "Object", ""},
-		{MTEX_NSPACE_TANGENT, "TANGENT", 0, "Tangent", ""},
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "ImageTexture", "Texture");
@@ -1122,15 +1115,6 @@ static void rna_def_texture_image(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "use_normal_map", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "imaflag", TEX_NORMALMAP);
 	RNA_def_property_ui_text(prop, "Normal Map", "Uses image RGB values for normal mapping");
-	RNA_def_property_update(prop, 0, "rna_Texture_update");
-	
-	/*	not sure why this goes in mtex instead of texture directly? */
-	RNA_def_struct_sdna(srna, "MTex");
-	
-	prop= RNA_def_property(srna, "normal_space", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_sdna(prop, NULL, "normapspace");
-	RNA_def_property_enum_items(prop, prop_normal_space);
-	RNA_def_property_ui_text(prop, "Normal Space", "Sets space of normal map image");
 	RNA_def_property_update(prop, 0, "rna_Texture_update");
 }
 
@@ -1520,7 +1504,7 @@ static void rna_def_texture_pointdensity(BlenderRNA *brna)
 	
 	prop= RNA_def_property(srna, "turbulence_depth", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "noise_depth");
-	RNA_def_property_range(prop, 0, INT_MAX);
+	RNA_def_property_range(prop, 0, 30);
 	RNA_def_property_ui_text(prop, "Depth", "Level of detail in the added turbulent noise");
 	RNA_def_property_update(prop, 0, "rna_Texture_update");
 	

@@ -1,7 +1,7 @@
 /* DNA_particle_types.h
  *
  *
- * $Id: DNA_particle_types.h 28150 2010-04-12 17:34:06Z jhk $
+ * $Id: DNA_particle_types.h 33634 2010-12-13 10:45:24Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -273,7 +273,7 @@ typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in
 		/* for dopesheet */
 #define PART_DS_EXPAND		8
 
-#define PART_HAIR_GEOMETRY	16
+#define PART_HAIR_REGROW	16	/* regrow hair for each frame */
 
 #define PART_UNBORN			32	/*show unborn particles*/
 #define PART_DIED			64	/*show died particles*/

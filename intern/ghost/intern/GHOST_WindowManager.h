@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_WindowManager.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: GHOST_WindowManager.h 33536 2010-12-07 11:57:34Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -160,6 +160,13 @@ protected:
 
 	/** Window that was active before entering fullscreen state. */
 	GHOST_IWindow* m_activeWindowBeforeFullScreen;
+
+#ifdef WITH_CXX_GUARDEDALLOC
+public:
+	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GHOST:GHOST_WindowManager"); }
+	void operator delete( void *mem ) { MEM_freeN(mem); }
+#endif
+	
 };
 
 #endif // _GHOST_WINDOW_MANAGER_H_

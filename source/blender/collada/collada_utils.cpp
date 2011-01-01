@@ -1,5 +1,5 @@
 /**
- * $Id: collada_utils.cpp 32697 2010-10-25 07:36:14Z jesterking $
+ * $Id: collada_utils.cpp 32953 2010-11-08 23:34:09Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -88,7 +88,7 @@ int bc_set_parent(Object *ob, Object *par, bContext *C, bool is_parent_space)
 	}
 	
 	// apply child obmat (i.e. decompose it into rot/loc/size)
-	object_apply_mat4(ob, ob->obmat, 0);
+	object_apply_mat4(ob, ob->obmat, 0, 0);
 
 	// compute parentinv
 	what_does_parent(sce, ob, &workob);
