@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PythonSeq.cpp 30446 2010-07-17 18:08:14Z campbellbarton $
+ * $Id: KX_PythonSeq.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,7 +28,7 @@
  * Readonly sequence wrapper for lookups on logic bricks
  */
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 #include "KX_PythonSeq.h"
 #include "KX_GameObject.h"
@@ -512,4 +512,4 @@ PyTypeObject KX_PythonSeq_Type = {
 	NULL
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

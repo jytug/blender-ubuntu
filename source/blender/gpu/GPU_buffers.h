@@ -1,5 +1,5 @@
 /**
- * $Id: GPU_buffers.h 30311 2010-07-14 10:46:12Z blendix $
+ * $Id: GPU_buffers.h 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -121,7 +121,7 @@ typedef struct GPUAttrib
 	int type;
 } GPUAttrib;
 
-GPUBufferPool *GPU_buffer_pool_new();
+GPUBufferPool *GPU_buffer_pool_new(void);
 void GPU_buffer_pool_free( GPUBufferPool *pool );
 void GPU_buffer_pool_free_unused( GPUBufferPool *pool );
 
@@ -171,7 +171,7 @@ void GPU_color_switch( int mode );
 void GPU_buffer_draw_elements( GPUBuffer *elements, unsigned int mode, int start, int count );
 
 /* called after drawing */
-void GPU_buffer_unbind();
+void GPU_buffer_unbind(void);
 
 int GPU_buffer_legacy( struct DerivedMesh *dm );
 

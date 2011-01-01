@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_C-api.cpp 29935 2010-07-04 15:35:23Z elubie $
+ * $Id: GHOST_C-api.cpp 33448 2010-12-03 17:05:21Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@
  *
  * C Api for GHOST
  *
- * Version: $Id: GHOST_C-api.cpp 29935 2010-07-04 15:35:23Z elubie $
+ * Version: $Id: GHOST_C-api.cpp 33448 2010-12-03 17:05:21Z campbellbarton $
  */
 
 #include <stdlib.h>
@@ -129,7 +129,7 @@ void GHOST_GetMainDisplayDimensions(GHOST_SystemHandle systemhandle,
 
 
 GHOST_WindowHandle GHOST_CreateWindow(GHOST_SystemHandle systemhandle,
-									  char* title,
+									  const char* title,
 									  GHOST_TInt32 left,
 									  GHOST_TInt32 top,
 									  GHOST_TUns32 width,
@@ -525,7 +525,7 @@ GHOST_TSuccess GHOST_SetDrawingContextType(GHOST_WindowHandle windowhandle,
 
 
 void GHOST_SetTitle(GHOST_WindowHandle windowhandle,
-					char* title)
+					const char* title)
 {
 	GHOST_IWindow* window = (GHOST_IWindow*) windowhandle;
 	

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 31798 2010-09-07 01:13:10Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,13 +24,25 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-IF(USE_QTKIT)
-	SET(SRC apple/qtkit_import.m apple/qtkit_export.m)
-ELSE(USE_QTKIT)
-	SET(SRC apple/quicktime_import.c apple/quicktime_export.c)
-ENDIF(USE_QTKIT)
+if(USE_QTKIT)
+	set(SRC
+		apple/qtkit_import.m
+		apple/qtkit_export.m
 
-SET(INC 
+		quicktime_export.h
+		quicktime_import.h
+	)
+else()
+	set(SRC
+		apple/quicktime_import.c
+		apple/quicktime_export.c
+
+		quicktime_export.h
+		quicktime_import.h
+	)
+endif()
+
+set(INC 
 	.
 	../quicktime
 	../makesdna
@@ -49,6 +61,6 @@ SET(INC
 	${QUICKTIME_INC}
 )
 
-ADD_DEFINITIONS(-DWITH_QUICKTIME)
+add_definitions(-DWITH_QUICKTIME)
 
-BLENDERLIB(bf_quicktime "${SRC}" "${INC}")
+blender_add_lib(bf_quicktime "${SRC}" "${INC}")

@@ -1,5 +1,5 @@
 /**
- * $Id: idcode.c 31437 2010-08-18 07:14:10Z campbellbarton $
+ * $Id: idcode.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,7 +35,7 @@
 
 typedef struct {
 	unsigned short code;
-	char *name, *plural;
+	const char *name, *plural;
 	
 	int flags;
 #define IDTYPE_FLAGS_ISLINKABLE	(1<<0)

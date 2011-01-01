@@ -3,7 +3,7 @@
  *
  * ID and Library types, which are fundamental for sdna,
  *
- * $Id: DNA_ID.h 31028 2010-08-04 04:01:27Z campbellbarton $
+ * $Id: DNA_ID.h 33490 2010-12-05 18:59:23Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -215,6 +215,8 @@ typedef struct PreviewImage {
 #define LIB_DOIT		1024
 /* tag existing data before linking so we know what is new */
 #define LIB_PRE_EXISTING	2048
+/* runtime */
+#define LIB_ID_RECALC		4096
 
 #ifdef __cplusplus
 }

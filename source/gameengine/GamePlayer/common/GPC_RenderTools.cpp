@@ -1,5 +1,5 @@
 /**
- * $Id: GPC_RenderTools.cpp 32532 2010-10-17 06:38:56Z campbellbarton $
+ * $Id: GPC_RenderTools.cpp 33707 2010-12-16 10:25:41Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,6 +52,10 @@
 #include "BKE_bmfont_types.h"
 
 #include "GPC_RenderTools.h"
+
+extern "C" {
+#include "BLF_api.h"
+}
 
 
 unsigned int GPC_RenderTools::m_numgllights;
@@ -275,6 +279,35 @@ void GPC_RenderTools::applyTransform(RAS_IRasterizer* rasty,double* oglmatrix,in
 		}
 	}
 }
+
+void GPC_RenderTools::RenderText3D(	int fontid,
+									const char* text,
+									int size,
+									int dpi,
+									float* color,
+									double* mat,
+									float aspect)
+{
+	/* the actual drawing */
+	glColor3fv(color);
+ 
+	/* multiply the text matrix by the object matrix */
+	BLF_enable(fontid, BLF_MATRIX|BLF_ASPECT);
+	BLF_matrix(fontid, mat);
+
+	/* aspect is the inverse scale that allows you to increase */
+	/* your resolution without sizing the final text size */
+	/* the bigger the size, the smaller the aspect	*/
+	BLF_aspect(fontid, aspect, aspect, aspect);
+
+	BLF_size(fontid, size, dpi);
+	BLF_position(fontid, 0, 0, 0);
+	BLF_draw(fontid, (char *)text, strlen(text));
+
+	BLF_disable(fontid, BLF_MATRIX|BLF_ASPECT);
+	glEnable(GL_DEPTH_TEST);
+}
+
 
 
 void GPC_RenderTools::RenderText2D(RAS_TEXT_RENDER_MODE mode,

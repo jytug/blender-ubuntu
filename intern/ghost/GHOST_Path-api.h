@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_Path-api.h 30004 2010-07-05 19:59:37Z damien78 $
+ * $Id: GHOST_Path-api.h 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,20 +41,20 @@ extern "C" {
  * "unpack and run" path, then look for properly installed path, not including versioning.
  * @return Unsigned char string pointing to system dir (eg /usr/share/blender/).
  */
-extern const GHOST_TUns8* GHOST_getSystemDir();
+extern const GHOST_TUns8* GHOST_getSystemDir(void);
 
 /**
  * Determine the base dir in which user configuration is stored, not including versioning.
  * @return Unsigned char string pointing to user dir (eg ~).
  */
-extern const GHOST_TUns8* GHOST_getUserDir();
+extern const GHOST_TUns8* GHOST_getUserDir(void);
 
 
 /**
  * Determine the dir in which the binary file is found.
  * @return Unsigned char string pointing to binary dir (eg ~/usr/local/bin/).
  */
-extern const GHOST_TUns8* GHOST_getBinaryDir();
+extern const GHOST_TUns8* GHOST_getBinaryDir(void);
 
 #ifdef __cplusplus
 } 

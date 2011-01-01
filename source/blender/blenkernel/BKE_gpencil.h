@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_gpencil.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BKE_gpencil.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,7 +42,7 @@ void free_gpencil_data(struct bGPdata *gpd);
 
 struct bGPDframe *gpencil_frame_addnew(struct bGPDlayer *gpl, int cframe);
 struct bGPDlayer *gpencil_layer_addnew(struct bGPdata *gpd);
-struct bGPdata *gpencil_data_addnew(char name[]);
+struct bGPdata *gpencil_data_addnew(const char name[]);
 
 struct bGPDframe *gpencil_frame_duplicate(struct bGPDframe *src);
 struct bGPDlayer *gpencil_layer_duplicate(struct bGPDlayer *src);

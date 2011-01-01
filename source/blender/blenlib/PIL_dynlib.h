@@ -1,5 +1,5 @@
 /**
- * $Id: PIL_dynlib.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: PIL_dynlib.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,7 +38,7 @@ PIL_dynlib_open(
 	void*
 PIL_dynlib_find_symbol(
 	PILdynlib* lib, 
-	char *symname);
+	const char *symname);
 
 	char*
 PIL_dynlib_get_error_as_string(

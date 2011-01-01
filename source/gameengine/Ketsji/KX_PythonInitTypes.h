@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PythonInitTypes.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_PythonInitTypes.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,7 +30,7 @@
 #ifndef _adr_py_init_types_h_				// only process once,
 #define _adr_py_init_types_h_				// even if multiply included
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 void initPyTypes(void);
 #endif
 

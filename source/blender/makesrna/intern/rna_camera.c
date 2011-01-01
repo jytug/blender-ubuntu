@@ -1,5 +1,5 @@
 /**
- * $Id: rna_camera.c 32139 2010-09-27 05:23:23Z campbellbarton $
+ * $Id: rna_camera.c 33114 2010-11-17 01:15:31Z zanqdo $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -117,8 +117,8 @@ void RNA_def_camera(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "draw_size", PROP_FLOAT, PROP_DISTANCE);
 	RNA_def_property_float_sdna(prop, NULL, "drawsize");
-	RNA_def_property_range(prop, 0.1f, 1000.0f);
-	RNA_def_property_ui_range(prop, 0.01, 100, 1, 1);
+	RNA_def_property_range(prop, 0.01f, 1000.0f);
+	RNA_def_property_ui_range(prop, 0.01, 100, 1, 2);
 	RNA_def_property_ui_text(prop, "Draw Size", "Apparent size of the Camera object in the 3D View");
 	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, NULL);
 

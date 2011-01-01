@@ -1,5 +1,5 @@
 /**
- * $Id: gpencil.c 27642 2010-03-21 13:42:25Z campbellbarton $
+ * $Id: gpencil.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -190,7 +190,7 @@ bGPDlayer *gpencil_layer_addnew (bGPdata *gpd)
 }
 
 /* add a new gp-datablock */
-bGPdata *gpencil_data_addnew (char name[])
+bGPdata *gpencil_data_addnew (const char name[])
 {
 	bGPdata *gpd;
 	

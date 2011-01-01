@@ -25,13 +25,14 @@ bl_addon_info= {
     "blender": (2, 5, 3),
     "api": 31847,
     "location": "File > Import > LightWave Object (.lwo)",
-    "description": "Imports a LWO file including any UV, Morph and Color maps. Can convert Skelegons to an Armature.",
+    "description": "Imports a LWO file including any UV, Morph and Color maps. "\
+        "Can convert Skelegons to an Armature.",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
-        "Scripts/File_I-O/LightWave_Object",
+        "Scripts/Import-Export/LightWave_Object",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
         "func=detail&aid=23623&group_id=153&atid=469",
-    "category": "Import/Export"}
+    "category": "Import-Export"}
 
 # Copyright (c) Ken Nign 2010
 # ken@virginpi.com
@@ -1082,9 +1083,9 @@ def build_objects(object_layers, object_surfs, object_tags, object_name, add_sub
         # Create the Shape Keys (LW's Endomorphs).
         if len(layer_data.morphs) > 0:
             print("Adding %d Shapes Keys" % len(layer_data.morphs))
-            ob.add_shape_key('Basis')   # Got to have a Base Shape.
+            ob.shape_key_add('Basis')   # Got to have a Base Shape.
             for morph_key in layer_data.morphs:
-                skey= ob.add_shape_key(morph_key)
+                skey= ob.shape_key_add(morph_key)
                 dlist= layer_data.morphs[morph_key]
                 for pdp in dlist:
                     me.shape_keys.keys[skey.name].data[pdp[0]].co= [pdp[1], pdp[2], pdp[3]]
@@ -1234,7 +1235,7 @@ class IMPORT_OT_lwo(bpy.types.Operator):
 
     def invoke(self, context, event):
         wm= context.window_manager
-        wm.add_fileselect(self)
+        wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
 

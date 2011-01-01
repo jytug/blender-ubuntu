@@ -1,5 +1,5 @@
 /**
- * $Id: space_sequencer.c 32511 2010-10-16 08:03:28Z campbellbarton $
+ * $Id: space_sequencer.c 33604 2010-12-11 20:01:34Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -334,6 +334,7 @@ static void sequencer_drop_copy(wmDrag *drag, wmDropBox *drop)
 		
 		RNA_string_set(drop->ptr, "directory", dir);
 
+		RNA_collection_clear(drop->ptr, "files");
 		RNA_collection_add(drop->ptr, "files", &itemptr);
 		RNA_string_set(&itemptr, "name", file);
 	}

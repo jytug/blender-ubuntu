@@ -1,5 +1,5 @@
 /**
- * $Id: action.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: action.c 33934 2010-12-29 11:51:53Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -96,7 +96,6 @@ void make_local_action(bAction *act)
 	if (act->id.us==1) {
 		act->id.lib= 0;
 		act->id.flag= LIB_LOCAL;
-		//make_local_action_channels(act);
 		new_id(0, (ID *)act, 0);
 		return;
 	}
@@ -376,6 +375,20 @@ bActionGroup *action_groups_find_named (bAction *act, const char name[])
 	return BLI_findstring(&act->groups, name, offsetof(bActionGroup, name));
 }
 
+/* Clear all 'temp' flags on all groups */
+void action_groups_clear_tempflags (bAction *act)
+{
+	bActionGroup *agrp;
+	
+	/* sanity checks */
+	if (ELEM(NULL, act, act->groups.first))
+		return;
+		
+	/* flag clearing loop */
+	for (agrp = act->groups.first; agrp; agrp = agrp->next)
+		agrp->flag &= ~AGRP_TEMP;
+}
+
 /* *************** Pose channels *************** */
 
 /* usually used within a loop, so we got a N^2 slowdown */
@@ -408,7 +421,7 @@ bPoseChannel *verify_pose_channel(bPose *pose, const char *name)
 	/* If not, create it and add it */
 	chan = MEM_callocN(sizeof(bPoseChannel), "verifyPoseChannel");
 	
-	strncpy(chan->name, name, 31);
+	BLI_strncpy(chan->name, name, sizeof(chan->name));
 	/* init vars to prevent math errors */
 	chan->quat[0] = chan->rotAxis[1]= 1.0f;
 	chan->size[0] = chan->size[1] = chan->size[2] = 1.0f;
@@ -774,7 +787,7 @@ void pose_add_group (Object *ob)
 		return;
 	
 	grp= MEM_callocN(sizeof(bActionGroup), "PoseGroup");
-	strcpy(grp->name, "Group");
+	BLI_strncpy(grp->name, "Group", sizeof(grp->name));
 	BLI_addtail(&pose->agroups, grp);
 	BLI_uniquename(&pose->agroups, grp, "Group", '.', offsetof(bActionGroup, name), sizeof(grp->name));
 	
@@ -1119,8 +1132,8 @@ void what_does_obaction (Scene *UNUSED(scene), Object *ob, Object *workob, bPose
 	
 	workob->pose= pose;	/* need to set pose too, since this is used for both types of Action Constraint */
 
-	strcpy(workob->parsubstr, ob->parsubstr);
-	strcpy(workob->id.name, "OB<ConstrWorkOb>"); /* we don't use real object name, otherwise RNA screws with the real thing */
+	BLI_strncpy(workob->parsubstr, ob->parsubstr, sizeof(workob->parsubstr));
+	BLI_strncpy(workob->id.name, "OB<ConstrWorkOb>", sizeof(workob->id.name)); /* we don't use real object name, otherwise RNA screws with the real thing */
 	
 	/* if we're given a group to use, it's likely to be more efficient (though a bit more dangerous) */
 	if (agrp) {
@@ -1134,10 +1147,9 @@ void what_does_obaction (Scene *UNUSED(scene), Object *ob, Object *workob, bPose
 		animsys_evaluate_action_group(&id_ptr, act, agrp, NULL, cframe);
 	}
 	else {
-		AnimData adt;
+		AnimData adt= {0};
 		
 		/* init animdata, and attach to workob */
-		memset(&adt, 0, sizeof(AnimData));
 		workob->adt= &adt;
 		
 		adt.recalc= ADT_RECALC_ANIM;

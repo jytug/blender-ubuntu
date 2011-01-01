@@ -2,7 +2,7 @@
 /*  property.c   june 2000
  * 
  *  ton roosendaal
- * $Id: property.c 31517 2010-08-22 14:15:28Z campbellbarton $
+ * $Id: property.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -179,7 +179,7 @@ void unique_property(bProperty *first, bProperty *prop, int force)
 	}
 }
 
-bProperty *get_ob_property(Object *ob, char *name)
+bProperty *get_ob_property(Object *ob, const char *name)
 {
 	return BLI_findstring(&ob->prop, name, offsetof(bProperty, name));
 }

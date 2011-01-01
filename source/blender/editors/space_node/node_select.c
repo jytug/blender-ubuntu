@@ -1,5 +1,5 @@
 /**
- * $Id: node_select.c 32479 2010-10-15 01:36:14Z campbellbarton $
+ * $Id: node_select.c 33563 2010-12-08 21:56:50Z sirdude $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -223,6 +223,7 @@ void NODE_OT_select_border(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Border Select";
 	ot->idname= "NODE_OT_select_border";
+	ot->description= "Use box selection to select nodes";
 	
 	/* api callbacks */
 	ot->invoke= node_border_select_invoke;

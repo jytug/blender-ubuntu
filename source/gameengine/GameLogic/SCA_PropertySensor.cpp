@@ -1,7 +1,7 @@
 /**
  * Property sensor
  *
- * $Id: SCA_PropertySensor.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_PropertySensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -304,7 +304,7 @@ CValue* SCA_PropertySensor::FindIdentifier(const STR_String& identifiername)
 	return  GetParent()->FindIdentifier(identifiername);
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -378,6 +378,6 @@ PyAttributeDef SCA_PropertySensor::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_screen_types.h 30497 2010-07-19 11:25:23Z aligorith $ 
+ * $Id: DNA_screen_types.h 33838 2010-12-21 18:55:49Z ton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,7 +54,8 @@ typedef struct bScreen {
 	struct Scene *scene;
 	struct Scene *newscene;				/* temporary when switching */
 	
-	short full;							/* fade out? */
+	short full;							/* temp screen for image render display or fileselect */
+	short temp;							/* temp screen in a temp window, don't save (like user prefs) */
 	short winid;						/* winid from WM, starts with 1 */
 	short do_draw;						/* notifier for drawing edges */
 	short do_refresh;					/* notifier for scale screen, changed screen, etc */
@@ -66,7 +67,7 @@ typedef struct bScreen {
 	short mainwin;						/* screensize subwindow, for screenedges and global menus */
 	short subwinactive;					/* active subwindow */
 	
-	int pad2;
+	short pad;
 	
 	struct wmTimer *animtimer;			/* if set, screen has timer handler added in window */
 	void *context;						/* context callback */
@@ -187,17 +188,17 @@ typedef struct ARegion {
 #define HEADERDOWN	1
 #define HEADERTOP	2
 
-#define SCREENNORMAL    0
-#define SCREENFULL      1
-#define SCREENAUTOPLAY  2
-#define SCREENTEMP		3
+/* screen->full */
+#define SCREENNORMAL	0
+#define SCREENFULL		1
+#define SCREENFULLTEMP	2
 
 
 /* Panel->snap - for snapping to screen edges */
 #define PNL_SNAP_NONE		0
 #define PNL_SNAP_TOP		1
 #define PNL_SNAP_RIGHT		2
-#define PNL_SNAP_BOTTOM	4
+#define PNL_SNAP_BOTTOM		4
 #define PNL_SNAP_LEFT		8
 
 #define PNL_SNAP_DIST		9.0
@@ -214,6 +215,7 @@ typedef struct ARegion {
 #define SCREEN_HANDLER_VERSE	3
 
 /* regiontype, first two are the default set */
+/* Do NOT change order, append on end. Types are hardcoded needed */
 enum {
 	RGN_TYPE_WINDOW = 0,
 	RGN_TYPE_HEADER,

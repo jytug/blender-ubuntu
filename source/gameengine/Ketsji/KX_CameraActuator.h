@@ -1,7 +1,7 @@
 /**
  * KX_CameraActuator.h
  *
- * $Id: KX_CameraActuator.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_CameraActuator.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -114,7 +114,7 @@ private :
 	/** Methods inherited from SCA_ILogicBrick */
 	virtual void	Relink(GEN_Map<GEN_HashedPtr, void*> *obj_map);
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* --------------------------------------------------------------------- */
 	/* Python interface ---------------------------------------------------- */
@@ -124,7 +124,7 @@ private :
 	static PyObject*	pyattr_get_object(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static int			pyattr_set_object(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 };
 

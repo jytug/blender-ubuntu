@@ -1,7 +1,7 @@
 /**
  * Do an object ipo
  *
- * $Id: KX_IpoActuator.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_IpoActuator.h 33522 2010-12-07 01:54:25Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -86,6 +86,9 @@ protected:
 
 	bool	m_bIpoPlaying;
 
+	/** Reset/Update the start time*/
+	void	ResetStartTime();
+
 public:
 	enum IpoActType
 	{
@@ -99,6 +102,11 @@ public:
 		KX_ACT_IPO_FROM_PROP,
 		KX_ACT_IPO_MAX
 	};
+
+	static PyObject*	pyattr_get_frame_start(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static int			pyattr_set_frame_start(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
+	static PyObject*	pyattr_get_frame_end(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static int			pyattr_set_frame_end(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
 
 	static const char *S_KX_ACT_IPO_PLAY_STRING;
 	static const char *S_KX_ACT_IPO_PINGPONG_STRING;

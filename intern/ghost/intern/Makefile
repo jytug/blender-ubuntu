@@ -1,7 +1,7 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
 #
-# $Id: Makefile 29990 2010-07-05 14:32:15Z bdiego $
+# $Id: Makefile 32824 2010-11-01 23:17:58Z gsrb3d $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -71,4 +71,4 @@ CPPFLAGS += -I..
 CPPFLAGS += -I$(OPENGL_HEADERS)
 CPPFLAGS += -I../../../source/blender/imbuf
 CPPFLAGS += -I../../../source/blender/makesdna
-
+CPPFLAGS += -DPREFIX=\"$(BF_PREFIX)\"

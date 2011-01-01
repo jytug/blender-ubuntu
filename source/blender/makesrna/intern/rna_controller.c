@@ -1,5 +1,5 @@
 /**
- * $Id: rna_controller.c 31423 2010-08-17 16:27:10Z campbellbarton $
+ * $Id: rna_controller.c 32883 2010-11-05 07:35:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -207,7 +207,6 @@ void RNA_def_controller(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "expression", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "str");
-	RNA_def_property_string_maxlength(prop, 127);
 	RNA_def_property_ui_text(prop, "Expression", "");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 

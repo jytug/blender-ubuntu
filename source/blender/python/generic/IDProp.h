@@ -1,5 +1,5 @@
 /**
- * $Id: IDProp.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: IDProp.h 33167 2010-11-19 02:14:18Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -56,7 +56,7 @@ int BPy_Wrap_SetMapItem(struct IDProperty *prop, PyObject *key, PyObject *val);
 
 
 PyObject *BPy_IDGroup_WrapData(struct ID *id, struct IDProperty *prop );
-char *BPy_IDProperty_Map_ValidateAndCreate(char *name, struct IDProperty *group, PyObject *ob);
+const char *BPy_IDProperty_Map_ValidateAndCreate(const char *name, struct IDProperty *group, PyObject *ob);
 
 void IDProp_Init_Types(void);
 

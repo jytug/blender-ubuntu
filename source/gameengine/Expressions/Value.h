@@ -1,6 +1,6 @@
 /*
  * Value.h: interface for the CValue class.
- * $Id: Value.h 31950 2010-09-15 16:13:32Z campbellbarton $
+ * $Id: Value.h 32788 2010-10-31 04:11:39Z campbellbarton $
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -198,7 +198,7 @@ public:
 
 
 #include "PyObjectPlus.h"
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #include "object.h"
 #endif
 class CValue  : public PyObjectPlus
@@ -221,7 +221,7 @@ public:
 	// Construction / Destruction
 	CValue();
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	//static PyObject*	PyMake(PyObject*,PyObject*);
 	virtual PyObject *py_repr(void)
 	{
@@ -237,7 +237,7 @@ public:
 	static PyObject * pyattr_get_name(void * self, const KX_PYATTRIBUTE_DEF * attrdef);
 	
 	virtual PyObject* ConvertKeysToPython( void );
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 	
 	

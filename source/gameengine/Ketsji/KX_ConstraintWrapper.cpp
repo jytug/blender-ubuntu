@@ -1,5 +1,5 @@
 /**
- * $Id: KX_ConstraintWrapper.cpp 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: KX_ConstraintWrapper.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,7 +45,7 @@ KX_ConstraintWrapper::~KX_ConstraintWrapper()
 {
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 PyObject* KX_ConstraintWrapper::PyGetConstraintId()
 {
@@ -120,4 +120,4 @@ PyObject* KX_ConstraintWrapper::pyattr_get_constraintId(void *self_v, const KX_P
 	return self->PyGetConstraintId();
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

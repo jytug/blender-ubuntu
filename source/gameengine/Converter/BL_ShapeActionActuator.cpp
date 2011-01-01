@@ -1,5 +1,5 @@
 /**
-* $Id: BL_ShapeActionActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+* $Id: BL_ShapeActionActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -408,7 +408,7 @@ bool BL_ShapeActionActuator::Update(double curtime, bool frame)
 	return keepgoing;
 };
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -491,4 +491,4 @@ int BL_ShapeActionActuator::pyattr_set_action(void *self_v, const KX_PYATTRIBUTE
 
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

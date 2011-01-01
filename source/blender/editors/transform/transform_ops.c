@@ -1,5 +1,5 @@
 /**
- * $Id: transform_ops.c 32479 2010-10-15 01:36:14Z campbellbarton $
+ * $Id: transform_ops.c 33868 2010-12-23 02:43:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -150,7 +150,7 @@ static int select_orientation_invoke(bContext *C, wmOperator *UNUSED(op), wmEven
 	uiPopupMenu *pup;
 	uiLayout *layout;
 
-	pup= uiPupMenuBegin(C, "Orientation", 0);
+	pup= uiPupMenuBegin(C, "Orientation", ICON_NULL);
 	layout= uiPupMenuLayout(pup);
 	uiItemsEnumO(layout, "TRANSFORM_OT_select_orientation", "orientation");
 	uiPupMenuEnd(C, pup);
@@ -171,7 +171,7 @@ void TRANSFORM_OT_select_orientation(struct wmOperatorType *ot)
 	/* api callbacks */
 	ot->invoke = select_orientation_invoke;
 	ot->exec   = select_orientation_exec;
-	ot->poll   = ED_operator_areaactive;
+	ot->poll   = ED_operator_view3d_active;
 
 	prop= RNA_def_property(ot->srna, "orientation", PROP_ENUM, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Orientation", "Transformation orientation");
@@ -422,7 +422,7 @@ void Transform_Properties(struct wmOperatorType *ot, int flags)
 	{
 		RNA_def_enum(ot->srna, "proportional", proportional_editing_items, 0, "Proportional Editing", "");
 		RNA_def_enum(ot->srna, "proportional_edit_falloff", proportional_falloff_items, 0, "Proportional Editing Falloff", "Falloff type for proportional editing mode.");
-		RNA_def_float(ot->srna, "proportional_size", 1, 0, FLT_MAX, "Proportional Size", "", 0, 100);
+		RNA_def_float(ot->srna, "proportional_size", 1, 0.00001f, FLT_MAX, "Proportional Size", "", 0.001, 100);
 	}
 
 	if (flags & P_SNAP)

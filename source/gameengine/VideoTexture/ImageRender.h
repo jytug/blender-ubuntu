@@ -1,4 +1,4 @@
-/* $Id: ImageRender.h 26689 2010-02-07 19:18:00Z ben2610 $
+/* $Id: ImageRender.h 33442 2010-12-03 12:30:59Z campbellbarton $
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -85,7 +85,7 @@ protected:
     /// engine
     KX_KetsjiEngine* m_engine;
 
-	/// background colour
+	/// background color
 	float  m_background[4];
 
 

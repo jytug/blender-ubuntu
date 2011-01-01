@@ -1,5 +1,5 @@
 /**
- * $Id: text_ops.c 32669 2010-10-23 16:03:31Z campbellbarton $
+ * $Id: text_ops.c 33868 2010-12-23 02:43:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -58,7 +58,7 @@
 #include "RNA_access.h"
 #include "RNA_define.h"
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #include "BPY_extern.h"
 #endif
 
@@ -162,7 +162,9 @@ static int new_exec(bContext *C, wmOperator *UNUSED(op))
 	if(prop) {
 		/* when creating new ID blocks, use is already 1, but RNA
 		 * pointer se also increases user, so this compensates it */
-		text->id.us--;
+		/* doesnt always seem to happen... (ton) */
+		if(text->id.us>1)
+			text->id.us--;
 
 		RNA_id_pointer_create(&text->id, &idptr);
 		RNA_property_pointer_set(&ptr, prop, idptr);
@@ -171,9 +173,9 @@ static int new_exec(bContext *C, wmOperator *UNUSED(op))
 	else if(st) {
 		st->text= text;
 		st->top= 0;
+		text_drawcache_tag_update(st, 1);
 	}
 
-	text_drawcache_tag_update(st, 1);
 	WM_event_add_notifier(C, NC_TEXT|NA_ADDED, text);
 
 	return OPERATOR_FINISHED;
@@ -310,7 +312,7 @@ static int reload_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	if(text->compiled)
 		BPY_free_compiled_text(text);
 #endif
@@ -557,7 +559,7 @@ static int run_script_poll(bContext *C)
 
 static int run_script_exec(bContext *C, wmOperator *op)
 {
-#ifdef DISABLE_PYTHON
+#ifndef WITH_PYTHON
 	(void)C; /* unused */
 
 	BKE_report(op->reports, RPT_ERROR, "Python disabled in this build");
@@ -597,7 +599,7 @@ void TEXT_OT_run_script(wmOperatorType *ot)
 
 static int refresh_pyconstraints_exec(bContext *UNUSED(C), wmOperator *UNUSED(op))
 {
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #if 0
 	Text *text= CTX_data_edit_text(C);
 	Object *ob;
@@ -629,7 +631,7 @@ static int refresh_pyconstraints_exec(bContext *UNUSED(C), wmOperator *UNUSED(op
 		}
 		
 		if(update) {
-			DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
+			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 		}
 	}
 #endif
@@ -1539,6 +1541,7 @@ static void wrap_move_bol(SpaceText *st, ARegion *ar, short sel)
 				*charp= endj;
 
 				if(j>=oldc) {
+					if(ch=='\0') *charp= start;
 					loop= 0;
 					break;
 				}
@@ -1547,10 +1550,11 @@ static void wrap_move_bol(SpaceText *st, ARegion *ar, short sel)
 
 				start= end;
 				end += max;
-				chop= 0;
+				chop= 1;
 			}
 			else if(ch==' ' || ch=='-' || ch=='\0') {
 				if(j>=oldc) {
+					*charp= start;
 					loop= 0;
 					break;
 				}
@@ -1601,17 +1605,18 @@ static void wrap_move_eol(SpaceText *st, ARegion *ar, short sel)
 
 		while(chars--) {
 			if(i-start>=max) {
+				if(chop) endj= j-1;
+
 				if(endj>=oldc) {
-					*charp= endj;
+					if(ch=='\0') *charp= (*linep)->len;
+					else *charp= endj;
 					loop= 0;
 					break;
 				}
 
-				if(chop) endj= j;
-
 				start= end;
 				end += max;
-				chop= 0;
+				chop= 1;
 			} else if(ch=='\0') {
 				*charp= (*linep)->len;
 				loop= 0;
@@ -2218,14 +2223,14 @@ static void set_cursor_to_pos(SpaceText *st, ARegion *ar, int x, int y, int sel)
 	Text *text= st->text;
 	TextLine **linep;
 	int *charp;
-	int w, tabs;
+	int w;
 
 	text_update_character_width(st);
 
 	if(sel) { linep= &text->sell; charp= &text->selc; } 
 	else { linep= &text->curl; charp= &text->curc; }
 	
-	y= (ar->winy - y)/st->lheight;
+	y= (ar->winy - 2 - y)/st->lheight;
 
 	if(st->showlinenrs)
 		x-= TXT_OFFSET+TEXTXLOC;
@@ -2265,14 +2270,12 @@ static void set_cursor_to_pos(SpaceText *st, ARegion *ar, int x, int y, int sel)
 			chars= 0;
 			curs= 0;
 			endj= 0;
-			tabs= 0;
 			for(i=0, j=0; loop; j++) {
 
 				/* Mimic replacement of tabs */
 				ch= (*linep)->line[j];
 				if(ch=='\t') {
 					chars= st->tabnumber-i%st->tabnumber;
-					tabs+= chars-1;
 					ch= ' ';
 				}
 				else
@@ -2300,7 +2303,7 @@ static void set_cursor_to_pos(SpaceText *st, ARegion *ar, int x, int y, int sel)
 						if(found) {
 							/* exact cursor position was found, check if it's */
 							/* still on needed line (hasn't been wrapped) */
-							if(*charp>endj && !chop) (*charp)= endj;
+							if(*charp>endj && !chop && ch!='\0') (*charp)= endj;
 							loop= 0;
 							break;
 						}
@@ -2309,7 +2312,7 @@ static void set_cursor_to_pos(SpaceText *st, ARegion *ar, int x, int y, int sel)
 						start= end;
 						end += max;
 
-						if(start-tabs<(*linep)->len)
+						if(j<(*linep)->len)
 							y--;
 
 						chop= 1;
@@ -2338,13 +2341,13 @@ static void set_cursor_to_pos(SpaceText *st, ARegion *ar, int x, int y, int sel)
 				}
 				if(ch=='\0') break;
 			}
-			if(!loop || y<0) break;
+			if(!loop || found) break;
 
 			if(!(*linep)->next) {
 				*charp= (*linep)->len;
 				break;
 			}
-			
+
 			/* On correct line but didn't meet cursor, must be at end */
 			if(y==0) {
 				*charp= (*linep)->len;
@@ -2603,12 +2606,16 @@ static int insert_invoke(bContext *C, wmOperator *op, wmEvent *event)
 
 	// if(!RNA_property_is_set(op->ptr, "text")) { /* always set from keymap XXX */
 	if(!RNA_string_length(op->ptr, "text")) {
-		char str[2] = {event->ascii, '\0'};
 		/* if alt/ctrl/super are pressed pass through */
-		if(event->ctrl || event->oskey)
+		if(event->ctrl || event->oskey) {
 			return OPERATOR_PASS_THROUGH;
-
-		RNA_string_set(op->ptr, "text", str);
+		}
+		else {
+			char str[2];
+			str[0]= event->ascii;
+			str[1]= '\0';
+			RNA_string_set(op->ptr, "text", str);
+		}
 	}
 
 	ret = insert_exec(C, op);
@@ -2681,7 +2688,7 @@ static int find_and_replace(bContext *C, wmOperator *op, short mode)
 					text_drawcache_tag_update(CTX_wm_space_text(C), 1);
 				}
 				else if(mode==TEXT_MARK_ALL) {
-					char color[4];
+					unsigned char color[4];
 					UI_GetThemeColor4ubv(TH_SHADE2, color);
 
 					if(txt_find_marker(text, text->curl, text->selc, TMARK_GRP_FINDALL, 0)) {
@@ -2932,7 +2939,7 @@ static int resolve_conflict_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(
 		case 1:
 			if(text->flags & TXT_ISDIRTY) {
 				/* modified locally and externally, ahhh. offer more possibilites. */
-				pup= uiPupMenuBegin(C, "File Modified Outside and Inside Blender", 0);
+				pup= uiPupMenuBegin(C, "File Modified Outside and Inside Blender", ICON_NULL);
 				layout= uiPupMenuLayout(pup);
 				uiItemEnumO(layout, op->type->idname, "Reload from disk (ignore local changes)", 0, "resolution", RESOLVE_RELOAD);
 				uiItemEnumO(layout, op->type->idname, "Save to disk (ignore outside changes)", 0, "resolution", RESOLVE_SAVE);
@@ -2940,7 +2947,7 @@ static int resolve_conflict_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(
 				uiPupMenuEnd(C, pup);
 			}
 			else {
-				pup= uiPupMenuBegin(C, "File Modified Outside Blender", 0);
+				pup= uiPupMenuBegin(C, "File Modified Outside Blender", ICON_NULL);
 				layout= uiPupMenuLayout(pup);
 				uiItemEnumO(layout, op->type->idname, "Reload from disk", 0, "resolution", RESOLVE_RELOAD);
 				uiItemEnumO(layout, op->type->idname, "Make text internal (separate copy)", 0, "resolution", RESOLVE_MAKE_INTERNAL);
@@ -2949,7 +2956,7 @@ static int resolve_conflict_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(
 			}
 			break;
 		case 2:
-			pup= uiPupMenuBegin(C, "File Deleted Outside Blender", 0);
+			pup= uiPupMenuBegin(C, "File Deleted Outside Blender", ICON_NULL);
 			layout= uiPupMenuLayout(pup);
 			uiItemEnumO(layout, op->type->idname, "Make text internal", 0, "resolution", RESOLVE_MAKE_INTERNAL);
 			uiItemEnumO(layout, op->type->idname, "Recreate file", 0, "resolution", RESOLVE_SAVE);

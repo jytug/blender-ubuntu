@@ -1,5 +1,5 @@
 /**
- * $Id: KX_VertexProxy.cpp 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: KX_VertexProxy.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 #include "KX_VertexProxy.h"
 #include "KX_MeshProxy.h"
@@ -553,4 +553,4 @@ PyObject* KX_VertexProxy::PySetUV2(PyObject* args)
 	Py_RETURN_NONE;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

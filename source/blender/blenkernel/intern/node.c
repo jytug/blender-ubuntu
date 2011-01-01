@@ -1,5 +1,5 @@
 /**
- * $Id: node.c 32620 2010-10-21 04:21:09Z campbellbarton $
+ * $Id: node.c 33935 2010-12-29 12:18:59Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,7 +27,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #include <Python.h>
 #endif
 
@@ -36,11 +36,13 @@
 #include <string.h>
 
 #include "DNA_anim_types.h"
+#include "DNA_action_types.h"
 
 #include "RNA_access.h"
 
+#include "BKE_animsys.h"
+#include "BKE_action.h"
 #include "BKE_fcurve.h"
-#include "BKE_animsys.h" /* BKE_free_animdata only */
 
 
 #include "PIL_time.h"
@@ -460,6 +462,7 @@ bNode *nodeMakeGroupFromSelected(bNodeTree *ntree)
 	bNode *node, *gnode, *nextn;
 	bNodeSocket *sock;
 	bNodeTree *ngroup;
+	ListBase anim_basepaths = {NULL, NULL};
 	float min[2], max[2];
 	int totnode=0;
 	
@@ -496,19 +499,33 @@ bNode *nodeMakeGroupFromSelected(bNodeTree *ntree)
 		return NULL;
 	
 	/* OK! new nodetree */
-	ngroup= alloc_libblock(&G.main->nodetree, ID_NT, "NodeGroup");
-	ngroup->type= ntree->type;
-	ngroup->alltypes= ntree->alltypes;
+	ngroup= ntreeAddTree("NodeGroup", ntree->type, TRUE);
 	
 	/* move nodes over */
 	for(node= ntree->nodes.first; node; node= nextn) {
 		nextn= node->next;
 		if(node->flag & NODE_SELECT) {
+			/* keep track of this node's RNA "base" path (the part of the pat identifying the node) 
+			 * if the old nodetree has animation data which potentially covers this node
+			 */
+			if (ntree->adt) {
+				PointerRNA ptr;
+				char *path;
+				
+				RNA_pointer_create(&ntree->id, &RNA_Node, node, &ptr);
+				path = RNA_path_from_ID_to_struct(&ptr);
+				
+				if (path)
+					BLI_addtail(&anim_basepaths, BLI_genericNodeN(path));
+			}
+			
+			/* change node-collection membership */
 			BLI_remlink(&ntree->nodes, node);
 			BLI_addtail(&ngroup->nodes, node);
+			
 			node->locx-= 0.5f*(min[0]+max[0]);
 			node->locy-= 0.5f*(min[1]+max[1]);
-
+			
 			/* set socket own_index to zero since it can still have a value
 			 * from being in a group before, otherwise it doesn't get a unique
 			 * index in group_verify_own_indices */
@@ -525,6 +542,21 @@ bNode *nodeMakeGroupFromSelected(bNodeTree *ntree)
 		if(link->fromnode->flag & link->tonode->flag & NODE_SELECT) {
 			BLI_remlink(&ntree->links, link);
 			BLI_addtail(&ngroup->links, link);
+		}
+	}
+	
+	/* move animation data over */
+	if (ntree->adt) {
+		LinkData *ld, *ldn=NULL;
+		
+		BKE_animdata_separate_by_basepath(&ntree->id, &ngroup->id, &anim_basepaths);
+		
+		/* paths + their wrappers need to be freed */
+		for (ld = anim_basepaths.first; ld; ld = ld->next) {
+			ldn = ld->next;
+			
+			MEM_freeN(ld->data);
+			BLI_freelinkN(&anim_basepaths, ld);
 		}
 	}
 	
@@ -773,6 +805,7 @@ int nodeGroupUnGroup(bNodeTree *ntree, bNode *gnode)
 	bNodeLink *link, *linkn;
 	bNode *node, *nextn;
 	bNodeTree *ngroup, *wgroup;
+	ListBase anim_basepaths = {NULL, NULL};
 	int index;
 	
 	ngroup= (bNodeTree *)gnode->id;
@@ -781,16 +814,38 @@ int nodeGroupUnGroup(bNodeTree *ntree, bNode *gnode)
 	/* clear new pointers, set in copytree */
 	for(node= ntree->nodes.first; node; node= node->next)
 		node->new_node= NULL;
-
+	
+	/* wgroup is a temporary copy of the NodeTree we're merging in
+	 *	- all of wgroup's nodes are transferred across to their new home
+	 *	- ngroup (i.e. the source NodeTree) is left unscathed
+	 */
 	wgroup= ntreeCopyTree(ngroup, 0);
 	
 	/* add the nodes into the ntree */
 	for(node= wgroup->nodes.first; node; node= nextn) {
 		nextn= node->next;
+		
+		/* keep track of this node's RNA "base" path (the part of the pat identifying the node) 
+		 * if the old nodetree has animation data which potentially covers this node
+		 */
+		if (wgroup->adt) {
+			PointerRNA ptr;
+			char *path;
+			
+			RNA_pointer_create(&wgroup->id, &RNA_Node, node, &ptr);
+			path = RNA_path_from_ID_to_struct(&ptr);
+			
+			if (path)
+				BLI_addtail(&anim_basepaths, BLI_genericNodeN(path));
+		}
+		
+		/* migrate node */
 		BLI_remlink(&wgroup->nodes, node);
 		BLI_addtail(&ntree->nodes, node);
+		
 		node->locx+= gnode->locx;
 		node->locy+= gnode->locy;
+		
 		node->flag |= NODE_SELECT;
 	}
 	/* and the internal links */
@@ -798,6 +853,29 @@ int nodeGroupUnGroup(bNodeTree *ntree, bNode *gnode)
 		linkn= link->next;
 		BLI_remlink(&wgroup->links, link);
 		BLI_addtail(&ntree->links, link);
+	}
+	
+	/* and copy across the animation */
+	if (wgroup->adt) {
+		LinkData *ld, *ldn=NULL;
+		bAction *waction;
+		
+		/* firstly, wgroup needs to temporary dummy action that can be destroyed, as it shares copies */
+		waction = wgroup->adt->action = copy_action(wgroup->adt->action);
+		
+		/* now perform the moving */
+		BKE_animdata_separate_by_basepath(&wgroup->id, &ntree->id, &anim_basepaths);
+		
+		/* paths + their wrappers need to be freed */
+		for (ld = anim_basepaths.first; ld; ld = ld->next) {
+			ldn = ld->next;
+			
+			MEM_freeN(ld->data);
+			BLI_freelinkN(&anim_basepaths, ld);
+		}
+		
+		/* free temp action too */
+		free_libblock(&G.main->action, waction);
 	}
 
 	/* restore links to and from the gnode */
@@ -883,6 +961,11 @@ bNode *nodeAddNodeType(bNodeTree *ntree, int type, bNodeTree *ngroup, ID *id)
 {
 	bNode *node= NULL;
 	bNodeType *ntype= NULL;
+
+	if (ngroup && BLI_findindex(&G.main->nodetree, ngroup)==-1) {
+		printf("nodeAddNodeType() error: '%s' not in main->nodetree\n", ngroup->id.name);
+		return NULL;
+	}
 
 	if(type>=NODE_DYNAMIC_MENU) {
 		int a=0, idx= type-NODE_DYNAMIC_MENU;
@@ -1034,21 +1117,22 @@ void nodeRemSocketLinks(bNodeTree *ntree, bNodeSocket *sock)
 }
 
 
-bNodeTree *ntreeAddTree(int type)
+bNodeTree *ntreeAddTree(const char *name, int type, const short is_group)
 {
-	bNodeTree *ntree= MEM_callocN(sizeof(bNodeTree), "new node tree");
+	bNodeTree *ntree;
+
+	if (is_group)
+		ntree= alloc_libblock(&G.main->nodetree, ID_NT, name);
+	else {
+		ntree= MEM_callocN(sizeof(bNodeTree), "new node tree");
+		*( (short *)ntree->id.name )= ID_NT; /* not "type", as that is ntree->type */
+		BLI_strncpy(ntree->id.name+2, name, sizeof(ntree->id.name));
+	}
+
 	ntree->type= type;
 	ntree->alltypes.first = NULL;
 	ntree->alltypes.last = NULL;
 
-	/* this helps RNA identify ID pointers as nodetree */
-	if(ntree->type==NTREE_SHADER)
-		BLI_strncpy(ntree->id.name, "NTShader Nodetree", sizeof(ntree->id.name));
-	else if(ntree->type==NTREE_COMPOSIT)
-		BLI_strncpy(ntree->id.name, "NTCompositing Nodetree", sizeof(ntree->id.name));
-	else if(ntree->type==NTREE_TEXTURE)
-		BLI_strncpy(ntree->id.name, "NTTexture Nodetree", sizeof(ntree->id.name));
-	
 	ntreeInitTypes(ntree);
 	return ntree;
 }
@@ -1077,7 +1161,7 @@ bNodeTree *ntreeCopyTree(bNodeTree *ntree, int internal_select)
 			newtree= copy_libblock(ntree);
 		} else {
 			newtree= MEM_dupallocN(ntree);
-			copy_libblock_data(&newtree->id, &ntree->id); /* copy animdata and ID props */
+			copy_libblock_data(&newtree->id, &ntree->id, TRUE); /* copy animdata and ID props */
 		}
 		newtree->nodes.first= newtree->nodes.last= NULL;
 		newtree->links.first= newtree->links.last= NULL;
@@ -1182,12 +1266,12 @@ static void node_init_preview(bNode *node, int xsize, int ysize)
 	}
 	
 	if(node->preview->rect==NULL) {
-		node->preview->rect= MEM_callocN(4*xsize + xsize*ysize*sizeof(float)*4, "node preview rect");
+		node->preview->rect= MEM_callocN(4*xsize + xsize*ysize*sizeof(char)*4, "node preview rect");
 		node->preview->xsize= xsize;
 		node->preview->ysize= ysize;
 	}
 	else
-		memset(node->preview->rect, 0, 4*xsize + xsize*ysize*sizeof(float)*4);
+		memset(node->preview->rect, 0, 4*xsize + xsize*ysize*sizeof(char)*4);
 }
 
 void ntreeInitPreview(bNodeTree *ntree, int xsize, int ysize)
@@ -1237,12 +1321,18 @@ void nodeAddToPreview(bNode *node, float *col, int x, int y)
 		if(x>=0 && y>=0) {
 			if(x<preview->xsize && y<preview->ysize) {
 				unsigned char *tar= preview->rect+ 4*((preview->xsize*y) + x);
-				//if(tar[0]==0.0f) {
-				tar[0]= FTOCHAR(col[0]);
-				tar[1]= FTOCHAR(col[1]);
-				tar[2]= FTOCHAR(col[2]);
+				
+				if(TRUE) {
+					tar[0]= FTOCHAR(linearrgb_to_srgb(col[0]));
+					tar[1]= FTOCHAR(linearrgb_to_srgb(col[1]));
+					tar[2]= FTOCHAR(linearrgb_to_srgb(col[2]));
+				}
+				else {
+					tar[0]= FTOCHAR(col[0]);
+					tar[1]= FTOCHAR(col[1]);
+					tar[2]= FTOCHAR(col[2]);
+				}
 				tar[3]= FTOCHAR(col[3]);
-				//}
 			}
 			//else printf("prv out bound x y %d %d\n", x, y);
 		}
@@ -1708,14 +1798,28 @@ static void ntreeSetOutput(bNodeTree *ntree)
 			/* there is more types having output class, each one is checked */
 			for(tnode= ntree->nodes.first; tnode; tnode= tnode->next) {
 				if(tnode->typeinfo->nclass==NODE_CLASS_OUTPUT) {
-					/* same type, exception for viewer */
-					if(tnode->type==node->type ||
-					   (ELEM(tnode->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER) &&
-					    ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER))) {
-						if(tnode->flag & NODE_DO_OUTPUT) {
-							output++;
-							if(output>1)
-								tnode->flag &= ~NODE_DO_OUTPUT;
+					
+					if(ntree->type==NTREE_COMPOSIT) {
+							
+						/* same type, exception for viewer */
+						if(tnode->type==node->type ||
+						   (ELEM(tnode->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER) &&
+							ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER))) {
+							if(tnode->flag & NODE_DO_OUTPUT) {
+								output++;
+								if(output>1)
+									tnode->flag &= ~NODE_DO_OUTPUT;
+							}
+						}
+					}
+					else {
+						/* same type */
+						if(tnode->type==node->type) {
+							if(tnode->flag & NODE_DO_OUTPUT) {
+								output++;
+								if(output>1)
+									tnode->flag &= ~NODE_DO_OUTPUT;
+							}
 						}
 					}
 				}
@@ -1968,7 +2072,6 @@ static void composit_begin_exec(bNodeTree *ntree, int is_group)
 /* copy stack compbufs to sockets */
 static void composit_end_exec(bNodeTree *ntree, int is_group)
 {
-	extern void print_compbuf(char *str, struct CompBuf *cbuf);
 	bNode *node;
 	bNodeStack *ns;
 	int a;
@@ -2451,6 +2554,25 @@ static bNode *getExecutableNode(bNodeTree *ntree)
 	return NULL;
 }
 
+/* check if texture nodes need exec or end */
+static  void ntree_composite_texnode(bNodeTree *ntree, int init)
+{
+	bNode *node;
+	
+	for(node= ntree->nodes.first; node; node= node->next) {
+		if(node->type==CMP_NODE_TEXTURE && node->id) {
+			Tex *tex= (Tex *)node->id;
+			if(tex->nodetree && tex->use_nodes) {
+				/* has internal flag to detect it only does it once */
+				if(init)
+					ntreeBeginExecTree(tex->nodetree); 
+				else
+					ntreeEndExecTree(tex->nodetree);
+			}
+		}
+	}
+
+}
 
 /* optimized tree execute test for compositing */
 void ntreeCompositExecTree(bNodeTree *ntree, RenderData *rd, int do_preview)
@@ -2466,6 +2588,7 @@ void ntreeCompositExecTree(bNodeTree *ntree, RenderData *rd, int do_preview)
 		ntreeInitPreview(ntree, 0, 0);
 	
 	ntreeBeginExecTree(ntree);
+	ntree_composite_texnode(ntree, 1);
 	
 	/* prevent unlucky accidents */
 	if(G.background)
@@ -2583,8 +2706,6 @@ bNodeTree *ntreeLocalize(bNodeTree *ntree)
 	/* ensures only a single output node is enabled */
 	ntreeSetOutput(ntree);
 
-	/* move over the compbufs */
-	/* right after ntreeCopyTree() oldsock pointers are valid */
 	for(node= ntree->nodes.first; node; node= node->next) {
 		
 		/* store new_node pointer to original */
@@ -2592,22 +2713,27 @@ bNodeTree *ntreeLocalize(bNodeTree *ntree)
 		/* ensure new user input gets handled ok */
 		node->need_exec= 0;
 		
-		if(ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER)) {
-			if(node->id) {
-				if(node->flag & NODE_DO_OUTPUT)
-					node->new_node->id= (ID *)copy_image((Image *)node->id);
-				else
-					node->new_node->id= NULL;
+		if(ntree->type==NTREE_COMPOSIT) {
+			/* move over the compbufs */
+			/* right after ntreeCopyTree() oldsock pointers are valid */
+			
+			if(ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER)) {
+				if(node->id) {
+					if(node->flag & NODE_DO_OUTPUT)
+						node->new_node->id= (ID *)copy_image((Image *)node->id);
+					else
+						node->new_node->id= NULL;
+				}
 			}
-		}
-		
-		for(sock= node->outputs.first; sock; sock= sock->next) {
 			
-			sock->new_sock->ns.data= sock->ns.data;
-			compbuf_set_node(sock->new_sock->ns.data, node->new_node);
-			
-			sock->ns.data= NULL;
-			sock->new_sock->new_sock= sock;
+			for(sock= node->outputs.first; sock; sock= sock->next) {
+				
+				sock->new_sock->ns.data= sock->ns.data;
+				compbuf_set_node(sock->new_sock->ns.data, node->new_node);
+				
+				sock->ns.data= NULL;
+				sock->new_sock->new_sock= sock;
+			}
 		}
 	}
 	
@@ -2635,19 +2761,38 @@ static int outsocket_exists(bNode *node, bNodeSocket *testsock)
 
 /* sync local composite with real tree */
 /* local composite is supposed to be running, be careful moving previews! */
+/* is called by jobs manager, outside threads, so it doesnt happen during draw */
 void ntreeLocalSync(bNodeTree *localtree, bNodeTree *ntree)
 {
 	bNode *lnode;
 	
-	/* move over the compbufs and previews */
-	for(lnode= localtree->nodes.first; lnode; lnode= lnode->next) {
-		if( (lnode->exec & NODE_READY) && !(lnode->exec & NODE_SKIPPED) ) {
+	if(ntree->type==NTREE_COMPOSIT) {
+		/* move over the compbufs and previews */
+		for(lnode= localtree->nodes.first; lnode; lnode= lnode->next) {
+			if( (lnode->exec & NODE_READY) && !(lnode->exec & NODE_SKIPPED) ) {
+				if(node_exists(ntree, lnode->new_node)) {
+					
+					if(lnode->preview && lnode->preview->rect) {
+						node_free_preview(lnode->new_node);
+						lnode->new_node->preview= lnode->preview;
+						lnode->preview= NULL;
+					}
+				}
+			}
+		}
+	}
+	else if(ntree->type==NTREE_SHADER) {
+		/* copy over contents of previews */
+		for(lnode= localtree->nodes.first; lnode; lnode= lnode->next) {
 			if(node_exists(ntree, lnode->new_node)) {
+				bNode *node= lnode->new_node;
 				
-				if(lnode->preview && lnode->preview->rect) {
-					node_free_preview(lnode->new_node);
-					lnode->new_node->preview= lnode->preview;
-					lnode->preview= NULL;
+				if(node->preview && node->preview->rect) {
+					if(lnode->preview && lnode->preview->rect) {
+						int xsize= node->preview->xsize;
+						int ysize= node->preview->ysize;
+						memcpy(node->preview->rect, lnode->preview->rect, 4*xsize + xsize*ysize*sizeof(char)*4);
+					}
 				}
 			}
 		}
@@ -2718,7 +2863,7 @@ static void gpu_from_node_stack(ListBase *sockets, bNodeStack **ns, GPUNodeStack
 
 		gs[i].name = "";
 		gs[i].hasinput= ns[i]->hasinput && ns[i]->data;
-		gs[i].hasoutput= ns[i]->hasinput && ns[i]->data;
+		gs[i].hasoutput= ns[i]->hasoutput && ns[i]->data;
 		gs[i].sockettype= ns[i]->sockettype;
 	}
 
@@ -2732,8 +2877,6 @@ static void data_from_gpu_stack(ListBase *sockets, bNodeStack **ns, GPUNodeStack
 
 	for (sock=sockets->first, i=0; sock; sock=sock->next, i++) {
 		ns[i]->data= gs[i].link;
-		ns[i]->hasinput= gs[i].hasinput && gs[i].link;
-		ns[i]->hasoutput= gs[i].hasoutput;
 		ns[i]->sockettype= gs[i].sockettype;
 	}
 }
@@ -2908,6 +3051,8 @@ void ntreeCompositTagRender(Scene *curscene)
 			
 			for(node= sce->nodetree->nodes.first; node; node= node->next) {
 				if(node->id==(ID *)curscene || node->type==CMP_NODE_COMPOSITE)
+					NodeTagChanged(sce->nodetree, node);
+				else if(node->type==CMP_NODE_TEXTURE) /* uses scene sizex/sizey */
 					NodeTagChanged(sce->nodetree, node);
 			}
 		}
@@ -3216,7 +3361,7 @@ static void remove_dynamic_typeinfos(ListBase *list)
 			if(ntype->inputs) {
 				bNodeSocketType *sock= ntype->inputs;
 				while(sock->type!=-1) {
-					MEM_freeN(sock->name);
+					MEM_freeN((void *)sock->name);
 					sock++;
 				}
 				MEM_freeN(ntype->inputs);
@@ -3224,13 +3369,13 @@ static void remove_dynamic_typeinfos(ListBase *list)
 			if(ntype->outputs) {
 				bNodeSocketType *sock= ntype->outputs;
 				while(sock->type!=-1) {
-					MEM_freeN(sock->name);
+					MEM_freeN((void *)sock->name);
 					sock++;
 				}
 				MEM_freeN(ntype->outputs);
 			}
 			if(ntype->name) {
-				MEM_freeN(ntype->name);
+				MEM_freeN((void *)ntype->name);
 			}
 			MEM_freeN(ntype);
 		}

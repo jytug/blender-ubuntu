@@ -4,7 +4,7 @@
  * 
  *	Reevan McKay et al
  *
- * $Id: BKE_deform.h 31517 2010-08-22 14:15:28Z campbellbarton $
+ * $Id: BKE_deform.h 33435 2010-12-03 01:52:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,8 +49,8 @@ int					 defgroup_flip_index(struct Object *ob, int index, int use_default);
 int					 defgroup_name_index(struct Object *ob, const char *name);
 void				 defgroup_unique_name(struct bDeformGroup *dg, struct Object *ob);
 
-struct MDeformWeight	*defvert_find_index(const struct MDeformVert *dv, int defgroup);
-struct MDeformWeight	*defvert_verify_index(struct MDeformVert *dv, int defgroup);
+struct MDeformWeight	*defvert_find_index(const struct MDeformVert *dv, const int defgroup);
+struct MDeformWeight	*defvert_verify_index(struct MDeformVert *dv, const int defgroup);
 
 float  defvert_find_weight(const struct MDeformVert *dvert, int group_num);
 float  defvert_array_find_weight_safe(const struct MDeformVert *dvert, int index, int group_num);

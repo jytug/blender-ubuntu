@@ -1,7 +1,7 @@
 /**
  * KX_SoundActuator.h
  *
- * $Id: KX_SoundActuator.h 31372 2010-08-16 11:41:07Z nexyon $
+ * $Id: KX_SoundActuator.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -93,7 +93,7 @@ public:
 	CValue* GetReplica();
 	void ProcessReplica();
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* -------------------------------------------------------------------- */
 	/* Python interface --------------------------------------------------- */
@@ -115,7 +115,7 @@ public:
 	static PyObject* pyattr_get_pitch(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef);
 	static PyObject* pyattr_get_type(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef);
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 };
 

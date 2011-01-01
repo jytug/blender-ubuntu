@@ -1,4 +1,4 @@
-/* $Id: PyTypeList.cpp 20741 2009-06-08 20:08:19Z blendix $
+/* $Id: PyTypeList.cpp 33830 2010-12-21 07:35:13Z moguri $
 -----------------------------------------------------------------------------
 This source file is part of blendTex library
 
@@ -28,6 +28,14 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 #include <PyObjectPlus.h>
 
+/// destructor
+PyTypeList::~PyTypeList()
+{
+	// if list exists
+	if (m_list.get() != NULL)
+		for (PyTypeListType::iterator it = m_list->begin(); it != m_list->end(); ++it)
+			delete *it;
+}
 
 /// check, if type is in list
 bool PyTypeList::in (PyTypeObject * type)

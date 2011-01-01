@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_mask.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_mask.c 33390 2010-11-30 15:39:38Z ton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -53,6 +53,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	MaskModifierData *tmmd = (MaskModifierData*) target;
 	
 	strcpy(tmmd->vgroup, mmd->vgroup);
+	tmmd->flag = mmd->flag;
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *UNUSED(md))

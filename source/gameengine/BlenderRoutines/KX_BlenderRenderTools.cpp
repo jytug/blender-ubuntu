@@ -1,5 +1,5 @@
 /**
- * $Id: KX_BlenderRenderTools.cpp 27231 2010-03-03 06:38:47Z dfelinto $
+ * $Id: KX_BlenderRenderTools.cpp 33707 2010-12-16 10:25:41Z dfelinto $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -275,7 +275,16 @@ void KX_BlenderRenderTools::applyTransform(RAS_IRasterizer* rasty,double* oglmat
 		}
 	}
 }
-
+void KX_BlenderRenderTools::RenderText3D(int fontid,
+										 const char* text,
+										 int size,
+										 int dpi,
+										 float* color,
+										 double* mat,
+										 float aspect)
+{
+	BL_print_game_line(fontid, text, size, dpi, color, mat, aspect);
+}
 
 void KX_BlenderRenderTools::RenderText2D(RAS_TEXT_RENDER_MODE mode,
 										 const char* text,

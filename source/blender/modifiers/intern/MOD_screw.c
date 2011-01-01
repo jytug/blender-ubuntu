@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_screw.c 32682 2010-10-24 11:14:18Z campbellbarton $
+* $Id: MOD_screw.c 33358 2010-11-28 06:03:30Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -167,11 +167,6 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	MVert *mvert_new, *mvert_orig, *mv_orig, *mv_new, *mv_new_base;
 
 	ScrewVertConnect *vc, *vc_tmp, *vert_connect= NULL;
-
-	float mat[4][4] =	{{0.0f, 0.0f, 0.0f, 0.0f},
-						 {0.0f, 0.0f, 0.0f, 0.0f},
-						 {0.0f, 0.0f, 0.0f, 0.0f},
-						 {0.0f, 0.0f, 0.0f, 1.0f}};
 
 	/* dont do anything? */
 	if (!totvert)
@@ -674,6 +669,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		const int varray_stride= totvert * step;
 		float step_angle;
 		float nor_tx[3];
+		float mat[4][4];
 		/* Rotation Matrix */
 		step_angle= (angle / (step_tot - (!close))) * step;
 

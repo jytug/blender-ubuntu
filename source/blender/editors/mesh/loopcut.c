@@ -1,5 +1,5 @@
 /**
- * $Id: loopcut.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: loopcut.c 33857 2010-12-22 18:46:54Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,11 +32,11 @@
 #include <stdio.h>
 
 #include "DNA_ID.h"
+#include "DNA_object_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_userdef_types.h"
 #include "DNA_windowmanager_types.h"
-#include "DNA_object_types.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -50,8 +50,10 @@
 #include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
-#include "BKE_scene.h"
 #include "BKE_mesh.h"
+#include "BKE_modifier.h"
+#include "BKE_report.h"
+#include "BKE_scene.h"
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h" /* for paint cursor */
@@ -94,13 +96,15 @@ typedef struct tringselOpData {
 } tringselOpData;
 
 /* modal loop selection drawing callback */
-static void ringsel_draw(const bContext *UNUSED(C), ARegion *UNUSED(ar), void *arg)
+static void ringsel_draw(const bContext *C, ARegion *UNUSED(ar), void *arg)
 {
-	int i;
+	View3D *v3d = CTX_wm_view3d(C);
 	tringselOpData *lcd = arg;
+	int i;
 	
 	if (lcd->totedge > 0) {
-		glDisable(GL_DEPTH_TEST);
+		if(v3d && v3d->zbuf)
+			glDisable(GL_DEPTH_TEST);
 
 		glPushMatrix();
 		glMultMatrixf(lcd->ob->obmat);
@@ -114,7 +118,8 @@ static void ringsel_draw(const bContext *UNUSED(C), ARegion *UNUSED(ar), void *a
 		glEnd();
 
 		glPopMatrix();
-		glEnable(GL_DEPTH_TEST);
+		if(v3d && v3d->zbuf)
+			glEnable(GL_DEPTH_TEST);
 	}
 }
 
@@ -282,7 +287,7 @@ static void ringsel_finish(bContext *C, wmOperator *op)
 				WM_event_add_notifier(C, NC_SCENE|ND_TOOLSETTINGS, CTX_data_scene(C));
 			}
 			
-			DAG_id_flush_update(lcd->ob->data, OB_RECALC_DATA);
+			DAG_id_tag_update(lcd->ob->data, OB_RECALC_DATA);
 			WM_event_add_notifier(C, NC_GEOM|ND_DATA, lcd->ob->data);
 		}
 		else {
@@ -378,10 +383,14 @@ static int ringsel_invoke (bContext *C, wmOperator *op, wmEvent *evt)
 
 static int ringcut_invoke (bContext *C, wmOperator *op, wmEvent *evt)
 {
+	Object *obedit= CTX_data_edit_object(C);
 	tringselOpData *lcd;
 	EditEdge *edge;
 	int dist = 75;
 
+	if(modifiers_isDeformedByLattice(obedit) || modifiers_isDeformedByArmature(obedit))
+		BKE_report(op->reports, RPT_WARNING, "Loop cut doesn't work well on deformed edit mesh display");
+	
 	view3d_operator_needs_opengl(C);
 
 	if (!ringsel_init(C, op, 1))
@@ -487,7 +496,7 @@ void MESH_OT_edgering_select (wmOperatorType *ot)
 	
 	/* callbacks */
 	ot->invoke= ringsel_invoke;
-	ot->poll= ED_operator_editmesh_view3d;
+	ot->poll= ED_operator_editmesh_region_view3d; 
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -506,7 +515,7 @@ void MESH_OT_loopcut (wmOperatorType *ot)
 	ot->invoke= ringcut_invoke;
 	ot->modal= ringcut_modal;
 	ot->cancel= ringcut_cancel;
-	ot->poll= ED_operator_editmesh_view3d;
+	ot->poll= ED_operator_editmesh_region_view3d;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO|OPTYPE_BLOCKING;

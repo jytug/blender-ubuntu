@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_C-api.h 29935 2010-07-04 15:35:23Z elubie $
+ * $Id: GHOST_C-api.h 33448 2010-12-03 17:05:21Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -167,7 +167,7 @@ extern void GHOST_GetMainDisplayDimensions(GHOST_SystemHandle systemhandle,
  * @return	A handle to the new window ( == NULL if creation failed).
  */
 extern GHOST_WindowHandle GHOST_CreateWindow(GHOST_SystemHandle systemhandle,
-	char* title,
+	const char* title,
 	GHOST_TInt32 left,
 	GHOST_TInt32 top,
 	GHOST_TUns32 width,
@@ -525,7 +525,7 @@ extern GHOST_TSuccess GHOST_SetDrawingContextType(GHOST_WindowHandle windowhandl
  * @param title	The title to display in the title bar.
  */
 extern void GHOST_SetTitle(GHOST_WindowHandle windowhandle,
-						   char* title);
+						   const char* title);
 
 /**
  * Returns the title displayed in the title bar. The title

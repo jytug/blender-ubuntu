@@ -1,5 +1,5 @@
 /**
-* $Id: DNA_smoke_types.h 30809 2010-07-27 14:53:20Z genscher $
+* $Id: DNA_smoke_types.h 33398 2010-11-30 21:31:18Z jhk $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -35,6 +35,7 @@
 #define MOD_SMOKE_DISSOLVE_LOG (1<<3) /* using 1/x for dissolve */
 
 #define MOD_SMOKE_HIGH_SMOOTH (1<<5) /* smoothens high res emission*/
+#define MOD_SMOKE_FILE_LOAD (1<<6) /* flag for file load */
 
 /* noise */
 #define MOD_SMOKE_NOISEWAVE (1<<0)
@@ -86,6 +87,8 @@ typedef struct SmokeDomainSettings {
 	int v3dnum;
 	int cache_comp;
 	int cache_high_comp;
+
+	/* Smoke uses only one cache from now on (index [0]), but keeping the array for now for reading old files. */
 	struct PointCache *point_cache[2];	/* definition is in DNA_object_force.h */
 	struct ListBase ptcaches[2];
 	struct EffectorWeights *effector_weights;

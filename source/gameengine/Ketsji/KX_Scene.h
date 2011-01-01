@@ -1,5 +1,5 @@
 /**
- * $Id: KX_Scene.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: KX_Scene.h 33707 2010-12-16 10:25:41Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -99,7 +99,7 @@ class KX_Scene : public PyObjectPlus, public SCA_IScene
 {
 	Py_Header;
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	PyObject*	m_attr_dict;
 	PyObject*	m_draw_call_pre;
 	PyObject*	m_draw_call_post;
@@ -136,6 +136,13 @@ protected:
 	 * The set of cameras for this scene
 	 */
 	list<class KX_Camera*>       m_cameras;
+
+	/**
+	 * The set of fonts for this scene
+	 */
+	list<class KX_FontObject*>       m_fonts;
+
+
 	/**
 	 * Various SCA managers used by the scene
 	 */
@@ -361,6 +368,27 @@ public:
 	GetTimeEventManager(
 	);
 
+	/** Font Routines */
+		
+		list<class KX_FontObject*>*
+	GetFonts(
+	);
+
+	/** Find a font in the scene by pointer. */
+		KX_FontObject*              
+	FindFont(
+		KX_FontObject*
+	);
+
+	/** Add a camera to this scene. */
+		void                    
+	AddFont(
+		KX_FontObject*
+	);
+
+
+	/** Camera Routines */
+
 		list<class KX_Camera*>*
 	GetCameras(
 	);
@@ -544,7 +572,7 @@ public:
 	void Update2DFilter(vector<STR_String>& propNames, void* gameObj, RAS_2DFilterManager::RAS_2DFILTER_MODE filtermode, int pass, STR_String& text);
 	void Render2DFilters(RAS_ICanvas* canvas);
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	/* --------------------------------------------------------------------- */
 	/* Python interface ---------------------------------------------------- */
 	/* --------------------------------------------------------------------- */

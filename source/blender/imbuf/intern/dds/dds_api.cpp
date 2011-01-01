@@ -1,5 +1,5 @@
 /**
- * $Id: dds_api.cpp 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: dds_api.cpp 33167 2010-11-19 02:14:18Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,7 +37,7 @@ extern "C" {
 #include "IMB_allocimbuf.h"
 
 
-int imb_save_dds(struct ImBuf * ibuf, char *name, int flags)
+int imb_save_dds(struct ImBuf * ibuf, const char *name, int flags)
 {
 	return(0); /* todo: finish this function */
 

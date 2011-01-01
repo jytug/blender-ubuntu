@@ -1,5 +1,5 @@
 /**
- * $Id: qtkit_import.m 32525 2010-10-16 15:53:01Z jesterking $
+ * $Id: qtkit_import.m 33167 2010-11-19 02:14:18Z campbellbarton $
  *
  * qtkit_import.m
  *
@@ -79,7 +79,7 @@ void quicktime_exit(void)
 }
 
 
-int anim_is_quicktime (char *name)
+int anim_is_quicktime (const char *name)
 {
 	NSAutoreleasePool *pool;
 	

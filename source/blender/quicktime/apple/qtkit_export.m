@@ -1,5 +1,5 @@
 /**
- * $Id: qtkit_export.m 32565 2010-10-18 17:55:11Z elubie $
+ * $Id: qtkit_export.m 33610 2010-12-12 13:45:35Z ton $
  *
  * qtkit_export.m
  *
@@ -119,9 +119,10 @@ static QuicktimeCodecTypeDesc qtVideoCodecList[] = {
 	{kMPEG4VisualCodecType, 10, "MPEG4"},
 	{kH263CodecType, 11, "H.263"},
 	{kH264CodecType, 12, "H.264"},
+	{kAnimationCodecType, 13, "Animation"},
 	{0,0,NULL}};
 
-static int qtVideoCodecCount = 12;
+static int qtVideoCodecCount = 13;
 
 int quicktime_get_num_videocodecs() {
 	return qtVideoCodecCount;

@@ -3,7 +3,7 @@
  *
  * These callbacks are needed in the lib
  *
- * $Id: BLI_callbacks.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BLI_callbacks.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,7 +35,7 @@
 #define BLI_CALLBACKS_H
 
 // This is blenlib internal only
-void callLocalErrorCallBack(char* msg);
+void callLocalErrorCallBack(const char* msg);
 
 #endif
 

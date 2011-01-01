@@ -1,6 +1,6 @@
 /**
  *	
- * $Id: BKE_sketch.h 26841 2010-02-12 13:34:04Z campbellbarton $ 
+ * $Id: BKE_sketch.h 33442 2010-12-03 12:30:59Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -113,12 +113,12 @@ typedef struct SK_Gesture {
 /************************************************/
 
 void freeSketch(SK_Sketch *sketch);
-SK_Sketch* createSketch();
+SK_Sketch* createSketch(void);
 
 void sk_removeStroke(SK_Sketch *sketch, SK_Stroke *stk);
 
 void sk_freeStroke(SK_Stroke *stk);
-SK_Stroke* sk_createStroke();
+SK_Stroke* sk_createStroke(void);
 
 SK_Point *sk_lastStrokePoint(SK_Stroke *stk);
 

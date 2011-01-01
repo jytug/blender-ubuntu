@@ -1,4 +1,5 @@
-# $Id: CMakeLists.txt 26841 2010-02-12 13:34:04Z campbellbarton $
+# -*- mode: cmake; indent-tabs-mode: t; -*-
+# $Id: CMakeLists.txt 33862 2010-12-22 22:15:20Z gsrb3d $
 # ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -27,33 +28,33 @@
 #
 # ***** END GPL/BL DUAL LICENSE BLOCK *****
 
-MESSAGE(STATUS "Configuring WebPlugin")
+message(STATUS "Configuring WebPlugin")
 
 # Enable build flag
-STRING(TOUPPER ${WEBPLUGIN_SANDBOX_MODE} WEBPLUGIN_SANDBOX_MODE_UPPER)
+string(TOUPPER ${WEBPLUGIN_SANDBOX_MODE} WEBPLUGIN_SANDBOX_MODE_UPPER)
 
-IF (WEBPLUGIN_SANDBOX_MODE_UPPER STREQUAL "APPARMOR")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWITH_APPARMOR ")
-ENDIF (WEBPLUGIN_SANDBOX_MODE_UPPER STREQUAL "APPARMOR")
+if(WEBPLUGIN_SANDBOX_MODE_UPPER STREQUAL "APPARMOR")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWITH_APPARMOR ")
+endif()
 
-IF (WEBPLUGIN_SANDBOX_MODE_UPPER STREQUAL "PRIVSEP")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWITH_PRIVSEP ")
-	ADD_EXECUTABLE(blenderplayer-wrapper blenderplayer-wrapper.c)
-ENDIF (WEBPLUGIN_SANDBOX_MODE_UPPER STREQUAL "PRIVSEP")
+if(WEBPLUGIN_SANDBOX_MODE_UPPER STREQUAL "PRIVSEP")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWITH_PRIVSEP ")
+	add_executable(blenderplayer-wrapper blenderplayer-wrapper.c)
+endif()
 
 # set output path
-SET(LIBRARY_OUTPUT_PATH  ${CMAKE_BINARY_DIR}/webplugin)
+set(LIBRARY_OUTPUT_PATH  ${CMAKE_BINARY_DIR}/webplugin)
 
-SET(INC
+set(INC
 	${GECKO_DIR}/include/
 )
 
-SET(SRC 
+set(SRC 
 	npunix.c 
 	UnixShell.c 
 )
 
-INCLUDE_DIRECTORIES(${INC})
-ADD_LIBRARY(blender_plugin SHARED ${SRC} )
+blender_include_dirs(${INC})
+add_library(blender_plugin SHARED ${SRC} )
 
 

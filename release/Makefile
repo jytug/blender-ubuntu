@@ -1,6 +1,6 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
-# $Id: Makefile 31223 2010-08-10 21:22:26Z gsrb3d $
+# $Id: Makefile 33381 2010-11-29 17:23:06Z ton $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -156,7 +156,7 @@ endif
     ifeq ($(OS),darwin)
 	@echo "----> Copy python modules"
 	@mkdir $(CONFDIR)/python/
-	@unzip -q $(LCGDIR)/release/python.zip -d $(CONFDIR)/python/	
+	@unzip -q $(LCGDIR)/release/python_ppc.zip -d $(CONFDIR)/python/	
     endif
 
     ifeq ($(OS),darwin)

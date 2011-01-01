@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 31223 2010-08-10 21:22:26Z gsrb3d $
+# $Id: Makefile 33707 2010-12-16 10:25:41Z dfelinto $
 #
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -41,6 +41,7 @@ CPPFLAGS += -I$(OPENGL_HEADERS)
 CPPFLAGS += -I../../../blender/blenkernel
 CPPFLAGS += -I../../../blender/blenloader
 CPPFLAGS += -I../../../blender/blenlib
+CPPFLAGS += -I../../../blender/blenfont
 CPPFLAGS += -I../../../blender/imbuf
 CPPFLAGS += -I../../../blender/makesdna
 CPPFLAGS += -I../../../blender/gpu
@@ -67,18 +68,3 @@ CPPFLAGS += -I../../../gameengine/Rasterizer
 CPPFLAGS += -I../../../gameengine/SceneGraph
 CPPFLAGS += -I../../../gameengine/Rasterizer/RAS_OpenGLRasterizer
 CPPFLAGS += -I../../../gameengine/Physics/common
-
-###############################
-
-SOURCEDIR = source/gameengine/GamePlayer/common
-DIRS =
-ifeq ($(OS),windows)
-# Still 
-    DIRS = windows
-else
-  ifneq ($(OS),darwin)
-    DIRS = unix
-  endif
-endif
-
-include nan_subdirs.mk

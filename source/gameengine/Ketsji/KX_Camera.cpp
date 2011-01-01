@@ -1,5 +1,5 @@
 /*
- * $Id: KX_Camera.cpp 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: KX_Camera.cpp 33203 2010-11-21 01:55:08Z moguri $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -474,7 +474,7 @@ int KX_Camera::GetViewportTop() const
 	return m_camdata.m_viewporttop;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 //----------------------------------------------------------------------------
 //Python
 
@@ -706,6 +706,7 @@ int KX_Camera::pyattr_set_perspective(void *self_v, const KX_PYATTRIBUTE_DEF *at
 	}
 	
 	self->m_camdata.m_perspective= param;
+	self->InvalidateProjectionMatrix();
 	return PY_SET_ATTR_SUCCESS;
 }
 

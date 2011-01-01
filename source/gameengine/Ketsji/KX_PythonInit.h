@@ -1,5 +1,5 @@
 /**
- * $Id: KX_PythonInit.h 28590 2010-05-05 06:38:49Z campbellbarton $
+ * $Id: KX_PythonInit.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,7 +39,7 @@ typedef enum {
 
 extern bool gUseVisibilityTemp;
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 PyObject*	initGameLogic(class KX_KetsjiEngine *engine, class KX_Scene* ketsjiscene);
 PyObject*	initGameKeys();
 PyObject*	initRasterizer(class RAS_IRasterizer* rasty,class RAS_ICanvas* canvas);

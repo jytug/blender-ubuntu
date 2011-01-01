@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_actuator_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_actuator_types.h 31028 2010-08-04 04:01:27Z campbellbarton $ 
+ * $Id: DNA_actuator_types.h 33500 2010-12-06 07:45:07Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -112,7 +112,7 @@ typedef struct bObjectActuator {
 	short damping;
 	float forceloc[3], forcerot[3];
 	float pad[3], pad1[3];
-	float dloc[3], drot[3];
+	float dloc[3], drot[3]; /* angle in radians */
 	float linearvelocity[3], angularvelocity[3];
 	struct Object *reference;
 } bObjectActuator;

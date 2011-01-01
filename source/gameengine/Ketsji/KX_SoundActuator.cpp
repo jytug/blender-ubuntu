@@ -1,7 +1,7 @@
 /**
  * KX_SoundActuator.cpp
  *
- * $Id: KX_SoundActuator.cpp 31380 2010-08-16 14:55:45Z nexyon $
+ * $Id: KX_SoundActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -233,7 +233,7 @@ bool KX_SoundActuator::Update(double curtime, bool frame)
 }
 
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -496,4 +496,4 @@ int KX_SoundActuator::pyattr_set_pitch(void *self, const struct KX_PYATTRIBUTE_D
 	return PY_SET_ATTR_SUCCESS;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

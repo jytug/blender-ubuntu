@@ -1,5 +1,5 @@
 /**
- * $Id: view2d.c 32702 2010-10-25 13:37:49Z campbellbarton $
+ * $Id: view2d.c 33890 2010-12-26 10:34:09Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -57,6 +57,9 @@
 
 /* *********************************************************************** */
 
+/* XXX still unresolved: scrolls hide/unhide vs region mask handling */
+/* XXX there's V2D_SCROLL_HORIZONTAL_HIDE and V2D_SCROLL_HORIZONTAL_FULLR ... */
+
 /* helper to allow scrollbars to dynamically hide
  * 	- returns a copy of the scrollbar settings with the flags to display 
  *	  horizontal/vertical scrollbars removed
@@ -83,6 +86,7 @@ static void view2d_masks(View2D *v2d)
 	v2d->mask.ymax= v2d->winy - 1;
 
 #if 0
+	// XXX see above
 	v2d->scroll &= ~(V2D_SCROLL_HORIZONTAL_HIDE|V2D_SCROLL_VERTICAL_HIDE);
 	/* check size if: */
 	if (v2d->scroll & V2D_SCROLL_HORIZONTAL)
@@ -845,7 +849,7 @@ void UI_view2d_totRect_set_resize (View2D *v2d, int width, int height, int resiz
 	
 	if (ELEM3(0, v2d, width, height)) {
 		if (G.f & G_DEBUG)
-			printf("Error: View2D totRect set exiting: v2d=%p width=%d height=%d \n", v2d, width, height); // XXX temp debug info
+			printf("Error: View2D totRect set exiting: v2d=%p width=%d height=%d \n", (void *)v2d, width, height); // XXX temp debug info
 		return;
 	}
 	
@@ -1525,7 +1529,7 @@ static void scroll_printstr(Scene *scene, float x, float y, float val, int power
 	}
 	
 	/* draw it */
-	BLF_draw_default(x, y, 0.0f, str);
+	BLF_draw_default(x, y, 0.0f, str, sizeof(str)-1);
 }
 
 /* Draw scrollbars in the given 2d-region */
@@ -1693,10 +1697,10 @@ void UI_view2d_scrollers_draw(const bContext *C, View2D *v2d, View2DScrollers *v
 			 *	  NOTE: it's assumed that that scrollbar is there if this is involved!
 			 */
 			fac= (grid->starty- v2d->cur.ymin) / (v2d->cur.ymax - v2d->cur.ymin);
-			fac= (vert.ymin + V2D_SCROLL_HEIGHT) + fac*(vert.ymax - vert.ymin - V2D_SCROLL_HEIGHT);
+			fac= vert.ymin + fac*(vert.ymax - vert.ymin);
 			
 			dfac= (grid->dy) / (v2d->cur.ymax - v2d->cur.ymin);
-			dfac= dfac * (vert.ymax - vert.ymin - V2D_SCROLL_HEIGHT);
+			dfac= dfac * (vert.ymax - vert.ymin);
 			
 			/* set starting value, and text color */
 			UI_ThemeColor(TH_TEXT);
@@ -2002,48 +2006,58 @@ static ListBase strings= {NULL, NULL};
 
 typedef struct View2DString {
 	struct View2DString *next, *prev;
-	float col[4];
-	char str[128]; 
+	union {
+		unsigned char ub[4];
+		int pack;
+	} col;
 	short mval[2];
 	rcti rect;
 } View2DString;
 
 
-void UI_view2d_text_cache_add(View2D *v2d, float x, float y, char *str)
+void UI_view2d_text_cache_add(View2D *v2d, float x, float y, const char *str, const char col[4])
 {
 	int mval[2];
 	
 	UI_view2d_view_to_region(v2d, x, y, mval, mval+1);
 	
 	if(mval[0]!=V2D_IS_CLIPPED && mval[1]!=V2D_IS_CLIPPED) {
+		int len= strlen(str)+1;
 		/* use calloc, rect has to be zeroe'd */
-		View2DString *v2s= MEM_callocN(sizeof(View2DString), "View2DString");
-		
+		View2DString *v2s= MEM_callocN(sizeof(View2DString)+len, "View2DString");
+		char *v2s_str= (char *)(v2s+1);
+		memcpy(v2s_str, str, len);
+
 		BLI_addtail(&strings, v2s);
-		BLI_strncpy(v2s->str, str, 128);
+		v2s->col.pack= *((int *)col);
 		v2s->mval[0]= mval[0];
 		v2s->mval[1]= mval[1];
-		glGetFloatv(GL_CURRENT_COLOR, v2s->col);
 	}
 }
 
 /* no clip (yet) */
-void UI_view2d_text_cache_rectf(View2D *v2d, rctf *rect, char *str)
+void UI_view2d_text_cache_rectf(View2D *v2d, rctf *rect, const char *str, const char col[4])
 {
-	View2DString *v2s= MEM_callocN(sizeof(View2DString), "View2DString");
-	
+	int len= strlen(str)+1;
+	View2DString *v2s= MEM_callocN(sizeof(View2DString)+len, "View2DString");
+	char *v2s_str= (char *)(v2s+1);
+	memcpy(v2s_str, str, len);
+
 	UI_view2d_to_region_no_clip(v2d, rect->xmin, rect->ymin, &v2s->rect.xmin, &v2s->rect.ymin);
 	UI_view2d_to_region_no_clip(v2d, rect->xmax, rect->ymax, &v2s->rect.xmax, &v2s->rect.ymax);
-	
+
+	v2s->col.pack= *((int *)col);
+	v2s->mval[0]= v2s->rect.xmin;
+	v2s->mval[1]= v2s->rect.ymin;
+
 	BLI_addtail(&strings, v2s);
-	BLI_strncpy(v2s->str, str, 128);
-	glGetFloatv(GL_CURRENT_COLOR, v2s->col);
 }
 
 
 void UI_view2d_text_cache_draw(ARegion *ar)
 {
 	View2DString *v2s;
+	int col_pack_prev= 0;
 	
 	// glMatrixMode(GL_PROJECTION);
 	// glPushMatrix();
@@ -2052,18 +2066,23 @@ void UI_view2d_text_cache_draw(ARegion *ar)
 	ED_region_pixelspace(ar);
 	
 	for(v2s= strings.first; v2s; v2s= v2s->next) {
-		glColor3fv(v2s->col);
-		if(v2s->rect.xmin==v2s->rect.xmax)
-			BLF_draw_default((float)v2s->mval[0], (float)v2s->mval[1], 0.0, v2s->str);
+		const char *str= (const char *)(v2s+1);
+		int xofs=0, yofs;
+
+		yofs= ceil( 0.5f*(v2s->rect.ymax - v2s->rect.ymin - BLF_height_default("28")));
+		if(yofs<1) yofs= 1;
+
+		if(col_pack_prev != v2s->col.pack) {
+			glColor3ubv(v2s->col.ub);
+			col_pack_prev= v2s->col.pack;
+		}
+
+		if(v2s->rect.xmin >= v2s->rect.xmax)
+			BLF_draw_default((float)v2s->mval[0]+xofs, (float)v2s->mval[1]+yofs, 0.0, str, 65535);
 		else {
-			int xofs=0, yofs;
-			
-			yofs= ceil( 0.5f*(v2s->rect.ymax - v2s->rect.ymin - BLF_height_default("28")));
-			if(yofs<1) yofs= 1;
-			
 			BLF_clipping_default(v2s->rect.xmin-4, v2s->rect.ymin-4, v2s->rect.xmax+4, v2s->rect.ymax+4);
 			BLF_enable_default(BLF_CLIPPING);
-			BLF_draw_default(v2s->rect.xmin+xofs, v2s->rect.ymin+yofs, 0.0f, v2s->str);
+			BLF_draw_default(v2s->rect.xmin+xofs, v2s->rect.ymin+yofs, 0.0f, str, 65535);
 			BLF_disable_default(BLF_CLIPPING);
 		}
 	}

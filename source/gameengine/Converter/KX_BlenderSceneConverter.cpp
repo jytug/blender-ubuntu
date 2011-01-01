@@ -1,5 +1,5 @@
 /**
- * $Id: KX_BlenderSceneConverter.cpp 32646 2010-10-22 06:00:12Z campbellbarton $
+ * $Id: KX_BlenderSceneConverter.cpp 33133 2010-11-17 14:36:19Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -777,8 +777,8 @@ void	KX_BlenderSceneConverter::WritePhysicsObjectToAnimationIpo(int frameNumber)
 
 					mat3_to_compatible_eul(blenderObject->rot, blenderObject->rot, tmat);
 
-					insert_keyframe(&blenderObject->id, NULL, NULL, "location", -1, frameNumber, INSERTKEY_FAST);
-					insert_keyframe(&blenderObject->id, NULL, NULL, "rotation_euler", -1, frameNumber, INSERTKEY_FAST);
+					insert_keyframe(NULL, &blenderObject->id, NULL, NULL, "location", -1, frameNumber, INSERTKEY_FAST);
+					insert_keyframe(NULL, &blenderObject->id, NULL, NULL, "rotation_euler", -1, frameNumber, INSERTKEY_FAST);
 
 #if 0
 					const MT_Point3& position = gameObj->NodeGetWorldPosition();
@@ -906,7 +906,7 @@ void	KX_BlenderSceneConverter::TestHandlesPhysicsObjectToAnimationIpo()
 
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 PyObject *KX_BlenderSceneConverter::GetPyNamespace()
 {
 	return m_ketsjiEngine->GetPyNamespace();

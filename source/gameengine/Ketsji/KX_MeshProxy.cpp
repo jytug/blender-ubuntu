@@ -1,5 +1,5 @@
 /**
- * $Id: KX_MeshProxy.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_MeshProxy.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 #include "KX_MeshProxy.h"
 #include "RAS_IPolygonMaterial.h"
@@ -308,4 +308,4 @@ bool ConvertPythonToMesh(PyObject * value, RAS_MeshObject **object, bool py_none
 	return false;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

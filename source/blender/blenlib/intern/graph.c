@@ -1,5 +1,5 @@
 /**
- * $Id: graph.c 28324 2010-04-21 12:27:48Z campbellbarton $
+ * $Id: graph.c 33435 2010-12-03 01:52:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -128,7 +128,7 @@ void BLI_buildAdjacencyList(BGraph *graph)
 	{
 		if (node->degree != node->flag)
 		{
-			printf("error in node [%p]. Added only %i arcs out of %i\n", node, node->flag, node->degree);
+			printf("error in node [%p]. Added only %i arcs out of %i\n", (void *)node, node->flag, node->degree);
 		}
 	}
 }
@@ -161,7 +161,7 @@ void BLI_rebuildAdjacencyListForNode(BGraph* graph, BNode *node)
 
 	if (node->degree != node->flag)
 	{
-		printf("error in node [%p]. Added only %i arcs out of %i\n", node, node->flag, node->degree);
+		printf("error in node [%p]. Added only %i arcs out of %i\n", (void *)node, node->flag, node->degree);
 	}
 }
 

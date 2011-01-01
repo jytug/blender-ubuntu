@@ -1,5 +1,5 @@
 /**
- * $Id: wm_init_exit.c 32669 2010-10-23 16:03:31Z campbellbarton $
+ * $Id: wm_init_exit.c 33848 2010-12-22 14:20:22Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -61,11 +61,13 @@
 
 #include "RE_pipeline.h"		/* RE_ free stuff */
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #include "BPY_extern.h"
 #endif
 
+#ifdef WITH_GAMEENGINE
 #include "SYS_System.h"
+#endif
 
 #include "RNA_define.h"
 
@@ -127,7 +129,7 @@ void WM_init(bContext *C, int argc, char **argv)
 	ED_file_init();			/* for fsmenu */
 	ED_init_node_butfuncs();	
 	
-	BLF_init(11, U.dpi);
+	BLF_init(11, U.dpi); /* Please update source/gamengine/GamePlayer/GPG_ghost.cpp if you change this */
 	BLF_lang_init();
 	
 	/* get the default database, plus a wm */
@@ -141,9 +143,11 @@ void WM_init(bContext *C, int argc, char **argv)
 	 * before WM_read_homefile() or make py-drivers check if python is running.
 	 * Will try fix when the crash can be repeated. - campbell. */
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	BPY_set_context(C); /* necessary evil */
 	BPY_start_python(argc, argv);
+
+	BPY_reset_driver();
 	BPY_load_user_modules(C);
 #else
 	(void)argc; /* unused */
@@ -271,12 +275,16 @@ int WM_init_game(bContext *C)
 		if(scene->gm.fullscreen) {
 			WM_operator_name_call(C, "WM_OT_window_fullscreen_toggle", WM_OP_EXEC_DEFAULT, NULL);
 			wm_get_screensize(&ar->winrct.xmax, &ar->winrct.ymax);
+			ar->winx = ar->winrct.xmax + 1;
+			ar->winy = ar->winrct.ymax + 1;
 		}
 		else
 		{
 			GHOST_RectangleHandle rect = GHOST_GetClientBounds(win->ghostwin);
 			ar->winrct.ymax = GHOST_GetHeightRectangle(rect);
 			ar->winrct.xmax = GHOST_GetWidthRectangle(rect);
+			ar->winx = ar->winrct.xmax + 1;
+			ar->winy = ar->winrct.ymax + 1;
 			GHOST_DisposeRectangle(rect);
 		}
 
@@ -321,10 +329,10 @@ extern wchar_t *copybuf;
 extern wchar_t *copybufinfo;
 
 	// XXX copy/paste buffer stuff...
-extern void free_anim_copybuf(); 
-extern void free_anim_drivers_copybuf(); 
-extern void free_fmodifiers_copybuf(); 
-extern void free_posebuf(); 
+extern void free_anim_copybuf(void); 
+extern void free_anim_drivers_copybuf(void); 
+extern void free_fmodifiers_copybuf(void); 
+extern void free_posebuf(void); 
 
 /* called in creator.c even... tsk, split this! */
 void WM_exit(bContext *C)
@@ -396,7 +404,7 @@ void WM_exit(bContext *C)
 //	free_txt_data();
 	
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	/* XXX - old note */
 	/* before free_blender so py's gc happens while library still exists */
 	/* needed at least for a rare sigsegv that can happen in pydrivers */
@@ -432,9 +440,9 @@ void WM_exit(bContext *C)
 	wm_ghost_exit();
 
 	CTX_free(C);
-	
+#ifdef WITH_GAMEENGINE
 	SYS_DeleteSystem(SYS_GetSystem());
-
+#endif
 	if(MEM_get_memory_blocks_in_use()!=0) {
 		printf("Error Totblock: %d\n", MEM_get_memory_blocks_in_use());
 		MEM_printmemlist();

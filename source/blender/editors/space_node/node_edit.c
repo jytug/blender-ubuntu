@@ -1,5 +1,5 @@
 /**
- * $Id: node_edit.c 32499 2010-10-15 12:29:02Z campbellbarton $
+ * $Id: node_edit.c 33923 2010-12-28 10:39:27Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -244,7 +244,7 @@ void ED_node_shader_default(Material *ma)
 		return;
 	}
 	
-	ma->nodetree= ntreeAddTree(NTREE_SHADER);
+	ma->nodetree= ntreeAddTree("Shader Nodetree", NTREE_SHADER, FALSE);
 	
 	out= nodeAddNodeType(ma->nodetree, SH_NODE_OUTPUT, NULL, NULL);
 	out->locx= 300.0f; out->locy= 300.0f;
@@ -275,15 +275,17 @@ void ED_node_composit_default(Scene *sce)
 		return;
 	}
 	
-	sce->nodetree= ntreeAddTree(NTREE_COMPOSIT);
+	sce->nodetree= ntreeAddTree("Compositing Nodetree", NTREE_COMPOSIT, FALSE);
 	
 	out= nodeAddNodeType(sce->nodetree, CMP_NODE_COMPOSITE, NULL, NULL);
 	out->locx= 300.0f; out->locy= 400.0f;
 	out->id= &sce->id;
+	id_us_plus(out->id);
 	
 	in= nodeAddNodeType(sce->nodetree, CMP_NODE_R_LAYERS, NULL, NULL);
 	in->locx= 10.0f; in->locy= 400.0f;
 	in->id= &sce->id;
+	id_us_plus(in->id);
 	nodeSetActive(sce->nodetree, in);
 	
 	/* links from color to color */
@@ -310,7 +312,7 @@ void ED_node_texture_default(Tex *tx)
 		return;
 	}
 	
-	tx->nodetree= ntreeAddTree(NTREE_TEXTURE);
+	tx->nodetree= ntreeAddTree("Texture Nodetree", NTREE_TEXTURE, FALSE);
 	
 	out= nodeAddNodeType(tx->nodetree, TEX_NODE_OUTPUT, NULL, NULL);
 	out->locx= 300.0f; out->locy= 300.0f;
@@ -431,11 +433,25 @@ void node_set_active(SpaceNode *snode, bNode *node)
 	nodeSetActive(snode->edittree, node);
 	
 	if(node->type!=NODE_GROUP) {
+		int was_output= (node->flag & NODE_DO_OUTPUT);
+		
 		/* tree specific activate calls */
 		if(snode->treetype==NTREE_SHADER) {
 			/* when we select a material, active texture is cleared, for buttons */
 			if(node->id && GS(node->id->name)==ID_MA)
 				nodeClearActiveID(snode->edittree, ID_TE);
+			
+			if(node->type==SH_NODE_OUTPUT) {
+				bNode *tnode;
+				
+				for(tnode= snode->edittree->nodes.first; tnode; tnode= tnode->next)
+					if( tnode->type==SH_NODE_OUTPUT)
+						tnode->flag &= ~NODE_DO_OUTPUT;
+				
+				node->flag |= NODE_DO_OUTPUT;
+				if(was_output==0)
+					ED_node_changed_update(snode->id, node);
+			}
 
 			// XXX
 #if 0
@@ -452,7 +468,7 @@ void node_set_active(SpaceNode *snode, bNode *node)
 			/* make active viewer, currently only 1 supported... */
 			if( ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER)) {
 				bNode *tnode;
-				int was_output= (node->flag & NODE_DO_OUTPUT);
+				
 
 				for(tnode= snode->edittree->nodes.first; tnode; tnode= tnode->next)
 					if( ELEM(tnode->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER))
@@ -479,6 +495,16 @@ void node_set_active(SpaceNode *snode, bNode *node)
 				if(node->id==NULL || node->id==(ID *)scene) {
 					scene->r.actlay= node->custom1;
 				}
+			}
+			else if(node->type==CMP_NODE_COMPOSITE) {
+				bNode *tnode;
+				
+				for(tnode= snode->edittree->nodes.first; tnode; tnode= tnode->next)
+					if( tnode->type==CMP_NODE_COMPOSITE)
+						tnode->flag &= ~NODE_DO_OUTPUT;
+				
+				node->flag |= NODE_DO_OUTPUT;
+				ED_node_changed_update(snode->id, node);
 			}
 		}
 		else if(snode->treetype==NTREE_TEXTURE) {
@@ -605,11 +631,11 @@ static int node_group_ungroup_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	
 	if(gnode->type!=NODE_GROUP) {
-		BKE_report(op->reports, RPT_ERROR, "Not a group");
+		BKE_report(op->reports, RPT_WARNING, "Not a group");
 		return OPERATOR_CANCELLED;
 	}
 	else if(!nodeGroupUnGroup(snode->edittree, gnode)) {
-		BKE_report(op->reports, RPT_ERROR, "Can't ungroup");
+		BKE_report(op->reports, RPT_WARNING, "Can't ungroup");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -1785,7 +1811,7 @@ static int cut_links_intersect(bNodeLink *link, float mcoords[][2], int tot)
 	if(node_link_bezier_points(NULL, NULL, link, coord_array, LINK_RESOL)) {
 
 		for(i=0; i<tot-1; i++)
-			for(b=0; b<LINK_RESOL-1; b++)
+			for(b=0; b<LINK_RESOL; b++)
 				if(isect_line_line_v2(mcoords[i], mcoords[i+1], coord_array[b], coord_array[b+1]) > 0)
 					return 1;
 	}
@@ -1904,16 +1930,17 @@ void NODE_OT_read_renderlayers(wmOperatorType *ot)
 
 static int node_read_fullsamplelayers_exec(bContext *C, wmOperator *UNUSED(op))
 {
+	Main *bmain= CTX_data_main(C);
 	SpaceNode *snode= CTX_wm_space_node(C);
 	Scene *curscene= CTX_data_scene(C);
 	Render *re= RE_NewRender(curscene->id.name);
 
-//	WM_cursor_wait(1);
+	WM_cursor_wait(1);
 
-	RE_MergeFullSample(re, curscene, snode->nodetree);
+	RE_MergeFullSample(re, bmain, curscene, snode->nodetree);
 	snode_notify(C, snode);
 	
-//	WM_cursor_wait(0);
+	WM_cursor_wait(0);
 	return OPERATOR_FINISHED;
 }
 
@@ -1941,7 +1968,7 @@ static int node_group_make_exec(bContext *C, wmOperator *op)
 	bNode *gnode;
 	
 	if(snode->edittree!=snode->nodetree) {
-		BKE_report(op->reports, RPT_ERROR, "Can not add a new Group in a Group");
+		BKE_report(op->reports, RPT_WARNING, "Can not add a new Group in a Group");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -1954,7 +1981,7 @@ static int node_group_make_exec(bContext *C, wmOperator *op)
 		}
 		
 		if(gnode) {
-			BKE_report(op->reports, RPT_ERROR, "Can not add RenderLayer in a Group");
+			BKE_report(op->reports, RPT_WARNING, "Can not add RenderLayer in a Group");
 			return OPERATOR_CANCELLED;
 		}
 	}
@@ -1963,7 +1990,7 @@ static int node_group_make_exec(bContext *C, wmOperator *op)
 	
 	gnode= nodeMakeGroupFromSelected(snode->nodetree);
 	if(gnode==NULL) {
-		BKE_report(op->reports, RPT_ERROR, "Can not make Group");
+		BKE_report(op->reports, RPT_WARNING, "Can not make Group");
 		return OPERATOR_CANCELLED;
 	}
 	else {
@@ -2293,7 +2320,7 @@ static int node_add_file_exec(bContext *C, wmOperator *op)
 	node = node_add_node(snode, scene, ntype, snode->mx, snode->my);
 	
 	if (!node) {
-		BKE_report(op->reports, RPT_ERROR, "Could not add an image node.");
+		BKE_report(op->reports, RPT_WARNING, "Could not add an image node.");
 		return OPERATOR_CANCELLED;
 	}
 	

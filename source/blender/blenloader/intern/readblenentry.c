@@ -1,5 +1,5 @@
 /**
- * $Id: readblenentry.c 32506 2010-10-16 02:40:31Z campbellbarton $
+ * $Id: readblenentry.c 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -242,7 +242,7 @@ void BLO_blendhandle_close(BlendHandle *bh) {
 
 	/**********/
 
-BlendFileData *BLO_read_from_file(char *file, ReportList *reports)
+BlendFileData *BLO_read_from_file(const char *file, ReportList *reports)
 {
 	BlendFileData *bfd = NULL;
 	FileData *fd;

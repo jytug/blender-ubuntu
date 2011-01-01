@@ -1,7 +1,7 @@
 /**
  * Generate random pulses
  *
- * $Id: SCA_RandomSensor.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_RandomSensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -120,7 +120,7 @@ bool SCA_RandomSensor::Evaluate()
 	return evaluateResult;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -176,6 +176,6 @@ int SCA_RandomSensor::pyattr_set_seed(void *self_v, const KX_PYATTRIBUTE_DEF *at
 	return PY_SET_ATTR_SUCCESS;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

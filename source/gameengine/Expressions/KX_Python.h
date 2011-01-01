@@ -1,5 +1,5 @@
 /**
- * $Id: KX_Python.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_Python.h 33301 2010-11-24 21:39:07Z damien78 $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +40,7 @@
 #undef _POSIX_C_SOURCE
 #endif
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #include "Python.h"
 
 #define USE_MATHUTILS // Blender 2.5x api will use mathutils, for a while we might want to test without it
@@ -64,6 +64,16 @@
 #undef tolower
 #undef toupper
 #endif
+#endif
+
+#ifdef __APPLE__
+#undef isalnum
+#undef isalpha
+#undef islower
+#undef isspace
+#undef isupper
+#undef tolower
+#undef toupper
 #endif
 
 #endif // KX_PYTHON_H

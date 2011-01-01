@@ -3,7 +3,7 @@
 // of a referenced object. The copy inherits some properties from the owner
 // of this actuator.
 //
-// $Id: KX_SCA_AddObjectActuator.h 26841 2010-02-12 13:34:04Z campbellbarton $
+// $Id: KX_SCA_AddObjectActuator.h 32788 2010-10-31 04:11:39Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -122,7 +122,7 @@ public:
 
 	void	InstantAddObject();
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	KX_PYMETHOD_DOC_NOARGS(KX_SCA_AddObjectActuator,InstantAddObject);
 
@@ -130,7 +130,7 @@ public:
 	static int pyattr_set_object(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
 	static PyObject* pyattr_get_objectLastCreated(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef);
 	
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 }; /* end of class KX_SCA_AddObjectActuator : public KX_EditObjectActuator */
 

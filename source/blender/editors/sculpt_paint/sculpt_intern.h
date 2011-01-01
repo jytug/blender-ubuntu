@@ -1,5 +1,5 @@
 /*
- * $Id: sculpt_intern.h 31028 2010-08-04 04:01:27Z campbellbarton $
+ * $Id: sculpt_intern.h 33468 2010-12-04 13:00:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -104,10 +104,9 @@ typedef struct SculptUndoNode {
 
 SculptUndoNode *sculpt_undo_push_node(SculptSession *ss, PBVHNode *node);
 SculptUndoNode *sculpt_undo_get_node(PBVHNode *node);
-void sculpt_undo_push_begin(char *name);
+void sculpt_undo_push_begin(const char *name);
 void sculpt_undo_push_end(void);
 
-struct MultiresModifierData *sculpt_multires_active(struct Scene *scene, struct Object *ob);
 int sculpt_modifiers_active(Scene *scene, Object *ob);
 void sculpt_vertcos_to_key(Object *ob, KeyBlock *kb, float (*vertCos)[3]);
 

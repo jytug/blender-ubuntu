@@ -1,7 +1,7 @@
 /*
  * allocimbuf.c
  *
- * $Id: allocimbuf.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: allocimbuf.c 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -443,7 +443,7 @@ static void imbuf_cache_destructor(void *data)
 	ibuf->c_handle = 0;
 }
 
-static MEM_CacheLimiterC **get_imbuf_cache_limiter()
+static MEM_CacheLimiterC **get_imbuf_cache_limiter(void)
 {
 	static MEM_CacheLimiterC *c = 0;
 

@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_ISensor.h 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: SCA_ISensor.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -190,7 +190,7 @@ public:
 	bool IsNoLink() const 
 		{ return !m_links; }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	/* Python functions: */
 	KX_PYMETHOD_DOC_NOARGS(SCA_ISensor,reset);
 	
@@ -210,7 +210,7 @@ public:
 		KX_SENSOR_JUST_DEACTIVATED
 	
 	};
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 };
 
 #endif //__SCA_ISENSOR

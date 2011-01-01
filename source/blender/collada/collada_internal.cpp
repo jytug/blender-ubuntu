@@ -1,5 +1,5 @@
 /**
- * $Id: collada_internal.cpp 32389 2010-10-09 21:17:14Z jesterking $
+ * $Id: collada_internal.cpp 33111 2010-11-16 22:27:31Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -247,7 +247,7 @@ std::string id_name(void *id)
 
 std::string get_geometry_id(Object *ob)
 {
-	return translate_id(id_name(ob)) + "-mesh";
+	return translate_id(id_name(ob->data)) + "-mesh";
 }
 
 std::string get_light_id(Object *ob)

@@ -1,5 +1,5 @@
 /**
- * $Id: BL_ArmatureObject.cpp 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: BL_ArmatureObject.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -594,7 +594,7 @@ float BL_ArmatureObject::GetBoneLength(Bone* bone) const
 	return (float)(MT_Point3(bone->head) - MT_Point3(bone->tail)).length();
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 // PYTHON
 
@@ -661,4 +661,4 @@ KX_PYMETHODDEF_DOC_NOARGS(BL_ArmatureObject, update,
 	Py_RETURN_NONE;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

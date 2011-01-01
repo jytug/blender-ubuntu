@@ -1,5 +1,5 @@
 /**
- * $Id: KX_VertexProxy.h 31373 2010-08-16 12:14:09Z nexyon $
+ * $Id: KX_VertexProxy.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,7 +29,7 @@
 #ifndef __KX_VERTEXPROXY
 #define __KX_VERTEXPROXY
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 #include "SCA_IObject.h"
 
@@ -102,7 +102,7 @@ public:
 
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 #endif //__KX_VERTEXPROXY
 

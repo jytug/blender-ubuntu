@@ -19,9 +19,9 @@
 bl_addon_info = {
     "name": "Renderfarm.fi",
     "author": "Nathan Letwory <nathan@letworyinteractive.com>, Jesse Kaukonen <jesse.kaukonen@gmail.com>",
-    "version": (3,),
-    "blender": (2, 5, 3),
-    "api": 31847,
+    "version": (5,),
+    "blender": (2, 5, 5),
+    "api": 33713,
     "location": "Render > Engine > Renderfarm.fi",
     "description": "Send .blend as session to http://www.renderfarm.fi to render",
     "warning": "",
@@ -102,6 +102,7 @@ ORESettings.fps = IntProperty(name='FPS', description='FPS', min=1, max=256, def
 ORESettings.prepared = BoolProperty(name='Prepared', description='Set to True if preparation has been run', default=False)
 ORESettings.debug = BoolProperty(name='Debug', description='Verbose output in console', default=False)
 ORESettings.selected_session = IntProperty(name='Selected Session', description='The selected session', default=0)
+ORESettings.hasUnsupportedSimulation = BoolProperty(name='HasSimulation', description='Set to True if therea re unsupported simulations', default=False)
 
 # session struct
 ORESession.name = StringProperty(name='Name', description='Name of the session', maxlen=128, default='[session]')
@@ -119,7 +120,7 @@ ORESettings.inlicense = EnumProperty(items=licenses, name='source license', desc
 ORESettings.outlicense = EnumProperty(items=licenses, name='output license', description='license speficied for the output files', default='1')
 
 ORESettings.sessions = CollectionProperty(type=ORESession, name='Sessions', description='Sessions on Renderfarm.fi')
-        
+
 # all panels, except render panel
 # Example of wrapping every class 'as is'
 import properties_scene
@@ -154,8 +155,123 @@ class RenderButtonsPanel():
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "render"
-    # COMPAT_ENGINES must be defined in each subclass, external engines can add themselves here
+    # COMPAT_ENGINES must be defined in each subclass, external engines can add themselves here    
+
+class SUMMARY_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
+    # Prints a summary to the panel before uploading. If scene settings differ from ore settings, then display a warning icon
+    bl_label = 'Summary'
+    COMPAT_ENGINES = set(['RENDERFARMFI_RENDER'])
     
+    @classmethod
+    def poll(cls, context):
+        rd = context.scene.render
+        return (rd.use_game_engine==False) and (rd.engine in cls.COMPAT_ENGINES)
+    
+    def draw(self, context):
+        sce = context.scene
+        rd = context.scene.render
+        ore = context.scene.ore_render
+        layout = self.layout
+        problems = False
+        
+        # Check if correct resolution is set
+        if rd.resolution_x != ore.resox:
+            layout.label(text='Resolution X: ' + str(ore.resox), icon='ERROR')
+            problems = True
+        else:
+            layout.label(text='Resolution X: ' + str(ore.resox), icon='FILE_TICK')
+        if rd.resolution_y != ore.resoy:
+            layout.label(text='Resolution Y: ' + str(ore.resoy), icon='ERROR')
+            problems = True
+        else:
+            layout.label(text='Resolution Y: ' + str(ore.resoy), icon='FILE_TICK')
+        
+        # Check if correct number of frames is specified
+        if (sce.frame_start != ore.start) and not ( (sce.frame_start == ore.start and sce.frame_end == ore.end) and sce.frame_start == sce.frame_end):
+            layout.label(text='Start frame: ' + str(ore.start), icon='ERROR')
+            layout.label(text='.blend Start frame is different to the one specified in the uploader script. Please verify!')
+            problems = True
+        else:
+            layout.label(text='Start frame: ' + str(ore.start), icon='FILE_TICK')
+        if (sce.frame_end != ore.end) and not ( (sce.frame_start == ore.start and sce.frame_end == ore.end) and sce.frame_start == sce.frame_end):
+            layout.label(text='End frame: ' + str(ore.end), icon='ERROR')
+            layout.label(text='.blend End frame is different to the one specified in the uploader script. Please verify!')
+            problems = True
+        else:
+            layout.label(text='End frame: ' + str(ore.end), icon='FILE_TICK')
+        
+        # Check if more than 1 frame is specified
+        if (sce.frame_start == ore.start and sce.frame_end == ore.end) and (sce.frame_start == sce.frame_end):
+            layout.label(text='Only one frame specified to be rendered!')
+            layout.label(text='This is highly ineffective when using distributed rendering')
+            problems = True
+        
+        if rd.resolution_percentage != 100:
+            layout.label(text='Resolution percentage: ' + str(rd.resolution_percentage), icon='ERROR')
+            problems = True
+        else:
+            layout.label(text='Resolution percentage: ' + str(rd.resolution_percentage), icon='FILE_TICK')
+        
+        if rd.file_format != 'PNG':
+            layout.label(text='Output format: ' + rd.file_format, icon='ERROR')
+            layout.label(text='Output format must be set to PNG')
+            problems = True
+        else:
+            layout.label(text='Output format: ' + rd.file_format, icon='FILE_TICK')
+        
+        if ore.parts > 1 and rd.use_sss == True:
+            layout.label(text='Subsurface Scattering: ' + str(rd.use_sss), icon='ERROR')
+            layout.label(text='If you want to use SSS, parts must be set to 1')
+            problems = True
+        else:
+            layout.label(text='Subsurface Scattering: ' + str(rd.use_sss), icon='FILE_TICK')
+        
+        if rd.use_compositing == False:
+            layout.label(text='Composite nodes: ' + str(rd.use_compositing), icon='ERROR')
+            layout.label(text='Composite nodes are disabled.')
+            layout.label(text='The script automatically disables them if: ')
+            layout.label(text='- Filter type nodes are used and parts are more than 1')
+            layout.label(text='- There is an output node')
+            problems = True
+        else:
+            layout.label(text='Composite nodes: ' + str(rd.use_compositing), icon='FILE_TICK')
+        
+        if rd.use_save_buffers:
+            layout.label(text='Save buffers: ' + str(rd.use_save_buffers), icon='ERROR')
+            layout.label(text='Save buffers must be disabled')
+            layout.label(text='Can only disabled if Full Sample is turned off')
+            problems = True
+        else:
+            layout.label(text='Save buffers: ' + str(rd.use_save_buffers), icon='FILE_TICK')
+        
+        if rd.threads_mode != 'FIXED' or rd.threads > 1:
+            layout.label(text='Threads: ' + rd.threads_mode + ' ' + str(rd.threads), icon='ERROR')
+            layout.label(text='Threads must be set to Fixed, 1')
+            problems = True
+        else:
+            layout.label(text='Threads: ' + rd.threads_mode + ' ' + str(rd.threads), icon='FILE_TICK')
+        
+        if ore.hasUnsupportedSimulation == True:
+            layout.label(text='There is an unsupported simulation', icon='ERROR')
+            layout.label(text='Fluid/smoke/cloth/collision/softbody simulations are not supported')
+            problems = True
+        else:
+            layout.label(text='No unsupported simulations found', icon='FILE_TICK')
+        
+        if problems == False and ore.prepared == False:
+            bpy.ops.ore.prepare()
+        
+        if ore.prepared == False:
+            layout.label(text='The script reports "not ready".', icon='ERROR')
+            layout.label(text='Please review the settings above')
+            layout.label(text='If everything is in order, click Check Scene again')
+            layout.label(text='The script automatically changes settings, so make sure they are correct')
+        else:
+            layout.label(text='The script reports "All settings ok!"', icon='FILE_TICK')
+            layout.label(text='Please render one frame using Blender Render first')
+            row = layout.row()
+            row.operator('ore.testRender')
+            layout.label(text='If you are sure that the render works, click Render on Renderfarm.fi')
 
 class RENDERFARM_MT_Session(bpy.types.Menu):
     bl_label = "Show Session"
@@ -244,23 +360,22 @@ class SESSIONS_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
 class RENDER_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
     bl_label = "Scene Settings"
     COMPAT_ENGINES = set(['RENDERFARMFI_RENDER'])
-
+    
     @classmethod
     def poll(cls, context):
         rd = context.scene.render
         return (rd.use_game_engine==False) and (rd.engine in cls.COMPAT_ENGINES)
-
+    
     def draw(self, context):
         layout = self.layout
         sce = context.scene
         ore = sce.ore_render
-
+        
         if ore.prepared and ore.hash!='':
             layout.prop(ore, 'memusage')
             
             layout.separator()
             row = layout.row()
-            row.label(text='Resolution: '+str(ore.resox)+'x'+str(ore.resoy))
             
             layout.separator()
             row = layout.row()
@@ -459,8 +574,13 @@ class OreSession:
 
     def percentageComplete(self):
         totFrames = self.endframe - self.startframe
-        done = math.floor((self.frames / totFrames)*100)
-        if done > 100: done = 100
+        if totFrames != 0:
+            done = math.floor((self.frames / totFrames)*100)
+        else:
+            done = math.floor((self.frames / (totFrames+0.01))*100)
+        
+        if done > 100:
+            done = 100
         return done
 
 def xmlSessionsToOreSessions(sessions, queue):
@@ -637,7 +757,7 @@ class ORE_PrepareOp(bpy.types.Operator):
     def execute(self, context):
         def hasSSSMaterial():
             for m in bpy.data.materials:
-                if m.subsurface_scattering.enabled:
+                if m.subsurface_scattering.use:
                     return True
             return False
 
@@ -705,8 +825,10 @@ class ORE_PrepareOp(bpy.types.Operator):
         if len(bpy.errors) > 0:
             ore.prepared = False
             return {'CANCELLED'}
-
+        
         rd = sce.render
+        
+        bpy.ops.file.pack_all()
         print("=============================================")
         rd.threads_mode = 'FIXED'
         rd.threads = 1
@@ -730,12 +852,16 @@ class ORE_PrepareOp(bpy.types.Operator):
         if hasUnsupportedSimulation() == True:
             print("An unsupported simulation was detected. Please check your settings and remove them")
             self.report({'WARNING'}, "An unsupported simulation was detected. Please check your settings and remove them")
+            ore.hasUnsupportedSimulation = True
             errors = True
+        else:
+            ore.hasUnsupportedSimulation = False
         rd.use_save_buffers = False
         rd.use_free_image_textures = True
         if rd.use_compositing:
             if hasCompositingErrors(sce.use_nodes, sce.node_tree, ore.parts):
                 print("Found disallowed nodes or problematic setup")
+                rd.use_compositing = False
                 self.report({'WARNING'}, "Found disallowed nodes or problematic setup")
                 errors = True
         print("Done checking the scene. Now do a test render")
@@ -762,6 +888,22 @@ class ORE_ResetOp(bpy.types.Operator):
     def execute(self, context):
         sce = context.scene
         sce.ore_render.prepared = False
+        sce.render.threads_mode = 'AUTO'
+        return {'FINISHED'}
+
+class ORE_TestRenderOp(bpy.types.Operator):
+    bl_idname = "ore.testRender"
+    bl_label = "Run a test render"
+    
+    def execute(self, context):
+        rd = context.scene.render
+        rd.engine = 'BLENDER_RENDER'
+        rd.threads_mode = 'AUTO'
+        rd.threads = 1
+        bpy.ops.render.render()
+        rd.threads_mode = 'FIXED'
+        rd.threads = 1
+        rd.engine = 'RENDERFARMFI_RENDER'
         return {'FINISHED'}
 
 class ORE_UploaderOp(bpy.types.Operator):
@@ -776,14 +918,18 @@ class ORE_UploaderOp(bpy.types.Operator):
 
 class ORE_UseBlenderReso(bpy.types.Operator):
     bl_idname = "ore.use_scene_settings"
-    bl_label = "Use Scene resolution"
+    bl_label = "Use Scene settings"
     
     def execute(self, context):
         sce = context.scene
         ore = sce.ore_render
+        rd = context.scene.render
         
-        ore.resox = sce.render.resolution_x
-        ore.resoy = sce.render.resolution_y
+        ore.resox = rd.resolution_x
+        ore.resoy = rd.resolution_y
+        ore.start = sce.frame_start
+        ore.end = sce.frame_end
+        ore.fps = rd.fps
         
         return {'FINISHED'}
 

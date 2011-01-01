@@ -13,6 +13,7 @@
 !include "nsDialogs.nsh"
 !include "x64.nsh"
 
+RequestExecutionLevel user
 
 SetCompressor /SOLID lzma
 
@@ -69,7 +70,10 @@ UninstallIcon "[RELDIR]\00.installer.ico"
 
 Caption "Blender [VERSION] Installer"
 OutFile "[DISTDIR]\..\blender-[VERSION]-windows[BITNESS].exe"
-InstallDir "$PROGRAMFILES[BITNESS]\Blender Foundation\Blender"
+;InstallDir "$PROGRAMFILES[BITNESS]\Blender Foundation\Blender"
+; Install to user profile dir. While it is non-standard, it allows
+; users to install without having to have the installer run in elevated mode.
+InstallDir "$PROFILE\Blender Foundation\Blender"
 
 BrandingText "Blender Foundation | http://www.blender.org"
 ComponentText "This will install Blender [VERSION] on your computer."
@@ -161,10 +165,6 @@ Section "Blender-[VERSION] (required)" SecCopyUI
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Blender" "DisplayName" "Blender (remove only)"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Blender" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteUninstaller "uninstall.exe"
-
-  ; Let's now run silent vcredist installer
-  SetOutPath $TEMP
-  [VCREDIST]
 
 SectionEnd
 

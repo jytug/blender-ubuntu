@@ -1,5 +1,5 @@
 /*
- * $Id: mathutils_euler.c 32612 2010-10-20 12:11:09Z campbellbarton $
+ * $Id: mathutils_euler.c 33878 2010-12-24 03:51:34Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,7 +39,7 @@
 
 //----------------------------------mathutils.Euler() -------------------
 //makes a new euler for you to play with
-static PyObject *Euler_new(PyTypeObject *UNUSED(type), PyObject *args, PyObject *kwds)
+static PyObject *Euler_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *seq= NULL;
 	char *order_str= NULL;
@@ -67,7 +67,7 @@ static PyObject *Euler_new(PyTypeObject *UNUSED(type), PyObject *args, PyObject 
 			return NULL;
 		break;
 	}
-	return newEulerObject(eul, order, Py_NEW, NULL);
+	return newEulerObject(eul, order, Py_NEW, type);
 }
 
 short euler_order_from_string(const char *str, const char *error_prefix)
@@ -286,7 +286,7 @@ static char Euler_MakeCompatible_doc[] =
 static PyObject *Euler_MakeCompatible(EulerObject * self, EulerObject *value)
 {
 	if(!EulerObject_Check(value)) {
-		PyErr_SetString(PyExc_TypeError, "euler.make_compatible(euler): expected a single euler argument.");
+		PyErr_SetString(PyExc_TypeError, "euler.make_compatible(euler): expected a single euler argument");
 		return NULL;
 	}
 	
@@ -294,7 +294,7 @@ static PyObject *Euler_MakeCompatible(EulerObject * self, EulerObject *value)
 		return NULL;
 
 	if(self->order != value->order) {
-		PyErr_SetString(PyExc_ValueError, "euler.make_compatible(euler): rotation orders don't match\n");
+		PyErr_SetString(PyExc_ValueError, "euler.make_compatible(euler): rotation orders don't match");
 		return NULL;
 	}
 
@@ -428,7 +428,7 @@ static int Euler_ass_item(EulerObject * self, int i, PyObject *value)
 	if(i<0) i= EULER_SIZE-i;
 	
 	if(i < 0 || i >= EULER_SIZE){
-		PyErr_SetString(PyExc_IndexError, "euler[attribute] = x: array assignment index out of range\n");
+		PyErr_SetString(PyExc_IndexError, "euler[attribute] = x: array assignment index out of range");
 		return -1;
 	}
 	
@@ -443,7 +443,7 @@ static int Euler_ass_item(EulerObject * self, int i, PyObject *value)
 //sequence slice (get)
 static PyObject *Euler_slice(EulerObject * self, int begin, int end)
 {
-	PyObject *list = NULL;
+	PyObject *tuple;
 	int count;
 
 	if(!BaseMath_ReadCallback(self))
@@ -452,15 +452,14 @@ static PyObject *Euler_slice(EulerObject * self, int begin, int end)
 	CLAMP(begin, 0, EULER_SIZE);
 	if (end<0) end= (EULER_SIZE + 1) + end;
 	CLAMP(end, 0, EULER_SIZE);
-	begin = MIN2(begin,end);
+	begin= MIN2(begin, end);
 
-	list = PyList_New(end - begin);
+	tuple= PyTuple_New(end - begin);
 	for(count = begin; count < end; count++) {
-		PyList_SetItem(list, count - begin,
-				PyFloat_FromDouble(self->eul[count]));
+		PyTuple_SET_ITEM(tuple, count - begin, PyFloat_FromDouble(self->eul[count]));
 	}
 
-	return list;
+	return tuple;
 }
 //----------------------------object[z:y]------------------------
 //sequence slice (set)
@@ -520,9 +519,7 @@ static PyObject *Euler_subscript(EulerObject *self, PyObject *item)
 		}
 	}
 	else {
-		PyErr_Format(PyExc_TypeError,
-				 "euler indices must be integers, not %.200s",
-				 item->ob_type->tp_name);
+		PyErr_Format(PyExc_TypeError, "euler indices must be integers, not %.200s", Py_TYPE(item)->tp_name);
 		return NULL;
 	}
 }
@@ -552,9 +549,7 @@ static int Euler_ass_subscript(EulerObject *self, PyObject *item, PyObject *valu
 		}
 	}
 	else {
-		PyErr_Format(PyExc_TypeError,
-				 "euler indices must be integers, not %.200s",
-				 item->ob_type->tp_name);
+		PyErr_Format(PyExc_TypeError, "euler indices must be integers, not %.200s", Py_TYPE(item)->tp_name);
 		return -1;
 	}
 }
@@ -620,13 +615,13 @@ static int Euler_setOrder(EulerObject *self, PyObject *value, void *UNUSED(closu
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef Euler_getseters[] = {
-	{"x", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler X axis in radians.\n\n:type: float", (void *)0},
-	{"y", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler Y axis in radians.\n\n:type: float", (void *)1},
-	{"z", (getter)Euler_getAxis, (setter)Euler_setAxis, "Euler Z axis in radians.\n\n:type: float", (void *)2},
-	{"order", (getter)Euler_getOrder, (setter)Euler_setOrder, "Euler rotation order.\n\n:type: string in ['XYZ', 'XZY', 'YXZ', 'YZX', 'ZXY', 'ZYX']", (void *)NULL},
+	{(char *)"x", (getter)Euler_getAxis, (setter)Euler_setAxis, (char *)"Euler X axis in radians.\n\n:type: float", (void *)0},
+	{(char *)"y", (getter)Euler_getAxis, (setter)Euler_setAxis, (char *)"Euler Y axis in radians.\n\n:type: float", (void *)1},
+	{(char *)"z", (getter)Euler_getAxis, (setter)Euler_setAxis, (char *)"Euler Z axis in radians.\n\n:type: float", (void *)2},
+	{(char *)"order", (getter)Euler_getOrder, (setter)Euler_setOrder, (char *)"Euler rotation order.\n\n:type: string in ['XYZ', 'XZY', 'YXZ', 'YZX', 'ZXY', 'ZYX']", (void *)NULL},
 
-	{"is_wrapped", (getter)BaseMathObject_getWrapped, (setter)NULL, BaseMathObject_Wrapped_doc, NULL},
-	{"owner", (getter)BaseMathObject_getOwner, (setter)NULL, BaseMathObject_Owner_doc, NULL},
+	{(char *)"is_wrapped", (getter)BaseMathObject_getWrapped, (setter)NULL, (char *)BaseMathObject_Wrapped_doc, NULL},
+	{(char *)"owner", (getter)BaseMathObject_getOwner, (setter)NULL, (char *)BaseMathObject_Owner_doc, NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
@@ -650,7 +645,7 @@ static char euler_doc[] =
 
 PyTypeObject euler_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"euler",						//tp_name
+	"mathutils.Euler",						//tp_name
 	sizeof(EulerObject),			//tp_basicsize
 	0,								//tp_itemsize
 	(destructor)BaseMathObject_dealloc,		//tp_dealloc

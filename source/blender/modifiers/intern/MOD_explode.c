@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_explode.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_explode.c 32840 2010-11-02 13:12:30Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -663,7 +663,7 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	DerivedMesh *explode, *dm=to_explode;
 	MFace *mf=0, *mface;
 	ParticleSettings *part=psmd->psys->part;
-	ParticleSimulationData sim = {scene, ob, psmd->psys, psmd};
+	ParticleSimulationData sim= {0};
 	ParticleData *pa=NULL, *pars=psmd->psys->particles;
 	ParticleKey state;
 	EdgeHash *vertpahash;
@@ -679,6 +679,11 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	totvert= dm->getNumVerts(dm);
 	mface= dm->getFaceArray(dm);
 	totpart= psmd->psys->totpart;
+
+	sim.scene= scene;
+	sim.ob= ob;
+	sim.psys= psmd->psys;
+	sim.psmd= psmd;
 
 	timestep= psys_get_timestep(&sim);
 

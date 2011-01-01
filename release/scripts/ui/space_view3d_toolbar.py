@@ -96,6 +96,7 @@ class VIEW3D_PT_tools_meshedit(View3DPanel, bpy.types.Panel):
         col.label(text="Deform:")
         col.operator("transform.edge_slide")
         col.operator("mesh.rip_move")
+        col.operator("mesh.noise")
         col.operator("mesh.vertices_smooth")
 
         col = layout.column(align=True)
@@ -193,7 +194,7 @@ class VIEW3D_PT_tools_curveedit(View3DPanel, bpy.types.Panel):
         row.operator("curve.handle_type_set", text="Auto").type = 'AUTOMATIC'
         row.operator("curve.handle_type_set", text="Vector").type = 'VECTOR'
         row = col.row()
-        row.operator("curve.handle_type_set", text="Align").type = 'ALIGN'
+        row.operator("curve.handle_type_set", text="Align").type = 'ALIGNED'
         row.operator("curve.handle_type_set", text="Free").type = 'FREE_ALIGN'
 
         col = layout.column(align=True)
@@ -1076,8 +1077,11 @@ class VIEW3D_PT_tools_weightpaint(View3DPanel, bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-
+		
+        ob = context.active_object
+		
         col = layout.column()
+        col.active = ob.vertex_groups.active != None
         col.operator("object.vertex_group_normalize_all", text="Normalize All")
         col.operator("object.vertex_group_normalize", text="Normalize")
         col.operator("object.vertex_group_invert", text="Invert")
@@ -1158,7 +1162,7 @@ class VIEW3D_PT_tools_projectpaint(View3DPanel, bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         brush = context.tool_settings.image_paint.brush
-        return (brush and brush.imagepaint_tool != 'SMEAR')
+        return (brush and brush.imagepaint_tool != 'SOFTEN')
 
     def draw_header(self, context):
         ipaint = context.tool_settings.image_paint
@@ -1294,7 +1298,7 @@ class VIEW3D_PT_tools_particlemode(View3DPanel, bpy.types.Panel):
 
         if not pe.is_editable:
             layout.label(text="Point cache must be baked")
-            layout.label(text="to enable editing!")
+            layout.label(text="in memory to enable editing!")
 
         col = layout.column(align=True)
         if pe.is_hair:

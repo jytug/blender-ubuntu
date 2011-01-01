@@ -1,5 +1,5 @@
 /**
- * $Id: ED_keyframes_draw.h 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: ED_keyframes_draw.h 33937 2010-12-29 12:52:06Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -100,7 +100,7 @@ typedef enum eKeyframeShapeDrawOpts {
 } eKeyframeShapeDrawOpts;
 
 /* draw simple diamond-shape keyframe (with OpenGL) */
-void draw_keyframe_shape(float x, float y, float xscale, float hsize, short sel, short key_type, short mode);
+void draw_keyframe_shape(float x, float y, float xscale, float hsize, short sel, short key_type, short mode, float alpha);
 
 /* ******************************* Methods ****************************** */
 

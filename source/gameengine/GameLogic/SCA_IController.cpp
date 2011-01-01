@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_IController.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_IController.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -194,7 +194,7 @@ void SCA_IController::ApplyState(unsigned int state)
 	}
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* Python api */
 
@@ -247,4 +247,4 @@ PyObject* SCA_IController::pyattr_get_actuators(void *self_v, const KX_PYATTRIBU
 {
 	return KX_PythonSeq_CreatePyObject((static_cast<SCA_IController*>(self_v))->m_proxy, KX_PYGENSEQ_CONT_TYPE_ACTUATORS);	
 }
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

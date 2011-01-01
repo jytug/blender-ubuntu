@@ -1,7 +1,7 @@
 /**
  * Sense if other objects are near
  *
- * $Id: KX_NearSensor.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: KX_NearSensor.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -78,7 +78,7 @@ public:
 	virtual bool	BroadPhaseSensorFilterCollision(void*obj1,void*obj2) { return false; };
 	virtual sensortype GetSensorType() { return ST_NEAR; }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* --------------------------------------------------------------------- */
 	/* Python interface ---------------------------------------------------- */
@@ -99,7 +99,7 @@ public:
 		return 0;
 	}
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 };
 

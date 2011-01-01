@@ -1,6 +1,6 @@
 /*
  * FloatValue.h: interface for the CFloatValue class.
- * $Id: FloatValue.h 29259 2010-06-06 01:15:44Z campbellbarton $
+ * $Id: FloatValue.h 32788 2010-10-31 04:11:39Z campbellbarton $
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -36,7 +36,7 @@ public:
 	virtual CValue* GetReplica();
 	virtual CValue* Calc(VALUE_OPERATOR op, CValue *val);
 	virtual CValue* CalcFinal(VALUE_DATA_TYPE dtype, VALUE_OPERATOR op, CValue *val);
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	virtual PyObject*	ConvertValueToPython();
 #endif
 

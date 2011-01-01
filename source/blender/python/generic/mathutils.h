@@ -1,5 +1,5 @@
 /* 
- * $Id: mathutils.h 32709 2010-10-25 22:44:01Z campbellbarton $
+ * $Id: mathutils.h 32764 2010-10-29 22:59:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -61,8 +61,7 @@ PyObject *BaseMathObject_getOwner( BaseMathObject * self, void * );
 PyObject *BaseMathObject_getWrapped( BaseMathObject *self, void * );
 void BaseMathObject_dealloc(BaseMathObject * self);
 
-PyObject *Mathutils_Init(void);
-PyObject *Noise_Init(void); /* lazy, saves having own header */
+PyMODINIT_FUNC BPyInit_mathutils(void);
 
 int EXPP_FloatsAreEqual(float A, float B, int floatSteps);
 int EXPP_VectorsAreEqual(float *vecA, float *vecB, int size, int floatSteps);

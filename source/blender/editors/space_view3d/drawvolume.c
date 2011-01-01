@@ -1,5 +1,5 @@
 /**
- * $Id: drawvolume.c 32459 2010-10-14 01:22:14Z campbellbarton $
+ * $Id: drawvolume.c 33447 2010-12-03 16:45:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -100,7 +100,7 @@ static void tend ( void )
 {
 	QueryPerformanceCounter ( &liCurrentTime );
 }
-static double tval()
+static double tval( void )
 {
 	return ((double)( (liCurrentTime.QuadPart - liStartTime.QuadPart)* (double)1000.0/(double)liFrequency.QuadPart ));
 }

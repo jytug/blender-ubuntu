@@ -1,5 +1,5 @@
 /* 
- * $Id: group.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: group.c 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -128,7 +128,7 @@ void unlink_group(Group *group)
 	group->id.us= 0;
 }
 
-Group *add_group(char *name)
+Group *add_group(const char *name)
 {
 	Group *group;
 	

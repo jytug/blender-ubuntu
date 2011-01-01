@@ -1,7 +1,7 @@
 /*
  * tiff.c
  *
- * $Id: tiff.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: tiff.c 33167 2010-11-19 02:14:18Z campbellbarton $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -642,7 +642,7 @@ void imb_loadtiletiff(ImBuf *ibuf, unsigned char *mem, size_t size, int tx, int 
  * @return: 1 if the function is successful, 0 on failure.
  */
 
-int imb_savetiff(ImBuf *ibuf, char *name, int flags)
+int imb_savetiff(ImBuf *ibuf, const char *name, int flags)
 {
 	TIFF *image = NULL;
 	uint16 samplesperpixel, bitspersample;

@@ -1,7 +1,7 @@
 /**
  * 'Xor' together all inputs
  *
- * $Id: SCA_XORController.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_XORController.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -91,7 +91,7 @@ CValue* SCA_XORController::GetReplica()
 	return replica;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -127,6 +127,6 @@ PyMethodDef SCA_XORController::Methods[] = {
 PyAttributeDef SCA_XORController::Attributes[] = {
 	{ NULL }	//Sentinel
 };
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

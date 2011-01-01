@@ -1,5 +1,5 @@
 /**
- * $Id: KX_NetworkMessageActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_NetworkMessageActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -91,7 +91,7 @@ CValue* KX_NetworkMessageActuator::GetReplica()
 	return replica;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* -------------------------------------------------------------------- */
 /* Python interface --------------------------------------------------- */
@@ -132,4 +132,4 @@ PyAttributeDef KX_NetworkMessageActuator::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

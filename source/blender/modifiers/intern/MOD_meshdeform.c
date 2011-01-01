@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_meshdeform.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_meshdeform.c 33435 2010-12-03 01:52:28Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -347,7 +347,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 						int UNUSED(useRenderParams),
 						int UNUSED(isFinalCalc))
 {
-	DerivedMesh *dm= get_dm(ob, NULL, derivedData, NULL, 0);;
+	DerivedMesh *dm= get_dm(ob, NULL, derivedData, NULL, 0);
 
 	modifier_vgroup_cache(md, vertexCos); /* if next modifier needs original vertices */
 	
@@ -363,7 +363,7 @@ static void deformVertsEM(ModifierData *md, Object *ob,
 						float (*vertexCos)[3],
 						int numVerts)
 {
-	DerivedMesh *dm= get_dm(ob, NULL, derivedData, NULL, 0);;
+	DerivedMesh *dm= get_dm(ob, NULL, derivedData, NULL, 0);
 
 	meshdeformModifier_do(md, ob, dm, vertexCos, numVerts);
 

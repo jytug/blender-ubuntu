@@ -1,5 +1,5 @@
 /**
- * $Id: ED_fileselect.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: ED_fileselect.h 33754 2010-12-17 19:05:34Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -92,6 +92,8 @@ void ED_operatormacros_file(void);
 void ED_fileselect_clear(struct bContext *C, struct SpaceFile *sfile);
 
 void ED_fileselect_exit(struct bContext *C, struct SpaceFile *sfile);
+
+int ED_file_extension_icon(char *relname);
 
 #endif /* ED_FILES_H */
 

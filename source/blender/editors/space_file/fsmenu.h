@@ -1,5 +1,5 @@
 /**
- * $Id: fsmenu.h 29935 2010-07-04 15:35:23Z elubie $
+ * $Id: fsmenu.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -56,7 +56,7 @@ char*	fsmenu_get_entry		(struct FSMenu* fsmenu, FSMenuCategory category, int ind
 	 * Duplicate entries are not added.
 	 * @param sorted Should entry be inserted in sorted order?
 	 */
-void	fsmenu_insert_entry		(struct FSMenu* fsmenu, FSMenuCategory category, char *path, int sorted, short save);
+void	fsmenu_insert_entry		(struct FSMenu* fsmenu, FSMenuCategory category, const char *path, int sorted, short save);
 
 	/** Return whether the entry was created by the user and can be saved and deleted */
 short   fsmenu_can_save			(struct FSMenu* fsmenu, FSMenuCategory category, int index);

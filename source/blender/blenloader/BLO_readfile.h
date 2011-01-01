@@ -1,5 +1,5 @@
 /*
- * $Id: BLO_readfile.h 31626 2010-08-28 02:07:55Z moguri $
+ * $Id: BLO_readfile.h 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -80,7 +80,7 @@ typedef struct BlendFileData {
 	 * indicating the cause of the failure.
 	 * @return The data of the file.
 	 */
-BlendFileData*	BLO_read_from_file		(char *file, struct ReportList *reports);
+BlendFileData*	BLO_read_from_file(const char *file, struct ReportList *reports);
 
 	/**
 	 * Open a blender file from memory. The function

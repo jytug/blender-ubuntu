@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32674 2010-10-24 03:57:07Z campbellbarton $
+# $Id: CMakeLists.txt 33549 2010-12-08 08:43:06Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -25,26 +25,30 @@
 # ***** END GPL LICENSE BLOCK *****
 
 # Otherwise we get warnings here that we cant fix in external projects
-REMOVE_STRICT_FLAGS()
+remove_strict_flags()
 
-IF(WITH_BULLET)
-	ADD_SUBDIRECTORY(bullet2)
-ENDIF(WITH_BULLET)
+if(WITH_BULLET)
+	add_subdirectory(bullet2)
+endif()
 
-IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
-	ADD_SUBDIRECTORY(binreloc)
-ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+	add_subdirectory(binreloc)
+endif()
 
-ADD_SUBDIRECTORY(glew)
+add_subdirectory(glew)
 
-IF(WITH_IMAGE_OPENJPEG)
-	ADD_SUBDIRECTORY(libopenjpeg)
-ENDIF(WITH_IMAGE_OPENJPEG)
+if(WITH_IMAGE_OPENJPEG)
+	add_subdirectory(libopenjpeg)
+endif()
 
-IF(WITH_LZO)
-	ADD_SUBDIRECTORY(lzo)
-ENDIF(WITH_LZO)
+if(WITH_IMAGE_REDCODE)
+	add_subdirectory(libredcode)
+endif()
 
-IF(WITH_LZMA)
-	ADD_SUBDIRECTORY(lzma)
-ENDIF(WITH_LZMA)
+if(WITH_LZO)
+	add_subdirectory(lzo)
+endif()
+
+if(WITH_LZMA)
+	add_subdirectory(lzma)
+endif()

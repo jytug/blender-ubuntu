@@ -1,5 +1,5 @@
 /**
- * $Id: rna_brush.c 31434 2010-08-18 03:56:14Z campbellbarton $
+ * $Id: rna_brush.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -98,7 +98,7 @@ EnumPropertyItem brush_imagepaint_tool_items[] = {
 
 #include "WM_api.h"
 
-static void rna_Brush_reset_icon(Brush *br, char *type)
+static void rna_Brush_reset_icon(Brush *br, const char *UNUSED(type))
 {
 	ID *id = &br->id;
 

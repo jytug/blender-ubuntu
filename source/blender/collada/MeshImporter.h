@@ -1,5 +1,5 @@
 /**
- * $Id: MeshImporter.h 32389 2010-10-09 21:17:14Z jesterking $
+ * $Id: MeshImporter.h 32862 2010-11-03 22:44:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -72,6 +72,8 @@ class MeshImporter : public MeshImporterBase
 {
 private:
 
+	UnitConverter *unitconverter;
+
 	Scene *scene;
 	ArmatureImporter *armature_importer;
 
@@ -120,8 +122,6 @@ private:
 
 	bool flat_face(unsigned int *nind, COLLADAFW::MeshVertexData& nor, int count);
 	
-	UnitConverter *unitconverter;
-
 public:
 
 	MeshImporter(UnitConverter *unitconv, ArmatureImporter *arm, Scene *sce);

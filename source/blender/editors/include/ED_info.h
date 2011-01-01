@@ -1,5 +1,5 @@
 /**
- * $Id: ED_info.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: ED_info.h 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,6 @@
 
 /* info_stats.c */
 void ED_info_stats_clear(struct Scene *scene);
-char *ED_info_stats_string(struct Scene *scene);
+const char *ED_info_stats_string(struct Scene *scene);
 
 #endif /*  ED_INFO_H */

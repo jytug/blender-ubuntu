@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_ILogicBrick.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: SCA_ILogicBrick.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -133,7 +133,7 @@ public:
 	virtual void		Replace_IScene(SCA_IScene *val) {};
 	virtual void		Replace_NetworkScene(NG_NetworkScene *val) {};
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	// python methods
 	
 	static PyObject*	pyattr_get_owner(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
@@ -157,7 +157,7 @@ protected:
 	/** Convert a a c++ value to KX_TRUE, KX_FALSE in Python. */
 	PyObject* BoolToPyArg(bool);
 	
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 };
 

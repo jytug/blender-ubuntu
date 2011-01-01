@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_PythonKeyboard.h 31649 2010-08-30 00:18:50Z moguri $
+ * $Id: SCA_PythonKeyboard.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,14 +32,14 @@ class SCA_PythonKeyboard : public PyObjectPlus
 	Py_Header;
 private:
 	class SCA_IInputDevice *m_keyboard;
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	PyObject* m_event_dict;
 #endif
 public:
 	SCA_PythonKeyboard(class SCA_IInputDevice* keyboard);
 	virtual ~SCA_PythonKeyboard();
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	static PyObject*	pyattr_get_events(void* self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 #endif
 };

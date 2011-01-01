@@ -2,7 +2,7 @@
 //
 // Add object to the game world on action of this actuator
 //
-// $Id: KX_SceneActuator.h 26841 2010-02-12 13:34:04Z campbellbarton $
+// $Id: KX_SceneActuator.h 32788 2010-10-31 04:11:39Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -89,7 +89,7 @@ class KX_SceneActuator : public SCA_IActuator
 
 	virtual bool Update();
 	
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	virtual void Replace_IScene(SCA_IScene *val)
 	{
@@ -103,7 +103,7 @@ class KX_SceneActuator : public SCA_IActuator
 	static PyObject* pyattr_get_camera(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef);
 	static int pyattr_set_camera(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 }; /* end of class KXSceneActuator */
 

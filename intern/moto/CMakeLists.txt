@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,11 +24,11 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC
+set(INC
 	include
 )
 
-SET(SRC
+set(SRC
 	intern/MT_Assert.cpp
 	intern/MT_CmMatrix4x4.cpp
 	intern/MT_Matrix3x3.cpp
@@ -41,6 +41,30 @@ SET(SRC
 	intern/MT_Vector3.cpp
 	intern/MT_Vector4.cpp
 	intern/MT_random.cpp
+
+	include/GEN_List.h
+	include/GEN_Map.h
+	include/MT_CmMatrix4x4.h
+	include/MT_Matrix3x3.h
+	include/MT_Matrix4x4.h
+	include/MT_MinMax.h
+	include/MT_Optimize.h
+	include/MT_Plane3.h
+	include/MT_Point2.h
+	include/MT_Point3.h
+	include/MT_Quaternion.h
+	include/MT_Scalar.h
+	include/MT_Stream.h
+	include/MT_Transform.h
+	include/MT_Tuple2.h
+	include/MT_Tuple3.h
+	include/MT_Tuple4.h
+	include/MT_Vector2.h
+	include/MT_Vector3.h
+	include/MT_Vector4.h
+	include/MT_assert.h
+	include/MT_random.h
+	include/NM_Scalar.h
 )
 
-BLENDERLIB(bf_intern_moto "${SRC}" "${INC}")
+blender_add_lib(bf_intern_moto "${SRC}" "${INC}")

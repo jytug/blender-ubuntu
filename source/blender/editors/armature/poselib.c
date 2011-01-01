@@ -1,5 +1,5 @@
 /**
- * $Id: poselib.c 32482 2010-10-15 03:24:47Z campbellbarton $
+ * $Id: poselib.c 33868 2010-12-23 02:43:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -73,7 +73,7 @@
 
 /* ******* XXX ********** */
 
-static void action_set_activemarker() {}
+static void action_set_activemarker(void *UNUSED(a), void *UNUSED(b), void *UNUSED(c)) {}
 
 /* ************************************************************* */
 /* == POSE-LIBRARY TOOL FOR BLENDER == 
@@ -304,17 +304,17 @@ static int poselib_add_menu_invoke (bContext *C, wmOperator *op, wmEvent *UNUSED
 		return OPERATOR_CANCELLED;
 	
 	/* start building */
-	pup= uiPupMenuBegin(C, op->type->name, 0);
+	pup= uiPupMenuBegin(C, op->type->name, ICON_NULL);
 	layout= uiPupMenuLayout(pup);
 	uiLayoutSetOperatorContext(layout, WM_OP_EXEC_DEFAULT);
 	
 	/* add new (adds to the first unoccupied frame) */
-	uiItemIntO(layout, "Add New", 0, "POSELIB_OT_pose_add", "frame", poselib_get_free_index(ob->poselib));
+	uiItemIntO(layout, "Add New", ICON_NULL, "POSELIB_OT_pose_add", "frame", poselib_get_free_index(ob->poselib));
 	
 	/* check if we have any choices to add a new pose in any other way */
 	if ((ob->poselib) && (ob->poselib->markers.first)) {
 		/* add new (on current frame) */
-		uiItemIntO(layout, "Add New (Current Frame)", 0, "POSELIB_OT_pose_add", "frame", CFRA);
+		uiItemIntO(layout, "Add New (Current Frame)", ICON_NULL, "POSELIB_OT_pose_add", "frame", CFRA);
 		
 		/* replace existing - submenu */
 		uiItemMenuF(layout, "Replace Existing...", 0, poselib_add_menu_invoke__replacemenu, NULL);
@@ -407,15 +407,13 @@ static EnumPropertyItem *poselib_stored_pose_itemf(bContext *C, PointerRNA *UNUS
 	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
 	bAction *act= (ob) ? ob->poselib : NULL;
 	TimeMarker *marker;
-	EnumPropertyItem *item= NULL, item_tmp;
+	EnumPropertyItem *item= NULL, item_tmp= {0};
 	int totitem= 0;
 	int i= 0;
 
 	if (C==NULL) {
 		return DummyRNA_DEFAULT_items;
 	}
-
-	memset(&item_tmp, 0, sizeof(item_tmp));
 	
 	/* check that the action exists */
 	if (act) {
@@ -708,7 +706,7 @@ static void poselib_apply_pose (tPoseLib_PreviewData *pld)
 	bAction *act= pld->act;
 	bActionGroup *agrp;
 	
-	KeyframeEditData ked;
+	KeyframeEditData ked= {{0}};
 	KeyframeEditFunc group_ok_cb;
 	int frame= 1;
 	
@@ -721,7 +719,6 @@ static void poselib_apply_pose (tPoseLib_PreviewData *pld)
 	
 	/* init settings for testing groups for keyframes */
 	group_ok_cb= ANIM_editkeyframes_ok(BEZT_OK_FRAMERANGE);
-	memset(&ked, 0, sizeof(KeyframeEditData)); 
 	ked.f1= ((float)frame) - 0.5f;
 	ked.f2= ((float)frame) + 0.5f;
 	
@@ -743,7 +740,7 @@ static void poselib_apply_pose (tPoseLib_PreviewData *pld)
 				}
 				else if (pchan->bone) {
 					/* only ok if bone is visible and selected */
-					if ( (pchan->bone->flag & BONE_SELECTED || pchan->bone == arm->act_bone) &&
+					if ( (pchan->bone->flag & BONE_SELECTED) &&
 						 (pchan->bone->flag & BONE_HIDDEN_P)==0 &&
 						 (pchan->bone->layer & arm->layer) )
 						ok = 1;
@@ -829,7 +826,7 @@ static void poselib_preview_apply (bContext *C, wmOperator *op)
 		 */
 		// FIXME: shouldn't this use the builtin stuff?
 		if ((pld->arm->flag & ARM_DELAYDEFORM)==0)
-			DAG_id_flush_update(&pld->ob->id, OB_RECALC_DATA);  /* sets recalc flags */
+			DAG_id_tag_update(&pld->ob->id, OB_RECALC_DATA);  /* sets recalc flags */
 		else
 			where_is_pose(pld->scene, pld->ob);
 	}
@@ -1333,7 +1330,7 @@ static void poselib_preview_cleanup (bContext *C, wmOperator *op)
 		 *	- note: code copied from transform_generics.c -> recalcData()
 		 */
 		if ((arm->flag & ARM_DELAYDEFORM)==0)
-			DAG_id_flush_update(&ob->id, OB_RECALC_DATA);  /* sets recalc flags */
+			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);  /* sets recalc flags */
 		else
 			where_is_pose(scene, ob);
 		
@@ -1347,7 +1344,7 @@ static void poselib_preview_cleanup (bContext *C, wmOperator *op)
 		action_set_activemarker(act, marker, 0);
 		
 		/* Update event for pose and deformation children */
-		DAG_id_flush_update(&ob->id, OB_RECALC_DATA);
+		DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 		
 		/* updates */
 		if (IS_AUTOKEY_MODE(scene, NORMAL)) {

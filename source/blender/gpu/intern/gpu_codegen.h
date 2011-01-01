@@ -1,5 +1,5 @@
 /**
- * $Id: gpu_codegen.h 27655 2010-03-22 09:30:00Z campbellbarton $
+ * $Id: gpu_codegen.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -55,7 +55,7 @@ typedef struct GPUFunction {
 	int totparam;
 } GPUFunction;
 
-GPUFunction *GPU_lookup_function(char *name);
+GPUFunction *GPU_lookup_function(const char *name);
 
 /* Pass Generation
    - Takes a list of nodes and a desired output, and makes a pass. This
@@ -79,7 +79,7 @@ void GPU_pass_free(GPUPass *pass);
 
 /* Material calls */
 
-char *GPU_builtin_name(GPUBuiltin builtin);
+const char *GPU_builtin_name(GPUBuiltin builtin);
 void gpu_material_add_node(struct GPUMaterial *material, struct GPUNode *node);
 int GPU_link_changed(struct GPUNodeLink *link);
 

@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_group.h (mar-2001 nzc)
  *	
- * $Id: BKE_group.h 28202 2010-04-15 10:28:32Z blendix $ 
+ * $Id: BKE_group.h 33124 2010-11-17 09:45:45Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +40,7 @@ struct Scene;
 
 void		free_group_objects(struct Group *group);
 void		unlink_group(struct Group *group);
-struct Group *add_group(char *name);
+struct Group *add_group(const char *name);
 struct Group *copy_group(struct Group *group);
 int			add_to_group(struct Group *group, struct Object *ob, struct Scene *scene, struct Base *base);
 int			rem_from_group(struct Group *group, struct Object *ob, struct Scene *scene, struct Base *base);

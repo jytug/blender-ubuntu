@@ -1,5 +1,5 @@
 /*
- * $Id: BLO_readblenfile.c 31935 2010-09-15 06:43:36Z campbellbarton $
+ * $Id: BLO_readblenfile.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,7 +54,7 @@
 #include "BLI_blenlib.h"
 
 /** Magic number for the file header */
-char *headerMagic = "BLENDFI";
+const char *headerMagic = "BLENDFI";
 
 /**
  * \brief Set the version number into the array.

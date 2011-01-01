@@ -1,4 +1,4 @@
-/* $Id: FilterBlueScreen.h 19820 2009-04-20 15:06:46Z blendix $
+/* $Id: FilterBlueScreen.h 33442 2010-12-03 12:30:59Z campbellbarton $
 -----------------------------------------------------------------------------
 This source file is part of blendTex library
 
@@ -75,7 +75,7 @@ protected:
 			VT_A(val) = 0;
 		// condition for fully opaque color
 		else if (m_squareLimits[1] <= dist)
-			// return normal colour
+			// return normal color
 			VT_A(val) = 0xFF;
 		// otherwise calc alpha
 		else

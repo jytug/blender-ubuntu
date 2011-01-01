@@ -1,5 +1,5 @@
 /**
- * $Id: quicktime_export.c 32605 2010-10-19 18:59:15Z elubie $
+ * $Id: quicktime_export.c 32889 2010-11-06 16:09:12Z elubie $
  *
  * quicktime_export.c
  *
@@ -61,6 +61,9 @@
 #include <Movies.h>
 #include <QuickTimeComponents.h>
 #include <TextUtils.h> 
+#include <string.h>
+#include <memory.h>
+
 #endif /* _WIN32 */
 
 #ifdef __APPLE__

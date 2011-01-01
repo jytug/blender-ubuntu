@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC	
+set(INC	
 	.
 	./intern
 	./extern
@@ -36,7 +36,7 @@ SET(INC
 	../../source/blender/makesdna
 )
 
-SET(SRC
+set(SRC
 	intern/BOP_BBox.cpp
 	intern/BOP_BSPNode.cpp
 	intern/BOP_BSPTree.cpp
@@ -53,6 +53,26 @@ SET(SRC
 	intern/BOP_Tag.cpp
 	intern/BOP_Triangulator.cpp
 	intern/BOP_Vertex.cpp
+
+	extern/BOP_Interface.h
+	intern/BOP_BBox.h
+	intern/BOP_BSPNode.h
+	intern/BOP_BSPTree.h
+	intern/BOP_Chrono.h
+	intern/BOP_Edge.h
+	intern/BOP_Face.h
+	intern/BOP_Face2Face.h
+	intern/BOP_Indexs.h
+	intern/BOP_MathUtils.h
+	intern/BOP_Merge.h
+	intern/BOP_Merge2.h
+	intern/BOP_Mesh.h
+	intern/BOP_Misc.h
+	intern/BOP_Segment.h
+	intern/BOP_Splitter.h
+	intern/BOP_Tag.h
+	intern/BOP_Triangulator.h
+	intern/BOP_Vertex.h
 )
 
-BLENDERLIB(bf_intern_bop "${SRC}" "${INC}")
+blender_add_lib(bf_intern_bop "${SRC}" "${INC}")

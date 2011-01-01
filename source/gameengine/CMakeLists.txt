@@ -1,4 +1,5 @@
-# $Id: CMakeLists.txt 32392 2010-10-10 07:01:56Z campbellbarton $
+# -*- mode: cmake; indent-tabs-mode: t; -*-
+# $Id: CMakeLists.txt 33862 2010-12-22 22:15:20Z gsrb3d $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,28 +25,34 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-ADD_SUBDIRECTORY(BlenderRoutines)
-ADD_SUBDIRECTORY(Converter)
-ADD_SUBDIRECTORY(Expressions)
-ADD_SUBDIRECTORY(GameLogic)
-ADD_SUBDIRECTORY(Ketsji)
-ADD_SUBDIRECTORY(Ketsji/KXNetwork)
-ADD_SUBDIRECTORY(Network)
-ADD_SUBDIRECTORY(Network/LoopBackNetwork)
-ADD_SUBDIRECTORY(Physics/common)
-ADD_SUBDIRECTORY(Physics/Dummy)
-ADD_SUBDIRECTORY(Rasterizer)
-ADD_SUBDIRECTORY(Rasterizer/RAS_OpenGLRasterizer)
-ADD_SUBDIRECTORY(SceneGraph)
+# there are too many inter-includes so best define here
+if(WITH_PYTHON)
+	blender_include_dirs(${PYTHON_INC})
+	add_definitions(-DWITH_PYTHON)
+endif()
 
-IF(WITH_BULLET)
-	ADD_SUBDIRECTORY(Physics/Bullet)
-ENDIF(WITH_BULLET)
+add_subdirectory(BlenderRoutines)
+add_subdirectory(Converter)
+add_subdirectory(Expressions)
+add_subdirectory(GameLogic)
+add_subdirectory(Ketsji)
+add_subdirectory(Ketsji/KXNetwork)
+add_subdirectory(Network)
+add_subdirectory(Network/LoopBackNetwork)
+add_subdirectory(Physics/common)
+add_subdirectory(Physics/Dummy)
+add_subdirectory(Rasterizer)
+add_subdirectory(Rasterizer/RAS_OpenGLRasterizer)
+add_subdirectory(SceneGraph)
 
-IF(WITH_PYTHON)
-	ADD_SUBDIRECTORY(VideoTexture)
-ENDIF(WITH_PYTHON)
+if(WITH_BULLET)
+	add_subdirectory(Physics/Bullet)
+endif()
 
-IF(WITH_PLAYER)
-	ADD_SUBDIRECTORY(GamePlayer)
-ENDIF(WITH_PLAYER)
+if(WITH_PYTHON)
+	add_subdirectory(VideoTexture)
+endif()
+
+if(WITH_PLAYER)
+	add_subdirectory(GamePlayer)
+endif()

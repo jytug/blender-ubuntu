@@ -1,5 +1,5 @@
 /**
- * $Id: ED_transform.h 27966 2010-04-02 19:40:51Z theeth $
+ * $Id: ED_transform.h 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -126,7 +126,7 @@ void BIF_selectTransformOrientationValue(struct bContext *C, int orientation);
 void ED_getTransformOrientationMatrix(const struct bContext *C, float orientation_mat[][3], int activeOnly);
 
 struct EnumPropertyItem *BIF_enumTransformOrientation(struct bContext *C);
-char * BIF_menustringTransformOrientation(const struct bContext *C, char *title); /* the returned value was allocated and needs to be freed after use */
+const char * BIF_menustringTransformOrientation(const struct bContext *C, const char *title); /* the returned value was allocated and needs to be freed after use */
 int BIF_countTransformOrientation(const struct bContext *C);
 
 void BIF_TransformSetUndo(char *str);

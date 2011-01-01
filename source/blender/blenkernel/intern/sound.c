@@ -1,7 +1,7 @@
 /**
  * sound.c (mar-2001 nzc)
  *
- * $Id: sound.c 32551 2010-10-18 06:41:16Z campbellbarton $
+ * $Id: sound.c 33852 2010-12-22 16:07:57Z nexyon $
  */
 
 #include <string.h>
@@ -120,7 +120,7 @@ void sound_exit()
 	AUD_exit();
 }
 
-struct bSound* sound_new_file(struct Main *bmain, char* filename)
+struct bSound* sound_new_file(struct Main *bmain, const char *filename)
 {
 	bSound* sound = NULL;
 
@@ -236,7 +236,7 @@ void sound_delete_cache(struct bSound* sound)
 	}
 }
 
-void sound_load(struct Main *UNUSED(bmain), struct bSound* sound)
+void sound_load(struct Main *bmain, struct bSound* sound)
 {
 	if(sound)
 	{
@@ -266,8 +266,7 @@ void sound_load(struct Main *UNUSED(bmain), struct bSound* sound)
 			if(sound->id.lib)
 				path = sound->id.lib->filepath;
 			else
-				// XXX this should be fixed!
-				path = /*bmain ? bmain->name :*/ G.main->name;
+				path = bmain->name;
 
 			BLI_path_abs(fullpath, path);
 
@@ -277,7 +276,7 @@ void sound_load(struct Main *UNUSED(bmain), struct bSound* sound)
 			/* or else load it from disk */
 			else
 				sound->handle = AUD_load(fullpath);
-		} // XXX
+		}
 // XXX unused currently
 #if 0
 			break;
@@ -484,4 +483,13 @@ int sound_read_sound_buffer(struct bSound* sound, float* buffer, int length, flo
 	AUD_Sound* limiter = AUD_limitSound(sound->cache, start, end);
 	return AUD_readSound(limiter, buffer, length);
 	AUD_unload(limiter);
+}
+
+int sound_get_channels(struct bSound* sound)
+{
+	AUD_SoundInfo info;
+
+	info = AUD_getInfo(sound->playback_handle);
+
+	return info.specs.channels;
 }

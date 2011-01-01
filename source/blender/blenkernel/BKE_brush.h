@@ -1,5 +1,5 @@
 /**
- * $Id: BKE_brush.h 32075 2010-09-23 12:03:34Z campbellbarton $
+ * $Id: BKE_brush.h 32774 2010-10-30 17:16:37Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,7 @@ struct Brush;
 struct ImBuf;
 struct Scene;
 struct wmOperator;
-enum CurveMappingPreset;
+// enum CurveMappingPreset;
 
 /* datablock functions */
 struct Brush *add_brush(const char *name);

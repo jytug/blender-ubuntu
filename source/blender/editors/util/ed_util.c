@@ -1,5 +1,5 @@
 /**
- * $Id: ed_util.c 31166 2010-08-08 13:03:07Z campbellbarton $
+ * $Id: ed_util.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -152,7 +152,7 @@ void apply_keyb_grid(int shift, int ctrl, float *val, float fac1, float fac2, fl
 }
 
 
-int GetButStringLength(char *str) 
+int GetButStringLength(const char *str) 
 {
 	int rt;
 	

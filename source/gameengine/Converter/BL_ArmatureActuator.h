@@ -1,5 +1,5 @@
 /**
- * $Id: BL_ArmatureActuator.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: BL_ArmatureActuator.h 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,14 +66,14 @@ public:
 	virtual bool Update(double curtime, bool frame);
 	virtual void ReParent(SCA_IObject* parent);
 	
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 	/* These are used to get and set m_target */
 	static PyObject* pyattr_get_constraint(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef);
 	static PyObject* pyattr_get_object(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef);
 	static int pyattr_set_object(void *self, const struct KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 private:
 	// identify the constraint that this actuator controls

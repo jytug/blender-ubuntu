@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_world.h (mar-2001 nzc)
  *	
- * $Id: BKE_world.h 26841 2010-02-12 13:34:04Z campbellbarton $ 
+ * $Id: BKE_world.h 33124 2010-11-17 09:45:45Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,7 @@
 struct World;
 
 void free_world(struct World *sc); 
-struct World *add_world(char *name);
+struct World *add_world(const char *name);
 struct World *copy_world(struct World *wrld);
 void make_local_world(struct World *wrld);
 

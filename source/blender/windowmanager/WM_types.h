@@ -1,5 +1,5 @@
 /**
- * $Id: WM_types.h 32435 2010-10-13 01:10:56Z campbellbarton $
+ * $Id: WM_types.h 33883 2010-12-24 07:46:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -55,6 +55,7 @@ struct ImBuf;
 #define OPTYPE_BLOCKING		4	/* let blender grab all input from the WM (X11) */
 #define OPTYPE_MACRO		8
 #define OPTYPE_GRAB_POINTER	16	/* */
+#define OPTYPE_PRESET		32	/* show preset menu */
 
 /* context to call operator in for WM_operator_name_call */
 /* rna_ui.c contains EnumPropertyItem's of these, keep in sync */
@@ -172,6 +173,7 @@ typedef struct wmNotifier {
 #define ND_GPENCIL			(5<<16)
 #define ND_EDITOR_CHANGED	(6<<16) /*sent to new editors after switching to them*/
 #define ND_SCREENSET		(7<<16)
+#define ND_SKETCH			(8<<16)
 
 	/* NC_SCENE Scene */
 #define ND_SCENEBROWSE		(1<<16)
@@ -219,6 +221,7 @@ typedef struct wmNotifier {
 
 	/* NC_WORLD World */
 #define	ND_WORLD_DRAW		(45<<16)
+#define	ND_WORLD_STARS		(46<<16)
 
 	/* NC_TEXT Text */
 #define ND_CURSOR			(50<<16)
@@ -241,23 +244,23 @@ typedef struct wmNotifier {
 
 	/* NC_SPACE */
 #define ND_SPACE_CONSOLE		(1<<16) /* general redraw */
-#define ND_SPACE_CONSOLE_REPORT	(2<<16) /* update for reports, could specify type */
-#define ND_SPACE_INFO			(2<<16)
-#define ND_SPACE_IMAGE			(3<<16)
-#define ND_SPACE_FILE_PARAMS	(4<<16)
-#define ND_SPACE_FILE_LIST		(5<<16)
-#define ND_SPACE_NODE			(6<<16)
-#define ND_SPACE_OUTLINER		(7<<16)
-#define ND_SPACE_VIEW3D			(8<<16)
-#define ND_SPACE_PROPERTIES		(9<<16)
-#define ND_SPACE_TEXT			(10<<16)
-#define ND_SPACE_TIME			(11<<16)
-#define ND_SPACE_GRAPH			(12<<16)
-#define ND_SPACE_DOPESHEET		(13<<16)
-#define ND_SPACE_NLA			(14<<16)
-#define ND_SPACE_SEQUENCER		(15<<16)
-#define ND_SPACE_NODE_VIEW		(16<<16)
-#define ND_SPACE_CHANGED		(17<<16) /*sent to a new editor type after it's replaced an old one*/
+#define ND_SPACE_INFO_REPORT	(2<<16) /* update for reports, could specify type */
+#define ND_SPACE_INFO			(3<<16)
+#define ND_SPACE_IMAGE			(4<<16)
+#define ND_SPACE_FILE_PARAMS	(5<<16)
+#define ND_SPACE_FILE_LIST		(6<<16)
+#define ND_SPACE_NODE			(7<<16)
+#define ND_SPACE_OUTLINER		(8<<16)
+#define ND_SPACE_VIEW3D			(9<<16)
+#define ND_SPACE_PROPERTIES		(10<<16)
+#define ND_SPACE_TEXT			(11<<16)
+#define ND_SPACE_TIME			(12<<16)
+#define ND_SPACE_GRAPH			(13<<16)
+#define ND_SPACE_DOPESHEET		(14<<16)
+#define ND_SPACE_NLA			(15<<16)
+#define ND_SPACE_SEQUENCER		(16<<16)
+#define ND_SPACE_NODE_VIEW		(17<<16)
+#define ND_SPACE_CHANGED		(18<<16) /*sent to a new editor type after it's replaced an old one*/
 
 /* subtype, 256 entries too */
 #define NOTE_SUBTYPE		0x0000FF00
@@ -385,9 +388,9 @@ typedef struct wmTimer {
 typedef struct wmOperatorType {
 	struct wmOperatorType *next, *prev;
 
-	char *name;		/* text for ui, undo */
-	char *idname;		/* unique identifier */
-	char *description;	/* tooltips and python docs */
+	const char *name;		/* text for ui, undo */
+	const char *idname;		/* unique identifier */
+	const char *description;	/* tooltips and python docs */
 
 	/* this callback executes the operator without any interactive input,
 	 * parameters may be provided through operator properties. cannot use
@@ -459,9 +462,9 @@ enum {
 
 typedef struct wmReport {
 	struct wmReport *next, *prev;
-	int type;
 	const char *typestr;
 	char *message;
+	int type;
 } wmReport;
 
 /* *************** Drag and drop *************** */
@@ -502,7 +505,8 @@ typedef struct wmDropBox {
 	
 	/* if poll survives, operator is called */
 	wmOperatorType *ot;				/* not saved in file, so can be pointer */
-
+	short opcontext;				/* default invoke */
+	
 	struct IDProperty *properties;			/* operator properties, assigned to ptr->data and can be written to a file */
 	struct PointerRNA *ptr;			/* rna pointer to access properties */
 

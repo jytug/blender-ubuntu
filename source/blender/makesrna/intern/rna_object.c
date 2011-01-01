@@ -1,5 +1,5 @@
 /**
- * $Id: rna_object.c 32694 2010-10-25 07:12:29Z campbellbarton $
+ * $Id: rna_object.c 33824 2010-12-20 23:26:29Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,12 +34,16 @@
 #include "DNA_action_types.h"
 #include "DNA_customdata_types.h"
 #include "DNA_controller_types.h"
+#include "DNA_group_types.h"
 #include "DNA_material_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_object_force.h"
 #include "DNA_object_types.h"
 #include "DNA_property_types.h"
 #include "DNA_scene_types.h"
+#include "DNA_meta_types.h"
+
+#include "BKE_group.h" /* needed for object_in_group() */
 
 #include "BLO_sys_types.h" /* needed for intptr_t used in ED_mesh.h */
 #include "ED_mesh.h"
@@ -80,17 +84,25 @@ static EnumPropertyItem collision_bounds_items[] = {
 	//{OB_DYN_MESH, "DYNAMIC_MESH", 0, "Dynamic Mesh", ""},
 	{0, NULL, 0, NULL, NULL}};
 
+EnumPropertyItem metaelem_type_items[] = {
+	{MB_BALL, "BALL", ICON_META_BALL, "Ball", ""},
+	{MB_TUBE, "CAPSULE", ICON_META_CAPSULE, "Capsule", ""},
+	{MB_PLANE, "PLANE", ICON_META_PLANE, "Plane", ""},
+	{MB_ELIPSOID, "ELLIPSOID", ICON_META_ELLIPSOID, "Ellipsoid", ""}, // NOTE: typo at original definition!
+	{MB_CUBE, "CUBE", ICON_META_CUBE, "Cube", ""},
+	{0, NULL, 0, NULL, NULL}};
+
 /* used for 2 enums */
 #define OBTYPE_CU_CURVE {OB_CURVE, "CURVE", 0, "Curve", ""}
 #define OBTYPE_CU_SURF {OB_SURF, "SURFACE", 0, "Surface", ""}
-#define OBTYPE_CU_TEXT {OB_FONT, "TEXT", 0, "Text", ""}
+#define OBTYPE_CU_FONT {OB_FONT, "FONT", 0, "Font", ""}
     
 EnumPropertyItem object_type_items[] = {
 	{OB_MESH, "MESH", 0, "Mesh", ""},
 	OBTYPE_CU_CURVE,
 	OBTYPE_CU_SURF,
 	{OB_MBALL, "META", 0, "Meta", ""},
-	OBTYPE_CU_TEXT,
+	OBTYPE_CU_FONT,
 	{0, "", 0, NULL, NULL},
 	{OB_ARMATURE, "ARMATURE", 0, "Armature", ""},
 	{OB_LATTICE, "LATTICE", 0, "Lattice", ""},
@@ -103,9 +115,10 @@ EnumPropertyItem object_type_items[] = {
 EnumPropertyItem object_type_curve_items[] = {
 	OBTYPE_CU_CURVE,
 	OBTYPE_CU_SURF,
-	OBTYPE_CU_TEXT,
+	OBTYPE_CU_FONT,
 	{0, NULL, 0, NULL, NULL}};
-    
+
+
 #ifdef RNA_RUNTIME
 
 #include "BLI_math.h"
@@ -138,13 +151,13 @@ EnumPropertyItem object_type_curve_items[] = {
 
 static void rna_Object_internal_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-	DAG_id_flush_update(ptr->id.data, OB_RECALC_OB);
+	DAG_id_tag_update(ptr->id.data, OB_RECALC_OB);
 }
 
 static void rna_Object_matrix_world_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	/* dont use compat so we get pradictable rotation */
-	object_apply_mat4(ptr->id.data, ((Object *)ptr->id.data)->obmat, FALSE);
+	object_apply_mat4(ptr->id.data, ((Object *)ptr->id.data)->obmat, FALSE, TRUE);
 	rna_Object_internal_update(bmain, scene, ptr);
 }
 
@@ -179,12 +192,24 @@ static void rna_Object_matrix_local_set(PointerRNA *ptr, const float values[16])
 	}
 
 	/* dont use compat so we get pradictable rotation */
-	object_apply_mat4(ob, ob->obmat, FALSE);
+	object_apply_mat4(ob, ob->obmat, FALSE, FALSE);
+}
+
+static void rna_Object_matrix_basis_get(PointerRNA *ptr, float values[16])
+{
+	Object *ob= ptr->id.data;
+	object_to_mat4(ob, (float(*)[4])values);
+}
+
+static void rna_Object_matrix_basis_set(PointerRNA *ptr, const float values[16])
+{
+	Object *ob= ptr->id.data;
+	object_apply_mat4(ob, (float(*)[4])values, FALSE, FALSE);
 }
 
 void rna_Object_internal_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-	DAG_id_flush_update(ptr->id.data, OB_RECALC_DATA);
+	DAG_id_tag_update(ptr->id.data, OB_RECALC_DATA);
 	WM_main_add_notifier(NC_OBJECT|ND_DRAW, ptr->id.data);
 }
 
@@ -216,7 +241,7 @@ void rna_Object_active_shape_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 
 static void rna_Object_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-	DAG_id_flush_update(ptr->id.data, OB_RECALC_OB);
+	DAG_id_tag_update(ptr->id.data, OB_RECALC_OB);
 	DAG_scene_sort(bmain, scene);
 	WM_main_add_notifier(NC_OBJECT|ND_PARENT, ptr->id.data);
 }
@@ -404,6 +429,20 @@ static void rna_Object_parent_bone_set(PointerRNA *ptr, const char *value)
 	ED_object_parent(ob, ob->parent, ob->partype, value);
 }
 
+static void rna_Object_dup_group_set(PointerRNA *ptr, PointerRNA value)
+{
+	Object *ob= (Object *)ptr->data;
+	Group *grp = (Group *)value.data;
+	
+	/* must not let this be set if the object belongs in this group already,
+	 * thus causing a cycle/infinite-recursion leading to crashes on load [#25298]
+	 */
+	if (object_in_group(ob, grp) == 0)
+		ob->dup_group = grp;
+	else
+		BKE_report(NULL, RPT_ERROR, "Cannot set dupli-group as object belongs in group being instanced thus causing a cycle");
+}
+
 static int rna_VertexGroup_index_get(PointerRNA *ptr)
 {
 	Object *ob= (Object*)ptr->id.data;
@@ -548,11 +587,12 @@ static void rna_Object_active_material_index_range(PointerRNA *ptr, int *min, in
 	*max= MAX2(ob->totcol-1, 0);
 }
 
+/* returns active base material */
 static PointerRNA rna_Object_active_material_get(PointerRNA *ptr)
 {
 	Object *ob= (Object*)ptr->id.data;
 	Material *ma;
-
+	
 	ma= (ob->totcol)? give_current_material(ob, ob->actcol): NULL;
 	return rna_pointer_inherit_refine(ptr, &RNA_Material, ma);
 }
@@ -561,6 +601,7 @@ static void rna_Object_active_material_set(PointerRNA *ptr, PointerRNA value)
 {
 	Object *ob= (Object*)ptr->id.data;
 
+	DAG_id_tag_update(value.data, 0);
 	assign_material(ob, value.data, ob->actcol);
 }
 
@@ -1050,7 +1091,7 @@ static void rna_Object_constraints_remove(Object *object, ReportList *reports, b
 	WM_main_add_notifier(NC_OBJECT|ND_CONSTRAINT, object);
 }
 
-static ModifierData *rna_Object_modifier_new(Object *object, bContext *C, ReportList *reports, char *name, int type)
+static ModifierData *rna_Object_modifier_new(Object *object, bContext *C, ReportList *reports, const char *name, int type)
 {
 	return ED_object_modifier_add(reports, CTX_data_main(C), CTX_data_scene(C), object, name, type);
 }
@@ -1068,7 +1109,7 @@ static void rna_Object_boundbox_get(PointerRNA *ptr, float *values)
 		memcpy(values, bb->vec, sizeof(bb->vec));
 	}
 	else {
-		memset(values, -1.0f, sizeof(bb->vec));
+		fill_vn(values, sizeof(bb->vec)/sizeof(float), 0.0f);
 	}
 
 }
@@ -1107,6 +1148,8 @@ int rna_Camera_object_poll(PointerRNA *ptr, PointerRNA value)
 
 #else
 
+static int rna_matrix_dimsize_4x4[]= {4, 4};
+
 static void rna_def_vertex_group(BlenderRNA *brna)
 {
 	StructRNA *srna;
@@ -1120,7 +1163,7 @@ static void rna_def_vertex_group(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Name", "Vertex group name");
 	RNA_def_struct_name_property(srna, prop);
-	RNA_def_property_update(prop, NC_GEOM|ND_DATA|NA_RENAME, NULL);
+	RNA_def_property_update(prop, NC_GEOM|ND_DATA|NA_RENAME, "rna_Object_internal_update_data"); /* update data because modifiers may use [#24761] */
 
 	prop= RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
@@ -1561,19 +1604,6 @@ static void rna_def_object(BlenderRNA *brna)
 	StructRNA *srna;
 	PropertyRNA *prop;
 
-	static EnumPropertyItem object_type_items[] = {
-		{OB_EMPTY, "EMPTY", 0, "Empty", ""},
-		{OB_MESH, "MESH", 0, "Mesh", ""},
-		{OB_CURVE, "CURVE", 0, "Curve", ""},
-		{OB_SURF, "SURFACE", 0, "Surface", ""},
-		{OB_FONT, "TEXT", 0, "Text", ""},
-		{OB_MBALL, "META", 0, "Meta", ""},
-		{OB_LAMP, "LAMP", 0, "Lamp", ""},
-		{OB_CAMERA, "CAMERA", 0, "Camera", ""},
-		{OB_LATTICE, "LATTICE", 0, "Lattice", ""},
-		{OB_ARMATURE, "ARMATURE", 0, "Armature", ""},
-		{0, NULL, 0, NULL, NULL}};
-
 	static EnumPropertyItem empty_drawtype_items[] = {
 		{OB_ARROWS, "ARROWS", 0, "Arrows", ""},
 		{OB_SINGLE_ARROW, "SINGLE_ARROW", 0, "Single Arrow", ""},
@@ -1639,8 +1669,7 @@ static void rna_def_object(BlenderRNA *brna)
 	static float default_quat[4] = {1,0,0,0};	/* default quaternion values */
 	static float default_axisAngle[4] = {0,0,1,0};	/* default axis-angle rotation values */
 	static float default_scale[3] = {1,1,1}; /* default scale values */
-	int matrix_dimsize[]= {4, 4};
-	int boundbox_dimsize[]= {8, 3};
+	static int boundbox_dimsize[]= {8, 3};
 
 	srna= RNA_def_struct(brna, "Object", "ID");
 	RNA_def_struct_ui_text(srna, "Object", "Object datablock defining an object in a scene");
@@ -1685,7 +1714,7 @@ static void rna_def_object(BlenderRNA *brna)
 	RNA_def_property_multi_array(prop, 2, boundbox_dimsize);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_float_funcs(prop, "rna_Object_boundbox_get", NULL, NULL);
-	RNA_def_property_ui_text(prop, "Bound Box", "Objects bound box in object-space coordinates");
+	RNA_def_property_ui_text(prop, "Bound Box", "Objects bound box in object-space coordinates, all values are -1.0 when not available.");
 
 	/* parent */
 	prop= RNA_def_property(srna, "parent", PROP_POINTER, PROP_NONE);
@@ -1876,16 +1905,25 @@ static void rna_def_object(BlenderRNA *brna)
 	/* matrix */
 	prop= RNA_def_property(srna, "matrix_world", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "obmat");
-	RNA_def_property_multi_array(prop, 2, matrix_dimsize);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Matrix World", "Worldspace transformation matrix");
 	RNA_def_property_update(prop, NC_OBJECT|ND_TRANSFORM, "rna_Object_matrix_world_update");
 
 	prop= RNA_def_property(srna, "matrix_local", PROP_FLOAT, PROP_MATRIX);
-	RNA_def_property_multi_array(prop, 2, matrix_dimsize);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Local Matrix", "Parent relative transformation matrix");
 	RNA_def_property_float_funcs(prop, "rna_Object_matrix_local_get", "rna_Object_matrix_local_set", NULL);
 	RNA_def_property_update(prop, NC_OBJECT|ND_TRANSFORM, NULL);
 
+	prop= RNA_def_property(srna, "matrix_basis", PROP_FLOAT, PROP_MATRIX);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+	RNA_def_property_ui_text(prop, "Input Matrix", "Matrix access to location, rotation and scale (including deltas), before constraints and parenting are applied.");
+	RNA_def_property_float_funcs(prop, "rna_Object_matrix_basis_get", "rna_Object_matrix_basis_set", NULL);
+	RNA_def_property_update(prop, NC_OBJECT|ND_TRANSFORM, "rna_Object_internal_update");
+	
 	/* collections */
 	prop= RNA_def_property(srna, "constraints", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_struct_type(prop, "Constraint");
@@ -2023,6 +2061,7 @@ static void rna_def_object(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "dupli_group", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "dup_group");
 	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_pointer_funcs(prop, NULL, "rna_Object_dup_group_set", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Dupli Group", "Instance an existing group");
 	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_Object_dependency_update");
 
@@ -2127,7 +2166,7 @@ static void rna_def_object(BlenderRNA *brna)
 	
 	prop= RNA_def_property(srna, "show_transparent", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "dtx", OB_DRAWTRANSP);
-	RNA_def_property_ui_text(prop, "Draw Transparent", "Enables transparent materials for the object (Mesh only)");
+	RNA_def_property_ui_text(prop, "Draw Transparent", "Displays material transparency in the object");
 	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, NULL);
 	
 	prop= RNA_def_property(srna, "show_x_ray", PROP_BOOLEAN, PROP_NONE);
@@ -2198,12 +2237,14 @@ static void rna_def_dupli_object(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "matrix_original", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "omat");
-	RNA_def_property_array(prop, 16);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Object Matrix", "The original matrix of this object before it was duplicated");
 
 	prop= RNA_def_property(srna, "matrix", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "mat");
-	RNA_def_property_array(prop, 16);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Object Duplicate Matrix", "Object duplicate transformation matrix");
 
 	/* TODO: DupliObject has more properties that can be wrapped */

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32705 2010-10-25 17:08:40Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -25,9 +25,9 @@
 # ***** END GPL LICENSE BLOCK *****
 
 # since this includes bullet we get errors from the headers too
-REMOVE_STRICT_FLAGS()
+remove_strict_flags()
 
-SET(INC
+set(INC
 	.
 	../common
 	../../../../extern/bullet2/src
@@ -47,14 +47,18 @@ SET(INC
 	${PYTHON_INC}
 )
 
-SET(SRC
+set(SRC
 	CcdPhysicsEnvironment.cpp
 	CcdPhysicsController.cpp
 	CcdGraphicController.cpp
+
+	CcdGraphicController.h
+	CcdPhysicsController.h
+	CcdPhysicsEnvironment.h
 )
 
-IF(WITH_BULLET)
-	ADD_DEFINITIONS(-DUSE_BULLET)
-ENDIF(WITH_BULLET)
+if(WITH_BULLET)
+	add_definitions(-DUSE_BULLET)
+endif()
 
-BLENDERLIB(bf_bullet "${SRC}" "${INC}")
+blender_add_lib(ge_phys_bullet "${SRC}" "${INC}")

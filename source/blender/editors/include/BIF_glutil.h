@@ -1,5 +1,5 @@
 /**
- * $Id: BIF_glutil.h 27639 2010-03-21 01:14:04Z gsrb3d $
+ * $Id: BIF_glutil.h 33442 2010-12-03 12:30:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -197,7 +197,7 @@ void gla2DSetMap(gla2DDrawInfo *di, struct rctf *rect);
 /* use this for platform hacks. glPointSize is solved here */
 void bglBegin(int mode);
 void bglEnd(void);
-int bglPointHack();
+int bglPointHack(void);
 void bglVertex3fv(float *vec);
 void bglVertex3f(float x, float y, float z);
 void bglVertex2fv(float *vec);

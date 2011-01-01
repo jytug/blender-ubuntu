@@ -1,5 +1,5 @@
 /*
- * $Id: KX_Scene.cpp 32414 2010-10-11 10:47:20Z dfelinto $
+ * $Id: KX_Scene.cpp 33707 2010-12-16 10:25:41Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -208,7 +208,7 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 
 	m_bucketmanager=new RAS_BucketManager();
 	
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	m_attr_dict = PyDict_New(); /* new ref */
 	m_draw_call_pre = NULL;
 	m_draw_call_post = NULL;
@@ -262,7 +262,7 @@ KX_Scene::~KX_Scene()
 		delete m_bucketmanager;
 	}
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	PyDict_Clear(m_attr_dict);
 	Py_DECREF(m_attr_dict);
 
@@ -323,7 +323,10 @@ list<class KX_Camera*>* KX_Scene::GetCameras()
 	return &m_cameras;
 }
 
-
+list<class KX_FontObject*>* KX_Scene::GetFonts()
+{
+	return &m_fonts;
+}
 
 void KX_Scene::SetFramingType(RAS_FrameSettings & frame_settings)
 {
@@ -1014,6 +1017,9 @@ int KX_Scene::NewRemoveObject(class CValue* gameobj)
 	// in case this is a camera
 	m_cameras.remove((KX_Camera*)newobj);
 
+	// in case this is a font
+	m_fonts.remove((KX_FontObject*)newobj);
+
 	/* currently does nothing, keep incase we need to Unregister something */
 #if 0
 	if (m_sceneConverter)
@@ -1073,8 +1079,9 @@ void KX_Scene::ReplaceMesh(class CValue* obj,void* meshobj, bool use_gfx, bool u
 				blendobj->parent &&							// original object had armature (not sure this test is needed)
 				blendobj->parent->type == OB_ARMATURE &&
 				blendmesh->dvert!=NULL;						// mesh has vertex group
+#ifdef USE_BULLET
 			bool bHasSoftBody = (!parentobj && (blendobj->gameflag & OB_SOFT_BODY));
-
+#endif
 			bool releaseParent = true;
 
 			
@@ -1187,6 +1194,27 @@ void KX_Scene::ReplaceMesh(class CValue* obj,void* meshobj, bool use_gfx, bool u
 #endif
 }
 
+/* Font Object routines */
+void KX_Scene::AddFont(KX_FontObject* font)
+{
+	if (!FindFont(font))
+		m_fonts.push_back(font);
+}
+
+KX_FontObject* KX_Scene::FindFont(KX_FontObject* font)
+{
+	list<KX_FontObject*>::iterator it = m_fonts.begin();
+
+	while ( (it != m_fonts.end()) 
+			&& ((*it) != font) ) {
+	  ++it;
+	}
+
+	return ((it == m_fonts.end()) ? NULL : (*it));
+}
+
+
+/* Camera Object routines */
 KX_Camera* KX_Scene::FindCamera(KX_Camera* cam)
 {
 	list<KX_Camera*>::iterator it = m_cameras.begin();
@@ -1721,6 +1749,11 @@ static void MergeScene_GameObject(KX_GameObject* gameobj, KX_Scene *to, KX_Scene
 	if(sg) {
 		if(sg->GetSGClientInfo() == from) {
 			sg->SetSGClientInfo(to);
+
+			/* Make sure to grab the children too since they might not be tied to a game object */
+			NodeList children = sg->GetSGChildren();
+			for (int i=0; i<children.size(); i++)
+					children[i]->SetSGClientInfo(to);
 		}
 #ifdef USE_BULLET
 		SGControllerList::iterator contit;
@@ -1838,7 +1871,7 @@ void KX_Scene::Render2DFilters(RAS_ICanvas* canvas)
 	m_filtermanager.RenderFilters(canvas);
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 void KX_Scene::RunDrawingCallbacks(PyObject* cb_list)
 {
@@ -2248,4 +2281,4 @@ KX_PYMETHODDEF_DOC(KX_Scene, get, "")
 	return def;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

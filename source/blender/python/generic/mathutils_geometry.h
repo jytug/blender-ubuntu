@@ -1,5 +1,5 @@
 /* 
- * $Id: mathutils_geometry.h 32709 2010-10-25 22:44:01Z campbellbarton $
+ * $Id: mathutils_geometry.h 32764 2010-10-29 22:59:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,6 +34,6 @@
 #include <Python.h>
 #include "mathutils.h"
 
-PyObject *Geometry_Init(void);
+PyMODINIT_FUNC BPyInit_mathutils_geometry(void);
 
 #endif				/* EXPP_Geometry_H */

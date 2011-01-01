@@ -1,5 +1,5 @@
 /**
- * $Id: ArmatureImporter.h 32310 2010-10-05 00:49:39Z gsrb3d $
+ * $Id: ArmatureImporter.h 33832 2010-12-21 10:43:47Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -105,9 +105,8 @@ private:
 
 	void fix_leaf_bones();
 
-	void set_leaf_bone_shapes(Object *ob_arm);
-
 #if 0
+	void set_leaf_bone_shapes(Object *ob_arm);
 	void set_euler_rotmode();
 #endif
 

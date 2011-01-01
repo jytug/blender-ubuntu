@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_SystemWin32.cpp 32683 2010-10-24 12:45:47Z jesterking $
+ * $Id: GHOST_SystemWin32.cpp 33928 2010-12-28 13:03:38Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
 
 /**
 
- * $Id: GHOST_SystemWin32.cpp 32683 2010-10-24 12:45:47Z jesterking $
+ * $Id: GHOST_SystemWin32.cpp 33928 2010-12-28 13:03:38Z jesterking $
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 7, 2001
@@ -399,6 +399,84 @@ GHOST_TSuccess GHOST_SystemWin32::exit()
 	return GHOST_System::exit();
 }
 
+void GHOST_SystemWin32::triggerKey(GHOST_IWindow *window, bool down, GHOST_TKey key)
+{
+	GHOST_Event *extra = new GHOST_EventKey(getSystem()->getMilliSeconds(), down ? GHOST_kEventKeyDown : GHOST_kEventKeyUp, window, key, '\0');
+	((GHOST_SystemWin32*)getSystem())->pushEvent(extra);
+}
+void GHOST_SystemWin32::handleModifierKeys(GHOST_IWindow *window, WPARAM wParam, LPARAM lParam, GHOST_ModifierKeys &oldModifiers, GHOST_ModifierKeys &newModifiers) const
+{
+	switch(wParam) {
+		case VK_SHIFT:
+			{
+				bool lchanged = oldModifiers.get(GHOST_kModifierKeyLeftAlt) != newModifiers.get(GHOST_kModifierKeyLeftAlt);
+				if(lchanged) {
+					((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyLeftAlt), GHOST_kKeyLeftAlt);
+				} else {
+					bool rchanged = oldModifiers.get(GHOST_kModifierKeyRightAlt) != newModifiers.get(GHOST_kModifierKeyRightAlt);
+					if (rchanged) {
+						((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyRightAlt), GHOST_kKeyRightAlt);
+					}
+				}
+				lchanged = oldModifiers.get(GHOST_kModifierKeyLeftControl) != newModifiers.get(GHOST_kModifierKeyLeftControl);
+				if(lchanged) {
+					((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyLeftControl), GHOST_kKeyLeftControl);
+				} else {
+					bool rchanged = oldModifiers.get(GHOST_kModifierKeyRightControl) != newModifiers.get(GHOST_kModifierKeyRightControl);
+					if (rchanged) {
+						((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyRightControl), GHOST_kKeyRightControl);
+					}
+				}
+			}
+			break;
+		case VK_CONTROL:
+			{
+				bool lchanged = oldModifiers.get(GHOST_kModifierKeyLeftAlt) != newModifiers.get(GHOST_kModifierKeyLeftAlt);
+				if(lchanged) {
+					((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyLeftAlt), GHOST_kKeyLeftAlt);
+				} else {
+					bool rchanged = oldModifiers.get(GHOST_kModifierKeyRightAlt) != newModifiers.get(GHOST_kModifierKeyRightAlt);
+					if (rchanged) {
+						((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyRightAlt), GHOST_kKeyRightAlt);
+					}
+				}
+				lchanged = oldModifiers.get(GHOST_kModifierKeyLeftShift) != newModifiers.get(GHOST_kModifierKeyLeftShift);
+				if(lchanged) {
+					((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyLeftShift), GHOST_kKeyLeftShift);
+				} else {
+					bool rchanged = oldModifiers.get(GHOST_kModifierKeyRightShift) != newModifiers.get(GHOST_kModifierKeyRightShift);
+					if (rchanged) {
+						((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyRightShift), GHOST_kKeyRightShift);
+					}
+				}
+			}
+			break;
+		case VK_MENU:
+			{
+				bool lchanged = oldModifiers.get(GHOST_kModifierKeyLeftShift) != newModifiers.get(GHOST_kModifierKeyLeftShift);
+				if(lchanged) {
+					((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyLeftShift), GHOST_kKeyLeftShift);
+				} else {
+					bool rchanged = oldModifiers.get(GHOST_kModifierKeyRightShift) != newModifiers.get(GHOST_kModifierKeyRightShift);
+					if (rchanged) {
+						((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyRightShift), GHOST_kKeyRightShift);
+					}
+				}
+				lchanged = oldModifiers.get(GHOST_kModifierKeyLeftControl) != newModifiers.get(GHOST_kModifierKeyLeftControl);
+				if(lchanged) {
+					((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyLeftControl), GHOST_kKeyLeftControl);
+				} else {
+					bool rchanged = oldModifiers.get(GHOST_kModifierKeyRightControl) != newModifiers.get(GHOST_kModifierKeyRightControl);
+					if (rchanged) {
+						((GHOST_SystemWin32*)getSystem())->triggerKey(window, newModifiers.get(GHOST_kModifierKeyRightControl), GHOST_kKeyRightControl);
+					}
+				}
+			}
+			break;
+		default:
+			break;
+	}
+}
 
 GHOST_TKey GHOST_SystemWin32::convertKey(GHOST_IWindow *window, WPARAM wParam, LPARAM lParam) const
 {
@@ -409,7 +487,7 @@ GHOST_TKey GHOST_SystemWin32::convertKey(GHOST_IWindow *window, WPARAM wParam, L
 	GHOST_ModifierKeys oldModifiers, newModifiers;
 	system->retrieveModifierKeys(oldModifiers);
 	system->getModifierKeys(newModifiers);
-	
+
 	//std::cout << wParam << " " << system->m_curKeyStatus[wParam] << " shift pressed: " << system->shiftPressed() << std::endl;
 
 	if ((wParam >= '0') && (wParam <= '9')) {
@@ -694,12 +772,13 @@ LRESULT CALLBACK GHOST_SystemWin32::s_llKeyboardProc(int nCode, WPARAM wParam, L
 		
 	KBDLLHOOKSTRUCT &keyb = *(PKBDLLHOOKSTRUCT)(lParam);
 	system->m_prevKeyStatus[keyb.vkCode] = system->m_curKeyStatus[keyb.vkCode];
-	//std::cout << "ll: " << keyb.vkCode << " " << down << " ";
+	//std::cout << "ll: " << keyb.vkCode << " " << down << " ||| ";
 	if(keyb.flags) {
 		if((keyb.flags & LLKHF_EXTENDED) == LLKHF_EXTENDED) {
 			//std::cout << "extended ";
 		}
 		if((keyb.flags & LLKHF_ALTDOWN) == LLKHF_ALTDOWN) {
+			//std::cout << "alt ";
 		}
 		if((keyb.flags & LLKHF_INJECTED)== LLKHF_INJECTED) {
 			//std::cout << "injected ";
@@ -772,7 +851,7 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					 * specifies a character code generated by a dead key. A dead key is a key that 
 					 * generates a character, such as the umlaut (double-dot), that is combined with 
 					 * another character to form a composite character. For example, the umlaut-O 
-					 * character (Ù) is generated by typing the dead key for the umlaut character, and 
+					 * character (Ã–) is generated by typing the dead key for the umlaut character, and
 					 * then typing the O key.
 					 */
 				case WM_SYSDEADCHAR:

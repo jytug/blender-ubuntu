@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_image.h (mar-2001 nzc)
  *	
- * $Id: BKE_image.h 32499 2010-10-15 12:29:02Z campbellbarton $ 
+ * $Id: BKE_image.h 33401 2010-11-30 23:38:31Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -46,8 +46,9 @@ void	free_image(struct Image *me);
 
 void	BKE_stamp_info(struct Scene *scene, struct ImBuf *ibuf);
 void	BKE_stamp_buf(struct Scene *scene, unsigned char *rect, float *rectf, int width, int height, int channels);
-int		BKE_write_ibuf(struct Scene *scene, struct ImBuf *ibuf, char *name, int imtype, int subimtype, int quality);
-void	BKE_makepicstring(char *string, char *base, int frame, int imtype, int use_ext);
+int		BKE_alphatest_ibuf(struct ImBuf *ibuf);
+int		BKE_write_ibuf(struct Scene *scene, struct ImBuf *ibuf, const char *name, int imtype, int subimtype, int quality);
+void	BKE_makepicstring(char *string, const char *base, int frame, int imtype, const short use_ext, const short use_frames);
 int		BKE_add_image_extension(char *string, int imtype);
 int		BKE_ftype_to_imtype(int ftype);
 int		BKE_imtype_to_ftype(int imtype);
@@ -115,7 +116,7 @@ void BKE_image_release_ibuf(struct Image *ima, void *lock);
 struct Image *BKE_add_image_file(const char *name);
 
 /* adds image, adds ibuf, generates color or pattern */
-struct Image *BKE_add_image_size(unsigned int width, unsigned int height, char *name, int depth, int floatbuf, short uvtestgrid, float color[4]);
+struct Image *BKE_add_image_size(unsigned int width, unsigned int height, const char *name, int depth, int floatbuf, short uvtestgrid, float color[4]);
 /* adds image from imbuf, owns imbuf */
 struct Image *BKE_add_image_imbuf(struct ImBuf *ibuf);
 

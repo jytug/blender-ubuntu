@@ -11,7 +11,7 @@
  * are self-explanatory (e.g. IS_amiga tests whether the buffer
  * contains an Amiga-format file).
  *
- * $Id: IMB_imbuf_types.h 32580 2010-10-19 04:29:05Z campbellbarton $ 
+ * $Id: IMB_imbuf_types.h 33665 2010-12-14 18:02:41Z ton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -131,11 +131,12 @@ typedef struct ImBuf {
 
 /* Moved from BKE_bmfont_types.h because it is a userflag bit mask. */
 /**
- * \brief Flags used internally by blender for imagebuffers
+ * \brief userflags: Flags used internally by blender for imagebuffers
  */
 
 #define IB_BITMAPFONT		(1 << 0)	/* this image is a font */
 #define IB_BITMAPDIRTY		(1 << 1)	/* image needs to be saved is not the same as filename */
+#define IB_MIPMAP_INVALID	(1 << 2)	/* image mipmaps are invalid, need recreate */
 
 /* From iff.h. This was once moved away by Frank, now Nzc moves it
  * back. Such is the way it is... It is a long list of defines, and

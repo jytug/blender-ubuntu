@@ -1,7 +1,7 @@
 /**
  * Senses touch and collision events
  *
- * $Id: KX_TouchSensor.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_TouchSensor.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -283,7 +283,7 @@ bool	KX_TouchSensor::NewHandleCollision(void*object1,void*object2,const PHY_Coll
 	return false; // was DT_CONTINUE but this was defined in sumo as false.
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */

@@ -1,5 +1,5 @@
 /**
- * $Id: MOD_util.c 32462 2010-10-14 06:29:17Z campbellbarton $
+ * $Id: MOD_util.c 33912 2010-12-27 19:26:38Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -53,7 +53,8 @@ void get_texture_value(Tex *texture, float *tex_co, TexResult *texres)
 {
 	int result_type;
 
-	result_type = multitex_ext(texture, tex_co, NULL, NULL, 0, texres);
+	/* no node textures for now */
+	result_type = multitex_ext_safe(texture, tex_co, texres);
 
 	/* if the texture gave an RGB value, we assume it didn't give a valid
 	* intensity, so calculate one (formula from do_material_tex).

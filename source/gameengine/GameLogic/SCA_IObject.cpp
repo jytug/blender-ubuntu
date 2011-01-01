@@ -1,5 +1,5 @@
 /**
- * $Id: SCA_IObject.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_IObject.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -303,7 +303,7 @@ void SCA_IObject::SetState(unsigned int state)
 	}
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -342,4 +342,4 @@ PyAttributeDef SCA_IObject::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

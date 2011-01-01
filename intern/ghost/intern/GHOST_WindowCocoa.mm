@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_WindowCocoa.mm 32243 2010-10-02 09:17:32Z damien78 $
+ * $Id: GHOST_WindowCocoa.mm 33470 2010-12-04 14:26:45Z damien78 $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -777,12 +777,14 @@ GHOST_TSuccess GHOST_WindowCocoa::setState(GHOST_TWindowState state)
 				[tmpWindow setReleasedWhenClosed:NO];
 				[tmpWindow setAcceptsMouseMovedEvents:YES];
 				[tmpWindow setDelegate:[m_window delegate]];
+				[tmpWindow registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType,
+												   NSStringPboardType, NSTIFFPboardType, nil]];
 				
 				//Assign the openGL view to the new window
 				[tmpWindow setContentView:m_openGLView];
 				
 				//Show the new window
-				[tmpWindow makeKeyAndOrderFront:nil];
+				[tmpWindow makeKeyAndOrderFront:m_openGLView];
 				//Close and release old window
 				[m_window setDelegate:nil]; // To avoid the notification of "window closed" event
 				[m_window close];
@@ -835,6 +837,10 @@ GHOST_TSuccess GHOST_WindowCocoa::setState(GHOST_TWindowState state)
 				[tmpWindow setReleasedWhenClosed:NO];
 				[tmpWindow setAcceptsMouseMovedEvents:YES];
 				[tmpWindow setDelegate:[m_window delegate]];
+				[tmpWindow registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType,
+												   NSStringPboardType, NSTIFFPboardType, nil]];
+				//Forbid to resize the window below the blender defined minimum one
+				[tmpWindow setContentMinSize:NSMakeSize(320, 240)];
 				
 				//Assign the openGL view to the new window
 				[tmpWindow setContentView:m_openGLView];

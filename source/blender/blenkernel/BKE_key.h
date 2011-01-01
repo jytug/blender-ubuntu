@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_key.h (mar-2001 nzc)
  *	
- * $Id: BKE_key.h 29647 2010-06-23 12:27:13Z nazgul $ 
+ * $Id: BKE_key.h 33124 2010-11-17 09:45:45Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -59,7 +59,7 @@ void key_curve_normal_weights(float t, float *data, int type);
 float *do_ob_key(struct Scene *scene, struct Object *ob);
 
 struct Key *ob_get_key(struct Object *ob);
-struct KeyBlock *add_keyblock(struct Key *key, char *name);
+struct KeyBlock *add_keyblock(struct Key *key, const char *name);
 struct KeyBlock *ob_get_keyblock(struct Object *ob);
 struct KeyBlock *ob_get_reference_keyblock(struct Object *ob);
 struct KeyBlock *key_get_keyblock(struct Key *key, int index);

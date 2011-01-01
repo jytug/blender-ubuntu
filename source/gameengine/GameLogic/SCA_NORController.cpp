@@ -1,7 +1,7 @@
 /**
  * 'Nor' together all inputs
  *
- * $Id: SCA_NORController.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_NORController.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -87,7 +87,7 @@ CValue* SCA_NORController::GetReplica()
 	return replica;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -124,6 +124,6 @@ PyAttributeDef SCA_NORController::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */

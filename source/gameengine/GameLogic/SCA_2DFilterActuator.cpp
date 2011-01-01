@@ -1,7 +1,7 @@
 /**
  * SCA_2DFilterActuator.cpp
  *
- * $Id: SCA_2DFilterActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: SCA_2DFilterActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -96,7 +96,7 @@ void SCA_2DFilterActuator::SetShaderText(const char *text)
 	m_shaderText = text;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */

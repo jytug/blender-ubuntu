@@ -1,5 +1,5 @@
 /*
- * $Id: KX_KetsjiEngine.h 31056 2010-08-05 03:25:45Z campbellbarton $
+ * $Id: KX_KetsjiEngine.h 33707 2010-12-16 10:25:41Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -70,7 +70,7 @@ private:
 	class RAS_IRenderTools*				m_rendertools;
 	class KX_ISceneConverter*			m_sceneconverter;
 	class NG_NetworkDeviceInterface*		m_networkdevice;
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	/* borrowed from sys.modules["__main__"], dont manage ref's */
 	PyObject*					m_pythondictionary;
 #endif
@@ -191,6 +191,7 @@ private:
 	void					RenderShadowBuffers(KX_Scene *scene);
 	void					SetBackGround(KX_WorldInfo* worldinfo);
 	void					DoSound(KX_Scene* scene);
+	void					RenderFonts(KX_Scene* scene);
 
 public:
 	KX_KetsjiEngine(class KX_ISystem* system);
@@ -204,7 +205,7 @@ public:
 	void			SetCanvas(RAS_ICanvas* canvas);
 	void			SetRenderTools(RAS_IRenderTools* rendertools);
 	void			SetRasterizer(RAS_IRasterizer* rasterizer);
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 	void			SetPyNamespace(PyObject* pythondictionary);
 	PyObject*		GetPyNamespace(){return m_pythondictionary;};
 #endif

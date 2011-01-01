@@ -39,6 +39,7 @@ def splitExt(path):
     else:
         return (path[dotidx:]).upper().replace('.','')
 
+
 def imageFormat(imgF):
     ext = ""
     ext_orig = splitExt(imgF)
@@ -106,7 +107,8 @@ def findInSubDir(filename, subdirectory=''):
             if filename in names:
                 pahFile = os.path.join(root, filename)
         return pahFile
-    except: return ''
+    except OSError:
+        return '' 
 
 def path_image(image):
     import os
@@ -119,28 +121,34 @@ def path_image(image):
 
 ##############end find image texture 
 
+def splitHyphen(name):
+    hyphidx = name.find('-')
+    if hyphidx == -1:
+        return name
+    else:
+        return (name[hyphidx:]).replace('-','')
 
 ##############safety string name material
-def safety(name):
-    try:
-        if int(name) > 0: prefix='shader'
-    except: prefix=''
-    prefix='shader_'
-    return prefix+name
+def safety(name, Level):
+    # Level=1 is for texture with No specular nor Mirror reflection
+    # Level=2 is for texture with translation of spec and mir levels for when no map influences them
+    # Level=3 is for texture with Maximum Spec and Mirror 
 
-def safety0(name): #used for 0 of specular map
     try:
-        if int(name) > 0: prefix='shader'
-    except: prefix=''
+        if int(name) > 0:
+            prefix='shader'
+    except:
+        prefix = ''
     prefix='shader_'
-    return prefix+name+'0'
+    name = splitHyphen(name)
+    if Level == 2:
+        return prefix+name
+    elif Level == 1:
+        return prefix+name+'0'#used for 0 of specular map
+    elif Level == 3:
+        return prefix+name+'1'#used for 1 of specular map
 
-def safety1(name): #used for 1 of specular map
-    try:
-        if int(name) > 0: prefix='shader'
-    except: prefix=''
-    prefix='shader_'
-    return prefix+name+'1'
+
 ##############end safety string name material
 ##############################EndSF###########################
 
@@ -164,7 +172,7 @@ def write_pov(filename, scene=None, info_callback=None):
         while name in nameSeq:
             name = '%s_%.3d' % (name_orig, i)
             i += 1
-
+        name = splitHyphen(name)
         return name
 
     def writeMatrix(matrix):
@@ -172,6 +180,10 @@ def write_pov(filename, scene=None, info_callback=None):
         (matrix[0][0], matrix[0][1], matrix[0][2], matrix[1][0], matrix[1][1], matrix[1][2], matrix[2][0], matrix[2][1], matrix[2][2], matrix[3][0], matrix[3][1], matrix[3][2]))
 
     def writeObjectMaterial(material):
+        
+        # DH - modified some variables to be function local, avoiding RNA write
+        # this should be checked to see if it is functionally correct
+        
         if material: #and material.transparency_method == 'RAYTRACE':#Commented out: always write IOR to be able to use it for SSS, Fresnel reflections...
             #But there can be only one!
             if material.subsurface_scattering.use:#SSS IOR get highest priority
@@ -180,35 +192,44 @@ def write_pov(filename, scene=None, info_callback=None):
                 file.write('\tinterior { ior %.6f\n' % material.raytrace_transparency.ior)
             else:
                 file.write('\tinterior { ior %.6f\n' % material.raytrace_transparency.ior)
-
-
+                
+            pov_fake_caustics = False
+            pov_photons_refraction = False
+            pov_photons_reflection = False
+                
+            if material.pov_refraction_type=="0":
+                pov_fake_caustics = False
+                pov_photons_refraction = False
+                pov_photons_reflection = True #should respond only to proper checkerbox
+            elif material.pov_refraction_type=="1":
+                pov_fake_caustics = True
+                pov_photons_refraction = False
+            elif material.pov_refraction_type=="2":
+                pov_fake_caustics = False
+                pov_photons_refraction = True
 
             #If only Raytrace transparency is set, its IOR will be used for refraction, but user can set up "un-physical" fresnel reflections in raytrace mirror parameters. 
             #Last, if none of the above is specified, user can set up "un-physical" fresnel reflections in raytrace mirror parameters. And pov IOR defaults to 1. 
             if material.pov_caustics_enable:
-                if material.pov_fake_caustics:
+                if pov_fake_caustics:
                     file.write('\tcaustics %.3g\n' % material.pov_fake_caustics_power)
-                    #material.pov_photons_refraction=0
-                if material.pov_photons_refraction:
-                    material.pov_fake_caustics=0 #How to deactivate fake caustics when refr photons on?
-
+                if pov_photons_refraction:
                     file.write('\tdispersion %.3g\n' % material.pov_photons_dispersion) #Default of 1 means no dispersion
-                    
-                #bpy.types.MATERIAL_PT_povray_caustics.Display = 1 - bpy.types.MATERIAL_PT_povray_caustics.Display
-        #mat = context.material
+            #TODO        
             # Other interior args
+            # if material.use_transparency and material.transparency_method == 'RAYTRACE':
             # fade_distance 2
             # fade_power [Value]
             # fade_color
 
             # (variable) dispersion_samples (constant count for now)
             file.write('\t}\n')
-            if material.pov_photons_refraction or material.pov_photons_reflection:
+            if pov_photons_refraction or pov_photons_reflection:
                 file.write('\tphotons{\n')
                 file.write('\t\ttarget\n')
-                if material.pov_photons_refraction:
+                if pov_photons_refraction:
                     file.write('\t\trefraction on\n')
-                if material.pov_photons_reflection:
+                if pov_photons_reflection:
                     file.write('\t\treflection on\n')
                 file.write('\t}\n')
                 
@@ -225,291 +246,162 @@ def write_pov(filename, scene=None, info_callback=None):
 
         name = materialNames[name_orig] = uniqueName(bpy.path.clean_name(name_orig), materialNames)
 
-        file.write('#declare %s = finish {\n' % safety0(name))
 
-        if material:
+        ##################Several versions of the finish: Level conditions are variations for specular/Mirror texture channel map with alternative finish of 0 specular and no mirror reflection
+        # Level=1 Means No specular nor Mirror reflection
+        # Level=2 Means translation of spec and mir levels for when no map influences them
+        # Level=3 Means Maximum Spec and Mirror 
+        def povHasnoSpecularMaps(Level):
+            if Level == 2:
+                file.write('#declare %s = finish {\n' % safety(name, Level = 2))
+            elif Level == 1:
+                file.write('#declare %s = finish {\n' % safety(name, Level = 1))
+            elif Level == 3:
+                file.write('#declare %s = finish {\n' % safety(name, Level = 3))
 
-            #Povray 3.7 now uses two diffuse values respectively for front and back shading (the back diffuse is like blender translucency)
-            frontDiffuse=material.diffuse_intensity
-            backDiffuse=material.translucency
+
+            if material:
+                #Povray 3.7 now uses two diffuse values respectively for front and back shading (the back diffuse is like blender translucency)
+                frontDiffuse=material.diffuse_intensity
+                backDiffuse=material.translucency
+                
             
+                if material.pov_conserve_energy:
+
+                    #Total should not go above one
+                    if (frontDiffuse + backDiffuse) <= 1.0:
+                        pass
+                    elif frontDiffuse==backDiffuse:
+                        frontDiffuse = backDiffuse = 0.5 # Try to respect the user's "intention" by comparing the two values but bringing the total back to one
+                    elif frontDiffuse>backDiffuse:       # Let the highest value stay the highest value
+                        backDiffuse = 1-(1-frontDiffuse)
+                    else:
+                        frontDiffuse = 1-(1-backDiffuse)
+                    
+
+                # map hardness between 0.0 and 1.0
+                roughness = ((1.0 - ((material.specular_hardness - 1.0) / 510.0)))
+                ## scale from 0.0 to 0.1
+                roughness *= 0.1 
+                # add a small value because 0.0 is invalid
+                roughness += (1 / 511.0)
+
+                #####################################Diffuse Shader######################################
+                # Not used for Full spec (Level=3) of the shader
+                if material.diffuse_shader == 'OREN_NAYAR' and Level != 3:
+                    file.write('\tbrilliance %.3g\n' % (0.9+material.roughness))#blender roughness is what is generally called oren nayar Sigma, and brilliance in povray
+
+                if material.diffuse_shader == 'TOON' and Level != 3:
+                    file.write('\tbrilliance %.3g\n' % (0.01+material.diffuse_toon_smooth*0.25))
+                    frontDiffuse*=0.5 #Lower diffuse and increase specular for toon effect seems to look better in povray
+                
+                if material.diffuse_shader == 'MINNAERT' and Level != 3:
+                    #file.write('\taoi %.3g\n' % material.darkness)
+                    pass #let's keep things simple for now
+                if material.diffuse_shader == 'FRESNEL' and Level != 3:
+                    #file.write('\taoi %.3g\n' % material.diffuse_fresnel_factor)
+                    pass #let's keep things simple for now
+                if material.diffuse_shader == 'LAMBERT' and Level != 3:
+                    file.write('\tbrilliance 1.8\n') #trying to best match lambert attenuation by that constant brilliance value
+
+                if Level == 2:   
+                    ####################################Specular Shader######################################
+                    if material.specular_shader == 'COOKTORR' or material.specular_shader == 'PHONG':#No difference between phong and cook torrence in blender HaHa!
+                        file.write('\tphong %.3g\n' % (material.specular_intensity))
+                        file.write('\tphong_size %.3g\n'% (material.specular_hardness / 2 + 0.25)) 
+
+                    if material.specular_shader == 'BLINN':#Povray "specular" keyword corresponds to a Blinn model, without the ior.
+                        file.write('\tspecular %.3g\n' % (material.specular_intensity * (material.specular_ior/4))) #Use blender Blinn's IOR just as some factor for spec intensity
+                        file.write('\troughness %.3g\n' % roughness) 
+                        #Could use brilliance 2(or varying around 2 depending on ior or factor) too.
+
+
+                    if material.specular_shader == 'TOON':
+                        file.write('\tphong %.3g\n' % (material.specular_intensity * 2))
+                        file.write('\tphong_size %.3g\n' % (0.1+material.specular_toon_smooth / 2)) #use extreme phong_size
+
+
+                    if material.specular_shader == 'WARDISO':
+                        file.write('\tspecular %.3g\n' % (material.specular_intensity / (material.specular_slope+0.0005))) #find best suited default constant for brilliance Use both phong and specular for some values.
+                        file.write('\troughness %.4g\n' % (0.0005+material.specular_slope/10)) #find best suited default constant for brilliance Use both phong and specular for some values.
+                        file.write('\tbrilliance %.4g\n' % (1.8-material.specular_slope*1.8)) #find best suited default constant for brilliance Use both phong and specular for some values.
+                        
+
+                    
+                    #########################################################################################
+                elif Level == 1:
+                    file.write('\tspecular 0\n')
+                elif Level == 3:
+                    file.write('\tspecular 1\n')
+                file.write('\tdiffuse %.3g %.3g\n' % (frontDiffuse, backDiffuse))
+
+
+                file.write('\tambient %.3g\n' % material.ambient)
+                #file.write('\tambient rgb <%.3g, %.3g, %.3g>\n' % tuple([c*material.ambient for c in world.ambient_color])) # povray blends the global value
+                file.write('\temission %.3g\n' % material.emit) #New in povray 3.7
+                
+                #file.write('\troughness %.3g\n' % roughness) #povray just ignores roughness if there's no specular keyword
+                
+                if material.pov_conserve_energy:
+                    file.write('\tconserve_energy\n')#added for more realistic shading. Needs some checking to see if it really works. --Maurice.
+
+                # 'phong 70.0 '
+                if Level != 1:
+                    if material.raytrace_mirror.use:
+                        raytrace_mirror = material.raytrace_mirror
+                        if raytrace_mirror.reflect_factor:
+                            file.write('\treflection {\n')
+                            file.write('\t\trgb <%.3g, %.3g, %.3g>' % tuple(material.mirror_color))
+                            if material.pov_mirror_metallic:
+                                file.write('\t\tmetallic %.3g' % (raytrace_mirror.reflect_factor))
+                            if material.pov_mirror_use_IOR: #WORKING ?
+                                file.write('\t\tfresnel 1 ')#Removed from the line below: gives a more physically correct material but needs proper IOR. --Maurice
+                            file.write('\t\tfalloff %.3g exponent %.3g} ' % (raytrace_mirror.fresnel, raytrace_mirror.fresnel_factor))
+
+                if material.subsurface_scattering.use:
+                    subsurface_scattering = material.subsurface_scattering
+                    file.write('\tsubsurface { <%.3g, %.3g, %.3g>, <%.3g, %.3g, %.3g> }\n' % (sqrt(subsurface_scattering.radius[0])*1.5, sqrt(subsurface_scattering.radius[1])*1.5, sqrt(subsurface_scattering.radius[2])*1.5, 1-subsurface_scattering.color[0], 1-subsurface_scattering.color[1], 1-subsurface_scattering.color[2]))
+
+                if material.pov_irid_enable:
+                    file.write('\tirid { %.4g thickness %.4g turbulence %.4g }' % (material.pov_irid_amount, material.pov_irid_thickness, material.pov_irid_turbulence))
+
+            else:
+                file.write('\tdiffuse 0.8\n')
+                file.write('\tphong 70.0\n')
+                
+                #file.write('\tspecular 0.2\n')
+
+
+            # This is written into the object
+            '''
+            if material and material.transparency_method=='RAYTRACE':
+                'interior { ior %.3g} ' % material.raytrace_transparency.ior
+            '''
+
+            #file.write('\t\t\tcrand 1.0\n') # Sand granyness
+            #file.write('\t\t\tmetallic %.6f\n' % material.spec)
+            #file.write('\t\t\tphong %.6f\n' % material.spec)
+            #file.write('\t\t\tphong_size %.6f\n' % material.spec)
+            #file.write('\t\t\tbrilliance %.6f ' % (material.specular_hardness/256.0) # Like hardness
+
+            file.write('}\n')
+
+        # Level=1 Means No specular nor Mirror reflection
+        povHasnoSpecularMaps(Level=1)
+
+        # Level=2 Means translation of spec and mir levels for when no map influences them
+        povHasnoSpecularMaps(Level=2)
         
-            if material.pov_conserve_energy:
-
-                #Total should not go above one
-                if (frontDiffuse + backDiffuse) <= 1.0:
-                    pass
-                elif frontDiffuse==backDiffuse:
-                    frontDiffuse = backDiffuse = 0.5 # Try to respect the user's "intention" by comparing the two values but bringing the total back to one
-                elif frontDiffuse>backDiffuse:       # Let the highest value stay the highest value
-                    backDiffuse = 1-(1-frontDiffuse)
-                else:
-                    frontDiffuse = 1-(1-backDiffuse)
-                
-
-            # map hardness between 0.0 and 1.0
-            roughness = ((1.0 - ((material.specular_hardness - 1.0) / 510.0)))
-            ## scale from 0.0 to 0.1
-            roughness *= 0.1
-            # add a small value because 0.0 is invalid
-            roughness += (1 / 511.0)
-
-            #####################################Diffuse Shader######################################
-            if material.diffuse_shader == 'OREN_NAYAR':
-                file.write('\tbrilliance %.3g\n' % (0.9+material.roughness))#blender roughness is what is generally called oren nayar Sigma, and brilliance in povray
-
-            if material.diffuse_shader == 'TOON':
-                file.write('\tbrilliance %.3g\n' % (0.01+material.diffuse_toon_smooth*0.25))
-                frontDiffuse*=0.5 #Lower diffuse and increase specular for toon effect seems to look better in povray
-            
-            if material.diffuse_shader == 'MINNAERT':
-                #file.write('\taoi %.3g\n' % material.darkness) #not real syntax, aoi is a pattern.
-                pass # Have to put this in texture since AOI and slope map are patterns
-            if material.diffuse_shader == 'FRESNEL':
-                #file.write('\taoi %.3g\n' % material.diffuse_fresnel_factor) #not real syntax, aoi is a pattern.
-                pass # Have to put this in texture since AOI and slope map are patterns
-            if material.diffuse_shader == 'LAMBERT':
-                file.write('\tbrilliance 1.8\n') #trying to best match lambert attenuation by that constant brilliance value
-                
-            
-            #########################################################################################
-
-            file.write('\tdiffuse %.3g %.3g\n' % (frontDiffuse, backDiffuse))
-
-                
-            file.write('\tspecular 0\n')
-
-            file.write('\tambient %.3g\n' % material.ambient)
-            #file.write('\tambient rgb <%.3g, %.3g, %.3g>\n' % tuple([c*material.ambient for c in world.ambient_color])) # povray blends the global value
-            file.write('\temission %.3g\n' % material.emit) #New in povray 3.7
-
-            if material.pov_conserve_energy:
-                file.write('\tconserve_energy\n')#added for more realistic shading. Needs some checking to see if it really works. --Maurice.
-
-            # 'phong 70.0 '
-
-            if material.subsurface_scattering.use:
-                subsurface_scattering = material.subsurface_scattering
-                file.write('\tsubsurface { <%.3g, %.3g, %.3g>, <%.3g, %.3g, %.3g> }\n' % (sqrt(subsurface_scattering.radius[0])*1.5, sqrt(subsurface_scattering.radius[1])*1.5, sqrt(subsurface_scattering.radius[2])*1.5, 1-subsurface_scattering.color[0], 1-subsurface_scattering.color[1], 1-subsurface_scattering.color[2]))
-
-            if material.pov_irid_enable:
-                file.write('\tirid { %.4g thickness %.4g turbulence %.4g }' % (material.pov_irid_amount, material.pov_irid_thickness, material.pov_irid_turbulence))
-
-        file.write('}\n')
-        ##################Plain version of the finish (previous ones are variations for specular/Mirror texture channel map with alternative finish of 0 specular and no mirror reflection###
-        file.write('#declare %s = finish {\n' % safety(name))
-
-        if material:
-            #Povray 3.7 now uses two diffuse values respectively for front and back shading (the back diffuse is like blender translucency)
-            frontDiffuse=material.diffuse_intensity
-            backDiffuse=material.translucency
-            
-        
-            if material.pov_conserve_energy:
-
-                #Total should not go above one
-                if (frontDiffuse + backDiffuse) <= 1.0:
-                    pass
-                elif frontDiffuse==backDiffuse:
-                    frontDiffuse = backDiffuse = 0.5 # Try to respect the user's "intention" by comparing the two values but bringing the total back to one
-                elif frontDiffuse>backDiffuse:       # Let the highest value stay the highest value
-                    backDiffuse = 1-(1-frontDiffuse)
-                else:
-                    frontDiffuse = 1-(1-backDiffuse)
-                
-
-            # map hardness between 0.0 and 1.0
-            roughness = ((1.0 - ((material.specular_hardness - 1.0) / 510.0)))
-            ## scale from 0.0 to 0.1
-            roughness *= 0.1 
-            # add a small value because 0.0 is invalid
-            roughness += (1 / 511.0)
-
-            #####################################Diffuse Shader######################################
-            if material.diffuse_shader == 'OREN_NAYAR':
-                file.write('\tbrilliance %.3g\n' % (0.9+material.roughness))#blender roughness is what is generally called oren nayar Sigma, and brilliance in povray
-
-            if material.diffuse_shader == 'TOON':
-                file.write('\tbrilliance %.3g\n' % (0.01+material.diffuse_toon_smooth*0.25))
-                frontDiffuse*=0.5 #Lower diffuse and increase specular for toon effect seems to look better in povray
-            
-            if material.diffuse_shader == 'MINNAERT':
-                #file.write('\taoi %.3g\n' % material.darkness)
-                pass #let's keep things simple for now
-            if material.diffuse_shader == 'FRESNEL':
-                #file.write('\taoi %.3g\n' % material.diffuse_fresnel_factor)
-                pass #let's keep things simple for now
-            if material.diffuse_shader == 'LAMBERT':
-                file.write('\tbrilliance 1.8\n') #trying to best match lambert attenuation by that constant brilliance value
-                
-            ####################################Specular Shader######################################
-            if material.specular_shader == 'COOKTORR' or material.specular_shader == 'PHONG':#No difference between phong and cook torrence in blender HaHa!
-                file.write('\tphong %.3g\n' % (material.specular_intensity))
-                file.write('\tphong_size %.3g\n'% (material.specular_hardness / 2 + 0.25)) 
-
-            if material.specular_shader == 'BLINN':#Povray "specular" keyword corresponds to a Blinn model, without the ior.
-                file.write('\tspecular %.3g\n' % (material.specular_intensity * (material.specular_ior/4))) #Use blender Blinn's IOR just as some factor for spec intensity
-                file.write('\troughness %.3g\n' % roughness) 
-                #Could use brilliance 2(or varying around 2 depending on ior or factor) too.
-
-
-            if material.specular_shader == 'TOON':
-                file.write('\tphong %.3g\n' % (material.specular_intensity * 2))
-                file.write('\tphong_size %.3g\n' % (0.1+material.specular_toon_smooth / 2)) #use extreme phong_size
-
-
-            if material.specular_shader == 'WARDISO':
-                file.write('\tspecular %.3g\n' % (material.specular_intensity / (material.specular_slope+0.0005))) #find best suited default constant for brilliance Use both phong and specular for some values.
-                file.write('\troughness %.4g\n' % (0.0005+material.specular_slope/10)) #find best suited default constant for brilliance Use both phong and specular for some values.
-                file.write('\tbrilliance %.4g\n' % (1.8-material.specular_slope*1.8)) #find best suited default constant for brilliance Use both phong and specular for some values.
-                
-
-            
-            #########################################################################################
-
-            file.write('\tdiffuse %.3g %.3g\n' % (frontDiffuse, backDiffuse))
-
-
-            file.write('\tambient %.3g\n' % material.ambient)
-            #file.write('\tambient rgb <%.3g, %.3g, %.3g>\n' % tuple([c*material.ambient for c in world.ambient_color])) # povray blends the global value
-            file.write('\temission %.3g\n' % material.emit) #New in povray 3.7
-            
-            #file.write('\troughness %.3g\n' % roughness) #povray just ignores roughness if there's no specular keyword
-            
-            if material.pov_conserve_energy:
-                file.write('\tconserve_energy\n')#added for more realistic shading. Needs some checking to see if it really works. --Maurice.
-
-            # 'phong 70.0 '
-
-            if material.raytrace_mirror.use:
-                raytrace_mirror = material.raytrace_mirror
-                if raytrace_mirror.reflect_factor:
-                    file.write('\treflection {\n')
-                    file.write('\t\trgb <%.3g, %.3g, %.3g>' % tuple(material.mirror_color))
-                    if material.pov_mirror_metallic:
-                        file.write('\t\tmetallic %.3g' % (raytrace_mirror.reflect_factor))
-                    if material.pov_mirror_use_IOR: #WORKING ?
-                        file.write('\t\tfresnel 1 ')#Removed from the line below: gives a more physically correct material but needs proper IOR. --Maurice
-                    file.write('\t\tfalloff %.3g exponent %.3g} ' % (raytrace_mirror.fresnel, raytrace_mirror.fresnel_factor))
-
-            if material.subsurface_scattering.use:
-                subsurface_scattering = material.subsurface_scattering
-                file.write('\tsubsurface { <%.3g, %.3g, %.3g>, <%.3g, %.3g, %.3g> }\n' % (sqrt(subsurface_scattering.radius[0])*1.5, sqrt(subsurface_scattering.radius[1])*1.5, sqrt(subsurface_scattering.radius[2])*1.5, 1-subsurface_scattering.color[0], 1-subsurface_scattering.color[1], 1-subsurface_scattering.color[2]))
-
-            if material.pov_irid_enable:
-                file.write('\tirid { %.4g thickness %.4g turbulence %.4g }' % (material.pov_irid_amount, material.pov_irid_thickness, material.pov_irid_turbulence))
-
-        file.write('}\n')
-        ##################Full specular version of the finish an increased roughness seems necessary here to perceive anything###
-        file.write('#declare %s = finish {\n' % safety1(name))
-
-        if material:
-            #Povray 3.7 now uses two diffuse values respectively for front and back shading (the back diffuse is like blender translucency)
-            frontDiffuse=material.diffuse_intensity
-            backDiffuse=material.translucency
-            if material.pov_conserve_energy:
-
-                #Total should not go above one
-                if (frontDiffuse + backDiffuse) <= 1.0:
-                    pass
-                elif frontDiffuse==backDiffuse:
-                    frontDiffuse = backDiffuse = 0.5 # Try to respect the user's "intention" by comparing the two values but bringing the total back to one
-                elif frontDiffuse>backDiffuse:       # Let the highest value stay the highest value
-                    backDiffuse = 1-(1-frontDiffuse)
-                else:
-                    frontDiffuse = 1-(1-backDiffuse)
-
-            # map hardness between 0.0 and 1.0
-            roughness = ((1.0 - ((material.specular_hardness - 1.0) / 510.0)))
-            ## scale from 0.0 to 0.1
-            roughness *= 0.1 
-            # add a small value because 0.0 is invalid
-            roughness += (1 / 511.0)
-
- 
-                
-            ####################################Specular Shader######################################
-            if material.specular_shader == 'COOKTORR' or material.specular_shader == 'PHONG':#No difference between phong and cook torrence in blender HaHa!
-                file.write('\tphong %.3g\n' % (material.specular_intensity*3))#Multiplied for max value of Textured Spec.
-                file.write('\tphong_size %.3g\n'% (material.specular_hardness /100 + 0.0005)) # /2-->/500; 0.25-->0.0025 Larger highlight for max value of Textured Spec.
-
-            if material.specular_shader == 'BLINN':#Povray "specular" keyword corresponds to a Blinn model, hmhmmmm...
-                file.write('\tspecular %.3g\n' % (material.specular_intensity * 5)) #Multiplied for max value of Textured Spec.
-                file.write('\troughness %.3g\n' % (roughness*10)) #Multiplied for max value of Textured Spec.
-
-
-
-            if material.specular_shader == 'TOON':
-                file.write('\tphong %.3g\n' % (material.specular_intensity*3))#Multiplied for max value of Textured Spec.
-                file.write('\tphong_size %.3g\n' % (0.1+material.specular_toon_smooth / 10)) #use extreme phong_size
-
-
-            if material.specular_shader == 'WARDISO':
-                file.write('\tspecular %.3g\n' % (material.specular_intensity / (material.specular_slope+0.0005))) #find best suited default constant for brilliance Use both phong and specular for some values.
-                file.write('\troughness %.4g\n' % (0.0005+material.specular_slope*5)) #Multiplied for max value of Textured Spec.
-                file.write('\tbrilliance %.4g\n' % (1.8-material.specular_slope*1.8)) #find best suited default constant for brilliance Use both phong and specular for some values.
-
-
-            
-            #########################################################################################
-                
-            file.write('\tdiffuse %.3g %.3g\n' % (frontDiffuse, backDiffuse))
-
-            file.write('\tambient %.3g\n' % material.ambient)
-            #file.write('\tambient rgb <%.3g, %.3g, %.3g>\n' % tuple([c*material.ambient for c in world.ambient_color])) # povray blends the global value
-            file.write('\temission %.3g\n' % material.emit) #New in povray 3.7
-            
-            if material.pov_conserve_energy:
-                file.write('\tconserve_energy\n')#added for more realistic shading. Needs some checking to see if it really works. --Maurice.
-
-            # 'phong 70.0 '
-
-            if material.raytrace_mirror.use:
-                raytrace_mirror = material.raytrace_mirror
-                if raytrace_mirror.reflect_factor:
-                    file.write('\treflection {\n')
-                    file.write('\t\trgb <%.3g, %.3g, %.3g>' % tuple(material.mirror_color))
-                    if material.pov_mirror_metallic:
-                        file.write('\t\tmetallic %.3g' % (raytrace_mirror.reflect_factor))
-                    if material.pov_mirror_use_IOR: #WORKING ?
-                        file.write('\t\tfresnel 1 ')#Removed from the line below: gives a more physically correct material but needs proper IOR. --Maurice
-                    file.write('\t\tfalloff %.3g exponent %.3g} ' % (raytrace_mirror.fresnel, raytrace_mirror.fresnel_factor))
-
-            if material.subsurface_scattering.use:
-                subsurface_scattering = material.subsurface_scattering
-                file.write('\tsubsurface { <%.3g, %.3g, %.3g>, <%.3g, %.3g, %.3g> }\n' % (sqrt(subsurface_scattering.radius[0])*1.5, sqrt(subsurface_scattering.radius[1])*1.5, sqrt(subsurface_scattering.radius[2])*1.5, 1-subsurface_scattering.color[0], 1-subsurface_scattering.color[1], 1-subsurface_scattering.color[2]))
-                ##sqrt(subsurface_scattering.radius[1] above is just some non linear relation to keep "proportions" between blender presets values and povray. The following paper has samples of sigma numbers we can put directly into pov to get good results:
-                ##http://graphics.stanford.edu/papers/bssrdf/bssrdf.pdf
-                ##Whereas Blender probably uses That:
-                ##http://graphics.stanford.edu/papers/fast_bssrdf/fast_bssrdf.pdf
-
-            if material.pov_irid_enable:
-                file.write('\tirid { %.4g thickness %.4g turbulence %.4g }' % (material.pov_irid_amount, material.pov_irid_thickness, material.pov_irid_turbulence))
-
-        else:
-            file.write('\tdiffuse 0.8\n')
-            file.write('\tphong 70.0\n')
-            
-            #file.write('\tspecular 0.2\n')
-
-
-        # This is written into the object
-        '''
-        if material and material.transparency_method=='RAYTRACE':
-            'interior { ior %.3g} ' % material.raytrace_transparency.ior
-        '''
-
-        #file.write('\t\t\tcrand 1.0\n') # Sand granyness
-        #file.write('\t\t\tmetallic %.6f\n' % material.spec)
-        #file.write('\t\t\tphong %.6f\n' % material.spec)
-        #file.write('\t\t\tphong_size %.6f\n' % material.spec)
-        #file.write('\t\t\tbrilliance %.6f ' % (material.specular_hardness/256.0) # Like hardness
-
-        file.write('}\n')
+        # Level=3 Means Maximum Spec and Mirror
+        povHasnoSpecularMaps(Level=3)
 
     def exportCamera():
         camera = scene.camera
+        
+        # DH disabled for now, this isn't the correct context
+        active_object = None #bpy.context.active_object # does not always work  MR
         matrix = camera.matrix_world
+        focal_point = camera.data.dof_distance
 
         # compute resolution
         Qsize = float(render.resolution_x) / float(render.resolution_y)
@@ -517,14 +409,27 @@ def write_pov(filename, scene=None, info_callback=None):
         file.write('#declare camLookAt = <%.6f, %.6f, %.6f>;\n' % tuple([degrees(e) for e in matrix.rotation_part().to_euler()]))
 
         file.write('camera {\n')
-        file.write('\tlocation  <0, 0, 0>\n')
-        file.write('\tlook_at  <0, 0, -1>\n')
-        file.write('\tright <%s, 0, 0>\n' % - Qsize)
-        file.write('\tup <0, 1, 0>\n')
-        file.write('\tangle  %f \n' % (360.0 * atan(16.0 / camera.data.lens) / pi))
+        if scene.pov_baking_enable and active_object and active_object.type=='MESH':
+            file.write('\tmesh_camera{ 1 3\n') # distribution 3 is what we want here
+            file.write('\t\tmesh{%s}\n' % active_object.name)
+            file.write('\t}\n')
+            file.write('location <0,0,.01>')
+            file.write('direction <0,0,-1>')
+        # Using standard camera otherwise
+        else:
+            file.write('\tlocation  <0, 0, 0>\n')
+            file.write('\tlook_at  <0, 0, -1>\n')
+            file.write('\tright <%s, 0, 0>\n' % - Qsize)
+            file.write('\tup <0, 1, 0>\n')
+            file.write('\tangle  %f \n' % (360.0 * atan(16.0 / camera.data.lens) / pi))
 
-        file.write('\trotate  <%.6f, %.6f, %.6f>\n' % tuple([degrees(e) for e in matrix.rotation_part().to_euler()]))
-        file.write('\ttranslate <%.6f, %.6f, %.6f>\n' % (matrix[3][0], matrix[3][1], matrix[3][2]))
+            file.write('\trotate  <%.6f, %.6f, %.6f>\n' % tuple([degrees(e) for e in matrix.rotation_part().to_euler()]))
+            file.write('\ttranslate <%.6f, %.6f, %.6f>\n' % (matrix[3][0], matrix[3][1], matrix[3][2]))
+            if focal_point != 0:
+                file.write('\taperture 0.25\n') # fixed blur amount for now to do, add slider a button? 
+                file.write('\tblur_samples 96 128\n')
+                file.write('\tvariance 1/10000\n')
+                file.write('\tfocal_point <0, 0, %f>\n' % focal_point)
         file.write('}\n')
 
     def exportLamps(lamps):
@@ -570,17 +475,19 @@ def write_pov(filename, scene=None, info_callback=None):
                     samples_y = lamp.shadow_ray_samples_y
 
                 file.write('\tarea_light <%d,0,0>,<0,0,%d> %d, %d\n' % (size_x, size_y, samples_x, samples_y))
-                if lamp.shadow_ray_sampling_method == 'CONSTANT_JITTERED':
+                if lamp.shadow_ray_sample_method == 'CONSTANT_JITTERED':
                     if lamp.jitter:
                         file.write('\tjitter\n')
                 else:
                     file.write('\tadaptive 1\n')
                     file.write('\tjitter\n')
 
-            if lamp.shadow_method == 'NOSHADOW':
+            if lamp.type == 'HEMI':#HEMI never has any shadow attribute
                 file.write('\tshadowless\n')
+            elif lamp.shadow_method == 'NOSHADOW':
+                    file.write('\tshadowless\n')
 
-            if lamp.type != 'SUN' and lamp.type!='AREA':#Sun shouldn't be attenuated. and area lights have no falloff attribute so they are put to type 2 attenuation a little higher above.
+            if lamp.type != 'SUN' and lamp.type!='AREA' and lamp.type!='HEMI':#Sun shouldn't be attenuated. Hemi and area lights have no falloff attribute so they are put to type 2 attenuation a little higher above.
                 file.write('\tfade_distance %.6f\n' % (lamp.distance / 5) )
                 if lamp.falloff_type == 'INVERSE_SQUARE':
                     file.write('\tfade_power %d\n' % 2) # Use blenders lamp quad equivalent
@@ -689,13 +596,22 @@ def write_pov(filename, scene=None, info_callback=None):
 
             file.write('}\n')
 
+    objectNames = {}
+    DEF_OBJ_NAME = 'Default'
     def exportMeshs(scene, sel):
 
         ob_num = 0
 
         for ob in sel:
             ob_num += 1
-
+#############################################
+            #Generating a name for object just like materials to be able to use it (baking for now or anything else).
+            if sel:
+                name_orig = ob.name
+            else:
+                name_orig = DEF_OBJ_NAME
+            name = objectNames[name_orig] = uniqueName(bpy.path.clean_name(name_orig), objectNames)
+#############################################
             if ob.type in ('LAMP', 'CAMERA', 'EMPTY', 'META', 'ARMATURE', 'LATTICE'):
                 continue
 
@@ -717,12 +633,12 @@ def write_pov(filename, scene=None, info_callback=None):
             matrix = ob.matrix_world
             try:
                 uv_layer = me.uv_textures.active.data
-            except:
+            except AttributeError:
                 uv_layer = None
 
             try:
                 vcol_layer = me.vertex_colors.active.data
-            except:
+            except AttributeError:
                 vcol_layer = None
 
             faces_verts = [f.vertices[:] for f in me.faces]
@@ -732,6 +648,8 @@ def write_pov(filename, scene=None, info_callback=None):
             # quads incur an extra face
             quadCount = sum(1 for f in faces_verts if len(f) == 4)
 
+            # Use named declaration to allow reference e.g. for baking. MR
+            file.write('#declare %s=\n' % name) 
             file.write('mesh2 {\n')
             file.write('\tvertex_vectors {\n')
             file.write('\t\t%s' % (len(me.vertices))) # vert count
@@ -843,8 +761,8 @@ def write_pov(filename, scene=None, info_callback=None):
                     material = me_materials[col[3]]
                     material_finish = materialNames[material.name]
 
-                    if material.use_transparency and material.transparency_method == 'RAYTRACE':
-                        trans = 1.0 - material.raytrace_transparency.filter
+                    if material.use_transparency:
+                        trans = 1.0 - material.alpha
                     else:
                         trans = 0.0
 
@@ -858,29 +776,29 @@ def write_pov(filename, scene=None, info_callback=None):
                 texturesNorm=''
                 texturesAlpha=''
                 for t in material.texture_slots:
-                    if t and t.texture.type == 'IMAGE' and t.use: 
-                        image_filename  = path_image(t.texture.image.filepath)
-                        if t.texture.image.filepath != image_filename: t.texture.image.filepath = image_filename
-                        if image_filename != '' and t.use_map_color_diffuse: 
-                            texturesDif = image_filename
-                            colvalue = t.default_value
-                            t_dif = t
-                        if image_filename != '' and (t.use_map_specular or t.use_map_raymir): 
-                            texturesSpec = image_filename
-                            colvalue = t.default_value
-                            t_spec = t
-                        if image_filename != '' and t.use_map_normal: 
-                            texturesNorm = image_filename
-                            colvalue = t.normal_factor * 10
-                            #textNormName=t.texture.image.name + '.normal'
-                            #was the above used? --MR
-                            t_nor = t
-                        if image_filename != '' and t.use_map_alpha: 
-                            texturesAlpha = image_filename
-                            colvalue = t.alpha_factor * 10
-                            #textDispName=t.texture.image.name + '.displ'
-                            #was the above used? --MR
-                            t_alpha = t
+                    if t and t.texture.type == 'IMAGE' and t.use and t.texture.image: 
+                        image_filename = path_image(t.texture.image.filepath)
+                        if image_filename:
+                            if t.use_map_color_diffuse: 
+                                texturesDif = image_filename
+                                colvalue = t.default_value
+                                t_dif = t
+                            if t.use_map_specular or t.use_map_raymir: 
+                                texturesSpec = image_filename
+                                colvalue = t.default_value
+                                t_spec = t
+                            if t.use_map_normal: 
+                                texturesNorm = image_filename
+                                colvalue = t.normal_factor * 10.0
+                                #textNormName=t.texture.image.name + '.normal'
+                                #was the above used? --MR
+                                t_nor = t
+                            if t.use_map_alpha: 
+                                texturesAlpha = image_filename
+                                colvalue = t.alpha_factor * 10.0
+                                #textDispName=t.texture.image.name + '.displ'
+                                #was the above used? --MR
+                                t_alpha = t
 
 
 
@@ -948,10 +866,10 @@ def write_pov(filename, scene=None, info_callback=None):
                         file.write('\n\t\t\t\tpigment {rgbft<%.3g, %.3g, %.3g, %.3g, %.3g>}' % (col[0], col[1], col[2], 1.0 - material.alpha, trans))
 
                     if texturesSpec !='':
-                        file.write('finish {%s}' % (safety0(material_finish)))
+                        file.write('finish {%s}' % (safety(material_finish, Level=1)))# Level 1 is no specular
                         
                     else:
-                        file.write('finish {%s}' % (safety(material_finish)))
+                        file.write('finish {%s}' % (safety(material_finish, Level=2)))# Level 2 is translated spec
 
                 else:
                     mappingDif = (" translate <%.4g-0.75,%.4g-0.75,%.4g-0.75> scale <%.4g,%.4g,%.4g>" % (t_dif.offset.x / 10 ,t_dif.offset.y / 10 ,t_dif.offset.z / 10, t_dif.scale.x / 2.25, t_dif.scale.y / 2.25, t_dif.scale.z / 2.25)) #strange that the translation factor for scale is not the same as for translate. ToDo: verify both matches with blender internal. 
@@ -967,10 +885,10 @@ def write_pov(filename, scene=None, info_callback=None):
                         file.write("\n\t\t\t\tpigment {uv_mapping image_map {%s \"%s\" %s}%s}" % (imageFormat(texturesDif),texturesDif,imgMap(t_dif),mappingDif))
 
                     if texturesSpec !='':
-                        file.write('finish {%s}' % (safety0(material_finish)))
+                        file.write('finish {%s}' % (safety(material_finish, Level=1)))# Level 1 is no specular
                             
                     else:
-                        file.write('finish {%s}' % (safety(material_finish)))
+                        file.write('finish {%s}' % (safety(material_finish, Level=2)))# Level 2 is translated specular
 
                     ## scale 1 rotate y*0
                     #imageMap = ("{image_map {%s \"%s\" %s }" % (imageFormat(textures),textures,imgMap(t_dif)))
@@ -1000,10 +918,10 @@ def write_pov(filename, scene=None, info_callback=None):
                         file.write('\n\t\t\t\tpigment {rgbft<%.3g, %.3g, %.3g, %.3g, %.3g>}' % (col[0], col[1], col[2], 1.0 - material.alpha, trans))
 
                     if texturesSpec !='':
-                        file.write('finish {%s}' % (safety1(material_finish)))
+                        file.write('finish {%s}' % (safety(material_finish, Level=3)))# Level 3 is full specular
                         
                     else:
-                        file.write('finish {%s}' % (safety(material_finish)))
+                        file.write('finish {%s}' % (safety(material_finish, Level=2)))# Level 2 is translated specular
 
                 else:
                     mappingDif = (" translate <%.4g-0.75,%.4g-0.75,%.4g-0.75> scale <%.4g,%.4g,%.4g>" % (t_dif.offset.x / 10 ,t_dif.offset.y / 10 ,t_dif.offset.z / 10, t_dif.scale.x / 2.25, t_dif.scale.y / 2.25, t_dif.scale.z / 2.25)) #strange that the translation factor for scale is not the same as for translate. ToDo: verify both matches with blender internal. 
@@ -1018,9 +936,9 @@ def write_pov(filename, scene=None, info_callback=None):
                     else:
                         file.write("\n\t\t\tpigment {uv_mapping image_map {%s \"%s\" %s}%s}" % (imageFormat(texturesDif),texturesDif,imgMap(t_dif),mappingDif))
                     if texturesSpec !='':
-                        file.write('finish {%s}' % (safety1(material_finish)))
+                        file.write('finish {%s}' % (safety(material_finish, Level=3)))# Level 3 is full specular
                     else:
-                        file.write('finish {%s}' % (safety(material_finish)))
+                        file.write('finish {%s}' % (safety(material_finish, Level=2)))# Level 2 is translated specular
 
                     ## scale 1 rotate y*0
                     #imageMap = ("{image_map {%s \"%s\" %s }" % (imageFormat(textures),textures,imgMap(t_dif)))
@@ -1151,10 +1069,12 @@ def write_pov(filename, scene=None, info_callback=None):
 
             writeMatrix(matrix)
             file.write('}\n')
+            file.write('%s\n' % name) # Use named declaration to allow reference e.g. for baking. MR
 
             bpy.data.meshes.remove(me)
 
     def exportWorld(world):
+        render = scene.render
         camera = scene.camera
         matrix = camera.matrix_world
         if not world:
@@ -1164,7 +1084,17 @@ def write_pov(filename, scene=None, info_callback=None):
         if world:
             #For simple flat background:
             if not world.use_sky_blend:
-                file.write('background {rgbt<%.3g, %.3g, %.3g, 1>}\n' % (tuple(world.horizon_color)))#Non fully transparent background could premultiply alpha and avoid anti-aliasing problem. Put transmit to 1 reveals pov problem with nonpremult antialiased.
+                #Non fully transparent background could premultiply alpha and avoid anti-aliasing display issue: 
+                if render.alpha_mode == 'PREMUL' or render.alpha_mode == 'PREMUL' :
+                    file.write('background {rgbt<%.3g, %.3g, %.3g, 0.75>}\n' % (tuple(world.horizon_color)))
+                #Currently using no alpha with Sky option:
+                elif render.alpha_mode == 'SKY':
+                    file.write('background {rgbt<%.3g, %.3g, %.3g, 0>}\n' % (tuple(world.horizon_color)))
+                #StraightAlpha:
+                else:
+                    file.write('background {rgbt<%.3g, %.3g, %.3g, 1>}\n' % (tuple(world.horizon_color)))
+
+                    
 
             #For Background image textures
             for t in world.texture_slots: #risk to write several sky_spheres but maybe ok.
@@ -1195,17 +1125,24 @@ def write_pov(filename, scene=None, info_callback=None):
                     file.write('\tpigment {\n')
                     file.write('\t\tgradient z\n')#maybe Should follow the advice of POV doc about replacing gradient for skysphere..5.5
                     file.write('\t\tcolor_map {\n')
-                    file.write('\t\t\t[0.0 rgbt<%.3g, %.3g, %.3g, 1>]\n' % (tuple(world.zenith_color)))           
-                    file.write('\t\t\t[1.0 rgbt<%.3g, %.3g, %.3g, 0.99>]\n' % (tuple(world.horizon_color))) #aa premult not solved with transmit 1
+                    if render.alpha_mode == 'STRAIGHT':
+                        file.write('\t\t\t[0.0 rgbt<%.3g, %.3g, %.3g, 1>]\n' % (tuple(world.horizon_color)))
+                        file.write('\t\t\t[1.0 rgbt<%.3g, %.3g, %.3g, 1>]\n' % (tuple(world.zenith_color)))
+                    elif render.alpha_mode == 'PREMUL':
+                        file.write('\t\t\t[0.0 rgbt<%.3g, %.3g, %.3g, 0.99>]\n' % (tuple(world.horizon_color)))
+                        file.write('\t\t\t[1.0 rgbt<%.3g, %.3g, %.3g, 0.99>]\n' % (tuple(world.zenith_color))) #aa premult not solved with transmit 1
+                    else:
+                        file.write('\t\t\t[0.0 rgbt<%.3g, %.3g, %.3g, 0>]\n' % (tuple(world.horizon_color)))
+                        file.write('\t\t\t[1.0 rgbt<%.3g, %.3g, %.3g, 0>]\n' % (tuple(world.zenith_color)))
                     file.write('\t\t}\n')
                     file.write('\t}\n')
                     file.write('}\n')
-                    #problem with sky_sphere alpha (transmit) not translating into image alpha as well as "background" replace 0.75 by 1 when solved and later by some variable linked to background alpha state
+                    #sky_sphere alpha (transmit) is not translating into image alpha the same way as "background"
 
             if world.light_settings.use_indirect_light:
-                scene.pov_radio_enable=1
+                scene.pov_radio_enable=1 
                 
-
+            #Maybe change the above to scene.pov_radio_enable = world.light_settings.use_indirect_light ?
 
 
         ###############################################################
@@ -1271,12 +1208,13 @@ def write_pov(filename, scene=None, info_callback=None):
     for material in bpy.data.materials:
         writeMaterial(material)
 
-    exportCamera()
+    
     #exportMaterials()
     sel = scene.objects
     exportLamps([l for l in sel if l.type == 'LAMP'])
     exportMeta([l for l in sel if l.type == 'META'])
     exportMeshs(scene, sel)
+    exportCamera()
     exportWorld(scene.world)
     exportGlobalSettings(scene)
 
@@ -1292,7 +1230,6 @@ def write_pov_ini(filename_ini, filename_pov, filename_image):
     y = int(render.resolution_y * render.resolution_percentage * 0.01)
 
     file = open(filename_ini, 'w')
-
     file.write('Input_File_Name="%s"\n' % filename_pov)
     file.write('Output_File_Name="%s"\n' % filename_image)
 
@@ -1326,14 +1263,14 @@ def write_pov_ini(filename_ini, filename_pov, filename_image):
  
     else:
         file.write('Antialias=0\n')
-
+    file.write('Version=3.7')
     file.close()
 
 
 class PovrayRender(bpy.types.RenderEngine):
-    bl_idname = 'povray_RENDER'
+    bl_idname = 'POVRAY_RENDER'
     bl_label = "Povray 3.7"
-    DELAY = 0.02
+    DELAY = 0.05
 
     def _export(self, scene):
         import tempfile
@@ -1358,7 +1295,7 @@ class PovrayRender(bpy.types.RenderEngine):
 
         try:
             os.remove(self._temp_file_out) # so as not to load the old file
-        except:
+        except OSError:
             pass
 
         write_pov_ini(self._temp_file_ini, self._temp_file_in, self._temp_file_out)
@@ -1366,7 +1303,9 @@ class PovrayRender(bpy.types.RenderEngine):
         print ("***-STARTING-***")
 
         pov_binary = "povray"
-
+        
+        extra_args = []
+        
         if sys.platform == 'win32':
             import winreg
             regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Software\\POV-Ray\\v3.7\\Windows')
@@ -1375,11 +1314,14 @@ class PovrayRender(bpy.types.RenderEngine):
                 pov_binary = winreg.QueryValueEx(regKey, 'Home')[0] + '\\bin\\pvengine64'
             else:
                 pov_binary = winreg.QueryValueEx(regKey, 'Home')[0] + '\\bin\\pvengine'
+        else:
+            # DH - added -d option to prevent render window popup which leads to segfault on linux
+            extra_args.append("-d")
 
         if 1:
             # TODO, when povray isnt found this gives a cryptic error, would be nice to be able to detect if it exists
             try:
-                self._process = subprocess.Popen([pov_binary, self._temp_file_ini]) # stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                self._process = subprocess.Popen([pov_binary, self._temp_file_ini] + extra_args) # stdout=subprocess.PIPE, stderr=subprocess.PIPE
             except OSError:
                 # TODO, report api
                 print("POVRAY 3.7: could not execute '%s', possibly povray isn't installed" % pov_binary)
@@ -1392,14 +1334,14 @@ class PovrayRender(bpy.types.RenderEngine):
             # This works too but means we have to wait until its done
             os.system('%s %s' % (pov_binary, self._temp_file_ini))
 
-        print ("***-DONE-***")
+        # print ("***-DONE-***")
         return True
 
     def _cleanup(self):
         for f in (self._temp_file_in, self._temp_file_ini, self._temp_file_out):
             try:
                 os.remove(f)
-            except:
+            except OSError:  #was that the proper error type?
                 pass
 
         self.update_stats("", "")
@@ -1430,40 +1372,47 @@ class PovrayRender(bpy.types.RenderEngine):
 
         # Wait for the file to be created
         while not os.path.exists(self._temp_file_out):
+            # print("***POV WAITING FOR FILE***")
             if self.test_break():
                 try:
                     self._process.terminate()
-                except:
+                    print("***POV INTERRUPTED***")
+                except OSError:
                     pass
                 break
-
-            if self._process.poll() != None:
+            
+            poll_result = self._process.poll()
+            if poll_result is not None:
+                print("***POV PROCESS FAILED : %s ***" % poll_result)
                 self.update_stats("", "POVRAY 3.7: Failed")
                 break
 
             time.sleep(self.DELAY)
 
         if os.path.exists(self._temp_file_out):
-
+            # print("***POV FILE OK***")
             self.update_stats("", "POVRAY 3.7: Rendering")
 
             prev_size = -1
 
             def update_image():
+                # print("***POV UPDATING IMAGE***")
                 result = self.begin_result(0, 0, x, y)
                 lay = result.layers[0]
                 # possible the image wont load early on.
                 try:
                     lay.load_from_file(self._temp_file_out)
-                except:
+                except SystemError:
                     pass
                 self.end_result(result)
 
             # Update while povray renders
             while True:
+                # print("***POV RENDER LOOP***")
 
                 # test if povray exists
                 if self._process.poll() is not None:
+                    print("***POV PROCESS FINISHED***")
                     update_image()
                     break
 
@@ -1471,7 +1420,8 @@ class PovrayRender(bpy.types.RenderEngine):
                 if self.test_break():
                     try:
                         self._process.terminate()
-                    except:
+                        print("***POV PROCESS INTERRUPTED***")
+                    except OSError:
                         pass
 
                     break
@@ -1488,7 +1438,10 @@ class PovrayRender(bpy.types.RenderEngine):
                     prev_size = new_size
 
                 time.sleep(self.DELAY)
-
+        else:
+            print("***POV FILE NOT FOUND***")
+        
+        print("***POV FINISHED***")
         self._cleanup()
 
 

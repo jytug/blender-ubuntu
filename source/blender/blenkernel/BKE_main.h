@@ -8,7 +8,7 @@
  *
  * Oops... this should be a _types.h file.
  *
- * $Id: BKE_main.h 32309 2010-10-05 00:05:14Z jesterking $ 
+ * $Id: BKE_main.h 33490 2010-12-05 18:59:23Z blendix $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -81,6 +81,8 @@ typedef struct Main {
 	ListBase particle;
 	ListBase wm;
 	ListBase gpencil;
+
+	char id_tag_update[256];
 } Main;
 
 

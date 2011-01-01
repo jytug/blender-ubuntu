@@ -1,5 +1,5 @@
 /**
- * $Id: SHD_math.c 32517 2010-10-16 14:32:17Z campbellbarton $
+ * $Id: SHD_math.c 33448 2010-12-03 17:05:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -196,7 +196,7 @@ bNodeStack **out)
 
 static int gpu_shader_math(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
 {
-	static char *names[] = {"math_add", "math_subtract", "math_multiply",
+	static const char *names[] = {"math_add", "math_subtract", "math_multiply",
 		"math_divide", "math_sine", "math_cosine", "math_tangent", "math_asin",
 		"math_acos", "math_atan", "math_pow", "math_log", "math_min", "math_max",
 		"math_round", "math_less_than", "math_greater_than"};

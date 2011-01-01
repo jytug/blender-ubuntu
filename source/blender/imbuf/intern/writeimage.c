@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * writeimage.c
  *
- * $Id: writeimage.c 28651 2010-05-07 15:18:04Z blendix $
+ * $Id: writeimage.c 33167 2010-11-19 02:14:18Z campbellbarton $
  */
 
 #include <stdio.h>
@@ -37,7 +37,7 @@
 
 #include "imbuf.h"
 
-short IMB_saveiff(struct ImBuf *ibuf, char *name, int flags)
+short IMB_saveiff(struct ImBuf *ibuf, const char *name, int flags)
 {
 	ImFileType *type;
 
@@ -50,7 +50,7 @@ short IMB_saveiff(struct ImBuf *ibuf, char *name, int flags)
 				if(ibuf->rect==NULL && ibuf->rect_float)
 					IMB_rect_from_float(ibuf);
 			}
-
+			/* TODO. have const char for image write funcs */
 			return type->save(ibuf, name, flags);
 		}
 	}

@@ -2,7 +2,7 @@
 /*  world.c
  * 
  * 
- * $Id: world.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: world.c 33124 2010-11-17 09:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -63,7 +63,7 @@ void free_world(World *wrld)
 }
 
 
-World *add_world(char *name)
+World *add_world(const char *name)
 {
 	Main *bmain= G.main;
 	World *wrld;

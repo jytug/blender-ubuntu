@@ -1,5 +1,5 @@
 /**
- * $Id: ED_screen_types.h 32413 2010-10-11 10:40:34Z jhk $
+ * $Id: ED_screen_types.h 32808 2010-11-01 10:22:46Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,7 +52,7 @@ enum {
 		/* don't drop frames (and ignore SCE_FRAME_DROP flag) */
 	ANIMPLAY_FLAG_NO_SYNC		= (1<<3),
 		/* use nextfra at next timer update */
-	ANIMPLAY_FLAG_USE_NEXT_FRAME,
+	ANIMPLAY_FLAG_USE_NEXT_FRAME = (1<<4)
 };
 
 /* ----------------------------------------------------- */

@@ -1,7 +1,7 @@
 /* blenkernel/script.c
  *
  *
- * $Id: script.c 27642 2010-03-21 13:42:25Z campbellbarton $
+ * $Id: script.c 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * Function(s) related to struct script management.
  *
@@ -36,7 +36,7 @@
 
 /*
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 #include "BPY_extern.h" // Blender Python library
 #endif
 */

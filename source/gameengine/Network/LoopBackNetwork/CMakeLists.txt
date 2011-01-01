@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 32661 2010-10-23 04:05:55Z campbellbarton $
+# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,15 +24,17 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC
+set(INC
 	.
 	../../../../source/kernel/gen_system
 	../../../../intern/string
 	../../../../source/gameengine/Network
 )
 
-SET(SRC
+set(SRC
 	NG_LoopBackNetworkDeviceInterface.cpp
+
+	NG_LoopBackNetworkDeviceInterface.h
 )
 
-BLENDERLIB(bf_loopbacknetwork "${SRC}" "${INC}")
+blender_add_lib(ge_logic_loopbacknetwork "${SRC}" "${INC}")

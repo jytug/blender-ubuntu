@@ -1,7 +1,7 @@
 //
 // Replace the mesh for this actuator's parent
 //
-// $Id: KX_SCA_ReplaceMeshActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+// $Id: KX_SCA_ReplaceMeshActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -40,7 +40,7 @@
 
 #include "PyObjectPlus.h" 
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -110,7 +110,7 @@ KX_PYMETHODDEF_DOC(KX_SCA_ReplaceMeshActuator, instantReplaceMesh,
 	Py_RETURN_NONE;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Native functions                                                          */

@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_meta_types.h (mar-2001 nzc)
  *
- * $Id: DNA_meta_types.h 26841 2010-02-12 13:34:04Z campbellbarton $ 
+ * $Id: DNA_meta_types.h 33557 2010-12-08 13:02:16Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -48,7 +48,7 @@ typedef struct MetaElem {
 
 	short type, flag, selcol1, selcol2;
 	float x, y, z;          /* Position of center of MetaElem */
-	float quat[4];          /* Rotation of MetaElem */
+	float quat[4];          /* Rotation of MetaElem (MUST be kept normalized) */
 	float expx; /* dimension parameters, used for some types like cubes */
 	float expy;
 	float expz;

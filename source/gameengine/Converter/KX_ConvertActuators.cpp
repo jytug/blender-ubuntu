@@ -1,5 +1,5 @@
 /**
-* $Id: KX_ConvertActuators.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
+* $Id: KX_ConvertActuators.cpp 33500 2010-12-06 07:45:07Z campbellbarton $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,8 +31,6 @@
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786) 
 #endif //WIN32
-
-#define BLENDER_HACK_DTIME 0.02
 
 #include "MEM_guardedalloc.h"
 
@@ -150,13 +148,6 @@ void BL_ConvertActuators(char* maggiename,
 					KX_BLENDERTRUNC(obact->angularvelocity[1]),
 					KX_BLENDERTRUNC(obact->angularvelocity[2]));
 				short damping = obact->damping;
-				
-				drotvec /=		BLENDER_HACK_DTIME;
-				//drotvec /=		BLENDER_HACK_DTIME;
-				drotvec *= MT_2_PI/360.0;
-				//dlocvec /= BLENDER_HACK_DTIME;
-				//linvelvec /=	BLENDER_HACK_DTIME;
-				//angvelvec /=	BLENDER_HACK_DTIME;
 				
 				/* Blender uses a bit vector internally for the local-flags. In */
 				/* KX, we have four bools. The compiler should be smart enough  */

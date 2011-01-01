@@ -1,5 +1,5 @@
 /**
- * $Id: KX_Light.cpp 32392 2010-10-10 07:01:56Z campbellbarton $
+ * $Id: KX_Light.cpp 33442 2010-12-03 12:30:59Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -259,7 +259,7 @@ void KX_LightObject::UnbindShadowBuffer(RAS_IRasterizer *ras)
 	GPU_lamp_shadow_buffer_unbind(lamp);
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 /* ------------------------------------------------------------------------- */
 /* Python Integration Hooks					                                 */
 /* ------------------------------------------------------------------------- */
@@ -301,7 +301,6 @@ PyAttributeDef KX_LightObject::Attributes[] = {
 	KX_PYATTRIBUTE_FLOAT_RW("energy", 0, 10, KX_LightObject, m_lightobj.m_energy),
 	KX_PYATTRIBUTE_FLOAT_RW("distance", 0.01, 5000, KX_LightObject, m_lightobj.m_distance),
 	KX_PYATTRIBUTE_RW_FUNCTION("color", KX_LightObject, pyattr_get_color, pyattr_set_color),
-	KX_PYATTRIBUTE_RW_FUNCTION("colour", KX_LightObject, pyattr_get_color, pyattr_set_color),
 	KX_PYATTRIBUTE_FLOAT_RW("lin_attenuation", 0, 1, KX_LightObject, m_lightobj.m_att1),
 	KX_PYATTRIBUTE_FLOAT_RW("quad_attenuation", 0, 1, KX_LightObject, m_lightobj.m_att2),
 	KX_PYATTRIBUTE_FLOAT_RW("spotsize", 1, 180, KX_LightObject, m_lightobj.m_spotsize),
@@ -385,4 +384,4 @@ int KX_LightObject::pyattr_set_type(void* self_v, const KX_PYATTRIBUTE_DEF *attr
 
 	return PY_SET_ATTR_SUCCESS;
 }
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON

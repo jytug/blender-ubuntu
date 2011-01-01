@@ -1,7 +1,7 @@
 /**
  * KX_CameraActuator.cpp
  *
- * $Id: KX_CameraActuator.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+ * $Id: KX_CameraActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -346,7 +346,7 @@ CValue *KX_CameraActuator::findObject(char *obName)
 	return NULL;
 }
 
-#ifndef DISABLE_PYTHON
+#ifdef WITH_PYTHON
 
 /* ------------------------------------------------------------------------- */
 /* Python functions                                                          */
@@ -414,6 +414,6 @@ int KX_CameraActuator::pyattr_set_object(void *self_v, const KX_PYATTRIBUTE_DEF 
 	return PY_SET_ATTR_SUCCESS;
 }
 
-#endif // DISABLE_PYTHON
+#endif // WITH_PYTHON
 
 /* eof */
