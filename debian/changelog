@@ -1,8 +1,15 @@
 blender (2.57-svn36147-1) unstable; urgency=low
 
   * New Upstream Release
+  * debian/patches :
+    - 0001-install_in_usr_lib :
+        Changed system path in GHOST_SystemPathsX11.cpp instead of GHOST_SystemX11.cpp
+    - 0002-use_systemwide_libraries :
+        Deactivated hardcoded linked libraries glew and openjpeg which are detected automatically now
+    - 0004-locales_directory_install :
+        Set locales installation into /usr/share/locale
 
- -- Kevin Roy <kiniou@kiniou-desktop>  Wed, 13 Apr 2011 17:37:57 +0200
+ -- Kevin Roy <kiniou@gmail.com>  Wed, 13 Apr 2011 17:37:57 +0200
 
 blender (2.56.1-beta-svn34076-1) unstable; urgency=low
 
