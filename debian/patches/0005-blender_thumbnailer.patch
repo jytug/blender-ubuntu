@@ -1,5 +1,5 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Tue, 28 Sep 2010 15:00:28 +0200
+Date: Thu, 14 Apr 2011 14:55:23 +0200
 Subject: [PATCH] blender_thumbnailer
 
 * Move thumbnailer script to an appropriate destination
@@ -10,7 +10,7 @@ Subject: [PATCH] blender_thumbnailer
  2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/release/bin/blender-thumbnailer.py b/release/bin/blender-thumbnailer.py
-index be87056..ba9a031 100755
+index 8b93eeb..c13b618 100755
 --- a/release/bin/blender-thumbnailer.py
 +++ b/release/bin/blender-thumbnailer.py
 @@ -1,4 +1,4 @@
@@ -19,20 +19,20 @@ index be87056..ba9a031 100755
  
  # ##### BEGIN GPL LICENSE BLOCK #####
  #
-@@ -22,7 +22,7 @@
+@@ -24,7 +24,7 @@
  Thumbnailer runs with python 2.6 and 3.x.
  To run automatically with nautilus:
     gconftool --type boolean --set /desktop/gnome/thumbnailers/application@x-blender/enable true
--   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "blender-thumbnailer.py %i %o"
+-   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "blender-thumbnailer.py %u %o"
 +   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "/usr/lib/blender/scripts/blender-thumbnailer.py %i %o"
  """
  
  import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 44ec9e8..209cd29 100644
+index c4b197b..9b91cce 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -225,7 +225,7 @@ if(WITH_INSTALL)
+@@ -295,7 +295,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
