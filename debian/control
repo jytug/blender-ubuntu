@@ -11,7 +11,7 @@ Build-Depends: debhelper (>= 7.0.50~),
  libpng-dev,
  libsdl-dev,
  libz-dev,
- python3.1-dev,
+ python3.2-dev,
  python-support,
  cmake,
  libtiff4-dev,
@@ -43,7 +43,7 @@ Vcs-Git: git://git.debian.org/git/collab-maint/blender.git
 
 Package: blender
 Architecture: any
-Depends: ${shlibs:Depends}, python3.1, ${misc:Depends}, ttf-dejavu
+Depends: ${shlibs:Depends}, python3.2, ${misc:Depends}, ttf-dejavu
 Suggests: yafray, libtiff4
 Description: Very fast and versatile 3D modeller/renderer
  Blender is an integrated 3d suite for modelling, animation, rendering,

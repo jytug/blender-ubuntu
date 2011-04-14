@@ -1,6 +1,7 @@
 blender (2.57-svn36147-1) unstable; urgency=low
 
   * New Upstream Release
+  * Bump Python version to 3.2
   * debian/patches :
     - 0001-install_in_usr_lib :
         Changed system path in GHOST_SystemPathsX11.cpp instead of GHOST_SystemX11.cpp
