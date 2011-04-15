@@ -16,14 +16,12 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# <pep8 compliant>
-
-bl_addon_info= {
+bl_info= {
     "name": "Import LightWave Objects",
     "author": "Ken Nign (Ken9)",
     "version": (1, 2),
-    "blender": (2, 5, 3),
-    "api": 31847,
+    "blender": (2, 5, 7),
+    "api": 35622,
     "location": "File > Import > LightWave Object (.lwo)",
     "description": "Imports a LWO file including any UV, Morph and Color maps. "\
         "Can convert Skelegons to an Armature.",
@@ -31,7 +29,7 @@ bl_addon_info= {
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Import-Export/LightWave_Object",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=23623&group_id=153&atid=469",
+        "func=detail&aid=23623",
     "category": "Import-Export"}
 
 # Copyright (c) Ken Nign 2010
@@ -1078,7 +1076,7 @@ def build_objects(object_layers, object_surfs, object_tags, object_name, add_sub
                 vgroup.name= wmap_key
                 wlist= layer_data.wmaps[wmap_key]
                 for pvp in wlist:
-                    ob.vertex_groups.assign([pvp[0]], vgroup, pvp[1], 'REPLACE')
+                    vgroup.add((pvp[0], ), pvp[1], 'REPLACE')
 
         # Create the Shape Keys (LW's Endomorphs).
         if len(layer_data.morphs) > 0:
@@ -1209,7 +1207,7 @@ def build_objects(object_layers, object_surfs, object_tags, object_name, add_sub
     print("Done Importing LWO File")
 
 
-from bpy.props import *
+from bpy.props import StringProperty, BoolProperty
 
 
 class IMPORT_OT_lwo(bpy.types.Operator):
@@ -1244,10 +1242,14 @@ def menu_func(self, context):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_import.append(menu_func)
 
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_import.remove(menu_func)
 
 if __name__ == "__main__":

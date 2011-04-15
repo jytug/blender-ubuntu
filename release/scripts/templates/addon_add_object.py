@@ -1,4 +1,4 @@
-bl_addon_info = {
+bl_info = {
     "name": "New Object",
     "author": "YourNameHere",
     "version": (1, 0),
@@ -22,15 +22,19 @@ def add_object(self, context):
     scale_x = self.scale.x
     scale_y = self.scale.y
 
-    verts = [Vector((-1 * scale_x,  1 * scale_y, 0)),
-             Vector(( 1 * scale_x,  1 * scale_y, 0)),
-             Vector(( 1 * scale_x, -1 * scale_y, 0)),
-             Vector((-1 * scale_x, -1 * scale_y, 0)),]
-    edges = []
-    faces = [[0,1,2,3]]
+    verts = [Vector((-1 * scale_x, 1 * scale_y, 0)),
+             Vector((1 * scale_x, 1 * scale_y, 0)),
+             Vector((1 * scale_x, -1 * scale_y, 0)),
+             Vector((-1 * scale_x, -1 * scale_y, 0)),
+            ]
 
-    mesh_data = bpy.data.meshes.new(name='New Object Mesh')
-    mesh_data.from_pydata(verts, edges, faces)
+    edges = []
+    faces = [[0, 1, 2, 3]]
+
+    mesh = bpy.data.meshes.new(name='New Object Mesh')
+    mesh.from_pydata(verts, edges, faces)
+    # useful for development when the mesh may be invalid.
+    # mesh.validate(verbose=True)
     add_object_data(context, mesh_data, operator=self)
 
 
@@ -42,18 +46,18 @@ class OBJECT_OT_add_object(bpy.types.Operator, AddObjectHelper):
     bl_options = {'REGISTER', 'UNDO'}
 
     scale = FloatVectorProperty(name='scale',
-                                default=(1,1,1),
+                                default=(1.0, 1.0, 1.0),
                                 subtype='TRANSLATION',
                                 description='scaling')
 
     def execute(self, context):
- 
+
         add_object(self, context)
- 
+
         return {'FINISHED'}
 
 
-#### REGISTER ####
+# Registration
 
 def add_object_button(self, context):
     self.layout.operator(
@@ -61,10 +65,14 @@ def add_object_button(self, context):
         text="Add Object",
         icon="PLUGIN")
 
+
 def register():
+    bpy.utils.register_class(OBJECT_OT_add_object)
     bpy.types.INFO_MT_mesh_add.append(add_object_button)
 
+
 def unregister():
+    bpy.utils.unregister_class(OBJECT_OT_add_object)
     bpy.types.INFO_MT_mesh_add.remove(add_object_button)
 
 

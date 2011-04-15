@@ -1,5 +1,5 @@
 /*
-* $Id: modifier.c 33837 2010-12-21 15:10:09Z ton $
+* $Id: modifier.c 35247 2011-02-27 20:40:57Z jesterking $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -34,17 +34,24 @@
 *
 */
 
+/** \file blender/blenkernel/intern/modifier.c
+ *  \ingroup bke
+ */
+
+
 #include <stddef.h>
 #include <string.h>
 #include <stdarg.h>
 #include <math.h>
 #include <float.h>
 
+#include "MEM_guardedalloc.h"
+
 #include "DNA_armature_types.h"
 #include "DNA_object_types.h"
 #include "DNA_meshdata_types.h"
 
-#include "MEM_guardedalloc.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_bmesh.h"
 #include "BKE_cloth.h"
@@ -55,7 +62,7 @@
 
 ModifierTypeInfo *modifierType_getInfo(ModifierType type)
 {
-	static ModifierTypeInfo *types[NUM_MODIFIER_TYPES];
+	static ModifierTypeInfo *types[NUM_MODIFIER_TYPES]= {NULL};
 	static int types_init = 1;
 
 	if (types_init) {
@@ -147,14 +154,14 @@ ModifierData *modifiers_findByName(Object *ob, const char *name)
 void modifiers_clearErrors(Object *ob)
 {
 	ModifierData *md = ob->modifiers.first;
-	int qRedraw = 0;
+	/* int qRedraw = 0; */
 
 	for (; md; md=md->next) {
 		if (md->error) {
 			MEM_freeN(md->error);
 			md->error = NULL;
 
-			qRedraw = 1;
+			/* qRedraw = 1; */
 		}
 	}
 }
@@ -218,12 +225,13 @@ int modifier_sameTopology(ModifierData *md)
 
 void modifier_setError(ModifierData *md, const char *format, ...)
 {
-	char buffer[2048];
+	char buffer[512];
 	va_list ap;
 
 	va_start(ap, format);
-	vsprintf(buffer, format, ap);
+	vsnprintf(buffer, sizeof(buffer), format, ap);
 	va_end(ap);
+	buffer[sizeof(buffer) - 1]= '\0';
 
 	if (md->error)
 		MEM_freeN(md->error);
@@ -243,6 +251,11 @@ int modifiers_getCageIndex(struct Scene *scene, Object *ob, int *lastPossibleCag
 {
 	ModifierData *md = (virtual_)? modifiers_getVirtualModifierList(ob): ob->modifiers.first;
 	int i, cageIndex = -1;
+
+	if(lastPossibleCageIndex_r) {
+		/* ensure the value is initialized */
+		*lastPossibleCageIndex_r= -1;
+	}
 
 	/* Find the last modifier acting on the cage. */
 	for (i=0; md; i++,md=md->next) {

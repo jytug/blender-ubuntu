@@ -1,5 +1,5 @@
-/**
- * $Id: RE_pipeline.h 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: RE_pipeline.h 35785 2011-03-25 17:11:32Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,12 +27,15 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file RE_pipeline.h
+ *  \ingroup render
+ */
+
 #ifndef RE_PIPELINE_H
 #define RE_PIPELINE_H
 
 #include "DNA_listBase.h"
 #include "DNA_vec_types.h"
-#include "BKE_utildefines.h"
 #include "RNA_types.h"
 
 struct bNodeTree;
@@ -236,6 +239,7 @@ void RE_display_clear_cb(struct Render *re, void *handle, void (*f)(void *handle
 void RE_display_draw_cb	(struct Render *re, void *handle, void (*f)(void *handle, RenderResult *rr, volatile struct rcti *rect));
 void RE_stats_draw_cb	(struct Render *re, void *handle, void (*f)(void *handle, RenderStats *rs));
 void RE_progress_cb	(struct Render *re, void *handle, void (*f)(void *handle, float));
+void RE_draw_lock_cb		(struct Render *re, void *handle, void (*f)(void *handle, int));
 void RE_test_break_cb	(struct Render *re, void *handle, int (*f)(void *handle));
 void RE_error_cb		(struct Render *re, void *handle, void (*f)(void *handle, const char *str));
 
@@ -288,7 +292,7 @@ typedef struct RenderEngine {
 	ListBase fullresult;
 } RenderEngine;
 
-void RE_layer_load_from_file(RenderLayer *layer, struct ReportList *reports, const char *filename);
+void RE_layer_load_from_file(RenderLayer *layer, struct ReportList *reports, const char *filename, int x, int y);
 void RE_result_load_from_file(RenderResult *result, struct ReportList *reports, const char *filename);
 
 struct RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h);

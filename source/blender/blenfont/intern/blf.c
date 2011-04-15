@@ -1,5 +1,5 @@
-/**
- * $Id: blf.c 33579 2010-12-09 22:27:55Z bdiego $
+/*
+ * $Id: blf.c 35248 2011-02-27 20:42:42Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenfont/intern/blf.c
+ *  \ingroup blf
+ */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,15 +61,15 @@
 #define BLF_MAX_FONT 16
 
 /* Font array. */
-FontBLF *global_font[BLF_MAX_FONT];
+static FontBLF *global_font[BLF_MAX_FONT];
 
 /* Number of font. */
-int global_font_num= 0;
+static int global_font_num= 0;
 
 /* Default size and dpi, for BLF_draw_default. */
-int global_font_default= -1;
-int global_font_points= 11;
-int global_font_dpi= 72;
+static int global_font_default= -1;
+static int global_font_points= 11;
+static int global_font_dpi= 72;
 
 // XXX, should these be made into global_font_'s too?
 int blf_mono_font= -1;
@@ -140,7 +145,7 @@ int BLF_load(const char *name)
 	/* check if we already load this font. */
 	i= blf_search(name);
 	if (i >= 0) {
-		font= global_font[i];
+		/*font= global_font[i];*/ /*UNUSED*/
 		return(i);
 	}
 
@@ -225,7 +230,7 @@ int BLF_load_mem(const char *name, unsigned char *mem, int mem_size)
 
 	i= blf_search(name);
 	if (i >= 0) {
-		font= global_font[i];
+		/*font= global_font[i];*/ /*UNUSED*/
 		return(i);
 	}
 

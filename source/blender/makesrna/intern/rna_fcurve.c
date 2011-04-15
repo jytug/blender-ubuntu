@@ -1,5 +1,5 @@
-/**
- * $Id: rna_fcurve.c 34015 2011-01-02 23:47:03Z aligorith $
+/*
+ * $Id: rna_fcurve.c 36058 2011-04-08 13:32:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_fcurve.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 
@@ -62,6 +67,7 @@ EnumPropertyItem beztriple_keyframe_type_items[] = {
 	{BEZT_KEYTYPE_KEYFRAME, "KEYFRAME", 0, "Keyframe", ""},
 	{BEZT_KEYTYPE_BREAKDOWN, "BREAKDOWN", 0, "Breakdown", ""},
 	{BEZT_KEYTYPE_EXTREME, "EXTREME", 0, "Extreme", ""},
+	{BEZT_KEYTYPE_JITTER, "JITTER", 0, "Jitter", ""},
 	{0, NULL, 0, NULL, NULL}};
 
 #ifdef RNA_RUNTIME
@@ -546,18 +552,37 @@ static void rna_FModifierStepped_end_frame_range(PointerRNA *ptr, float *min, fl
 	*max= MAXFRAMEF;
 }
 
-static BezTriple *rna_FKeyframe_points_add(FCurve *fcu, float frame, float value, int do_replace, int do_needed, int do_fast)
+static BezTriple *rna_FKeyframe_points_insert(FCurve *fcu, float frame, float value, int flag)
 {
-	int index;
-	int flag= 0;
-
-	if(do_replace) flag |= INSERTKEY_REPLACE;
-	if(do_needed) flag |= INSERTKEY_NEEDED;
-	if(do_fast) flag |= INSERTKEY_FAST;
-
-
-	index= insert_vert_fcurve(fcu, frame, value, flag);
+	int index= insert_vert_fcurve(fcu, frame, value, flag);
 	return ((fcu->bezt) && (index >= 0))? (fcu->bezt + index) : NULL;
+}
+
+static void rna_FKeyframe_points_add(FCurve *fcu, int tot)
+{
+	if(tot > 0) {
+		BezTriple *bezt;
+		if(fcu->totvert) {
+			BezTriple *nbezt= MEM_callocN(sizeof(BezTriple) * (fcu->totvert + tot), "rna_FKeyframe_points_add");
+			memcpy(nbezt, fcu->bezt, sizeof(BezTriple) * fcu->totvert);
+			MEM_freeN(fcu->bezt);
+			fcu->bezt= nbezt;
+		}
+		else {
+			fcu->bezt= MEM_callocN(sizeof(BezTriple) * tot, "rna_FKeyframe_points_add");
+		}
+
+		bezt= fcu->bezt + fcu->totvert;
+		fcu->totvert += tot;
+
+		while(tot--) {
+			/* defaults, no userprefs gives pradictable results for API */
+			bezt->f1= bezt->f2= bezt->f3= SELECT;
+			bezt->ipo= BEZT_IPO_BEZ;
+			bezt->h1= bezt->h2= HD_AUTO;
+			bezt++;
+		}
+	}
 }
 
 static void rna_FKeyframe_points_remove(FCurve *fcu, ReportList *reports, BezTriple *bezt, int do_fast)
@@ -573,7 +598,7 @@ static void rna_FKeyframe_points_remove(FCurve *fcu, ReportList *reports, BezTri
 
 static void rna_fcurve_range(FCurve *fcu, float range[2])
 {
-	calc_fcurve_range(fcu, range, range+1);
+	calc_fcurve_range(fcu, range, range+1, FALSE);
 }
 
 #else
@@ -1194,7 +1219,7 @@ static void rna_def_fpoint(BlenderRNA *brna)
 	RNA_def_property_update(prop, NC_ANIMATION|ND_KEYFRAME|NA_SELECTED, NULL);
 	
 	/* Vector value */
-	prop= RNA_def_property(srna, "co", PROP_FLOAT, PROP_XYZ);
+	prop= RNA_def_property(srna, "co", PROP_FLOAT, PROP_COORDS); /* keyframes are dimensionless */
 	RNA_def_property_float_sdna(prop, NULL, "vec");
 	RNA_def_property_array(prop, 2);
 	RNA_def_property_ui_text(prop, "Point", "Point coordinates");
@@ -1256,19 +1281,19 @@ static void rna_def_fkeyframe(BlenderRNA *brna)
 	RNA_def_property_update(prop, NC_ANIMATION|ND_KEYFRAME_PROP, NULL);
 	
 	/* Vector values */
-	prop= RNA_def_property(srna, "handle_left", PROP_FLOAT, PROP_TRANSLATION);
+	prop= RNA_def_property(srna, "handle_left", PROP_FLOAT, PROP_COORDS); /* keyframes are dimensionless */
 	RNA_def_property_array(prop, 2);
 	RNA_def_property_float_funcs(prop, "rna_FKeyframe_handle1_get", "rna_FKeyframe_handle1_set", NULL);
 	RNA_def_property_ui_text(prop, "Handle 1", "Coordinates of the first handle");
 	RNA_def_property_update(prop, NC_ANIMATION|ND_KEYFRAME|NA_EDITED, NULL);
 	
-	prop= RNA_def_property(srna, "co", PROP_FLOAT, PROP_TRANSLATION);
+	prop= RNA_def_property(srna, "co", PROP_FLOAT, PROP_COORDS); /* keyframes are dimensionless */
 	RNA_def_property_array(prop, 2);
 	RNA_def_property_float_funcs(prop, "rna_FKeyframe_ctrlpoint_get", "rna_FKeyframe_ctrlpoint_set", NULL);
 	RNA_def_property_ui_text(prop, "Control Point", "Coordinates of the control point");
 	RNA_def_property_update(prop, NC_ANIMATION|ND_KEYFRAME|NA_EDITED, NULL);
 	
-	prop= RNA_def_property(srna, "handle_right", PROP_FLOAT, PROP_TRANSLATION);
+	prop= RNA_def_property(srna, "handle_right", PROP_FLOAT, PROP_COORDS); /* keyframes are dimensionless */
 	RNA_def_property_array(prop, 2);
 	RNA_def_property_float_funcs(prop, "rna_FKeyframe_handle2_get", "rna_FKeyframe_handle2_set", NULL);
 	RNA_def_property_ui_text(prop, "Handle 2", "Coordinates of the second handle");
@@ -1323,25 +1348,32 @@ static void rna_def_fcurve_keyframe_points(BlenderRNA *brna, PropertyRNA *cprop)
 	FunctionRNA *func;
 	PropertyRNA *parm;
 
+	static EnumPropertyItem keyframe_flag_items[] = {
+		{INSERTKEY_REPLACE, "REPLACE", 0, "Replace", "Don't add any new keyframes, but just replace existing ones"},
+		{INSERTKEY_NEEDED, "NEEDED", 0, "Needed", "Only adds keyframes that are needed"},
+		{INSERTKEY_FAST, "FAST", 0, "Fast", "Fast keyframe insertion to avoid recalculating the curve each time"},
+		{0, NULL, 0, NULL, NULL}};
+
 	RNA_def_property_srna(cprop, "FCurveKeyframePoints");
 	srna= RNA_def_struct(brna, "FCurveKeyframePoints", NULL);
 	RNA_def_struct_sdna(srna, "FCurve");
 	RNA_def_struct_ui_text(srna, "Keyframe Points", "Collection of keyframe points");
 
-	func= RNA_def_function(srna, "add", "rna_FKeyframe_points_add");
+	func= RNA_def_function(srna, "insert", "rna_FKeyframe_points_insert");
 	RNA_def_function_ui_description(func, "Add a keyframe point to a F-Curve.");
 	parm= RNA_def_float(func, "frame", 0.0f, -FLT_MAX, FLT_MAX, "", "X Value of this keyframe point", -FLT_MAX, FLT_MAX);
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	parm= RNA_def_float(func, "value", 0.0f, -FLT_MAX, FLT_MAX, "", "Y Value of this keyframe point", -FLT_MAX, FLT_MAX);
 	RNA_def_property_flag(parm, PROP_REQUIRED);
-	/* optional */
-	parm= RNA_def_boolean(func, "replace", 0, "Replace", "Don't add any new keyframes, but just replace existing ones");
-	parm= RNA_def_boolean(func, "needed", 0, "Needed", "Only adds keyframes that are needed");
-	parm= RNA_def_boolean(func, "fast", 0, "Fast", "Fast keyframe insertion to avoid recalculating the curve each time");
+
+	RNA_def_enum_flag(func, "options", keyframe_flag_items, 0, "", "Keyframe options.");
 
 	parm= RNA_def_pointer(func, "keyframe", "Keyframe", "", "Newly created keyframe");
 	RNA_def_function_return(func, parm);
 
+	func= RNA_def_function(srna, "add", "rna_FKeyframe_points_add");
+	RNA_def_function_ui_description(func, "Add a keyframe point to a F-Curve.");
+	RNA_def_int(func, "count", 1, 1, INT_MAX, "Number", "Number of points to add to the spline", 1, INT_MAX);
 
 	func= RNA_def_function(srna, "remove", "rna_FKeyframe_points_remove");
 	RNA_def_function_ui_description(func, "Remove keyframe from an fcurve.");
@@ -1349,7 +1381,7 @@ static void rna_def_fcurve_keyframe_points(BlenderRNA *brna, PropertyRNA *cprop)
 	parm= RNA_def_pointer(func, "keyframe", "Keyframe", "", "Keyframe to remove.");
 	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_NEVER_NULL);
 	/* optional */
-	parm= RNA_def_boolean(func, "fast", 0, "Fast", "Fast keyframe removal to avoid recalculating the curve each time");
+	RNA_def_boolean(func, "fast", 0, "Fast", "Fast keyframe removal to avoid recalculating the curve each time");
 }
 
 static void rna_def_fcurve(BlenderRNA *brna)
@@ -1397,7 +1429,8 @@ static void rna_def_fcurve(BlenderRNA *brna)
 	RNA_def_property_string_funcs(prop, "rna_FCurve_RnaPath_get", "rna_FCurve_RnaPath_length", "rna_FCurve_RnaPath_set");
 	RNA_def_property_ui_text(prop, "Data Path", "RNA Path to property affected by F-Curve");
 	RNA_def_property_update(prop, NC_ANIMATION, NULL);	// XXX need an update callback for this to that animation gets evaluated
-	
+
+	/* called 'index' when given as function arg */
 	prop= RNA_def_property(srna, "array_index", PROP_INT, PROP_NONE);
 	RNA_def_property_ui_text(prop, "RNA Array Index", "Index to the specific property affected by F-Curve if applicable");
 	RNA_def_property_update(prop, NC_ANIMATION, NULL);	// XXX need an update callback for this so that animation gets evaluated

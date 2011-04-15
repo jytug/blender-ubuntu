@@ -1,5 +1,5 @@
-/**
- * $Id: BKE_animsys.h 33934 2010-12-29 11:51:53Z aligorith $
+/*
+ * $Id: BKE_animsys.h 35772 2011-03-25 07:34:44Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
 
 #ifndef BKE_ANIM_SYS_H
 #define BKE_ANIM_SYS_H
+
+/** \file BKE_animsys.h
+ *  \ingroup bke
+ *  \author Joshua Leung
+ */
 
 struct ID;
 struct ListBase;
@@ -66,6 +71,9 @@ void BKE_copy_animdata_id_action(struct ID *id);
 
 /* Make Local */
 void BKE_animdata_make_local(struct AnimData *adt);
+
+/* Re-Assign ID's */
+void BKE_relink_animdata(struct AnimData *adt);
 
 /* ************************************* */
 /* KeyingSets API */

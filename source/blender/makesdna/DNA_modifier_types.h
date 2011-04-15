@@ -1,6 +1,5 @@
-/**
- *
- * $Id: DNA_modifier_types.h 33607 2010-12-12 01:33:12Z campbellbarton $ 
+/*
+ * $Id: DNA_modifier_types.h 35614 2011-03-18 15:31:32Z jhk $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,10 +20,15 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#include "DNA_listBase.h"
-
 #ifndef DNA_MODIFIER_TYPES_H
 #define DNA_MODIFIER_TYPES_H
+
+/** \file DNA_modifier_types.h
+ *  \ingroup DNA
+ */
+
+#include "DNA_listBase.h"
+
 
 #define MODSTACK_DEBUG 1
 
@@ -79,6 +83,7 @@ typedef enum ModifierMode {
 	eModifierMode_OnCage = (1<<3),
 	eModifierMode_Expanded = (1<<4),
 	eModifierMode_Virtual = (1<<5),
+	eModifierMode_ApplyOnSpline = (1<<6),
 	eModifierMode_DisableTemporary = (1 << 31)
 } ModifierMode;
 
@@ -234,6 +239,7 @@ typedef struct MirrorModifierData {
 #define MOD_MIR_AXIS_Y		(1<<4)
 #define MOD_MIR_AXIS_Z		(1<<5)
 #define MOD_MIR_VGROUP		(1<<6)
+#define MOD_MIR_NO_MERGE	(1<<7)
 
 typedef struct EdgeSplitModifierData {
 	ModifierData modifier;
@@ -468,7 +474,7 @@ typedef struct CollisionModifierData {
 	
 	unsigned int numverts;
 	unsigned int numfaces;
-	float time, pad;		/* cfra time of modifier */
+	float time_x, time_xnew;		/* cfra time of modifier */
 	struct BVHTree *bvhtree; /* bounding volume hierarchy for this cloth object */
 } CollisionModifierData;
 
@@ -550,6 +556,7 @@ typedef struct MeshDeformModifierData {
 typedef enum {
 	eParticleSystemFlag_Pars =			(1<<0),
 	eParticleSystemFlag_psys_updated =	(1<<1),
+	eParticleSystemFlag_file_loaded =	(1<<2),
 } ParticleSystemModifierFlag;
 
 typedef struct ParticleSystemModifierData {
@@ -581,7 +588,7 @@ typedef struct ParticleInstanceModifierData {
 typedef enum {
 	eExplodeFlag_CalcFaces =	(1<<0),
 	eExplodeFlag_PaSize =		(1<<1),
-	eExplodeFlag_EdgeSplit =	(1<<2),
+	eExplodeFlag_EdgeCut =		(1<<2),
 	eExplodeFlag_Unborn =		(1<<3),
 	eExplodeFlag_Alive =		(1<<4),
 	eExplodeFlag_Dead =			(1<<5),
@@ -592,6 +599,7 @@ typedef struct ExplodeModifierData {
 	int *facepa;
 	short flag, vgroup;
 	float protect;
+	char uvname[32];
 } ExplodeModifierData;
 
 typedef struct MultiresModifierData {
@@ -697,13 +705,16 @@ typedef struct SolidifyModifierData {
 	float crease_outer;
 	float crease_rim;
 	int flag;
+	short mat_ofs;
+	short mat_ofs_rim;
+	int pad;
 } SolidifyModifierData;
 
 #define MOD_SOLIDIFY_RIM			(1<<0)
 #define MOD_SOLIDIFY_EVEN			(1<<1)
 #define MOD_SOLIDIFY_NORMAL_CALC	(1<<2)
 #define MOD_SOLIDIFY_VGROUP_INV		(1<<3)
-#define MOD_SOLIDIFY_RIM_MATERIAL	(1<<4)
+#define MOD_SOLIDIFY_RIM_MATERIAL	(1<<4) /* deprecated, used in do_versions */
 
 typedef struct ScrewModifierData {
 	ModifierData modifier;

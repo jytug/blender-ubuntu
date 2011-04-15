@@ -1,31 +1,36 @@
-/*  collision.c
-*
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) Blender Foundation
-* All rights reserved.
-*
-* The Original Code is: all of this file.
-*
-* Contributor(s): none yet.
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
+/*
+ * $Id: collision.c 36110 2011-04-12 11:09:10Z campbellbarton $
+ *
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) Blender Foundation
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file blender/blenkernel/intern/collision.c
+ *  \ingroup bke
+ */
+
 
 #include "MEM_guardedalloc.h"
 
@@ -42,6 +47,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_DerivedMesh.h"
 #include "BKE_global.h"
@@ -49,7 +55,7 @@
 #include "BKE_mesh.h"
 #include "BKE_object.h"
 #include "BKE_modifier.h"
-#include "BKE_utildefines.h"
+
 #include "BKE_DerivedMesh.h"
 #ifdef USE_BULLET
 #include "Bullet-C-Api.h"
@@ -163,8 +169,8 @@ Collision modifier code end
 */
 
 #define mySWAP(a,b) do { double tmp = b ; b = a ; a = tmp ; } while(0)
-
-int 
+#if 0 /* UNUSED */
+static int 
 gsl_poly_solve_cubic (double a, double b, double c, 
 					  double *x0, double *x1, double *x2)
 {
@@ -254,7 +260,7 @@ gsl_poly_solve_cubic (double a, double b, double c,
 *
 * copied from GSL
 */
-int 
+static int 
 gsl_poly_solve_quadratic (double a, double b, double c, 
 						  double *x0, double *x1)
 {
@@ -312,7 +318,7 @@ gsl_poly_solve_quadratic (double a, double b, double c,
 		return 0;
 	}
 }
-
+#endif /* UNUSED */
 
 
 
@@ -481,7 +487,7 @@ DO_INLINE void collision_interpolateOnTriangle ( float to[3], float v1[3], float
 }
 
 
-int cloth_collision_response_static ( ClothModifierData *clmd, CollisionModifierData *collmd, CollPair *collpair, CollPair *collision_end )
+static int cloth_collision_response_static ( ClothModifierData *clmd, CollisionModifierData *collmd, CollPair *collpair, CollPair *collision_end )
 {
 	int result = 0;
 	Cloth *cloth1;
@@ -597,7 +603,7 @@ int cloth_collision_response_static ( ClothModifierData *clmd, CollisionModifier
 }
 
 //Determines collisions on overlap, collisions are written to collpair[i] and collision+number_collision_found is returned
-CollPair* cloth_collision ( ModifierData *md1, ModifierData *md2, BVHTreeOverlap *overlap, CollPair *collpair )
+static CollPair* cloth_collision ( ModifierData *md1, ModifierData *md2, BVHTreeOverlap *overlap, CollPair *collpair )
 {
 	ClothModifierData *clmd = ( ClothModifierData * ) md1;
 	CollisionModifierData *collmd = ( CollisionModifierData * ) md2;
@@ -1456,13 +1462,13 @@ static void cloth_bvh_objcollisions_nearcheck ( ClothModifierData * clmd, Collis
 static int cloth_bvh_objcollisions_resolve ( ClothModifierData * clmd, CollisionModifierData *collmd, CollPair *collisions, CollPair *collisions_index)
 {
 	Cloth *cloth = clmd->clothObject;
-	int i=0, j = 0, numfaces = 0, numverts = 0;
+	int i=0, j = 0, /*numfaces = 0,*/ numverts = 0;
 	ClothVertex *verts = NULL;
 	int ret = 0;
 	int result = 0;
 	float tnull[3] = {0,0,0};
 	
-	numfaces = clmd->clothObject->numfaces;
+	/*numfaces = clmd->clothObject->numfaces;*/ /*UNUSED*/
 	numverts = clmd->clothObject->numverts;
  
 	verts = cloth->verts;

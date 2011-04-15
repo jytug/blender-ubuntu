@@ -1,5 +1,5 @@
-/**
- * $Id: wm_init_exit.c 33848 2010-12-22 14:20:22Z dfelinto $
+/*
+ * $Id: wm_init_exit.c 36059 2011-04-08 14:04:59Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/windowmanager/intern/wm_init_exit.c
+ *  \ingroup wm
+ */
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,12 +57,13 @@
 #include "BKE_main.h"
 #include "BKE_mball.h"
 #include "BKE_report.h"
-#include "BKE_utildefines.h"
+
 #include "BKE_packedFile.h"
 #include "BKE_sequencer.h" /* free seq clipboard */
 #include "BKE_material.h" /* clear_matcopybuf */
 
 #include "BLI_blenlib.h"
+#include "BLI_winstuff.h"
 
 #include "RE_pipeline.h"		/* RE_ free stuff */
 
@@ -68,6 +74,7 @@
 #ifdef WITH_GAMEENGINE
 #include "SYS_System.h"
 #endif
+#include "GHOST_Path-api.h"
 
 #include "RNA_define.h"
 
@@ -108,16 +115,22 @@ static void wm_free_reports(bContext *C)
 	BKE_reports_clear(CTX_wm_reports(C));
 }
 
-
+int wm_start_with_console = 0;
 
 /* only called once, for startup */
-void WM_init(bContext *C, int argc, char **argv)
+void WM_init(bContext *C, int argc, const char **argv)
 {
 
 	if (!G.background) {
 		wm_ghost_init(C);	/* note: it assigns C to ghost! */
 		wm_init_cursor_data();
+#ifdef WIN32
+		if (IsConsoleEmpty()) /* never hide if the console window pre-existed */
+			WM_console_toggle(C, wm_start_with_console);
+#endif
 	}
+	GHOST_CreateSystemPaths();
+
 	wm_operatortype_init();
 	
 	set_free_windowmanager_cb(wm_close_and_free);	/* library.c */
@@ -133,7 +146,7 @@ void WM_init(bContext *C, int argc, char **argv)
 	BLF_lang_init();
 	
 	/* get the default database, plus a wm */
-	WM_read_homefile(C, NULL);
+	WM_read_homefile(C, NULL, G.factory_startup);
 
 	/* note: there is a bug where python needs initializing before loading the
 	 * startup.blend because it may contain PyDrivers. It also needs to be after
@@ -144,11 +157,11 @@ void WM_init(bContext *C, int argc, char **argv)
 	 * Will try fix when the crash can be repeated. - campbell. */
 
 #ifdef WITH_PYTHON
-	BPY_set_context(C); /* necessary evil */
-	BPY_start_python(argc, argv);
+	BPY_context_set(C); /* necessary evil */
+	BPY_python_start(argc, argv);
 
-	BPY_reset_driver();
-	BPY_load_user_modules(C);
+	BPY_driver_reset();
+	BPY_modules_load_user(C);
 #else
 	(void)argc; /* unused */
 	(void)argv; /* unused */
@@ -172,10 +185,13 @@ void WM_init(bContext *C, int argc, char **argv)
 	
 	G.ndofdevice = -1;	/* XXX bad initializer, needs set otherwise buttons show! */
 	
-	read_history();
+	WM_read_history();
 
+	/* allow a path of "", this is what happens when making a new file */
+	/*
 	if(G.main->name[0] == 0)
 		BLI_make_file_string("/", G.main->name, BLI_getDefaultDocumentFolder(), "untitled.blend");
+	*/
 
 	BLI_strncpy(G.lib, G.main->name, FILE_MAX);
 
@@ -268,7 +284,7 @@ int WM_init_game(bContext *C)
 
 		/* full screen the area */
 		if(!sa->full) {
-			ED_screen_full_toggle(C, wm->windows.first, sa);
+			ED_screen_full_toggle(C, win, sa);
 		}
 
 		/* Fullscreen */
@@ -341,6 +357,10 @@ void WM_exit(bContext *C)
 
 	sound_exit();
 
+#ifdef WIN32
+	WM_console_toggle(C, 1); /* never leave behind invisible consoles */
+#endif
+
 	/* first wrap up running stuff, we assume only the active WM is running */
 	/* modal handlers are on window level freed, others too? */
 	/* note; same code copied in wm_files.c */
@@ -412,14 +432,14 @@ void WM_exit(bContext *C)
 	/* Update for blender 2.5, move after free_blender because blender now holds references to PyObject's
 	 * so decref'ing them after python ends causes bad problems every time
 	 * the pyDriver bug can be fixed if it happens again we can deal with it then */
-	BPY_end_python();
+	BPY_python_end();
 #endif
 
 	if (!G.background) {
 // XXX		UI_filelist_free_icons();
 	}
 	
-	GPU_buffer_pool_free(0);
+	GPU_buffer_pool_free(NULL);
 	GPU_free_unused_buffers();
 	GPU_extensions_exit();
 	
@@ -435,7 +455,7 @@ void WM_exit(bContext *C)
 	UI_exit();
 	BKE_userdef_free();
 
-	RNA_exit(); /* should be after BPY_end_python so struct python slots are cleared */
+	RNA_exit(); /* should be after BPY_python_end so struct python slots are cleared */
 	
 	wm_ghost_exit();
 
@@ -443,8 +463,11 @@ void WM_exit(bContext *C)
 #ifdef WITH_GAMEENGINE
 	SYS_DeleteSystem(SYS_GetSystem());
 #endif
+	
+	GHOST_DisposeSystemPaths();
+
 	if(MEM_get_memory_blocks_in_use()!=0) {
-		printf("Error Totblock: %d\n", MEM_get_memory_blocks_in_use());
+		printf("Error: Not freed memory blocks: %d\n", MEM_get_memory_blocks_in_use());
 		MEM_printmemlist();
 	}
 	wm_autosave_delete();

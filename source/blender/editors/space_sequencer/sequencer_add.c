@@ -1,4 +1,4 @@
-/**
+/*
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_sequencer/sequencer_add.c
+ *  \ingroup spseq
+ */
+
+
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -40,7 +45,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_storage_types.h"
-
+#include "BLI_utildefines.h"
 
 #include "DNA_scene_types.h"
 #include "DNA_userdef_types.h"
@@ -77,6 +82,8 @@
 #define SEQPROP_ENDFRAME	(1<<1)
 #define SEQPROP_FILES		(1<<2)
 #define SEQPROP_NOPATHS		(1<<3)
+
+#define SELECT 1
 
 static void sequencer_generic_props__internal(wmOperatorType *ot, int flag)
 {
@@ -201,7 +208,6 @@ static int sequencer_add_scene_strip_exec(bContext *C, wmOperator *op)
 
 	Sequence *seq;	/* generic strip vars */
 	Strip *strip;
-	StripElem *se;
 	
 	int start_frame, channel; /* operator props */
 	
@@ -227,7 +233,7 @@ static int sequencer_add_scene_strip_exec(bContext *C, wmOperator *op)
 	strip->len = seq->len = sce_seq->r.efra - sce_seq->r.sfra + 1;
 	strip->us= 1;
 	
-	strip->stripdata= se= MEM_callocN(seq->len*sizeof(StripElem), "stripelem");
+	strip->stripdata= MEM_callocN(seq->len*sizeof(StripElem), "stripelem");
 	
 	strcpy(seq->name+2, sce_seq->id.name+2);
 	seqbase_unique_name_recursive(&ed->seqbase, seq);
@@ -314,7 +320,7 @@ static int sequencer_add_generic_strip_exec(bContext *C, wmOperator *op, SeqLoad
 
 		RNA_BEGIN(op->ptr, itemptr, "files") {
 			RNA_string_get(&itemptr, "name", file_only);
-			BLI_join_dirfile(seq_load.path, dir_only, file_only);
+			BLI_join_dirfile(seq_load.path, sizeof(seq_load.path), dir_only, file_only);
 
 			seq= seq_load_func(C, ed->seqbasep, &seq_load);
 		}
@@ -559,7 +565,6 @@ static int sequencer_add_effect_strip_exec(bContext *C, wmOperator *op)
 
 	Sequence *seq;	/* generic strip vars */
 	Strip *strip;
-	StripElem *se;
 	struct SeqEffectHandle sh;
 
 	int start_frame, end_frame, channel, type; /* operator props */
@@ -614,7 +619,7 @@ static int sequencer_add_effect_strip_exec(bContext *C, wmOperator *op)
 	strip->len = seq->len;
 	strip->us= 1;
 	if(seq->len>0)
-		strip->stripdata= se= MEM_callocN(seq->len*sizeof(StripElem), "stripelem");
+		strip->stripdata= MEM_callocN(seq->len*sizeof(StripElem), "stripelem");
 
 	if (seq->type==SEQ_PLUGIN) {
 		char path[FILE_MAX];

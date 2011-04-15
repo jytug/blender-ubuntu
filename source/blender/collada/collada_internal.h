@@ -1,5 +1,5 @@
-/**
- * $Id: collada_internal.h 32389 2010-10-09 21:17:14Z jesterking $
+/*
+ * $Id: collada_internal.h 35596 2011-03-17 16:40:53Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,8 +21,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef BLENDER_COLLADA_H
-#define BLENDER_COLLADA_H
+
+/** \file collada_internal.h
+ *  \ingroup collada
+ */
+
+#ifndef COLLADA_INTERNAL_H
+#define COLLADA_INTERNAL_H
 
 #include <string>
 #include <vector>
@@ -32,7 +37,9 @@
 #include "Math/COLLADABUMathMatrix4.h"
 
 #include "DNA_armature_types.h"
+#include "DNA_material_types.h"
 #include "DNA_object_types.h"
+#include "DNA_scene_types.h"
 #include "BLI_math.h"
 
 class UnitConverter
@@ -89,4 +96,8 @@ extern std::string get_joint_id(Bone *bone, Object *ob_arm);
 
 extern std::string get_camera_id(Object *ob);
 
-#endif
+extern std::string get_material_id(Material *mat);
+
+extern bool has_object_type(Scene* sce, short obtype);
+
+#endif /* COLLADA_INTERNAL_H */

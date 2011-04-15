@@ -1,5 +1,5 @@
-/**
- * $Id: editmesh_loop.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: editmesh_loop.c 36043 2011-04-07 12:36:24Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/mesh/editmesh_loop.c
+ *  \ingroup edmesh
+ */
+
+
 /*
 
 editmesh_loop: tools with own drawing subloops, select, knife, subdiv
@@ -46,12 +51,14 @@ editmesh_loop: tools with own drawing subloops, select, knife, subdiv
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 #include "BLI_editVert.h"
 #include "BLI_ghash.h"
 
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_mesh.h"
+#include "BKE_array_mallocn.h"
 
 #include "PIL_time.h"
 
@@ -69,14 +76,10 @@ editmesh_loop: tools with own drawing subloops, select, knife, subdiv
 #include "mesh_intern.h"
 
 /* **** XXX ******** */
-static void BIF_undo_push(const char *UNUSED(arg)) {}
-static void BIF_undo(void) {}
 static void error(const char *UNUSED(arg)) {}
-static int qtest(void) {return 0;}
 /* **** XXX ******** */
 
-
-/* New LoopCut */
+#if 0 /* UNUSED 2.5 */
 static void edgering_sel(EditMesh *em, EditEdge *startedge, int select, int previewlines)
 {
 	EditEdge *eed;
@@ -190,7 +193,7 @@ static void edgering_sel(EditMesh *em, EditEdge *startedge, int select, int prev
 	}
 }
 
-void CutEdgeloop(Object *obedit, wmOperator *op, EditMesh *em, int numcuts)
+static void CutEdgeloop(Object *obedit, wmOperator *op, EditMesh *em, int numcuts)
 {
 	ViewContext vc; // XXX
 	EditEdge *nearest=NULL, *eed;
@@ -218,9 +221,8 @@ void CutEdgeloop(Object *obedit, wmOperator *op, EditMesh *em, int numcuts)
 			dist= 50;
 			nearest = findnearestedge(&vc, &dist);	// returns actual distance in dist
 //			scrarea_do_windraw(curarea);	// after findnearestedge, backbuf!
-			
-			sprintf(msg,"Number of Cuts: %d (S)mooth: ",numcuts);
-			strcat(msg, smooth ? "on":"off");
+
+			BLI_snprintf(msg, sizeof(msg),"Number of Cuts: %d (S)mooth: %s", numcuts, smooth ? "on":"off");
 			
 //			headerprint(msg);
 			/* Need to figure preview */
@@ -379,7 +381,7 @@ void CutEdgeloop(Object *obedit, wmOperator *op, EditMesh *em, int numcuts)
 //	DAG_id_tag_update(obedit->data, 0);
 	return;
 }
-
+#endif
 
 /* *************** LOOP SELECT ************* */
 #if 0
@@ -622,7 +624,7 @@ static int knife_cut_exec(bContext *C, wmOperator *op)
 	float  *scr, co[4];
 	int len=0;
 	short numcuts= RNA_int_get(op->ptr, "num_cuts"); 
-	short mode= RNA_int_get(op->ptr, "type");
+	short mode= RNA_enum_get(op->ptr, "type");
 //	int corner_cut_pattern= RNA_enum_get(op->ptr,"corner_cut_pattern");
 	
 	/* edit-object needed for matrix, and ar->regiondata for projections to work */

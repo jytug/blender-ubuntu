@@ -1,5 +1,5 @@
-/**
- * $Id: KX_PolygonMaterial.cpp 33089 2010-11-16 02:18:50Z campbellbarton $
+/*
+ * $Id: KX_PolygonMaterial.cpp 35390 2011-03-07 19:14:17Z dfelinto $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,6 +25,14 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file gameengine/Ketsji/KX_PolygonMaterial.cpp
+ *  \ingroup ketsji
+ */
+
+
+#include <stddef.h>
+
 #include "KX_PolygonMaterial.h"
 
 #include "BKE_mesh.h"
@@ -108,6 +116,11 @@ KX_PolygonMaterial::~KX_PolygonMaterial()
 #endif // WITH_PYTHON
 }
 
+Image *KX_PolygonMaterial::GetBlenderImage() const
+{
+	return (m_tface) ? m_tface->tpage : NULL;
+}
+
 bool KX_PolygonMaterial::Activate(RAS_IRasterizer* rasty, TCachingInfo& cachingInfo) const 
 {
 	bool dopass = false;
@@ -159,7 +172,7 @@ void KX_PolygonMaterial::DefaultActivate(RAS_IRasterizer* rasty, TCachingInfo& c
 
 		cachingInfo = GetCachingInfo();
 
-		if ((m_drawingmode & 4)&& (rasty->GetDrawingMode() == RAS_IRasterizer::KX_TEXTURED))
+		if ((m_drawingmode & RAS_IRasterizer::KX_TEX)&& (rasty->GetDrawingMode() == RAS_IRasterizer::KX_TEXTURED))
 		{
 			Image *ima = (Image*)m_tface->tpage;
 			GPU_update_image_time(ima, rasty->GetTime());

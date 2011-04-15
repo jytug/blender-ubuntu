@@ -1,7 +1,7 @@
 /* text.c
  *
  *
- * $Id: text.c 33960 2010-12-31 04:09:15Z aligorith $
+ * $Id: text.c 35622 2011-03-19 05:06:06Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/text.c
+ *  \ingroup bke
+ */
+
+
 #include <string.h> /* strstr */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,6 +41,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_constraint_types.h"
 #include "DNA_controller_types.h"
@@ -51,7 +57,7 @@
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_text.h"
-#include "BKE_utildefines.h"
+
 
 #ifdef WITH_PYTHON
 #include "BPY_extern.h"
@@ -168,7 +174,7 @@ void free_text(Text *text)
 	if(text->name) MEM_freeN(text->name);
 	MEM_freeN(text->undo_buf);
 #ifdef WITH_PYTHON
-	if (text->compiled) BPY_free_compiled_text(text);
+	if (text->compiled) BPY_text_free_code(text);
 #endif
 }
 
@@ -279,7 +285,6 @@ int reopen_text(Text *text)
 	text->mtime= st.st_mtime;
 	
 	text->nlines=0;
-	i=0;
 	llen=0;
 	for(i=0; i<len; i++) {
 		if (buffer[i]=='\n') {
@@ -373,7 +378,6 @@ Text *add_text(const char *file, const char *relpath)
 	ta->mtime= st.st_mtime;
 	
 	ta->nlines=0;
-	i=0;
 	llen=0;
 	for(i=0; i<len; i++) {
 		if (buffer[i]=='\n') {
@@ -684,7 +688,7 @@ static void txt_make_dirty (Text *text)
 {
 	text->flags |= TXT_ISDIRTY;
 #ifdef WITH_PYTHON
-	if (text->compiled) BPY_free_compiled_text(text);
+	if (text->compiled) BPY_text_free_code(text);
 #endif
 }
 
@@ -1232,7 +1236,7 @@ int txt_find_string(Text *text, char *findstr, int wrap)
 {
 	TextLine *tl, *startl;
 	char *s= NULL;
-	int oldcl, oldsl, oldcc, oldsc;
+	int oldcl, oldsl;
 
 	if (!text || !text->curl || !text->sell) return 0;
 	
@@ -1241,8 +1245,6 @@ int txt_find_string(Text *text, char *findstr, int wrap)
 	oldcl= txt_get_span(text->lines.first, text->curl);
 	oldsl= txt_get_span(text->lines.first, text->sell);
 	tl= startl= text->sell;
-	oldcc= text->curc;
-	oldsc= text->selc;
 	
 	s= strstr(&tl->line[text->selc], findstr);
 	while (!s) {
@@ -2219,7 +2221,6 @@ static void txt_combine_lines (Text *text, TextLine *linea, TextLine *lineb)
 		} while (mrk && mrk->lineno==lineno);
 	}
 	if (lineno==-1) lineno= txt_get_span(text->lines.first, lineb);
-	if (!mrk) mrk= text->markers.first;
 	
 	tmp= MEM_mallocN(linea->len+lineb->len+1, "textline_string");
 	

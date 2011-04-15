@@ -1,5 +1,5 @@
-/**
- * $Id: reorganize.h 31950 2010-09-15 16:13:32Z campbellbarton $
+/*
+ * $Id: reorganize.h 36083 2011-04-10 09:37:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,17 +26,27 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#include <stdio.h>
-#include <algorithm>
+
+/** \file blender/render/intern/raytrace/reorganize.h
+ *  \ingroup render
+ */
+
+
+#include <float.h>
 #include <math.h>
-#include <vector>
+#include <stdio.h>
+
+#include <algorithm>
 #include <queue>
+#include <vector>
 
 #include "BKE_global.h"
 
 #ifdef _WIN32
-#undef INFINITY
-#define INFINITY FLT_MAX // in mingw math.h: (1.0F/0.0F). This generates compile error, though.
+#  ifdef INFINITY
+#    undef INFINITY
+#  endif
+#  define INFINITY FLT_MAX // in mingw math.h: (1.0F/0.0F). This generates compile error, though.
 #endif
 
 extern int tot_pushup;
@@ -300,7 +310,7 @@ float bvh_refit(Node *node)
  * with the purpose to reduce the expected cost (eg.: number of BB tests).
  */
 #include <vector>
-#define MAX_CUT_SIZE	16
+#define MAX_CUT_SIZE		4				/* svbvh assumes max 4 children! */
 #define MAX_OPTIMIZE_CHILDS	MAX_CUT_SIZE
 
 struct OVBVHNode

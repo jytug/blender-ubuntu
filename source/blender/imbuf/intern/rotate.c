@@ -1,4 +1,4 @@
-/**
+/*
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,11 +26,18 @@
  * ***** END GPL LICENSE BLOCK *****
  * rotate.c
  *
- * $Id: rotate.c 31364 2010-08-16 05:46:10Z campbellbarton $
+ * $Id: rotate.c 35586 2011-03-17 05:15:54Z campbellbarton $
  */
 
+/** \file blender/imbuf/intern/rotate.c
+ *  \ingroup imbuf
+ */
+
+
 #include "BLI_blenlib.h"
-#include "BKE_utildefines.h"
+#include "BLI_utildefines.h"
+
+
 #include "MEM_guardedalloc.h"
 
 #include "imbuf.h"
@@ -94,7 +101,7 @@ void IMB_flipy(struct ImBuf * ibuf)
 
 void IMB_flipx(struct ImBuf * ibuf)
 {
-	short x, y, xr, xl, yi;
+	int x, y, xr, xl, yi;
 	float px_f[4];
 	
 	if (ibuf == NULL) return;

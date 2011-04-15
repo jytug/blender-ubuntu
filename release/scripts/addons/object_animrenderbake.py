@@ -16,18 +16,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     "name": "Animated Render Baker",
     "author": "Janne Karhu (jahka)",
     "version": (1, 0),
-    "blender": (2, 5, 5),
-    "location": "Render Properties > Bake",
+    "blender": (2, 5, 7),
+    "api": 35622,
+    "location": "Properties > Render > Bake Panel",
     "description": "Renderbakes a series of frames",
     "category": "Object",
     'wiki_url': 'http://wiki.blender.org/index.php/Extensions:2.5/Py/' \
         'Scripts/Object/Animated_Render_Baker',
     'tracker_url': 'https://projects.blender.org/tracker/index.php?'\
-        'func=detail&aid=24836&group_id=153&atid=467'}
+        'func=detail&aid=24836'}
 
 import bpy
 from bpy.props import *
@@ -84,7 +85,7 @@ class OBJECT_OT_animrenderbake(bpy.types.Operator):
                         img = uvdata.image
                         break
 
-        if img == None:
+        if img is None:
             self.report({'ERROR'}, "No valid image found to bake to")
             return {'CANCELLED'}
 
@@ -158,6 +159,8 @@ def draw_animrenderbake(self, context):
     sub.prop(rd, "bake_bias")
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.Scene.animrenderbake_start = IntProperty(
         name="Start",
         description="Start frame of the animated bake",
@@ -174,6 +177,8 @@ def register():
     panel.draw = draw_animrenderbake
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     # restore original panel draw function
     bpy.types.RENDER_PT_bake.draw = bpy.types.RENDER_PT_bake.old_draw
     del bpy.types.RENDER_PT_bake.old_draw

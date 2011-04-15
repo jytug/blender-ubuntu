@@ -1,5 +1,5 @@
-/**
- * $Id: KX_FontObject.h 33718 2010-12-16 19:05:47Z gsrb3d $
+/*
+ * $Id: KX_FontObject.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file KX_FontObject.h
+ *  \ingroup ketsji
+ */
+
 #ifndef __KX_FONTOBJECT
 #define  __KX_FONTOBJECT
 #include "KX_GameObject.h"
@@ -60,7 +65,7 @@ protected:
 	int			m_dpi;
 	float			m_fsize;
 	float			m_resolution;
-	float*			m_color;
+	float			m_color[4];
 
 	class RAS_IRenderTools*	m_rendertools;	//needed for drawing routine
 

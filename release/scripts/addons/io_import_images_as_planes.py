@@ -16,12 +16,12 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     "name": "Import Images as Planes",
     "author": "Florian Meyer (tstscr)",
     "version": (1, 0),
-    "blender": (2, 5, 5),
-    "api": 33754,
+    "blender": (2, 5, 7),
+    "api": 35622,
     "location": "File > Import > Images as Planes",
     "description": "Imports images and creates planes with the appropriate aspect ratio. "\
         "The images are mapped to the planes.",
@@ -29,7 +29,7 @@ bl_addon_info = {
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Add_Mesh/Planes_from_Images",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=21751&group_id=153&atid=469",
+        "func=detail&aid=21751",
     "category": "Import-Export"}
 
 import bpy, os, mathutils
@@ -185,7 +185,7 @@ def align_planes(self, planes):
         offset += (plane.dimensions.x / 2) + gap
         if i == 0: continue
         move_local = mathutils.Vector((offset, 0, 0))
-        move_world = plane.location + move_local * plane.matrix_world.copy().invert()
+        move_world = plane.location + move_local * plane.matrix_world.inverted()
         plane.location += move_world
         offset += (plane.dimensions.x / 2)
         
@@ -340,8 +340,12 @@ def import_images_button(self, context):
     self.layout.operator(IMPORT_OT_image_to_plane.bl_idname, text="Images as Planes", icon='PLUGIN')
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_import.append(import_images_button)
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_import.remove(import_images_button)
 if __name__ == '__main__':
     register()

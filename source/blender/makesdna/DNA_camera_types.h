@@ -1,7 +1,5 @@
-/**
- * blenlib/DNA_camera_types.h (mar-2001 nzc)
- *
- * $Id: DNA_camera_types.h 29436 2010-06-14 01:03:48Z campbellbarton $ 
+/*
+ * $Id: DNA_camera_types.h 34941 2011-02-17 20:48:12Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,6 +28,10 @@
  */
 #ifndef DNA_CAMERA_TYPES_H
 #define DNA_CAMERA_TYPES_H
+
+/** \file DNA_camera_types.h
+ *  \ingroup DNA
+ */
 
 #include "DNA_ID.h"
 
@@ -78,7 +80,7 @@ typedef struct Camera {
 #define CAM_PANORAMA		128
 
 /* yafray: dof sampling switch */
-#define CAM_YF_NO_QMC	512
+/* #define CAM_YF_NO_QMC	512 */ /* depreceated */
 
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
-/**
- * $Id: wm_gesture.c 33875 2010-12-23 10:34:37Z ton $
+/*
+ * $Id: wm_gesture.c 35953 2011-04-02 02:08:33Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/windowmanager/intern/wm_gesture.c
+ *  \ingroup wm
+ */
+
+
 #include "DNA_screen_types.h"
 #include "DNA_vec_types.h"
 #include "DNA_userdef_types.h"
@@ -37,9 +42,10 @@
 #include "BLI_editVert.h"	/* lasso tessellation */
 #include "BLI_math.h"
 #include "BLI_scanfill.h"	/* lasso tessellation */
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
-#include "BKE_utildefines.h"
+
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -128,7 +134,7 @@ int wm_gesture_evaluate(wmGesture *gesture)
 		int dx= rect->xmax - rect->xmin;
 		int dy= rect->ymax - rect->ymin;
 		if(ABS(dx)+ABS(dy) > TWEAK_THRESHOLD) {
-			int theta= (int)floor(4.0f*atan2((float)dy, (float)dx)/M_PI + 0.5);
+			int theta= (int)floor(4.0f*atan2f((float)dy, (float)dx)/(float)M_PI + 0.5f);
 			int val= EVT_GESTURE_W;
 			
 			if(theta==0) val= EVT_GESTURE_E;
@@ -276,7 +282,6 @@ static void wm_gesture_draw_lasso(wmGesture *gt)
 	glColor3ub(96, 96, 96);
 	glLineStipple(1, 0xAAAA);
 	glBegin(GL_LINE_STRIP);
-	lasso= (short *)gt->customdata;
 	for(i=0; i<gt->points; i++, lasso+=2)
 		glVertex2sv(lasso);
 	if(gt->type==WM_GESTURE_LASSO)

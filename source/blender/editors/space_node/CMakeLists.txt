@@ -21,7 +21,9 @@
 
 set(INC
 	../include
+	../../blenfont
 	../../blenkernel
+	../../blenloader
 	../../blenlib
 	../../imbuf
 	../../makesdna
@@ -31,6 +33,7 @@ set(INC
 	../../render/extern/include
 	../../../../intern/guardedalloc
 	../../../../intern/opennl/extern
+	${GLEW_INCLUDE_PATH}
 )
 
 set(SRC

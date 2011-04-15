@@ -1,5 +1,5 @@
-/**
- * $Id: zbuf.c 33894 2010-12-26 17:47:17Z ton $
+/*
+ * $Id: zbuf.c 35233 2011-02-27 19:31:27Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/render/intern/source/zbuf.c
+ *  \ingroup render
+ */
+
+
 
 /*---------------------------------------------------------------------------*/
 /* Common includes                                                           */
@@ -41,7 +46,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_jitter.h"
 #include "BLI_threads.h"
-
+#include "BLI_utildefines.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -53,7 +58,7 @@
 
 #include "BKE_global.h"
 #include "BKE_material.h"
-#include "BKE_utildefines.h"
+
 
 #include "RE_render_ext.h"
 
@@ -3766,7 +3771,10 @@ static void shade_tra_samples_fill(ShadeSample *ssamp, int x, int y, int z, int 
 					shi->samplenr= R.shadowsamplenr[shi->thread]++;
 					shade_input_set_viewco(shi, x, y, xs, ys, (float)z);
 					shade_input_set_uv(shi);
-					shade_input_set_normals(shi);
+					if(shi_inc==0)
+						shade_input_set_normals(shi);
+					else /* XXX shi->flippednor messes up otherwise */
+						shade_input_set_vertex_normals(shi);
 					
 					shi_inc= 1;
 				}

@@ -1,5 +1,5 @@
-/**
- * $Id: GHOST_DisplayManagerWin32.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+/*
+ * $Id: GHOST_DisplayManagerWin32.cpp 36072 2011-04-09 19:46:17Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,12 +26,10 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-/**
-
- * $Id: GHOST_DisplayManagerWin32.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
- * Copyright (C) 2001 NaN Technologies B.V.
- * @author	Maarten Gribnau
- * @date	September 21, 2001
+/** \file ghost/intern/GHOST_DisplayManagerWin32.cpp
+ *  \ingroup GHOST
+ *  \author	Maarten Gribnau
+ *  \date	September 21, 2001
  */
 
 #include "GHOST_DisplayManagerWin32.h"

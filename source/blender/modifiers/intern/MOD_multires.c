@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_multires.c 32586 2010-10-19 07:10:12Z nazgul $
+* $Id: MOD_multires.c 35362 2011-03-05 10:29:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,6 +30,11 @@
 *
 */
 
+/** \file blender/modifiers/intern/MOD_multires.c
+ *  \ingroup modifiers
+ */
+
+
 #include <stddef.h>
 
 #include "BKE_cdderivedmesh.h"
@@ -39,6 +44,8 @@
 #include "BKE_particle.h"
 
 #include "DNA_mesh_types.h"
+
+#include "MOD_util.h"
 
 static void initData(ModifierData *md)
 {
@@ -108,18 +115,19 @@ ModifierTypeInfo modifierType_Multires = {
 							| eModifierTypeFlag_RequiresOriginalData,
 
 	/* copyData */          copyData,
-	/* deformVerts */       0,
-	/* deformVertsEM */     0,
-	/* deformMatricesEM */  0,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   0,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
-	/* requiredDataMask */  0,
-	/* freeData */          0,
-	/* isDisabled */        0,
-	/* updateDepgraph */    0,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
-	/* foreachObjectLink */ 0,
-	/* foreachIDLink */     0,
+	/* requiredDataMask */  NULL,
+	/* freeData */          NULL,
+	/* isDisabled */        NULL,
+	/* updateDepgraph */    NULL,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
+	/* foreachObjectLink */ NULL,
+	/* foreachIDLink */     NULL,
 };

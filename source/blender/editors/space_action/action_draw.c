@@ -1,5 +1,5 @@
-/**
- * $Id: action_draw.c 33799 2010-12-20 03:59:22Z campbellbarton $
+/*
+ * $Id: action_draw.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_action/action_draw.c
+ *  \ingroup spaction
+ */
+
+
 /* System includes ----------------------------------------------------- */
 
 #include <math.h>
@@ -34,9 +39,9 @@
 #include <string.h>
 #include <float.h>
 
-
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 /* Types --------------------------------------------------------------- */
 
@@ -45,7 +50,7 @@
 
 #include "BKE_action.h"
 #include "BKE_context.h"
-#include "BKE_utildefines.h"
+
 
 /* Everything from source (BIF, BDR, BSE) ------------------------------ */ 
 
@@ -58,6 +63,7 @@
 #include "ED_anim_api.h"
 #include "ED_keyframes_draw.h"
 
+#include "action_intern.h"
 
 /* ************************************************************************* */
 /* Channel List */

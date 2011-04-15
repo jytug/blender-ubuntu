@@ -1,5 +1,5 @@
-/**
- * $Id: node_util.h 26841 2010-02-12 13:34:04Z campbellbarton $
+/*
+ * $Id: node_util.h 35237 2011-02-27 20:13:22Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/nodes/intern/node_util.h
+ *  \ingroup nodes
+ */
+
+
 #ifndef NODE_UTIL_H_
 #define NODE_UTIL_H_
 
@@ -37,6 +42,11 @@ extern void node_free_standard_storage(struct bNode *node);
 
 extern void node_copy_curves(struct bNode *orig_node, struct bNode *new_node);
 extern void node_copy_standard_storage(struct bNode *orig_node, struct bNode *new_node);
+
+const char *node_blend_label(struct bNode *node);
+const char *node_math_label(struct bNode *node);
+const char *node_vect_math_label(struct bNode *node);
+const char *node_filter_label(struct bNode *node);
 
 #endif
 

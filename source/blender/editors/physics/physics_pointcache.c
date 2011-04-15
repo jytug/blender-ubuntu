@@ -1,5 +1,5 @@
 /*
- * $Id: physics_pointcache.c 33767 2010-12-18 15:03:31Z jhk $
+ * $Id: physics_pointcache.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,9 +27,17 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/physics/physics_pointcache.c
+ *  \ingroup edphys
+ */
+
+
 #include <stdlib.h>
 
 #include "MEM_guardedalloc.h"
+
+#include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_scene_types.h"
 
@@ -41,12 +49,9 @@
 #include "BKE_pointcache.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
-#include "BKE_utildefines.h" 
-
-#include "BLI_blenlib.h"
+ 
 
 #include "ED_particle.h"
-
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -75,13 +80,13 @@ static int ptcache_poll(bContext *C)
 	return (ptr.data && ptr.id.data);
 }
 
-void bake_console_progress(void *UNUSED(arg), int nr)
+static void bake_console_progress(void *UNUSED(arg), int nr)
 {
 	printf("\rbake: %3i%%", nr);
 	fflush(stdout);
 }
 
-void bake_console_progress_end(void *UNUSED(arg))
+static void bake_console_progress_end(void *UNUSED(arg))
 {
 	printf("\rbake: done!\n");
 }

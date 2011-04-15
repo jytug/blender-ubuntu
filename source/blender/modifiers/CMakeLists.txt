@@ -27,13 +27,14 @@
 set(INC 
 	. ./intern
 	../blenlib
+	../blenloader
 	../makesdna
 	../blenkernel
 	../blenkernel/intern
 	../render/extern/include
 	../../../intern/guardedalloc
 	../../../intern/elbeem/extern
-	${ZLIB_INC}
+	${ZLIB_INCLUDE_DIRS}
 )
 
 set(SRC

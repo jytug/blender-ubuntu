@@ -1,5 +1,5 @@
-/**
- * $Id: fmodifier.c 33918 2010-12-28 06:18:56Z aligorith $
+/*
+ * $Id: fmodifier.c 35953 2011-04-02 02:08:33Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/fmodifier.c
+ *  \ingroup bke
+ */
+
+
 
 #include <math.h>
 #include <stdio.h>
@@ -38,10 +43,11 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h" /* windows needs for M_PI */
+#include "BLI_utildefines.h"
 
 #include "BKE_fcurve.h"
 #include "BKE_idprop.h"
-#include "BKE_utildefines.h"
+
 
 #define SMALL -1.0e-10
 #define SELECT 1
@@ -340,7 +346,7 @@ static void fcm_fn_generator_evaluate (FCurve *UNUSED(fcu), FModifier *fcm, floa
 		case FCM_GENERATOR_FN_LN: /* natural log */
 		{
 			/* check that value is greater than 1? */
-			if (arg > 1.0f) {
+			if (arg > 1.0) {
 				fn= log;
 			}
 			else {
@@ -352,7 +358,7 @@ static void fcm_fn_generator_evaluate (FCurve *UNUSED(fcu), FModifier *fcm, floa
 		case FCM_GENERATOR_FN_SQRT: /* square root */
 		{
 			/* no negative numbers */
-			if (arg > 0.0f) {
+			if (arg > 0.0) {
 				fn= sqrt;
 			}
 			else {
@@ -368,7 +374,7 @@ static void fcm_fn_generator_evaluate (FCurve *UNUSED(fcu), FModifier *fcm, floa
 	
 	/* execute function callback to set value if appropriate */
 	if (fn) {
-		float value= (float)(data->amplitude*fn(arg) + data->value_offset);
+		float value= (float)(data->amplitude*(float)fn(arg) + data->value_offset);
 		
 		if (data->flag & FCM_GENERATOR_ADDITIVE)
 			*cvalue += value;

@@ -1,5 +1,5 @@
-/**
- * $Id: logic_buttons.c 33563 2010-12-08 21:56:50Z sirdude $
+/*
+ * $Id: logic_buttons.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,20 +23,22 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_logic/logic_buttons.c
+ *  \ingroup splogic
+ */
+
 
 #include <string.h>
 #include <stdio.h>
 
-
-
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
 #include "ED_screen.h"
-
 
 #include "RNA_access.h"
 #include "RNA_define.h"

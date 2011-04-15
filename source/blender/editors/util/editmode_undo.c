@@ -1,5 +1,5 @@
-/**
- * $Id: editmode_undo.c 33490 2010-12-05 18:59:23Z blendix $
+/*
+ * $Id: editmode_undo.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/util/editmode_undo.c
+ *  \ingroup edutil
+ */
+
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -37,19 +42,22 @@
 #include "DNA_object_types.h"
 #include "DNA_screen_types.h"
 
-#include "BKE_utildefines.h"
+#include "BLI_blenlib.h"
+#include "BLI_dynstr.h"
+#include "BLI_utildefines.h"
+
+
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_global.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_dynstr.h"
-
-
+#include "ED_util.h"
 #include "ED_mesh.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
+
+#include "util_intern.h"
 
 /* ***************** generic editmode undo system ********************* */
 /*
@@ -75,7 +83,7 @@ void undo_editmode_menu(void)				// history menu
 /* ********************************************************************* */
 
 /* ****** XXX ***** */
-void error(const char *UNUSED(arg)) {}
+static void error(const char *UNUSED(arg)) {}
 /* ****** XXX ***** */
 
 
@@ -314,6 +322,20 @@ void undo_editmode_name(bContext *C, const char *undoname)
 	}
 }
 
+/* undoname optionally, if NULL it just checks for existing undo steps */
+int undo_editmode_valid(const char *undoname)
+{
+	if(undoname) {
+		UndoElem *uel;
+		
+		for(uel= undobase.last; uel; uel= uel->prev) {
+			if(strcmp(undoname, uel->name)==0)
+				break;
+		}
+		return uel != NULL;
+	}
+	return undobase.last != undobase.first;
+}
 
 /* ************** for interaction with menu/pullown */
 

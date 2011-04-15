@@ -1,9 +1,5 @@
-/**
- * blenlib/DNA_curve_types.h (mar-2001 nzc)
- *
- * Curve stuff.
- *
- * $Id: DNA_curve_types.h 33822 2010-12-20 19:47:16Z nazgul $ 
+/*
+ * $Id: DNA_curve_types.h 34941 2011-02-17 20:48:12Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,6 +28,10 @@
  */
 #ifndef DNA_CURVE_TYPES_H
 #define DNA_CURVE_TYPES_H
+
+/** \file DNA_curve_types.h
+ *  \ingroup DNA
+ */
 
 #include "DNA_listBase.h"
 #include "DNA_vec_types.h"
@@ -171,7 +171,7 @@ typedef struct Curve {
 	struct BoundBox *bb;
 	
 	ListBase nurb;		/* actual data, called splines in rna */
-	ListBase disp;
+	ListBase disp;		/* undeformed display list, used mostly for texture space calculation */
 	
 	EditNurb *editnurb;	/* edited data, not in file, use pointer so we can check for it */
 	
@@ -328,7 +328,8 @@ typedef enum eBezTriple_Interpolation {
 typedef enum eBezTriple_KeyframeType {
 	BEZT_KEYTYPE_KEYFRAME = 0,	/* default - 'proper' Keyframe */
 	BEZT_KEYTYPE_EXTREME,		/* 'extreme' keyframe */
-	BEZT_KEYTYPE_BREAKDOWN		/* 'breakdown' keyframe */
+	BEZT_KEYTYPE_BREAKDOWN,		/* 'breakdown' keyframe */
+	BEZT_KEYTYPE_JITTER,		/* 'jitter' keyframe (for adding 'filler' secondary motion) */
 } eBezTriple_KeyframeType;
 
 /* checks if the given BezTriple is selected */

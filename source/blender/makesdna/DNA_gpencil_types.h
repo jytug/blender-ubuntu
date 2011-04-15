@@ -1,5 +1,5 @@
-/**
- * $Id: DNA_gpencil_types.h 26841 2010-02-12 13:34:04Z campbellbarton $
+/*
+ * $Id: DNA_gpencil_types.h 35935 2011-04-01 11:55:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,10 @@
  */
 #ifndef DNA_GPENCIL_TYPES_H
 #define DNA_GPENCIL_TYPES_H
+
+/** \file DNA_gpencil_types.h
+ *  \ingroup DNA
+ */
 
 #include "DNA_listBase.h"
 #include "DNA_ID.h"
@@ -115,6 +119,8 @@ typedef struct bGPDlayer {
 #define GP_LAYER_SELECT		(1<<5)
 	/* current frame for layer can't be changed */
 #define GP_LAYER_FRAMELOCK	(1<<6)
+	/* don't render xray (which is default) */
+#define GP_LAYER_NO_XRAY	(1<<7)
 
 
 /* Grease-Pencil Annotations - 'DataBlock' */

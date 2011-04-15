@@ -2,7 +2,7 @@
  * 
  * common help functions and data
  * 
- * $Id: blender.c 33719 2010-12-16 19:26:54Z campbellbarton $
+ * $Id: blender.c 35724 2011-03-23 14:06:44Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenkernel/intern/blender.c
+ *  \ingroup bke
+ */
+
 
 #ifndef _WIN32 
 	#include <unistd.h> // for read close
@@ -58,6 +63,7 @@
 #include "BLI_bpath.h"
 #include "BLI_dynstr.h"
 #include "BLI_path_util.h"
+#include "BLI_utildefines.h"
 
 #include "IMB_imbuf.h"
 
@@ -81,16 +87,16 @@
 #include "BLO_readfile.h" 
 #include "BLO_writefile.h" 
 
-#include "BKE_utildefines.h" // O_BINARY FALSE
+#include "BKE_utildefines.h"
 
 #include "WM_api.h" // XXXXX BAD, very BAD dependency (bad level call) - remove asap, elubie
 
 Global G;
 UserDef U;
-ListBase WMlist= {NULL, NULL};
+/* ListBase = {NULL, NULL}; */
 short ENDIAN_ORDER;
 
-char versionstr[48]= "";
+static char versionstr[48]= "";
 
 /* ********** free ********** */
 
@@ -123,9 +129,9 @@ void initglobals(void)
 	ENDIAN_ORDER= (((char*)&ENDIAN_ORDER)[0])? L_ENDIAN: B_ENDIAN;
 
 	if(BLENDER_SUBVERSION)
-		sprintf(versionstr, "www.blender.org %d.%d", BLENDER_VERSION, BLENDER_SUBVERSION);
+		BLI_snprintf(versionstr, sizeof(versionstr), "www.blender.org %d.%d", BLENDER_VERSION, BLENDER_SUBVERSION);
 	else
-		sprintf(versionstr, "www.blender.org %d", BLENDER_VERSION);
+		BLI_snprintf(versionstr, sizeof(versionstr), "www.blender.org %d", BLENDER_VERSION);
 
 #ifdef _WIN32	// FULLSCREEN
 	G.windowstate = G_WINDOWSTATE_USERDEF;
@@ -159,7 +165,7 @@ static void clean_paths(Main *main)
 	char filepath_expanded[1024];
 	Scene *scene;
 
-	for(BLI_bpathIterator_init(&bpi, main, main->name); !BLI_bpathIterator_isDone(bpi); BLI_bpathIterator_step(bpi)) {
+	for(BLI_bpathIterator_init(&bpi, main, main->name, BPATH_USE_PACKED); !BLI_bpathIterator_isDone(bpi); BLI_bpathIterator_step(bpi)) {
 		BLI_bpathIterator_getPath(bpi, filepath_expanded);
 
 		BLI_clean(filepath_expanded);
@@ -265,12 +271,11 @@ static void setup_app_data(bContext *C, BlendFileData *bfd, const char *filename
 	}
 
 	/* special cases, override loaded flags: */
-	if (G.f & G_DEBUG) bfd->globalf |= G_DEBUG;
-	else bfd->globalf &= ~G_DEBUG;
-	if (G.f & G_SWAP_EXCHANGE) bfd->globalf |= G_SWAP_EXCHANGE;
-	else bfd->globalf &= ~G_SWAP_EXCHANGE;
-	if (G.f & G_SCRIPT_AUTOEXEC) bfd->globalf |= G_SCRIPT_AUTOEXEC;
-	else bfd->globalf &= ~G_SCRIPT_AUTOEXEC;
+	if(G.f != bfd->globalf) {
+		const int flags_keep= (G_DEBUG | G_SWAP_EXCHANGE | G_SCRIPT_AUTOEXEC | G_SCRIPT_OVERRIDE_PREF);
+		bfd->globalf= (bfd->globalf & ~flags_keep) | (G.f & flags_keep);
+	}
+
 
 	G.f= bfd->globalf;
 
@@ -298,8 +303,6 @@ static void setup_app_data(bContext *C, BlendFileData *bfd, const char *filename
 	/* these are the same at times, should never copy to the same location */
 	if(G.main->name != filename)
 		BLI_strncpy(G.main->name, filename, FILE_MAX);
-	
-	BLI_strncpy(G.main->name, filename, FILE_MAX); /* is guaranteed current file */
 
 	/* baseflags, groups, make depsgraph, etc */
 	set_scene_bg(G.main, CTX_data_scene(C));
@@ -315,7 +318,7 @@ static int handle_subversion_warning(Main *main)
 		
 		char str[128];
 		
-		sprintf(str, "File written by newer Blender binary: %d.%d , expect loss of data!", main->minversionfile, main->minsubversionfile);
+		BLI_snprintf(str, sizeof(str), "File written by newer Blender binary: %d.%d , expect loss of data!", main->minversionfile, main->minsubversionfile);
 // XXX		error(str);
 	}
 	return 1;
@@ -346,29 +349,23 @@ void BKE_userdef_free(void)
 	BLI_freelistN(&U.addons);
 }
 
-/* returns:
-   0: no load file
-   1: OK
-   2: OK, and with new user settings
-*/
-
 int BKE_read_file(bContext *C, const char *dir, ReportList *reports) 
 {
 	BlendFileData *bfd;
-	int retval= 1;
+	int retval= BKE_READ_FILE_OK;
 
-	if(strstr(dir, BLENDER_STARTUP_FILE)==0) /* dont print user-pref loading */
+	if(strstr(dir, BLENDER_STARTUP_FILE)==NULL) /* dont print user-pref loading */
 		printf("read blend: %s\n", dir);
 
 	bfd= BLO_read_from_file(dir, reports);
 	if (bfd) {
-		if(bfd->user) retval= 2;
+		if(bfd->user) retval= BKE_READ_FILE_OK_USERPREFS;
 		
 		if(0==handle_subversion_warning(bfd->main)) {
 			free_main(bfd->main);
 			MEM_freeN(bfd);
 			bfd= NULL;
-			retval= 0;
+			retval= BKE_READ_FILE_FAIL;
 		}
 		else
 			setup_app_data(C, bfd, dir); // frees BFD
@@ -376,7 +373,7 @@ int BKE_read_file(bContext *C, const char *dir, ReportList *reports)
 	else
 		BKE_reports_prependf(reports, "Loading %s failed: ", dir);
 		
-	return (bfd?retval:0);
+	return (bfd?retval:BKE_READ_FILE_FAIL);
 }
 
 int BKE_read_file_from_memory(bContext *C, char* filebuf, int filelength, ReportList *reports)
@@ -459,17 +456,17 @@ static int read_undosave(bContext *C, UndoElem *uel)
 	G.fileflags |= G_FILE_NO_UI;
 
 	if(UNDO_DISK) 
-		success= BKE_read_file(C, uel->str, NULL);
+		success= (BKE_read_file(C, uel->str, NULL) != BKE_READ_FILE_FAIL);
 	else
 		success= BKE_read_file_from_memfile(C, &uel->memfile, NULL);
 
 	/* restore */
-	strcpy(G.main->name, mainstr); /* restore */
+	BLI_strncpy(G.main->name, mainstr, sizeof(G.main->name)); /* restore */
 	G.fileflags= fileflags;
 
 	if(success) {
 		/* important not to update time here, else non keyed tranforms are lost */
-		DAG_on_load_update(G.main, FALSE);
+		DAG_on_visible_update(G.main, FALSE);
 	}
 
 	return success;
@@ -527,12 +524,12 @@ void BKE_write_undo(bContext *C, const char *name)
 		counter++;
 		counter= counter % U.undosteps;	
 	
-		sprintf(numstr, "%d.blend", counter);
+		BLI_snprintf(numstr, sizeof(numstr), "%d.blend", counter);
 		BLI_make_file_string("/", tstr, btempdir, numstr);
 	
 		success= BLO_write_file(CTX_data_main(C), tstr, G.fileflags, NULL, NULL);
 		
-		strcpy(curundo->str, tstr);
+		BLI_strncpy(curundo->str, tstr, sizeof(curundo->str));
 	}
 	else {
 		MemFile *prevfile=NULL;
@@ -641,6 +638,22 @@ void BKE_undo_name(bContext *C, const char *name)
 		curundo= uel->prev;
 		BKE_undo_step(C, 0);
 	}
+}
+
+/* name optional */
+int BKE_undo_valid(const char *name)
+{
+	if(name) {
+		UndoElem *uel;
+		
+		for(uel= undobase.last; uel; uel= uel->prev)
+			if(strcmp(name, uel->name)==0)
+				break;
+		
+		return uel && uel->prev;
+	}
+	
+	return undobase.last != undobase.first;
 }
 
 

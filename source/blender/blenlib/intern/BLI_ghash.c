@@ -1,5 +1,5 @@
-/**
- * $Id: BLI_ghash.c 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: BLI_ghash.c 35246 2011-02-27 20:37:56Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,8 +28,14 @@
  * A general (pointer -> pointer) hash table ADT
  */
 
+/** \file blender/blenlib/intern/BLI_ghash.c
+ *  \ingroup bli
+ */
+
+
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_ghash.h"
 #include "BLO_sys_types.h" // for intptr_t support
 /***/
@@ -89,7 +95,7 @@ void BLI_ghash_free(GHash *gh, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfreef
 	
 	MEM_freeN(gh->buckets);
 	BLI_mempool_destroy(gh->entrypool);
-	gh->buckets = 0;
+	gh->buckets = NULL;
 	gh->nentries = 0;
 	gh->nbuckets = 0;
 	MEM_freeN(gh);

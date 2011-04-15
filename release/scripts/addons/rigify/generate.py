@@ -25,8 +25,8 @@ from rigify.utils import MetarigError, new_bone, get_rig_type
 from rigify.utils import ORG_PREFIX, MCH_PREFIX, DEF_PREFIX, WGT_PREFIX, ROOT_NAME, make_original_name
 from rigify.utils import RIG_DIR
 from rigify.utils import create_root_widget
-from rigify.utils import random_string
-from rigify.rig_ui_template import UI_SLIDERS, layers_ui
+from rigify.utils import random_id
+from rigify.rig_ui_template import UI_SLIDERS, layers_ui, UI_REGISTER
 from rigify import rigs
 
 RIG_MODULE = "rigs"
@@ -52,11 +52,12 @@ def generate_rig(context, metarig):
 
     """
     t = Timer()
-    rig_id = random_string(12)  # Random so that different rigs don't collide id's
+
+    # Random string with time appended so that
+    # different rigs don't collide id's
+    rig_id = random_id(16)
 
     # Initial configuration
-    use_global_undo = context.user_preferences.edit.use_global_undo
-    context.user_preferences.edit.use_global_undo = False
     mode_orig = context.mode
     rest_backup = metarig.data.pose_position
     metarig.data.pose_position = 'REST'
@@ -214,7 +215,6 @@ def generate_rig(context, metarig):
     except Exception as e:
         # Cleanup if something goes wrong
         print("Rigify: failed to generate rig.")
-        context.user_preferences.edit.use_global_undo = use_global_undo
         metarig.data.pose_position = rest_backup
         obj.data.pose_position = 'POSE'
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -231,7 +231,7 @@ def generate_rig(context, metarig):
     # Parent any free-floating bones to the root.
     bpy.ops.object.mode_set(mode='EDIT')
     for bone in bones:
-        if obj.data.edit_bones[bone].parent == None:
+        if obj.data.edit_bones[bone].parent is None:
             obj.data.edit_bones[bone].use_connect = False
             obj.data.edit_bones[bone].parent = obj.data.edit_bones[root_bone]
     bpy.ops.object.mode_set(mode='OBJECT')
@@ -292,7 +292,11 @@ def generate_rig(context, metarig):
     for s in ui_scripts:
         script.write("\n        " + s.replace("\n", "\n        ") + "\n")
     script.write(layers_ui(vis_layers))
+    script.write(UI_REGISTER)
     script.use_module = True
+
+    # Run UI script
+    exec(script.as_string(), {})
 
     t.tick("The rest: ")
     #----------------------------------
@@ -300,7 +304,6 @@ def generate_rig(context, metarig):
     bpy.ops.object.mode_set(mode='OBJECT')
     metarig.data.pose_position = rest_backup
     obj.data.pose_position = 'POSE'
-    context.user_preferences.edit.use_global_undo = use_global_undo
 
 
 def get_bone_rigs(obj, bone_name, halt_on_missing=False):
@@ -348,4 +351,3 @@ def param_name(param_name, rig_type):
     """ Get the actual parameter name, sans-rig-type.
     """
     return param_name[len(rig_type) + 1:]
-

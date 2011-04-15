@@ -1,5 +1,5 @@
-/**
- * $Id: text_draw.c 34047 2011-01-03 18:14:10Z ton $
+/*
+ * $Id: text_draw.c 35890 2011-03-30 04:58:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_text/text_draw.c
+ *  \ingroup sptext
+ */
+
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +41,7 @@
 #include "BLF_api.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_text_types.h"
 #include "DNA_space_types.h"
@@ -45,7 +51,7 @@
 #include "BKE_context.h"
 #include "BKE_suggestions.h"
 #include "BKE_text.h"
-#include "BKE_utildefines.h"
+
 
 #include "BIF_gl.h"
 
@@ -88,7 +94,7 @@ static int text_font_draw_character(SpaceText *st, int x, int y, char c)
 	return st->cwidth;
 }
 
-int text_font_width(SpaceText *UNUSED(st), char *str)
+int text_font_width(SpaceText *UNUSED(st), const char *str)
 {
 	return BLF_width(mono, str);
 }
@@ -123,7 +129,7 @@ static void flatten_string_append(FlattenString *fs, char c, int accum)
 	fs->pos++;
 }
 
-int flatten_string(SpaceText *st, FlattenString *fs, char *in)
+int flatten_string(SpaceText *st, FlattenString *fs, const char *in)
 {
 	int r = 0, i = 0;
 
@@ -249,7 +255,7 @@ static int find_bool(char *string)
 
 /* Ensures the format string for the given line is long enough, reallocating
  as needed. Allocation is done here, alone, to ensure consistency. */
-int text_check_format_len(TextLine *line, unsigned int len)
+static int text_check_format_len(TextLine *line, unsigned int len)
 {
 	if(line->format) {
 		if(strlen(line->format) < len) {
@@ -601,7 +607,6 @@ void wrap_offset_in_line(SpaceText *st, ARegion *ar, TextLine *linein, int cursi
 	start= 0;
 	end= max;
 	chop= 1;
-	chars= 0;
 	*offc= 0;
 
 	for(i=0, j=0; linein->line[j]!='\0'; j++) {
@@ -645,7 +650,7 @@ void wrap_offset_in_line(SpaceText *st, ARegion *ar, TextLine *linein, int cursi
 	}
 }
 
-int text_get_char_pos(SpaceText *st, char *line, int cur)
+int text_get_char_pos(SpaceText *st, const char *line, int cur)
 {
 	int a=0, i;
 	
@@ -954,14 +959,14 @@ void text_free_caches(SpaceText *st)
 /************************ word-wrap utilities *****************************/
 
 /* cache should be updated in caller */
-int text_get_visible_lines_no(SpaceText *st, int lineno)
+static int text_get_visible_lines_no(SpaceText *st, int lineno)
 {
 	DrawCache *drawcache= (DrawCache *)st->drawcache;
 
 	return drawcache->line_height[lineno];
 }
 
-int text_get_visible_lines(SpaceText *st, ARegion *ar, char *str)
+int text_get_visible_lines(SpaceText *st, ARegion *ar, const char *str)
 {
 	int i, j, start, end, max, lines, chars;
 	char ch;
@@ -1029,10 +1034,8 @@ static TextLine *first_visible_line(SpaceText *st, ARegion *ar, int *wrap_top)
 	Text *text= st->text;
 	TextLine* pline= text->lines.first;
 	int i= st->top, lineno= 0;
-	DrawCache *drawcache;
 
 	text_update_drawcache(st, ar);
-	drawcache= (DrawCache *)st->drawcache;
 
 	if(wrap_top) *wrap_top= 0;
 
@@ -1050,7 +1053,7 @@ static TextLine *first_visible_line(SpaceText *st, ARegion *ar, int *wrap_top)
 			}
 		}
 	} else {
-		for(i=st->top, pline= text->lines.first; pline->next && i>0; i--)
+		for(i=st->top; pline->next && i>0; i--)
 			pline= pline->next;
 	}
 
@@ -1105,7 +1108,7 @@ static void calc_text_rcts(SpaceText *st, ARegion *ar, rcti *scroll, rcti *back)
 	CLAMP(st->txtbar.ymax, pix_bottom_margin, ar->winy - pix_top_margin);
 
 	st->pix_per_line= (pix_available > 0)? (float) ltexth/pix_available: 0;
-	if(st->pix_per_line<.1) st->pix_per_line=.1f;
+	if(st->pix_per_line < 0.1f) st->pix_per_line=0.1f;
 
 	curl_off= text_get_span_wrap(st, ar, st->text->lines.first, st->text->curl);
 	sell_off= text_get_span_wrap(st, ar, st->text->lines.first, st->text->sell);
@@ -1284,7 +1287,7 @@ static void draw_documentation(SpaceText *st, ARegion *ar)
 {
 	TextLine *tmp;
 	char *docs, buf[DOC_WIDTH+1], *p;
-	int len, i, br, lines;
+	int i, br, lines;
 	int boxw, boxh, l, x, y, top;
 	
 	if(!st || !st->text) return;
@@ -1309,7 +1312,6 @@ static void draw_documentation(SpaceText *st, ARegion *ar)
 	}
 
 	top= y= ar->winy - st->lheight*l - 2;
-	len= strlen(docs);
 	boxw= DOC_WIDTH*st->cwidth + 20;
 	boxh= (DOC_HEIGHT+1)*st->lheight;
 
@@ -1761,7 +1763,7 @@ void draw_text_main(SpaceText *st, ARegion *ar)
 			else
 				UI_ThemeColor(TH_TEXT);
 
-			sprintf(linenr, "%d", i + linecount + 1);
+			sprintf(linenr, "%*d", st->linenrs_tot, i + linecount + 1);
 			/* itoa(i + linecount + 1, linenr, 10); */ /* not ansi-c :/ */
 			text_font_draw(st, TXT_OFFSET - 7, y, linenr);
 
@@ -1782,6 +1784,15 @@ void draw_text_main(SpaceText *st, ARegion *ar)
 		wrap_skip= 0;
 	}
 	
+	if(st->flags&ST_SHOW_MARGIN) {
+		UI_ThemeColor(TH_HILITE);
+
+		glBegin(GL_LINES);
+		glVertex2i(x+st->cwidth*st->margin_column, 0);
+		glVertex2i(x+st->cwidth*st->margin_column, ar->winy - 2);
+		glEnd();
+	}
+
 	/* draw other stuff */
 	draw_brackets(st, ar);
 	draw_markers(st, ar);

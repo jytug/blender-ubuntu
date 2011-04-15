@@ -1,5 +1,5 @@
-/**
- * $Id: object_group.c 33044 2010-11-12 17:35:51Z ton $
+/*
+ * $Id: object_group.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,10 +27,15 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/object/object_group.c
+ *  \ingroup edobj
+ */
+
+
 #include <string.h>
 
-
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_group_types.h"
 #include "DNA_object_types.h"

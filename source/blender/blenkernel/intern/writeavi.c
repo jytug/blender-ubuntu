@@ -1,8 +1,8 @@
-/**
+/*
  * Functions for writing avi-format files.
  * Added interface for generic movie support (ton)
  *
- * $Id: writeavi.c 32551 2010-10-18 06:41:16Z campbellbarton $
+ * $Id: writeavi.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,6 +31,11 @@
  * 
  */
 
+/** \file blender/blenkernel/intern/writeavi.c
+ *  \ingroup bke
+ */
+
+
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
@@ -38,11 +43,12 @@
 #include "DNA_scene_types.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_report.h"
-#include "BKE_utildefines.h"
+
 #include "BKE_writeavi.h"
 #include "AVI_avi.h"
 
@@ -213,7 +219,7 @@ static int append_avi(RenderData *UNUSED(rd), int frame, int *pixels, int rectx,
 	return 1;
 }
 
-void end_avi(void)
+static void end_avi(void)
 {
 	if (avi == NULL) return;
 

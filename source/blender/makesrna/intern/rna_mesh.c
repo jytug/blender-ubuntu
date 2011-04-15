@@ -1,5 +1,5 @@
-/**
- * $Id: rna_mesh.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: rna_mesh.c 35559 2011-03-15 09:04:26Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_mesh.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 
@@ -46,7 +51,7 @@
 #include "BKE_depsgraph.h"
 #include "BKE_main.h"
 #include "BKE_mesh.h"
-#include "BKE_utildefines.h"
+
 
 #include "ED_mesh.h" /* XXX Bad level call */
 
@@ -228,6 +233,15 @@ static void rna_MeshColor_color4_set(PointerRNA *ptr, const float *values)
 	(&mcol[3].r)[1]= (char)(CLAMPIS(values[1]*255.0f, 0, 255));
 	(&mcol[3].r)[0]= (char)(CLAMPIS(values[2]*255.0f, 0, 255));
 }
+
+static void rna_Mesh_texspace_set(Main *bmain, Scene *scene, PointerRNA *ptr)
+{
+	Mesh *me= (Mesh*)ptr->data;
+	
+	if (me->texflag & AUTOSPACE)
+		tex_space_mesh(me);
+}
+
 
 static int rna_Mesh_texspace_editable(PointerRNA *ptr)
 {
@@ -952,10 +966,29 @@ static char *rna_VertexGroupElement_path(PointerRNA *ptr)
 	MDeformVert *dvert;
 	int a, b;
 	
-	for(a=0, dvert=me->dvert; a<me->totvert; a++, dvert++)
-		for(b=0; b<dvert->totweight; b++)
+	/* sanity check: make sure that mesh pointer is valid */
+	if (me == NULL) 
+		return NULL;
+	else if (GS(me->id.name) != ID_ME) {
+		/* if object pointer, try to resolve the object's data to mesh pointer */
+		if (GS(me->id.name) == ID_OB) {
+			Object *ob = (Object *)me;
+			
+			if (ob->type == OB_MESH)
+				me = (Mesh *)ob->data;
+			else
+				return NULL; /* nothing can be done */
+		}
+		else
+			return NULL; /* nothing can be done */
+	}
+	
+	for(a=0, dvert=me->dvert; a<me->totvert; a++, dvert++) {
+		for(b=0; b<dvert->totweight; b++) {
 			if(dw == &dvert->dw[b])
 				return BLI_sprintfN("vertices[%d].groups[%d]", a, b);
+		}
+	}
 
 	return NULL;
 }
@@ -1641,7 +1674,7 @@ static void rna_def_mesh_vertices(BlenderRNA *brna, PropertyRNA *cprop)
 //	PropertyRNA *prop;
 
 	FunctionRNA *func;
-	PropertyRNA *parm;
+//	PropertyRNA *parm;
 
 	RNA_def_property_srna(cprop, "MeshVertices");
 	srna= RNA_def_struct(brna, "MeshVertices", NULL);
@@ -1650,7 +1683,7 @@ static void rna_def_mesh_vertices(BlenderRNA *brna, PropertyRNA *cprop)
 
 	func= RNA_def_function(srna, "add", "ED_mesh_vertices_add");
 	RNA_def_function_flag(func, FUNC_USE_REPORTS);
-	parm= RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of vertices to add.", 0, INT_MAX);
+	RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of vertices to add.", 0, INT_MAX);
 }
 
 /* mesh.edges */
@@ -1660,7 +1693,7 @@ static void rna_def_mesh_edges(BlenderRNA *brna, PropertyRNA *cprop)
 //	PropertyRNA *prop;
 
 	FunctionRNA *func;
-	PropertyRNA *parm;
+//	PropertyRNA *parm;
 
 	RNA_def_property_srna(cprop, "MeshEdges");
 	srna= RNA_def_struct(brna, "MeshEdges", NULL);
@@ -1669,7 +1702,7 @@ static void rna_def_mesh_edges(BlenderRNA *brna, PropertyRNA *cprop)
 
 	func= RNA_def_function(srna, "add", "ED_mesh_edges_add");
 	RNA_def_function_flag(func, FUNC_USE_REPORTS);
-	parm= RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of vertices to add.", 0, INT_MAX);
+	RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of vertices to add.", 0, INT_MAX);
 }
 
 /* mesh.faces */
@@ -1679,7 +1712,7 @@ static void rna_def_mesh_faces(BlenderRNA *brna, PropertyRNA *cprop)
 	PropertyRNA *prop;
 
 	FunctionRNA *func;
-	PropertyRNA *parm;
+	/*PropertyRNA *parm;*/
 
 	RNA_def_property_srna(cprop, "MeshFaces");
 	srna= RNA_def_struct(brna, "MeshFaces", NULL);
@@ -1698,7 +1731,7 @@ static void rna_def_mesh_faces(BlenderRNA *brna, PropertyRNA *cprop)
 
 	func= RNA_def_function(srna, "add", "ED_mesh_faces_add");
 	RNA_def_function_flag(func, FUNC_USE_REPORTS);
-	parm= RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of vertices to add.", 0, INT_MAX);
+	RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of vertices to add.", 0, INT_MAX);
 }
 
 /* mesh.vertex_colors */
@@ -1718,7 +1751,7 @@ static void rna_def_vertex_colors(BlenderRNA *brna, PropertyRNA *cprop)
 	func= RNA_def_function(srna, "new", "rna_Mesh_vertex_color_new");
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 	RNA_def_function_ui_description(func, "Add a vertex color layer to Mesh.");
-	parm= RNA_def_string(func, "name", "UVTex", 0, "", "UV Texture name.");
+	RNA_def_string(func, "name", "Col", 0, "", "Vertex color name.");
 	parm= RNA_def_pointer(func, "layer", "MeshColorLayer", "", "The newly created layer.");
 	RNA_def_function_return(func, parm);
 	
@@ -1759,7 +1792,7 @@ static void rna_def_uv_textures(BlenderRNA *brna, PropertyRNA *cprop)
 	func= RNA_def_function(srna, "new", "rna_Mesh_uv_texture_new");
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 	RNA_def_function_ui_description(func, "Add a UV texture layer to Mesh.");
-	parm= RNA_def_string(func, "name", "UVTex", 0, "", "UV Texture name.");
+	RNA_def_string(func, "name", "UVTex", 0, "", "UV Texture name.");
 	parm= RNA_def_pointer(func, "layer", "MeshTextureFaceLayer", "", "The newly created layer.");
 	RNA_def_function_return(func, parm);
 
@@ -1903,6 +1936,7 @@ static void rna_def_mesh(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "use_auto_texspace", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "texflag", AUTOSPACE);
 	RNA_def_property_ui_text(prop, "Auto Texture Space", "Adjusts active object's texture space automatically when transforming object");
+	RNA_def_property_update(prop, NC_OBJECT|ND_DRAW, "rna_Mesh_texspace_set");
 	
 	prop= RNA_def_property(srna, "texspace_location", PROP_FLOAT, PROP_TRANSLATION);
 	RNA_def_property_array(prop, 3);
@@ -1984,9 +2018,9 @@ static void rna_def_mesh(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Edge Length", "Displays selected edge lengths, Using global values when set in the transform panel");
 	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
 	
-	prop= RNA_def_property(srna, "show_extra_edge_angle", PROP_BOOLEAN, PROP_NONE);
+	prop= RNA_def_property(srna, "show_extra_face_angle", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAWEXTRA_FACEANG);
-	RNA_def_property_ui_text(prop, "Edge Angles", "Displays the angles in the selected edges in degrees, Using global values when set in the transform panel");
+	RNA_def_property_ui_text(prop, "Faces Angles", "Displays the angles in the selected edges in degrees, Using global values when set in the transform panel");
 	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
 	
 	prop= RNA_def_property(srna, "show_extra_face_area", PROP_BOOLEAN, PROP_NONE);
@@ -2011,7 +2045,7 @@ static void rna_def_mesh(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "use_mirror_topology", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "editflag", ME_EDIT_MIRROR_TOPO);
-	RNA_def_property_ui_text(prop, "Topology Mirror", "Use topology based mirroring");
+	RNA_def_property_ui_text(prop, "Topology Mirror", "Use topology based mirroring. For when both sides of mesh have matching, unique topology");
 
 	prop= RNA_def_property(srna, "use_paint_mask", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "editflag", ME_EDIT_PAINT_MASK);

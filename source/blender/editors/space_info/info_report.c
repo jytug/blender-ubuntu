@@ -1,5 +1,5 @@
-/**
- * $Id: info_report.c 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: info_report.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -22,15 +22,20 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_info/info_report.c
+ *  \ingroup spinfo
+ */
+
+
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
 #include "MEM_guardedalloc.h"
 
-
 #include "BLI_blenlib.h"
 #include "BLI_dynstr.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 
@@ -128,6 +133,9 @@ static int select_report_pick_invoke(bContext *C, wmOperator *op, wmEvent *event
 	ReportList *reports= CTX_wm_reports(C);
 	Report *report;
 
+	/* uses opengl */
+	wmSubWindowSet(CTX_wm_window(C), ar->swinid);
+	
 	report= info_text_pick(sinfo, ar, reports, event->mval[1]);
 
 	RNA_int_set(op->ptr, "report_index", BLI_findindex(&reports->list, report));

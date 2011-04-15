@@ -1,5 +1,5 @@
-/**
- * $Id: sound_header.c 32511 2010-10-16 08:03:28Z campbellbarton $
+/*
+ * $Id: sound_header.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_sound/sound_header.c
+ *  \ingroup spsnd
+ */
+
+
 #include <string.h>
 #include <stdio.h>
 
@@ -33,14 +38,14 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
-#include "BKE_utildefines.h"
+
 #include "BKE_context.h"
 
 #include "ED_screen.h"
 #include "ED_types.h"
 #include "ED_util.h"
-
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h"

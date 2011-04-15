@@ -1,5 +1,5 @@
-/**
- * $Id: IK_QSegment.h 26841 2010-02-12 13:34:04Z campbellbarton $
+/*
+ * $Id: IK_QSegment.h 35154 2011-02-25 11:43:19Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file iksolver/intern/IK_QSegment.h
+ *  \ingroup iksolver
+ */
+
+
 #ifndef NAN_INCLUDED_IK_QSegment_h
 #define NAN_INCLUDED_IK_QSegment_h
 
@@ -34,7 +39,6 @@
 #include "MT_Transform.h"
 #include "MT_Matrix4x4.h"
 #include "IK_QJacobian.h"
-#include "MEM_SmartPtr.h"
 
 #include <vector>
 

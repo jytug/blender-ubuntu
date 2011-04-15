@@ -1,5 +1,5 @@
-/**
- * $Id: py_capi_utils.h 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: py_capi_utils.h 35767 2011-03-25 04:36:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/python/generic/py_capi_utils.h
+ *  \ingroup pygen
+ */
+
  
 #ifndef PY_CAPI_UTILS_H
 #define PY_CAPI_UTILS_H
@@ -39,4 +44,8 @@ const char *	PyC_UnicodeAsByte(PyObject *py_str, PyObject **coerce); /* coerce m
 /* name namespace function for bpy & bge */
 PyObject *		PyC_DefaultNameSpace(const char *filename);
 void			PyC_RunQuicky(const char *filepath, int n, ...);
+
+void PyC_MainModule_Backup(PyObject **main_mod);
+void PyC_MainModule_Restore(PyObject *main_mod);
+
 #endif // PY_CAPI_UTILS_H

@@ -23,11 +23,13 @@ set(INC
 	../include
 	../../blenfont
 	../../blenkernel
+	../../blenloader
 	../../blenlib
 	../../makesdna
 	../../makesrna
 	../../windowmanager
 	../../../../intern/guardedalloc
+	${GLEW_INCLUDE_PATH}
 )
 
 set(SRC
@@ -41,7 +43,7 @@ set(SRC
 )
 
 if(WITH_PYTHON)
-	list(APPEND INC ${PYTHON_INC} ../../python)
+	list(APPEND INC ${PYTHON_INCLUDE_DIRS} ../../python)
 	add_definitions(-DWITH_PYTHON)
 endif()
 

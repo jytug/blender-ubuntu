@@ -1,5 +1,5 @@
-/**
- * $Id: transform_constraints.c 33814 2010-12-20 13:57:52Z ton $
+/*
+ * $Id: transform_constraints.c 35852 2011-03-28 17:06:15Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/transform/transform_constraints.c
+ *  \ingroup edtransform
+ */
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,12 +54,13 @@
 #include "BIF_glutil.h"
 
 #include "BKE_context.h"
-#include "BKE_utildefines.h"
+
 
 #include "ED_image.h"
 #include "ED_view3d.h"
 
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 //#include "blendef.h"
 //
@@ -68,7 +74,7 @@
 static void drawObjectConstraint(TransInfo *t);
 
 /* ************************** CONSTRAINTS ************************* */
-void constraintAutoValues(TransInfo *t, float vec[3])
+static void constraintAutoValues(TransInfo *t, float vec[3])
 {
 	int mode = t->con.mode;
 	if (mode & CON_APPLY)
@@ -185,11 +191,11 @@ static void axisProjection(TransInfo *t, float axis[3], float in[3], float out[3
 	if(in[0]==0.0f && in[1]==0.0f && in[2]==0.0f)
 		return;
 
-	angle = fabs(angle_v3v3(axis, t->viewinv[2]));
-	if (angle > M_PI / 2) {
-		angle = M_PI - angle;
+	angle = fabsf(angle_v3v3(axis, t->viewinv[2]));
+	if (angle > (float)M_PI / 2.0f) {
+		angle = (float)M_PI - angle;
 	}
-	angle = 180.0f * angle / M_PI;
+	angle = RAD2DEGF(angle);
 
 	/* For when view is parallel to constraint... will cause NaNs otherwise
 	   So we take vertical motion in 3D space and apply it to the
@@ -222,12 +228,12 @@ static void axisProjection(TransInfo *t, float axis[3], float in[3], float out[3
 
 		/* give arbitrary large value if projection is impossible */
 		factor = dot_v3v3(axis, norm);
-		if (1 - fabs(factor) < 0.0002f) {
+		if (1.0f - fabsf(factor) < 0.0002f) {
 			VECCOPY(out, axis);
 			if (factor > 0) {
-				mul_v3_fl(out, 1000000000);
+				mul_v3_fl(out, 1000000000.0f);
 			} else {
-				mul_v3_fl(out, -1000000000);
+				mul_v3_fl(out, -1000000000.0f);
 			}
 		} else {
 			add_v3_v3v3(v2, t->con.center, axis);

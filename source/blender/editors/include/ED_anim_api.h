@@ -1,5 +1,5 @@
-/**
- * $Id: ED_anim_api.h 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: ED_anim_api.h 35365 2011-03-05 14:03:29Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,10 @@
  * Contributor(s): Joshua Leung
  *
  * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file ED_anim_api.h
+ *  \ingroup editors
  */
 
 #ifndef ED_ANIM_API_H
@@ -153,6 +157,7 @@ typedef enum eAnim_ChannelType {
 	ANIMTYPE_DSARM,
 	ANIMTYPE_DSMESH,
 	ANIMTYPE_DSTEX,
+	ANIMTYPE_DSLAT,
 	
 	ANIMTYPE_SHAPEKEY,
 	
@@ -230,6 +235,8 @@ typedef enum eAnimFilter_Flags {
 #define FILTER_MBALL_OBJD(mb) ((mb->flag2 & MB_DS_EXPAND))
 #define FILTER_ARM_OBJD(arm) ((arm->flag & ARM_DS_EXPAND))
 #define FILTER_MESH_OBJD(me) ((me->flag & ME_DS_EXPAND))
+#define FILTER_LATTICE_OBJD(lt) ((lt->flag & LT_DS_EXPAND))
+
 	/* 'Sub-object/Action' channels (flags stored in Action) */
 #define SEL_ACTC(actc) ((actc->flag & ACT_SELECTED))
 #define EXPANDED_ACTC(actc) ((actc->flag & ACT_COLLAPSED)==0)
@@ -578,6 +585,11 @@ void ED_keymap_animchannels(struct wmKeyConfig *keyconf);
 	/* generic time editing */
 void ED_operatortypes_anim(void);
 void ED_keymap_anim(struct wmKeyConfig *keyconf);
+	
+	/* space_graph */
+void ED_operatormacros_graph(void);
+	/* space_action */
+void ED_operatormacros_action(void);
 
 /* ************************************************ */
 

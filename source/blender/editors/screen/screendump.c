@@ -1,5 +1,5 @@
-/**
- * $Id: screendump.c 34064 2011-01-04 14:37:21Z ton $
+/*
+ * $Id: screendump.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,11 +26,17 @@
  * Making screendumps.
  */
 
+/** \file blender/editors/screen/screendump.c
+ *  \ingroup edscr
+ */
+
+
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"

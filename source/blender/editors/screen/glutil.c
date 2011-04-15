@@ -1,5 +1,5 @@
-/**
- * $Id: glutil.c 33442 2010-12-03 12:30:59Z campbellbarton $
+/*
+ * $Id: glutil.c 35820 2011-03-27 14:59:55Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/screen/glutil.c
+ *  \ingroup edscr
+ */
+
+
 #include <stdio.h>
 #include <string.h>
 
@@ -32,7 +37,8 @@
 
 #include "DNA_vec_types.h"
 
-#include "BKE_utildefines.h"
+#include "BLI_utildefines.h"
+
 #include "BKE_colortools.h"
 
 #include "BLI_math.h"
@@ -340,7 +346,7 @@ void glutil_draw_filled_arc(float start, float angle, float radius, int nsegment
 		float t= (float) i/(nsegments-1);
 		float cur= start + t*angle;
 		
-		glVertex2f(cos(cur)*radius, sin(cur)*radius);
+		glVertex2f(cosf(cur)*radius, sinf(cur)*radius);
 	}
 	glEnd();
 }
@@ -353,7 +359,7 @@ void glutil_draw_lined_arc(float start, float angle, float radius, int nsegments
 		float t= (float) i/(nsegments-1);
 		float cur= start + t*angle;
 		
-		glVertex2f(cos(cur)*radius, sin(cur)*radius);
+		glVertex2f(cosf(cur)*radius, sinf(cur)*radius);
 	}
 	glEnd();
 }
@@ -755,22 +761,22 @@ void bglBegin(int mode)
 	if(mode==GL_POINTS) {
 		float value[4];
 		glGetFloatv(GL_POINT_SIZE_RANGE, value);
-		if(value[1]<2.0) {
+		if(value[1] < 2.0f) {
 			glGetFloatv(GL_POINT_SIZE, value);
-			pointhack= floor(value[0]+0.5);
+			pointhack= floor(value[0] + 0.5f);
 			if(pointhack>4) pointhack= 4;
 		}
 		else glBegin(mode);
 	}
 }
 
-int bglPointHack() {
+int bglPointHack(void) {
 	float value[4];
 	int pointhack_px;
 	glGetFloatv(GL_POINT_SIZE_RANGE, value);
-	if(value[1]<2.0) {
+	if(value[1] < 2.0f) {
 		glGetFloatv(GL_POINT_SIZE, value);
-		pointhack_px= floor(value[0]+0.5);
+		pointhack_px= floorf(value[0]+0.5f);
 		if(pointhack_px>4) pointhack_px= 4;
 		return pointhack_px;
 	}
@@ -783,7 +789,7 @@ void bglVertex3fv(float *vec)
 	case GL_POINTS:
 		if(pointhack) {
 			glRasterPos3fv(vec);
-			glBitmap(pointhack, pointhack, (float)pointhack/2.0, (float)pointhack/2.0, 0.0, 0.0, Squaredot);
+			glBitmap(pointhack, pointhack, (float)pointhack/2.0f, (float)pointhack/2.0f, 0.0, 0.0, Squaredot);
 		}
 		else glVertex3fv(vec);
 		break;
@@ -796,7 +802,7 @@ void bglVertex3f(float x, float y, float z)
 	case GL_POINTS:
 		if(pointhack) {
 			glRasterPos3f(x, y, z);
-			glBitmap(pointhack, pointhack, (float)pointhack/2.0, (float)pointhack/2.0, 0.0, 0.0, Squaredot);
+			glBitmap(pointhack, pointhack, (float)pointhack/2.0f, (float)pointhack/2.0f, 0.0, 0.0, Squaredot);
 		}
 		else glVertex3f(x, y, z);
 		break;
@@ -854,7 +860,7 @@ void bglPolygonOffset(float viewdist, float dist)
 {
 	static float winmat[16], offset=0.0;	
 	
-	if(dist!=0.0) {
+	if(dist != 0.0f) {
 		float offs;
 		
 		// glEnable(GL_POLYGON_OFFSET_FILL);
@@ -866,8 +872,8 @@ void bglPolygonOffset(float viewdist, float dist)
 		
 		/* dist is from camera to center point */
 		
-		if(winmat[15]>0.5) offs= 0.00001*dist*viewdist;  // ortho tweaking
-		else offs= 0.0005*dist;  // should be clipping value or so...
+		if(winmat[15]>0.5f) offs= 0.00001f*dist*viewdist;  // ortho tweaking
+		else offs= 0.0005f*dist;  // should be clipping value or so...
 		
 		winmat[14]-= offs;
 		offset+= offs;

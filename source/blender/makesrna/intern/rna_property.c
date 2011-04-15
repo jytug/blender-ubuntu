@@ -1,5 +1,5 @@
-/**
- * $Id: rna_property.c 33961 2010-12-31 04:12:20Z campbellbarton $
+/*
+ * $Id: rna_property.c 35238 2011-02-27 20:20:01Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_property.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 

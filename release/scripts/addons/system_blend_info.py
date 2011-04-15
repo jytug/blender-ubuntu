@@ -20,19 +20,19 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
-bl_addon_info = {
+bl_info = {
     "name": "Scene Information",
     "author": "uselessdreamer",
     "version": (0,3),
-    "blender": (2, 5, 3),
-    "api": 32411,
-    "location": "Properties space > Scene tab > Blend Info panel",
+    "blender": (2, 5, 7),
+    "api": 35853,
+    "location": "Properties > Scene > Blend Info Panel",
     "description": "Show information about the .blend",
     "warning": "",
     "wiki_url": 'http://wiki.blender.org/index.php/Extensions:2.5/Py/' \
         'Scripts/System/Blend Info',
     "tracker_url": "https://projects.blender.org/tracker/index.php?" \
-        "func=detail&aid=22102&group_id=153&atid=469",
+        "func=detail&aid=22102",
     "category": "System"}
 
 import bpy
@@ -198,9 +198,13 @@ class OBJECT_PT_blendinfo(bpy.types.Panel):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     pass
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     pass
 
 if __name__ == "__main__":

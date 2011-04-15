@@ -1,5 +1,5 @@
 /*
- * $Id: math_matrix.c 33229 2010-11-22 10:39:28Z campbellbarton $
+ * $Id: math_matrix.c 35821 2011-03-27 15:54:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenlib/intern/math_matrix.c
+ *  \ingroup bli
+ */
+
 
 #include <assert.h>
 #include "BLI_math.h"
@@ -107,6 +112,20 @@ void copy_m4_m3(float m1[][4], float m2[][3])	/* no clear */
 	m1[3][2]=0.0F;	
 	m1[3][3]=1.0F;
 
+}
+
+void swap_m3m3(float m1[][3], float m2[][3])
+{
+	float t;
+	int i, j;
+
+	for(i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			t        = m1[i][j];
+			m1[i][j] = m2[i][j];
+			m2[i][j] = t;
+		}
+	}
 }
 
 void swap_m4m4(float m1[][4], float m2[][4])
@@ -228,7 +247,7 @@ void mul_serie_m3(float answ[][3],
 {
 	float temp[3][3];
 	
-	if(m1==0 || m2==0) return;
+	if(m1==NULL || m2==NULL) return;
 	
 	mul_m3_m3m3(answ, m2, m1);
 	if(m3) {
@@ -261,7 +280,7 @@ void mul_serie_m4(float answ[][4], float m1[][4],
 {
 	float temp[4][4];
 	
-	if(m1==0 || m2==0) return;
+	if(m1==NULL || m2==NULL) return;
 	
 	mul_m4_m4m4(answ, m2, m1);
 	if(m3) {
@@ -516,7 +535,7 @@ int invert_m4_m4(float inverse[4][4], float mat[4][4])
 		max = fabs(tempmat[i][i]);
 		maxj = i;
 		for(j = i + 1; j < 4; j++) {
-			if(fabs(tempmat[j][i]) > max) {
+			if(fabsf(tempmat[j][i]) > max) {
 				max = fabs(tempmat[j][i]);
 				maxj = j;
 			}
@@ -741,13 +760,13 @@ void orthogonalize_m4(float mat[][4], int axis)
 
 int is_orthogonal_m3(float mat[][3])
 {
-	if (fabs(dot_v3v3(mat[0], mat[1])) > 1.5 * FLT_EPSILON)
+	if (fabsf(dot_v3v3(mat[0], mat[1])) > 1.5f * FLT_EPSILON)
 		return 0;
 
-	if (fabs(dot_v3v3(mat[1], mat[2])) > 1.5 * FLT_EPSILON)
+	if (fabsf(dot_v3v3(mat[1], mat[2])) > 1.5f * FLT_EPSILON)
 		return 0;
 
-	if (fabs(dot_v3v3(mat[0], mat[2])) > 1.5 * FLT_EPSILON)
+	if (fabsf(dot_v3v3(mat[0], mat[2])) > 1.5f * FLT_EPSILON)
 		return 0;
 	
 	return 1;
@@ -755,13 +774,13 @@ int is_orthogonal_m3(float mat[][3])
 
 int is_orthogonal_m4(float mat[][4])
 {
-	if (fabs(dot_v3v3(mat[0], mat[1])) > 1.5 * FLT_EPSILON)
+	if (fabsf(dot_v3v3(mat[0], mat[1])) > 1.5f * FLT_EPSILON)
 		return 0;
 
-	if (fabs(dot_v3v3(mat[1], mat[2])) > 1.5 * FLT_EPSILON)
+	if (fabsf(dot_v3v3(mat[1], mat[2])) > 1.5f * FLT_EPSILON)
 		return 0;
 
-	if (fabs(dot_v3v3(mat[0], mat[2])) > 1.5 * FLT_EPSILON)
+	if (fabsf(dot_v3v3(mat[0], mat[2])) > 1.5f * FLT_EPSILON)
 		return 0;
 	
 	return 1;
@@ -787,11 +806,11 @@ void normalize_m4(float mat[][4])
 	float len;
 	
 	len= normalize_v3(mat[0]);
-	if(len!=0.0) mat[0][3]/= len;
+	if(len!=0.0f) mat[0][3]/= len;
 	len= normalize_v3(mat[1]);
-	if(len!=0.0) mat[1][3]/= len;
+	if(len!=0.0f) mat[1][3]/= len;
 	len= normalize_v3(mat[2]);
-	if(len!=0.0) mat[2][3]/= len;
+	if(len!=0.0f) mat[2][3]/= len;
 }
 
 void normalize_m4_m4(float rmat[][4], float mat[][4])
@@ -799,11 +818,11 @@ void normalize_m4_m4(float rmat[][4], float mat[][4])
 	float len;
 	
 	len= normalize_v3_v3(rmat[0], mat[0]);
-	if(len!=0.0) rmat[0][3]= mat[0][3] / len;
+	if(len!=0.0f) rmat[0][3]= mat[0][3] / len;
 	len= normalize_v3_v3(rmat[1], mat[1]);
-	if(len!=0.0) rmat[1][3]= mat[1][3] / len;
+	if(len!=0.0f) rmat[1][3]= mat[1][3] / len;
 	len= normalize_v3_v3(rmat[2], mat[2]);
-	if(len!=0.0) rmat[2][3]= mat[2][3] / len;;
+	if(len!=0.0f) rmat[2][3]= mat[2][3] / len;;
 }
 
 void adjoint_m3_m3(float m1[][3], float m[][3])
@@ -1224,7 +1243,7 @@ void loc_axisangle_size_to_mat4(float mat[4][4], const float loc[3], const float
 
 /*********************************** Other ***********************************/
 
-void print_m3(char *str, float m[][3])
+void print_m3(const char *str, float m[][3])
 {
 	printf("%s\n", str);
 	printf("%f %f %f\n",m[0][0],m[1][0],m[2][0]);
@@ -1233,7 +1252,7 @@ void print_m3(char *str, float m[][3])
 	printf("\n");
 }
 
-void print_m4(char *str, float m[][4])
+void print_m4(const char *str, float m[][4])
 {
 	printf("%s\n", str);
 	printf("%f %f %f %f\n",m[0][0],m[1][0],m[2][0],m[3][0]);
@@ -1457,7 +1476,6 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
 	eps = powf(2.0f,-52.0f);
 	while (p > 0) {
 		int kase=0;
-		k=0;
 
 		// Test for maximum iterations to avoid infinite loop
 		if(maxiter == 0)
@@ -1695,5 +1713,5 @@ void pseudoinverse_m4_m4(float Ainv[4][4], float A[4][4], float epsilon)
 
 	transpose_m4(V);
 
-	mul_serie_m4(Ainv, U, Wm, V, 0, 0, 0, 0, 0);
+	mul_serie_m4(Ainv, U, Wm, V, NULL, NULL, NULL, NULL, NULL);
 }

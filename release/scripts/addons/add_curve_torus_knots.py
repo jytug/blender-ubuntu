@@ -17,19 +17,19 @@
 # ##### END GPL LICENSE BLOCK #####
 
 
-bl_addon_info = {
+bl_info = {
     "name": "Torus Knots",
     "author": "testscreenings",
     "version": (0,1),
-    "blender": (2, 5, 5),
-    "api": 33754,
+    "blender": (2, 5, 7),
+    "api": 35853,
     "location": "View3D > Add > Curve",
     "description": "Adds many types of (torus) knots",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Curve/Torus_Knot",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=22403&group_id=153&atid=469",
+        "func=detail&aid=22403",
     "category": "Add Curve"}
     
     
@@ -234,9 +234,13 @@ def torus_knot_plus_button(self, context):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_curve_add.append(torus_knot_plus_button)
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_curve_add.remove(torus_knot_plus_button)
 
 if __name__ == "__main__":

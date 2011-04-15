@@ -1,5 +1,5 @@
-/**
- * $Id: space_action.c 33821 2010-12-20 19:09:22Z ton $
+/*
+ * $Id: space_action.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_action/space_action.c
+ *  \ingroup spaction
+ */
+
+
 #include <string.h>
 #include <stdio.h>
 
@@ -37,6 +42,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
@@ -51,6 +57,7 @@
 #include "UI_resources.h"
 #include "UI_view2d.h"
 
+#include "ED_space_api.h"
 #include "ED_anim_api.h"
 #include "ED_markers.h"
 
@@ -190,7 +197,9 @@ static void action_main_area_draw(const bContext *C, ARegion *ar)
 	
 	/* markers */
 	UI_view2d_view_orthoSpecial(ar, v2d, 1);
-	draw_markers_time(C, 0);
+	
+	flag = (ac.markers && (ac.markers != &ac.scene->markers))? DRAW_MARKERS_LOCAL : 0;
+	draw_markers_time(C, flag);
 	
 	/* preview range */
 	UI_view2d_view_ortho(v2d);
@@ -348,6 +357,13 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 	
 	/* context changes */
 	switch (wmn->category) {
+		case NC_SCREEN:
+			if (wmn->data == ND_GPENCIL) {
+				/* only handle this event in GPencil mode for performance considerations */
+				if (saction->mode == SACTCONT_GPENCIL)	
+					ED_area_tag_redraw(sa);
+			}
+			break;
 		case NC_ANIMATION:
 			/* for selection changes of animation data, we can just redraw... otherwise autocolor might need to be done again */
 			if (ELEM(wmn->data, ND_KEYFRAME, ND_ANIMCHAN) && (wmn->action == NA_SELECTED))
@@ -456,7 +472,7 @@ void ED_spacetype_action(void)
 	art->init= action_main_area_init;
 	art->draw= action_main_area_draw;
 	art->listener= action_main_area_listener;
-	art->keymapflag= ED_KEYMAP_VIEW2D/*|ED_KEYMAP_MARKERS*/|ED_KEYMAP_ANIMATION|ED_KEYMAP_FRAMES;
+	art->keymapflag= ED_KEYMAP_VIEW2D|ED_KEYMAP_MARKERS|ED_KEYMAP_ANIMATION|ED_KEYMAP_FRAMES;
 
 	BLI_addhead(&st->regiontypes, art);
 	

@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_meshdeform.c 33435 2010-12-03 01:52:28Z campbellbarton $
+* $Id: MOD_meshdeform.c 35817 2011-03-27 13:49:53Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,12 +30,18 @@
 *
 */
 
+/** \file blender/modifiers/intern/MOD_meshdeform.c
+ *  \ingroup modifiers
+ */
+
+
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
-#include "BKE_utildefines.h"
+
 #include "BKE_cdderivedmesh.h"
 #include "BKE_global.h"
 #include "BKE_mesh.h"
@@ -371,7 +377,7 @@ static void deformVertsEM(ModifierData *md, Object *ob,
 		dm->release(dm);
 }
 
-#define MESHDEFORM_MIN_INFLUENCE 0.00001
+#define MESHDEFORM_MIN_INFLUENCE 0.00001f
 
 void modifier_mdef_compact_influences(ModifierData *md)
 {
@@ -444,17 +450,18 @@ ModifierTypeInfo modifierType_MeshDeform = {
 
 	/* copyData */          copyData,
 	/* deformVerts */       deformVerts,
+	/* deformMatrices */    NULL,
 	/* deformVertsEM */     deformVertsEM,
-	/* deformMatricesEM */  0,
-	/* applyModifier */     0,
-	/* applyModifierEM */   0,
+	/* deformMatricesEM */  NULL,
+	/* applyModifier */     NULL,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
 	/* freeData */          freeData,
 	/* isDisabled */        isDisabled,
 	/* updateDepgraph */    updateDepgraph,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
-	/* foreachIDLink */     0,
+	/* foreachIDLink */     NULL,
 };

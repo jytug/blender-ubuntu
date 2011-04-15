@@ -1,5 +1,5 @@
-/**
- * $Id: BL_ShapeDeformer.cpp 34020 2011-01-03 04:59:57Z campbellbarton $
+/*
+ * $Id: BL_ShapeDeformer.cpp 35167 2011-02-25 13:30:41Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file gameengine/Converter/BL_ShapeDeformer.cpp
+ *  \ingroup bgeconv
+ */
+
 
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786)
@@ -55,7 +60,7 @@
 extern "C"{
 	#include "BKE_lattice.h"
 }
- #include "BKE_utildefines.h"
+ 
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"

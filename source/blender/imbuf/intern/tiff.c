@@ -1,7 +1,7 @@
 /*
  * tiff.c
  *
- * $Id: tiff.c 33167 2010-11-19 02:14:18Z campbellbarton $
+ * $Id: tiff.c 35823 2011-03-27 17:12:59Z campbellbarton $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/imbuf/intern/tiff.c
+ *  \ingroup imbuf
+ */
+
+
 /**
  * Provides TIFF file loading and saving for Blender, via libtiff.
  *
@@ -45,12 +50,13 @@
 #include <string.h>
 
 #include "imbuf.h"
- 
-#include "BKE_global.h"
-#include "BKE_utildefines.h"
 
 #include "BLI_math.h"
 #include "BLI_string.h"
+#include "BLI_utildefines.h"
+ 
+#include "BKE_global.h"
+
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
@@ -330,7 +336,7 @@ static void scanline_contig_32bit(float *rectf, float *fbuf, int scanline_w, int
 		rectf[i*4 + 0] = fbuf[i*spp + 0];
 		rectf[i*4 + 1] = fbuf[i*spp + 1];
 		rectf[i*4 + 2] = fbuf[i*spp + 2];
-		rectf[i*4 + 3] = (spp==4)?fbuf[i*spp + 3]:1.0;
+		rectf[i*4 + 3] = (spp==4)?fbuf[i*spp + 3]:1.0f;
 	}
 }
 
@@ -434,9 +440,11 @@ static int imb_read_tiff_pixels(ImBuf *ibuf, TIFF *image, int premul)
 
 	if(success) {
 		ibuf->profile = (bitspersample==32)?IB_PROFILE_LINEAR_RGB:IB_PROFILE_SRGB;
-			
-		if(ENDIAN_ORDER == B_ENDIAN)
-			IMB_convert_rgba_to_abgr(tmpibuf);
+
+//		Code seems to be not needed for 16 bits tif, on PPC G5 OSX (ton)
+		if(bitspersample < 16)
+			if(ENDIAN_ORDER == B_ENDIAN)
+				IMB_convert_rgba_to_abgr(tmpibuf);
 		if(premul) {
 			IMB_premultiply_alpha(tmpibuf);
 			ibuf->flags |= IB_premul;
@@ -759,7 +767,7 @@ int imb_savetiff(ImBuf *ibuf, const char *name, int flags)
 				
 				if (samplesperpixel == 4) {
 					to16[to_i+3] = FTOUSHORT(fromf[from_i+3]);
-					to_i++; from_i++;
+					/*to_i++; from_i++;*/ /*unused, set on each loop */
 				}
 			}
 			else {

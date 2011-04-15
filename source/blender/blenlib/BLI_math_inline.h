@@ -1,5 +1,5 @@
-/**
- * $Id: BLI_math_inline.h 29623 2010-06-22 15:20:06Z blendix $
+/*
+ * $Id: BLI_math_inline.h 34966 2011-02-18 13:58:08Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,14 +28,18 @@
 #ifndef BLI_MATH_INLINE_H
 #define BLI_MATH_INLINE_H
 
+/** \file BLI_math_inline.h
+ *  \ingroup bli
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* add platform/compiler checks here if it is not supported */
-#define BLI_MATH_INLINE
+#define BLI_MATH_INLINE_H
 
-#ifdef BLI_MATH_INLINE
+#ifdef BLI_MATH_INLINE_H
 #ifdef _MSC_VER
 #define MINLINE static __forceinline
 #define MALWAYS_INLINE MINLINE

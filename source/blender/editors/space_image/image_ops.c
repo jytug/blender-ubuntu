@@ -1,5 +1,5 @@
-/**
- * $Id: image_ops.c 33868 2010-12-23 02:43:40Z campbellbarton $
+/*
+ * $Id: image_ops.c 35962 2011-04-02 15:30:58Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,12 +25,21 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_image/image_ops.c
+ *  \ingroup spimage
+ */
+
+
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 
 #include "MEM_guardedalloc.h"
+
+#include "BLI_math.h"
+#include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_object_types.h"
 #include "DNA_node_types.h"
@@ -48,9 +57,6 @@
 #include "BKE_report.h"
 #include "BKE_screen.h"
 
-#include "BLI_math.h"
-#include "BLI_blenlib.h"
-
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
@@ -61,9 +67,11 @@
 #include "RNA_enum_types.h"
 
 #include "ED_image.h"
+#include "ED_render.h"
 #include "ED_screen.h"
 #include "ED_space_api.h"
 #include "ED_uvedit.h"
+#include "ED_util.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
@@ -168,6 +176,7 @@ int space_image_main_area_poll(bContext *C)
 typedef struct ViewPanData {
 	float x, y;
 	float xof, yof;
+	int event_type;
 } ViewPanData;
 
 static void view_pan_init(bContext *C, wmOperator *op, wmEvent *event)
@@ -182,6 +191,7 @@ static void view_pan_init(bContext *C, wmOperator *op, wmEvent *event)
 	vpd->y= event->y;
 	vpd->xof= sima->xof;
 	vpd->yof= sima->yof;
+	vpd->event_type= event->type;
 
 	WM_event_add_modal_handler(C, op);
 }
@@ -258,9 +268,8 @@ static int view_pan_modal(bContext *C, wmOperator *op, wmEvent *event)
 			RNA_float_set_array(op->ptr, "offset", offset);
 			view_pan_exec(C, op);
 			break;
-		case MIDDLEMOUSE:
-		case LEFTMOUSE:
-			if(event->val==KM_RELEASE) {
+		default:
+			if(event->type==vpd->event_type &&  event->val==KM_RELEASE) {
 				view_pan_exit(C, op, 0);
 				return OPERATOR_FINISHED;
 			}
@@ -302,6 +311,7 @@ void IMAGE_OT_view_pan(wmOperatorType *ot)
 typedef struct ViewZoomData {
 	float x, y;
 	float zoom;
+	int event_type;
 } ViewZoomData;
 
 static void view_zoom_init(bContext *C, wmOperator *op, wmEvent *event)
@@ -315,7 +325,8 @@ static void view_zoom_init(bContext *C, wmOperator *op, wmEvent *event)
 	vpd->x= event->x;
 	vpd->y= event->y;
 	vpd->zoom= sima->zoom;
-
+	vpd->event_type= event->type;
+	
 	WM_event_add_modal_handler(C, op);
 }
 
@@ -361,7 +372,7 @@ static int view_zoom_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		ARegion *ar= CTX_wm_region(C);
 		float factor;
 		
-		factor= 1.0 + (event->x-event->prevx+event->y-event->prevy)/300.0f;
+		factor= 1.0f + (event->x-event->prevx+event->y-event->prevy)/300.0f;
 		RNA_float_set(op->ptr, "factor", factor);
 		sima_zoom_set(sima, ar, sima->zoom*factor);
 		ED_region_tag_redraw(CTX_wm_region(C));
@@ -383,14 +394,13 @@ static int view_zoom_modal(bContext *C, wmOperator *op, wmEvent *event)
 
 	switch(event->type) {
 		case MOUSEMOVE:
-			factor= 1.0 + (vpd->x-event->x+vpd->y-event->y)/300.0f;
+			factor= 1.0f + (vpd->x-event->x+vpd->y-event->y)/300.0f;
 			RNA_float_set(op->ptr, "factor", factor);
 			sima_zoom_set(sima, ar, vpd->zoom*factor);
 			ED_region_tag_redraw(CTX_wm_region(C));
 			break;
-		case MIDDLEMOUSE:
-		case LEFTMOUSE:
-			if(event->val==KM_RELEASE) {
+		default:
+			if(event->type==vpd->event_type && event->val==KM_RELEASE) {
 				view_zoom_exit(C, op, 0);
 				return OPERATOR_FINISHED;
 			}
@@ -437,16 +447,12 @@ static int view_all_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	SpaceImage *sima;
 	ARegion *ar;
-	Scene *scene;
-	Object *obedit;
 	float aspx, aspy, zoomx, zoomy, w, h;
 	int width, height;
 
 	/* retrieve state */
 	sima= CTX_wm_space_image(C);
 	ar= CTX_wm_region(C);
-	scene= (Scene*)CTX_data_scene(C);
-	obedit= CTX_data_edit_object(C);
 
 	ED_space_image_size(sima, &width, &height);
 	ED_space_image_aspect(sima, &aspx, &aspy);
@@ -516,10 +522,10 @@ static int view_selected_exec(bContext *C, wmOperator *UNUSED(op))
 
 	d[0]= max[0] - min[0];
 	d[1]= max[1] - min[1];
-	size= 0.5*MAX2(d[0], d[1])*MAX2(width, height)/256.0f;
+	size= 0.5f*MAX2(d[0], d[1])*MAX2(width, height)/256.0f;
 	
-	if(size<=0.01) size= 0.01;
-	sima_zoom_set(sima, ar, 0.7/size);
+	if(size<=0.01f) size= 0.01f;
+	sima_zoom_set(sima, ar, 0.7f/size);
 
 	ED_region_tag_redraw(CTX_wm_region(C));
 	
@@ -744,6 +750,9 @@ static int open_exec(bContext *C, wmOperator *op)
 		iuser->fie_ima= 2;
 	}
 
+	/* XXX unpackImage frees image buffers */
+	ED_preview_kill_jobs(C);
+	
 	BKE_image_signal(ima, iuser, IMA_SIGNAL_RELOAD);
 	WM_event_add_notifier(C, NC_IMAGE|NA_EDITED, ima);
 	
@@ -789,7 +798,7 @@ static int open_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 void IMAGE_OT_open(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Open";
+	ot->name= "Open Image";
 	ot->idname= "IMAGE_OT_open";
 	
 	/* api callbacks */
@@ -817,6 +826,9 @@ static int replace_exec(bContext *C, wmOperator *op)
 	RNA_string_get(op->ptr, "filepath", str);
 	BLI_strncpy(sima->image->name, str, sizeof(sima->image->name)); /* we cant do much if the str is longer then 240 :/ */
 
+	/* XXX unpackImage frees image buffers */
+	ED_preview_kill_jobs(C);
+	
 	BKE_image_signal(sima->image, &sima->iuser, IMA_SIGNAL_RELOAD);
 	WM_event_add_notifier(C, NC_IMAGE|NA_EDITED, sima->image);
 
@@ -844,7 +856,7 @@ static int replace_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 void IMAGE_OT_replace(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Replace";
+	ot->name= "Replace Image";
 	ot->idname= "IMAGE_OT_replace";
 	
 	/* api callbacks */
@@ -876,6 +888,8 @@ static void save_image_doit(bContext *C, SpaceImage *sima, Scene *scene, wmOpera
 		short ok= FALSE;
 
 		BLI_path_abs(path, bmain->name);
+		/* old global to ensure a 2nd save goes to same dir */
+		BLI_strncpy(G.ima, path, sizeof(G.ima));
 
 		WM_cursor_wait(1);
 
@@ -1062,7 +1076,7 @@ static int save_as_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 void IMAGE_OT_save_as(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Save As";
+	ot->name= "Save As Image";
 	ot->idname= "IMAGE_OT_save_as";
 	
 	/* api callbacks */
@@ -1133,7 +1147,7 @@ static int save_exec(bContext *C, wmOperator *op)
 void IMAGE_OT_save(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Save";
+	ot->name= "Save Image";
 	ot->idname= "IMAGE_OT_save";
 	
 	/* api callbacks */
@@ -1231,6 +1245,9 @@ static int reload_exec(bContext *C, wmOperator *UNUSED(op))
 	if(!ima)
 		return OPERATOR_CANCELLED;
 
+	/* XXX unpackImage frees image buffers */
+	ED_preview_kill_jobs(C);
+	
 	// XXX other users?
 	BKE_image_signal(ima, (sima)? &sima->iuser: NULL, IMA_SIGNAL_RELOAD);
 
@@ -1242,7 +1259,7 @@ static int reload_exec(bContext *C, wmOperator *UNUSED(op))
 void IMAGE_OT_reload(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Reload";
+	ot->name= "Reload Image";
 	ot->idname= "IMAGE_OT_reload";
 	
 	/* api callbacks */
@@ -1324,7 +1341,7 @@ void IMAGE_OT_new(wmOperatorType *ot)
 	static float default_color[4]= {0.0f, 0.0f, 0.0f, 1.0f};
 	
 	/* identifiers */
-	ot->name= "New";
+	ot->name= "New Image";
 	ot->idname= "IMAGE_OT_new";
 	
 	/* api callbacks */
@@ -1332,7 +1349,7 @@ void IMAGE_OT_new(wmOperatorType *ot)
 	ot->invoke= image_new_invoke;
 	
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag= OPTYPE_UNDO;
 
 	/* properties */
 	RNA_def_string(ot->srna, "name", "untitled", 21, "Name", "Image datablock name.");
@@ -1343,6 +1360,88 @@ void IMAGE_OT_new(wmOperatorType *ot)
 	RNA_def_boolean(ot->srna, "alpha", 1, "Alpha", "Create an image with an alpha channel.");
 	RNA_def_boolean(ot->srna, "uv_test_grid", 0, "UV Test Grid", "Fill the image with a grid for UV map testing.");
 	RNA_def_boolean(ot->srna, "float", 0, "32 bit Float", "Create image with 32 bit floating point bit depth.");
+}
+
+/********************* invert operators *********************/
+
+static int image_invert_poll(bContext *C)
+{
+	Image *ima= CTX_data_edit_image(C);
+	ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
+	
+	if( ibuf != NULL )
+		return 1;
+	return 0;
+}
+
+static int image_invert_exec(bContext *C, wmOperator *op)
+{
+	Image *ima= CTX_data_edit_image(C);
+	ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
+
+	// flags indicate if this channel should be inverted
+	const short r= RNA_boolean_get(op->ptr, "invert_r");
+	const short g= RNA_boolean_get(op->ptr, "invert_g");
+	const short b= RNA_boolean_get(op->ptr, "invert_b");
+	const short a= RNA_boolean_get(op->ptr, "invert_a");
+
+	int i;
+
+	if( ibuf == NULL) // TODO: this should actually never happen, but does for render-results -> cleanup
+		return OPERATOR_CANCELLED;
+
+	/* TODO: make this into an IMB_invert_channels(ibuf,r,g,b,a) method!? */
+	if (ibuf->rect_float) {
+		
+		float *fp = (float *) ibuf->rect_float;
+		for( i = ibuf->x * ibuf->y; i > 0; i--, fp+=4 ) {
+			if( r ) fp[0] = 1.0f - fp[0];
+			if( g ) fp[1] = 1.0f - fp[1];
+			if( b ) fp[2] = 1.0f - fp[2];
+			if( a ) fp[3] = 1.0f - fp[3];
+		}
+
+		if(ibuf->rect) {
+			IMB_rect_from_float(ibuf);
+		}
+	}
+	else if(ibuf->rect) {
+		
+		char *cp = (char *) ibuf->rect;
+		for( i = ibuf->x * ibuf->y; i > 0; i--, cp+=4 ) {
+			if( r ) cp[0] = 255 - cp[0];
+			if( g ) cp[1] = 255 - cp[1];
+			if( b ) cp[2] = 255 - cp[2];
+			if( a ) cp[3] = 255 - cp[3];
+		}
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
+
+	ibuf->userflags |= IB_BITMAPDIRTY;
+	WM_event_add_notifier(C, NC_IMAGE|NA_EDITED, ima);
+	return OPERATOR_FINISHED;
+}
+
+void IMAGE_OT_invert(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "Invert Channels";
+	ot->idname= "IMAGE_OT_invert";
+	
+	/* api callbacks */
+	ot->exec= image_invert_exec;
+	ot->poll= image_invert_poll;
+	
+	/* properties */
+	RNA_def_boolean(ot->srna, "invert_r", 0, "Red", "Invert Red Channel");
+	RNA_def_boolean(ot->srna, "invert_g", 0, "Green", "Invert Green Channel");
+	RNA_def_boolean(ot->srna, "invert_b", 0, "Blue", "Invert Blue Channel");
+	RNA_def_boolean(ot->srna, "invert_a", 0, "Alpha", "Invert Alpha Channel");
+	
+	/* flags */
+	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
 /********************* pack operator *********************/
@@ -1403,7 +1502,7 @@ static int pack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 	if(!as_png && (ibuf && (ibuf->userflags & IB_BITMAPDIRTY))) {
 		pup= uiPupMenuBegin(C, "OK", ICON_QUESTION);
 		layout= uiPupMenuLayout(pup);
-		uiItemBooleanO(layout, "Can't pack edited image from disk. Pack as internal PNG?", ICON_NULL, op->idname, "as_png", 1);
+		uiItemBooleanO(layout, "Can't pack edited image from disk. Pack as internal PNG?", ICON_NONE, op->idname, "as_png", 1);
 		uiPupMenuEnd(C, pup);
 
 		return OPERATOR_CANCELLED;
@@ -1415,7 +1514,7 @@ static int pack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 void IMAGE_OT_pack(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Pack";
+	ot->name= "Pack Image";
 	ot->description= "Pack an image as embedded data into the .blend file"; 
 	ot->idname= "IMAGE_OT_pack";
 	
@@ -1432,101 +1531,15 @@ void IMAGE_OT_pack(wmOperatorType *ot)
 
 /********************* unpack operator *********************/
 
-static void unpack_menu(bContext *C, const char *opname, Image *ima, const char *folder, PackedFile *pf)
-{
-	PointerRNA props_ptr;
-	uiPopupMenu *pup;
-	uiLayout *layout;
-	char line[FILE_MAXDIR + FILE_MAXFILE + 100];
-	char local_name[FILE_MAXDIR + FILE_MAX], fi[FILE_MAX];
-	char *abs_name = ima->name;
-	
-	strcpy(local_name, abs_name);
-	BLI_splitdirstring(local_name, fi);
-	sprintf(local_name, "//%s/%s", folder, fi);
-
-	pup= uiPupMenuBegin(C, "Unpack file", ICON_NULL);
-	layout= uiPupMenuLayout(pup);
-
-	uiItemEnumO(layout, opname, "Remove Pack", 0, "method", PF_REMOVE);
-
-	if(strcmp(abs_name, local_name)) {
-		switch(checkPackedFile(local_name, pf)) {
-			case PF_NOFILE:
-				sprintf(line, "Create %s", local_name);
-				props_ptr= uiItemFullO(layout, opname, line, ICON_NULL, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
-				RNA_enum_set(&props_ptr, "method", PF_WRITE_LOCAL);
-				RNA_string_set(&props_ptr, "image", ima->id.name+2);
-	
-				break;
-			case PF_EQUAL:
-				sprintf(line, "Use %s (identical)", local_name);
-				//uiItemEnumO(layout, opname, line, 0, "method", PF_USE_LOCAL);
-				props_ptr= uiItemFullO(layout, opname, line, ICON_NULL, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
-				RNA_enum_set(&props_ptr, "method", PF_USE_LOCAL);
-				RNA_string_set(&props_ptr, "image", ima->id.name+2);
-				
-				break;
-			case PF_DIFFERS:
-				sprintf(line, "Use %s (differs)", local_name);
-				//uiItemEnumO(layout, opname, line, 0, "method", PF_USE_LOCAL);
-				props_ptr= uiItemFullO(layout, opname, line, ICON_NULL, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
-				RNA_enum_set(&props_ptr, "method", PF_USE_LOCAL);
-				RNA_string_set(&props_ptr, "image", ima->id.name);
-				
-				sprintf(line, "Overwrite %s", local_name);
-				//uiItemEnumO(layout, opname, line, 0, "method", PF_WRITE_LOCAL);
-				props_ptr= uiItemFullO(layout, opname, line, ICON_NULL, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
-				RNA_enum_set(&props_ptr, "method", PF_WRITE_LOCAL);
-				RNA_string_set(&props_ptr, "image", ima->id.name+2);
-				
-				
-				break;
-		}
-	}
-	
-	switch(checkPackedFile(abs_name, pf)) {
-		case PF_NOFILE:
-			sprintf(line, "Create %s", abs_name);
-			//uiItemEnumO(layout, opname, line, 0, "method", PF_WRITE_ORIGINAL);
-			props_ptr= uiItemFullO(layout, opname, line, ICON_NULL, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
-			RNA_enum_set(&props_ptr, "method", PF_WRITE_ORIGINAL);
-			RNA_string_set(&props_ptr, "image", ima->id.name+2);
-			break;
-		case PF_EQUAL:
-			sprintf(line, "Use %s (identical)", abs_name);
-			//uiItemEnumO(layout, opname, line, 0, "method", PF_USE_ORIGINAL);
-			props_ptr= uiItemFullO(layout, opname, line, ICON_NULL, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
-			RNA_enum_set(&props_ptr, "method", PF_USE_ORIGINAL);
-			RNA_string_set(&props_ptr, "image", ima->id.name+2);
-			break;
-		case PF_DIFFERS:
-			sprintf(line, "Use %s (differs)", local_name);
-			//uiItemEnumO(layout, opname, line, 0, "method", PF_USE_ORIGINAL);
-			props_ptr= uiItemFullO(layout, opname, line, ICON_NULL, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
-			RNA_enum_set(&props_ptr, "method", PF_USE_ORIGINAL);
-			RNA_string_set(&props_ptr, "image", ima->id.name+2);
-			
-			sprintf(line, "Overwrite %s", local_name);
-			//uiItemEnumO(layout, opname, line, 0, "method", PF_WRITE_ORIGINAL);
-			props_ptr= uiItemFullO(layout, opname, line, ICON_NULL, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
-			RNA_enum_set(&props_ptr, "method", PF_WRITE_ORIGINAL);
-			RNA_string_set(&props_ptr, "image", ima->id.name+2);
-			break;
-	}
-
-	uiPupMenuEnd(C, pup);
-}
-
-static int unpack_exec(bContext *C, wmOperator *op)
+static int image_unpack_exec(bContext *C, wmOperator *op)
 {
 	Image *ima= CTX_data_edit_image(C);
 	int method= RNA_enum_get(op->ptr, "method");
 
 	/* find the suppplied image by name */
-	if (RNA_property_is_set(op->ptr, "image")) {
+	if (RNA_property_is_set(op->ptr, "id")) {
 		char imaname[22];
-		RNA_string_get(op->ptr, "image", imaname);
+		RNA_string_get(op->ptr, "id", imaname);
 		ima = BLI_findstring(&CTX_data_main(C)->image, imaname, offsetof(ID, name) + 2);
 		if (!ima) ima = CTX_data_edit_image(C);
 	}
@@ -1541,7 +1554,10 @@ static int unpack_exec(bContext *C, wmOperator *op)
 
 	if(G.fileflags & G_AUTOPACK)
 		BKE_report(op->reports, RPT_WARNING, "AutoPack is enabled, so image will be packed again on file save.");
-		
+	
+	/* XXX unpackImage frees image buffers */
+	ED_preview_kill_jobs(C);
+	
 	unpackImage(op->reports, ima, method);
 	
 	WM_event_add_notifier(C, NC_IMAGE|NA_EDITED, ima);
@@ -1549,12 +1565,12 @@ static int unpack_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int unpack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int image_unpack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 {
 	Image *ima= CTX_data_edit_image(C);
 
-	if(RNA_property_is_set(op->ptr, "image"))
-		return unpack_exec(C, op);
+	if(RNA_property_is_set(op->ptr, "id"))
+		return image_unpack_exec(C, op);
 		
 	if(!ima || !ima->packedfile)
 		return OPERATOR_CANCELLED;
@@ -1566,8 +1582,8 @@ static int unpack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 
 	if(G.fileflags & G_AUTOPACK)
 		BKE_report(op->reports, RPT_WARNING, "AutoPack is enabled, so image will be packed again on file save.");
-	
-	unpack_menu(C, "IMAGE_OT_unpack", ima, "textures", ima->packedfile);
+
+	unpack_menu(C, "IMAGE_OT_unpack", ima->id.name+2, ima->name, "textures", ima->packedfile);
 
 	return OPERATOR_FINISHED;
 }
@@ -1575,20 +1591,20 @@ static int unpack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 void IMAGE_OT_unpack(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Unpack";
+	ot->name= "Unpack Image";
 	ot->description= "Save an image packed in the .blend file to disk"; 
 	ot->idname= "IMAGE_OT_unpack";
 	
 	/* api callbacks */
-	ot->exec= unpack_exec;
-	ot->invoke= unpack_invoke;
+	ot->exec= image_unpack_exec;
+	ot->invoke= image_unpack_invoke;
 
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-
+	
 	/* properties */
 	RNA_def_enum(ot->srna, "method", unpack_method_items, PF_USE_LOCAL, "Method", "How to unpack.");
-	RNA_def_string(ot->srna, "image", "", 21, "Image Name", "Image datablock name to unpack.");
+	RNA_def_string(ot->srna, "id", "", 21, "Image Name", "Image datablock name to unpack."); /* XXX, weark!, will fail with library, name collisions */
 }
 
 /******************** sample image operator ********************/
@@ -1615,9 +1631,9 @@ typedef struct ImageSampleInfo {
 static void sample_draw(const bContext *UNUSED(C), ARegion *ar, void *arg_info)
 {
 	ImageSampleInfo *info= arg_info;
-
-	draw_image_info(ar, info->channels, info->x, info->y, info->colp,
-		info->colfp, info->zp, info->zfp);
+	if(info->draw) {
+		draw_image_info(ar, info->channels, info->x, info->y, info->colp, info->colfp, info->zp, info->zfp);
+	}
 }
 
 static void sample_apply(bContext *C, wmOperator *op, wmEvent *event)
@@ -1639,7 +1655,7 @@ static void sample_apply(bContext *C, wmOperator *op, wmEvent *event)
 	my= event->y - ar->winrct.ymin;
 	UI_view2d_region_to_view(&ar->v2d, mx, my, &fx, &fy);
 
-	if(fx>=0.0 && fy>=0.0 && fx<1.0 && fy<1.0) {
+	if(fx>=0.0f && fy>=0.0f && fx<1.0f && fy<1.0f) {
 		float *fp;
 		char *cp;
 		int x= (int)(fx*ibuf->x), y= (int)(fy*ibuf->y);
@@ -1787,7 +1803,7 @@ static int sample_cancel(bContext *C, wmOperator *op)
 void IMAGE_OT_sample(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Sample";
+	ot->name= "Sample Color";
 	ot->idname= "IMAGE_OT_sample";
 	
 	/* api callbacks */
@@ -1944,7 +1960,7 @@ typedef struct RecordCompositeData {
 	int sfra, efra;
 } RecordCompositeData;
 
-int record_composite_apply(bContext *C, wmOperator *op)
+static int record_composite_apply(bContext *C, wmOperator *op)
 {
 	SpaceImage *sima= CTX_wm_space_image(C);
 	RecordCompositeData *rcd= op->customdata;
@@ -2029,7 +2045,7 @@ static int record_composite_exec(bContext *C, wmOperator *op)
 
 static int record_composite_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 {
-	RecordCompositeData *rcd= op->customdata;
+	RecordCompositeData *rcd;
 	
 	if(!record_composite_init(C, op))
 		return OPERATOR_CANCELLED;
@@ -2119,6 +2135,10 @@ static int cycle_render_slot_exec(bContext *C, wmOperator *op)
 	
 	WM_event_add_notifier(C, NC_IMAGE|ND_DRAW, NULL);
 
+	/* no undo push for browsing existing */
+	if(ima->renders[ima->render_slot] || ima->render_slot==ima->last_render_slot)
+		return OPERATOR_CANCELLED;
+	
 	return OPERATOR_FINISHED;
 }
 

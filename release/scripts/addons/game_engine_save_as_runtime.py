@@ -16,19 +16,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     'name': 'Save As Runtime',
     'author': 'Mitchell Stokes (Moguri)',
     'version': (0, 3, 0),
-    'blender': (2, 5, 6),
-    'api': 34057,
+    "blender": (2, 5, 7),
+    "api": 35622,
     'location': 'File > Export',
     'description': 'Bundle a .blend file with the Blenderplayer',
     'warning': '',
     'wiki_url': 'http://wiki.blender.org/index.php/Extensions:2.5/Py/'\
         'Scripts/Game_Engine/Save_As_Runtime',
     'tracker_url': 'https://projects.blender.org/tracker/index.php?'\
-        'func=detail&aid=23564&group_id=153&atid=469',
+        'func=detail&aid=23564',
     'category': 'Game Engine'}
 
 import bpy
@@ -53,7 +53,7 @@ def WriteAppleRuntime(player_path, output_path, copy_python, overwrite_lib):
     if copy_python:
         print("Copying Python files...", end=" ")
         src = os.path.join(blender_dir, bpy.app.version_string.split()[0], "python", "lib")
-        dst = os.path.join(output_path, "Contents", "MacOS", "lib")
+        dst = os.path.join(output_path, "..")
         
         if os.path.exists(dst):
             if overwrite_lib:
@@ -207,10 +207,14 @@ def menu_func(self, context):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_export.append(menu_func)
 
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_export.remove(menu_func)
 
 

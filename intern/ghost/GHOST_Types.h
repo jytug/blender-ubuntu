@@ -1,5 +1,5 @@
-/**
- * $Id: GHOST_Types.h 33536 2010-12-07 11:57:34Z campbellbarton $
+/*
+ * $Id: GHOST_Types.h 35152 2011-02-25 11:28:33Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,12 +26,19 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file ghost/GHOST_Types.h
+ *  \ingroup GHOST
+ */
+
+
 #ifndef _GHOST_TYPES_H_
 #define _GHOST_TYPES_H_
 
 #ifdef WITH_CXX_GUARDEDALLOC
 #include "MEM_guardedalloc.h"
 #endif
+
+#define GHOST_DECLARE_HANDLE(name) typedef struct name##__ { int unused; } *name
 
 typedef	char				GHOST_TInt8;
 typedef	unsigned char		GHOST_TUns8;
@@ -351,7 +358,13 @@ typedef enum {
 	GHOST_kKeyF21,
 	GHOST_kKeyF22,
 	GHOST_kKeyF23,
-	GHOST_kKeyF24
+	GHOST_kKeyF24,
+	
+	// Multimedia keypad buttons
+	GHOST_kKeyMediaPlay,
+	GHOST_kKeyMediaStop,
+	GHOST_kKeyMediaFirst,
+	GHOST_kKeyMediaLast
 } GHOST_TKey;
 
 typedef enum {

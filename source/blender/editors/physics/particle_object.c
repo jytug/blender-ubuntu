@@ -1,5 +1,5 @@
-/**
- * $Id: particle_object.c 33490 2010-12-05 18:59:23Z blendix $
+/*
+ * $Id: particle_object.c 35362 2011-03-05 10:29:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/physics/particle_object.c
+ *  \ingroup edphys
+ */
+
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -36,6 +41,7 @@
 
 #include "BLI_math.h"
 #include "BLI_listbase.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
@@ -45,7 +51,7 @@
 #include "BKE_main.h"
 #include "BKE_particle.h"
 #include "BKE_pointcache.h"
-#include "BKE_utildefines.h"
+
 
 #include "RNA_access.h"
 #include "RNA_define.h"
@@ -623,7 +629,7 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 	PTCacheEditPoint *point;
 	PTCacheEditKey *ekey = NULL;
 	HairKey *key;
-	BVHTreeFromMesh bvhtree= {0};
+	BVHTreeFromMesh bvhtree= {NULL};
 	BVHTreeNearest nearest;
 	MFace *mface;
 	DerivedMesh *dm = NULL;

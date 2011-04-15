@@ -1,5 +1,5 @@
-/**
- * $Id: uvedit_intern.h 33468 2010-12-04 13:00:28Z campbellbarton $
+/*
+ * $Id: uvedit_intern.h 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/uvedit/uvedit_intern.h
+ *  \ingroup eduv
+ */
+
+
 #ifndef ED_UVEDIT_INTERN_H
 #define ED_UVEDIT_INTERN_H
 
@@ -36,9 +41,6 @@ struct Scene;
 struct Image;
 struct Object;
 struct wmOperatorType;
-
-#define UV_SELECT_ALL       1
-#define UV_SELECT_PINNED    2
 
 /* id can be from 0 to 3 */
 #define TF_PIN_MASK(id) (TF_PIN1 << id)

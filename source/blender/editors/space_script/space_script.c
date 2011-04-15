@@ -1,5 +1,5 @@
-/**
- * $Id: space_script.c 32788 2010-10-31 04:11:39Z campbellbarton $
+/*
+ * $Id: space_script.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,19 +26,25 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_script/space_script.c
+ *  \ingroup spscript
+ */
+
+
 #include <string.h>
 #include <stdio.h>
-
 
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
+#include "ED_space_api.h"
 #include "ED_screen.h"
 
 #include "BIF_gl.h"
@@ -148,12 +154,11 @@ static void script_main_area_draw(const bContext *C, ARegion *ar)
 	UI_view2d_view_ortho(v2d);
 		
 	/* data... */
-	// BPY_run_python_script(C, "/root/blender-svn/blender25/test.py", NULL);
+	// BPY_script_exec(C, "/root/blender-svn/blender25/test.py", NULL);
 	
 #ifdef WITH_PYTHON
 	if (sscript->script) {
-		//BPY_run_python_script_space(scpt->script.filename, NULL);
-		BPY_run_script_space_draw(C, sscript);
+		// BPY_run_script_space_draw(C, sscript);
 	}
 #else
 	(void)sscript;

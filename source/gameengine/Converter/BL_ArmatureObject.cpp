@@ -1,5 +1,5 @@
-/**
- * $Id: BL_ArmatureObject.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
+/*
+ * $Id: BL_ArmatureObject.cpp 35167 2011-02-25 13:30:41Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,17 +27,23 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file gameengine/Converter/BL_ArmatureObject.cpp
+ *  \ingroup bgeconv
+ */
+
+
 #include "BL_ArmatureObject.h"
 #include "BL_ActionActuator.h"
 #include "KX_BlenderSceneConverter.h"
 #include "MEM_guardedalloc.h"
 #include "BLI_blenlib.h"
-#include "BLI_ghash.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
+#include "BLI_ghash.h"
 #include "BIK_api.h"
 #include "BKE_action.h"
 #include "BKE_armature.h"
-#include "BKE_utildefines.h"
+
 #include "BKE_constraint.h"
 #include "GEN_Map.h"
 #include "GEN_HashedPtr.h"

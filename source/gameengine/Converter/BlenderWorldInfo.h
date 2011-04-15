@@ -1,5 +1,5 @@
-/**
- * $Id: BlenderWorldInfo.h 31968 2010-09-16 19:03:01Z blendix $
+/*
+ * $Id: BlenderWorldInfo.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file BlenderWorldInfo.h
+ *  \ingroup bgeconv
+ */
+
 #ifndef __BLENDERWORLDINFO_H
 #define __BLENDERWORLDINFO_H
 #include "MT_CmMatrix4x4.h"
@@ -64,6 +69,12 @@ public:
     float	getMistColorGreen();
     float	getMistColorBlue();     
 
+		void
+	setBackColor(
+		float r,
+		float g,
+		float b
+	);
 		void	
 	setMistStart(
 		float d

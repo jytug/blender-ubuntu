@@ -1,5 +1,5 @@
-/**
- * $Id: transform_orientations.c 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: transform_orientations.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -22,6 +22,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/transform/transform_orientations.c
+ *  \ingroup edtransform
+ */
+
+
 #include <string.h>
 #include <ctype.h>
 
@@ -34,7 +39,7 @@
 #include "DNA_screen_types.h"
 #include "DNA_view3d_types.h"
 
-#include "BKE_utildefines.h"
+
 #include "BKE_armature.h"
 #include "BKE_context.h"
 #include "BKE_report.h"
@@ -42,6 +47,7 @@
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
 #include "BLI_editVert.h"
+#include "BLI_utildefines.h"
 
 //#include "BIF_editmesh.h"
 //#include "BIF_interface.h"
@@ -289,7 +295,7 @@ TransformOrientation* addMatrixSpace(bContext *C, float mat[3][3], char name[], 
 
 void BIF_removeTransformOrientation(bContext *C, TransformOrientation *target) {
 	ListBase *transform_spaces = &CTX_data_scene(C)->transform_spaces;
-	TransformOrientation *ts = transform_spaces->first;
+	TransformOrientation *ts;
 	int i;
 	
 	for (i = 0, ts = transform_spaces->first; ts; ts = ts->next, i++) {
@@ -340,7 +346,7 @@ void BIF_removeTransformOrientationIndex(bContext *C, int index) {
 void BIF_selectTransformOrientation(bContext *C, TransformOrientation *target) {
 	ListBase *transform_spaces = &CTX_data_scene(C)->transform_spaces;
 	View3D *v3d = CTX_wm_view3d(C);
-	TransformOrientation *ts = transform_spaces->first;
+	TransformOrientation *ts;
 	int i;
 	
 	for (i = 0, ts = transform_spaces->first; ts; ts = ts->next, i++) {

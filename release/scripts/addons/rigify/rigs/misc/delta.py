@@ -39,7 +39,7 @@ class Rig:
         """
         bb = obj.data.bones
 
-        if bb[bone].children == None:
+        if bb[bone].children is None:
             raise MetarigError("RIGIFY ERROR: bone '%s': rig type requires one child." % org_name(bone.name))
         if bb[bone].use_connect == True:
             raise MetarigError("RIGIFY ERROR: bone '%s': rig type cannot be connected to parent." % org_name(bone.name))
@@ -144,15 +144,15 @@ def set_mat(obj, bone_name, matrix):
 
     a.transform(matrix)
 
-    d = acos(a.matrix.to_quat().dot(matrix.to_quat())) * 2
+    d = acos(a.matrix.to_quaternion().dot(matrix.to_quaternion())) * 2.0
 
     roll_1 = a.roll + d
     roll_2 = a.roll - d
 
     a.roll = roll_1
-    d1 = a.matrix.to_quat().dot(matrix.to_quat())
+    d1 = a.matrix.to_quaternion().dot(matrix.to_quaternion())
     a.roll = roll_2
-    d2 = a.matrix.to_quat().dot(matrix.to_quat())
+    d2 = a.matrix.to_quaternion().dot(matrix.to_quaternion())
 
     if d1 > d2:
         a.roll = roll_1

@@ -1,9 +1,9 @@
-/**
+/*
  * BME_structure.c    jan 2007
  *
  *	Low level routines for manipulating the BMesh structure.
  *
- * $Id: BME_structure.c 27642 2010-03-21 13:42:25Z campbellbarton $
+ * $Id: BME_structure.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,9 +32,15 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#include <limits.h>
-#include "MEM_guardedalloc.h"
+/** \file blender/blenkernel/intern/BME_structure.c
+ *  \ingroup bke
+ */
 
+
+#include <limits.h>
+
+#include "MEM_guardedalloc.h"
+#include "BLI_utildefines.h"
 #include "BKE_bmesh.h"
 /**
  *	MISC utility functions.

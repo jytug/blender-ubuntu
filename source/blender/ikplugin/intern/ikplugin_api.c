@@ -1,5 +1,5 @@
-/**
- * $Id: ikplugin_api.c 31891 2010-09-12 12:27:12Z campbellbarton $
+/*
+ * $Id: ikplugin_api.c 35240 2011-02-27 20:24:49Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,13 +27,18 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/ikplugin/intern/ikplugin_api.c
+ *  \ingroup ikplugin
+ */
+
+
 
 #include "BIK_api.h"
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 
 #include "BKE_armature.h"
-#include "BKE_utildefines.h"
+
 #include "DNA_object_types.h"
 #include "DNA_action_types.h"
 #include "DNA_scene_types.h"

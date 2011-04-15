@@ -1,5 +1,5 @@
-/**
- * $Id: BLI_math_geom.h 33608 2010-12-12 01:36:10Z campbellbarton $
+/*
+ * $Id: BLI_math_geom.h 35646 2011-03-20 13:35:35Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,8 +25,12 @@
  * ***** END GPL LICENSE BLOCK *****
  * */
 
-#ifndef BLI_MATH_GEOM
-#define BLI_MATH_GEOM
+#ifndef BLI_MATH_GEOM_H
+#define BLI_MATH_GEOM_H
+
+/** \file BLI_math_geom.h
+ *  \ingroup bli
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +38,7 @@ extern "C" {
 
 #include "BLI_math_inline.h"
 
-#ifdef BLI_MATH_INLINE
+#ifdef BLI_MATH_INLINE_H
 #include "intern/math_geom_inline.c"
 #endif
 
@@ -58,7 +62,8 @@ float dist_to_line_v2(float p[2], float l1[2], float l2[2]);
 float dist_to_line_segment_v2(float p[2], float l1[2], float l2[2]);
 
 float dist_to_line_segment_v3(float p[3], float l1[3], float l2[3]);
-float closest_to_line_v3(float r[3], float p[3], float l1[3], float l2[3]);
+float closest_to_line_v3(float r[3], const float p[3], const float l1[3], const float l2[3]);
+float closest_to_line_v2(float r[2], const float p[2], const float l1[2], const float l2[2]);
 void closest_to_line_segment_v3(float r[3], float p[3], float l1[3], float l2[3]);
 
 /******************************* Intersection ********************************/
@@ -119,6 +124,8 @@ int isect_aabb_aabb_v3(float min1[3], float max1[3], float min2[3], float max2[3
 
 int clip_line_plane(float clipco[3], float plane[4], float co[3]);
 
+void plot_line_v2v2i(int p1[2], int p2[2], int (*callback)(int, int, void *), void *userData);
+
 /****************************** Interpolation ********************************/
 
 /* tri or quad, d can be NULL */
@@ -161,6 +168,12 @@ void box_minmax_bounds_m4(float min[3], float max[3],
 
 void map_to_tube(float *u, float *v, float x, float y, float z);
 void map_to_sphere(float *u, float *v, float x, float y, float z);
+
+/********************************** Normals **********************************/
+
+void accumulate_vertex_normals(float n1[3], float n2[3], float n3[3],
+	float n4[3], const float f_no[3], const float co1[3], const float co2[3],
+	const float co3[3], const float co4[3]);
 
 /********************************* Tangents **********************************/
 
@@ -207,5 +220,5 @@ float form_factor_hemi_poly(float p[3], float n[3],
 }
 #endif
 
-#endif /* BLI_MATH_GEOM */
+#endif /* BLI_MATH_GEOM_H */
 

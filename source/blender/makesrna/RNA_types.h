@@ -1,5 +1,5 @@
-/**
- * $Id: RNA_types.h 33951 2010-12-30 12:22:28Z campbellbarton $
+/*
+ * $Id: RNA_types.h 36058 2011-04-08 13:32:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -22,10 +22,15 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/makesrna/RNA_types.h
+ *  \ingroup RNA
+ */
+
+
 #include "BLO_sys_types.h"
 
-#ifndef RNA_TYPES
-#define RNA_TYPES
+#ifndef RNA_TYPES_H
+#define RNA_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +45,7 @@ struct IDProperty;
 struct bContext;
 struct ReportList;
 
-/* Pointer
+/** Pointer
  *
  * RNA pointers are not a single C pointer but include the type,
  * and a pointer to the ID struct that owns the struct, since
@@ -122,6 +127,7 @@ typedef enum PropertySubType {
 	PROP_XYZ = 29,
 	PROP_XYZ_LENGTH = 29|PROP_UNIT_LENGTH,
 	PROP_COLOR_GAMMA = 30,
+	PROP_COORDS = 31, /* generic array, no units applied, only that x/y/z/w are used (python vec) */
 
 	/* booleans */
 	PROP_LAYER = 40,
@@ -186,6 +192,12 @@ typedef enum PropertyFlag {
 	/* Use for arrays or for any data that should not have a referene kept
 	 * most common case is functions that return arrays where the array */
 	PROP_THICK_WRAP = 1<<23,
+
+	/* Reject values outside limits, use for python api only so far
+	 * this is for use when silently clamping string length will give
+	 * bad behavior later. Could also enforce this for INT's and other types.
+	 * note: currently no support for function arguments or non utf8 paths (filepaths) */
+	PROP_NEVER_CLAMP = 1<<26,
 
 	/* internal flags */
 	PROP_BUILTIN = 1<<7,
@@ -342,38 +354,8 @@ typedef struct ExtensionRNA {
 	
 } ExtensionRNA;
 
-/* fake struct definitions, needed otherwise collections end up owning the C
- * structs like 'Object' when defined first */
-#define MainActions		Main
-#define MainArmatures		Main
-#define MainBrushes		Main
-#define MainCameras		Main
-#define MainCurves		Main
-#define MainFonts		Main
-#define MainGreasePencils	Main
-#define MainGroups		Main
-#define MainImages		Main
-#define MainLamps		Main
-#define MainLattices		Main
-#define MainLibraries		Main
-#define MainMaterials		Main
-#define MainMeshes		Main
-#define MainMetaBalls		Main
-#define MainNodeTrees		Main
-#define MainObjects		Main
-#define MainParticles		Main
-#define MainScenes		Main
-#define MainScreens		Main
-#define MainSounds		Main
-#define MainTexts		Main
-#define MainTextures		Main
-#define MainWindowManagers	Main
-#define MainWorlds		Main
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* RNA_TYPES */
-
-
+#endif /* RNA_TYPES_H */

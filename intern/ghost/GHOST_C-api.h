@@ -1,5 +1,5 @@
-/**
- * $Id: GHOST_C-api.h 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: GHOST_C-api.h 35792 2011-03-26 08:13:42Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,10 +25,10 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-/**
- * @file	GHOST_C-api.h
- * GHOST C-API function and type declarations.
- * The C-API wraps the C++ objects with the 
+/** \ingroup GHOST
+ *
+ * \file	GHOST_C-api.h
+ * \brief GHOST C-API function and type declarations.
  */
 
 #ifndef	GHOST_C_API_H
@@ -44,9 +44,8 @@ extern "C" {
  * Creates a &quot;handle&quot; for a C++ GHOST object.
  * A handle is just an opaque pointer to an empty struct.
  * In the API the pointer is casted to the actual C++ class.
- * @param	name	Name of the handle to create.
+ * \param	name	Name of the handle to create.
  */
-#define GHOST_DECLARE_HANDLE(name) typedef struct name##__ { int unused; } *name
 
 GHOST_DECLARE_HANDLE(GHOST_SystemHandle);
 GHOST_DECLARE_HANDLE(GHOST_TimerTaskHandle);
@@ -263,7 +262,16 @@ extern int GHOST_DispatchEvents(GHOST_SystemHandle systemhandle);
  */
 extern GHOST_TSuccess GHOST_AddEventConsumer(GHOST_SystemHandle systemhandle,
 											  GHOST_EventConsumerHandle consumerhandle);
-	
+
+/**
+ * Remove the given event consumer to our list.
+ * @param systemhandle The handle to the system
+ * @param consumerhandle The event consumer to remove.
+ * @return Indication of success.
+ */
+extern GHOST_TSuccess GHOST_RemoveEventConsumer(GHOST_SystemHandle systemhandle,
+											  GHOST_EventConsumerHandle consumerhandle);
+
 /***************************************************************************************
  ** Progress bar functionality
  ***************************************************************************************/

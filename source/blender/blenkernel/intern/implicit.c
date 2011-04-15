@@ -1,31 +1,36 @@
-/*  implicit.c      
-* 
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) Blender Foundation
-* All rights reserved.
-*
-* The Original Code is: all of this file.
-*
-* Contributor(s): none yet.
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
+/*
+ * $Id: implicit.c 35247 2011-02-27 20:40:57Z jesterking $
+ *
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) Blender Foundation
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file blender/blenkernel/intern/implicit.c
+ *  \ingroup bke
+ */
+
 
 #include "MEM_guardedalloc.h"
 
@@ -37,12 +42,13 @@
 #include "BLI_threads.h"
 #include "BLI_math.h"
 #include "BLI_linklist.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_cloth.h"
 #include "BKE_collision.h"
 #include "BKE_effect.h"
 #include "BKE_global.h"
-#include "BKE_utildefines.h"
+
 
 #define CLOTH_OPENMP_LIMIT 25
 
@@ -1228,7 +1234,7 @@ DO_INLINE void cloth_calc_spring_force(ClothModifierData *clmd, ClothSpring *s, 
 	float vel[3];
 	float k = 0.0f;
 	float L = s->restlen;
-	float cb = clmd->sim_parms->structural;
+	float cb; /* = clmd->sim_parms->structural; */ /*UNUSED*/
 
 	float nullf[3] = {0,0,0};
 	float stretch_force[3] = {0,0,0};
@@ -1316,8 +1322,9 @@ DO_INLINE void cloth_calc_spring_force(ClothModifierData *clmd, ClothSpring *s, 
 
 		VECSUB(extent, X[s->ij], tvect);
 		
-		dot = INPR(extent, extent);
-		length = sqrt(dot);
+		// SEE MSG BELOW (these are UNUSED)
+		// dot = INPR(extent, extent);
+		// length = sqrt(dot);
 		
 		k = clmd->sim_parms->goalspring;
 		
@@ -1565,7 +1572,7 @@ static void cloth_calc_force(ClothModifierData *clmd, float UNUSED(frame), lfVec
 	float 		tm2[3][3] 	= {{0}};
 	MFace 		*mfaces 	= cloth->mfaces;
 	unsigned int numverts = cloth->numverts;
-	LinkNode *search = cloth->springs;
+	LinkNode *search;
 	lfVector *winvec;
 	EffectedPoint epoint;
 

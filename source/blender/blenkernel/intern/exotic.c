@@ -1,4 +1,5 @@
-/*  exotic.c   
+/*
+ * $Id: exotic.c 35835 2011-03-28 02:34:55Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -20,14 +21,20 @@
  * All rights reserved.
  *
  *
- * Contributor(s): 
+ * Contributor(s):
  * - Martin DeMello
  *   Added dxf_read_arc, dxf_read_ellipse and dxf_read_lwpolyline
  *   Copyright (C) 2004 by Etheract Software Labs
  *
  * - Blender Foundation
  *
- * ***** END GPL LICENSE BLOCK *****/
+ * ***** END GPL LICENSE BLOCK ****
+ */
+
+/** \file blender/blenkernel/intern/exotic.c
+ *  \ingroup bke
+ */
+
 
 #include <stddef.h>
 #include "BLI_storage.h"
@@ -61,10 +68,11 @@
 #include "DNA_camera_types.h"
 #include "DNA_scene_types.h"
 
-#include "BKE_utildefines.h"
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_storage.h"
+#include "BLI_utildefines.h"
+
 
 #include "BKE_blender.h"
 #include "BKE_global.h"
@@ -74,7 +82,7 @@
 #include "BKE_object.h"
 #include "BKE_material.h"
 #include "BKE_report.h"
-
+#include "BKE_exotic.h"
 #include "BKE_displist.h"
 #include "BKE_DerivedMesh.h"
 #include "BKE_curve.h"
@@ -174,12 +182,10 @@ static void mesh_add_normals_flags(Mesh *me)
 		v2= me->mvert+mface->v2;
 		v3= me->mvert+mface->v3;
 		v4= me->mvert+mface->v4;
-		
+
 		normal_tri_v3( nor,v1->co, v2->co, v3->co);
-		sno[0]= 32767.0*nor[0];
-		sno[1]= 32767.0*nor[1];
-		sno[2]= 32767.0*nor[2];
-		
+		normal_float_to_short_v3(sno, nor);
+
 		simple_vertex_normal_blend(v1->no, sno);
 		simple_vertex_normal_blend(v2->no, sno);
 		simple_vertex_normal_blend(v3->no, sno);
@@ -363,10 +369,16 @@ static void read_stl_mesh_ascii(Scene *scene, const char *str)
 		 * sure we have enough storage for some more faces
 		 */
 		if ( (totface) && ( (totface % 10000) == 0 ) ) {
+			float  *vertdata_old= vertdata;
 			++numtenthousand;
 			vertdata = realloc(vertdata, 
 							   numtenthousand*3*30000*sizeof(float));
-			if (!vertdata) { STLALLOCERROR; }
+			if (!vertdata) {
+				if(vertdata_old) {
+					free(vertdata_old);
+				}
+				STLALLOCERROR;
+			}
 		}
 		
 		/* Don't read normal, but check line for proper syntax anyway
@@ -458,61 +470,53 @@ int BKE_read_exotic(Scene *scene, const char *name)
 {
 	int len;
 	gzFile gzfile;
-	char str[32];
-	int *s0 = (int*) str;
-	int retval = 0;
+	char header[7];
+	int retval;
 
 	// make sure we're not trying to read a directory....
 
 	len= strlen(name);
-	if (name[len-1] !='/' && name[len-1] != '\\') {
+	if (ELEM(name[len-1], '/', '\\')) {
+		retval= BKE_READ_EXOTIC_FAIL_PATH;
+	}
+	else {
 		gzfile = gzopen(name,"rb");
 
-		if (NULL == gzfile ) {
-			//XXX error("Can't open file: %s", name);
-			retval= -1;
-		} else {
-			gzread(gzfile, str, 31);
+		if (gzfile == NULL) {
+			retval= BKE_READ_EXOTIC_FAIL_OPEN;
+		}
+		else {
+			len= gzread(gzfile, header, sizeof(header));
 			gzclose(gzfile);
-
-			if ((*s0 != FORM) && (strncmp(str, "BLEN", 4) != 0) && !BLI_testextensie(name,".blend.gz")) {
-
+			if (len == sizeof(header) && strncmp(header, "BLENDER", 7) == 0) {
+				retval= BKE_READ_EXOTIC_OK_BLEND;
+			}
+			else {
 				//XXX waitcursor(1);
 				if(is_dxf(name)) {
 					dxf_read(scene, name);
-					retval = 1;
+					retval= BKE_READ_EXOTIC_OK_OTHER;
 				}
 				else if(is_stl(name)) {
 					if (is_stl_ascii(name))
 						read_stl_mesh_ascii(scene, name);
 					else
 						read_stl_mesh_binary(scene, name);
-					retval = 1;
+					retval= BKE_READ_EXOTIC_OK_OTHER;
 				}
-#ifdef WITH_PYTHON
-				// TODO: this should not be in the kernel...
-				else { // unknown format, call Python importloader 
-					if (BPY_call_importloader(name)) {
-						retval = 1;
-					} else {	
-						//XXX error("Unknown file type or error, check console");
-					}	
-				
+				else {
+					retval= BKE_READ_EXOTIC_FAIL_FORMAT;
 				}
-#endif /* WITH_PYTHON */
 				//XXX waitcursor(0);
 			}
 		}
 	}
 	
-	return (retval);
+	return retval;
 }
 
 
 /* ************************ WRITE ************************** */
-
-
-char temp_dir[160]= {0, 0};
 
 static void write_vert_stl(Object *ob, MVert *verts, int index, FILE *fpSTL)
 {
@@ -586,7 +590,6 @@ void write_stl(Scene *scene, char *str)
 		BKE_reportf(reports, RPT_ERROR, "Can't open file: %s.", strerror(errno));
 		return;
 	}
-	strcpy(temp_dir, str);
 	
 	//XXX waitcursor(1);
 	
@@ -872,7 +875,6 @@ void write_dxf(struct Scene *scene, char *str)
 		//XXX error("Can't write file");
 		return;
 	}
-	strcpy(temp_dir, str);
 	
 	//XXX waitcursor(1);
 	
@@ -1132,7 +1134,7 @@ static void dxf_add_mat (Object *ob, Mesh *me, float color[3], char *layer)
 						
 	ma= G.main->mat.first;
 	while(ma) {
-		if(ma->mtex[0]==0) {
+		if(ma->mtex[0]==NULL) {
 			if(color[0]==ma->r && color[1]==ma->g && color[2]==ma->b) {
 				me->mat[0]= ma;
 				ma->id.us++;
@@ -1141,7 +1143,7 @@ static void dxf_add_mat (Object *ob, Mesh *me, float color[3], char *layer)
 		}
 		ma= ma->id.next;
 	}
-	if(ma==0) {
+	if(ma==NULL) {
 		ma= add_material("ext");
 		me->mat[0]= ma;
 		ma->r= color[0];
@@ -1650,7 +1652,7 @@ static void dxf_read_arc(Scene *scene, int noob)
 	cent[2]= center[2];
 
 	dxf_get_mesh(scene, &me, &ob, noob);
-	strcpy(oldllay, layname);		
+	BLI_strncpy(oldllay, layname, sizeof(oldllay));
 	if(ob) VECCOPY(ob->loc, cent);
 	dxf_add_mat (ob, me, color, layname);
 

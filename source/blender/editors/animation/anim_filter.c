@@ -1,5 +1,5 @@
-/**
- * $Id: anim_filter.c 34058 2011-01-04 08:00:16Z campbellbarton $
+/*
+ * $Id: anim_filter.c 35936 2011-04-01 12:21:41Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/animation/anim_filter.c
+ *  \ingroup edanimation
+ */
+
 
 /* This file contains a system used to provide a layer of abstraction between sources
  * of animation data and tools in Animation Editors. The method used here involves 
@@ -69,6 +74,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 #include "BLI_ghash.h"
 
 #include "BKE_animsys.h"
@@ -78,11 +84,14 @@
 #include "BKE_global.h"
 #include "BKE_group.h"
 #include "BKE_key.h"
+#include "BKE_main.h"
 #include "BKE_material.h"
 #include "BKE_node.h"
 #include "BKE_sequencer.h"
+#include "BKE_utildefines.h"
 
 #include "ED_anim_api.h"
+#include "ED_markers.h"
 
 /* ************************************************************ */
 /* Blender Context <-> Animation Context mapping */
@@ -143,9 +152,11 @@ static short actedit_get_context (bAnimContext *ac, SpaceAction *saction)
 			return 1;
 			
 		case SACTCONT_GPENCIL: /* Grease Pencil */ // XXX review how this mode is handled...
-			ac->datatype=ANIMCONT_GPENCIL;
-			//ac->data= CTX_wm_screen(C); // FIXME: add that dopesheet type thing here!
-			ac->data= NULL; // !!!
+			/* update scene-pointer (no need to check for pinning yet, as not implemented) */
+			saction->ads.source= (ID *)ac->scene;
+			
+			ac->datatype= ANIMCONT_GPENCIL;
+			ac->data= &saction->ads;
 			
 			ac->mode= saction->mode;
 			return 1;
@@ -301,7 +312,7 @@ short ANIM_animdata_get_context (const bContext *C, bAnimContext *ac)
 	/* get useful default context settings from context */
 	ac->scene= scene;
 	if (scene) {
-		ac->markers= &scene->markers;		
+		ac->markers= ED_context_get_markers(C);		
 		ac->obact= (scene->basact)?  scene->basact->object : NULL;
 	}
 	ac->sa= sa;
@@ -421,7 +432,7 @@ short ANIM_animdata_get_context (const bContext *C, bAnimContext *ac)
 /* this function allocates memory for a new bAnimListElem struct for the 
  * provided animation channel-data. 
  */
-bAnimListElem *make_new_animlistelem (void *data, short datatype, void *owner, short ownertype, ID *owner_id)
+static bAnimListElem *make_new_animlistelem (void *data, short datatype, void *owner, short ownertype, ID *owner_id)
 {
 	bAnimListElem *ale= NULL;
 	
@@ -626,6 +637,19 @@ bAnimListElem *make_new_animlistelem (void *data, short datatype, void *owner, s
 				ale->adt= BKE_animdata_from_id(data);
 			}
 				break;
+			case ANIMTYPE_DSLAT:
+			{
+				Lattice *lt= (Lattice *)data;
+				AnimData *adt= lt->adt;
+				
+				ale->flag= FILTER_LATTICE_OBJD(lt);
+				
+				ale->key_data= (adt) ? adt->action : NULL;
+				ale->datatype= ALE_ACT;
+				
+				ale->adt= BKE_animdata_from_id(data);
+			}	
+				break;
 			case ANIMTYPE_DSSKEY:
 			{
 				Key *key= (Key *)data;
@@ -780,8 +804,10 @@ bAnimListElem *make_new_animlistelem (void *data, short datatype, void *owner, s
  
 /* ----------------------------------------- */
 
-/* NOTE: when this function returns true, the F-Curve is to be skipped */
-static int skip_fcurve_selected_data(bDopeSheet *ads, FCurve *fcu, ID *owner_id, int filter_mode)
+/* 'Only Selected' selected data filtering
+ * NOTE: when this function returns true, the F-Curve is to be skipped 
+ */
+static int skip_fcurve_selected_data (bDopeSheet *ads, FCurve *fcu, ID *owner_id, int filter_mode)
 {
 	if (GS(owner_id->name) == ID_OB) {
 		Object *ob= (Object *)owner_id;
@@ -852,6 +878,37 @@ static int skip_fcurve_selected_data(bDopeSheet *ads, FCurve *fcu, ID *owner_id,
 	return 0;
 }
 
+/* (Display-)Name-based F-Curve filtering
+ * NOTE: when this function returns true, the F-Curve is to be skipped 
+ */
+static short skip_fcurve_with_name (bDopeSheet *ads, FCurve *fcu, ID *owner_id)
+{
+	bAnimListElem ale_dummy = {0};
+	bAnimChannelType *acf;
+	
+	/* create a dummy wrapper for the F-Curve */
+	ale_dummy.type = ANIMTYPE_FCURVE;
+	ale_dummy.id = owner_id;
+	ale_dummy.data = fcu;
+	
+	/* get type info for channel */
+	acf = ANIM_channel_get_typeinfo(&ale_dummy);
+	if (acf && acf->name) {
+		char name[256]; /* hopefully this will be enough! */
+		
+		/* get name */
+		acf->name(&ale_dummy, name);
+		
+		/* check for partial match with the match string, assuming case insensitive filtering 
+		 * if match, this channel shouldn't be ignored!
+		 */
+		return BLI_strcasestr(name, ads->searchstr) == NULL;
+	}
+	
+	/* just let this go... */
+	return 1;
+}
+
 /* find the next F-Curve that is usable for inclusion */
 static FCurve *animdata_filter_fcurve_next (bDopeSheet *ads, FCurve *first, bActionGroup *grp, int filter_mode, ID *owner_id)
 {
@@ -861,7 +918,7 @@ static FCurve *animdata_filter_fcurve_next (bDopeSheet *ads, FCurve *first, bAct
 	 * NOTE: we need to check if the F-Curves belong to the same group, as this gets called for groups too...
 	 */
 	for (fcu= first; ((fcu) && (fcu->grp==grp)); fcu= fcu->next) {
-		/* special exception for Pose-Channel Based F-Curves:
+		/* special exception for Pose-Channel/Sequence-Strip/Node Based F-Curves:
 		 *	- the 'Only Selected' data filter should be applied to Pose-Channel data too, but those are
 		 *	  represented as F-Curves. The way the filter for objects worked was to be the first check
 		 *	  after 'normal' visibility, so this is done first here too...
@@ -873,7 +930,7 @@ static FCurve *animdata_filter_fcurve_next (bDopeSheet *ads, FCurve *first, bAct
 			if (skip_fcurve_selected_data(ads, fcu, owner_id, filter_mode))
 				continue;
 		}
-			
+		
 		/* only include if visible (Graph Editor check, not channels check) */
 		if (!(filter_mode & ANIMFILTER_CURVEVISIBLE) || (fcu->flag & FCURVE_VISIBLE)) {
 			/* only work with this channel and its subchannels if it is editable */
@@ -882,6 +939,12 @@ static FCurve *animdata_filter_fcurve_next (bDopeSheet *ads, FCurve *first, bAct
 				if ( ANIMCHANNEL_SELOK(SEL_FCU(fcu)) && ANIMCHANNEL_SELEDITOK(SEL_FCU(fcu)) ) {
 					/* only include if this curve is active */
 					if (!(filter_mode & ANIMFILTER_ACTIVE) || (fcu->flag & FCURVE_ACTIVE)) {
+						/* name based filtering... */
+						if ( ((ads) && (ads->filterflag & ADS_FILTER_BY_FCU_NAME)) && (owner_id) ) {
+							if (skip_fcurve_with_name(ads, fcu, owner_id))
+								continue;
+						}
+						
 						/* this F-Curve can be used, so return it */
 						return fcu;
 					}
@@ -1166,38 +1229,28 @@ static int animdata_filter_shapekey (bAnimContext *ac, ListBase *anim_data, Key 
 	return items;
 }
 
-#if 0
-// FIXME: switch this to use the bDopeSheet...
-static int animdata_filter_gpencil (ListBase *anim_data, bScreen *sc, int filter_mode)
+/* Grab all Grase Pencil datablocks in file */
+// TODO: should this be amalgamated with the dopesheet filtering code?
+static int animdata_filter_gpencil (ListBase *anim_data, void *UNUSED(data), int filter_mode)
 {
 	bAnimListElem *ale;
-	ScrArea *sa, *curarea;
 	bGPdata *gpd;
 	bGPDlayer *gpl;
 	int items = 0;
 	
 	/* check if filtering types are appropriate */
+	if (!(filter_mode & (ANIMFILTER_ACTGROUPED|ANIMFILTER_CURVESONLY)))
 	{
-		/* special hack for fullscreen area (which must be this one then):
-		 * 	- we use the curarea->full as screen to get spaces from, since the
-		 * 	  old (pre-fullscreen) screen was stored there...
-		 *	- this is needed as all data would otherwise disappear
-		 */
-		// XXX need to get new alternative for curarea
-		if ((curarea->full) && (curarea->spacetype==SPACE_ACTION))
-			sc= curarea->full;
-		
-		/* loop over spaces in current screen, finding gpd blocks (could be slow!) */
-		for (sa= sc->areabase.first; sa; sa= sa->next) {
-			/* try to get gp data */
-			// XXX need to put back grease pencil api...
-			gpd= gpencil_data_get_active(sa);
-			if (gpd == NULL) continue;
+		/* for now, grab grease pencil datablocks directly from main*/
+		for (gpd = G.main->gpencil.first; gpd; gpd = gpd->id.next) {
+			/* only show if gpd is used by something... */
+			if (ID_REAL_USERS(gpd) < 1)
+				continue;
 			
 			/* add gpd as channel too (if for drawing, and it has layers) */
 			if ((filter_mode & ANIMFILTER_CHANNELS) && (gpd->layers.first)) {
 				/* add to list */
-				ale= make_new_animlistelem(gpd, ANIMTYPE_GPDATABLOCK, sa, ANIMTYPE_SPECIALDATA);
+				ale= make_new_animlistelem(gpd, ANIMTYPE_GPDATABLOCK, NULL, ANIMTYPE_NONE, NULL);
 				if (ale) {
 					BLI_addtail(anim_data, ale);
 					items++;
@@ -1213,7 +1266,7 @@ static int animdata_filter_gpencil (ListBase *anim_data, bScreen *sc, int filter
 						/* only if editable */
 						if (!(filter_mode & ANIMFILTER_FOREDIT) || EDITABLE_GPL(gpl)) {
 							/* add to list */
-							ale= make_new_animlistelem(gpl, ANIMTYPE_GPLAYER, gpd, ANIMTYPE_GPDATABLOCK);
+							ale= make_new_animlistelem(gpl, ANIMTYPE_GPLAYER, gpd, ANIMTYPE_GPDATABLOCK, (ID*)gpd);
 							if (ale) {
 								BLI_addtail(anim_data, ale);
 								items++;
@@ -1228,7 +1281,6 @@ static int animdata_filter_gpencil (ListBase *anim_data, bScreen *sc, int filter
 	/* return the number of items added to the list */
 	return items;
 }
-#endif 
 
 /* NOTE: owner_id is either material, lamp, or world block, which is the direct owner of the texture stack in question */
 static int animdata_filter_dopesheet_texs (bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, ID *owner_id, int filter_mode)
@@ -1583,6 +1635,14 @@ static int animdata_filter_dopesheet_obdata (bAnimContext *ac, ListBase *anim_da
 			expanded= FILTER_MESH_OBJD(me);
 		}
 			break;
+		case OB_LATTICE: /* ---- Lattice ---- */
+		{
+			Lattice *lt = (Lattice *)ob->data;
+			
+			type= ANIMTYPE_DSLAT;
+			expanded= FILTER_LATTICE_OBJD(lt);
+		}
+			break;
 	}
 	
 	/* special exception for drivers instead of action */
@@ -1834,6 +1894,19 @@ static int animdata_filter_dopesheet_ob (bAnimContext *ac, ListBase *anim_data, 
 			
 			if ((ads->filterflag & ADS_FILTER_NOMESH) == 0) {
 				ANIMDATA_FILTER_CASES(me,
+					{ /* AnimData blocks - do nothing... */ },
+					obdata_ok= 1;,
+					obdata_ok= 1;,
+					obdata_ok= 1;)
+			}
+		}
+			break;
+		case OB_LATTICE: /* ------- Lattice ---------- */
+		{
+			Lattice *lt= (Lattice *)ob->data;
+			
+			if ((ads->filterflag & ADS_FILTER_NOLAT) == 0) {
+				ANIMDATA_FILTER_CASES(lt,
 					{ /* AnimData blocks - do nothing... */ },
 					obdata_ok= 1;,
 					obdata_ok= 1;,
@@ -2354,6 +2427,23 @@ static int animdata_filter_dopesheet (bAnimContext *ac, ListBase *anim_data, bDo
 							dataOk= !(ads->filterflag & ADS_FILTER_NOMESH);)
 					}
 						break;
+					case OB_LATTICE: /* ------- Lattice ---------- */
+					{
+						Lattice *lt= (Lattice *)ob->data;
+						dataOk= 0;
+						ANIMDATA_FILTER_CASES(lt, 
+							if ((ads->filterflag & ADS_FILTER_NOLAT)==0) {
+								/* for the special AnimData blocks only case, we only need to add
+								 * the block if it is valid... then other cases just get skipped (hence ok=0)
+								 */
+								ANIMDATA_ADD_ANIMDATA(lt);
+								dataOk=0;
+							},
+							dataOk= !(ads->filterflag & ADS_FILTER_NOLAT);, 
+							dataOk= !(ads->filterflag & ADS_FILTER_NOLAT);, 
+							dataOk= !(ads->filterflag & ADS_FILTER_NOLAT);)
+					}
+						break;
 					default: /* --- other --- */
 						dataOk= 0;
 						break;
@@ -2421,7 +2511,7 @@ static short animdata_filter_dopesheet_summary (bAnimContext *ac, ListBase *anim
 	
 	/* dopesheet summary 
 	 *	- only for drawing and/or selecting keyframes in channels, but not for real editing 
-	 *	- only useful for DopeSheet Editor, where the summary is useful
+	 *	- only useful for DopeSheet/Action/etc. editors where it is actually useful
 	 */
 	// TODO: we should really check if some other prohibited filters are also active, but that can be for later
 	if ((filter_mode & ANIMFILTER_CHANNELS) && (ads->filterflag & ADS_FILTER_SUMMARY)) {
@@ -2522,9 +2612,12 @@ int ANIM_animdata_filter (bAnimContext *ac, ListBase *anim_data, int filter_mode
 		switch (datatype) {
 			case ANIMCONT_ACTION:	/* 'Action Editor' */
 			{
+				SpaceAction *saction = (SpaceAction *)ac->sa->spacedata.first;
+				bDopeSheet *ads = (saction)? &saction->ads : NULL;
+				
 				/* the check for the DopeSheet summary is included here since the summary works here too */
 				if (animdata_filter_dopesheet_summary(ac, anim_data, filter_mode, &items))
-					items += animdata_filter_action(ac, anim_data, NULL, data, filter_mode, NULL, ANIMTYPE_NONE, (ID *)obact);
+					items += animdata_filter_action(ac, anim_data, ads, data, filter_mode, NULL, ANIMTYPE_NONE, (ID *)obact);
 			}
 				break;
 				
@@ -2538,7 +2631,7 @@ int ANIM_animdata_filter (bAnimContext *ac, ListBase *anim_data, int filter_mode
 				
 			case ANIMCONT_GPENCIL:
 			{
-				//items= animdata_filter_gpencil(anim_data, data, filter_mode);
+				items= animdata_filter_gpencil(anim_data, data, filter_mode);
 			}
 				break;
 				

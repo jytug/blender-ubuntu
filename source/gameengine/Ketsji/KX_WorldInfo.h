@@ -1,5 +1,5 @@
-/**
- * $Id: KX_WorldInfo.h 29259 2010-06-06 01:15:44Z campbellbarton $
+/*
+ * $Id: KX_WorldInfo.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file KX_WorldInfo.h
+ *  \ingroup ketsji
+ */
+
 #ifndef __KX_WORLDINFO_H
 #define __KX_WORLDINFO_H
 
@@ -58,6 +63,7 @@ public:
 	virtual float	getAmbientColorGreen()=0;
 	virtual float	getAmbientColorBlue()=0;
 
+	virtual void	setBackColor(float,float,float)=0;
 	virtual void	setMistStart(float)=0;
 	virtual void	setMistDistance(float)=0;
 	virtual void	setMistColorRed(float)=0;

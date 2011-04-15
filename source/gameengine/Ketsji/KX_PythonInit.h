@@ -1,5 +1,5 @@
-/**
- * $Id: KX_PythonInit.h 32788 2010-10-31 04:11:39Z campbellbarton $
+/*
+ * $Id: KX_PythonInit.h 35686 2011-03-22 08:35:56Z moguri $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file KX_PythonInit.h
+ *  \ingroup ketsji
+ */
+
 #ifndef __KX_PYTHON_INIT
 #define __KX_PYTHON_INIT
 
@@ -44,10 +49,6 @@ PyObject*	initGameLogic(class KX_KetsjiEngine *engine, class KX_Scene* ketsjisce
 PyObject*	initGameKeys();
 PyObject*	initRasterizer(class RAS_IRasterizer* rasty,class RAS_ICanvas* canvas);
 PyObject*	initGamePlayerPythonScripting(const STR_String& progname, TPythonSecurityLevel level, struct Main *maggie, int argc, char** argv);
-PyObject*	initMathutils();
-PyObject*	initGeometry();
-PyObject*	initBGL();
-PyObject*	initBLF();
 PyObject*	initVideoTexture(void); 
 void		exitGamePlayerPythonScripting();
 PyObject*	initGamePythonScripting(const STR_String& progname, TPythonSecurityLevel level, struct Main *maggie);

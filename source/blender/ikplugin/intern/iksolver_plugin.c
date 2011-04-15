@@ -1,5 +1,5 @@
-/**
- * $Id: iksolver_plugin.c 32506 2010-10-16 02:40:31Z campbellbarton $
+/*
+ * $Id: iksolver_plugin.c 35336 2011-03-03 17:58:06Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,15 +27,21 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/ikplugin/intern/iksolver_plugin.c
+ *  \ingroup ikplugin
+ */
+
+
 #include "MEM_guardedalloc.h"
 
 #include "BIK_api.h"
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_armature.h"
 #include "BKE_constraint.h"
-#include "BKE_utildefines.h"
+
 #include "DNA_object_types.h"
 #include "DNA_action_types.h"
 #include "DNA_constraint_types.h"
@@ -394,7 +400,7 @@ static void execute_posetree(struct Scene *scene, Object *ob, PoseTree *tree)
 			/* end effector in world space */
 			copy_m4_m4(end_pose, pchan->pose_mat);
 			VECCOPY(end_pose[3], pchan->pose_tail);
-			mul_serie_m4(world_pose, goalinv, ob->obmat, end_pose, 0, 0, 0, 0, 0);
+			mul_serie_m4(world_pose, goalinv, ob->obmat, end_pose, NULL, NULL, NULL, NULL, NULL);
 			
 			/* blend position */
 			goalpos[0]= fac*goalpos[0] + mfac*world_pose[3][0];

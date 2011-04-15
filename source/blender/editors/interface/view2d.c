@@ -1,5 +1,5 @@
-/**
- * $Id: view2d.c 34049 2011-01-03 18:57:13Z ton $
+/*
+ * $Id: view2d.c 35819 2011-03-27 14:52:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/interface/view2d.c
+ *  \ingroup edinterface
+ */
+
+
 #include <float.h>
 #include <limits.h>
 #include <math.h>
@@ -36,10 +41,11 @@
 #include "DNA_userdef_types.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
-#include "BKE_utildefines.h"
+
 
 #include "WM_api.h"
 
@@ -254,8 +260,6 @@ void UI_view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
 				/* absolutely no scrollers allowed */
 				v2d->scroll= 0;
 				
-				/* pixel offsets need to be applied for smooth UI controls */
-				v2d->flag |= (V2D_PIXELOFS_X|V2D_PIXELOFS_Y);
 			}
 				break;
 			
@@ -979,10 +983,6 @@ void UI_view2d_view_ortho(View2D *v2d)
 	/* pixel offsets (-0.375f) are needed to get 1:1 correspondance with pixels for smooth UI drawing, 
 	 * but only applied where requsted
 	 */
-	/* XXX ton: fix this! */
-	xofs= 0.0; // (v2d->flag & V2D_PIXELOFS_X) ? 0.375f : 0.0f;
-	yofs= 0.0; // (v2d->flag & V2D_PIXELOFS_Y) ? 0.375f : 0.0f;
-
 	/* XXX brecht: instead of zero at least use a tiny offset, otherwise
 	 * pixel rounding is effectively random due to float inaccuracy */
 	xofs= 0.001f*(v2d->cur.xmax - v2d->cur.xmin)/(v2d->mask.xmax - v2d->mask.xmin);
@@ -991,9 +991,22 @@ void UI_view2d_view_ortho(View2D *v2d)
 	/* apply mask-based adjustments to cur rect (due to scrollers), to eliminate scaling artifacts */
 	view2d_map_cur_using_mask(v2d, &curmasked);
 	
+	curmasked.xmin-= xofs; curmasked.xmax-=xofs;
+	curmasked.ymin-= yofs; curmasked.ymax-=yofs;
+	
+	/* XXX ton: this flag set by outliner, for icons */
+	if(v2d->flag & V2D_PIXELOFS_X) {
+		curmasked.xmin= floorf(curmasked.xmin) - 0.001f;
+		curmasked.xmax= floorf(curmasked.xmax) - 0.001f;
+	}
+	if(v2d->flag & V2D_PIXELOFS_Y) {
+		curmasked.ymin= floorf(curmasked.ymin) - 0.001f;
+		curmasked.ymax= floorf(curmasked.ymax) - 0.001f;
+	}
+	
 	/* set matrix on all appropriate axes */
 	wmOrtho2(curmasked.xmin-xofs, curmasked.xmax-xofs, curmasked.ymin-yofs, curmasked.ymax-yofs);
-	
+
 	/* XXX is this necessary? */
 	glLoadIdentity();
 }
@@ -1109,7 +1122,6 @@ View2DGrid *UI_view2d_grid_calc(Scene *scene, View2D *v2d, short xunits, short x
 
 	View2DGrid *grid;
 	float space, pixels, seconddiv;
-	int secondgrid;
 	
 	/* check that there are at least some workable args */
 	if (ELEM(V2D_ARG_DUMMY, xunits, xclamp) && ELEM(V2D_ARG_DUMMY, yunits, yclamp))
@@ -1120,11 +1132,9 @@ View2DGrid *UI_view2d_grid_calc(Scene *scene, View2D *v2d, short xunits, short x
 	
 	/* rule: gridstep is minimal GRIDSTEP pixels */
 	if (xunits == V2D_UNIT_SECONDS) {
-		secondgrid= 1;
 		seconddiv= (float)(0.01 * FPS);
 	}
 	else {
-		secondgrid= 0;
 		seconddiv= 1.0f;
 	}
 	
@@ -1805,8 +1815,8 @@ void UI_view2d_listview_view_to_cell(View2D *v2d, short columnwidth, short rowhe
 						float viewx, float viewy, int *column, int *row)
 {
 	/* adjust view coordinates to be all positive ints, corrected for the start offset */
-	const int x= (int)(floor(fabs(viewx) + 0.5f) - startx); 
-	const int y= (int)(floor(fabs(viewy) + 0.5f) - starty);
+	const int x= (int)(floorf(fabsf(viewx) + 0.5f) - startx);
+	const int y= (int)(floorf(fabsf(viewy) + 0.5f) - starty);
 	
 	/* sizes must not be negative */
 	if ( (v2d == NULL) || ((columnwidth <= 0) && (rowheight <= 0)) ) {

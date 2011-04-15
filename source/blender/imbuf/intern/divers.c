@@ -1,4 +1,4 @@
-/**
+/*
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,18 +26,24 @@
  * ***** END GPL LICENSE BLOCK *****
  * allocimbuf.c
  *
- * $Id: divers.c 33484 2010-12-05 12:32:58Z ton $
+ * $Id: divers.c 35823 2011-03-27 17:12:59Z campbellbarton $
  */
+
+/** \file blender/imbuf/intern/divers.c
+ *  \ingroup imbuf
+ */
+
 
 #include "BLI_blenlib.h"
 #include "BLI_rand.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "imbuf.h"
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
 #include "IMB_allocimbuf.h"
-#include "BKE_utildefines.h"
+
 #include "BKE_colortools.h"
 
 #include "MEM_guardedalloc.h"
@@ -46,7 +52,7 @@ void IMB_de_interlace(struct ImBuf *ibuf)
 {
 	struct ImBuf * tbuf1, * tbuf2;
 	
-	if (ibuf == 0) return;
+	if (ibuf == NULL) return;
 	if (ibuf->flags & IB_fields) return;
 	ibuf->flags |= IB_fields;
 	
@@ -73,7 +79,7 @@ void IMB_interlace(struct ImBuf *ibuf)
 {
 	struct ImBuf * tbuf1, * tbuf2;
 
-	if (ibuf == 0) return;
+	if (ibuf == NULL) return;
 	ibuf->flags &= ~IB_fields;
 
 	ibuf->y *= 2;
@@ -103,7 +109,7 @@ void IMB_rect_from_float(struct ImBuf *ibuf)
 	/* quick method to convert floatbuf to byte */
 	float *tof = (float *)ibuf->rect_float;
 //	int do_dither = ibuf->dither != 0.f;
-	float dither= ibuf->dither / 255.0;
+	float dither= ibuf->dither / 255.0f;
 	float srgb[4];
 	int i, channels= ibuf->channels;
 	short profile= ibuf->profile;
@@ -135,7 +141,7 @@ void IMB_rect_from_float(struct ImBuf *ibuf)
 		else if (channels == 4) {
 			if (dither != 0.f) {
 				for (i = ibuf->x * ibuf->y; i > 0; i--, to+=4, tof+=4) {
-					const float d = (BLI_frand()-0.5)*dither;
+					const float d = (BLI_frand()-0.5f)*dither;
 					
 					srgb[0]= d + linearrgb_to_srgb(tof[0]);
 					srgb[1]= d + linearrgb_to_srgb(tof[1]);
@@ -164,7 +170,7 @@ void IMB_rect_from_float(struct ImBuf *ibuf)
 		else {
 			if (dither != 0.f) {
 				for (i = ibuf->x * ibuf->y; i > 0; i--, to+=4, tof+=4) {
-					const float d = (BLI_frand()-0.5)*dither;
+					const float d = (BLI_frand()-0.5f)*dither;
 					float col[4];
 
 					col[0]= d + tof[0];
@@ -187,6 +193,8 @@ void IMB_rect_from_float(struct ImBuf *ibuf)
 			}
 		}
 	}
+	/* ensure user flag is reset */
+	ibuf->userflags &= ~IB_RECT_INVALID;
 }
 
 static void imb_float_from_rect_nonlinear(struct ImBuf *ibuf, float *fbuf)
@@ -227,13 +235,9 @@ static void imb_float_from_rect_linear(struct ImBuf *ibuf, float *fbuf)
 void IMB_float_from_rect(struct ImBuf *ibuf)
 {
 	/* quick method to convert byte to floatbuf */
-	float *tof = ibuf->rect_float;
-
-	unsigned char *to = (unsigned char *) ibuf->rect;
-	if(to==NULL) return;
-	if(tof==NULL) {
+	if(ibuf->rect==NULL) return;
+	if(ibuf->rect_float==NULL) {
 		if (imb_addrectfloatImBuf(ibuf) == 0) return;
-		tof = ibuf->rect_float;
 	}
 	
 	/* Float bufs should be stored linear */
@@ -277,9 +281,9 @@ void IMB_convert_profile(struct ImBuf *ibuf, int profile)
 			}
 			if(ibuf->rect) {
 				for (i = ibuf->x * ibuf->y; i > 0; i--, rct+=4) {
-					rctf[0]= (unsigned char)((srgb_to_linearrgb((float)rctf[0]/255.0f) * 255.0f) + 0.5f);
-					rctf[1]= (unsigned char)((srgb_to_linearrgb((float)rctf[1]/255.0f) * 255.0f) + 0.5f);
-					rctf[2]= (unsigned char)((srgb_to_linearrgb((float)rctf[2]/255.0f) * 255.0f) + 0.5f);
+					rct[0]= (unsigned char)((srgb_to_linearrgb((float)rct[0]/255.0f) * 255.0f) + 0.5f);
+					rct[1]= (unsigned char)((srgb_to_linearrgb((float)rct[1]/255.0f) * 255.0f) + 0.5f);
+					rct[2]= (unsigned char)((srgb_to_linearrgb((float)rct[2]/255.0f) * 255.0f) + 0.5f);
 				}
 			}
 			ok= TRUE;
@@ -296,9 +300,9 @@ void IMB_convert_profile(struct ImBuf *ibuf, int profile)
 			}
 			if(ibuf->rect) {
 				for (i = ibuf->x * ibuf->y; i > 0; i--, rct+=4) {
-					rctf[0]= (unsigned char)((linearrgb_to_srgb((float)rctf[0]/255.0f) * 255.0f) + 0.5f);
-					rctf[1]= (unsigned char)((linearrgb_to_srgb((float)rctf[1]/255.0f) * 255.0f) + 0.5f);
-					rctf[2]= (unsigned char)((linearrgb_to_srgb((float)rctf[2]/255.0f) * 255.0f) + 0.5f);
+					rct[0]= (unsigned char)((linearrgb_to_srgb((float)rct[0]/255.0f) * 255.0f) + 0.5f);
+					rct[1]= (unsigned char)((linearrgb_to_srgb((float)rct[1]/255.0f) * 255.0f) + 0.5f);
+					rct[2]= (unsigned char)((linearrgb_to_srgb((float)rct[2]/255.0f) * 255.0f) + 0.5f);
 				}
 			}
 			ok= TRUE;

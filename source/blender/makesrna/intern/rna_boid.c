@@ -1,5 +1,5 @@
-/**
- * $Id: rna_boid.c 33490 2010-12-05 18:59:23Z blendix $
+/*
+ * $Id: rna_boid.c 36095 2011-04-11 01:18:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/makesrna/intern/rna_boid.c
+ *  \ingroup RNA
+ */
+
+
 #include <float.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -46,7 +51,7 @@
 EnumPropertyItem boidrule_type_items[] ={
 	{eBoidRuleType_Goal, "GOAL", 0, "Goal", "Go to assigned object or loudest assigned signal source"},
 	{eBoidRuleType_Avoid, "AVOID", 0, "Avoid", "Get away from assigned object or loudest assigned signal source"},
-	{eBoidRuleType_AvoidCollision, "AVOID_COLLISION", 0, "Avoid Collision", "Maneuver to avoid collisions with other boids and deflector objects in near future"},
+	{eBoidRuleType_AvoidCollision, "AVOID_COLLISION", 0, "Avoid Collision", "Manoeuvre to avoid collisions with other boids and deflector objects in near future"},
 	{eBoidRuleType_Separate, "SEPARATE", 0, "Separate", "Keep from going through other boids"},
 	{eBoidRuleType_Flock, "FLOCK", 0, "Flock", "Move to center of neighbors and match their velocity"},
 	{eBoidRuleType_FollowLeader, "FOLLOW_LEADER", 0, "Follow Leader", "Follow a boid or assigned object"},

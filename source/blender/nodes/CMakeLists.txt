@@ -34,7 +34,7 @@ set(INC
 	../makesrna
 	../render/extern/include
 	../../../intern/guardedalloc
-	../../../extern/glew/include
+	${GLEW_INCLUDE_PATH}
 )
 
 set(SRC
@@ -149,7 +149,7 @@ set(SRC
 )
 
 if(WITH_PYTHON)
-	set(INC ${INC} ../python ${PYTHON_INC})
+	set(INC ${INC} ../python ${PYTHON_INCLUDE_DIRS})
 	add_definitions(-DWITH_PYTHON)
 endif()
 

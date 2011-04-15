@@ -1,5 +1,5 @@
 /*
- * $Id: KX_KetsjiEngine.cpp 33707 2010-12-16 10:25:41Z dfelinto $
+ * $Id: KX_KetsjiEngine.cpp 35417 2011-03-09 01:25:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,11 +28,17 @@
  * The engine ties all game modules together. 
  */
 
+/** \file gameengine/Ketsji/KX_KetsjiEngine.cpp
+ *  \ingroup ketsji
+ */
+
+
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786)
 #endif //WIN32
 
 #include <iostream>
+#include <stdio.h>
 
 #include "KX_KetsjiEngine.h"
 
@@ -72,7 +78,6 @@
 #include "KX_TimeCategoryLogger.h"
 
 #include "RAS_FramingManager.h"
-#include "stdio.h"
 #include "DNA_world_types.h"
 #include "DNA_scene_types.h"
 

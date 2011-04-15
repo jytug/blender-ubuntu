@@ -16,19 +16,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
-    "name": "Import Unreal Skeleton Mesh(.psk)",
+bl_info = {
+    "name": "Import Unreal Skeleton Mesh (.psk)",
     "author": "Darknet",
     "version": (2, 0),
     "blender": (2, 5, 3),
-    "api": 31847,
-    "location": "File > Import ",
-    "description": "Import Unreal Engine (.psk)",
+    "api": 36079,
+    "location": "File > Import > Skeleton Mesh (.psk)",
+    "description": "Import Skeleleton Mesh",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"
         "Scripts/Import-Export/Unreal_psk_psa",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=21366&group_id=153&atid=469",
+        "func=detail&aid=21366",
     "category": "Import-Export"}
 
 """
@@ -146,11 +146,13 @@ def fixRoll(b):
         #align Z-axis
         b.roll -= math.degrees(math.atan2(v[0]*v[2]*(1 - v[1]),v[0]*v[0] + v[1]*v[2]*v[2])) 
         
-def pskimport(infile):
+def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
     global DEBUGLOG
+    DEBUGLOG = bDebugLogPSK
     print ("--------------------------------------------------")
     print ("---------SCRIPT EXECUTING PYTHON IMPORTER---------")
     print ("--------------------------------------------------")
+    print (" DEBUG Log:",bDebugLogPSK)
     print ("Importing file: ", infile)
     
     md5_bones=[]
@@ -163,7 +165,7 @@ def pskimport(infile):
     def printlog(strdata):
         if (DEBUGLOG):
             logf.write(strdata)
-            
+    
     objName = infile.split('\\')[-1].split('.')[0]
     
     me_ob = bpy.data.meshes.new(objName)
@@ -241,7 +243,8 @@ def pskimport(infile):
         u2 = UVCoords[indata[2]][1]
         v2 = UVCoords[indata[2]][2]
         uv.append([u2,v2])
-        faceuv.append(uv)
+        faceuv.append([uv,indata[3],indata[4],indata[5]])
+        #print("material:",indata[3])
         #print("UV: ",u0,v0)
         #update the uv var of the last item in the Tmsh.faces list
         # which is the face just added above
@@ -268,9 +271,12 @@ def pskimport(infile):
     printlog("Nbr of MATT0000 records: " +  str(recCount) + "\n" )
     printlog(" - Not importing any material data now. PSKs are texture wrapped! \n")
     counter = 0
+    materialcount = 0
     while counter < recCount:
         counter = counter + 1
         indata = unpack('64s6i',pskfile.read(88))
+        materialcount += 1
+        print("Material",counter)		
     ##
     
     #================================================================================================== 
@@ -351,73 +357,104 @@ def pskimport(infile):
     objectname = "armaturedata"
     bfound = False
     arm = None
-    for obj in bpy.data.objects:
-        if (obj.name == meshname):
-            bfound = True
-            arm = obj
-            break
+    if importbone:
+        for obj in bpy.data.objects:
+            if (obj.name == meshname):
+                bfound = True
+                arm = obj
+                break
+				
+        if bfound == False:
+            '''
+            armdata = bpy.data.armatures.new(objectname)
+            ob_new = bpy.data.objects.new(meshname, armdata)
+            #ob_new = bpy.data.objects.new(meshname, 'ARMATURE')
+            #ob_new.data = armdata
+            bpy.context.scene.objects.link(ob_new)
+            #bpy.ops.object.mode_set(mode='OBJECT')
+            for i in bpy.context.scene.objects: i.select = False #deselect all objects
+            ob_new.select = True
+            #set current armature to edit the bone
+            bpy.context.scene.objects.active = ob_new
+            #set mode to able to edit the bone
+            bpy.ops.object.mode_set(mode='EDIT')
+			
+            #newbone = ob_new.data.edit_bones.new('test')
+            #newbone.tail.y = 1
+            print("creating bone(s)")
+            for bone in md5_bones:
+                #print(dir(bone))
+                bpy.ops.object.mode_set(mode='EDIT')
+                newbone = ob_new.data.edit_bones.new(bone.name)
+            '''		
+		
             
-    if bfound == False:
-        armdata = bpy.data.armatures.new(objectname)
-        ob_new = bpy.data.objects.new(meshname, armdata)
-        #ob_new = bpy.data.objects.new(meshname, 'ARMATURE')
-        #ob_new.data = armdata
-        bpy.context.scene.objects.link(ob_new)
-        #bpy.ops.object.mode_set(mode='OBJECT')
-        for i in bpy.context.scene.objects: i.select = False #deselect all objects
-        ob_new.select = True
-        #set current armature to edit the bone
-        bpy.context.scene.objects.active = ob_new
-        #set mode to able to edit the bone
-        bpy.ops.object.mode_set(mode='EDIT')
-        #newbone = ob_new.data.edit_bones.new('test')
-        #newbone.tail.y = 1
-        print("creating bone(s)")
-        for bone in md5_bones:
-            #print(dir(bone))
-            newbone = ob_new.data.edit_bones.new(bone.name)
-            #parent the bone
-            parentbone = None
-            print("bone name:",bone.name)
-            #note bone location is set in the real space or global not local
-            if bone.name != bone.parent:
+            armdata = bpy.data.armatures.new(objectname)
+            ob_new = bpy.data.objects.new(meshname, armdata)
+            #ob_new = bpy.data.objects.new(meshname, 'ARMATURE')
+            #ob_new.data = armdata
+            bpy.context.scene.objects.link(ob_new)
+            #bpy.ops.object.mode_set(mode='OBJECT')
+            for i in bpy.context.scene.objects: i.select = False #deselect all objects
+            ob_new.select = True
+            #set current armature to edit the bone
+            bpy.context.scene.objects.active = ob_new
+            #set mode to able to edit the bone
+            bpy.ops.object.mode_set(mode='EDIT')
+			
+            #newbone = ob_new.data.edit_bones.new('test')
+            #newbone.tail.y = 1
+            print("creating bone(s)")
+            for bone in md5_bones:
+                #print(dir(bone))
+                bpy.ops.object.mode_set(mode='EDIT')
+                newbone = ob_new.data.edit_bones.new(bone.name)
+                #parent the bone
+                parentbone = None
+                print("bone name:",bone.name)
+                #note bone location is set in the real space or global not local
+                if bone.name != bone.parent:
+				
+                    pos_x = bone.bindpos[0]
+                    pos_y = bone.bindpos[1]
+                    pos_z = bone.bindpos[2]
+				
+                    #print( "LINKING:" , bone.parent ,"j")
+                    parentbone = ob_new.data.edit_bones[bone.parent]
+                    newbone.parent = parentbone
+                    rotmatrix = bone.bindmat.to_matrix().to_4x4().to_3x3()  # XXX, redundant matrix conversion?
+					
+                    #parent_head = parentbone.head * parentbone.matrix.to_quaternion().inverse()
+                    #parent_tail = parentbone.tail * parentbone.matrix.to_quaternion().inverse()
+                    #location=Vector(pos_x,pos_y,pos_z)
+                    #set_position = (parent_tail - parent_head) + location
+                    #print("tmp head:",set_position)
+					
+                    #pos_x = set_position.x
+                    #pos_y = set_position.y
+                    #pos_z = set_position.z
+					
+                    newbone.head.x = parentbone.head.x + pos_x
+                    newbone.head.y = parentbone.head.y + pos_y
+                    newbone.head.z = parentbone.head.z + pos_z
+                    #print("head:",newbone.head)
+                    newbone.tail.x = parentbone.head.x + (pos_x + bonesize * rotmatrix[1][0])
+                    newbone.tail.y = parentbone.head.y + (pos_y + bonesize * rotmatrix[1][1])
+                    newbone.tail.z = parentbone.head.z + (pos_z + bonesize * rotmatrix[1][2])
+                else:
+                    #print("rotmatrix:",dir(bone.bindmat.to_matrix().resize_4x4()))
+                    #rotmatrix = bone.bindmat.to_matrix().resize_4x4().to_3x3()  # XXX, redundant matrix conversion?
+                    rotmatrix = bone.bindmat.to_matrix().to_3x3()  # XXX, redundant matrix conversion?
+					
+                    
+                    newbone.head.x = bone.bindpos[0]
+                    newbone.head.y = bone.bindpos[1]
+                    newbone.head.z = bone.bindpos[2]
+                    newbone.tail.x = bone.bindpos[0] + bonesize * rotmatrix[1][0]
+                    newbone.tail.y = bone.bindpos[1] + bonesize * rotmatrix[1][1]
+                    newbone.tail.z = bone.bindpos[2] + bonesize * rotmatrix[1][2]
+					#print("no parent")
             
-                pos_x = bone.bindpos[0]
-                pos_y = bone.bindpos[1]
-                pos_z = bone.bindpos[2]
-            
-                #print( "LINKING:" , bone.parent ,"j")
-                parentbone = ob_new.data.edit_bones[bone.parent]
-                newbone.parent = parentbone
-                rotmatrix = bone.bindmat.to_matrix().resize4x4().rotation_part()
-                
-                #parent_head = parentbone.head * parentbone.matrix.to_quat().inverse()
-                #parent_tail = parentbone.tail * parentbone.matrix.to_quat().inverse()
-                #location=Vector(pos_x,pos_y,pos_z)
-                #set_position = (parent_tail - parent_head) + location
-                #print("tmp head:",set_position)
-                
-                #pos_x = set_position.x
-                #pos_y = set_position.y
-                #pos_z = set_position.z
-                
-                newbone.head.x = parentbone.head.x + pos_x
-                newbone.head.y = parentbone.head.y + pos_y
-                newbone.head.z = parentbone.head.z + pos_z
-                print("head:",newbone.head)
-                newbone.tail.x = parentbone.head.x + (pos_x + bonesize * rotmatrix[1][0])
-                newbone.tail.y = parentbone.head.y + (pos_y + bonesize * rotmatrix[1][1])
-                newbone.tail.z = parentbone.head.z + (pos_z + bonesize * rotmatrix[1][2])
-            else:
-                rotmatrix = bone.bindmat.to_matrix().resize4x4().rotation_part()
-                newbone.head.x = bone.bindpos[0]
-                newbone.head.y = bone.bindpos[1]
-                newbone.head.z = bone.bindpos[2]
-                newbone.tail.x = bone.bindpos[0] + bonesize * rotmatrix[1][0]
-                newbone.tail.y = bone.bindpos[1] + bonesize * rotmatrix[1][1]
-                newbone.tail.z = bone.bindpos[2] + bonesize * rotmatrix[1][2]
-                #print("no parent")
-    
     bpy.context.scene.update()
     
     #==================================================================================================
@@ -459,7 +496,7 @@ def pskimport(infile):
     #RWghts fields = PntIdx|BoneIdx|Weight
     RWghts.sort()
     printlog( "len(RWghts)=" + str(len(RWghts)) + "\n")
-    #Tmsh.update()
+    #Tmsh.update_tag()
     
     #set the Vertex Colors of the faces
     #face.v[n] = RWghts[0]
@@ -495,33 +532,136 @@ def pskimport(infile):
     
     me_ob.faces.foreach_set("vertices_raw", faces)
     me_ob.faces.foreach_set("use_smooth", [False] * len(me_ob.faces))
-    me_ob.update()
+    me_ob.update_tag()
     
+    """
+	Material setup coding.
+	First the mesh has to be create first to get the uv texture setup working.
+	-Create material(s) list in the psk pack data from the list.(to do list)
+	-Append the material to the from create the mesh object.
+	-Create Texture(s)
+	-fae loop for uv assign and assign material index
+	
+    """
+    bpy.ops.object.mode_set(mode='OBJECT')
+    #===================================================================================================
+    #Material Setup
+    #===================================================================================================
+    print ("-------------------------")
+    print ("----Creating--Materials--")
+    print ("-------------------------")
+    materialname = "pskmat"
+    materials = []
+	
+    for matcount in range(materialcount):
+        
+        #if texturedata != None:
+        matdata = bpy.data.materials.new(materialname + str(matcount))
+        #mtex = matdata.texture_slots.new()
+        #mtex.texture = texture[matcount].data
+        #print(type(texture[matcount].data))
+        #print(dir(mtex))
+        #print(dir(matdata))
+        #for texno in range(len( bpy.data.textures)):
+            #print((bpy.data.textures[texno].name))		
+            #print(dir(bpy.data.textures[texno]))
+        #matdata.active_texture = bpy.data.textures[matcount-1]
+        #matdata.texture_coords = 'UV'
+        #matdata.active_texture = texturedata
+        materials.append(matdata)
+	
+    for material in materials:
+        #add material to the mesh list of materials
+        me_ob.materials.append(material)
     #===================================================================================================
     #UV Setup
     #===================================================================================================
+    print ("-------------------------")
+    print ("-- Creating UV Texture --")
+    print ("-------------------------") 
     texture = []
     texturename = "text1"
-    #print(dir(bpy.data))
-    if (len(faceuv) > 0):
-        uvtex = me_ob.uv_textures.new() #add one uv texture
-        for i, face in enumerate(me_ob.faces):
-            blender_tface= uvtex.data[i] #face
-            blender_tface.uv1 = faceuv[i][0] #uv = (0,0)
-            blender_tface.uv2 = faceuv[i][1] #uv = (0,0)
-            blender_tface.uv3 = faceuv[i][2] #uv = (0,0)
-        texture.append(uvtex)
-        
+    countm = 0
+    #for countm in range(materialcount):
+        #psktexname="psk" + str(countm)
+        #me_ob.uv_textures.new(name=psktexname)
+    if importmultiuvtextures == True:
+        me_ob.uv_textures.new(name="pskuvtexture")
+        #print(dir(bpy.data))
+        if (len(faceuv) > 0):
+            for countm in range(len(me_ob.uv_textures)):
+                me_ob.update()
+                uvtex = me_ob.uv_textures[countm] #add one uv texture
+                me_ob.update()
+                #print("UV TEXTURE NAME:",uvtex.name)
+                for i, face in enumerate(me_ob.faces):
+                    blender_tface = uvtex.data[i] #face
+                    mfaceuv = faceuv[i]
+                    #print("---------------------------------------")
+                    #print(faceuv[i][1])
+                    #print(dir(face))
+                    face.material_index = faceuv[i][1]
+                    blender_tface.uv1 = mfaceuv[0][0] #uv = (0,0)
+                    blender_tface.uv2 = mfaceuv[0][1] #uv = (0,0)
+                    blender_tface.uv3 = mfaceuv[0][2] #uv = (0,0)
+                texture.append(uvtex)
+    else:
+        for countm in range(materialcount):
+            psktexname="psk" + str(countm)
+            me_ob.uv_textures.new(name=psktexname)
+		    #psktexname="psk" + str(countm)
+        #me_ob.uv_textures.new(name=psktexname)
+        for countm in range(len(me_ob.uv_textures)):
+                me_ob.update()
+                #print(dir(me_ob.uv_textures))
+                #psktexname="psk" + str(countm)
+                uvtex = me_ob.uv_textures[countm] #add one uv texture
+                me_ob.update()
+                #print("UV TEXTURE NAME:",uvtex.name)
+                if (len(faceuv) > 0):
+                    counttex = 0
+                    countm = 0
+                    for countm in range(len(me_ob.uv_textures)):
+                        me_ob.update()
+                        #print(dir(me_ob.uv_textures))
+                        psktexname="psk" + str(countm)
+                        uvtex = me_ob.uv_textures[countm] #add one uv texture
+                        me_ob.update()
+                        #print("UV TEXTURE NAME:",uvtex.name)
+                        for i, face in enumerate(me_ob.faces):
+                            blender_tface = uvtex.data[i] #face
+                            mfaceuv = faceuv[i]
+                            #print("---------------------------------------")
+                            #print(faceuv[i][1])
+                            #print(dir(face))
+                            face.material_index = faceuv[i][1]
+                            if countm == faceuv[i][1]:
+                                face.material_index = faceuv[i][1]
+                                blender_tface.uv1 = mfaceuv[0][0] #uv = (0,0)
+                                blender_tface.uv2 = mfaceuv[0][1] #uv = (0,0)
+                                blender_tface.uv3 = mfaceuv[0][2] #uv = (0,0)
+                            else:
+                                #set uv to zero (0,0)
+                                #print("--------------------")
+                                #print(blender_tface.uv1)
+                                #print(blender_tface.uv2)
+                                #print(blender_tface.uv2)
+                                blender_tface.uv1 = [0,0]
+                                #print(blender_tface.uv1)
+                                blender_tface.uv2 = [0,0]
+                                blender_tface.uv3 = [0,0]
+                    
+                texture.append(uvtex)		
+    print("UV TEXTURE LEN:",len(texture))
         #for tex in me_ob.uv_textures:
             #print("mesh tex:",dir(tex))
             #print((tex.name))
     
-    #===================================================================================================
-    #Material Setup
-    #===================================================================================================
-    materialname = "mat"
-    materials = []
+    #for face in me_ob.faces:
+        #print(dir(face))
     
+		
+    '''
     matdata = bpy.data.materials.new(materialname)
     #color is 0 - 1 not in 0 - 255
     #matdata.mirror_color=(float(0.04),float(0.08),float(0.44))
@@ -541,6 +681,7 @@ def pskimport(infile):
     for material in materials:
         #add material to the mesh list of materials
         me_ob.materials.append(material)
+    '''
     #===================================================================================================
     #
     #===================================================================================================
@@ -556,13 +697,13 @@ def pskimport(infile):
     print ("PSK2Blender completed")
 #End of def pskimport#########################
 
-def getInputFilename(filename):
+def getInputFilename(filename,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
     checktype = filename.split('\\')[-1].split('.')[1]
     print ("------------",filename)
     if checktype.upper() != 'PSK':
         print ("  Selected file = ",filename)
         raise (IOError, "The selected input file is not a *.psk file")
-    pskimport(filename)
+    pskimport(filename,importmesh,importbone,bDebugLogPSK,importmultiuvtextures)
 
 from bpy.props import *
 
@@ -570,13 +711,19 @@ class IMPORT_OT_psk(bpy.types.Operator):
     '''Load a skeleton mesh psk File'''
     bl_idname = "import_scene.psk"
     bl_label = "Import PSK"
-
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+	
     # List of operator properties, the attributes will be assigned
     # to the class instance from the operator settings before calling.
     filepath = StringProperty(name="File Path", description="Filepath used for importing the OBJ file", maxlen= 1024, default= "")
+    importmesh = BoolProperty(name="Mesh", description="Import mesh only. (not yet build.)", default=True)
+    importbone = BoolProperty(name="Bones", description="Import bones only. Current not working yet.", default=True)
+    importmultiuvtextures = BoolProperty(name="Single UV Texture(s)", description="Single or Multi uv textures.", default=True)
+    bDebugLogPSK = BoolProperty(name="Debug Log.txt", description="Log the output of raw format. It will save in current file dir. Note this just for testing.", default=False)
 
     def execute(self, context):
-        getInputFilename(self.filepath)
+        getInputFilename(self.filepath,self.importmesh,self.importbone,self.bDebugLogPSK,self.importmultiuvtextures)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -587,11 +734,12 @@ class IMPORT_OT_psk(bpy.types.Operator):
 def menu_func(self, context):
     self.layout.operator(IMPORT_OT_psk.bl_idname, text="Skeleton Mesh (.psk)")
 
-
 def register():
+    bpy.utils.register_module(__name__)
     bpy.types.INFO_MT_file_import.append(menu_func)
     
 def unregister():
+    bpy.utils.unregister_module(__name__)
     bpy.types.INFO_MT_file_import.remove(menu_func)
 
 if __name__ == "__main__":

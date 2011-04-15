@@ -16,19 +16,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
-    "name": "Import GIMP Image to Scene (.xcf, .xjt)",
+bl_info = {
+    "name": "Import GIMP Image to Scene (.xcf/.xjt)",
     "author": "Daniel Salazar (ZanQdo)",
     "version": (2, 0, 0),
-    "blender": (2, 5, 5),
-    "api": 33419,
-    "location": "File > Import > GIMP Image to Scene(.xcf, .xjt)",
-    "description": "Imports GIMP multilayer image files into 3D Layers",
+    "blender": (2, 5, 7),
+    "api": 36079,
+    "location": "File > Import > GIMP Image to Scene(.xcf/.xjt)",
+    "description": "Imports GIMP multilayer image files as a series of multiple planes",
     "warning": "XCF import requires xcftools installed",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Import-Export/GIMPImageToScene",
     "tracker_url": "http://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=25136&group_id=153&atid=469",
+        "func=detail&aid=25136",
     "category": "Import-Export"}
 
 """
@@ -44,7 +44,7 @@ def main(File, Path, LayerViewers, MixerViewers, LayerOffset,\
     #Folder = '['+File.rstrip(Ext)+']'+'_images/'
     Folder = 'images_'+'['+File.rstrip(Ext)+']/'
     
-    if bpy.data.is_dirty:
+    if not bpy.data.is_saved:
         PathSaveRaw = Path+Folder
         PathSave = PathSaveRaw.replace(' ', '\ ')
         try: os.mkdir(PathSaveRaw)
@@ -88,6 +88,9 @@ def main(File, Path, LayerViewers, MixerViewers, LayerOffset,\
                         ResX, ResY = map (int, Segment[4:].split(','))
             if Line.startswith("b'L") or Line.startswith("b'l"):
                 
+                '''The "nice" method to check if layer has alpha channel
+                sadly GIMP sometimes decides not to export an alpha channel
+                if it's pure white so we are not completly sure here yet'''
                 if Line.startswith("b'L"): HasAlpha = True
                 else: HasAlpha = False
                 
@@ -100,6 +103,11 @@ def main(File, Path, LayerViewers, MixerViewers, LayerOffset,\
                     if Segment.startswith("b'"):
                         imageFile = 'l' + Segment[3:] + '.jpg'
                         imageFileAlpha ='la'+Segment[3:]+'.jpg'
+                        
+                        '''Phisically double checking if alpha image exists
+                        now we can be sure! (damn GIMP)'''
+                        if HasAlpha:
+                            if not os.path.isfile(PathSaveRaw+imageFileAlpha): HasAlpha = False
                         
                         # Get Widht and Height from images
                         data = open(PathSaveRaw+imageFile, "rb").read()
@@ -338,7 +346,7 @@ def main(File, Path, LayerViewers, MixerViewers, LayerOffset,\
             Tex.extension = 'CLIP'
             Tex.use_preview_alpha = True
             
-            Img = bpy.data.images.new(NameShort)
+            Img = bpy.data.images.new(NameShort, 128, 128)
             Img.source = 'FILE'
             if PremulAlpha: Img.use_premultiply = True
             Img.filepath = '%s%s%s' % (PathSaveRaw, Name, ExtSave)
@@ -362,7 +370,7 @@ def main(File, Path, LayerViewers, MixerViewers, LayerOffset,\
             Tex = bpy.data.textures.new(NameShort, 'IMAGE')
             Tex.extension = 'CLIP'
             
-            Img = bpy.data.images.new(NameShort)
+            Img = bpy.data.images.new(NameShort, 128, 128)
             Img.source = 'FILE'
             Img.filepath = '%s%s%s' % (PathSaveRaw, Name, ExtSave)
             
@@ -384,7 +392,7 @@ def main(File, Path, LayerViewers, MixerViewers, LayerOffset,\
                 Tex.use_preview_alpha = True
                 Tex.use_alpha = False
                 
-                Img = bpy.data.images.new(NameShort+'_A')
+                Img = bpy.data.images.new(NameShort+'_A', 128, 128)
                 Img.source = 'FILE'
                 if PremulAlpha: Img.use_premultiply = True
                 Img.filepath = '%s%s_A%s' % (PathSaveRaw, Name, ExtSave)
@@ -659,10 +667,14 @@ def menu_func(self, context):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_import.append(menu_func)
 
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_import.remove(menu_func)
 
 

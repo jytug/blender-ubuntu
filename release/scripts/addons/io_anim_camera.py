@@ -18,19 +18,20 @@
 
 # <pep8 compliant>
 
-bl_addon_info = {
+bl_info = {
     "name": "Export Camera Animation",
     "author": "Campbell Barton",
     "version": (0, 1),
-    "blender": (2, 5, 3),
-    "api": 31847,
-    "location": "File > Export > Camera Animation",
-    "description": "Export Cameras & Markers",
+    "blender": (2, 5, 7),
+    "api": 36079,
+    "location": "File > Export > Cameras & Markers (.py)",
+    "description": "Export Cameras & Markers (.py)",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Import-Export/Camera_Animation",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=22835&group_id=153&atid=469",
+        "func=detail&aid=22835",
+    "support": 'OFFICIAL',
     "category": "Import-Export"}
 
 
@@ -86,9 +87,9 @@ def writeCameras(context, filepath, frame_start, frame_end, only_selected=False)
             fw("obj = cameras['%s']\n" % obj.name)
 
             matrix = obj.matrix_world.copy()
-            fw("obj.location = %s\n" % repr(tuple(matrix.translation_part())))
-            fw("obj.scale = %s\n" % repr(tuple(matrix.scale_part())))
-            fw("obj.rotation_euler = %s\n" % repr(tuple(matrix.to_euler())))
+            fw("obj.location = %r\n" % matrix.to_translation()[:])
+            fw("obj.scale = %r\n" % matrix.to_scale()[:])
+            fw("obj.rotation_euler = %r\n" % matrix.to_euler()[:])
 
             fw("obj.keyframe_insert('location')\n")
             fw("obj.keyframe_insert('scale')\n")
@@ -113,7 +114,7 @@ def writeCameras(context, filepath, frame_start, frame_end, only_selected=False)
         fw("\n")
 
 
-from bpy.props import *
+from bpy.props import StringProperty, IntProperty, BoolProperty
 from io_utils import ExportHelper
 
 
@@ -154,10 +155,14 @@ def menu_export(self, context):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_export.append(menu_export)
 
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_export.remove(menu_export)
 
 

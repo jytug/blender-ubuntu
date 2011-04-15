@@ -1,5 +1,5 @@
-/**
- * $Id: gpencil.c 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: gpencil.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenkernel/intern/gpencil.c
+ *  \ingroup bke
+ */
+
  
 #include <stdio.h>
 #include <string.h>
@@ -33,8 +38,8 @@
 
 #include "MEM_guardedalloc.h"
 
-
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_gpencil_types.h"
 
@@ -42,7 +47,7 @@
 #include "BKE_gpencil.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
-#include "BKE_utildefines.h"
+
 
 
 /* ************************************************** */

@@ -1,5 +1,5 @@
-/**
- * $Id: GHOST_IEvent.h 33536 2010-12-07 11:57:34Z campbellbarton $
+/*
+ * $Id: GHOST_IEvent.h 35904 2011-03-30 16:14:54Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,14 +25,16 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-/**
- * @file	GHOST_IEvent.h
+
+/** \file ghost/GHOST_IEvent.h
+ *  \ingroup GHOST
  * Declaration of GHOST_IEvent interface class.
  */
 
 #ifndef _GHOST_IEVENT_H_
 #define _GHOST_IEVENT_H_
 
+#include <stddef.h>
 #include "GHOST_Types.h"
 
 class GHOST_IWindow;

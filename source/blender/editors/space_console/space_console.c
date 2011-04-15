@@ -1,5 +1,5 @@
-/**
- * $Id: space_console.c 33400 2010-11-30 22:39:41Z campbellbarton $
+/*
+ * $Id: space_console.c 35883 2011-03-29 16:52:26Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,8 +21,12 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
- 
- #include <string.h>
+
+/** \file blender/editors/space_console/space_console.c
+ *  \ingroup spconsole
+ */
+
+#include <string.h>
 #include <stdio.h>
 
 #ifdef WIN32
@@ -33,15 +37,16 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 #include "BKE_idcode.h"
 
+#include "ED_space_api.h"
 #include "ED_screen.h"
 
 #include "BIF_gl.h"
-
 
 #include "RNA_access.h"
 
@@ -225,7 +230,7 @@ static void console_main_area_draw(const bContext *C, ARegion *ar)
 	UI_view2d_scrollers_free(scrollers);
 }
 
-void console_operatortypes(void)
+static void console_operatortypes(void)
 {
 	/* console_ops.c */
 	WM_operatortype_append(CONSOLE_OT_move);
@@ -243,7 +248,7 @@ void console_operatortypes(void)
 	WM_operatortype_append(CONSOLE_OT_select_set);
 }
 
-void console_keymap(struct wmKeyConfig *keyconf)
+static void console_keymap(struct wmKeyConfig *keyconf)
 {
 	wmKeyMap *keymap= WM_keymap_find(keyconf, "Console", SPACE_CONSOLE, 0);
 	wmKeyMapItem *kmi;
@@ -299,6 +304,7 @@ void console_keymap(struct wmKeyConfig *keyconf)
 	
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_delete", DELKEY, KM_PRESS, 0, 0)->ptr, "type", DEL_NEXT_CHAR);
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_delete", BACKSPACEKEY, KM_PRESS, 0, 0)->ptr, "type", DEL_PREV_CHAR);
+	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_delete", BACKSPACEKEY, KM_PRESS, KM_SHIFT, 0)->ptr, "type", DEL_PREV_CHAR);  /* same as above [#26623] */
 
 #ifdef WITH_PYTHON
 	WM_keymap_add_item(keymap, "CONSOLE_OT_execute", RETKEY, KM_PRESS, 0, 0); /* python operator - space_text.py */

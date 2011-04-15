@@ -1,5 +1,5 @@
-/**
- * $Id: wm_window.c 33754 2010-12-17 19:05:34Z ton $
+/*
+ * $Id: wm_window.c 35785 2011-03-25 17:11:32Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/windowmanager/intern/wm_window.c
+ *  \ingroup wm
+ */
+
+
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -41,13 +46,14 @@
 #include "GHOST_C-api.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_library.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
-#include "BKE_utildefines.h"
+
 
 #include "BIF_gl.h"
 
@@ -68,7 +74,7 @@
 #include "GPU_extensions.h"
 
 /* the global to talk to ghost */
-GHOST_SystemHandle g_system= NULL;
+static GHOST_SystemHandle g_system= NULL;
 
 /* set by commandline */
 static int prefsizx= 0, prefsizy= 0, prefstax= 0, prefstay= 0, initialstate= GHOST_kWindowStateNormal;
@@ -232,6 +238,8 @@ wmWindow *wm_window_copy(bContext *C, wmWindow *winorig)
 /* this is event from ghost, or exit-blender op */
 void wm_window_close(bContext *C, wmWindowManager *wm, wmWindow *win)
 {
+	bScreen *screen= win->screen;
+	
 	BLI_remlink(&wm->windows, win);
 	
 	wm_draw_window_clear(win);
@@ -240,13 +248,13 @@ void wm_window_close(bContext *C, wmWindowManager *wm, wmWindow *win)
 	WM_event_remove_handlers(C, &win->modalhandlers);
 	ED_screen_exit(C, win, win->screen); 
 	
-	/* if temp screen, delete it */
-	if(win->screen->temp) {
-		Main *bmain= CTX_data_main(C);
-		free_libblock(&bmain->screen, win->screen);
-	}
-	
 	wm_window_free(C, wm, win);
+	
+	/* if temp screen, delete it after window free (it stops jobs that can access it) */
+	if(screen->temp) {
+		Main *bmain= CTX_data_main(C);
+		free_libblock(&bmain->screen, screen);
+	}
 	
 	/* check remaining windows */
 	if(wm->windows.first) {
@@ -272,12 +280,7 @@ void wm_window_title(wmWindowManager *wm, wmWindow *win)
 		/* this is set to 1 if you don't have startup.blend open */
 		if(G.save_over && G.main->name[0]) {
 			char str[sizeof(G.main->name) + 12];
-			
-			if(wm->file_saved)
-				sprintf(str, "Blender [%s]", G.main->name);
-			else
-				sprintf(str, "Blender* [%s]", G.main->name);
-			
+			BLI_snprintf(str, sizeof(str), "Blender%s [%s]", wm->file_saved ? "":"*", G.main->name);
 			GHOST_SetTitle(win->ghostwin, str);
 		}
 		else
@@ -527,7 +530,12 @@ int wm_window_duplicate_exec(bContext *C, wmOperator *UNUSED(op))
 int wm_window_fullscreen_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	wmWindow *window= CTX_wm_window(C);
-	GHOST_TWindowState state = GHOST_GetWindowState(window->ghostwin);
+	GHOST_TWindowState state;
+
+	if(G.background)
+		return OPERATOR_CANCELLED;
+
+	state= GHOST_GetWindowState(window->ghostwin);
 	if(state!=GHOST_kWindowStateFullScreen)
 		GHOST_SetWindowState(window->ghostwin, GHOST_kWindowStateFullScreen);
 	else
@@ -1159,12 +1167,12 @@ void WM_setprefsize(int stax, int stay, int sizx, int sizy)
 }
 
 /* for borderless and border windows set from command-line */
-void WM_setinitialstate_fullscreen()
+void WM_setinitialstate_fullscreen(void)
 {
 	initialstate= GHOST_kWindowStateFullScreen;
 }
 
-void WM_setinitialstate_normal()
+void WM_setinitialstate_normal(void)
 {
 	initialstate= GHOST_kWindowStateNormal;
 }

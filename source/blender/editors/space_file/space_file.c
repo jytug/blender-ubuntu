@@ -1,5 +1,5 @@
-/**
- * $Id: space_file.c 33818 2010-12-20 18:29:32Z ton $
+/*
+ * $Id: space_file.c 35642 2011-03-20 11:16:59Z elubie $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_file/space_file.c
+ *  \ingroup spfile
+ */
+
+
 #include <string.h>
 #include <stdio.h>
 
@@ -42,10 +47,12 @@
 #include "BLI_math.h"
 #include "BLI_rand.h"
 #include "BLI_storage_types.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
+#include "ED_space_api.h"
 #include "ED_screen.h"
 #include "ED_fileselect.h"
 
@@ -57,7 +64,6 @@
 
 #include "UI_resources.h"
 #include "UI_view2d.h"
-
 
 
 #include "file_intern.h"	// own include
@@ -230,7 +236,7 @@ static void file_refresh(const bContext *C, ScrArea *UNUSED(sa))
 		if (idx >= 0) {
 			struct direntry *file= filelist_file(sfile->files, idx);
 			if (file) {
-				file->flags |= EDITING;
+				file->selflag |= EDITING_FILE;
 			}
 		}
 		BLI_strncpy(sfile->params->renameedit, sfile->params->renamefile, sizeof(sfile->params->renameedit));
@@ -362,7 +368,7 @@ static void file_main_area_draw(const bContext *C, ARegion *ar)
 
 }
 
-void file_operatortypes(void)
+static void file_operatortypes(void)
 {
 	WM_operatortype_append(FILE_OT_select);
 	WM_operatortype_append(FILE_OT_select_all_toggle);
@@ -388,7 +394,7 @@ void file_operatortypes(void)
 }
 
 /* NOTE: do not add .blend file reading on this level */
-void file_keymap(struct wmKeyConfig *keyconf)
+static void file_keymap(struct wmKeyConfig *keyconf)
 {
 	wmKeyMapItem *kmi;
 	/* keys for all areas */
@@ -406,7 +412,8 @@ void file_keymap(struct wmKeyConfig *keyconf)
 
 	/* keys for main area */
 	keymap= WM_keymap_find(keyconf, "File Browser Main", SPACE_FILE, 0);
-	WM_keymap_add_item(keymap, "FILE_OT_select_execute", LEFTMOUSE, KM_DBL_CLICK, 0, 0);
+	kmi= WM_keymap_add_item(keymap, "FILE_OT_execute", LEFTMOUSE, KM_DBL_CLICK, 0, 0);
+	RNA_boolean_set(kmi->ptr, "need_active", 1);
 	WM_keymap_add_item(keymap, "FILE_OT_select", LEFTMOUSE, KM_CLICK, 0, 0);
 	kmi = WM_keymap_add_item(keymap, "FILE_OT_select", LEFTMOUSE, KM_CLICK, KM_SHIFT, 0);
 	RNA_boolean_set(kmi->ptr, "extend", 1);
@@ -414,6 +421,7 @@ void file_keymap(struct wmKeyConfig *keyconf)
 	RNA_boolean_set(kmi->ptr, "extend", 1);
 	RNA_boolean_set(kmi->ptr, "fill", 1);
 	WM_keymap_add_item(keymap, "FILE_OT_select_all_toggle", AKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "FILE_OT_refresh", PADPERIOD, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "FILE_OT_select_border", BKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "FILE_OT_select_border", EVT_TWEAK_L, KM_ANY, 0, 0);
 	WM_keymap_add_item(keymap, "FILE_OT_rename", LEFTMOUSE, KM_PRESS, KM_CTRL, 0);

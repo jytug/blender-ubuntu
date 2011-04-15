@@ -1,5 +1,5 @@
 /*
- * $Id: multires.c 34009 2011-01-02 17:38:22Z nazgul $
+ * $Id: multires.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/multires.c
+ *  \ingroup bke
+ */
+
+
 #include "MEM_guardedalloc.h"
 
 #include "DNA_mesh_types.h"
@@ -38,6 +43,7 @@
 #include "BLI_math.h"
 #include "BLI_pbvh.h"
 #include "BLI_editVert.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_mesh.h"
@@ -46,7 +52,7 @@
 #include "BKE_paint.h"
 #include "BKE_scene.h"
 #include "BKE_subsurf.h"
-#include "BKE_utildefines.h"
+
 #include "BKE_object.h"
 
 #include "CCGSubSurf.h"
@@ -91,8 +97,10 @@ MultiresModifierData *find_multires_modifier_before(Scene *scene, ModifierData *
 	return NULL;
 }
 
-/* used for applying scale on mdisps layer and syncing subdivide levels when joining objects */
-static MultiresModifierData *get_multires_modifier(Scene *scene, Object *ob)
+/* used for applying scale on mdisps layer and syncing subdivide levels when joining objects
+   use_first - return first multires modifier if all multires'es are disabled
+*/
+MultiresModifierData *get_multires_modifier(Scene *scene, Object *ob, int use_first)
 {
 	ModifierData *md;
 	MultiresModifierData *mmd= NULL, *firstmmd= NULL;
@@ -110,7 +118,7 @@ static MultiresModifierData *get_multires_modifier(Scene *scene, Object *ob)
 		}
 	}
 
-	if(!mmd) {
+	if(!mmd && use_first) {
 		/* active multires have not been found
 		   try to use first one */
 		return firstmmd;
@@ -197,7 +205,7 @@ int multiresModifier_reshapeFromDM(Scene *scene, MultiresModifierData *mmd,
 		return 1;
 	}
 
-	mrdm->release(mrdm);
+	if(mrdm) mrdm->release(mrdm);
 
 	return 0;
 }
@@ -446,7 +454,7 @@ void multiresModifier_del_levels(MultiresModifierData *mmd, Object *ob, int dire
 
 static DerivedMesh *multires_dm_create_local(Object *ob, DerivedMesh *dm, int lvl, int totlvl, int simple)
 {
-	MultiresModifierData mmd= {{0}};
+	MultiresModifierData mmd= {{NULL}};
 
 	mmd.lvl = lvl;
 	mmd.sculptlvl = lvl;
@@ -459,7 +467,7 @@ static DerivedMesh *multires_dm_create_local(Object *ob, DerivedMesh *dm, int lv
 
 static DerivedMesh *subsurf_dm_create_local(Object *UNUSED(ob), DerivedMesh *dm, int lvl, int simple, int optimal)
 {
-	SubsurfModifierData smd= {{0}};
+	SubsurfModifierData smd= {{NULL}};
 
 	smd.levels = smd.renderLevels = lvl;
 	smd.flags |= eSubsurfModifierFlag_SubsurfUv;
@@ -471,7 +479,129 @@ static DerivedMesh *subsurf_dm_create_local(Object *UNUSED(ob), DerivedMesh *dm,
 	return subsurf_make_derived_from_derived(dm, &smd, 0, NULL, 0, 0);
 }
 
-void multires_subdivide(MultiresModifierData *mmd, Object *ob, int totlvl, int updateblock, int simple)
+
+
+/* assumes no is normalized; return value's sign is negative if v is on
+   the other side of the plane */
+static float v3_dist_from_plane(float v[3], float center[3], float no[3])
+{
+	float s[3];
+	sub_v3_v3v3(s, v, center);
+	return dot_v3v3(s, no);
+}
+
+void multiresModifier_base_apply(MultiresModifierData *mmd, Object *ob)
+{
+	DerivedMesh *cddm, *dispdm, *origdm;
+	Mesh *me;
+	ListBase *fmap;
+	float (*origco)[3];
+	int i, j, offset, totlvl;
+
+	multires_force_update(ob);
+
+	me = get_mesh(ob);
+	totlvl = mmd->totlvl;
+
+	/* nothing to do */
+	if(!totlvl)
+		return;
+
+	/* XXX - probably not necessary to regenerate the cddm so much? */
+
+	/* generate highest level with displacements */
+	cddm = CDDM_from_mesh(me, NULL);
+	DM_set_only_copy(cddm, CD_MASK_BAREMESH);
+	dispdm = multires_dm_create_local(ob, cddm, totlvl, totlvl, 0);
+	cddm->release(cddm);
+
+	/* copy the new locations of the base verts into the mesh */
+	offset = dispdm->getNumVerts(dispdm) - me->totvert;
+	for(i = 0; i < me->totvert; ++i) {
+		dispdm->getVertCo(dispdm, offset + i, me->mvert[i].co);
+	}
+
+	/* heuristic to produce a better-fitting base mesh */
+
+	cddm = CDDM_from_mesh(me, NULL);
+	fmap = cddm->getFaceMap(ob, cddm);
+	origco = MEM_callocN(sizeof(float)*3*me->totvert, "multires apply base origco");
+	for(i = 0; i < me->totvert ;++i)
+		copy_v3_v3(origco[i], me->mvert[i].co);
+
+	for(i = 0; i < me->totvert; ++i) {
+		IndexNode *n;
+		float avg_no[3] = {0,0,0}, center[3] = {0,0,0}, push[3];
+		float dist;
+		int tot;
+
+		/* don't adjust verts not used by at least one face */
+		if(!fmap[i].first)
+			continue;
+
+		/* find center */
+		for(n = fmap[i].first, tot = 0; n; n = n->next) {
+			MFace *f = &me->mface[n->index];
+			int S = f->v4 ? 4 : 3;
+			
+			/* this double counts, not sure if that's bad or good */
+			for(j = 0; j < S; ++j) {
+				int vndx = (&f->v1)[j];
+				if(vndx != i) {
+					add_v3_v3(center, origco[vndx]);
+					++tot;
+				}
+			}
+		}
+		mul_v3_fl(center, 1.0f / tot);
+
+		/* find normal */
+		for(n = fmap[i].first; n; n = n->next) {
+			MFace *f = &me->mface[n->index];
+			int S = f->v4 ? 4 : 3;
+			float v[4][3], no[3];
+			
+			for(j = 0; j < S; ++j) {
+				int vndx = (&f->v1)[j];
+				if(vndx == i)
+					copy_v3_v3(v[j], center);
+				else
+					copy_v3_v3(v[j], origco[vndx]);
+			}
+			
+			if(S == 4)
+				normal_quad_v3(no, v[0], v[1], v[2], v[3]);
+			else
+				normal_tri_v3(no, v[0], v[1], v[2]);
+			add_v3_v3(avg_no, no);
+		}
+		normalize_v3(avg_no);
+
+		/* push vertex away from the plane */
+		dist = v3_dist_from_plane(me->mvert[i].co, center, avg_no);
+		copy_v3_v3(push, avg_no);
+		mul_v3_fl(push, dist);
+		add_v3_v3(me->mvert[i].co, push);
+		
+	}
+
+	MEM_freeN(origco);
+	cddm->release(cddm);
+
+	/* subdivide the mesh to highest level without displacements */
+	cddm = CDDM_from_mesh(me, NULL);
+	DM_set_only_copy(cddm, CD_MASK_BAREMESH);
+	origdm = subsurf_dm_create_local(ob, cddm, totlvl, 0, 0);
+	cddm->release(cddm);
+
+	/* calc disps */
+	multiresModifier_disp_run(dispdm, me, 1, 0, origdm->getGridData(origdm), totlvl);
+
+	origdm->release(origdm);
+	dispdm->release(dispdm);
+}
+
+static void multires_subdivide(MultiresModifierData *mmd, Object *ob, int totlvl, int updateblock, int simple)
 {
 	Mesh *me = ob->data;
 	MDisps *mdisps;
@@ -584,7 +714,7 @@ static void multiresModifier_disp_run(DerivedMesh *dm, Mesh *me, int invert, int
 	MFace *mface = me->mface;
 	MDisps *mdisps = CustomData_get_layer(&me->fdata, CD_MDISPS);
 	int *gridOffset;
-	int i, numGrids, gridSize, dGridSize, dSkip;
+	int i, /*numGrids,*/ gridSize, dGridSize, dSkip;
 
 	if(!mdisps) {
 		if(invert)
@@ -593,7 +723,7 @@ static void multiresModifier_disp_run(DerivedMesh *dm, Mesh *me, int invert, int
 			return;
 	}
 
-	numGrids = dm->getNumGrids(dm);
+	/*numGrids = dm->getNumGrids(dm);*/ /*UNUSED*/
 	gridSize = dm->getGridSize(dm);
 	gridData = dm->getGridData(dm);
 	gridOffset = dm->getGridOffset(dm);
@@ -837,7 +967,7 @@ DerivedMesh *multires_dm_create_from_derived(MultiresModifierData *mmd, int loca
 ***************************/
 
 /* Adapted from sculptmode.c */
-void old_mdisps_bilinear(float out[3], float (*disps)[3], int st, float u, float v)
+void old_mdisps_bilinear(float out[3], float (*disps)[3], const int st, float u, float v)
 {
 	int x, y, x2, y2;
 	const int st_max = st - 1;
@@ -1176,7 +1306,6 @@ static void multires_load_old_dm(DerivedMesh *dm, Mesh *me, int totlvl)
 	unsigned int i, j, totvert;
 
 	src = 0;
-	dst = 0;
 	vsrc = mr->verts;
 	vdst = dm->getVertArray(dm);
 	totvert = (unsigned int)dm->getNumVerts(dm);
@@ -1305,7 +1434,7 @@ static void multires_load_old_dm(DerivedMesh *dm, Mesh *me, int totlvl)
 			dst = ldst;
 		}
 
-		lvl = lvl->next;
+		/*lvl = lvl->next;*/ /*UNUSED*/
 
 		for(i = 0; i < (unsigned int)(mr->level_count - 1); ++i) {
 			MEM_freeN(fmap[i]);
@@ -1446,8 +1575,8 @@ void multires_load_old(Object *ob, Mesh *me)
 
 static void multires_sync_levels(Scene *scene, Object *ob, Object *to_ob)
 {
-	MultiresModifierData *mmd= get_multires_modifier(scene, ob);
-	MultiresModifierData *to_mmd= get_multires_modifier(scene, to_ob);
+	MultiresModifierData *mmd= get_multires_modifier(scene, ob, 1);
+	MultiresModifierData *to_mmd= get_multires_modifier(scene, to_ob, 1);
 
 	if(!mmd) {
 		/* object could have MDISP even when there is no multires modifier
@@ -1467,18 +1596,17 @@ static void multires_sync_levels(Scene *scene, Object *ob, Object *to_ob)
 	else multires_subdivide(mmd, ob, to_mmd->totlvl, 0, mmd->simple);
 }
 
-void multires_apply_smat(Scene *scene, Object *ob, float smat[3][3])
+static void multires_apply_smat(Scene *scene, Object *ob, float smat[3][3])
 {
 	DerivedMesh *dm= NULL, *cddm= NULL, *subdm= NULL;
 	DMGridData **gridData, **subGridData;
 	Mesh *me= (Mesh*)ob->data;
 	MFace *mface= me->mface;
-	MVert *mvert= NULL;
 	MDisps *mdisps;
 	int *gridOffset;
-	int i, numGrids, gridSize, dGridSize, dSkip, totvert;
+	int i, /*numGrids,*/ gridSize, dGridSize, dSkip, totvert;
 	float (*vertCos)[3] = NULL;
-	MultiresModifierData *mmd= get_multires_modifier(scene, ob);
+	MultiresModifierData *mmd= get_multires_modifier(scene, ob, 1);
 	MultiresModifierData high_mmd;
 
 	CustomData_external_read(&me->fdata, &me->id, CD_MASK_MDISPS, me->totface);
@@ -1504,13 +1632,11 @@ void multires_apply_smat(Scene *scene, Object *ob, float smat[3][3])
 	CDDM_apply_vert_coords(cddm, vertCos);
 	MEM_freeN(vertCos);
 
-	mvert= cddm->getVertArray(cddm);
-
 	/* scaled ccgDM for tangent space of object with applied scale */
 	dm= subsurf_dm_create_local(ob, cddm, high_mmd.totlvl, high_mmd.simple, 0);
 	cddm->release(cddm);
 
-	numGrids= dm->getNumGrids(dm);
+	/*numGrids= dm->getNumGrids(dm);*/ /*UNUSED*/
 	gridSize= dm->getGridSize(dm);
 	gridData= dm->getGridData(dm);
 	gridOffset= dm->getGridOffset(dm);
@@ -1601,11 +1727,15 @@ void multiresModifier_prepare_join(Scene *scene, Object *ob, Object *to_ob)
 }
 
 /* update multires data after topology changing */
-void multires_topology_changed(Object *ob)
+void multires_topology_changed(Scene *scene, Object *ob)
 {
 	Mesh *me= (Mesh*)ob->data;
 	MDisps *mdisp= NULL, *cur= NULL;
 	int i, grid= 0, corners;
+	MultiresModifierData *mmd= get_multires_modifier(scene, ob, 1);
+
+	if(mmd)
+		multires_set_tot_mdisps(me, mmd->totlvl);
 
 	CustomData_external_read(&me->fdata, &me->id, CD_MASK_MDISPS, me->totface);
 	mdisp= CustomData_get_layer(&me->fdata, CD_MDISPS);
@@ -1840,7 +1970,7 @@ static void face_to_crn_interp(float u, float v, float v1[2], float v2[2], float
 	*x = maxf(x1, x2);
 }
 
-void mdisp_rot_crn_to_face(int S, int corners, int face_side, float x, float y, float *u, float *v)
+void mdisp_rot_crn_to_face(const int S, const int corners, const int face_side, const float x, const float y, float *u, float *v)
 {
 	float offset = face_side*0.5f - 0.5f;
 
@@ -1867,10 +1997,10 @@ void mdisp_rot_crn_to_face(int S, int corners, int face_side, float x, float y, 
 	}
 }
 
-int mdisp_rot_face_to_crn(int corners, int face_side, float u, float v, float *x, float *y)
+int mdisp_rot_face_to_crn(const int corners, const int face_side, const float u, const float v, float *x, float *y)
 {
-	float offset = face_side*0.5f - 0.5f;
-	int S;
+	const float offset = face_side*0.5f - 0.5f;
+	int S = 0;
 
 	if (corners == 4) {
 		if(u <= offset && v <= offset) S = 0;
@@ -1912,7 +2042,7 @@ int mdisp_rot_face_to_crn(int corners, int face_side, float u, float v, float *x
 	return S;
 }
 
-void mdisp_apply_weight(int S, int corners, int x, int y, int face_side,
+void mdisp_apply_weight(const int S, const int corners, int x, int y, const int face_side,
 	float crn_weight[4][2], float *u_r, float *v_r)
 {
 	float u, v, xl, yl;
@@ -1946,7 +2076,7 @@ void mdisp_apply_weight(int S, int corners, int x, int y, int face_side,
 	*v_r = mid3[1];
 }
 
-void mdisp_flip_disp(int S, int corners, float axis_x[2], float axis_y[2], float disp[3])
+void mdisp_flip_disp(const int S, const int corners, const float axis_x[2], const float axis_y[2], float disp[3])
 {
 	float crn_x[2], crn_y[2];
 	float vx[2], vy[2], coord[2];

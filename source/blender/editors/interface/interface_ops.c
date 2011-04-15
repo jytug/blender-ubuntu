@@ -1,5 +1,5 @@
-/**
- * $Id: interface_ops.c 33133 2010-11-17 14:36:19Z campbellbarton $
+/*
+ * $Id: interface_ops.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,10 +25,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/interface/interface_ops.c
+ *  \ingroup edinterface
+ */
+
+
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-
 
 #include "MEM_guardedalloc.h"
 
@@ -38,6 +42,7 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math_color.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
@@ -177,7 +182,7 @@ static int eyedropper_poll(bContext *C)
 	else return 1;
 }
 
-void UI_OT_eyedropper(wmOperatorType *ot)
+static void UI_OT_eyedropper(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Eyedropper";
@@ -207,7 +212,7 @@ static int reset_default_theme_exec(bContext *C, wmOperator *UNUSED(op))
 	return OPERATOR_FINISHED;
 }
 
-void UI_OT_reset_default_theme(wmOperatorType *ot)
+static void UI_OT_reset_default_theme(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Reset to Default Theme";
@@ -247,7 +252,7 @@ static int copy_data_path_button_exec(bContext *C, wmOperator *UNUSED(op))
 	return (success)? OPERATOR_FINISHED: OPERATOR_CANCELLED;
 }
 
-void UI_OT_copy_data_path_button(wmOperatorType *ot)
+static void UI_OT_copy_data_path_button(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Copy Data Path";
@@ -297,7 +302,7 @@ static int reset_default_button_exec(bContext *C, wmOperator *op)
 	return (success)? OPERATOR_FINISHED: OPERATOR_CANCELLED;
 }
 
-void UI_OT_reset_default_button(wmOperatorType *ot)
+static void UI_OT_reset_default_button(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Reset to Default Value";
@@ -389,7 +394,7 @@ static int copy_to_selected_button_exec(bContext *C, wmOperator *op)
 	return (success)? OPERATOR_FINISHED: OPERATOR_CANCELLED;
 }
 
-void UI_OT_copy_to_selected_button(wmOperatorType *ot)
+static void UI_OT_copy_to_selected_button(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Copy To Selected";
@@ -439,7 +444,7 @@ static int reports_to_text_exec(bContext *C, wmOperator *UNUSED(op))
 	return OPERATOR_FINISHED;
 }
 
-void UI_OT_reports_to_textblock(wmOperatorType *ot)
+static void UI_OT_reports_to_textblock(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Reports to Text Block";

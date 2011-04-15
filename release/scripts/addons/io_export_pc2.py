@@ -16,19 +16,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
-    "name": "Export Pointcache (.pc2)",
+bl_info = {
+    "name": "Export Pointcache Format(.pc2)",
     "author": "Florian Meyer (tstscr)",
     "version": (1, 0),
-    "blender": (2, 5, 4),
-    "api": 33047,
-    "location": "File > Export",
-    "description": "Export Mesh Pointcache to .pc2",
+    "blender": (2, 5, 7),
+    "api": 36079,
+    "location": "File > Export > Pointcache (.pc2)",
+    "description": "Export mesh Pointcache data (.pc2)",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Import-Export/PC2_Pointcache_export",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=24703&group_id=153&atid=468",
+        "func=detail&aid=24703",
     "category": "Import-Export"}
 
 '''
@@ -60,14 +60,14 @@ def do_export(context, props, filepath):
     end = props.range_end
     sampling = float(props.sampling)
     apply_modifiers = props.apply_modifiers
-    me = ob.create_mesh(sc, apply_modifiers, 'PREVIEW')
+    me = ob.to_mesh(sc, apply_modifiers, 'PREVIEW')
     vertCount = len(me.vertices)
     sampletimes = getSampling(start, end, sampling)
     sampleCount = len(sampletimes)
     
     # Create the header
-    headerFormat='<12ciiffi'
-    headerStr = struct.pack(headerFormat, 'P','O','I','N','T','C','A','C','H','E','2','\0',
+    headerFormat='<12siiffi'
+    headerStr = struct.pack(headerFormat, b'POINTCACHE2\0',
                             1, vertCount, start, sampling, sampleCount)
 
     file = open(filepath, "wb")
@@ -75,7 +75,7 @@ def do_export(context, props, filepath):
     
     for frame in sampletimes:
         sc.frame_set(frame)
-        me = ob.create_mesh(sc, apply_modifiers, 'PREVIEW')
+        me = ob.to_mesh(sc, apply_modifiers, 'PREVIEW')
         
         if len(me.vertices) != vertCount:
             file.close()
@@ -107,7 +107,7 @@ def do_export(context, props, filepath):
 ###### EXPORT OPERATOR #######
 class Export_pc2(bpy.types.Operator, ExportHelper):
     '''Exports the active Object as a .pc2 Pointcache file.'''
-    bl_idname = "export_pc2"
+    bl_idname = "export_shape.pc2"
     bl_label = "Export Pointcache (.pc2)"
 
     filename_ext = ".pc2"
@@ -188,10 +188,14 @@ def menu_func(self, context):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_export.append(menu_func)
     #bpy.types.VIEW3D_PT_tools_objectmode.prepend(menu_func)
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_export.remove(menu_func)
     #bpy.types.VIEW3D_PT_tools_objectmode.remove(menu_func)
     

@@ -1,5 +1,5 @@
 /* 
- * $Id: sss.c 33811 2010-12-20 13:02:33Z ton $
+ * $Id: sss.c 35233 2011-02-27 19:31:27Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/render/intern/source/sss.c
+ *  \ingroup render
+ */
+
+
 /* Possible Improvements:
    - add fresnel terms
    - adapt Rd table to scale, now with small scale there are a lot of misses?
@@ -49,8 +54,10 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 #include "BLI_ghash.h"
 #include "BLI_memarena.h"
+
 #include "PIL_time.h"
 
 #include "DNA_material_types.h"
@@ -61,7 +68,7 @@
 #include "BKE_material.h"
 #include "BKE_node.h"
 #include "BKE_scene.h"
-#include "BKE_utildefines.h"
+
 
 /* this module */
 #include "render_types.h"

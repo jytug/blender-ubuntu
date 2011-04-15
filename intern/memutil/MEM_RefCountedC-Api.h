@@ -1,5 +1,5 @@
-/**
- * $Id: MEM_RefCountedC-Api.h 26841 2010-02-12 13:34:04Z campbellbarton $
+/*
+ * $Id: MEM_RefCountedC-Api.h 35156 2011-02-25 11:47:18Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,13 +25,18 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file memutil/MEM_RefCountedC-Api.h
+ *  \ingroup memutil
+ */
+
 /**
  * @file	MEM_RefCountedC-Api.h
  * Interface for C access to functionality relating to shared objects in the foundation library.
  */
 
-#ifndef _H_MEM_REF_COUNTED_C_API
-#define _H_MEM_REF_COUNTED_C_API
+#ifndef MEM_REFCOUNTEDC_API_H
+#define MEM_REFCOUNTEDC_API_H
 
 /** A pointer to a private object. */
 typedef struct MEM_TOpaqueObject* MEM_TObjectPtr;
@@ -71,5 +76,4 @@ extern int	MEM_RefCountedDecRef(MEM_TRefCountedObjectPtr shared);
 }
 #endif
 
-#endif // _H_MEM_REF_COUNTED_C_API
-
+#endif // MEM_REFCOUNTEDC_API_H

@@ -1,5 +1,5 @@
-/**
- * $Id: anim_sys.c 34059 2011-01-04 08:56:25Z campbellbarton $
+/*
+ * $Id: anim_sys.c 35971 2011-04-03 10:04:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/anim_sys.c
+ *  \ingroup bke
+ */
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stddef.h>
@@ -36,8 +41,8 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
-#include "BKE_library.h"
 #include "BLI_dynstr.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_material_types.h"
@@ -50,6 +55,7 @@
 #include "BKE_nla.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
+#include "BKE_library.h"
 #include "BKE_utildefines.h"
 
 #include "RNA_access.h"
@@ -276,6 +282,40 @@ void BKE_animdata_make_local(AnimData *adt)
 		make_local_strips(&nlt->strips);
 }
 
+
+/* When duplicating data (i.e. objects), drivers referring to the original data will 
+ * get updated to point to the duplicated data (if drivers belong to the new data)
+ */
+void BKE_relink_animdata (AnimData *adt)
+{
+	/* sanity check */
+	if (adt == NULL)
+		return;
+	
+	/* drivers */
+	if (adt->drivers.first) {
+		FCurve *fcu;
+		
+		/* check each driver against all the base paths to see if any should go */
+		for (fcu= adt->drivers.first; fcu; fcu=fcu->next) {
+			ChannelDriver *driver= fcu->driver;
+			DriverVar *dvar;
+			
+			/* driver variables */
+			for (dvar= driver->variables.first; dvar; dvar=dvar->next) {
+				/* only change the used targets, since the others will need fixing manually anyway */
+				DRIVER_TARGETS_USED_LOOPER(dvar)
+				{
+					if (dtar->id && dtar->id->newid) {
+						dtar->id= dtar->id->newid;
+					}
+				}
+				DRIVER_TARGETS_LOOPER_END
+			}
+		}
+	}
+}
+
 /* Sub-ID Regrouping ------------------------------------------- */
 
 /* helper heuristic for determining if a path is compatible with the basepath 
@@ -303,7 +343,7 @@ void action_move_fcurves_by_basepath (bAction *srcAct, bAction *dstAct, const ch
 	if ELEM3(NULL, srcAct, dstAct, basepath) {
 		if (G.f & G_DEBUG) {
 			printf("ERROR: action_partition_fcurves_by_basepath(%p, %p, %p) has insufficient info to work with\n",
-					srcAct, dstAct, basepath);
+					(void *)srcAct, (void *)dstAct, (void *)basepath);
 		}
 		return;
 	}
@@ -556,7 +596,7 @@ static void drivers_path_rename_fix (ID *owner_id, const char *prefix, char *old
 				DRIVER_TARGETS_USED_LOOPER(dvar) 
 				{
 					/* rename RNA path */
-					if (dtar->rna_path)
+					if (dtar->rna_path && dtar->id)
 						dtar->rna_path= rna_path_rename_fix(dtar->id, prefix, oldKey, newKey, dtar->rna_path, verify_paths);
 					
 					/* also fix the bone-name (if applicable) */
@@ -808,7 +848,7 @@ KS_Path *BKE_keyingset_find_path (KeyingSet *ks, ID *id, const char group_name[]
 			eq_id= 0;
 		
 		/* path */
-		if ((ksp->rna_path==0) || strcmp(rna_path, ksp->rna_path))
+		if ((ksp->rna_path==NULL) || strcmp(rna_path, ksp->rna_path))
 			eq_path= 0;
 			
 		/* index - need to compare whole-array setting too... */
@@ -1807,22 +1847,18 @@ void nladata_flush_channels (ListBase *channels)
 
 /* ---------------------- */
 
-/* NLA Evaluation function (mostly for use through do_animdata) 
- *	- All channels that will be affected are not cleared anymore. Instead, we just evaluate into 
- *		some temp channels, where values can be accumulated in one go.
+/* NLA Evaluation function - values are calculated and stored in temporary "NlaEvalChannels" 
+ * ! This is exported so that keyframing code can use this for make use of it for anim layers support
+ * > echannels: (list<NlaEvalChannels>) evaluation channels with calculated values
  */
-static void animsys_evaluate_nla (PointerRNA *ptr, AnimData *adt, float ctime)
+static void animsys_evaluate_nla (ListBase *echannels, PointerRNA *ptr, AnimData *adt, float ctime)
 {
 	NlaTrack *nlt;
 	short track_index=0;
 	short has_strips = 0;
 	
 	ListBase estrips= {NULL, NULL};
-	ListBase echannels= {NULL, NULL};
 	NlaEvalStrip *nes;
-	
-	// TODO: need to zero out all channels used, otherwise we have problems with threadsafety
-	// and also when the user jumps between different times instead of moving sequentially...
 	
 	/* 1. get the stack of strips to evaluate at current time (influence calculated here) */
 	for (nlt=adt->nla_tracks.first; nlt; nlt=nlt->next, track_index++) { 
@@ -1855,7 +1891,7 @@ static void animsys_evaluate_nla (PointerRNA *ptr, AnimData *adt, float ctime)
 		/* if there are strips, evaluate action as per NLA rules */
 		if ((has_strips) || (adt->actstrip)) {
 			/* make dummy NLA strip, and add that to the stack */
-			NlaStrip dummy_strip= {0};
+			NlaStrip dummy_strip= {NULL};
 			ListBase dummy_trackslist;
 			
 			dummy_trackslist.first= dummy_trackslist.last= &dummy_strip;
@@ -1873,7 +1909,7 @@ static void animsys_evaluate_nla (PointerRNA *ptr, AnimData *adt, float ctime)
 				/* action range is calculated taking F-Modifiers into account (which making new strips doesn't do due to the troublesome nature of that) */
 				calc_action_range(dummy_strip.act, &dummy_strip.actstart, &dummy_strip.actend, 1);
 				dummy_strip.start = dummy_strip.actstart;
-				dummy_strip.end = (IS_EQ(dummy_strip.actstart, dummy_strip.actend)) ?  (dummy_strip.actstart + 1.0f): (dummy_strip.actend);
+				dummy_strip.end = (IS_EQF(dummy_strip.actstart, dummy_strip.actend)) ?  (dummy_strip.actstart + 1.0f): (dummy_strip.actend);
 				
 				dummy_strip.blendmode= adt->act_blendmode;
 				dummy_strip.extendmode= adt->act_extendmode;
@@ -1898,13 +1934,30 @@ static void animsys_evaluate_nla (PointerRNA *ptr, AnimData *adt, float ctime)
 	
 	/* 2. for each strip, evaluate then accumulate on top of existing channels, but don't set values yet */
 	for (nes= estrips.first; nes; nes= nes->next) 
-		nlastrip_evaluate(ptr, &echannels, NULL, nes);
+		nlastrip_evaluate(ptr, echannels, NULL, nes);
+		
+	/* 3. free temporary evaluation data that's not used elsewhere */
+	BLI_freelistN(&estrips);
+}
+
+/* NLA Evaluation function (mostly for use through do_animdata) 
+ *	- All channels that will be affected are not cleared anymore. Instead, we just evaluate into 
+ *		some temp channels, where values can be accumulated in one go.
+ */
+static void animsys_calculate_nla (PointerRNA *ptr, AnimData *adt, float ctime)
+{
+	ListBase echannels= {NULL, NULL};
 	
-	/* 3. flush effects of accumulating channels in NLA to the actual data they affect */
+	// TODO: need to zero out all channels used, otherwise we have problems with threadsafety
+	// and also when the user jumps between different times instead of moving sequentially...
+	
+	/* evaluate the NLA stack, obtaining a set of values to flush */
+	animsys_evaluate_nla(&echannels, ptr, adt, ctime);
+	
+	/* flush effects of accumulating channels in NLA to the actual data they affect */
 	nladata_flush_channels(&echannels);
 	
-	/* 4. free temporary evaluation data */
-	BLI_freelistN(&estrips);
+	/* free temp data */
 	BLI_freelistN(&echannels);
 }
 
@@ -1914,11 +1967,13 @@ static void animsys_evaluate_nla (PointerRNA *ptr, AnimData *adt, float ctime)
 /* Clear all overides */
 
 /* Add or get existing Override for given setting */
+#if 0
 AnimOverride *BKE_animsys_validate_override (PointerRNA *UNUSED(ptr), char *UNUSED(path), int UNUSED(array_index))
 {
 	// FIXME: need to define how to get overrides
 	return NULL;
 } 
+#endif
 
 /* -------------------- */
 
@@ -1996,7 +2051,7 @@ void BKE_animsys_evaluate_animdata (ID *id, AnimData *adt, float ctime, short re
 			/* evaluate NLA-stack 
 			 *	- active action is evaluated as part of the NLA stack as the last item
 			 */
-			animsys_evaluate_nla(&id_ptr, adt, ctime);
+			animsys_calculate_nla(&id_ptr, adt, ctime);
 		}
 		/* evaluate Active Action only */
 		else if (adt->action)
@@ -2038,7 +2093,7 @@ void BKE_animsys_evaluate_animdata (ID *id, AnimData *adt, float ctime, short re
 void BKE_animsys_evaluate_all_animation (Main *main, float ctime)
 {
 	ID *id;
-	
+
 	if (G.f & G_DEBUG)
 		printf("Evaluate all animation - %f \n", ctime);
 	

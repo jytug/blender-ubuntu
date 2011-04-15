@@ -1,5 +1,5 @@
-/**
- * $Id: BKE_fcurve.h 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: BKE_fcurve.h 35590 2011-03-17 10:02:37Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,12 @@
 
 #ifndef BKE_FCURVE_H
 #define BKE_FCURVE_H
+
+/** \file BKE_fcurve.h
+ *  \ingroup bke
+ *  \author Joshua Leung
+ *  \since 2009
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -209,10 +215,10 @@ struct FCurve *rna_get_fcurve(struct PointerRNA *ptr, struct PropertyRNA *prop, 
 int binarysearch_bezt_index(struct BezTriple array[], float frame, int arraylen, short *replace);
 
 /* get the time extents for F-Curve */
-void calc_fcurve_range(struct FCurve *fcu, float *min, float *max);
+void calc_fcurve_range(struct FCurve *fcu, float *min, float *max, const short selOnly);
 
 /* get the bounding-box extents for F-Curve */
-void calc_fcurve_bounds(struct FCurve *fcu, float *xmin, float *xmax, float *ymin, float *ymax);
+void calc_fcurve_bounds(struct FCurve *fcu, float *xmin, float *xmax, float *ymin, float *ymax, const short selOnly);
 
 /* .............. */
 

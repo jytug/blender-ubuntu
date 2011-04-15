@@ -1,5 +1,5 @@
-/**
- * $Id: sequencer_buttons.c 32511 2010-10-16 08:03:28Z campbellbarton $
+/*
+ * $Id: sequencer_buttons.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,6 +23,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_sequencer/sequencer_buttons.c
+ *  \ingroup spseq
+ */
+
+
 
 #include <string.h>
 #include <stdio.h>
@@ -31,13 +36,12 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
-
 #include "ED_screen.h"
-
 
 #include "WM_api.h"
 #include "WM_types.h"

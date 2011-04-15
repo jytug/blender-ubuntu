@@ -1,5 +1,5 @@
-/**
- * $Id: rna_lattice.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: rna_lattice.c 35238 2011-02-27 20:20:01Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_lattice.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 

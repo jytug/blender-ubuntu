@@ -1,5 +1,5 @@
-/**
- * $Id: transform_ndofinput.c 32517 2010-10-16 14:32:17Z campbellbarton $
+/*
+ * $Id: transform_ndofinput.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,13 +23,19 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/transform/transform_ndofinput.c
+ *  \ingroup edtransform
+ */
+
  
  #include <math.h>			/* fabs */
 #include <stdio.h>			/* for sprintf		*/
 
-#include "BKE_global.h"		/* for G			*/
-#include "BKE_utildefines.h"	/* ABS */
+#include "BLI_utildefines.h"
 
+#include "BKE_global.h"		/* for G			*/
+	/* ABS */
 
 #include "WM_types.h"
 

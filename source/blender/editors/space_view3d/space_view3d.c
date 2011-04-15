@@ -1,5 +1,5 @@
-/**
- * $Id: space_view3d.c 33924 2010-12-28 11:01:26Z ton $
+/*
+ * $Id: space_view3d.c 36045 2011-04-07 15:48:33Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_view3d/space_view3d.c
+ *  \ingroup spview3d
+ */
+
+
 #include <string.h>
 #include <stdio.h>
 
@@ -37,11 +42,13 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_object.h"
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
+#include "ED_space_api.h"
 #include "ED_screen.h"
 #include "ED_object.h"
 
@@ -207,7 +214,7 @@ static SpaceLink *view3d_new(const bContext *C)
 	
 	v3d->lens= 35.0f;
 	v3d->near= 0.01f;
-	v3d->far= 500.0f;
+	v3d->far= 1000.0f;
 
 	v3d->twflag |= U.tw_flag & V3D_USE_MANIPULATOR;
 	v3d->twtype= V3D_MANIP_TRANSLATE;
@@ -523,7 +530,6 @@ static void *view3d_main_area_duplicate(void *poin)
 			new->clipbb= MEM_dupallocN(rv3d->clipbb);
 		
 		new->depths= NULL;
-		new->retopo_view_data= NULL;
 		new->ri= NULL;
 		new->gpd= NULL;
 		new->sms= NULL;
@@ -909,7 +915,7 @@ static void view3d_props_area_listener(ARegion *ar, wmNotifier *wmn)
 }
 
 /*area (not region) level listener*/
-void space_view3d_listener(struct ScrArea *sa, struct wmNotifier *wmn)
+static void space_view3d_listener(struct ScrArea *sa, struct wmNotifier *wmn)
 {
 	View3D *v3d = sa->spacedata.first;
 
@@ -949,6 +955,11 @@ void space_view3d_listener(struct ScrArea *sa, struct wmNotifier *wmn)
 #endif
 }
 
+const char *view3d_context_dir[] = {
+	"selected_objects", "selected_bases", "selected_editable_objects",
+	"selected_editable_bases", "visible_objects", "visible_bases", "selectable_objects", "selectable_bases",
+	"active_base", "active_object", NULL};
+
 static int view3d_context(const bContext *C, const char *member, bContextDataResult *result)
 {
 	View3D *v3d= CTX_wm_view3d(C);
@@ -957,12 +968,7 @@ static int view3d_context(const bContext *C, const char *member, bContextDataRes
 	unsigned int lay = v3d ? v3d->lay:scene->lay; /* fallback to the scene layer, allows duplicate and other oject operators to run outside the 3d view */
 
 	if(CTX_data_dir(member)) {
-		static const char *dir[] = {
-			"selected_objects", "selected_bases", "selected_editable_objects",
-			"selected_editable_bases", "visible_objects", "visible_bases", "selectable_objects", "selectable_bases",
-			"active_base", "active_object", NULL};
-
-		CTX_data_dir_set(result, dir);
+		CTX_data_dir_set(result, view3d_context_dir);
 	}
 	else if(CTX_data_equals(member, "selected_objects") || CTX_data_equals(member, "selected_bases")) {
 		int selected_objects= CTX_data_equals(member, "selected_objects");
@@ -1072,7 +1078,7 @@ void ED_spacetype_view3d(void)
 	st->context= view3d_context;
 	
 	/* regions: main window */
-	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d region");
+	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d main region");
 	art->regionid = RGN_TYPE_WINDOW;
 	art->keymapflag= ED_KEYMAP_GPENCIL;
 	art->draw= view3d_main_area_draw;
@@ -1081,10 +1087,11 @@ void ED_spacetype_view3d(void)
 	art->duplicate= view3d_main_area_duplicate;
 	art->listener= view3d_main_area_listener;
 	art->cursor= view3d_main_area_cursor;
+	art->lock= 1;	/* can become flag, see BKE_spacedata_draw_locks */
 	BLI_addhead(&st->regiontypes, art);
 	
 	/* regions: listview/buttons */
-	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d region");
+	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d buttons region");
 	art->regionid = RGN_TYPE_UI;
 	art->prefsizex= 180; // XXX
 	art->keymapflag= ED_KEYMAP_UI|ED_KEYMAP_FRAMES;
@@ -1096,7 +1103,7 @@ void ED_spacetype_view3d(void)
 	view3d_buttons_register(art);
 
 	/* regions: tool(bar) */
-	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d region");
+	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d tools region");
 	art->regionid = RGN_TYPE_TOOLS;
 	art->prefsizex= 160; // XXX
 	art->prefsizey= 50; // XXX
@@ -1112,7 +1119,7 @@ void ED_spacetype_view3d(void)
 #endif
 
 	/* regions: tool properties */
-	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d region");
+	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d tool properties region");
 	art->regionid = RGN_TYPE_TOOL_PROPS;
 	art->prefsizex= 0;
 	art->prefsizey= 120;
@@ -1126,7 +1133,7 @@ void ED_spacetype_view3d(void)
 	
 	
 	/* regions: header */
-	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d region");
+	art= MEM_callocN(sizeof(ARegionType), "spacetype view3d header region");
 	art->regionid = RGN_TYPE_HEADER;
 	art->prefsizey= HEADERY;
 	art->keymapflag= ED_KEYMAP_UI|ED_KEYMAP_VIEW2D|ED_KEYMAP_FRAMES|ED_KEYMAP_HEADER;

@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_subsurf.c 32462 2010-10-14 06:29:17Z campbellbarton $
+* $Id: MOD_subsurf.c 35417 2011-03-09 01:25:59Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,12 +30,19 @@
 *
 */
 
-#include "stddef.h"
+/** \file blender/modifiers/intern/MOD_subsurf.c
+ *  \ingroup modifiers
+ */
+
+
+#include <stddef.h>
 
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 
-#include "BKE_utildefines.h"
+#include "BLI_utildefines.h"
+
+
 #include "BKE_cdderivedmesh.h"
 #include "BKE_scene.h"
 #include "BKE_subsurf.h"
@@ -130,18 +137,19 @@ ModifierTypeInfo modifierType_Subsurf = {
 							| eModifierTypeFlag_AcceptsCVs,
 
 	/* copyData */          copyData,
-	/* deformVerts */       0,
-	/* deformVertsEM */     0,
-	/* deformMatricesEM */  0,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
 	/* applyModifierEM */   applyModifierEM,
 	/* initData */          initData,
-	/* requiredDataMask */  0,
+	/* requiredDataMask */  NULL,
 	/* freeData */          freeData,
 	/* isDisabled */        isDisabled,
-	/* updateDepgraph */    0,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
-	/* foreachObjectLink */ 0,
-	/* foreachIDLink */     0,
+	/* updateDepgraph */    NULL,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
+	/* foreachObjectLink */ NULL,
+	/* foreachIDLink */     NULL,
 };

@@ -1,5 +1,5 @@
-/**
- * $Id: GPG_Application.cpp 33829 2010-12-21 06:58:44Z moguri $
+/*
+ * $Id: GPG_Application.cpp 35170 2011-02-25 13:35:11Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  * GHOST Blender Player application implementation file.
  */
+
+/** \file gameengine/GamePlayer/ghost/GPG_Application.cpp
+ *  \ingroup player
+ */
+
 
 #ifdef WIN32
 	#pragma warning (disable:4786) // suppress stl-MSVC debug info warning
@@ -546,7 +551,10 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		if (!m_canvas)
 			return false;
 				
-		m_canvas->Init();				
+		m_canvas->Init();
+		if (gm->flag & GAME_SHOW_MOUSE)
+			m_canvas->SetMouseState(RAS_ICanvas::MOUSE_NORMAL);				
+
 		m_rendertools = new GPC_RenderTools();
 		if (!m_rendertools)
 			goto initFailed;

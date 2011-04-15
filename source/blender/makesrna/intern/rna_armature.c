@@ -1,5 +1,5 @@
-/**
- * $Id: rna_armature.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: rna_armature.c 36095 2011-04-11 01:18:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_armature.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 
@@ -66,12 +71,16 @@ static void rna_Armature_act_bone_set(PointerRNA *ptr, PointerRNA value)
 	}
 	else {
 		if(value.id.data != arm) {
-			/* raise an error! */
+			Object *ob = (Object *)value.id.data;
+			
+			if(GS(ob->id.name)!=ID_OB || (ob->data != arm)) {
+				printf("ERROR: armature set active bone - new active doesn't come from this armature\n");
+				return;
+			}
 		}
-		else {
-			arm->act_bone= value.data;
-			arm->act_bone->flag |= BONE_SELECTED;
-		}
+		
+		arm->act_bone= value.data;
+		arm->act_bone->flag |= BONE_SELECTED;
 	}
 }
 
@@ -517,6 +526,18 @@ static void rna_def_bone_common(StructRNA *srna, int editbone)
 	RNA_def_property_range(prop, 0.0f, 2.0f);
 	RNA_def_property_ui_text(prop, "B-Bone Ease Out", "Length of second Bezier Handle (for B-Bones only)");
 	RNA_def_property_update(prop, 0, "rna_Armature_update_data");
+
+	prop= RNA_def_property(srna, "bbone_x", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "xwidth");
+	RNA_def_property_range(prop, 0.0f, 1000.0f);
+	RNA_def_property_ui_text(prop, "B-Bone Display X Width", "B-Bone X size");
+	RNA_def_property_update(prop, 0, "rna_Armature_update_data");
+	
+	prop= RNA_def_property(srna, "bbone_z", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "zwidth");
+	RNA_def_property_range(prop, 0.0f, 1000.0f);
+	RNA_def_property_ui_text(prop, "B-Bone Display Z Width", "B-Bone Z size");
+	RNA_def_property_update(prop, 0, "rna_Armature_update_data");
 }
 
 // err... bones should not be directly edited (only editbones should be...)
@@ -779,7 +800,7 @@ static void rna_def_armature(BlenderRNA *brna)
 		{ARM_OCTA, "OCTAHEDRAL", 0, "Octahedral", "Display bones as octahedral shape (default)"},
 		{ARM_LINE, "STICK", 0, "Stick", "Display bones as simple 2D lines with dots"},
 		{ARM_B_BONE, "BBONE", 0, "B-Bone", "Display bones as boxes, showing subdivision and B-Splines"},
-		{ARM_ENVELOPE, "ENVELOPE", 0, "Envelope", "Display bones as extruded spheres, showing defomation influence volume"},
+		{ARM_ENVELOPE, "ENVELOPE", 0, "Envelope", "Display bones as extruded spheres, showing deformation influence volume"},
 		{0, NULL, 0, NULL, NULL}};
 	static EnumPropertyItem prop_ghost_type_items[] = {
 		{ARM_GHOST_CUR, "CURRENT_FRAME", 0, "Around Frame", "Display Ghosts of poses within a fixed number of frames around the current frame"},

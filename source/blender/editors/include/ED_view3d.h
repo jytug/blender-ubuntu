@@ -1,5 +1,5 @@
-/**
- * $Id: ED_view3d.h 34012 2011-01-02 19:00:32Z nazgul $
+/*
+ * $Id: ED_view3d.h 36013 2011-04-05 02:58:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file ED_view3d.h
+ *  \ingroup editors
+ */
+
 #ifndef ED_VIEW3D_H
 #define ED_VIEW3D_H
 
@@ -47,6 +52,7 @@ struct RegionView3D;
 struct Scene;
 struct View3D;
 struct ViewContext;
+struct wmWindow;
 
 
 /* for derivedmesh drawing callbacks, for view3d_select, .... */
@@ -76,6 +82,7 @@ float *give_cursor(struct Scene *scene, struct View3D *v3d);
 int initgrabz(struct RegionView3D *rv3d, float x, float y, float z);
 void window_to_3d(struct ARegion *ar, float *vec, short mx, short my);
 void window_to_3d_delta(struct ARegion *ar, float *vec, short mx, short my);
+void window_to_3d_vector(struct ARegion *ar, float *vec, short mx, short my);
 void view3d_unproject(struct bglMats *mats, float out[3], const short x, const short y, const float z);
 
 /* Depth buffer */
@@ -135,8 +142,9 @@ int view_autodist(struct Scene *scene, struct ARegion *ar, struct View3D *v3d, s
 
 /* only draw so view_autodist_simple can be called many times after */
 int view_autodist_init(struct Scene *scene, struct ARegion *ar, struct View3D *v3d, int mode);
-int view_autodist_simple(struct ARegion *ar, short *mval, float mouse_worldloc[3], int margin, float *force_depth);
-int view_autodist_depth(struct ARegion *ar, short *mval, int margin, float *depth);
+int view_autodist_simple(struct ARegion *ar, short mval[2], float mouse_worldloc[3], int margin, float *force_depth);
+int view_autodist_depth(struct ARegion *ar, short mval[2], int margin, float *depth);
+int view_autodist_depth_segment(struct ARegion *ar, short mval_sta[2], short mval_end[2], int margin, float *depth);
 
 /* select */
 #define MAXPICKBUF      10000
@@ -144,10 +152,11 @@ short view3d_opengl_select(struct ViewContext *vc, unsigned int *buffer, unsigne
 
 void view3d_set_viewcontext(struct bContext *C, struct ViewContext *vc);
 void view3d_operator_needs_opengl(const struct bContext *C);
+void view3d_region_operator_needs_opengl(struct wmWindow *win, struct ARegion *ar);
 void view3d_get_view_aligned_coordinate(struct ViewContext *vc, float *fp, short mval[2]);
 void view3d_get_transformation(struct ARegion *ar, struct RegionView3D *rv3d, struct Object *ob, struct bglMats *mats);
 
-/* XXX should move to arithb.c */
+/* XXX should move to BLI_math */
 int edge_inside_circle(short centx, short centy, short rad, short x1, short y1, short x2, short y2);
 int lasso_inside(short mcords[][2], short moves, short sx, short sy);
 int lasso_inside_edge(short mcords[][2], short moves, int x0, int y0, int x1, int y1);
@@ -163,13 +172,15 @@ int ED_view3d_context_activate(struct bContext *C);
 void ED_view3d_draw_offscreen(struct Scene *scene, struct View3D *v3d, struct ARegion *ar,
 	int winx, int winy, float viewmat[][4], float winmat[][4]);
 
-struct ImBuf *ED_view3d_draw_offscreen_imbuf(struct Scene *scene, struct View3D *v3d, struct ARegion *ar, int sizex, int sizey, unsigned int flag);
-struct ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Scene *scene, int width, int height, unsigned int flag, int drawtype);
+struct ImBuf *ED_view3d_draw_offscreen_imbuf(struct Scene *scene, struct View3D *v3d, struct ARegion *ar, int sizex, int sizey, unsigned int flag, char err_out[256]);
+struct ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Scene *scene, int width, int height, unsigned int flag, int drawtype, char err_out[256]);
 
 
 Base *ED_view3d_give_base_under_cursor(struct bContext *C, short *mval);
 void ED_view3d_quadview_update(struct ScrArea *sa, struct ARegion *ar, short do_clip);
+int ED_view3d_lock(struct RegionView3D *rv3d);
 
+unsigned int ED_view3d_datamask(struct Scene *scene, struct View3D *v3d);
 unsigned int ED_viewedit_datamask(struct bScreen *screen);
 
 #endif /* ED_VIEW3D_H */

@@ -21,19 +21,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     "name": "3D Navigation",
     "author": "Demohero, uriel",
     "version": (1, 2),
-    "blender": (2, 5, 4),
-    "api": 32411,
-    "location": "View3D > Toolbar",
-    "description": "Navigate the Camera & 3d Views",
+    "blender": (2, 5, 7),
+    "api": 35853,
+    "location": "View3D > Tool Shelf > 3D Nav",
+    "description": "Navigate the Camera & 3D View from the Toolshelf",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/3D_interaction/3D_Navigation",
     "tracker_url": "http://projects.blender.org/tracker/index.php?"\
-	    "func=detail&aid=23530&group_id=153&atid=468",
+	    "func=detail&aid=23530",
     "category": "3D View"}
 
 # import the basic library
@@ -43,7 +43,7 @@ import bpy
 class VIEW3D_PT_3dnavigationPanel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
-    bl_label = "3D Views "
+    bl_label = "3D Nav"
 
     def draw(self, context):
         layout = self.layout
@@ -87,10 +87,14 @@ class VIEW3D_PT_3dnavigationPanel(bpy.types.Panel):
         row.operator("view3d.snap_cursor_to_selected", text="Cursor to Selected")
 
 # register the class
-def register(): 
+def register():
+    bpy.utils.register_module(__name__)
+ 
     pass 
 
-def unregister(): 
+def unregister():
+    bpy.utils.unregister_module(__name__)
+ 
     pass 
 
 if __name__ == "__main__": 

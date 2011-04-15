@@ -1,5 +1,5 @@
-/**
- * $Id: MEM_NonCopyable.h 26841 2010-02-12 13:34:04Z campbellbarton $
+/*
+ * $Id: MEM_NonCopyable.h 35156 2011-02-25 11:47:18Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file memutil/MEM_NonCopyable.h
+ *  \ingroup memutil
+ */
+
 /**
  * @file	MEM_NonCopyable.h
  * Declaration of MEM_NonCopyable class.

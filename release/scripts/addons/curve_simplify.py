@@ -16,19 +16,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     "name": "Simplify curves",
     "author": "testscreenings",
     "version": (1,),
-    "blender": (2, 5, 3),
-    "api": 32411,
-    "location": "Toolshelf > search > simplify curves",
-    "description": "This script simplifies 3D curves and fcurves",
+    "blender": (2, 5, 7),
+    "api": 35853,
+    "location": "Search > Simplify Curves",
+    "description": "Simplifies 3D curves and fcurves",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Curve/Curve_Simplify",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=22327&group_id=153&atid=468",
+        "func=detail&aid=22327",
     "category": "Add Curve"}
 
 """
@@ -44,7 +44,7 @@ import math
 ##############################
 #### simplipoly algorithm ####
 ##############################
-# get SplineVertIndicies to keep
+# get SplineVertIndices to keep
 def simplypoly(splineVerts, options):
     # main vars
     newVerts = [] # list of vertindices to keep
@@ -79,7 +79,7 @@ def simplypoly(splineVerts, options):
         distances.append(dist)
     distances.append(0.0) # last vert is always kept
 
-    # generate list of vertindicies to keep
+    # generate list of vertindices to keep
     # tested against averaged curvatures and distances of neighbour verts
     newVerts.append(0) # first vert is always kept
     for i, curv in enumerate(curvatures):
@@ -172,7 +172,7 @@ def iterate(points, newVerts, error):
         return False
     return new
 
-#### get SplineVertIndicies to keep
+#### get SplineVertIndices to keep
 def simplify_RDP(splineVerts, options):
     #main vars
     error = options[4]
@@ -254,7 +254,7 @@ def main(context, obj, options):
                                 for splineVert in spline.bezier_points.values()]
 
             else: # verts from all other types of curves
-                splineVerts = [splineVert.co.copy().resize3D()
+                splineVerts = [splineVert.co.to_3d()
                                 for splineVert in spline.points.values()]
 
             # simplify spline according to mode
@@ -264,7 +264,7 @@ def main(context, obj, options):
             if mode == 'curvature':
                 newVerts = simplypoly(splineVerts, options)
 
-            # convert indicies into vectors3D
+            # convert indices into vectors3D
             newPoints = vertsToPoints(newVerts, splineVerts, splineType)
 
             # create new spline            
@@ -304,7 +304,7 @@ def getFcurveData(obj):
     fcurves = []
     for fc in obj.animation_data.action.fcurves:
         if fc.select:
-            fcVerts = [vcVert.co.copy().resize3D()
+            fcVerts = [vcVert.co.to_3d()
                         for vcVert in fc.keyframe_points.values()]
             fcurves.append(fcVerts)
     return fcurves
@@ -324,7 +324,7 @@ def fcurves_simplify(context, obj, options, fcurves):
     scene = context.scene
     fcurves_obj = obj.animation_data.action.fcurves
 
-    #get indicies of selected fcurves
+    #get indices of selected fcurves
     fcurve_sel = selectedfcurves(obj)
     
     # go through fcurves
@@ -339,7 +339,7 @@ def fcurves_simplify(context, obj, options, fcurves):
             if mode == 'curvature':
                 newVerts = simplypoly(fcurve, options)
 
-            # convert indicies into vectors3D
+            # convert indices into vectors3D
             newPoints = []
         
             #this is different from the main() function for normal curves, different api...
@@ -351,7 +351,7 @@ def fcurves_simplify(context, obj, options, fcurves):
                 fcurve_sel[fcurve_i].keyframe_points.remove(fcurve_sel[fcurve_i].keyframe_points[i])
             # put newPoints into fcurve
             for v in newPoints:
-                fcurve_sel[fcurve_i].keyframe_points.add(frame=v[0],value=v[1])
+                fcurve_sel[fcurve_i].keyframe_points.insert(frame=v[0],value=v[1])
             #fcurve.points.foreach_set('co', newPoints)
     return
 
@@ -584,9 +584,13 @@ class CURVE_OT_simplify(bpy.types.Operator):
 #### REGISTER ###################################
 #################################################
 def register():
+    bpy.utils.register_module(__name__)
+
     pass
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     pass
 
 if __name__ == "__main__":

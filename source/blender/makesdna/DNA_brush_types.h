@@ -1,5 +1,5 @@
-/**
- * $Id: DNA_brush_types.h 34065 2011-01-04 14:46:29Z nazgul $
+/*
+ * $Id: DNA_brush_types.h 35189 2011-02-25 16:54:09Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,6 +30,11 @@
 #ifndef DNA_BRUSH_TYPES_H
 #define DNA_BRUSH_TYPES_H
 
+/** \file DNA_brush_types.h
+ *  \ingroup DNA
+ */
+
+
 #include "DNA_ID.h"
 #include "DNA_texture_types.h" /* for MTex */
 
@@ -57,9 +62,6 @@ typedef struct Brush {
 	struct ImBuf *icon_imbuf;
 	PreviewImage *preview;
 	char icon_filepath[240];
-	int icon_mode;			/* store paint mode for which brush's icon was last generated */
-	int pad;
-
 
 	float normal_weight;
 
@@ -83,13 +85,14 @@ typedef struct Brush {
 	char sculpt_tool;		/* active sculpt tool */
 	char vertexpaint_tool;		/* active vertex/weight paint tool/blend mode */
 	char imagepaint_tool;		/* active image paint tool */
-	char pad3;
+	char pad3[5];
 
 	float autosmooth_factor;
 
 	float crease_pinch_factor;
 
 	float plane_trim;
+	float height;			/* affectable height of brush (layer height for layer tool, i.e.) */
 
 	float texture_sample_bias;
 	int   texture_overlay_alpha;

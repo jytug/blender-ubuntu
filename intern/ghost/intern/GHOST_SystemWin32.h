@@ -1,5 +1,5 @@
-/**
- * $Id: GHOST_SystemWin32.h 33084 2010-11-15 12:05:11Z jesterking $
+/*
+ * $Id: GHOST_SystemWin32.h 35467 2011-03-11 02:58:37Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,8 +25,9 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-/**
- * @file	GHOST_SystemWin32.h
+
+/** \file ghost/intern/GHOST_SystemWin32.h
+ *  \ingroup GHOST
  * Declaration of GHOST_SystemWin32 class.
  */
 
@@ -45,6 +46,93 @@
 #	define __int64 long long
 #endif
 
+#ifndef WM_INPUT
+#define WM_INPUT 0x00FF
+#endif 
+#ifndef RID_INPUT
+#define RID_INPUT 0x10000003
+#endif
+#ifndef RI_KEY_BREAK
+#define RI_KEY_BREAK 0x1
+#endif
+#ifndef RI_KEY_E0
+#define RI_KEY_E0 0x2
+#endif
+#ifndef RI_KEY_E1
+#define RI_KEY_E1 0x4
+#endif
+#ifndef RIM_TYPEMOUSE
+#define RIM_TYPEMOUSE		0x0
+#define RIM_TYPEKEYBOARD	0x1
+#define RIM_TYPEHID			0x2
+
+typedef struct tagRAWINPUTDEVICE {
+	USHORT usUsagePage;
+	USHORT usUsage;
+	DWORD dwFlags;
+	HWND hwndTarget;
+} RAWINPUTDEVICE;
+
+
+
+typedef struct tagRAWINPUTHEADER {
+	DWORD dwType;
+	DWORD dwSize;
+	HANDLE hDevice;
+	WPARAM wParam;
+} RAWINPUTHEADER;
+
+typedef struct tagRAWMOUSE {
+	USHORT usFlags;
+	union {
+		ULONG ulButtons;
+		struct	{
+			USHORT	usButtonFlags;
+			USHORT	usButtonData;
+		};
+	};
+	ULONG	ulRawButtons;
+	LONG	lLastX;
+	LONG	lLastY;
+	ULONG	ulExtraInformation;
+} RAWMOUSE;
+
+typedef struct tagRAWKEYBOARD {
+	USHORT	MakeCode;
+	USHORT	Flags;
+	USHORT	Reserved;
+	USHORT	VKey;
+	UINT	Message;
+	ULONG	ExtraInformation;
+} RAWKEYBOARD;
+
+typedef struct tagRAWHID {
+	DWORD	dwSizeHid;
+	DWORD	dwCount;
+	BYTE	bRawData[1];
+} RAWHID;
+
+typedef struct tagRAWINPUT {
+	RAWINPUTHEADER header;
+	union {
+		RAWMOUSE	mouse;
+		RAWKEYBOARD keyboard;
+		RAWHID      hid;
+	} data;
+} RAWINPUT;
+
+DECLARE_HANDLE(HRAWINPUT);
+#endif
+
+#ifdef FREE_WINDOWS
+#define NEED_RAW_PROC
+typedef BOOL (WINAPI * LPFNDLLRRID)(RAWINPUTDEVICE*,UINT, UINT);
+#define RegisterRawInputDevices(pRawInputDevices, uiNumDevices, cbSize) ((pRegisterRawInputDevices)?pRegisterRawInputDevices(pRawInputDevices, uiNumDevices, cbSize):0)
+
+
+typedef UINT (WINAPI * LPFNDLLGRID)(HRAWINPUT, UINT, LPVOID, PUINT, UINT);
+#define GetRawInputData(hRawInput, uiCommand, pData, pcbSize, cbSizeHeader) ((pGetRawInputData)?pGetRawInputData(hRawInput, uiCommand, pData, pcbSize, cbSizeHeader):(UINT)-1)
+#endif
 
 class GHOST_EventButton;
 class GHOST_EventCursor;
@@ -188,26 +276,6 @@ public:
 	virtual void putClipboard(GHOST_TInt8 *buffer, bool selection) const;
 
 	/**
-	 * Determine the base dir in which shared resources are located. It will first try to use
-	 * "unpack and run" path, then look for properly installed path, not including versioning.
-	 * @return Unsigned char string pointing to system dir (eg /usr/share/).
-	 */
-	virtual const GHOST_TUns8* getSystemDir() const;
-
-	/**
-	 * Determine the base dir in which user configuration is stored, not including versioning.
-	 * If needed, it will create the base directory.
-	 * @return Unsigned char string pointing to user dir (eg ~/).
-	 */
-	 virtual const GHOST_TUns8* getUserDir() const;
-
-	 /**
-	  * Determine the directory of the current binary
-	  * @return Unsigned char string pointing to the binary dir
-	  */
-	 virtual const GHOST_TUns8* getBinaryDir() const;
-
-	/**
 	 * Creates a drag'n'drop event and pushes it immediately onto the event queue. 
 	 * Called by GHOST_DropTargetWin32 class.
 	 * @param eventType The type of drag'n'drop event
@@ -236,27 +304,23 @@ protected:
 	/**
 	 * Converts raw WIN32 key codes from the wndproc to GHOST keys.
 	 * @param window->	The window for this handling
-	 * @param wParam	The wParam from the wndproc
-	 * @param lParam	The lParam from the wndproc
+	 * @param vKey		The virtual key from hardKey
+	 * @param ScanCode	The ScanCode of pressed key (simular to PS/2 Set 1)
+	 * @param extend	Flag if key is not primerly (left or right)
 	 * @return The GHOST key (GHOST_kKeyUnknown if no match).
 	 */
-	virtual GHOST_TKey convertKey(GHOST_IWindow *window, WPARAM wParam, LPARAM lParam) const;
+	virtual GHOST_TKey convertKey(GHOST_IWindow *window, short vKey, short ScanCode, short extend) const;
 
 	/**
-	 * @param window	The window for this handling
+	 * Catches raw WIN32 key codes from WM_INPUT in the wndproc.
+	 * @param window->	The window for this handling
 	 * @param wParam	The wParam from the wndproc
 	 * @param lParam	The lParam from the wndproc
-	 * @param oldModifiers	The old modifiers
-	 * @param newModifiers	The new modifiers
+	 * @param keyDown	Pointer flag that specify if a key is down
+	 * @param vk		Pointer to virtual key
+	 * @return The GHOST key (GHOST_kKeyUnknown if no match).
 	 */
-	virtual void handleModifierKeys(GHOST_IWindow *window, WPARAM wParam, LPARAM lParam, GHOST_ModifierKeys &oldModifiers, GHOST_ModifierKeys &newModifiers) const;
-	/**
-	 * Immediately push key event for given key
-	 * @param window	The window for this handling
-	 * @param down		Whether we send up or down event
-	 * @param key		The key to send the event for
-	 */
-	virtual void triggerKey(GHOST_IWindow *window, bool down, GHOST_TKey key);
+	virtual GHOST_TKey hardKey(GHOST_IWindow *window, WPARAM wParam, LPARAM lParam, int * keyDown, char * vk);
 
 	/**
 	 * Creates modifier key event(s) and updates the key data stored locally (m_modifierKeys).
@@ -265,7 +329,7 @@ protected:
 	 * events generated for both keys.
 	 * @param window	The window receiving the event (the active window).
 	 */
-	//GHOST_EventKey* processModifierKeys(GHOST_IWindow *window);
+	GHOST_EventKey* processModifierKeys(GHOST_IWindow *window);
 
 	/**
 	 * Creates mouse button event.
@@ -300,7 +364,16 @@ protected:
 	 * @param wParam	The wParam from the wndproc
 	 * @param lParam	The lParam from the wndproc
 	 */
-	static GHOST_EventKey* processKeyEvent(GHOST_IWindow *window, bool keyDown, WPARAM wParam, LPARAM lParam);
+	static GHOST_EventKey* processKeyEvent(GHOST_IWindow *window, WPARAM wParam, LPARAM lParam);
+
+	/**
+	 * Process special keys (VK_OEM_*), to see if current key layout
+	 * gives us anything special, like ! on french AZERTY.
+	 * @param window	The window receiving the event (the active window).
+	 * @param vKey		The virtual key from hardKey
+	 * @param ScanCode	The ScanCode of pressed key (simular to PS/2 Set 1)
+	 */
+	virtual GHOST_TKey processSpecialKey(GHOST_IWindow *window, short vKey, short scanCode) const;
 
 	/** 
 	 * Creates a window event.
@@ -331,23 +404,18 @@ protected:
 	/**
 	 * Check current key layout for AltGr
 	 */
-	inline virtual void keyboardAltGr(void);
+	inline virtual void handleKeyboardChange(void);
 
 	/**
 	 * Windows call back routine for our window class.
 	 */
 	static LRESULT WINAPI s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	
-	/**
-	 * Low-level inspection of keyboard events
-	 */
-	static LRESULT CALLBACK s_llKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
-	
-	/**
-	 * Check if any shiftkey is pressed
-	 */
-	inline virtual bool shiftPressed(void);
 
+	/**
+	 * Initiates WM_INPUT messages from keyboard 
+	 */
+	GHOST_TInt32 initKeyboardRawInput(void);
+	
 	/** The current state of the modifier keys. */
 	GHOST_ModifierKeys m_modifierKeys;
 	/** State variable set at initialization. */
@@ -358,10 +426,19 @@ protected:
 	__int64 m_start;
 	/** AltGr on current keyboard layout. */
 	bool m_hasAltGr;
-	/** holding hook handle for low-level keyboard handling */
-	HHOOK m_llKeyboardHook;
-	bool m_prevKeyStatus[255]; /* VK_* codes 0x01-0xFF, with 0xFF reserved */
-	bool m_curKeyStatus[255]; /* VK_* codes 0x01-0xFF, with 0xFF reserved */
+	/** language identifier. */
+	WORD m_langId;
+	/** stores keyboard layout. */
+	HKL m_keylayout;
+
+	/** handle for user32.dll*/
+	HMODULE user32;
+	#ifdef NEED_RAW_PROC
+	/* pointer to RegisterRawInputDevices function */
+	LPFNDLLRRID pRegisterRawInputDevices;
+	/* pointer to GetRawInputData function */
+	LPFNDLLGRID pGetRawInputData;
+	#endif
 };
 
 inline void GHOST_SystemWin32::retrieveModifierKeys(GHOST_ModifierKeys& keys) const
@@ -374,13 +451,17 @@ inline void GHOST_SystemWin32::storeModifierKeys(const GHOST_ModifierKeys& keys)
 	m_modifierKeys = keys;
 }
 
-inline void GHOST_SystemWin32::keyboardAltGr(void)
+inline void GHOST_SystemWin32::handleKeyboardChange(void)
 {
-	HKL keylayout = GetKeyboardLayout(0); // get keylayout for current thread
+	m_keylayout = GetKeyboardLayout(0); // get keylayout for current thread
 	int i;
 	SHORT s;
+
+	// save the language identifier.
+	m_langId = LOWORD(m_keylayout);
+
 	for(m_hasAltGr = false, i = 32; i < 256; ++i) {
-		s = VkKeyScanEx((char)i, keylayout);
+		s = VkKeyScanEx((char)i, m_keylayout);
 		// s == -1 means no key that translates passed char code
 		// high byte contains shift state. bit 2 ctrl pressed, bit 4 alt pressed
 		// if both are pressed, we have AltGr keycombo on keylayout
@@ -389,11 +470,6 @@ inline void GHOST_SystemWin32::keyboardAltGr(void)
 			break;
 		}
 	}
-}
-
-inline bool GHOST_SystemWin32::shiftPressed(void)
-{
-	return (m_curKeyStatus[VK_SHIFT] || m_curKeyStatus[VK_RSHIFT] || m_curKeyStatus[VK_LSHIFT]);
 }
 
 #endif // _GHOST_SYSTEM_WIN32_H_

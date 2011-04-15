@@ -1,5 +1,5 @@
-/**
- * $Id: GPC_RenderTools.cpp 33707 2010-12-16 10:25:41Z dfelinto $
+/*
+ * $Id: GPC_RenderTools.cpp 35170 2011-02-25 13:35:11Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file gameengine/GamePlayer/common/GPC_RenderTools.cpp
+ *  \ingroup player
+ */
+
 
 #include "GL/glew.h"
 
@@ -347,13 +352,11 @@ void GPC_RenderTools::RenderText2D(RAS_TEXT_RENDER_MODE mode,
 	if (mode == RAS_IRenderTools::RAS_TEXT_PADDED)
 	{
 		glColor3ub(0, 0, 0);
-		glRasterPos2s(xco+1, height-yco-1);
-		// XXX BMF_DrawString(m_font, s);
+		BLF_draw_default(xco+1, height-yco-1, 0.f, text, strlen(text));
 	}
 
 	glColor3ub(255, 255, 255);
-	glRasterPos2s(xco, height-yco);
-	// XXX BMF_DrawString(m_font, s);
+	BLF_draw_default(xco, height-yco, 0.f, text, strlen(text));
 
 	// Restore view settings
 	glMatrixMode(GL_PROJECTION);

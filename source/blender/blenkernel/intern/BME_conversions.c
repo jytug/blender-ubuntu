@@ -1,9 +1,9 @@
-/**
+/*
  * BME_mesh.c    jan 2007
  *
  *	BMesh mesh level functions.
  *
- * $Id: BME_conversions.c 31483 2010-08-20 16:02:20Z blendix $
+ * $Id: BME_conversions.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,16 +32,23 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/BME_conversions.c
+ *  \ingroup bke
+ */
+
+
 #include "MEM_guardedalloc.h"
 
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 
+#include "BLI_edgehash.h"
+#include "BLI_utildefines.h"
+
 #include "BKE_mesh.h"
 #include "BKE_cdderivedmesh.h"
 
-#include "BLI_edgehash.h"
 //XXX #include "BIF_editmesh.h"
 //XXX #include "editmesh.h"
 #include "bmesh_private.h"

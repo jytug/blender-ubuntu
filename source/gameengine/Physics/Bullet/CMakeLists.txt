@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
+# $Id: CMakeLists.txt 36024 2011-04-05 23:31:01Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -31,7 +31,6 @@ set(INC
 	.
 	../common
 	../../../../extern/bullet2/src
-	../../../../extern/glew/include
 	../../../../intern/moto/include
 	../../../../intern/guardedalloc
 	../../../kernel/gen_system
@@ -44,7 +43,8 @@ set(INC
 	../../../../source/blender/makesdna
 	../../../../source/blender/blenlib
 	../../../../source/blender/blenkernel
-	${PYTHON_INC}
+	${GLEW_INCLUDE_PATH}
+	${PYTHON_INCLUDE_DIRS}
 )
 
 set(SRC

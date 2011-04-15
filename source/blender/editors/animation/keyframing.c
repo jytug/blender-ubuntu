@@ -1,5 +1,5 @@
-/**
- * $Id: keyframing.c 34021 2011-01-03 05:36:52Z aligorith $
+/*
+ * $Id: keyframing.c 36094 2011-04-11 00:49:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/animation/keyframing.c
+ *  \ingroup edanimation
+ */
+
  
 #include <stdio.h>
 #include <stddef.h>
@@ -38,6 +43,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_dynstr.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
@@ -49,6 +55,7 @@
 
 #include "BKE_animsys.h"
 #include "BKE_action.h"
+#include "BKE_armature.h"
 #include "BKE_constraint.h"
 #include "BKE_depsgraph.h"
 #include "BKE_fcurve.h"
@@ -87,15 +94,15 @@ short ANIM_get_keyframing_flags (Scene *scene, short incl_mode)
 	/* standard flags */
 	{
 		/* visual keying */
-		if (IS_AUTOKEY_FLAG(AUTOMATKEY)) 
+		if (IS_AUTOKEY_FLAG(scene, AUTOMATKEY)) 
 			flag |= INSERTKEY_MATRIX;
 		
 		/* only needed */
-		if (IS_AUTOKEY_FLAG(INSERTNEEDED)) 
+		if (IS_AUTOKEY_FLAG(scene, INSERTNEEDED)) 
 			flag |= INSERTKEY_NEEDED;
 		
-		/* default F-Curve color mode - RGB from XYZ indicies */
-		if (IS_AUTOKEY_FLAG(XYZ2RGB)) 
+		/* default F-Curve color mode - RGB from XYZ indices */
+		if (IS_AUTOKEY_FLAG(scene, XYZ2RGB)) 
 			flag |= INSERTKEY_XYZ2RGB;
 	}
 		
@@ -230,7 +237,7 @@ int insert_bezt_fcurve (FCurve *fcu, BezTriple *bezt, short flag)
 				dst->vec[0][1] += dy;
 				dst->vec[1][1] += dy;
 				dst->vec[2][1] += dy;
-
+				
 				dst->f1= bezt->f1;
 				dst->f2= bezt->f2;
 				dst->f3= bezt->f3;
@@ -293,6 +300,7 @@ int insert_bezt_fcurve (FCurve *fcu, BezTriple *bezt, short flag)
 int insert_vert_fcurve (FCurve *fcu, float x, float y, short flag)
 {
 	BezTriple beztr= {{{0}}};
+	unsigned int oldTot = fcu->totvert;
 	int a;
 	
 	/* set all three points, for nicer start position 
@@ -328,10 +336,16 @@ int insert_vert_fcurve (FCurve *fcu, float x, float y, short flag)
 	if ((fcu->totvert > 2) && (flag & INSERTKEY_REPLACE)==0) {
 		BezTriple *bezt= (fcu->bezt + a);
 		
-		/* set interpolation from previous (if available) */
-		// FIXME: this doesn't work if user tweaked the interpolation specifically, and they were just overwriting some existing key in the process...
-		if (a > 0) bezt->ipo= (bezt-1)->ipo;
-		else if (a < fcu->totvert-1) bezt->ipo= (bezt+1)->ipo;
+		/* set interpolation from previous (if available), but only if we didn't just replace some keyframe 
+		 * 	- replacement is indicated by no-change in number of verts
+		 *	- when replacing, the user may have specified some interpolation that should be kept
+		 */
+		if (fcu->totvert > oldTot) {
+			if (a > 0) 
+				bezt->ipo= (bezt-1)->ipo;
+			else if (a < fcu->totvert-1) 
+				bezt->ipo= (bezt+1)->ipo;
+		}
 			
 		/* don't recalculate handles if fast is set
 		 *	- this is a hack to make importers faster
@@ -352,7 +366,7 @@ enum {
 	KEYNEEDED_JUSTADD,
 	KEYNEEDED_DELPREV,
 	KEYNEEDED_DELNEXT
-} eKeyNeededStatus;
+} /*eKeyNeededStatus*/;
 
 /* This helper function determines whether a new keyframe is needed */
 /* Cases where keyframes should not be added:
@@ -389,14 +403,14 @@ static short new_key_needed (FCurve *fcu, float cFrame, float nValue)
 			prevVal= prev->vec[1][1];
 			
 			/* keyframe to be added at point where there are already two similar points? */
-			if (IS_EQ(prevPosi, cFrame) && IS_EQ(beztPosi, cFrame) && IS_EQ(beztPosi, prevPosi)) {
+			if (IS_EQF(prevPosi, cFrame) && IS_EQF(beztPosi, cFrame) && IS_EQF(beztPosi, prevPosi)) {
 				return KEYNEEDED_DONTADD;
 			}
 			
 			/* keyframe between prev+current points ? */
 			if ((prevPosi <= cFrame) && (cFrame <= beztPosi)) {
 				/* is the value of keyframe to be added the same as keyframes on either side ? */
-				if (IS_EQ(prevVal, nValue) && IS_EQ(beztVal, nValue) && IS_EQ(prevVal, beztVal)) {
+				if (IS_EQF(prevVal, nValue) && IS_EQF(beztVal, nValue) && IS_EQF(prevVal, beztVal)) {
 					return KEYNEEDED_DONTADD;
 				}
 				else {
@@ -406,7 +420,7 @@ static short new_key_needed (FCurve *fcu, float cFrame, float nValue)
 					realVal= evaluate_fcurve(fcu, cFrame);
 					
 					/* compare whether it's the same as proposed */
-					if (IS_EQ(realVal, nValue)) 
+					if (IS_EQF(realVal, nValue))
 						return KEYNEEDED_DONTADD;
 					else 
 						return KEYNEEDED_JUSTADD;
@@ -419,7 +433,7 @@ static short new_key_needed (FCurve *fcu, float cFrame, float nValue)
 				 * stays around or not depends on whether the values of previous/current
 				 * beztriples and new keyframe are the same.
 				 */
-				if (IS_EQ(prevVal, nValue) && IS_EQ(beztVal, nValue) && IS_EQ(prevVal, beztVal))
+				if (IS_EQF(prevVal, nValue) && IS_EQF(beztVal, nValue) && IS_EQF(prevVal, beztVal))
 					return KEYNEEDED_DELNEXT;
 				else 
 					return KEYNEEDED_JUSTADD;
@@ -457,7 +471,7 @@ static short new_key_needed (FCurve *fcu, float cFrame, float nValue)
 	else 
 		valB= bezt->vec[1][1] + 1.0f; 
 		
-	if (IS_EQ(valA, nValue) && IS_EQ(valA, valB)) 
+	if (IS_EQF(valA, nValue) && IS_EQF(valA, valB))
 		return KEYNEEDED_DELPREV;
 	else 
 		return KEYNEEDED_JUSTADD;
@@ -641,51 +655,48 @@ static float visualkey_get_value (PointerRNA *ptr, PropertyRNA *prop, int array_
 			if (strstr(identifier, "location")) {
 				return ob->obmat[3][array_index];
 			}
-			else if (strstr(identifier, "rotation")) {
+			else if (strstr(identifier, "rotation_euler")) {
 				float eul[3];
 				
-				mat4_to_eul( eul,ob->obmat);
+				mat4_to_eulO(eul, ob->rotmode, ob->obmat);
 				return eul[array_index];
 			}
+			// FIXME: other types of rotation don't work
 		}
 	}
 	else if (ptr->type == &RNA_PoseBone) {
-		Object *ob= (Object *)ptr->id.data; /* we assume that this is always set, and is an object */
 		bPoseChannel *pchan= (bPoseChannel *)ptr->data;
-		float tmat[4][4];
+		bPoseChannel tchan;
 		
-		/* Although it is not strictly required for this particular space conversion, 
-		 * arg1 must not be null, as there is a null check for the other conversions to
-		 * be safe. Therefore, the active object is passed here, and in many cases, this
-		 * will be what owns the pose-channel that is getting this anyway.
+		/* make a copy of pchan so that we can apply and decompose its chan_mat, thus getting the 
+		 * rest-pose to pose-mode transform that got stored there at the end of posing calculations
+		 * for B-Bone deforms to use
+		 *	- it should be safe to just make a local copy like this, since we're not doing anything with the copied pointers
 		 */
-		copy_m4_m4(tmat, pchan->pose_mat);
-		constraint_mat_convertspace(ob, pchan, tmat, CONSTRAINT_SPACE_POSE, CONSTRAINT_SPACE_LOCAL);
+		memcpy(&tchan, pchan, sizeof(bPoseChannel));
+		pchan_apply_mat4(&tchan, pchan->chan_mat, TRUE);
 		
 		/* Loc, Rot/Quat keyframes are supported... */
 		if (strstr(identifier, "location")) {
 			/* only use for non-connected bones */
 			if ((pchan->bone->parent) && !(pchan->bone->flag & BONE_CONNECTED))
-				return tmat[3][array_index];
+				return tchan.loc[array_index];
 			else if (pchan->bone->parent == NULL)
-				return tmat[3][array_index];
+				return tchan.loc[array_index];
 		}
 		else if (strstr(identifier, "rotation_euler")) {
-			float eul[3];
-			
-			/* euler-rotation test before standard rotation, as standard rotation does quats */
-			mat4_to_eulO( eul, pchan->rotmode,tmat);
-			return eul[array_index];
+			return tchan.eul[array_index];
 		}
 		else if (strstr(identifier, "rotation_quaternion")) {
-			float trimat[3][3], quat[4];
-			
-			copy_m3_m4(trimat, tmat);
-			mat3_to_quat_is_ok( quat,trimat);
-			
-			return quat[array_index];
+			return tchan.quat[array_index];
 		}
-		// TODO: axis-angle...
+		else if (strstr(identifier, "rotation_axisangle")) {
+			/* w = 0, x,y,z = 1,2,3 */
+			if (array_index == 0)
+				return tchan.rotAngle;
+			else
+				return tchan.rotAxis[array_index - 1];
+		}
 	}
 	
 	/* as the function hasn't returned yet, read value from system in the default way */
@@ -905,7 +916,7 @@ short insert_keyframe (ReportList *reports, ID *id, bAction *act, const char gro
 				/* for Loc/Rot/Scale and also Color F-Curves, the color of the F-Curve in the Graph Editor,
 				 * is determined by the array index for the F-Curve
 				 */
-				if (ELEM4(RNA_property_subtype(prop), PROP_TRANSLATION, PROP_XYZ, PROP_EULER, PROP_COLOR)) {
+				if (ELEM5(RNA_property_subtype(prop), PROP_TRANSLATION, PROP_XYZ, PROP_EULER, PROP_COLOR, PROP_COORDS)) {
 					fcu->color_mode= FCURVE_COLOR_AUTO_RGB;
 				}
 			}
@@ -1038,7 +1049,7 @@ short delete_keyframe (ReportList *reports, ID *id, bAction *act, const char gro
 enum {
 	COMMONKEY_MODE_INSERT = 0,
 	COMMONKEY_MODE_DELETE,
-} eCommonModifyKey_Modes;
+} /*eCommonModifyKey_Modes*/;
 
 /* Polling callback for use with ANIM_*_keyframe() operators
  * This is based on the standard ED_operator_areaactive callback,
@@ -1321,7 +1332,7 @@ static int delete_key_v3d_exec (bContext *C, wmOperator *op)
 		short success= 0;
 		
 		/* loop through all curves in animdata and delete keys on this frame */
-		if (ob->adt) {
+		if ((ob->adt) && (ob->adt->action)) {
 			AnimData *adt= ob->adt;
 			bAction *act= adt->action;
 			
@@ -1331,7 +1342,7 @@ static int delete_key_v3d_exec (bContext *C, wmOperator *op)
 			}
 		}
 		
-		BKE_reportf(op->reports, RPT_INFO, "Ob '%s' - Successfully removed %d keyframes \n", id->name+2, success);
+		BKE_reportf(op->reports, RPT_INFO, "Ob '%s' - Successfully had %d keyframes removed", id->name+2, success);
 		
 		ob->recalc |= OB_RECALC_OB;
 	}
@@ -1368,7 +1379,7 @@ static int insert_key_button_exec (bContext *C, wmOperator *op)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
-	PointerRNA ptr= {{0}};
+	PointerRNA ptr= {{NULL}};
 	PropertyRNA *prop= NULL;
 	char *path;
 	float cfra= (float)CFRA; // XXX for now, don't bother about all the yucky offset crap
@@ -1457,7 +1468,7 @@ static int delete_key_button_exec (bContext *C, wmOperator *op)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
-	PointerRNA ptr= {{0}};
+	PointerRNA ptr= {{NULL}};
 	PropertyRNA *prop= NULL;
 	char *path;
 	float cfra= (float)CFRA; // XXX for now, don't bother about all the yucky offset crap
@@ -1579,7 +1590,7 @@ short fcurve_frame_has_keyframe (FCurve *fcu, float frame, short filter)
 /* Checks whether an Action has a keyframe for a given frame 
  * Since we're only concerned whether a keyframe exists, we can simply loop until a match is found...
  */
-short action_frame_has_keyframe (bAction *act, float frame, short filter)
+static short action_frame_has_keyframe (bAction *act, float frame, short filter)
 {
 	FCurve *fcu;
 	
@@ -1607,7 +1618,7 @@ short action_frame_has_keyframe (bAction *act, float frame, short filter)
 }
 
 /* Checks whether an Object has a keyframe for a given frame */
-short object_frame_has_keyframe (Object *ob, float frame, short filter)
+static short object_frame_has_keyframe (Object *ob, float frame, short filter)
 {
 	/* error checking */
 	if (ob == NULL)

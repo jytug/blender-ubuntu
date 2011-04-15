@@ -1,5 +1,5 @@
-/**
- * $Id: undo.c 33675 2010-12-15 04:06:19Z campbellbarton $
+/*
+ * $Id: undo.c 35569 2011-03-16 12:21:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/util/undo.c
+ *  \ingroup edutil
+ */
+
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -36,15 +41,15 @@
 
 #include "DNA_object_types.h"
 
+#include "BLI_blenlib.h"
+#include "BLI_editVert.h"
+#include "BLI_dynstr.h"
+#include "BLI_utildefines.h"
+
 #include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_screen.h"
-
-#include "BLI_blenlib.h"
-#include "BLI_editVert.h"
-#include "BLI_dynstr.h"
-
 
 #include "ED_armature.h"
 #include "ED_particle.h"
@@ -60,8 +65,12 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+#include "RNA_access.h"
+#include "RNA_define.h"
 
 #include "util_intern.h"
+
+#define MAXUNDONAME 64 /* XXX, make common define */
 
 /* ***************** generic undo system ********************* */
 
@@ -71,6 +80,9 @@ void ED_undo_push(bContext *C, const char *str)
 	Object *obedit= CTX_data_edit_object(C);
 	Object *obact= CTX_data_active_object(C);
 
+	if (G.f & G_DEBUG)
+		printf("undo push %s\n", str);
+	
 	if(obedit) {
 		if (U.undosteps == 0) return;
 		
@@ -199,6 +211,52 @@ void ED_undo_pop_op(bContext *C, wmOperator *op)
 	ed_undo_step(C, 0, op->type->name);
 }
 
+/* name optionally, function used to check for operator redo panel */
+int ED_undo_valid(const bContext *C, const char *undoname)
+{
+	Object *obedit= CTX_data_edit_object(C);
+	Object *obact= CTX_data_active_object(C);
+	ScrArea *sa= CTX_wm_area(C);
+	
+	if(sa && sa->spacetype==SPACE_IMAGE) {
+		SpaceImage *sima= (SpaceImage *)sa->spacedata.first;
+		
+		if((obact && obact->mode & OB_MODE_TEXTURE_PAINT) || sima->flag & SI_DRAWTOOL) {
+			return 1;
+		}
+	}
+	
+	if(sa && sa->spacetype==SPACE_TEXT) {
+		return 1;
+	}
+	else if(obedit) {
+		if ELEM7(obedit->type, OB_MESH, OB_FONT, OB_CURVE, OB_SURF, OB_MBALL, OB_LATTICE, OB_ARMATURE) {
+			return undo_editmode_valid(undoname);
+		}
+	}
+	else {
+		
+		/* if below tests fail, global undo gets executed */
+		
+		if(obact && obact->mode & OB_MODE_TEXTURE_PAINT) {
+			if( ED_undo_paint_valid(UNDO_PAINT_IMAGE, undoname) )
+				return 1;
+		}
+		else if(obact && obact->mode & OB_MODE_SCULPT) {
+			if( ED_undo_paint_valid(UNDO_PAINT_MESH, undoname) )
+				return 1;
+		}
+		else if(obact && obact->mode & OB_MODE_PARTICLE_EDIT) {
+			return PE_undo_valid(CTX_data_scene(C));
+		}
+		
+		if(U.uiflag & USER_GLOBALUNDO) {
+			return BKE_undo_valid(undoname);
+		}
+	}
+	return 0;
+}
+
 static int ed_undo_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	/* "last operator" should disappear, later we can tie ths with undo stack nicer */
@@ -206,11 +264,20 @@ static int ed_undo_exec(bContext *C, wmOperator *UNUSED(op))
 	return ed_undo_step(C, 1, NULL);
 }
 
+static int ed_undo_push_exec(bContext *C, wmOperator *op)
+{
+	char str[MAXUNDONAME];
+	RNA_string_get(op->ptr, "message", str);
+	ED_undo_push(C, str);
+	return OPERATOR_FINISHED;
+}
+
 static int ed_redo_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	return ed_undo_step(C, -1, NULL);
 }
 
+#if 0 /* UNUSED */
 void ED_undo_menu(bContext *C)
 {
 	Object *obedit= CTX_data_edit_object(C);
@@ -235,6 +302,7 @@ void ED_undo_menu(bContext *C)
 		}
 	}
 }
+#endif
 
 /* ********************** */
 
@@ -248,6 +316,19 @@ void ED_OT_undo(wmOperatorType *ot)
 	/* api callbacks */
 	ot->exec= ed_undo_exec;
 	ot->poll= ED_operator_screenactive;
+}
+
+void ED_OT_undo_push(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "Undo Push";
+	ot->description= "Add an undo state (internal use only)";
+	ot->idname= "ED_OT_undo_push";
+	
+	/* api callbacks */
+	ot->exec= ed_undo_push_exec;
+
+	RNA_def_string(ot->srna, "message", "Add an undo step *function may be moved*", MAXUNDONAME, "Undo Message", "");
 }
 
 void ED_OT_redo(wmOperatorType *ot)
@@ -281,6 +362,11 @@ int ED_undo_operator_repeat(bContext *C, struct wmOperator *op)
 			if (G.f & G_DEBUG)
 				printf("redo_cb: operator redo %s\n", op->type->name);
 			ED_undo_pop_op(C, op);
+
+			if(op->type->check) {
+				op->type->check(C, op); /* ignore return value since its running again anyway */
+			}
+
 			retval= WM_operator_repeat(C, op);
 			if((retval & OPERATOR_FINISHED)==0) {
 				if (G.f & G_DEBUG)

@@ -1,5 +1,5 @@
-/**
- * $Id: node_select.c 34040 2011-01-03 14:36:44Z ton $
+/*
+ * $Id: node_select.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_node/node_select.c
+ *  \ingroup spnode
+ */
+
+
 #include <stdio.h>
 
 #include "DNA_node_types.h"
@@ -34,6 +39,7 @@
 #include "BKE_context.h"
 
 #include "BLI_rect.h"
+#include "BLI_utildefines.h"
 
 #include "ED_screen.h"
 #include "ED_types.h"
@@ -136,6 +142,7 @@ void NODE_OT_select(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Select";
 	ot->idname= "NODE_OT_select";
+	ot->description= "Select node under cursor";
 	
 	/* api callbacks */
 	ot->invoke= node_select_invoke;
@@ -286,7 +293,7 @@ static int node_select_linked_to_exec(bContext *C, wmOperator *UNUSED(op))
 		node->flag &= ~NODE_TEST;
 
 	for (link=snode->edittree->links.first; link; link=link->next) {
-		if (link->fromnode->flag & NODE_SELECT)
+		if (link->fromnode && link->tonode && (link->fromnode->flag & NODE_SELECT))
 			link->tonode->flag |= NODE_TEST;
 	}
 	
@@ -326,7 +333,7 @@ static int node_select_linked_from_exec(bContext *C, wmOperator *UNUSED(op))
 		node->flag &= ~NODE_TEST;
 
 	for(link=snode->edittree->links.first; link; link=link->next) {
-		if(link->tonode->flag & NODE_SELECT)
+		if(link->fromnode && link->tonode && (link->tonode->flag & NODE_SELECT))
 			link->fromnode->flag |= NODE_TEST;
 	}
 	

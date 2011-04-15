@@ -1,5 +1,5 @@
-/**
- * $Id: ED_fileselect.h 33754 2010-12-17 19:05:34Z ton $
+/*
+ * $Id: ED_fileselect.h 35543 2011-03-14 19:56:13Z elubie $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file ED_fileselect.h
+ *  \ingroup editors
+ */
+
 #ifndef ED_FILES_H
 #define ED_FILES_H
 
@@ -70,6 +75,13 @@ typedef struct FileLayout
 	float column_widths[MAX_FILE_COLUMN];
 } FileLayout;
 
+typedef struct FileSelection {
+	int first;
+	int last;
+} FileSelection;
+
+struct rcti;
+
 struct FileSelectParams* ED_fileselect_get_params(struct SpaceFile *sfile);
 
 short ED_fileselect_set_params(struct SpaceFile *sfile);
@@ -83,7 +95,8 @@ void ED_fileselect_init_layout(struct SpaceFile *sfile, struct ARegion *ar);
 FileLayout* ED_fileselect_get_layout(struct SpaceFile *sfile, struct ARegion *ar);
 
 int ED_fileselect_layout_numfiles(FileLayout* layout, struct ARegion *ar);
-int ED_fileselect_layout_offset(FileLayout* layout, int clamp_bounds, int x, int y);
+int ED_fileselect_layout_offset(FileLayout* layout, int x, int y);
+FileSelection ED_fileselect_layout_offset_rect(FileLayout* layout, const struct rcti* rect);
 
 void ED_fileselect_layout_tilepos(FileLayout* layout, int tile, int *x, int *y);
 

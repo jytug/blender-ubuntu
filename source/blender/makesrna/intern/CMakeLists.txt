@@ -38,6 +38,13 @@ list(REMOVE_ITEM DEFSRC ${APISRC})
 string(REGEX REPLACE "rna_([a-zA-Z0-9_-]*).c" "${CMAKE_CURRENT_BINARY_DIR}/rna_\\1_gen.c" GENSRC "${DEFSRC}")
 set_source_files_properties(GENSRC PROPERTIES GENERATED true)
 
+set(SRC_RNA_INC
+	../RNA_access.h
+	../RNA_define.h
+	../RNA_documentation.h
+	../RNA_enum_types.h
+	../RNA_types.h
+)
 
 set(SRC
 	makesrna.c
@@ -48,26 +55,8 @@ set(SRC
 	../../../../intern/guardedalloc/intern/mmap_win.c
 )
 
-blender_include_dirs(
-	../../../../intern/audaspace/intern
-	../../../../intern/guardedalloc
-	../../../../intern/memutil
-	..
-	../../makesdna
-	../../blenkernel
-	../../blenlib
-	../../blenfont
-	../../ikplugin
-	../../windowmanager
-	../../editors/include
-	../../gpu
-	../../imbuf
-	../../render/extern/include
-	../../../../extern/glew/include
-	.
+set(INC
 )
-
-file(GLOB INC_FILES ../*.h ../../makesdna/*.h)
 
 if(WITH_PYTHON)
 	add_definitions(-DWITH_PYTHON)
@@ -136,8 +125,32 @@ if(WITH_JACK)
 	add_definitions(-DWITH_JACK)
 endif()
 
+if(WITH_OPENCOLLADA)
+	add_definitions(-DWITH_COLLADA)
+endif()
+
 # Build makesrna executable
-add_executable(makesrna ${SRC} ${INC_FILES})
+blender_include_dirs(
+	.
+	..
+	../../blenkernel
+	../../blenloader
+	../../blenlib
+	../../blenfont
+	../../gpu
+	../../imbuf
+	../../ikplugin
+	../../makesdna
+	../../windowmanager
+	../../editors/include
+	../../render/extern/include
+	../../../../intern/audaspace/intern
+	../../../../intern/guardedalloc
+	../../../../intern/memutil
+    ${GLEW_INCLUDE_PATH}
+)
+
+add_executable(makesrna ${SRC} ${SRC_RNA_INC} ${SRC_DNA_INC})
 target_link_libraries(makesrna bf_dna)
 
 # Output rna_*_gen.c
@@ -153,11 +166,7 @@ set(SRC
 	rna_access.c
 	${GENSRC}
 
-	../RNA_access.h
-	../RNA_define.h
-	../RNA_enum_types.h
-	../RNA_types.h
-
+	${SRC_RNA_INC}
 	rna_internal.h
 	rna_internal_types.h
 	rna_nodetree_types.h

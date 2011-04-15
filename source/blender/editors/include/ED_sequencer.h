@@ -1,5 +1,5 @@
-/**
- * $Id: ED_sequencer.h 27639 2010-03-21 01:14:04Z gsrb3d $
+/*
+ * $Id: ED_sequencer.h 35819 2011-03-27 14:52:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -22,10 +22,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file ED_sequencer.h
+ *  \ingroup editors
+ */
+
 #ifndef ED_SEQUENCER_H
 #define ED_SEQUENCER_H
 
-#define SEQ_ZOOM_FAC(szoom) (szoom > 0)? (szoom) : (szoom == 0)? (1.0) : (-1.0/szoom)
+#define SEQ_ZOOM_FAC(szoom) ((szoom) > 0.0f)? (szoom) : ((szoom) == 0.0f)? (1.0f) : (-1.0f/(szoom))
 
 
 /* in space_sequencer.c, for rna update function */

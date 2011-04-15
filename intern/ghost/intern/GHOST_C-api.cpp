@@ -1,5 +1,5 @@
-/**
- * $Id: GHOST_C-api.cpp 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: GHOST_C-api.cpp 35792 2011-03-26 08:13:42Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,13 +26,18 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file ghost/intern/GHOST_C-api.cpp
+ *  \ingroup GHOST
+ */
+
+
 /*
 
  * GHOST_C-Api.cpp
  *
  * C Api for GHOST
  *
- * Version: $Id: GHOST_C-api.cpp 33448 2010-12-03 17:05:21Z campbellbarton $
+ * Version: $Id: GHOST_C-api.cpp 35792 2011-03-26 08:13:42Z campbellbarton $
  */
 
 #include <stdlib.h>
@@ -246,6 +251,13 @@ GHOST_TSuccess GHOST_AddEventConsumer(GHOST_SystemHandle systemhandle, GHOST_Eve
 	GHOST_ISystem* system = (GHOST_ISystem*) systemhandle;
 	
 	return system->addEventConsumer((GHOST_CallbackEventConsumer*)consumerhandle);
+}
+
+GHOST_TSuccess GHOST_RemoveEventConsumer(GHOST_SystemHandle systemhandle, GHOST_EventConsumerHandle consumerhandle)
+{
+	GHOST_ISystem* system = (GHOST_ISystem*) systemhandle;
+
+	return system->removeEventConsumer((GHOST_CallbackEventConsumer*)consumerhandle);
 }
 
 GHOST_TSuccess GHOST_SetProgressBar(GHOST_WindowHandle windowhandle,float progress)

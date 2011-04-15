@@ -1,5 +1,5 @@
-/**
- * $Id: rna_cloth.c 33490 2010-12-05 18:59:23Z blendix $
+/*
+ * $Id: rna_cloth.c 35238 2011-02-27 20:20:01Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_cloth.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 #include <limits.h>

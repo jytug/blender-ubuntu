@@ -1,5 +1,5 @@
-/**
- * $Id: file_panels.c 33868 2010-12-23 02:43:40Z campbellbarton $
+/*
+ * $Id: file_panels.c 36031 2011-04-06 06:03:48Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,10 +26,16 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_file/file_panels.c
+ *  \ingroup spfile
+ */
+
+
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_screen_types.h"
 #include "DNA_space_types.h"
@@ -95,7 +101,7 @@ static void file_panel_category(const bContext *C, Panel *pa, FSMenuCategory cat
 		
 		/* set this list item as active if we have a match */
 		if(sfile->params) {
-			if(strcmp(sfile->params->dir, entry) == 0) {
+			if(BLI_path_cmp(sfile->params->dir, entry) == 0) {
 				*nr= i;
 			}
 		}
@@ -139,7 +145,7 @@ static void file_panel_bookmarks(const bContext *C, Panel *pa)
 	if(sfile) {
 		row= uiLayoutRow(pa->layout, 0);
 		uiItemO(row, "Add", ICON_ZOOMIN, "file.bookmark_add");
-		uiItemL(row, NULL, ICON_NULL);
+		uiItemL(row, NULL, ICON_NONE);
 
 		file_panel_category(C, pa, FS_CATEGORY_BOOKMARKS, &sfile->bookmarknr, ICON_BOOKMARKS, 1, 0);
 	}

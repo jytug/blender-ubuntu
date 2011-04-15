@@ -14,19 +14,19 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
-bl_addon_info = {
-    "name": "Blender to XNA",
+bl_info = {
+    "name": "Export XNA format (.fbx)",
     "author": "John C Brown, JCBDigger (@MistyManor)",
-    "version": (1, 1),
-    "blender": (2, 5, 5),
-    "api": 32738,
-    "location": "File > Export > XNA FBX Animated Model",
-    "description": "Export the model and animations for use in XNA",
+    "version": (1, 2),
+    "blender": (2, 5, 7),
+    "api": 36079,
+    "location": "File > Export > XNA FBX Animated Model (*.fbx)",
+    "description": "Export FBX models and animations for use in XNA",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Import-Export/Blender-toXNA",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=25013&group_id=153&atid=469",
+        "func=detail&aid=25013",
     "category": "Import-Export"}
 
 
@@ -54,8 +54,8 @@ def menu_export_fbx_model(self, context):
     self.layout.operator(export_xna.ExportFBXmodel.bl_idname, text="XNA FBX Model only (.fbx)").filepath = default_path
 
 def menu_export_fbx_takes(self, context):
-    from . import export_xna
     import os
+
     # get the current action name
     currentAction = ""
     for arm_obj in bpy.context.scene.objects:
@@ -68,20 +68,25 @@ def menu_export_fbx_takes(self, context):
     self.layout.operator(export_xna.ExportFBXtakes.bl_idname, text="XNA FBX Animations only (.fbx)").filepath = default_path
     
 def menu_export_fbx_animated(self, context):
-    from . import export_xna
     import os
+
     default_path = os.path.splitext(bpy.data.filepath)[0] + ".fbx"
     self.layout.operator(export_xna.ExportFBXanimated.bl_idname, text="XNA FBX Animated Model (.fbx)").filepath = default_path
 
 
 # Add references to all scripts invoked by this class
 def register():
+    from . import export_xna
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_export.append(menu_export_fbx_animated)
     bpy.types.INFO_MT_file_export.append(menu_export_fbx_model)
     bpy.types.INFO_MT_file_export.append(menu_export_fbx_takes)
 
 # Add references to all scripts invoked by this class
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_export.remove(menu_export_fbx_animated)
     bpy.types.INFO_MT_file_export.remove(menu_export_fbx_model)
     bpy.types.INFO_MT_file_export.remove(menu_export_fbx_takes)

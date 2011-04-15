@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_simpledeform.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_simpledeform.c 35817 2011-03-27 13:49:53Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,17 +30,24 @@
 *
 */
 
+/** \file blender/modifiers/intern/MOD_simpledeform.c
+ *  \ingroup modifiers
+ */
+
+
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 
 #include "BLI_math.h"
+#include "BLI_string.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_lattice.h"
 #include "BKE_modifier.h"
 #include "BKE_deform.h"
 #include "BKE_shrinkwrap.h"
-#include "BKE_utildefines.h"
+
 
 #include "depsgraph_private.h"
 
@@ -82,11 +89,11 @@ static void simpleDeform_stretch(const float factor, const float dcut[3], float 
 	float x = co[0], y = co[1], z = co[2];
 	float scale;
 
-	scale = (z*z*factor-factor + 1.0);
+	scale = (z*z*factor-factor + 1.0f);
 
 	co[0] = x*scale;
 	co[1] = y*scale;
-	co[2] = z*(1.0+factor);
+	co[2] = z*(1.0f+factor);
 
 
 	if(dcut)
@@ -127,7 +134,7 @@ static void simpleDeform_bend(const float factor, const float dcut[3], float *co
 	sint = sin(theta);
 	cost = cos(theta);
 
-	if(fabs(factor) > 1e-7f)
+	if(fabsf(factor) > 1e-7f)
 	{
 		co[0] = -(y-1.0f/factor)*sint;
 		co[1] =  (y-1.0f/factor)*cost + 1.0f/factor;
@@ -146,7 +153,7 @@ static void simpleDeform_bend(const float factor, const float dcut[3], float *co
 
 
 /* simple deform modifier */
-void SimpleDeformModifier_do(SimpleDeformModifierData *smd, struct Object *ob, struct DerivedMesh *dm, float (*vertexCos)[3], int numVerts)
+static void SimpleDeformModifier_do(SimpleDeformModifierData *smd, struct Object *ob, struct DerivedMesh *dm, float (*vertexCos)[3], int numVerts)
 {
 	static const float lock_axis[2] = {0.0f, 0.0f};
 
@@ -161,8 +168,8 @@ void SimpleDeformModifier_do(SimpleDeformModifierData *smd, struct Object *ob, s
 	//Safe-check
 	if(smd->origin == ob) smd->origin = NULL;					//No self references
 
-	if(smd->limit[0] < 0.0) smd->limit[0] = 0.0f;
-	if(smd->limit[0] > 1.0) smd->limit[0] = 1.0f;
+	if(smd->limit[0] < 0.0f) smd->limit[0] = 0.0f;
+	if(smd->limit[0] > 1.0f) smd->limit[0] = 1.0f;
 
 	smd->limit[0] = MIN2(smd->limit[0], smd->limit[1]);			//Upper limit >= than lower limit
 
@@ -287,7 +294,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tsmd->originOpts= smd->originOpts;
 	tsmd->factor= smd->factor;
 	memcpy(tsmd->limit, smd->limit, sizeof(tsmd->limit));
-	strcpy(tsmd->vgroup_name, smd->vgroup_name);
+	BLI_strncpy(tsmd->vgroup_name, smd->vgroup_name, sizeof(tsmd->vgroup_name));
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
@@ -374,17 +381,18 @@ ModifierTypeInfo modifierType_SimpleDeform = {
 
 	/* copyData */          copyData,
 	/* deformVerts */       deformVerts,
+	/* deformMatrices */    NULL,
 	/* deformVertsEM */     deformVertsEM,
-	/* deformMatricesEM */  0,
-	/* applyModifier */     0,
-	/* applyModifierEM */   0,
+	/* deformMatricesEM */  NULL,
+	/* applyModifier */     NULL,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          0,
-	/* isDisabled */        0,
+	/* freeData */          NULL,
+	/* isDisabled */        NULL,
 	/* updateDepgraph */    updateDepgraph,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
-	/* foreachIDLink */     0,
+	/* foreachIDLink */     NULL,
 };

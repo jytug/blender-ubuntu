@@ -1,5 +1,5 @@
-/**
- * $Id: util_intern.h 27639 2010-03-21 01:14:04Z gsrb3d $
+/*
+ * $Id: util_intern.h 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/util/util_intern.h
+ *  \ingroup edutil
+ */
+
+
 #ifndef ED_UTIL_INTERN_H
 #define ED_UTIL_INTERN_H
 
@@ -34,6 +39,7 @@
 /* editmode_undo.c */
 void undo_editmode_clear(void);
 void undo_editmode_name(bContext *C, const char *undoname);
+int undo_editmode_valid(const char *undoname);
 
 #endif /* ED_UTIL_INTERN_H */
 

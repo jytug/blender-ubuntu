@@ -1,4 +1,7 @@
-/* $Id: VideoBase.cpp 32613 2010-10-20 12:33:00Z campbellbarton $
+/** \file gameengine/VideoTexture/VideoBase.cpp
+ *  \ingroup bgevideotex
+ */
+/* $Id: VideoBase.cpp 35176 2011-02-25 13:39:34Z jesterking $
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -147,7 +150,7 @@ PyObject * Video_getRange (PyImage * self, void * closure)
 int Video_setRange (PyImage * self, PyObject * value, void * closure)
 {
 	// check validity of parameter
-	if (value == NULL || !PySequence_Check(value) || PySequence_Length(value) != 2
+	if (value == NULL || !PySequence_Check(value) || PySequence_Size(value) != 2
 		|| !PyFloat_Check(PySequence_Fast_GET_ITEM(value, 0))
 		|| !PyFloat_Check(PySequence_Fast_GET_ITEM(value, 1)))
 	{

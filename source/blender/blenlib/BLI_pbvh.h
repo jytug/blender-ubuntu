@@ -1,7 +1,5 @@
-/**
- * A BVH for high poly meshes.
- * 
- * $Id: BLI_pbvh.h 30325 2010-07-14 14:11:03Z jwilkins $
+/*
+ * $Id: BLI_pbvh.h 35215 2011-02-27 08:31:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +22,11 @@
 
 #ifndef BLI_PBVH_H
 #define BLI_PBVH_H
+
+/** \file BLI_pbvh.h
+ *  \ingroup bli
+ *  \brief A BVH for high poly meshes.
+ */
 
 struct MFace;
 struct MVert;

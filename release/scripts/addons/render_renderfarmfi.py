@@ -16,23 +16,23 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     "name": "Renderfarm.fi",
     "author": "Nathan Letwory <nathan@letworyinteractive.com>, Jesse Kaukonen <jesse.kaukonen@gmail.com>",
-    "version": (5,),
-    "blender": (2, 5, 5),
-    "api": 33713,
+    "version": (6,),
+    "blender": (2, 5, 7),
+    "api": 35622,
     "location": "Render > Engine > Renderfarm.fi",
     "description": "Send .blend as session to http://www.renderfarm.fi to render",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Render/Renderfarm.fi",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=22927&group_id=153&atid=469",
+        "func=detail&aid=22927",
     "category": "Render"}
 
 """
-Copyright 2009-2010 Laurea University of Applied Sciences
+Copyright 2009-2011 Laurea University of Applied Sciences
 Authors: Nathan Letwory, Jesse Kaukonen
 """
 
@@ -45,7 +45,7 @@ from os.path import abspath, isabs, join, isfile
 
 from bpy.props import PointerProperty, StringProperty, BoolProperty, EnumProperty, IntProperty, CollectionProperty
 
-bpy.CURRENT_VERSION = bl_addon_info["version"][0]
+bpy.CURRENT_VERSION = bl_info["version"][0]
 bpy.found_newer_version = False
 bpy.up_to_date = False
 bpy.download_location = 'http://www.renderfarm.fi/blender'
@@ -68,44 +68,8 @@ bpy.ore_sessions = []
 bpy.queue_selected = -1
 
 def renderEngine(render_engine):
-    bpy.types.register(render_engine)
+    bpy.utils.register_class(render_engine)
     return render_engine
-
-
-class ORESession(bpy.types.IDPropertyGroup):
-    pass
-
-class ORESettings(bpy.types.IDPropertyGroup):
-    pass
-
-# entry point for settings collection
-bpy.types.Scene.ore_render = PointerProperty(type=ORESettings, name='ORE Render', description='ORE Render Settings')
-
-# fill the new struct
-ORESettings.username = StringProperty(name='E-mail', description='E-mail for Renderfarm.fi', maxlen=256, default='')
-ORESettings.password = StringProperty(name='Password', description='Renderfarm.fi password', maxlen=256, default='')
-ORESettings.hash = StringProperty(name='Hash', description='hash calculated out of credentials', maxlen=33, default='')
-
-ORESettings.shortdesc = StringProperty(name='Short description', description='A short description of the scene (100 characters)', maxlen=101, default='')
-ORESettings.longdesc = StringProperty(name='Long description', description='A more elaborate description of the scene (2k)', maxlen=2048, default='')
-ORESettings.title = StringProperty(name='Title', description='Title for this session (128 characters)', maxlen=128, default='')
-ORESettings.url = StringProperty(name='Project URL', description='Project URL. Leave empty if not applicable', maxlen=256, default='')
-
-ORESettings.parts = IntProperty(name='Parts/Frame', description='', min=1, max=1000, soft_min=1, soft_max=64, default=1)
-ORESettings.resox = IntProperty(name='Resolution X', description='X of render', min=1, max=10000, soft_min=1, soft_max=10000, default=1920)
-ORESettings.resoy = IntProperty(name='Resolution Y', description='Y of render', min=1, max=10000, soft_min=1, soft_max=10000, default=1080)
-ORESettings.memusage = IntProperty(name='Memory Usage', description='Estimated maximum memory usage during rendering in MB', min=1, max=6*1024, soft_min=1, soft_max=3*1024, default=256)
-ORESettings.start = IntProperty(name='Start Frame', description='Start Frame', default=1)
-ORESettings.end = IntProperty(name='End Frame', description='End Frame', default=250)
-ORESettings.fps = IntProperty(name='FPS', description='FPS', min=1, max=256, default=25)
-
-ORESettings.prepared = BoolProperty(name='Prepared', description='Set to True if preparation has been run', default=False)
-ORESettings.debug = BoolProperty(name='Debug', description='Verbose output in console', default=False)
-ORESettings.selected_session = IntProperty(name='Selected Session', description='The selected session', default=0)
-ORESettings.hasUnsupportedSimulation = BoolProperty(name='HasSimulation', description='Set to True if therea re unsupported simulations', default=False)
-
-# session struct
-ORESession.name = StringProperty(name='Name', description='Name of the session', maxlen=128, default='[session]')
 
 licenses =  (
         ('1', 'CC by-nc-nd', 'Creative Commons: Attribution Non-Commercial No Derivatives'),
@@ -116,35 +80,63 @@ licenses =  (
         ('6', 'CC by', 'Creative Commons: Attribution'),
         ('7', 'Copyright', 'Copyright, no license specified'),
         )
-ORESettings.inlicense = EnumProperty(items=licenses, name='source license', description='license speficied for the source files', default='1')
-ORESettings.outlicense = EnumProperty(items=licenses, name='output license', description='license speficied for the output files', default='1')
 
-ORESettings.sessions = CollectionProperty(type=ORESession, name='Sessions', description='Sessions on Renderfarm.fi')
+class ORESession(bpy.types.PropertyGroup):
+    name = StringProperty(name='Name', description='Name of the session', maxlen=128, default='[session]')
+
+class ORESettings(bpy.types.PropertyGroup):
+    username = StringProperty(name='E-mail', description='E-mail for Renderfarm.fi', maxlen=256, default='')
+    password = StringProperty(name='Password', description='Renderfarm.fi password', maxlen=256, default='')
+    hash = StringProperty(name='Hash', description='hash calculated out of credentials', maxlen=33, default='')
+
+    shortdesc = StringProperty(name='Short description', description='A short description of the scene (100 characters)', maxlen=101, default='')
+    longdesc = StringProperty(name='Long description', description='A more elaborate description of the scene (2k)', maxlen=2048, default='')
+    title = StringProperty(name='Title', description='Title for this session (128 characters)', maxlen=128, default='')
+    url = StringProperty(name='Project URL', description='Project URL. Leave empty if not applicable', maxlen=256, default='')
+
+    parts = IntProperty(name='Parts/Frame', description='', min=1, max=1000, soft_min=1, soft_max=64, default=1)
+    resox = IntProperty(name='Resolution X', description='X of render', min=1, max=10000, soft_min=1, soft_max=10000, default=1920)
+    resoy = IntProperty(name='Resolution Y', description='Y of render', min=1, max=10000, soft_min=1, soft_max=10000, default=1080)
+    memusage = IntProperty(name='Memory Usage', description='Estimated maximum memory usage during rendering in MB', min=1, max=6*1024, soft_min=1, soft_max=3*1024, default=256)
+    start = IntProperty(name='Start Frame', description='Start Frame', default=1)
+    end = IntProperty(name='End Frame', description='End Frame', default=250)
+    fps = IntProperty(name='FPS', description='FPS', min=1, max=256, default=25)
+
+    prepared = BoolProperty(name='Prepared', description='Set to True if preparation has been run', default=False)
+    debug = BoolProperty(name='Debug', description='Verbose output in console', default=False)
+    selected_session = IntProperty(name='Selected Session', description='The selected session', default=0)
+    hasUnsupportedSimulation = BoolProperty(name='HasSimulation', description='Set to True if therea re unsupported simulations', default=False)
+
+    inlicense = EnumProperty(items=licenses, name='source license', description='license speficied for the source files', default='1')
+    outlicense = EnumProperty(items=licenses, name='output license', description='license speficied for the output files', default='1')
+    sessions = CollectionProperty(type=ORESession, name='Sessions', description='Sessions on Renderfarm.fi')
+
+# session struct
 
 # all panels, except render panel
 # Example of wrapping every class 'as is'
-import properties_scene
+from bl_ui import properties_scene
 for member in dir(properties_scene):
     subclass = getattr(properties_scene, member)
     try:        subclass.COMPAT_ENGINES.add('RENDERFARMFI_RENDER')
     except:    pass
 del properties_scene
 
-import properties_world
+from bl_ui import properties_world
 for member in dir(properties_world):
     subclass = getattr(properties_world, member)
     try:        subclass.COMPAT_ENGINES.add('RENDERFARMFI_RENDER')
     except:    pass
 del properties_world
 
-import properties_material
+from bl_ui import properties_material
 for member in dir(properties_material):
     subclass = getattr(properties_material, member)
     try:        subclass.COMPAT_ENGINES.add('RENDERFARMFI_RENDER')
     except:    pass
 del properties_material
 
-import properties_object
+from bl_ui import properties_object
 for member in dir(properties_object):
     subclass = getattr(properties_object, member)
     try:        subclass.COMPAT_ENGINES.add('RENDERFARMFI_RENDER')
@@ -160,6 +152,7 @@ class RenderButtonsPanel():
 class SUMMARY_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
     # Prints a summary to the panel before uploading. If scene settings differ from ore settings, then display a warning icon
     bl_label = 'Summary'
+    bl_options = {'DEFAULT_CLOSED'}
     COMPAT_ENGINES = set(['RENDERFARMFI_RENDER'])
     
     @classmethod
@@ -244,6 +237,12 @@ class SUMMARY_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
         else:
             layout.label(text='Save buffers: ' + str(rd.use_save_buffers), icon='FILE_TICK')
         
+        if rd.use_border:
+            layout.label(text='Border render: ' + str(rd.use_border), icon='ERROR')
+            layout.label(text='Border render must be disabled')
+        else:
+            layout.label(text='Border render: ' + str(rd.use_border), icon='FILE_TICK')
+        
         if rd.threads_mode != 'FIXED' or rd.threads > 1:
             layout.label(text='Threads: ' + rd.threads_mode + ' ' + str(rd.threads), icon='ERROR')
             layout.label(text='Threads must be set to Fixed, 1')
@@ -258,9 +257,6 @@ class SUMMARY_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
         else:
             layout.label(text='No unsupported simulations found', icon='FILE_TICK')
         
-        if problems == False and ore.prepared == False:
-            bpy.ops.ore.prepare()
-        
         if ore.prepared == False:
             layout.label(text='The script reports "not ready".', icon='ERROR')
             layout.label(text='Please review the settings above')
@@ -270,7 +266,7 @@ class SUMMARY_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
             layout.label(text='The script reports "All settings ok!"', icon='FILE_TICK')
             layout.label(text='Please render one frame using Blender Render first')
             row = layout.row()
-            row.operator('ore.testRender')
+            row.operator('ore.test_render')
             layout.label(text='If you are sure that the render works, click Render on Renderfarm.fi')
 
 class RENDERFARM_MT_Session(bpy.types.Menu):
@@ -298,7 +294,6 @@ class LOGIN_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
         layout = self.layout
         # XXX layout.operator('ore.check_update')
         ore = context.scene.ore_render
-        updateSessionList(ore)
         checkStatus(ore)
 
         if ore.hash=='':
@@ -385,6 +380,7 @@ class RENDER_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
             layout.separator()
             row = layout.row()
             row.operator('ore.upload')
+            layout.label(text='Blender may seem frozen during the upload!')
             row.operator('ore.reset', icon='FILE_REFRESH')
         else:
             layout.prop(ore, 'title', icon=bpy.statusMessage['title'])
@@ -464,7 +460,6 @@ def md5_for_file(filepath):
 def upload_file(key, userid, sessionid, server, path):
     assert isabs(path)
     assert isfile(path)
-
     data = {
         'userId': str(userid),
         'sessionKey': key,
@@ -486,7 +481,6 @@ def run_upload(key, userid, sessionid, path):
     r = upload_file(key, userid, sessionid, r'http://xmlrpc.renderfarm.fi/file', path)
     o = xmlrpc.client.loads(r)
     #print('Done!')
-    
     return o[0][0]
 
 def ore_upload(op, context):
@@ -500,7 +494,6 @@ def ore_upload(op, context):
         res = authproxy.auth.getSessionKey(ore.username, ore.hash)
         key = res['key']
         userid = res['userId']
-        
         proxy = xmlrpc.client.ServerProxy(r'http://xmlrpc.renderfarm.fi/session')
         proxy._ServerProxy__transport.user_agent = 'Renderfarm.fi Uploader/%s' % (bpy.CURRENT_VERSION)
         res = proxy.session.createSession(userid, key)
@@ -508,7 +501,6 @@ def ore_upload(op, context):
         key = res['key']
         res = run_upload(key, userid, sessionid, bpy.data.filepath)
         fileid = int(res['fileId'])
-        
         res = proxy.session.setTitle(userid, res['key'], sessionid, ore.title)
         res = proxy.session.setLongDescription(userid, res['key'], sessionid, ore.longdesc)
         res = proxy.session.setShortDescription(userid, res['key'], sessionid, ore.shortdesc)
@@ -634,7 +626,7 @@ class ORE_CancelSession(bpy.types.Operator):
 
 class ORE_GetCompletedSessions(bpy.types.Operator):
     bl_idname = 'ore.completed_sessions'
-    bl_label = 'Complete'
+    bl_label = 'Completed sessions'
 
     def execute(self, context):
         sce = context.scene
@@ -652,7 +644,7 @@ class ORE_GetCompletedSessions(bpy.types.Operator):
 
 class ORE_GetCancelledSessions(bpy.types.Operator):
     bl_idname = 'ore.cancelled_sessions'
-    bl_label = 'Cancelled'
+    bl_label = 'Cancelled sessions'
 
     def execute(self, context):
         sce = context.scene
@@ -670,7 +662,7 @@ class ORE_GetCancelledSessions(bpy.types.Operator):
 
 class ORE_GetActiveSessions(bpy.types.Operator):
     bl_idname = 'ore.active_sessions'
-    bl_label = 'Rendering'
+    bl_label = 'Rendering sessions'
 
     def execute(self, context):
         sce = context.scene
@@ -688,7 +680,7 @@ class ORE_GetActiveSessions(bpy.types.Operator):
 
 class ORE_GetPendingSessions(bpy.types.Operator):
     bl_idname = 'ore.accept_sessions' # using ORE lingo in API. acceptQueue is session waiting for admin approval
-    bl_label = 'Pending'
+    bl_label = 'Pending sessions'
 
     def execute(self, context):
         sce = context.scene
@@ -837,18 +829,15 @@ class ORE_PrepareOp(bpy.types.Operator):
         if (rd.resolution_percentage != 100):
             print("Resolution percentage is not 100. Changing to 100%")
             self.report({'WARNING'}, "Resolution percentage is not 100. Changing to 100%")
-            errors = True
         rd.resolution_percentage = 100
         if rd.file_format != 'PNG':
             print("Renderfarm.fi always uses PNG for output. Changing to PNG.")
             self.report({'WARNING'}, "Renderfarm.fi always uses PNG for output. Changing to PNG.")
-            errors = True
         rd.file_format = 'PNG'
         if (rd.use_sss == True or hasSSSMaterial()) and ore.parts > 1:
             print("Subsurface Scattering is not supported when rendering with parts > 1. Disabling")
             self.report({'WARNING'}, "Subsurface Scattering is not supported when rendering with parts > 1. Disabling")
             rd.use_sss = False # disabling because ore.parts > 1. It's ok to use SSS with 1part/frame
-            errors = True
         if hasUnsupportedSimulation() == True:
             print("An unsupported simulation was detected. Please check your settings and remove them")
             self.report({'WARNING'}, "An unsupported simulation was detected. Please check your settings and remove them")
@@ -856,22 +845,34 @@ class ORE_PrepareOp(bpy.types.Operator):
             errors = True
         else:
             ore.hasUnsupportedSimulation = False
+        if (rd.use_full_sample == True and rd.use_save_buffers == True):
+            print("Save Buffers is not supported. As you also have Full Sample on, I'm turning both of the settings off")
+            self.report({'WARNING'}, "Save Buffers is not supported. As you also have Full Sample on, I'm turning both of the settings off")
+        if (rd.use_full_sample == False and rd.use_save_buffers == True):
+            print("Save buffers needs to be turned off. Changing to off")
+            self.report({'WARNING'}, "Save buffers needs to be turned off. Changing to off")
+        rd.use_full_sample = False
         rd.use_save_buffers = False
         rd.use_free_image_textures = True
+        if (rd.use_border == True):
+            print("Border render is not supported. Turning it off")
+            self.report({'WARNING'}, "Border render is not supported. Turning it off")
+        rd.use_border = False
         if rd.use_compositing:
             if hasCompositingErrors(sce.use_nodes, sce.node_tree, ore.parts):
                 print("Found disallowed nodes or problematic setup")
                 rd.use_compositing = False
                 self.report({'WARNING'}, "Found disallowed nodes or problematic setup")
-                errors = True
         print("Done checking the scene. Now do a test render")
         self.report({'INFO'}, "Done checking the scene. Now do a test render")
         print("=============================================")
         
         # if errors found, don't allow to upload, instead have user
         # go through this until everything is ok
+        # Errors is only True if there is a setting that could not be changed to the correct setting
+        # In short, unsupported simulations
         if errors:
-            self.report({'WARNING'}, "Settings were changed or other issues found. Check console and do a test render to make sure everything works.")
+            self.report({'WARNING'}, "Some issues found. Check console and do a test render to make sure everything works.")
             ore.prepared = False
         else:
             ore.prepared = True
@@ -892,7 +893,7 @@ class ORE_ResetOp(bpy.types.Operator):
         return {'FINISHED'}
 
 class ORE_TestRenderOp(bpy.types.Operator):
-    bl_idname = "ore.testRender"
+    bl_idname = "ore.test_render"
     bl_label = "Run a test render"
     
     def execute(self, context):
@@ -951,16 +952,24 @@ class RenderfarmFi(bpy.types.RenderEngine):
     def render(self, scene):
         print('Do test renders with Blender Render')
 
-def menu_export(self, context):
-    import os
-    default_path = os.path.splitext(bpy.data.filepath)[0] + ".py"
-    self.layout.operator(RenderfarmFi.bl_idname, text=RenderfarmFi.bl_label)
+
+#~ def menu_export(self, context):
+    #~ import os
+    #~ default_path = os.path.splitext(bpy.data.filepath)[0] + ".py"
+    #~ self.layout.operator(RenderfarmFi.bl_idname, text=RenderfarmFi.bl_label)
+
 
 def register():
-    bpy.types.INFO_MT_render.append(menu_export)
+    bpy.utils.register_module(__name__)
+
+    bpy.types.Scene.ore_render = PointerProperty(type=ORESettings, name='ORE Render', description='ORE Render Settings')
+
+    #~ bpy.types.INFO_MT_render.append(menu_export)
 
 def unregister():
-    bpy.types.INFO_MT_render.remove(menu_export)
+    bpy.utils.unregister_module(__name__)
+
+    #~ bpy.types.INFO_MT_render.remove(menu_export)
 
 if __name__ == "__main__":
     register()

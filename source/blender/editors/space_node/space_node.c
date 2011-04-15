@@ -1,5 +1,5 @@
-/**
- * $Id: space_node.c 34072 2011-01-04 16:39:05Z ton $
+/*
+ * $Id: space_node.c 35783 2011-03-25 16:53:07Z lukastoenne $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_node/space_node.c
+ *  \ingroup spnode
+ */
+
+
 #include <string.h>
 #include <stdio.h>
 
@@ -39,11 +44,13 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 #include "BKE_node.h"
 
+#include "ED_space_api.h"
 #include "ED_render.h"
 #include "ED_screen.h"
 
@@ -96,6 +103,9 @@ static SpaceLink *node_new(const bContext *UNUSED(C))
 	
 	snode= MEM_callocN(sizeof(SpaceNode), "initnode");
 	snode->spacetype= SPACE_NODE;	
+	
+	/* backdrop */
+	snode->zoom = 1.0f;
 	
 	/* header */
 	ar= MEM_callocN(sizeof(ARegion), "header for node");
@@ -171,13 +181,21 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 				case ND_FRAME:
 					ED_area_tag_refresh(sa);
 					break;
+				case ND_TRANSFORM_DONE:
+					if(type==NTREE_COMPOSIT) {
+						if(snode->flag & SNODE_AUTO_RENDER) {
+							snode->recalc= 1;
+							ED_area_tag_refresh(sa);
+						}
+					}
+					break;
 			}
 			break;
 		case NC_WM:
 			if(wmn->data==ND_FILEREAD)
 				ED_area_tag_refresh(sa);
 			break;
-			
+		
 		/* future: add ID checks? */
 		case NC_MATERIAL:
 			if(type==NTREE_SHADER) {
@@ -211,7 +229,7 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 
 		case NC_IMAGE:
 			if (wmn->action == NA_EDITED) {
-				if(snode->treetype==NTREE_COMPOSIT) {
+				if(type==NTREE_COMPOSIT) {
 					Scene *scene= wmn->window->screen->scene;
 					
 					/* note that NodeTagIDChanged is alredy called by BKE_image_signal() on all
@@ -240,8 +258,15 @@ static void node_area_refresh(const struct bContext *C, struct ScrArea *sa)
 		}
 		else if(snode->treetype==NTREE_COMPOSIT) {
 			Scene *scene= (Scene *)snode->id;
-			if(scene->use_nodes)
-				snode_composite_job(C, sa);
+			if(scene->use_nodes) {
+				/* recalc is set on 3d view changes for auto compo */
+				if(snode->recalc) {
+					snode->recalc= 0;
+					node_render_changed_exec((struct bContext*)C, NULL);
+				}
+				else 
+					snode_composite_job(C, sa);
+			}
 		}
 		else if(snode->treetype==NTREE_TEXTURE) {
 			Tex *tex= (Tex *)snode->id;
@@ -258,6 +283,7 @@ static SpaceLink *node_duplicate(SpaceLink *sl)
 	
 	/* clear or remove stuff from old */
 	snoden->nodetree= NULL;
+	snoden->linkdrag.first= snoden->linkdrag.last= NULL;
 	
 	return (SpaceLink *)snoden;
 }
@@ -391,20 +417,21 @@ static void node_region_listener(ARegion *ar, wmNotifier *wmn)
 	}
 }
 
+const char *node_context_dir[] = {"selected_nodes", NULL};
+
 static int node_context(const bContext *C, const char *member, bContextDataResult *result)
 {
 	SpaceNode *snode= CTX_wm_space_node(C);
 	
 	if(CTX_data_dir(member)) {
-		static const char *dir[] = {"selected_nodes", NULL};
-		CTX_data_dir_set(result, dir);
+		CTX_data_dir_set(result, node_context_dir);
 		return 1;
 	}
 	else if(CTX_data_equals(member, "selected_nodes")) {
 		bNode *node;
 		
 		for(next_node(snode->edittree); (node=next_node(NULL));) {
-			if(node->flag & SELECT) {
+			if(node->flag & NODE_SELECT) {
 				CTX_data_list_add(result, &snode->edittree->id, &RNA_Node, node);
 			}
 		}

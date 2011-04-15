@@ -1,5 +1,5 @@
-/**
- * $Id: RAS_IPolygonMaterial.cpp 28254 2010-04-18 10:28:37Z campbellbarton $
+/*
+ * $Id: RAS_IPolygonMaterial.cpp 35390 2011-03-07 19:14:17Z dfelinto $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file gameengine/Rasterizer/RAS_IPolygonMaterial.cpp
+ *  \ingroup bgerast
+ */
+
 
 #include "RAS_IPolygonMaterial.h"
 #include "RAS_IRasterizer.h"
@@ -208,6 +213,11 @@ Material *RAS_IPolyMaterial::GetBlenderMaterial() const
 	return NULL;
 }
 
+Image *RAS_IPolyMaterial::GetBlenderImage() const
+{
+	return NULL;
+}
+
 Scene* RAS_IPolyMaterial::GetBlenderScene() const
 {
 	return NULL;
@@ -231,7 +241,7 @@ bool RAS_IPolyMaterial::UsesLighting(RAS_IRasterizer *rasty) const
 	else if(rasty->GetDrawingMode() < RAS_IRasterizer::KX_SOLID);
 	else if(rasty->GetDrawingMode() == RAS_IRasterizer::KX_SHADOW);
 	else
-		dolights = (m_drawingmode & 16)!=0;
+		dolights = (m_drawingmode & RAS_IRasterizer::KX_LIGHT)!=0;
 	
 	return dolights;
 }

@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_uvproject.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_uvproject.c 35817 2011-03-27 13:49:53Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,6 +30,11 @@
 *
 */
 
+/** \file blender/modifiers/intern/MOD_uvproject.c
+ *  \ingroup modifiers
+ */
+
+
 /* UV Project modifier: Generates UVs projected from an object */
 
 #include "DNA_meshdata_types.h"
@@ -38,8 +43,9 @@
 
 #include "BLI_math.h"
 #include "BLI_uvproject.h"
+#include "BLI_utildefines.h"
 
-#include "BKE_utildefines.h"
+
 #include "BKE_DerivedMesh.h"
 
 #include "MOD_modifiertypes.h"
@@ -188,7 +194,7 @@ static DerivedMesh *uvprojectModifier_do(UVProjectModifierData *umd,
 				free_uci= 1;
 			}
 			else {
-				float scale= (cam->type == CAM_PERSP) ? cam->clipsta * 32.0 / cam->lens : cam->ortho_scale;
+				float scale= (cam->type == CAM_PERSP) ? cam->clipsta * 32.0f / cam->lens : cam->ortho_scale;
 				float xmax, xmin, ymax, ymin;
 
 				if(aspect > 1.0f) {
@@ -411,18 +417,19 @@ ModifierTypeInfo modifierType_UVProject = {
 							| eModifierTypeFlag_EnableInEditmode,
 
 	/* copyData */          copyData,
-	/* deformVerts */       0,
-	/* deformVertsEM */     0,
-	/* deformMatricesEM */  0,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
 	/* applyModifierEM */   applyModifierEM,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          0,
-	/* isDisabled */        0,
+	/* freeData */          NULL,
+	/* isDisabled */        NULL,
 	/* updateDepgraph */    updateDepgraph,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     foreachIDLink,
 };

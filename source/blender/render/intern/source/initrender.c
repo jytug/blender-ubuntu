@@ -1,5 +1,5 @@
-/**
- * $Id: initrender.c 27655 2010-03-22 09:30:00Z campbellbarton $
+/*
+ * $Id: initrender.c 35233 2011-02-27 19:31:27Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/render/intern/source/initrender.c
+ *  \ingroup render
+ */
+
+
 
 /* Global includes */
 
@@ -40,8 +45,7 @@
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
 #include "BLI_jitter.h"
-
-
+#include "BLI_utildefines.h"
 
 #include "DNA_camera_types.h"
 #include "DNA_group_types.h"
@@ -50,7 +54,7 @@
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 
-#include "BKE_utildefines.h"
+
 #include "BKE_global.h"
 #include "BKE_material.h"
 #include "BKE_object.h"

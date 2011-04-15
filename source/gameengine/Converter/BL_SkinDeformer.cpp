@@ -1,5 +1,5 @@
-/**
- * $Id: BL_SkinDeformer.cpp 31950 2010-09-15 16:13:32Z campbellbarton $
+/*
+ * $Id: BL_SkinDeformer.cpp 35167 2011-02-25 13:30:41Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file gameengine/Converter/BL_SkinDeformer.cpp
+ *  \ingroup bgeconv
+ */
+
+
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786)
 #endif //WIN32
@@ -42,6 +47,7 @@
 #include "DNA_action_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
+#include "BLI_utildefines.h"
 #include "BKE_armature.h"
 #include "BKE_action.h"
 #include "MT_Point3.h"
@@ -49,7 +55,7 @@
 extern "C"{
 	#include "BKE_lattice.h"
 }
- #include "BKE_utildefines.h"
+ 
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"

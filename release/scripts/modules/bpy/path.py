@@ -27,12 +27,15 @@ import bpy as _bpy
 import os as _os
 
 
-def abspath(path):
+def abspath(path, start=None):
     """
     Returns the absolute path relative to the current blend file using the "//" prefix.
+
+    :arg start: Relative to this path, when not set the current filename is used.
+    :type start: string
     """
     if path.startswith("//"):
-        return _os.path.join(_os.path.dirname(_bpy.data.filepath), path[2:])
+        return _os.path.join(_os.path.dirname(_bpy.data.filepath if start is None else start), path[2:])
 
     return path
 
@@ -126,7 +129,7 @@ def resolve_ncase(path):
     import os
 
     def _ncase_path_found(path):
-        if path == "" or os.path.exists(path):
+        if not path or os.path.exists(path):
             return path, True
 
         filename = os.path.basename(path)  # filename may be a directory or a file

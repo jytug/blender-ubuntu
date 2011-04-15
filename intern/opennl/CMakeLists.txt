@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
+# $Id: CMakeLists.txt 35868 2011-03-29 11:50:37Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -26,6 +26,10 @@
 
 # External project, better not fix warnings.
 remove_strict_flags()
+
+# remove debug flag here since this is not a blender maintained library
+# and debug gives a lot of prints on UV unwrapping. developers can enable if they need to.
+remove_flag("-DDEBUG")
 
 set(INC
 	extern
@@ -67,7 +71,7 @@ set(SRC
 	superlu/xerbla.c
 
 	extern/ONL_opennl.h
-	superlu/BLO_sys_types.h
+	superlu/superlu_sys_types.h
 	superlu/Cnames.h
 	superlu/colamd.h
 	superlu/ssp_defs.h

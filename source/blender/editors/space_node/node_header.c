@@ -1,5 +1,5 @@
-/**
- * $Id: node_header.c 34040 2011-01-03 14:36:44Z ton $
+/*
+ * $Id: node_header.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_node/node_header.c
+ *  \ingroup spnode
+ */
+
+
 #include <string.h>
 #include <stdio.h>
 
@@ -37,18 +42,20 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 #include "BKE_node.h"
 #include "BKE_main.h"
 
-
 #include "WM_api.h"
 #include "WM_types.h"
 
 
 #include "UI_interface.h"
+#include "UI_resources.h"
+#include "UI_interface_icons.h"
 #include "UI_view2d.h"
 
 #include "node_intern.h"
@@ -140,7 +147,7 @@ static void node_auto_add_menu(bContext *C, uiLayout *layout, void *arg_nodeclas
 
 		for(tot=0, a=0; ngroup; ngroup= ngroup->id.next, tot++) {
 			if(ngroup->type==ntree->type) {
-				uiItemV(layout, ngroup->id.name+2, ICON_NULL, NODE_GROUP_MENU+tot);
+				uiItemV(layout, ngroup->id.name+2, ICON_NONE, NODE_GROUP_MENU+tot);
 				a++;
 			}
 		}
@@ -152,11 +159,11 @@ static void node_auto_add_menu(bContext *C, uiLayout *layout, void *arg_nodeclas
 		for(a=0, type= ntree->alltypes.first; type; type=type->next) {
 			if(type->nclass == nodeclass && type->name) {
 				if(type->type == NODE_DYNAMIC) {
-					uiItemV(layout, type->name, ICON_NULL, NODE_DYNAMIC_MENU+script);
+					uiItemV(layout, type->name, ICON_NONE, NODE_DYNAMIC_MENU+script);
 					script++;
 				}
 				else
-					uiItemV(layout, type->name, ICON_NULL, type->type);
+					uiItemV(layout, type->name, ICON_NONE, type->type);
 
 				a++;
 			}

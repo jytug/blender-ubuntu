@@ -17,19 +17,19 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
-bl_addon_info = {
+bl_info = {
     "name": "Regular Solids",
     "author": "DreamPainter",
-    "version": (1,),
-    "blender": (2, 5, 3),
-    "api": 32411,
+    "version": (1, 0, 1),
+    "blender": (2, 5, 7),
+    "api": 35853,
     "location": "View3D > Add > Mesh > Regular Solids",
     "description": "Add a Regular Solid mesh.",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Add_Mesh/Add_Solid",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=22405&group_id=153&atid=469",
+        "func=detail&aid=22405",
     "category": "Add Mesh"}
 
 
@@ -40,33 +40,13 @@ from mathutils import Vector,Matrix
 #from rawMeshUtils import *
 from functools import reduce
 
-# Apply view rotation to objects if "Align To" for
-# new objects was set to "VIEW" in the User Preference.
-def apply_object_align(context, ob):
-    obj_align = bpy.context.user_preferences.edit.object_align
-
-    if (context.space_data.type == 'VIEW_3D'
-        and obj_align == 'VIEW'):
-            view3d = context.space_data
-            region = view3d.region_3d
-            viewMatrix = region.view_matrix
-            rot = viewMatrix.rotation_part()
-            ob.rotation_euler = rot.invert().to_euler()
-
-
 # Create a new mesh (object) from verts/edges/faces.
 # verts/edges/faces ... List of vertices/edges/faces for the
 #                       new mesh (as used in from_pydata).
 # name ... Name of the new mesh (& object).
-# edit ... Replace existing mesh data.
-# Note: Using "edit" will destroy/delete existing mesh data.
-def create_mesh_object(context, verts, edges, faces, name, edit):
+def create_mesh_object(context, verts, edges, faces, name):
     scene = context.scene
     obj_act = scene.objects.active
-
-    # Can't edit anything, unless we have an active obj.
-    if edit and not obj_act:
-        return None
 
     # Create new mesh
     mesh = bpy.data.meshes.new(name)
@@ -77,71 +57,8 @@ def create_mesh_object(context, verts, edges, faces, name, edit):
     # Update mesh geometry after adding stuff.
     mesh.update()
 
-    # Deselect all objects.
-    bpy.ops.object.select_all(action='DESELECT')
-
-    if edit:
-        # Replace geometry of existing object
-
-        # Use the active obj and select it.
-        ob_new = obj_act
-        ob_new.select = True
-
-        if obj_act.mode == 'OBJECT':
-            # Get existing mesh datablock.
-            old_mesh = ob_new.data
-
-            # Set object data to nothing
-            ob_new.data = None
-
-            # Clear users of existing mesh datablock.
-            old_mesh.user_clear()
-
-            # Remove old mesh datablock if no users are left.
-            if (old_mesh.users == 0):
-                bpy.data.meshes.remove(old_mesh)
-
-            # Assign new mesh datablock.
-            ob_new.data = mesh
-
-    else:
-        # Create new object
-        ob_new = bpy.data.objects.new(name, mesh)
-
-        # Link new object to the given scene and select it.
-        scene.objects.link(ob_new)
-        ob_new.select = True
-
-        # Place the object at the 3D cursor location.
-        ob_new.location = scene.cursor_location
-
-        apply_object_align(context, ob_new)
-
-    if obj_act and obj_act.mode == 'EDIT':
-        if not edit:
-            # We are in EditMode, switch to ObjectMode.
-            bpy.ops.object.mode_set(mode='OBJECT')
-
-            # Select the active object as well.
-            obj_act.select = True
-
-            # Apply location of new object.
-            scene.update()
-
-            # Join new object into the active.
-            bpy.ops.object.join()
-
-            # Switching back to EditMode.
-            bpy.ops.object.mode_set(mode='EDIT')
-
-            ob_new = obj_act
-
-    else:
-        # We are in ObjectMode.
-        # Make the new object the active one.
-        scene.objects.active = ob_new
-
-    return ob_new
+    import add_object_utils
+    return add_object_utils.object_data_add(context, mesh, operator=None)
 
 
 # A very simple "bridge" tool.
@@ -359,7 +276,9 @@ def createSolid(plato,vtrunc,etrunc,dual,snub):
             if dual:
                 vInput,fInput = source(plato)
                 vInput = [i*supposed_size for i in vInput]
-                return vInput,fInput,sourceName
+                return vInput,fInput#,sourceName
+                #JayDez - I don't know what sourceName is, but commenting that
+                #part out fixes vert truncation problems.
             vInput = [-i*supposed_size for i in vInput]
             return vInput,fInput
 
@@ -647,7 +566,7 @@ class Solids(bpy.types.Operator):
                          default = 1.0)
     vTrunc = FloatProperty(name = "Vertex Truncation",
                            description = "Ammount of vertex truncation",
-                           min = 0.0,
+                           min = 0.001,
                            soft_min = 0.0,
                            max = 2.0,
                            soft_max = 2.0,
@@ -735,11 +654,6 @@ class Solids(bpy.types.Operator):
          "ds12":["12",1.1235,0.68,1,"L"],
          "c":["6",0,0,0,"0"],
          "sb":["20",2/3,0,0,"0"]}
-    
-    edit = BoolProperty(name="",
-                        description="",
-                        default=False,
-                        options={'HIDDEN'})
 
     def execute(self,context):
         # turn off undo for better performance (3 - 5x faster), also makes sure
@@ -774,12 +688,12 @@ class Solids(bpy.types.Operator):
         verts = [i*rad for i in verts]
 
         # generate object
-        obj = create_mesh_object(context,verts,[],faces,"Solid",self.edit)
+        obj = create_mesh_object(context,verts,[],faces,"Solid")
 
         # vertices will be on top of each other in some cases,
         #    so remove doubles then
         if ((self.vTrunc == 1) and (self.eTrunc == 0)) or (self.eTrunc == 1):
-            current_mode = obj.mode
+            current_mode = context.active_object.mode
             if current_mode == 'OBJECT':
                 bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
@@ -787,13 +701,13 @@ class Solids(bpy.types.Operator):
             bpy.ops.object.mode_set(mode=current_mode)
 
         # snub duals suck, so make all normals point outwards
-        if self.dual and (self.snub != "0"):
-            current_mode = obj.mode
-            if current_mode == 'OBJECT':
-                bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.mesh.normals_make_consistent()
-            bpy.ops.object.mode_set(mode=current_mode)
+        #if self.dual and (self.snub != "0"):
+        current_mode = context.active_object.mode
+        if current_mode == 'OBJECT':
+            bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.normals_make_consistent()
+        bpy.ops.object.mode_set(mode=current_mode)
 
         # turn undo back on
         bpy.context.user_preferences.edit.use_global_undo = True 
@@ -882,9 +796,6 @@ class OtherMenu(bpy.types.Menu):
         layout.operator_context = 'INVOKE_REGION_WIN'
         layout.operator(Solids.bl_idname, text = "Cube").preset = "c"
         layout.operator(Solids.bl_idname, text = "Soccer ball").preset = "sb"
-        
-
-import space_info
 
 
 def menu_func(self, context):
@@ -892,10 +803,16 @@ def menu_func(self, context):
 
 
 def register():
-    space_info.INFO_MT_mesh_add.append(menu_func)
+    bpy.utils.register_module(__name__)
+
+    bpy.types.INFO_MT_mesh_add.append(menu_func)
+
 
 def unregister():
-    space_info.INFO_MT_mesh_add.remove(menu_func)
-      
+    bpy.utils.unregister_module(__name__)
+
+    bpy.types.INFO_MT_mesh_add.remove(menu_func)
+
+
 if __name__ == "__main__":
     register()

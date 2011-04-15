@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_wave.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_wave.c 35817 2011-03-27 13:49:53Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,13 +30,20 @@
 *
 */
 
+/** \file blender/modifiers/intern/MOD_wave.c
+ *  \ingroup modifiers
+ */
+
+
 #include "BLI_math.h"
 
 #include "DNA_meshdata_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 
-#include "BKE_utildefines.h"
+#include "BLI_utildefines.h"
+
+
 #include "BKE_DerivedMesh.h"
 #include "BKE_object.h"
 #include "BKE_deform.h"
@@ -279,7 +286,7 @@ static void waveModifier_do(WaveModifierData *md,
 
 	if(wmd->damp == 0) wmd->damp = 10.0f;
 
-	if(wmd->lifetime != 0.0) {
+	if(wmd->lifetime != 0.0f) {
 		float x = ctime - wmd->timeoffs;
 
 		if(x > wmd->lifetime) {
@@ -287,7 +294,7 @@ static void waveModifier_do(WaveModifierData *md,
 
 			if(lifefac > wmd->damp) lifefac = 0.0;
 			else lifefac =
-				(float)(wmd->height * (1.0 - sqrt(lifefac / wmd->damp)));
+				(float)(wmd->height * (1.0f - sqrtf(lifefac / wmd->damp)));
 		}
 	}
 
@@ -297,9 +304,9 @@ static void waveModifier_do(WaveModifierData *md,
 		wavemod_get_texture_coords(wmd, ob, dm, vertexCos, tex_co, numVerts);
 	}
 
-	if(lifefac != 0.0) {		
+	if(lifefac != 0.0f) {
 		/* avoid divide by zero checks within the loop */
-		float falloff_inv= wmd->falloff ? 1.0f / wmd->falloff : 1.0;
+		float falloff_inv= wmd->falloff ? 1.0f / wmd->falloff : 1.0f;
 		int i;
 
 		for(i = 0; i < numVerts; i++) {
@@ -357,14 +364,14 @@ static void waveModifier_do(WaveModifierData *md,
 			amplit -= (ctime - wmd->timeoffs) * wmd->speed;
 
 			if(wmd->flag & MOD_WAVE_CYCL) {
-				amplit = (float)fmod(amplit - wmd->width, 2.0 * wmd->width)
+				amplit = (float)fmodf(amplit - wmd->width, 2.0f * wmd->width)
 						+ wmd->width;
 			}
 
 			/* GAUSSIAN */
 			if(amplit > -wmd->width && amplit < wmd->width) {
 				amplit = amplit * wmd->narrow;
-				amplit = (float)(1.0 / exp(amplit * amplit) - minfac);
+				amplit = (float)(1.0f / expf(amplit * amplit) - minfac);
 
 				/*apply texture*/
 				if(wmd->texture)
@@ -450,17 +457,18 @@ ModifierTypeInfo modifierType_Wave = {
 							| eModifierTypeFlag_SupportsEditmode,
 	/* copyData */          copyData,
 	/* deformVerts */       deformVerts,
+	/* deformMatrices */    NULL,
 	/* deformVertsEM */     deformVertsEM,
-	/* deformMatricesEM */  0,
-	/* applyModifier */     0,
-	/* applyModifierEM */   0,
+	/* deformMatricesEM */  NULL,
+	/* applyModifier */     NULL,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          0,
-	/* isDisabled */        0,
+	/* freeData */          NULL,
+	/* isDisabled */        NULL,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     dependsOnTime,
-	/* dependsOnNormals */	0,
+	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     foreachIDLink,
 };

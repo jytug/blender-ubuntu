@@ -1,5 +1,5 @@
-/**
- * $Id: context.c 33524 2010-12-07 04:12:15Z campbellbarton $
+/*
+ * $Id: context.c 35929 2011-04-01 04:22:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenkernel/intern/context.c
+ *  \ingroup bke
+ */
+
 
 #include <string.h>
 #include <stddef.h>
@@ -85,7 +90,7 @@ struct bContext {
 
 /* context */
 
-bContext *CTX_create()
+bContext *CTX_create(void)
 {
 	bContext *C;
 	
@@ -427,8 +432,8 @@ static int ctx_data_get(bContext *C, const char *member, bContextDataResult *res
 	memset(result, 0, sizeof(bContextDataResult));
 #ifdef WITH_PYTHON
 	if(CTX_py_dict_get(C)) {
-		return BPY_context_get(C, member, result);
-//		if (BPY_context_get(C, member, result))
+		return BPY_context_member_get(C, member, result);
+//		if (BPY_context_member_get(C, member, result))
 //			return 1;
 	}
 #endif
@@ -785,10 +790,10 @@ static const char *data_mode_strings[] = {
 	"sculpt_mode",
 	"weightpaint",
 	"vertexpaint",
-	"texturepaint",
+	"imagepaint",
 	"particlemode",
 	"objectmode",
-	0
+	NULL
 };
 const char *CTX_data_mode_string(const bContext *C)
 {

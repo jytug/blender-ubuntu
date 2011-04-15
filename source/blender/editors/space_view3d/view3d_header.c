@@ -1,5 +1,5 @@
-/**
- * $Id: view3d_header.c 33868 2010-12-23 02:43:40Z campbellbarton $
+/*
+ * $Id: view3d_header.c 35902 2011-03-30 15:28:38Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_view3d/view3d_header.c
+ *  \ingroup spview3d
+ */
+
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +41,11 @@
 #include "RNA_access.h"
 
 #include "MEM_guardedalloc.h"
+
+#include "BLI_math.h"
+#include "BLI_blenlib.h"
+#include "BLI_editVert.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
@@ -57,11 +67,6 @@
 
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
-
-
-#include "BLI_math.h"
-#include "BLI_blenlib.h"
-#include "BLI_editVert.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
@@ -137,9 +142,28 @@ static void handle_view3d_lock(bContext *C)
 	}
 }
 
-static int layers_exec(bContext *C, wmOperator *op)
+/* layer code is on three levels actually:
+- here for operator
+- uiTemplateLayers in interface/ code for buttons
+- ED_view3d_scene_layer_set for RNA
+ */
+static void view3d_layers_editmode_ensure(Scene *scene, View3D *v3d)
 {
-	Main *bmain= CTX_data_main(C);
+	/* sanity check - when in editmode disallow switching the editmode layer off since its confusing
+	 * an alternative would be to always draw the editmode object. */
+	if(scene->obedit && (scene->obedit->lay & v3d->lay)==0) {
+		int bit;
+		for(bit=0; bit<32; bit++) {
+			if(scene->obedit->lay & (1<<bit)) {
+				v3d->lay |= 1<<bit;
+				break;
+			}
+		}
+	}
+}
+
+static int view3d_layers_exec(bContext *C, wmOperator *op)
+{
 	Scene *scene= CTX_data_scene(C);
 	ScrArea *sa= CTX_wm_area(C);
 	View3D *v3d= sa->spacedata.first;
@@ -157,7 +181,10 @@ static int layers_exec(bContext *C, wmOperator *op)
 		if (toggle && v3d->lay == ((1<<20)-1)) {
 			/* return to active layer only */
 			v3d->lay = v3d->layact;
-		} else {
+
+			view3d_layers_editmode_ensure(scene, v3d);
+		}
+		else {
 			v3d->lay |= (1<<20)-1;
 		}		
 	}
@@ -172,19 +199,10 @@ static int layers_exec(bContext *C, wmOperator *op)
 				v3d->lay |= (1<<nr);
 		} else {
 			v3d->lay = (1<<nr);
-
-			/* sanity check - when in editmode disallow switching the editmode layer off since its confusing
-			 * an alternative would be to always draw the editmode object. */
-			if(scene->obedit && (scene->obedit->lay & v3d->lay)==0) {
-				for(bit=0; bit<32; bit++) {
-					if(scene->obedit->lay & (1<<bit)) {
-						v3d->lay |= 1<<bit;
-						break;
-					}
-				}
-			}
 		}
-		
+
+		view3d_layers_editmode_ensure(scene, v3d);
+
 		/* set active layer, ensure to always have one */
 		if(v3d->lay & (1<<nr))
 		   v3d->layact= 1<<nr;
@@ -200,8 +218,7 @@ static int layers_exec(bContext *C, wmOperator *op)
 	
 	if(v3d->scenelock) handle_view3d_lock(C);
 	
-	/* new layers might need unflushed events events */
-	DAG_scene_update_flags(bmain, scene, v3d->lay, FALSE);	/* tags all that moves and flushes */
+	DAG_on_visible_update(CTX_data_main(C), FALSE);
 
 	ED_area_tag_redraw(sa);
 	
@@ -210,7 +227,7 @@ static int layers_exec(bContext *C, wmOperator *op)
 
 /* applies shift and alt, lazy coding or ok? :) */
 /* the local per-keymap-entry keymap will solve it */
-static int layers_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int view3d_layers_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
 	if(event->ctrl || event->oskey)
 		return OPERATOR_PASS_THROUGH;
@@ -222,12 +239,12 @@ static int layers_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		int nr= RNA_int_get(op->ptr, "nr") + 10;
 		RNA_int_set(op->ptr, "nr", nr);
 	}
-	layers_exec(C, op);
+	view3d_layers_exec(C, op);
 	
 	return OPERATOR_FINISHED;
 }
 
-int layers_poll(bContext *C)
+static int view3d_layers_poll(bContext *C)
 {
 	return (ED_operator_view3d_active(C) && CTX_wm_view3d(C)->localvd==NULL);
 }
@@ -240,9 +257,9 @@ void VIEW3D_OT_layers(wmOperatorType *ot)
 	ot->idname= "VIEW3D_OT_layers";
 	
 	/* api callbacks */
-	ot->invoke= layers_invoke;
-	ot->exec= layers_exec;
-	ot->poll= layers_poll;
+	ot->invoke= view3d_layers_invoke;
+	ot->exec= view3d_layers_exec;
+	ot->poll= view3d_layers_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -450,7 +467,7 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 	uiBlockEndAlign(block);
 	
 	/* Draw type */
-	uiItemR(layout, &v3dptr, "viewport_shade", UI_ITEM_R_ICON_ONLY, "", ICON_NULL);
+	uiItemR(layout, &v3dptr, "viewport_shade", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 
 	if (obedit==NULL && ((ob && ob->mode & (OB_MODE_VERTEX_PAINT|OB_MODE_WEIGHT_PAINT|OB_MODE_TEXTURE_PAINT)))) {
 		/* Manipulators aren't used in weight paint mode */
@@ -458,13 +475,13 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 		PointerRNA meshptr;
 
 		RNA_pointer_create(&ob->id, &RNA_Mesh, ob->data, &meshptr);
-		uiItemR(layout, &meshptr, "use_paint_mask", UI_ITEM_R_ICON_ONLY, "", ICON_NULL);
+		uiItemR(layout, &meshptr, "use_paint_mask", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 	} else {
 		const char *str_menu;
 
 		row= uiLayoutRow(layout, 1);
-		uiItemR(row, &v3dptr, "pivot_point", UI_ITEM_R_ICON_ONLY, "", ICON_NULL);
-		uiItemR(row, &v3dptr, "use_pivot_point_align", UI_ITEM_R_ICON_ONLY, "", ICON_NULL);
+		uiItemR(row, &v3dptr, "pivot_point", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
+		uiItemR(row, &v3dptr, "use_pivot_point_align", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 
 		/* NDOF */
 		/* Not implemented yet
@@ -479,7 +496,7 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 
 		/* Transform widget / manipulators */
 		row= uiLayoutRow(layout, 1);
-		uiItemR(row, &v3dptr, "show_manipulator", UI_ITEM_R_ICON_ONLY, "", ICON_NULL);
+		uiItemR(row, &v3dptr, "show_manipulator", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 		block= uiLayoutGetBlock(row);
 		
 		if(v3d->twflag & V3D_USE_MANIPULATOR) {
@@ -507,7 +524,7 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 			uiTemplateLayers(layout, &v3dptr, "layers", &v3dptr, "layers_used", ob_lay);
 
 		/* Scene lock */
-		uiItemR(layout, &v3dptr, "lock_camera_and_layers", UI_ITEM_R_ICON_ONLY, "", ICON_NULL);
+		uiItemR(layout, &v3dptr, "lock_camera_and_layers", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 	}
 	
 	/* selection modus, dont use python for this since it cant do the toggle buttons with shift+click as well as clicking to set one. */

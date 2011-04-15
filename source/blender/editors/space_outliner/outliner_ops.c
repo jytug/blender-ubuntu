@@ -1,5 +1,5 @@
-/**
- * $Id: outliner_ops.c 33603 2010-12-11 17:55:54Z ton $
+/*
+ * $Id: outliner_ops.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/space_outliner/outliner_ops.c
+ *  \ingroup spoutliner
+ */
+
 
 #include <stdlib.h>
 
@@ -56,6 +61,7 @@ void outliner_operatortypes(void)
 	WM_operatortype_append(OUTLINER_OT_show_one_level);
 	WM_operatortype_append(OUTLINER_OT_show_active);
 	WM_operatortype_append(OUTLINER_OT_show_hierarchy);
+	WM_operatortype_append(OUTLINER_OT_scroll_page);
 	
 	WM_operatortype_append(OUTLINER_OT_selected_toggle);
 	WM_operatortype_append(OUTLINER_OT_expanded_toggle);
@@ -90,6 +96,9 @@ void outliner_keymap(wmKeyConfig *keyconf)
 	
 	WM_keymap_add_item(keymap, "OUTLINER_OT_show_active", PERIODKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "OUTLINER_OT_show_active", PADPERIOD, KM_PRESS, 0, 0);
+	
+	WM_keymap_add_item(keymap, "OUTLINER_OT_scroll_page", PAGEDOWNKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "OUTLINER_OT_scroll_page", PAGEUPKEY, KM_PRESS, 0, 0)->ptr, "up", 1);
 	
 	WM_keymap_add_item(keymap, "OUTLINER_OT_show_one_level", PADPLUSKEY, KM_PRESS, 0, 0); /* open */
 	RNA_boolean_set(WM_keymap_add_item(keymap, "OUTLINER_OT_show_one_level", PADMINUS, KM_PRESS, 0, 0)->ptr, "open", 0); /* close */

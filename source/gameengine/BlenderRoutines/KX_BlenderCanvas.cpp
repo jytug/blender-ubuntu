@@ -1,5 +1,5 @@
-/**
- * $Id: KX_BlenderCanvas.cpp 32387 2010-10-09 13:46:34Z dfelinto $
+/*
+ * $Id: KX_BlenderCanvas.cpp 35417 2011-03-09 01:25:59Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,9 +26,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file gameengine/BlenderRoutines/KX_BlenderCanvas.cpp
+ *  \ingroup blroutines
+ */
+
+
 #include "KX_BlenderCanvas.h"
 #include "DNA_screen_types.h"
-#include "stdio.h"
+#include <stdio.h>
 
 
 KX_BlenderCanvas::KX_BlenderCanvas(struct wmWindow *win, RAS_Rect &rect, struct ARegion *ar) :

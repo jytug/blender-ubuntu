@@ -16,16 +16,19 @@
 #
 #======================= END GPL LICENSE BLOCK ========================
 
-bl_addon_info = {
+bl_info = {
     "name": "Math Vis (Console)",
     "author": "Campbell Barton",
     "version": (0, 1),
-    "blender": (2, 5, 5),
-    "api": 33110,
-    "location": "3D View Toolbar, Python Console",
+    "blender": (2, 5, 7),
+    "api": 35622,
+    "location": "View3D > Tool Shelf or Console",
     "description": "Display console defined mathutils variables in the 3D view",
-    "wiki_url": "",
-    "tracker_url": "",
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
+        "Scripts/3D_interaction/Math_Viz",
+    "tracker_url": "http://projects.blender.org/tracker/index.php?"\
+        "func=detail&aid=25545",
+    "support": "OFFICIAL",
     "category": "3D View"}
 
 if "bpy" in locals():
@@ -89,10 +92,14 @@ def console_hook():
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     import console_python
     console_python.execute.hooks.append((console_hook, ()))
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     import console_python
     console_python.execute.hooks.remove((console_hook, ()))
 

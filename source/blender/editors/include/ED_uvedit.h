@@ -1,5 +1,5 @@
-/**
- * $Id: ED_uvedit.h 33468 2010-12-04 13:00:28Z campbellbarton $
+/*
+ * $Id: ED_uvedit.h 35446 2011-03-10 05:52:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,6 +23,10 @@
  * Contributor(s): Blender Foundation
  *
  * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file ED_uvedit.h
+ *  \ingroup editors
  */
 
 #ifndef ED_UVEDIT_H
@@ -62,10 +66,16 @@ void uvedit_uv_select(struct Scene *scene, struct EditFace *efa, struct MTFace *
 
 int ED_uvedit_nearest_uv(struct Scene *scene, struct Object *obedit, struct Image *ima, float co[2], float uv[2]);
 
-/* uvedit_unwrap.c */
+/* uvedit_unwrap_ops.c */
 void ED_uvedit_live_unwrap_begin(struct Scene *scene, struct Object *obedit);
 void ED_uvedit_live_unwrap_re_solve(void);
 void ED_uvedit_live_unwrap_end(short cancel);
+
+/* single call up unwrap using scene settings, used for edge tag unwrapping */
+void ED_unwrap_lscm(struct Scene *scene, struct Object *obedit, const short sel);
+
+/* uvedit_draw.c */
+void draw_uvedit_main(struct SpaceImage *sima, struct ARegion *ar, struct Scene *scene, struct Object *obedit);
 
 #endif /* ED_UVEDIT_H */
 

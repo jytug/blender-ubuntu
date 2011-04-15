@@ -1,5 +1,5 @@
-/**
- * $Id: transform.c 33886 2010-12-24 12:50:07Z ton $
+/*
+ * $Id: transform.c 36020 2011-04-05 11:04:00Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/transform/transform.c
+ *  \ingroup edtransform
+ */
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,22 +54,10 @@
 
 #include "RNA_access.h"
 
-//#include "BIF_editview.h"		/* arrows_move_cursor	*/
 #include "BIF_gl.h"
 #include "BIF_glutil.h"
-//#include "BIF_mywindow.h"
-//#include "BIF_resources.h"
-//#include "BIF_screen.h"
-//#include "BIF_space.h"			/* undo					*/
-//#include "BIF_toets.h"			/* persptoetsen			*/
-//#include "BIF_mywindow.h"		/* warp_pointer			*/
-//#include "BIF_toolbox.h"			/* notice				*/
-//#include "BIF_editmesh.h"
-//#include "BIF_editsima.h"
-//#include "BIF_editparticle.h"
 
 #include "BKE_nla.h"
-//#include "BKE_bad_level_calls.h"/* popmenu and error	*/
 #include "BKE_bmesh.h"
 #include "BKE_context.h"
 #include "BKE_constraint.h"
@@ -72,8 +65,6 @@
 #include "BKE_particle.h"
 #include "BKE_pointcache.h"
 #include "BKE_unit.h"
-
-//#include "BSE_view.h"
 
 #include "ED_image.h"
 #include "ED_keyframing.h"
@@ -89,10 +80,10 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 #include "BLI_editVert.h"
 #include "BLI_ghash.h"
 #include "BLI_linklist.h"
-
 
 #include "UI_resources.h"
 
@@ -338,7 +329,7 @@ static void viewRedrawForce(const bContext *C, TransInfo *t)
 	}
 }
 
-static void viewRedrawPost(TransInfo *t)
+static void viewRedrawPost(bContext *C, TransInfo *t)
 {
 	ED_area_headerprint(t->sa, NULL);
 	
@@ -346,6 +337,10 @@ static void viewRedrawPost(TransInfo *t)
 		/* if autokeying is enabled, send notifiers that keyframes were added */
 		if (IS_AUTOKEY_ON(t->scene))
 			WM_main_add_notifier(NC_ANIMATION|ND_KEYFRAME|NA_EDITED, NULL);
+		
+		/* XXX temp, first hack to get auto-render in compositor work (ton) */
+		WM_event_add_notifier(C, NC_SCENE|ND_TRANSFORM_DONE, CTX_data_scene(C));
+
 	}
 	
 #if 0 // TRANSFORM_FIX_ME
@@ -372,7 +367,7 @@ static void viewRedrawPost(TransInfo *t)
 
 /* ************************** TRANSFORMATIONS **************************** */
 
-void BIF_selectOrientation() {
+void BIF_selectOrientation(void) {
 #if 0 // TRANSFORM_FIX_ME
 	short val;
 	char *str_menu = BIF_menustringTransformOrientation("Orientation");
@@ -542,9 +537,6 @@ wmKeyMap* transform_modal_keymap(wmKeyConfig *keyconf)
 	WM_modalkeymap_add_item(keymap, AKEY, KM_PRESS, 0, 0, TFM_MODAL_ADD_SNAP);
 	WM_modalkeymap_add_item(keymap, AKEY, KM_PRESS, KM_ALT, 0, TFM_MODAL_REMOVE_SNAP);
 
-	WM_modalkeymap_add_item(keymap, UPARROWKEY, KM_PRESS, 0, 0, NUM_MODAL_INCREMENT_UP);
-	WM_modalkeymap_add_item(keymap, DOWNARROWKEY, KM_PRESS, 0, 0, NUM_MODAL_INCREMENT_DOWN);
-	
 	WM_modalkeymap_add_item(keymap, PAGEUPKEY, KM_PRESS, 0, 0, TFM_MODAL_PROPSIZE_UP);
 	WM_modalkeymap_add_item(keymap, PAGEDOWNKEY, KM_PRESS, 0, 0, TFM_MODAL_PROPSIZE_DOWN);
 	WM_modalkeymap_add_item(keymap, WHEELDOWNMOUSE, KM_PRESS, 0, 0, TFM_MODAL_PROPSIZE_UP);
@@ -607,20 +599,22 @@ int transformEvent(TransInfo *t, wmEvent *event)
 				break;
 			case TFM_MODAL_ROTATE:
 				/* only switch when... */
-				if( ELEM4(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL, TFM_TRANSLATION) ) {
-					
-					resetTransRestrictions(t);
-					
-					if (t->mode == TFM_ROTATION) {
-						restoreTransObjects(t);
-						initTrackball(t);
+				if(!(t->options & CTX_TEXTURE)) {
+					if( ELEM4(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL, TFM_TRANSLATION) ) {
+						
+						resetTransRestrictions(t);
+						
+						if (t->mode == TFM_ROTATION) {
+							restoreTransObjects(t);
+							initTrackball(t);
+						}
+						else {
+							restoreTransObjects(t);
+							initRotation(t);
+						}
+						initSnapping(t, NULL); // need to reinit after mode change
+						t->redraw |= TREDRAW_HARD;
 					}
-					else {
-						restoreTransObjects(t);
-						initRotation(t);
-					}
-					initSnapping(t, NULL); // need to reinit after mode change
-					t->redraw |= TREDRAW_HARD;
 				}
 				break;
 			case TFM_MODAL_RESIZE:
@@ -739,6 +733,8 @@ int transformEvent(TransInfo *t, wmEvent *event)
 			case TFM_MODAL_PROPSIZE_UP:
 				if(t->flag & T_PROP_EDIT) {
 					t->prop_size*= 1.1f;
+					if(t->spacetype==SPACE_VIEW3D && t->persp != RV3D_ORTHO)
+						t->prop_size= MIN2(t->prop_size, ((View3D *)t->view)->far);
 					calculatePropRatio(t);
 				}
 				t->redraw |= TREDRAW_HARD;
@@ -858,20 +854,22 @@ int transformEvent(TransInfo *t, wmEvent *event)
 			break;
 		case RKEY:
 			/* only switch when... */
-			if( ELEM4(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL, TFM_TRANSLATION) ) {
+			if(!(t->options & CTX_TEXTURE)) {
+				if( ELEM4(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL, TFM_TRANSLATION) ) {
 
-				resetTransRestrictions(t);
+					resetTransRestrictions(t);
 
-				if (t->mode == TFM_ROTATION) {
-					restoreTransObjects(t);
-					initTrackball(t);
+					if (t->mode == TFM_ROTATION) {
+						restoreTransObjects(t);
+						initTrackball(t);
+					}
+					else {
+						restoreTransObjects(t);
+						initRotation(t);
+					}
+					initSnapping(t, NULL); // need to reinit after mode change
+					t->redraw |= TREDRAW_HARD;
 				}
-				else {
-					restoreTransObjects(t);
-					initRotation(t);
-				}
-				initSnapping(t, NULL); // need to reinit after mode change
-				t->redraw |= TREDRAW_HARD;
 			}
 			break;
 		case CKEY:
@@ -975,6 +973,8 @@ int transformEvent(TransInfo *t, wmEvent *event)
 		case PADPLUSKEY:
 			if(event->alt && t->flag & T_PROP_EDIT) {
 				t->prop_size *= 1.1f;
+				if(t->spacetype==SPACE_VIEW3D && t->persp != RV3D_ORTHO)
+					t->prop_size= MIN2(t->prop_size, ((View3D *)t->view)->far);
 				calculatePropRatio(t);
 			}
 			t->redraw= 1;
@@ -1053,7 +1053,6 @@ int transformEvent(TransInfo *t, wmEvent *event)
 		// Snapping events
 		t->redraw |= handleSnapping(t, event);
 
-		//arrows_move_cursor(event->type);
 	}
 	else if (event->val==KM_RELEASE) {
 		switch (event->type){
@@ -1226,6 +1225,15 @@ static void drawArc(float size, float angle_start, float angle_end, int segments
 	glEnd();
 }
 
+static int helpline_poll(bContext *C)
+{
+	ARegion *ar= CTX_wm_region(C);
+	
+	if(ar && ar->regiontype==RGN_TYPE_WINDOW)
+		return 1;
+	return 0;
+}
+
 static void drawHelpline(bContext *UNUSED(C), int x, int y, void *customdata)
 {
 	TransInfo *t = (TransInfo*)customdata;
@@ -1264,7 +1272,7 @@ static void drawHelpline(bContext *UNUSED(C), int x, int y, void *customdata)
 				glEnd();
 
 				glTranslatef(mval[0], mval[1], 0);
-				glRotatef(-180 / M_PI * atan2f(cent[0] - t->mval[0], cent[1] - t->mval[1]), 0, 0, 1);
+				glRotatef(-RAD2DEGF(atan2f(cent[0] - t->mval[0], cent[1] - t->mval[1])), 0, 0, 1);
 
 				setlinestyle(0);
 				glLineWidth(3.0);
@@ -1298,8 +1306,8 @@ static void drawHelpline(bContext *UNUSED(C), int x, int y, void *customdata)
 					float dx = t->mval[0] - cent[0], dy = t->mval[1] - cent[1];
 					float angle = atan2f(dy, dx);
 					float dist = sqrtf(dx*dx + dy*dy);
-					float delta_angle = MIN2(15 / dist, M_PI/4);
-					float spacing_angle = MIN2(5 / dist, M_PI/12);
+					float delta_angle = MIN2(15.0f / dist, (float)M_PI/4.0f);
+					float spacing_angle = MIN2(5.0f / dist, (float)M_PI/12.0f);
 					UI_ThemeColor(TH_WIRE);
 
 					setlinestyle(3);
@@ -1318,14 +1326,14 @@ static void drawHelpline(bContext *UNUSED(C), int x, int y, void *customdata)
 					glPushMatrix();
 
 					glTranslatef(cosf(angle - delta_angle) * dist, sinf(angle - delta_angle) * dist, 0);
-					glRotatef(180 / M_PI * (angle - delta_angle), 0, 0, 1);
+					glRotatef(RAD2DEGF(angle - delta_angle), 0, 0, 1);
 
 					drawArrowHead(DOWN, 5);
 
 					glPopMatrix();
 
 					glTranslatef(cosf(angle + delta_angle) * dist, sinf(angle + delta_angle) * dist, 0);
-					glRotatef(180 / M_PI * (angle + delta_angle), 0, 0, 1);
+					glRotatef(RAD2DEGF(angle + delta_angle), 0, 0, 1);
 
 					drawArrowHead(UP, 5);
 
@@ -1361,7 +1369,7 @@ static void drawHelpline(bContext *UNUSED(C), int x, int y, void *customdata)
 	}
 }
 
-void drawTransformView(const struct bContext *C, struct ARegion *UNUSED(ar), void *arg)
+static void drawTransformView(const struct bContext *C, struct ARegion *UNUSED(ar), void *arg)
 {
 	TransInfo *t = arg;
 
@@ -1370,12 +1378,14 @@ void drawTransformView(const struct bContext *C, struct ARegion *UNUSED(ar), voi
 	drawSnapping(C, t);
 }
 
-void drawTransformPixel(const struct bContext *UNUSED(C), struct ARegion *UNUSED(ar), void *UNUSED(arg))
+#if 0
+static void drawTransformPixel(const struct bContext *UNUSED(C), struct ARegion *UNUSED(ar), void *UNUSED(arg))
 {
 //	TransInfo *t = arg;
 //
 //	drawHelpline(C, t->mval[0], t->mval[1], t);
 }
+#endif
 
 void saveTransform(bContext *C, TransInfo *t, wmOperator *op)
 {
@@ -1499,6 +1509,10 @@ int initTransform(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event, int
 
 	t->state = TRANS_STARTING;
 
+	if(RNA_struct_find_property(op->ptr, "texture_space"))
+		if(RNA_boolean_get(op->ptr, "texture_space"))
+			options |= CTX_TEXTURE;
+	
 	t->options = options;
 
 	t->mode = mode;
@@ -1534,7 +1548,7 @@ int initTransform(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event, int
 		t->draw_handle_apply = ED_region_draw_cb_activate(t->ar->type, drawTransformApply, t, REGION_DRAW_PRE_VIEW);
 		t->draw_handle_view = ED_region_draw_cb_activate(t->ar->type, drawTransformView, t, REGION_DRAW_POST_VIEW);
 		//t->draw_handle_pixel = ED_region_draw_cb_activate(t->ar->type, drawTransformPixel, t, REGION_DRAW_POST_PIXEL);
-		t->draw_handle_cursor = WM_paint_cursor_activate(CTX_wm_manager(C), NULL, drawHelpline, t);
+		t->draw_handle_cursor = WM_paint_cursor_activate(CTX_wm_manager(C), helpline_poll, drawHelpline, t);
 	}
 	else if(t->spacetype == SPACE_IMAGE) {
 		unit_m3(t->spacemtx);
@@ -1636,11 +1650,6 @@ int initTransform(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event, int
 		break;
 	case TFM_EDGE_SLIDE:
 		initEdgeSlide(t);
-		if(t->state == TRANS_CANCEL)
-		{
-			postTrans(C, t);
-			return 0;
-		}
 		break;
 	case TFM_BONE_ROLL:
 		initBoneRoll(t);
@@ -1653,6 +1662,16 @@ int initTransform(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event, int
 		break;
 	case TFM_TIME_SCALE:
 		initTimeScale(t);
+		break;
+	case TFM_TIME_DUPLICATE:
+		/* same as TFM_TIME_EXTEND, but we need the mode info for later 
+		 * so that duplicate-culling will work properly
+		 */
+		if ELEM(t->spacetype, SPACE_IPO, SPACE_NLA)
+			initTranslation(t);
+		else
+			initTimeTranslate(t);
+		t->mode = mode;
 		break;
 	case TFM_TIME_EXTEND:
 		/* now that transdata has been made, do like for TFM_TIME_TRANSLATE (for most Animation
@@ -1684,6 +1703,13 @@ int initTransform(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event, int
 		initSeqSlide(t);
 		break;
 	}
+
+	if(t->state == TRANS_CANCEL)
+	{
+		postTrans(C, t);
+		return 0;
+	}
+
 
 	/* overwrite initial values if operator supplied a non-null vector */
 	if (RNA_property_is_set(op->ptr, "value"))
@@ -1805,7 +1831,7 @@ int transformEnd(bContext *C, TransInfo *t)
 		postTrans(C, t);
 
 		/* send events out for redraws */
-		viewRedrawPost(t);
+		viewRedrawPost(C, t);
 
 		/*  Undo as last, certainly after special_trans_update! */
 
@@ -1895,7 +1921,7 @@ static void protectedAxisAngleBits(short protectflag, float axis[3], float *angl
 		eulO_to_axis_angle( axis, angle,eul, EULER_ORDER_DEFAULT);
 		
 		/* when converting to axis-angle, we need a special exception for the case when there is no axis */
-		if (IS_EQ(axis[0], axis[1]) && IS_EQ(axis[1], axis[2])) {
+		if (IS_EQF(axis[0], axis[1]) && IS_EQF(axis[1], axis[2])) {
 			/* for now, rotate around y-axis then (so that it simply becomes the roll) */
 			axis[1]= 1.0f;
 		}
@@ -1956,7 +1982,7 @@ static void constraintTransLim(TransInfo *UNUSED(t), TransData *td)
 {
 	if (td->con) {
 		bConstraintTypeInfo *cti= get_constraint_typeinfo(CONSTRAINT_TYPE_LOCLIMIT);
-		bConstraintOb cob= {0};
+		bConstraintOb cob= {NULL};
 		bConstraint *con;
 		
 		/* Make a temporary bConstraintOb for using these limit constraints
@@ -2112,7 +2138,7 @@ static void constraintSizeLim(TransInfo *t, TransData *td)
 {
 	if (td->con && td->ext) {
 		bConstraintTypeInfo *cti= get_constraint_typeinfo(CONSTRAINT_TYPE_SIZELIMIT);
-		bConstraintOb cob= {0};
+		bConstraintOb cob= {NULL};
 		bConstraint *con;
 		
 		/* Make a temporary bConstraintOb for using these limit constraints
@@ -2186,7 +2212,7 @@ static void constraintSizeLim(TransInfo *t, TransData *td)
 
 /* ************************** WARP *************************** */
 
-void postInputWarp(TransInfo *t, float values[3])
+static void postInputWarp(TransInfo *t, float values[3])
 {
 	mul_v3_fl(values, (float)(M_PI * 2));
 
@@ -2211,8 +2237,8 @@ void initWarp(TransInfo *t)
 	t->idx_max = 0;
 	t->num.idx_max = 0;
 	t->snap[0] = 0.0f;
-	t->snap[1] = 5.0f / 180 * M_PI;
-	t->snap[2] = 1.0f / 180 * M_PI;
+	t->snap[1] = 5.0f / 180.0f * (float)M_PI;
+	t->snap[2] = 1.0f / 180.0f * (float)M_PI;
 	
 	t->num.increment = 1.0f;
 
@@ -2235,7 +2261,7 @@ void initWarp(TransInfo *t)
 
 	mid_v3_v3v3(t->center, min, max);
 
-	if (max[0] == min[0]) max[0] += 0.1; /* not optimal, but flipping is better than invalid garbage (i.e. division by zero!) */
+	if (max[0] == min[0]) max[0] += 0.1f; /* not optimal, but flipping is better than invalid garbage (i.e. division by zero!) */
 	t->val= (max[0]-min[0])/2.0f; /* t->val is X dimension projected boundbox */
 }
 
@@ -2246,10 +2272,10 @@ int handleEventWarp(TransInfo *t, wmEvent *event)
 	if (event->type == MIDDLEMOUSE && event->val==KM_PRESS)
 	{
 		// Use customData pointer to signal warp direction
-		if	(t->customData == 0)
+		if	(t->customData == NULL)
 			t->customData = (void*)1;
 		else
-			t->customData = 0;
+			t->customData = NULL;
 		
 		status = 1;
 	}
@@ -2299,11 +2325,11 @@ int Warp(TransInfo *t, short UNUSED(mval[2]))
 		
 		sprintf(str, "Warp: %s", c);
 
-		circumfac = circumfac / 180 * M_PI;
+		circumfac = DEG2RADF(circumfac);
 	}
 	else {
 		/* default header print */
-		sprintf(str, "Warp: %.3f", circumfac * 180 / M_PI);
+		sprintf(str, "Warp: %.3f", RAD2DEGF(circumfac));
 	}
 	
 	t->values[0] = circumfac;
@@ -2355,7 +2381,7 @@ int Warp(TransInfo *t, short UNUSED(mval[2]))
 
 /* ************************** SHEAR *************************** */
 
-void postInputShear(TransInfo *UNUSED(t), float values[3])
+static void postInputShear(TransInfo *UNUSED(t), float values[3])
 {
 	mul_v3_fl(values, 0.05f);
 }
@@ -2387,7 +2413,7 @@ int handleEventShear(TransInfo *t, wmEvent *event)
 	if (event->type == MIDDLEMOUSE && event->val==KM_PRESS)
 	{
 		// Use customData pointer to signal Shear direction
-		if	(t->customData == 0)
+		if	(t->customData == NULL)
 		{
 			initMouseInputMode(t, &t->mouse, INPUT_VERTICAL_ABSOLUTE);
 			t->customData = (void*)1;
@@ -2395,7 +2421,7 @@ int handleEventShear(TransInfo *t, wmEvent *event)
 		else
 		{
 			initMouseInputMode(t, &t->mouse, INPUT_HORIZONTAL_ABSOLUTE);
-			t->customData = 0;
+			t->customData = NULL;
 		}
 		
 		status = 1;
@@ -2439,7 +2465,7 @@ int Shear(TransInfo *t, short UNUSED(mval[2]))
 	unit_m3(smat);
 	
 	// Custom data signals shear direction
-	if (t->customData == 0)
+	if (t->customData == NULL)
 		smat[1][0] = value;
 	else
 		smat[0][1] = value;
@@ -2509,6 +2535,7 @@ void initResize(TransInfo *t)
 
 static void headerResize(TransInfo *t, float vec[3], char *str) {
 	char tvec[60];
+	char *spos= str;
 	if (hasNumInput(&t->num)) {
 		outputNumInput(&(t->num), tvec);
 	}
@@ -2521,21 +2548,27 @@ static void headerResize(TransInfo *t, float vec[3], char *str) {
 	if (t->con.mode & CON_APPLY) {
 		switch(t->num.idx_max) {
 		case 0:
-			sprintf(str, "Scale: %s%s %s", &tvec[0], t->con.text, t->proptext);
+			spos += sprintf(spos, "Scale: %s%s %s", &tvec[0], t->con.text, t->proptext);
 			break;
 		case 1:
-			sprintf(str, "Scale: %s : %s%s %s", &tvec[0], &tvec[20], t->con.text, t->proptext);
+			spos += sprintf(spos, "Scale: %s : %s%s %s", &tvec[0], &tvec[20], t->con.text, t->proptext);
 			break;
 		case 2:
-			sprintf(str, "Scale: %s : %s : %s%s %s", &tvec[0], &tvec[20], &tvec[40], t->con.text, t->proptext);
+			spos += sprintf(spos, "Scale: %s : %s : %s%s %s", &tvec[0], &tvec[20], &tvec[40], t->con.text, t->proptext);
 		}
 	}
 	else {
 		if (t->flag & T_2D_EDIT)
-			sprintf(str, "Scale X: %s   Y: %s%s %s", &tvec[0], &tvec[20], t->con.text, t->proptext);
+			spos += sprintf(spos, "Scale X: %s   Y: %s%s %s", &tvec[0], &tvec[20], t->con.text, t->proptext);
 		else
-			sprintf(str, "Scale X: %s   Y: %s  Z: %s%s %s", &tvec[0], &tvec[20], &tvec[40], t->con.text, t->proptext);
+			spos += sprintf(spos, "Scale X: %s   Y: %s  Z: %s%s %s", &tvec[0], &tvec[20], &tvec[40], t->con.text, t->proptext);
 	}
+	
+	if (t->flag & (T_PROP_EDIT|T_PROP_CONNECTED)) {
+		spos += sprintf(spos, " Proportional size: %.2f", t->prop_size);
+	}
+
+	(void)spos;
 }
 
 #define SIGN(a)		(a<-FLT_EPSILON?1:a>FLT_EPSILON?2:3)
@@ -2834,7 +2867,7 @@ int ToSphere(TransInfo *t, short UNUSED(mval[2]))
 /* ************************** ROTATION *************************** */
 
 
-void postInputRotation(TransInfo *t, float values[3])
+static void postInputRotation(TransInfo *t, float values[3])
 {
 	if ((t->con.mode & CON_APPLY) && t->con.applyRot) {
 		t->con.applyRot(t, NULL, t->axis, values);
@@ -2902,7 +2935,7 @@ static void ElementRotation(TransInfo *t, TransData *td, float mat[3][3], short 
 		
 		
 		if(td->flag & TD_USEQUAT) {
-			mul_serie_m3(fmat, td->mtx, mat, td->smtx, 0, 0, 0, 0, 0);
+			mul_serie_m3(fmat, td->mtx, mat, td->smtx, NULL, NULL, NULL, NULL, NULL);
 			mat3_to_quat( quat,fmat);	// Actual transform
 			
 			if(td->ext->quat){
@@ -2969,7 +3002,7 @@ static void ElementRotation(TransInfo *t, TransData *td, float mat[3][3], short 
 		if ((t->flag & T_V3D_ALIGN)==0) { // align mode doesn't rotate objects itself
 			/* euler or quaternion/axis-angle? */
 			if (td->ext->rotOrder == ROT_MODE_QUAT) {
-				mul_serie_m3(fmat, td->mtx, mat, td->smtx, 0, 0, 0, 0, 0);
+				mul_serie_m3(fmat, td->mtx, mat, td->smtx, NULL, NULL, NULL, NULL, NULL);
 				
 				mat3_to_quat( quat,fmat);	// Actual transform
 				
@@ -2984,7 +3017,7 @@ static void ElementRotation(TransInfo *t, TransData *td, float mat[3][3], short 
 				
 				axis_angle_to_quat(iquat, td->ext->irotAxis, td->ext->irotAngle);
 				
-				mul_serie_m3(fmat, td->mtx, mat, td->smtx, 0, 0, 0, 0, 0);
+				mul_serie_m3(fmat, td->mtx, mat, td->smtx, NULL, NULL, NULL, NULL, NULL);
 				mat3_to_quat( quat,fmat);	// Actual transform
 				mul_qt_qtqt(tquat, quat, iquat);
 				
@@ -3039,7 +3072,7 @@ static void ElementRotation(TransInfo *t, TransData *td, float mat[3][3], short 
 		if ((t->flag & T_V3D_ALIGN)==0) { // align mode doesn't rotate objects itself
 			/* euler or quaternion? */
 			   if ((td->ext->rotOrder == ROT_MODE_QUAT) || (td->flag & TD_USEQUAT)) {
-				mul_serie_m3(fmat, td->mtx, mat, td->smtx, 0, 0, 0, 0, 0);
+				mul_serie_m3(fmat, td->mtx, mat, td->smtx, NULL, NULL, NULL, NULL, NULL);
 				mat3_to_quat( quat,fmat);	// Actual transform
 				
 				mul_qt_qtqt(td->ext->quat, quat, td->ext->iquat);
@@ -3052,7 +3085,7 @@ static void ElementRotation(TransInfo *t, TransData *td, float mat[3][3], short 
 				
 				axis_angle_to_quat(iquat, td->ext->irotAxis, td->ext->irotAngle);
 				
-				mul_serie_m3(fmat, td->mtx, mat, td->smtx, 0, 0, 0, 0, 0);
+				mul_serie_m3(fmat, td->mtx, mat, td->smtx, NULL, NULL, NULL, NULL, NULL);
 				mat3_to_quat( quat,fmat);	// Actual transform
 				mul_qt_qtqt(tquat, quat, iquat);
 				
@@ -3118,7 +3151,7 @@ static void applyRotation(TransInfo *t, float angle, float axis[3])
 
 int Rotation(TransInfo *t, short UNUSED(mval[2]))
 {
-	char str[64];
+	char str[128];
 	
 	float final;
 
@@ -3145,19 +3178,16 @@ int Rotation(TransInfo *t, short UNUSED(mval[2]))
 		outputNumInput(&(t->num), c);
 		
 		sprintf(str, "Rot: %s %s %s", &c[0], t->con.text, t->proptext);
-		
+
 		/* Clamp between -180 and 180 */
-		while (final >= 180.0)
-			final -= 360.0;
-		
-		while (final <= -180.0)
-			final += 360.0;
-		
-		final *= (float)(M_PI / 180.0);
+		final= angle_wrap_rad(DEG2RADF(final));
 	}
 	else {
-		sprintf(str, "Rot: %.2f%s %s", 180.0*final/M_PI, t->con.text, t->proptext);
+		sprintf(str, "Rot: %.2f%s %s", RAD2DEGF(final), t->con.text, t->proptext);
 	}
+	
+	if (t->flag & (T_PROP_EDIT|T_PROP_CONNECTED))
+		sprintf(str, "%s Proportional size: %.2f", str, t->prop_size);
 	
 	t->values[0] = final;
 	
@@ -3253,11 +3283,11 @@ int Trackball(TransInfo *t, short UNUSED(mval[2]))
 
 		sprintf(str, "Trackball: %s %s %s", &c[0], &c[20], t->proptext);
 
-		phi[0] *= (float)(M_PI / 180.0);
-		phi[1] *= (float)(M_PI / 180.0);
+		phi[0] = DEG2RADF(phi[0]);
+		phi[1] = DEG2RADF(phi[1]);
 	}
 	else {
-		sprintf(str, "Trackball: %.2f %.2f %s", 180.0*phi[0]/M_PI, 180.0*phi[1]/M_PI, t->proptext);
+		sprintf(str, "Trackball: %.2f %.2f %s", RAD2DEGF(phi[0]), RAD2DEGF(phi[1]), t->proptext);
 	}
 
 	vec_rot_to_mat3( smat,axis1, phi[0]);
@@ -3331,7 +3361,7 @@ static void headerTranslation(TransInfo *t, float vec[3], char *str) {
 		applyAspectRatio(t, dvec);
 
 		dist = len_v3(vec);
-		if(t->scene->unit.system) {
+		if(!(t->flag & T_2D_EDIT) && t->scene->unit.system) {
 			int i, do_split= t->scene->unit.flag & USER_UNIT_OPT_SPLIT ? 1:0;
 
 			for(i=0; i<3; i++)
@@ -3344,9 +3374,9 @@ static void headerTranslation(TransInfo *t, float vec[3], char *str) {
 		}
 	}
 
-	if(t->scene->unit.system)
+	if(!(t->flag & T_2D_EDIT) && t->scene->unit.system)
 		bUnit_AsString(distvec, sizeof(distvec), dist*t->scene->unit.scale_length, 4, t->scene->unit.system, B_UNIT_LENGTH, t->scene->unit.flag & USER_UNIT_OPT_SPLIT, 0);
-	else if( dist > 1e10 || dist < -1e10 )	/* prevent string buffer overflow */
+	else if( dist > 1e10f || dist < -1e10f )	/* prevent string buffer overflow */
 		sprintf(distvec, "%.4e", dist);
 	else
 		sprintf(distvec, "%.4f", dist);
@@ -3380,6 +3410,9 @@ static void headerTranslation(TransInfo *t, float vec[3], char *str) {
 		else
 			sprintf(str, "Dx: %s   Dy: %s  Dz: %s (%s)%s %s  %s", &tvec[0], &tvec[20], &tvec[40], distvec, t->con.text, t->proptext, &autoik[0]);
 	}
+	
+	if (t->flag & (T_PROP_EDIT|T_PROP_CONNECTED))
+		sprintf(str, "%s Proportional size: %.2f", str, t->prop_size);
 }
 
 static void applyTranslation(TransInfo *t, float vec[3]) {
@@ -3609,10 +3642,10 @@ int Tilt(TransInfo *t, short UNUSED(mval[2]))
 
 		sprintf(str, "Tilt: %s %s", &c[0], t->proptext);
 
-		final *= (float)(M_PI / 180.0);
+		final = DEG2RADF(final);
 	}
 	else {
-		sprintf(str, "Tilt: %.2f %s", 180.0*final/M_PI, t->proptext);
+		sprintf(str, "Tilt: %.2f %s", RAD2DEGF(final), t->proptext);
 	}
 
 	for(i = 0 ; i < t->total; i++, td++) {
@@ -4261,7 +4294,7 @@ static int createSlideVerts(TransInfo *t)
 	int  uvlay_tot= CustomData_number_of_layers(&em->fdata, CD_MTFACE);
 	int uvlay_idx;
 	TransDataSlideUv *slideuvs=NULL, *suv=NULL, *suv_last=NULL;
-	RegionView3D *v3d = t->ar->regiondata;
+	RegionView3D *v3d = t->ar ? t->ar->regiondata : NULL; /* background mode support */
 	float projectMat[4][4];
 	float start[3] = {0.0f, 0.0f, 0.0f}, end[3] = {0.0f, 0.0f, 0.0f};
 	float vec[3];
@@ -4600,7 +4633,7 @@ static int createSlideVerts(TransInfo *t)
 	}
 
 	add_v3_v3(start, end);
-	mul_v3_fl(start, 0.5*(1.0/totvec));
+	mul_v3_fl(start, 0.5f*(1.0f/totvec));
 	VECCOPY(vec, start);
 	start[0] = t->mval[0];
 	start[1] = t->mval[1];
@@ -4828,17 +4861,15 @@ int doEdgeSlide(TransInfo *t, float perc)
 	LinkNode *vertlist=sld->vertlist, *look;
 	GHash *vertgh = sld->vhash;
 	TransDataSlideVert *tempsv;
-	float len = 0.0f;
+	float len;
 	int prop=1, flip=0;
 	/* UV correction vars */
 	GHash **uvarray= sld->uvhash;
 	int  uvlay_tot= CustomData_number_of_layers(&em->fdata, CD_MTFACE);
 	int uvlay_idx;
-	TransDataSlideUv *suv=sld->slideuv;
+	TransDataSlideUv *suv;
 	float uv_tmp[2];
 	LinkNode *fuv_link;
-
-	len = 0.0f;
 
 	tempsv = BLI_ghash_lookup(vertgh,nearest);
 
@@ -4886,8 +4917,8 @@ int doEdgeSlide(TransInfo *t, float perc)
 			tempsv = BLI_ghash_lookup(vertgh,ev);
 			edgelen = len_v3v3(editedge_getOtherVert(tempsv->up,ev)->co,editedge_getOtherVert(tempsv->down,ev)->co);
 			newlen = (edgelen != 0.0f)? (len / edgelen): 0.0f;
-			if(newlen > 1.0) {newlen = 1.0;}
-			if(newlen < 0.0) {newlen = 0.0;}
+			if(newlen > 1.0f) {newlen = 1.0;}
+			if(newlen < 0.0f) {newlen = 0.0;}
 			if(flip == 0) {
 				interp_v3_v3v3(ev->co, editedge_getOtherVert(tempsv->down,ev)->co, editedge_getOtherVert(tempsv->up,ev)->co, fabs(newlen));
 				if (uvlay_tot) { // XXX scene->toolsettings->uvcalc_flag & UVCALC_TRANSFORM_CORRECT) {
@@ -5010,10 +5041,10 @@ int BoneRoll(TransInfo *t, short UNUSED(mval[2]))
 
 		sprintf(str, "Roll: %s", &c[0]);
 
-		final *= (float)(M_PI / 180.0);
+		final = DEG2RADF(final);
 	}
 	else {
-		sprintf(str, "Roll: %.2f", 180.0*final/M_PI);
+		sprintf(str, "Roll: %.2f", RAD2DEGF(final));
 	}
 
 	/* set roll values */
@@ -5321,8 +5352,8 @@ int SeqSlide(TransInfo *t, short UNUSED(mval[2]))
 		applyNumInput(&t->num, t->values);
 	}
 
-	t->values[0] = floor(t->values[0] + 0.5);
-	t->values[1] = floor(t->values[1] + 0.5);
+	t->values[0] = floor(t->values[0] + 0.5f);
+	t->values[1] = floor(t->values[1] + 0.5f);
 
 	headerSeqSlide(t, t->values, str);
 	applySeqSlide(t, t->values);
@@ -5480,6 +5511,11 @@ static void doAnimEdit_SnapFrame(TransInfo *t, TransData *td, TransData2D *td2d,
 
 void initTimeTranslate(TransInfo *t)
 {
+	/* this tool is only really available in the Action Editor... */
+	if (t->spacetype != SPACE_ACTION) {
+		t->state = TRANS_CANCEL;
+	}
+
 	t->mode = TFM_TIME_TRANSLATE;
 	t->transform = TimeTranslate;
 
@@ -5628,7 +5664,10 @@ void initTimeSlide(TransInfo *t)
 
 		/* set flag for drawing stuff */
 		saction->flag |= SACTION_MOVING;
+	} else {
+		t->state = TRANS_CANCEL;
 	}
+
 
 	t->mode = TFM_TIME_SLIDE;
 	t->transform = TimeSlide;
@@ -5736,7 +5775,7 @@ int TimeSlide(TransInfo *t, short mval[2])
 	/* handle numeric-input stuff */
 	t->vec[0] = 2.0f*(cval[0]-sval[0]) / (maxx-minx);
 	applyNumInput(&t->num, &t->vec[0]);
-	t->values[0] = (maxx-minx) * t->vec[0] / 2.0 + sval[0];
+	t->values[0] = (maxx-minx) * t->vec[0] / 2.0f + sval[0];
 
 	headerTimeSlide(t, sval[0], str);
 	applyTimeSlide(t, sval[0]);
@@ -5753,6 +5792,13 @@ int TimeSlide(TransInfo *t, short mval[2])
 void initTimeScale(TransInfo *t)
 {
 	int center[2];
+
+	/* this tool is only really available in the Action Editor
+	 * AND NLA Editor (for strip scaling)
+	 */
+	if (ELEM(t->spacetype, SPACE_ACTION, SPACE_NLA) == 0) {
+		t->state = TRANS_CANCEL;
+	}
 
 	t->mode = TFM_TIME_SCALE;
 	t->transform = TimeScale;
@@ -5863,9 +5909,9 @@ void BIF_TransformSetUndo(char *UNUSED(str))
 }
 
 
-void NDofTransform(void)
-{
 #if 0 // TRANSFORM_FIX_ME
+static void NDofTransform(void)
+{
 	float fval[7];
 	float maxval = 50.0f; // also serves as threshold
 	int axis = -1;
@@ -5910,5 +5956,5 @@ void NDofTransform(void)
 		initTransform(mode, CTX_NDOF);
 		Transform();
 	}
-#endif
 }
+#endif

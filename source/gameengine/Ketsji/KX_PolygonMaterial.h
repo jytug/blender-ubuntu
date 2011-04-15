@@ -1,5 +1,5 @@
-/**
- * $Id: KX_PolygonMaterial.h 32788 2010-10-31 04:11:39Z campbellbarton $
+/*
+ * $Id: KX_PolygonMaterial.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file KX_PolygonMaterial.h
+ *  \ingroup ketsji
+ */
+
 #ifndef __KX_POLYGONMATERIAL_H__
 #define __KX_POLYGONMATERIAL_H__
 
@@ -42,6 +47,7 @@
 struct MTFace;
 struct Material;
 struct MTex;
+struct Image;
 
 /**
  *  Material class.
@@ -106,6 +112,8 @@ public:
 	{
 		return m_material;
 	}
+
+	Image *GetBlenderImage() const;
 
 	/**
 	 * Returns the Blender texture face structure that is used for this material.

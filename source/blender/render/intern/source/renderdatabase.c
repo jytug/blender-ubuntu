@@ -1,5 +1,5 @@
-/**
- * $Id: renderdatabase.c 33894 2010-12-26 17:47:17Z ton $
+/*
+ * $Id: renderdatabase.c 35266 2011-02-28 15:42:15Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  *
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
+
+/** \file blender/render/intern/source/renderdatabase.c
+ *  \ingroup render
+ */
+
 
 /*
  * Storage, retrieval and query of render specific data.
@@ -58,10 +63,11 @@
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
-#include "BKE_utildefines.h"
+
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 #include "BLI_ghash.h"
 #include "BLI_memarena.h"
 
@@ -75,8 +81,8 @@
 #include "BKE_DerivedMesh.h"
 
 #include "RE_render_ext.h"	/* externtex */
-#include "RE_raytrace.h"
 
+#include "rayobject.h"
 #include "renderpipeline.h"
 #include "render_types.h"
 #include "renderdatabase.h"
@@ -108,7 +114,7 @@
 #define RE_RADFACE_ELEMS	1
 #define RE_SIMPLIFY_ELEMS	2
 #define RE_FACE_ELEMS		1
-#define RE_NMAP_TANGENT_ELEMS	12
+#define RE_NMAP_TANGENT_ELEMS	16
 
 float *RE_vertren_get_sticky(ObjectRen *obr, VertRen *ver, int verify)
 {
@@ -294,7 +300,7 @@ MTFace *RE_vlakren_get_tface(ObjectRen *obr, VlakRen *vlr, int n, char **name, i
 	if(verify) {
 		if(n>=node->totmtface) {
 			MTFace *mtface= node->mtface;
-			int size= size= (n+1)*256;
+			int size= (n+1)*256;
 
 			node->mtface= MEM_callocN(size*sizeof(MTFace), "Vlak mtface");
 
@@ -999,6 +1005,7 @@ HaloRen *RE_inithalo(Render *re, ObjectRen *obr, Material *ma,   float *vec,   f
 	if(ma->mtex[0]) {
 
 		if( (ma->mode & MA_HALOTEX) ) har->tex= 1;
+		else if(har->mat->septex & (1<<0));	/* only 1 level textures */
 		else {
 
 			mtex= ma->mtex[0];
@@ -1122,16 +1129,8 @@ HaloRen *RE_inithalo_particle(Render *re, ObjectRen *obr, DerivedMesh *dm, Mater
 				;
 			}
 			else if(mtex->texco & TEXCO_OBJECT) {
-				if(mtex->object){
-					float imat[4][4];
-					/* imat should really be cached somewhere before this */
-					invert_m4_m4(imat,mtex->object->obmat);
-					mul_m4_v3(imat,texvec);
-				}
-				/* texvec[0]+= imatbase->ivec[0]; */
-				/* texvec[1]+= imatbase->ivec[1]; */
-				/* texvec[2]+= imatbase->ivec[2]; */
-				/* mul_m3_v3(imatbase->imat, texvec); */
+				if(mtex->object)
+					mul_m4_v3(mtex->object->imat_ren,texvec);
 			}
 			else if(mtex->texco & TEXCO_GLOB){
 				VECCOPY(texvec,vec);

@@ -1,5 +1,5 @@
-/**
- * $Id: drawvolume.c 33447 2010-12-03 16:45:04Z campbellbarton $
+/*
+ * $Id: drawvolume.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,15 +25,16 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_view3d/drawvolume.c
+ *  \ingroup spview3d
+ */
+
+
 
 #include <string.h>
 #include <math.h>
 
 #include "MEM_guardedalloc.h"
-
-
-
-
 
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
@@ -44,6 +45,7 @@
 #include "BLI_editVert.h"
 #include "BLI_edgehash.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_curve.h"
 #include "BKE_constraint.h" // for the get_constraint_target function
@@ -65,7 +67,7 @@
 #include "BKE_particle.h"
 #include "BKE_property.h"
 #include "BKE_smoke.h"
-#include "BKE_utildefines.h"
+
 #include "smoke_API.h"
 
 #include "BIF_gl.h"
@@ -129,7 +131,7 @@ static double tval()
 
 struct GPUTexture;
 
-int intersect_edges(float *points, float a, float b, float c, float d, float edges[12][2][3])
+static int intersect_edges(float *points, float a, float b, float c, float d, float edges[12][2][3])
 {
 	int i;
 	float t;

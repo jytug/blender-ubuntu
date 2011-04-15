@@ -1,5 +1,5 @@
-/**
-* $Id: BL_ActionActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
+/*
+* $Id: BL_ActionActuator.cpp 35167 2011-02-25 13:30:41Z jesterking $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,11 +27,10 @@
  * ***** END GPL LICENSE BLOCK *****
 */
 
-#if defined (__sgi)
-#include <math.h>
-#else
-#include <cmath>
-#endif
+/** \file gameengine/Converter/BL_ActionActuator.cpp
+ *  \ingroup bgeconv
+ */
+
 
 #include "SCA_LogicManager.h"
 #include "BL_ActionActuator.h"
@@ -39,16 +38,17 @@
 #include "BL_SkinDeformer.h"
 #include "KX_GameObject.h"
 #include "STR_HashedString.h"
+#include "MEM_guardedalloc.h"
 #include "DNA_nla_types.h"
-#include "BKE_action.h"
 #include "DNA_action_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_scene_types.h"
-#include "MEM_guardedalloc.h"
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 #include "MT_Matrix4x4.h"
-#include "BKE_utildefines.h"
+
+#include "BKE_action.h"
 #include "FloatValue.h"
 #include "PyObjectPlus.h"
 #include "KX_PyMath.h"
@@ -231,6 +231,16 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 			apply=false;
 		}
 		break;
+	case ACT_ACTION_PINGPONG:
+		if (bPositiveEvent){
+			if (!(m_flag & ACT_FLAG_LOCKINPUT)){
+				m_flag &= ~ACT_FLAG_KEYUP;
+				m_localtime = m_starttime;
+				m_starttime = curtime;
+				m_flag |= ACT_FLAG_LOCKINPUT;
+			}
+		}
+		break;
 	case ACT_ACTION_FLIPPER:
 		if (bPositiveEvent){
 			if (!(m_flag & ACT_FLAG_LOCKINPUT)){
@@ -304,6 +314,18 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 	case ACT_ACTION_MOTION:
 		break;
 	case ACT_ACTION_LOOP_STOP:
+		break;
+	case ACT_ACTION_PINGPONG:
+		if (wrap){
+			if (!(m_flag & ACT_FLAG_REVERSE))
+				m_localtime = m_endframe;
+			else 
+				m_localtime = m_startframe;
+
+			m_flag &= ~ACT_FLAG_LOCKINPUT;
+			m_flag ^= ACT_FLAG_REVERSE; //flip direction
+			keepgoing = false;
+		}
 		break;
 	case ACT_ACTION_FLIPPER:
 		if (wrap){

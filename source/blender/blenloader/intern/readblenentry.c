@@ -1,5 +1,5 @@
-/**
- * $Id: readblenentry.c 33124 2010-11-17 09:45:45Z campbellbarton $
+/*
+ * $Id: readblenentry.c 35495 2011-03-12 15:15:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,6 +28,11 @@
  * .blend file reading entry point
  */
 
+/** \file blender/blenloader/intern/readblenentry.c
+ *  \ingroup blenloader
+ */
+
+
 #include <stddef.h>
 #include "BLI_storage.h" /* _LARGEFILE_SOURCE */
 
@@ -38,6 +43,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_ghash.h"
 #include "BLI_linklist.h"
 
@@ -49,6 +55,7 @@
 #include "BKE_library.h" // for free_main
 #include "BKE_idcode.h"
 #include "BKE_report.h"
+#include "BKE_utildefines.h"
 
 #include "BLO_readfile.h"
 #include "BLO_undofile.h"
@@ -68,11 +75,11 @@ void BLO_blendhandle_print_sizes(BlendHandle *, void *);
 
 	/* Access routines used by filesel. */
 	 
-BlendHandle *BLO_blendhandle_from_file(char *file) 
+BlendHandle *BLO_blendhandle_from_file(char *file, ReportList *reports)
 {
 	BlendHandle *bh;
 
-	bh= (BlendHandle*)blo_openblenderfile(file, NULL);
+	bh= (BlendHandle*)blo_openblenderfile(file, reports);
 
 	return bh;
 }
@@ -116,21 +123,24 @@ void BLO_blendhandle_print_sizes(BlendHandle *bh, void *fp)
 	fprintf(fp, "]\n");
 }
 
-LinkNode *BLO_blendhandle_get_datablock_names(BlendHandle *bh, int ofblocktype) 
+LinkNode *BLO_blendhandle_get_datablock_names(BlendHandle *bh, int ofblocktype, int *tot_names)
 {
 	FileData *fd= (FileData*) bh;
 	LinkNode *names= NULL;
 	BHead *bhead;
+	int tot= 0;
 
 	for (bhead= blo_firstbhead(fd); bhead; bhead= blo_nextbhead(fd, bhead)) {
 		if (bhead->code==ofblocktype) {
 			char *idname= bhead_id_name(fd, bhead);
-			
+
 			BLI_linklist_prepend(&names, strdup(idname+2));
+			tot++;
 		} else if (bhead->code==ENDB)
 			break;
 	}
-	
+
+	*tot_names= tot;
 	return names;
 }
 
@@ -169,11 +179,11 @@ LinkNode *BLO_blendhandle_get_previews(BlendHandle *bh, int ofblocktype)
 					memcpy(new_prv, prv, sizeof(PreviewImage));
 					if (prv->rect[0]) {
 						unsigned int *rect = NULL;
-						int rectlen = 0;
+						// int rectlen = 0;
 						new_prv->rect[0] = MEM_callocN(new_prv->w[0]*new_prv->h[0]*sizeof(unsigned int), "prvrect");
 						bhead= blo_nextbhead(fd, bhead);
 						rect = (unsigned int*)(bhead+1);
-						rectlen = new_prv->w[0]*new_prv->h[0]*sizeof(unsigned int);
+						// rectlen = new_prv->w[0]*new_prv->h[0]*sizeof(unsigned int);
 						memcpy(new_prv->rect[0], rect, bhead->len);					
 					} else {
 						new_prv->rect[0] = NULL;
@@ -181,11 +191,11 @@ LinkNode *BLO_blendhandle_get_previews(BlendHandle *bh, int ofblocktype)
 					
 					if (prv->rect[1]) {
 						unsigned int *rect = NULL;
-						int rectlen = 0;
+						// int rectlen = 0;
 						new_prv->rect[1] = MEM_callocN(new_prv->w[1]*new_prv->h[1]*sizeof(unsigned int), "prvrect");
 						bhead= blo_nextbhead(fd, bhead);
 						rect = (unsigned int*)(bhead+1);
-						rectlen = new_prv->w[1]*new_prv->h[1]*sizeof(unsigned int);					
+						// rectlen = new_prv->w[1]*new_prv->h[1]*sizeof(unsigned int);
 						memcpy(new_prv->rect[1], rect, bhead->len);							
 					} else {
 						new_prv->rect[1] = NULL;
