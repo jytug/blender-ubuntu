@@ -1,0 +1,22 @@
+From: Kevin Roy <kiniou@gmail.com>
+Date: Fri, 15 Apr 2011 19:44:00 +0200
+Subject: [PATCH] disable_tests
+
+added WITH_TESTS condition to implicitly disable
+---
+ source/CMakeLists.txt |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/source/CMakeLists.txt b/source/CMakeLists.txt
+index e240a38..3977fbe 100644
+--- a/source/CMakeLists.txt
++++ b/source/CMakeLists.txt
+@@ -35,4 +35,6 @@ if(WINDOWS)
+ 	add_subdirectory(icons)
+ endif()
+ 
+-add_subdirectory(tests)
++if(WITH_TESTS)
++	add_subdirectory(tests)
++endif()
+-- 
