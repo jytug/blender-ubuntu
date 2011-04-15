@@ -1,5 +1,5 @@
 /**
- * $Id: bpy_rna_array.c 33123 2010-11-17 07:22:20Z campbellbarton $
+ * $Id: bpy_rna_array.c 34002 2011-01-02 11:06:50Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -450,7 +450,7 @@ static PyObject *pyrna_py_from_array_internal(PointerRNA *ptr, PropertyRNA *prop
 			return NULL;
 		}
 
-		PyTuple_SetItem(tuple, i, item);
+		PyTuple_SET_ITEM(tuple, i, item);
 	}
 
 	return tuple;

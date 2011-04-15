@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_space_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_space_types.h 33840 2010-12-21 20:18:43Z jhk $ 
+ * $Id: DNA_space_types.h 33994 2011-01-02 03:55:26Z jhk $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -357,13 +357,11 @@ typedef struct SpaceScript {
 	void *but_refs;
 } SpaceScript;
 
+# /* Only store the data array in the cache to avoid constant reallocation. */
+# /* No need to store when saved. */
 typedef struct SpaceTimeCache {
 	struct SpaceTimeCache *next, *prev;
-
-	struct PointCache *cache;
 	float *array;
-
-	int type, len;
 } SpaceTimeCache;
 
 typedef struct SpaceTime {

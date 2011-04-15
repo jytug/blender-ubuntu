@@ -110,6 +110,13 @@ def display_name(name):
         return name_base
 
 
+def display_name_from_filepath(name):
+    """
+    Returns the path stripped of directort and extension, ensured to be utf8 compatible.
+    """
+    return _os.path.splitext(_os.path.basename(name))[0].encode("utf8", "replace").decode("utf8")
+
+
 def resolve_ncase(path):
     """
     Resolve a case insensitive path on a case sensitive system,
@@ -204,7 +211,7 @@ def module_names(path, recursive=False):
 
     for filename in sorted(_os.listdir(path)):
         if filename == "modules":
-            pass # XXX, hard coded exception.
+            pass  # XXX, hard coded exception.
         elif filename.endswith(".py") and filename != "__init__.py":
             fullpath = join(path, filename)
             modules.append((filename[0:-3], fullpath))

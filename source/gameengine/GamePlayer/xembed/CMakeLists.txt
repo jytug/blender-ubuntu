@@ -1,5 +1,5 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 33862 2010-12-22 22:15:20Z gsrb3d $
+# $Id: CMakeLists.txt 33962 2010-12-31 04:29:11Z campbellbarton $
 # ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -54,7 +54,7 @@ set(SRC
 	UnixShell.c 
 )
 
-blender_include_dirs(${INC})
+blender_include_dirs("${INC}")
 add_library(blender_plugin SHARED ${SRC} )
 
 

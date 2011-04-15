@@ -1,5 +1,5 @@
 /**
- * $Id: rna_texture.c 33906 2010-12-27 12:12:43Z dingto $
+ * $Id: rna_texture.c 34001 2011-01-02 10:52:21Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -325,9 +325,6 @@ static void rna_ImageTexture_mipmap_set(PointerRNA *ptr, int value)
 
 	if(value) tex->imaflag |= TEX_MIPMAP;
 	else tex->imaflag &= ~TEX_MIPMAP;
-
-	if(tex->imaflag & TEX_MIPMAP)
-		tex->texfilter = TXF_EWA;
 }
 
 static void rna_Envmap_source_update(Main *bmain, Scene *scene, PointerRNA *ptr)

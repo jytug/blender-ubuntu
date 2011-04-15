@@ -1,5 +1,5 @@
 /**
- * $Id: resources.c 33799 2010-12-20 03:59:22Z campbellbarton $
+ * $Id: resources.c 34044 2011-01-03 17:00:49Z ton $
  *
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
@@ -1527,7 +1527,7 @@ void init_userdef_do_versions(void)
 		U.dbl_click_time = 350;
 	}
 	if (U.anim_player_preset == 0) {
-		U.anim_player_preset =1 ;
+		U.anim_player_preset = 1 ;
 	}
 	if (U.scrcastfps == 0) {
 		U.scrcastfps = 10;
@@ -1536,6 +1536,8 @@ void init_userdef_do_versions(void)
 	if (U.v2d_min_gridsize == 0) {
 		U.v2d_min_gridsize= 35;
 	}
+	if (U.dragthreshold == 0 )
+		U.dragthreshold= 5;
 
 	/* funny name, but it is GE stuff, moves userdef stuff to engine */
 // XXX	space_set_commmandline_options();

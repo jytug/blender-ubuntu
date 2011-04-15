@@ -1,5 +1,5 @@
 /**
- * $Id: rna_userdef.c 33799 2010-12-20 03:59:22Z campbellbarton $
+ * $Id: rna_userdef.c 34044 2011-01-03 17:00:49Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2676,6 +2676,12 @@ static void rna_def_userdef_input(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_CONTINUOUS_MOUSE);
 	RNA_def_property_ui_text(prop, "Continuous Grab", "Allow moving the mouse outside the view on some manipulations (transform, ui control drag)");
 	
+	/* tweak tablet & mouse preset */
+	prop= RNA_def_property(srna, "drag_threshold", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "dragthreshold");
+	RNA_def_property_range(prop, 3, 40);
+	RNA_def_property_ui_text(prop, "Drag Threshold", "Amount of pixels you have to drag before dragging UI items happens");
+	
 	prop= RNA_def_property(srna, "ndof_pan_speed", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "ndof_pan");
 	RNA_def_property_range(prop, 0, 200);
@@ -2790,7 +2796,7 @@ static void rna_def_userdef_filepaths(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "render_output_directory", PROP_STRING, PROP_DIRPATH);
 	RNA_def_property_string_sdna(prop, NULL, "renderdir");
-	RNA_def_property_ui_text(prop, "Render Output Directory", "The default directory for rendering output");
+	RNA_def_property_ui_text(prop, "Render Output Directory", "The default directory for rendering output, for new scenes");
 
 	prop= RNA_def_property(srna, "script_directory", PROP_STRING, PROP_DIRPATH);
 	RNA_def_property_string_sdna(prop, NULL, "pythondir");

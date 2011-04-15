@@ -1,5 +1,5 @@
 /**
-* $Id: GPG_ghost.cpp 33829 2010-12-21 06:58:44Z moguri $
+* $Id: GPG_ghost.cpp 33968 2010-12-31 10:56:06Z moguri $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -946,7 +946,8 @@ int main(int argc, char** argv)
 	// Cleanup
 	RNA_exit();
 	BLF_exit();
-	free_blender();
+	IMB_exit();
+	free_nodesystem();
 
 	SYS_DeleteSystem(syshandle);
 

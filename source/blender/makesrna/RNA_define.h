@@ -1,5 +1,5 @@
 /**
- * $Id: RNA_define.h 33073 2010-11-15 06:38:07Z campbellbarton $
+ * $Id: RNA_define.h 33961 2010-12-31 04:12:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -196,6 +196,12 @@ void RNA_def_func_free_pointers(FunctionRNA *func);
 void RNA_def_property_duplicate_pointers(StructOrFunctionRNA *cont_, PropertyRNA *prop);
 void RNA_def_property_free_pointers(PropertyRNA *prop);
 int RNA_def_property_free_identifier(StructOrFunctionRNA *cont_, const char *identifier);
+
+/* utilities */
+const char *RNA_property_typename(PropertyType type);
+#define IS_DNATYPE_FLOAT_COMPAT(_str) (strcmp(_str, "float") == 0 || strcmp(_str, "double") == 0)
+#define IS_DNATYPE_INT_COMPAT(_str) (strcmp(_str, "int") == 0 || strcmp(_str, "short") == 0 || strcmp(_str, "char") == 0)
+
 
 #ifdef __cplusplus
 }

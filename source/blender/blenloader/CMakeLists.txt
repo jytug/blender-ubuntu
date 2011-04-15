@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
+# $Id: CMakeLists.txt 34004 2011-01-02 13:33:32Z ton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -49,5 +49,9 @@ set(SRC
 	BLO_writefile.h
 	intern/readfile.h
 )
+
+if(WITH_BUILDINFO)
+	add_definitions(-DNAN_BUILDINFO)
+endif()
 
 blender_add_lib(bf_blenloader "${SRC}" "${INC}")

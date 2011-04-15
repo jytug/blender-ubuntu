@@ -1,5 +1,5 @@
 /**
- * $Id: rna_lattice.c 33629 2010-12-13 08:44:07Z campbellbarton $
+ * $Id: rna_lattice.c 34035 2011-01-03 12:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -91,7 +91,7 @@ static void rna_Lattice_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	ID *id= ptr->id.data;
 
-	DAG_id_tag_update(id, OB_RECALC_DATA);
+	DAG_id_tag_update(id, 0);
 	WM_main_add_notifier(NC_GEOM|ND_DATA, id);
 }
 

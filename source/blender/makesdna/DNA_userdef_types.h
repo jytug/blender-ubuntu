@@ -1,7 +1,7 @@
 /**
  * blenkernel/DNA_userdef_types.h (mar-2001 nzc)
  *
- *	$Id: DNA_userdef_types.h 33799 2010-12-20 03:59:22Z campbellbarton $
+ *	$Id: DNA_userdef_types.h 34044 2011-01-03 17:00:49Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -350,7 +350,7 @@ typedef struct UserDef {
 	short tw_hotspot, tw_flag, tw_handlesize, tw_size;
 	short textimeout,texcollectrate;
 	short wmdrawmethod; /* removed wmpad */
-	short pad2;
+	short dragthreshold;
 	int memcachelimit;
 	int prefetchframes;
 	short frameserverport;

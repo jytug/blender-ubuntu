@@ -1,5 +1,5 @@
 /**
- * $Id: anim_sys.c 33945 2010-12-30 05:47:34Z aligorith $
+ * $Id: anim_sys.c 34059 2011-01-04 08:56:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -886,7 +886,7 @@ KS_Path *BKE_keyingset_add_path (KeyingSet *ks, ID *id, const char group_name[],
 	/* just store absolute info */
 	ksp->id= id;
 	if (group_name)
-		BLI_snprintf(ksp->group, 64, group_name);
+		BLI_strncpy(ksp->group, group_name, sizeof(ksp->group));
 	else
 		ksp->group[0]= '\0';
 	
@@ -916,10 +916,11 @@ void BKE_keyingset_free_path (KeyingSet *ks, KS_Path *ksp)
 	/* sanity check */
 	if ELEM(NULL, ks, ksp)
 		return;
-	
+
 	/* free RNA-path info */
-	MEM_freeN(ksp->rna_path);
-	
+	if(ksp->rna_path)
+		MEM_freeN(ksp->rna_path);
+
 	/* free path itself */
 	BLI_freelinkN(&ks->paths, ksp);
 }

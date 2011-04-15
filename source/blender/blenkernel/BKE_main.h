@@ -8,7 +8,7 @@
  *
  * Oops... this should be a _types.h file.
  *
- * $Id: BKE_main.h 33490 2010-12-05 18:59:23Z blendix $ 
+ * $Id: BKE_main.h 34004 2011-01-02 13:33:32Z ton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,6 +51,7 @@ typedef struct Main {
 	char name[240];
 	short versionfile, subversionfile;
 	short minversionfile, minsubversionfile;
+	int revision;	/* svn revision of binary that saved file */
 	
 	struct Library *curlib;
 	ListBase scene;

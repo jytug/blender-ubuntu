@@ -584,7 +584,7 @@ class VIEW3D_MT_select_edit_metaball(bpy.types.Menu):
 
         layout.separator()
 
-        layout.operator("mball.select_deselect_all_metaelems")
+        layout.operator("mball.select_all").action = 'TOGGLE'
         layout.operator("mball.select_inverse_metaelems")
 
         layout.separator()
@@ -646,6 +646,7 @@ class VIEW3D_MT_select_face(bpy.types.Menu):  # XXX no matching enum
         # see view3d_select_faceselmenu
 
 # ********** Object menu **********
+
 
 class VIEW3D_MT_object(bpy.types.Menu):
     bl_context = "objectmode"
@@ -1418,7 +1419,7 @@ class VIEW3D_MT_edit_mesh_extrude(bpy.types.Menu):
         if mesh.total_edge_sel and (select_mode[0] or select_mode[1]):
             menu += ["EDGE"]
         if mesh.total_vert_sel and select_mode[0]:
-            menu += ["VERT"]        
+            menu += ["VERT"]
 
         # should never get here
         return menu

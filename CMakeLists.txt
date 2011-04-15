@@ -1,5 +1,5 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 33899 2010-12-27 09:33:32Z jesterking $
+# $Id: CMakeLists.txt 34000 2011-01-02 10:21:03Z moguri $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -690,7 +690,7 @@ elseif(WIN32)
 	endif()
 
 	# used in many places so include globally, like OpenGL
-	blender_include_dirs(${PTHREADS_INC})
+	blender_include_dirs("${PTHREADS_INC}")
 
 elseif(APPLE)
 
@@ -945,11 +945,7 @@ endif()
 #-----------------------------------------------------------------------------
 # Configure OpenGL.
 find_package(OpenGL)
-if(MSVC)
-	include_directories(${OPENGL_INCLUDE_DIR})
-else()
-	blender_include_dirs(${OPENGL_INCLUDE_DIR})
-endif()
+blender_include_dirs("${OPENGL_INCLUDE_DIR}")
 # unset(OPENGL_LIBRARIES CACHE) # not compat with older cmake 
 # unset(OPENGL_xmesa_INCLUDE_DIR CACHE) # not compat with older cmake 
 

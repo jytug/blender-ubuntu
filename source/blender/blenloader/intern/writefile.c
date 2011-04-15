@@ -1,5 +1,5 @@
 /*
- * $Id: writefile.c 33713 2010-12-16 16:09:23Z jhk $
+ * $Id: writefile.c 34004 2011-01-02 13:33:32Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2375,7 +2375,15 @@ static void write_global(WriteData *wd, int fileflags, Main *mainvar)
 	fg.subversion= BLENDER_SUBVERSION;
 	fg.minversion= BLENDER_MINVERSION;
 	fg.minsubversion= BLENDER_MINSUBVERSION;
-	fg.pads= 0; /* prevent mem checkers from complaining */
+#ifdef NAN_BUILDINFO
+	{
+		extern char build_rev[];
+		fg.revision= atoi(build_rev);
+	}
+#else
+	fg.revision= 0;
+#endif
+	fg.pads= fg.pad= 0; /* prevent mem checkers from complaining */
 	writestruct(wd, GLOB, "FileGlobal", 1, &fg);
 }
 

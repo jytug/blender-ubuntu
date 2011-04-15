@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4; indent-tabs-mode: t; -*-
 # vim: tabstop=4
-# $Id: getversion.py 33381 2010-11-29 17:23:06Z ton $
+# $Id: getversion.py 33978 2011-01-01 07:20:34Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -57,7 +57,7 @@ for line in infile.readlines():
 infile.close()
 
 # Major was changed to float, but minor is still a string
-# Note: removed returning minor, this messes up with install path code in BLI module
+# Note: removed returning minor, messes up install path code in BLI module
 if major:
     print "%.2f" % major
 else:

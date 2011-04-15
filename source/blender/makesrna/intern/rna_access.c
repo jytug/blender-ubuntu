@@ -1,5 +1,5 @@
 /**
- * $Id: rna_access.c 33833 2010-12-21 11:40:12Z campbellbarton $
+ * $Id: rna_access.c 34031 2011-01-03 11:50:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -704,8 +704,8 @@ int RNA_property_array_dimension(PointerRNA *ptr, PropertyRNA *prop, int length[
 {
 	PropertyRNA *rprop= rna_ensure_property(prop);
 
-	if(length && rprop->arraydimension > 1)
-		rna_ensure_property_multi_array_length(ptr, prop, length);
+	if(length)
+			rna_ensure_property_multi_array_length(ptr, prop, length);
 
 	return rprop->arraydimension;
 }
@@ -2828,7 +2828,8 @@ void rna_iterator_array_begin(CollectionPropertyIterator *iter, void *ptr, int i
 	internal->endptr= ((char*)ptr)+length*itemsize;
 	internal->itemsize= itemsize;
 	internal->skip= skip;
-
+	internal->length= length;
+	
 	iter->internal= internal;
 	iter->valid= (internal->ptr != internal->endptr);
 

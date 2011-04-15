@@ -1,5 +1,5 @@
 /**
- * $Id: node.c 33935 2010-12-29 12:18:59Z aligorith $
+ * $Id: node.c 34042 2011-01-03 15:50:08Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1270,8 +1270,7 @@ static void node_init_preview(bNode *node, int xsize, int ysize)
 		node->preview->xsize= xsize;
 		node->preview->ysize= ysize;
 	}
-	else
-		memset(node->preview->rect, 0, 4*xsize + xsize*ysize*sizeof(char)*4);
+	/* no clear, makes nicer previews */
 }
 
 void ntreeInitPreview(bNodeTree *ntree, int xsize, int ysize)

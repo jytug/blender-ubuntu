@@ -1,5 +1,5 @@
 /**
- * $Id: rna_curve.c 33595 2010-12-11 11:11:32Z campbellbarton $
+ * $Id: rna_curve.c 34035 2011-01-03 12:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -278,7 +278,7 @@ static void rna_BPoint_array_begin(CollectionPropertyIterator *iter, PointerRNA 
 
 static void rna_Curve_update_data_id(Main *bmain, Scene *scene, ID *id)
 {
-	DAG_id_tag_update(id, OB_RECALC_DATA);
+	DAG_id_tag_update(id, 0);
 	WM_main_add_notifier(NC_GEOM|ND_DATA, id);
 }
 

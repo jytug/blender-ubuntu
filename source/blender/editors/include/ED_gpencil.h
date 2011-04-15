@@ -1,5 +1,5 @@
 /**
- * $Id: ED_gpencil.h 31573 2010-08-25 08:31:52Z campbellbarton $
+ * $Id: ED_gpencil.h 34051 2011-01-04 03:14:01Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,6 +54,10 @@ typedef struct tGPspoint {
 	short x, y;				/* x and y coordinates of cursor (in relative to area) */
 	float pressure;			/* pressure of tablet at this point */
 } tGPspoint;
+
+
+/* Check if 'sketching sessions' are enabled */
+#define GPENCIL_SKETCH_SESSIONS_ON(scene) ((scene)->toolsettings->gpencil_flags & GP_TOOL_FLAG_PAINTSESSIONS_ON)
 
 /* ----------- Grease Pencil Tools/Context ------------- */
 

@@ -1,5 +1,5 @@
 /**
- * $Id: space_image.c 33800 2010-12-20 05:26:25Z campbellbarton $
+ * $Id: space_image.c 34068 2011-01-04 15:19:16Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -391,6 +391,7 @@ static SpaceLink *image_new(const bContext *UNUSED(C))
 	simage->iuser.frames= 100;
 	
 	scopes_new(&simage->scopes);
+	simage->sample_line_hist.height= 100;
 
 	/* header */
 	ar= MEM_callocN(sizeof(ARegion), "header for image");
@@ -765,6 +766,9 @@ static void image_main_area_draw(const bContext *C, ARegion *ar)
 	View2D *v2d= &ar->v2d;
 	//View2DScrollers *scrollers;
 	float col[3];
+	
+	/* XXX not supported yet, disabling for now */
+	scene->r.scemode &= ~R_COMP_CROP;
 	
 	/* clear and setup matrix */
 	UI_GetThemeColor3fv(TH_BACK, col);

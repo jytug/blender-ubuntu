@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_brush_types.h 33647 2010-12-14 01:19:51Z nicholasbishop $
+ * $Id: DNA_brush_types.h 34065 2011-01-04 14:46:29Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -129,6 +129,10 @@ typedef struct Brush {
 #define BRUSH_PLANE_TRIM (1<<26)
 #define BRUSH_FRONTFACE (1<<27)
 #define BRUSH_CUSTOM_ICON (1<<28)
+
+/* temporary flag which sets up autmatically for correct
+   brush drawing when inverted modal operator is running */
+#define BRUSH_INVERTED (1<<29)
 
 /* Brush.sculpt_tool */
 #define SCULPT_TOOL_DRAW        1

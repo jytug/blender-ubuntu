@@ -1,5 +1,5 @@
 /**
- * $Id: image_buttons.c 33868 2010-12-23 02:43:40Z campbellbarton $
+ * $Id: image_buttons.c 34068 2011-01-04 15:19:16Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -349,6 +349,8 @@ static void image_panel_curves(const bContext *C, Panel *pa)
 #if 0
 /* 0: disable preview 
    otherwise refresh preview
+ 
+   XXX if you put this back, also check XXX in image_main_area_draw() */
 */
 void image_preview_event(int event)
 {

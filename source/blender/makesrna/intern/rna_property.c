@@ -1,5 +1,5 @@
 /**
- * $Id: rna_property.c 31493 2010-08-21 04:51:00Z campbellbarton $
+ * $Id: rna_property.c 33961 2010-12-31 04:12:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -154,7 +154,7 @@ void RNA_def_gameproperty(BlenderRNA *brna)
 	RNA_def_struct_sdna(srna, "bProperty");
 
 	prop= RNA_def_property(srna, "value", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "data");
+	// RNA_def_property_float_sdna(prop, NULL, "data");
 	RNA_def_property_ui_text(prop, "Value", "Property value");
 	RNA_def_property_range(prop, -10000, 10000);
 	RNA_def_property_float_funcs(prop, "rna_GameFloatProperty_value_get", "rna_GameFloatProperty_value_set", NULL);
@@ -166,7 +166,7 @@ void RNA_def_gameproperty(BlenderRNA *brna)
 	RNA_def_struct_sdna(srna, "bProperty");
 
 	prop= RNA_def_property(srna, "value", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "data");
+	// RNA_def_property_float_sdna(prop, NULL, "data");
 	RNA_def_property_ui_text(prop, "Value", "Property value");
 	RNA_def_property_range(prop, -10000, 10000);
 	RNA_def_property_float_funcs(prop, "rna_GameFloatProperty_value_get", "rna_GameFloatProperty_value_set", NULL);

@@ -4,7 +4,7 @@
  * 
  *	Reevan McKay
  *
- * $Id: deform.c 33435 2010-12-03 01:52:28Z campbellbarton $
+ * $Id: deform.c 33969 2010-12-31 11:51:00Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -448,7 +448,7 @@ void flip_side_name (char *name, const char *from_name, int strip_number)
 	sprintf (name, "%s%s%s%s", prefix, replace, suffix, number);
 }
 
-float defvert_find_weight(const struct MDeformVert *dvert, int group_num)
+float defvert_find_weight(const struct MDeformVert *dvert, const int group_num)
 {
 	MDeformWeight *dw= defvert_find_index(dvert, group_num);
 	return dw ? dw->weight : 0.0f;

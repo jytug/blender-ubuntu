@@ -1,5 +1,5 @@
 /**
- * $Id: view3d_snap.c 33838 2010-12-21 18:55:49Z ton $
+ * $Id: view3d_snap.c 34035 2011-01-03 12:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -87,7 +87,7 @@ static void special_transvert_update(Object *obedit)
 	
 	if(obedit) {
 		
-		DAG_id_tag_update(obedit->data, OB_RECALC_DATA);
+		DAG_id_tag_update(obedit->data, 0);
 		
 		if(obedit->type==OB_MESH) {
 			Mesh *me= obedit->data;

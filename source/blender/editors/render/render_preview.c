@@ -1,5 +1,5 @@
 /* 
- * $Id: render_preview.c 33811 2010-12-20 13:02:33Z ton $
+ * $Id: render_preview.c 34067 2011-01-04 14:59:55Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -347,6 +347,7 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 	
 	sce= pr_main->scene.first;
 	if(sce) {
+		
 		/* this flag tells render to not execute depsgraph or ipos etc */
 		sce->r.scemode |= R_PREVIEWBUTS;
 		/* set world always back, is used now */
@@ -358,9 +359,17 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 		}
 		
 		sce->r.color_mgt_flag = scene->r.color_mgt_flag;
+		
+		/* prevent overhead for small renders and icons (32) */
+		if(id && sp->sizex < 40)
+			sce->r.xparts= sce->r.yparts= 1;
+		else
+			sce->r.xparts= sce->r.yparts= 4;
+		
 		/* exception: don't color manage texture previews or icons */
 		if((id && sp->pr_method==PR_ICON_RENDER) || id_type == ID_TE)
 			sce->r.color_mgt_flag &= ~R_COLOR_MANAGEMENT;
+		
 		if((id && sp->pr_method==PR_ICON_RENDER) && id_type != ID_WO)
 			sce->r.alphamode= R_ALPHAPREMUL;
 		else
@@ -380,7 +389,7 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 				
 				init_render_material(mat, 0, NULL);		/* call that retrieves mode_l */
 				end_render_material(mat);
-				
+
 				/* turn on raytracing if needed */
 				if(mat->mode_l & MA_RAYMIRROR)
 					sce->r.mode |= R_RAYTRACE;
@@ -601,7 +610,7 @@ void ED_preview_draw(const bContext *C, void *idp, void *parentp, void *slotp, r
 			sbuts->preview= 0;
 			ok= 0;
 		}
-		
+	
 		if(ok==0) {
 			ED_preview_shader_job(C, sa, id, parent, slot, newx, newy, PR_BUTS_RENDER);
 		}
@@ -937,7 +946,7 @@ static void shader_preview_draw(void *spv, RenderResult *UNUSED(rr), volatile st
 static int shader_preview_break(void *spv)
 {
 	ShaderPreview *sp= spv;
-	
+
 	return *(sp->stop);
 }
 
@@ -962,7 +971,7 @@ static void shader_preview_render(ShaderPreview *sp, ID *id, int split, int firs
 	short idtype= GS(id->name);
 	char name[32];
 	int sizex;
-
+	
 	/* get the stuff from the builtin preview dbase */
 	sce= preview_prepare_scene(sp->scene, id, idtype, sp); // XXX sizex
 	if(sce==NULL) return;
@@ -986,7 +995,7 @@ static void shader_preview_render(ShaderPreview *sp, ID *id, int split, int firs
 	else if(sp->pr_method==PR_NODE_RENDER) {
 		if(idtype == ID_MA) sce->r.scemode |= R_MATNODE_PREVIEW;
 		else if(idtype == ID_TE) sce->r.scemode |= R_TEXNODE_PREVIEW;
-		sce->r.mode |= R_OSA;
+		sce->r.mode &= ~R_OSA;
 	}
 	else {	/* PR_BUTS_RENDER */
 		sce->r.mode |= R_OSA;
@@ -1021,6 +1030,8 @@ static void shader_preview_render(ShaderPreview *sp, ID *id, int split, int firs
 
 	/* handle results */
 	if(sp->pr_method==PR_ICON_RENDER) {
+		// char *rct= (char *)(sp->pr_rect + 32*16 + 16);
+		
 		if(sp->pr_rect)
 			RE_ResultGet32(re, sp->pr_rect);
 	}
@@ -1220,7 +1231,8 @@ void ED_preview_icon_job(const bContext *C, void *owner, ID *id, unsigned int *r
 	wmJob *steve;
 	ShaderPreview *sp;
 
-	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), owner, "Icon Preview", WM_JOB_EXCL_RENDER);
+	/* suspended start means it starts after 1 timer step, see WM_jobs_timer below */
+	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), owner, "Icon Preview", WM_JOB_EXCL_RENDER|WM_JOB_SUSPEND);
 	sp= MEM_callocN(sizeof(ShaderPreview), "shader preview");
 
 	/* customdata for preview thread */
@@ -1231,10 +1243,10 @@ void ED_preview_icon_job(const bContext *C, void *owner, ID *id, unsigned int *r
 	sp->pr_method= PR_ICON_RENDER;
 	sp->pr_rect= rect;
 	sp->id = id;
-	
+
 	/* setup job */
 	WM_jobs_customdata(steve, sp, shader_preview_free);
-	WM_jobs_timer(steve, 0.1, NC_MATERIAL, NC_MATERIAL);
+	WM_jobs_timer(steve, 0.25, NC_MATERIAL, NC_MATERIAL);
 	WM_jobs_callbacks(steve, common_preview_startjob, NULL, NULL, common_preview_endjob);
 
 	WM_jobs_start(CTX_wm_manager(C), steve);
