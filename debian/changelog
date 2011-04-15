@@ -9,6 +9,8 @@ blender (2.57-svn36147-1) unstable; urgency=low
         Deactivated hardcoded linked libraries glew and openjpeg which are detected automatically now
     - 0004-locales_directory_install :
         Set locales installation into /usr/share/locale
+    - 0007-disable_tests.patch :
+        Disable Tests when building
 
  -- Kevin Roy <kiniou@gmail.com>  Wed, 13 Apr 2011 17:37:57 +0200
 
