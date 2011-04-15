@@ -1,5 +1,5 @@
-/**
- * $Id: WM_api.h 34067 2011-01-04 14:59:55Z ton $
+/*
+ * $Id: WM_api.h 36038 2011-04-06 22:03:02Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,17 @@
  */
 #ifndef WM_API_H
 #define WM_API_H
+
+/** \file WM_api.h
+ *  \ingroup wm
+ *
+ *  \page wmpage windowmanager
+ *  \section wmabout About windowmanager
+ *  \ref wm handles events received from \ref GHOST and manages
+ *  the screens, areas and input for Blender
+ *  \section wmnote NOTE
+ *  \todo document
+ */
 
 /* dna-savable wmStructs here */
 #include "DNA_windowmanager_types.h"
@@ -59,7 +70,7 @@ void		WM_setprefsize		(int stax, int stay, int sizx, int sizy);
 void		WM_setinitialstate_fullscreen(void);
 void		WM_setinitialstate_normal(void);
 
-void		WM_init				(struct bContext *C, int argc, char **argv);
+void		WM_init				(struct bContext *C, int argc, const char **argv);
 void		WM_exit				(struct bContext *C);
 void		WM_main				(struct bContext *C);
 
@@ -81,7 +92,8 @@ void		WM_window_open_temp	(struct bContext *C, struct rcti *position, int type);
 
 
 			/* files */
-int			WM_read_homefile	(struct bContext *C, struct wmOperator *op);
+int			WM_read_homefile_exec(struct bContext *C, struct wmOperator *op);
+int			WM_read_homefile	(struct bContext *C, struct ReportList *reports, short from_memory);
 int			WM_write_homefile	(struct bContext *C, struct wmOperator *op);
 void		WM_read_file		(struct bContext *C, const char *name, struct ReportList *reports);
 int			WM_write_file		(struct bContext *C, const char *target, int fileflags, struct ReportList *reports, int copy);
@@ -347,8 +359,11 @@ void		WM_progress_clear(struct wmWindow *win);
 
 #ifdef WIN32
 			/* Windows System Console */
-void		WM_toggle_console(struct bContext *C, short show);
+void		WM_console_toggle(struct bContext *C, short show);
 #endif
+
+/* debugging only, convenience function to write on crash */
+int write_crash_blend(void);
 
 #ifdef __cplusplus
 }

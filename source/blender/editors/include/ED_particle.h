@@ -1,5 +1,5 @@
 /* 
- * $Id: ED_particle.h 33124 2010-11-17 09:45:45Z campbellbarton $
+ * $Id: ED_particle.h 35016 2011-02-21 07:25:24Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,10 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file ED_particle.h
+ *  \ingroup editors
  */
 
 #ifndef ED_PARTICLE_H
@@ -68,6 +72,7 @@ void PE_undo_step(struct Scene *scene, int step);
 void PE_undo(struct Scene *scene);
 void PE_redo(struct Scene *scene);
 void PE_undo_menu(struct Scene *scene, struct Object *ob);
+int PE_undo_valid(struct Scene *scene);
 
 #endif /* ED_PARTICLE_H */
 

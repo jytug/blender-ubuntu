@@ -1,4 +1,4 @@
-/**
+/*
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,11 +26,19 @@
  * ***** END GPL LICENSE BLOCK *****
  * filter.c
  *
- * $Id: filter.c 33665 2010-12-14 18:02:41Z ton $
+ * $Id: filter.c 35239 2011-02-27 20:23:21Z jesterking $
  */
 
-#include "BKE_utildefines.h"
+/** \file blender/imbuf/intern/filter.c
+ *  \ingroup imbuf
+ */
+
+
 #include "MEM_guardedalloc.h"
+
+#include "BLI_utildefines.h"
+
+
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"

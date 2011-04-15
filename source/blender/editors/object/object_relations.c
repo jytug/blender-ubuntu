@@ -1,5 +1,5 @@
-/**
- * $Id: object_relations.c 34012 2011-01-02 19:00:32Z nazgul $
+/*
+ * $Id: object_relations.c 35773 2011-03-25 08:43:41Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/object/object_relations.c
+ *  \ingroup edobj
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,6 +52,7 @@
 #include "BLI_editVert.h"
 #include "BLI_listbase.h"
 #include "BLI_string.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_action.h"
 #include "BKE_animsys.h"
@@ -279,10 +285,9 @@ static int make_proxy_invoke (bContext *C, wmOperator *op, wmEvent *evt)
 	else if (ob->id.lib) {
 		uiPopupMenu *pup= uiPupMenuBegin(C, "OK?", ICON_QUESTION);
 		uiLayout *layout= uiPupMenuLayout(pup);
-		PointerRNA props_ptr;
 		
 		/* create operator menu item with relevant properties filled in */
-		props_ptr= uiItemFullO(layout, op->idname, op->type->name, ICON_NULL, NULL, WM_OP_EXEC_REGION_WIN, UI_ITEM_O_RETURN_PROPS);
+		uiItemFullO(layout, op->idname, op->type->name, ICON_NONE, NULL, WM_OP_EXEC_REGION_WIN, UI_ITEM_O_RETURN_PROPS);
 		
 		/* present the menu and be done... */
 		uiPupMenuEnd(C, pup);
@@ -689,7 +694,7 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 static int parent_set_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(event))
 {
 	Object *ob= ED_object_active_context(C);
-	uiPopupMenu *pup= uiPupMenuBegin(C, "Set Parent To", ICON_NULL);
+	uiPopupMenu *pup= uiPupMenuBegin(C, "Set Parent To", ICON_NONE);
 	uiLayout *layout= uiPupMenuLayout(pup);
 	
 	uiLayoutSetOperatorContext(layout, WM_OP_EXEC_DEFAULT);
@@ -1050,7 +1055,8 @@ static unsigned int move_to_layer_init(bContext *C, wmOperator *op)
 	unsigned int lay= 0;
 
 	if(!RNA_property_is_set(op->ptr, "layers")) {
-		CTX_DATA_BEGIN(C, Base*, base, selected_editable_bases) {
+		/* note: layers are set in bases, library objects work for this */
+		CTX_DATA_BEGIN(C, Base*, base, selected_bases) {
 			lay |= base->lay;
 		}
 		CTX_DATA_END;
@@ -1098,8 +1104,8 @@ static int move_to_layer_exec(bContext *C, wmOperator *op)
 	
 	if(v3d && v3d->localvd) {
 		/* now we can move out of localview. */
-		// XXX if (!okee("Move from localview")) return;
-		CTX_DATA_BEGIN(C, Base*, base, selected_editable_bases) {
+		/* note: layers are set in bases, library objects work for this */
+		CTX_DATA_BEGIN(C, Base*, base, selected_bases) {
 			lay= base->lay & ~v3d->lay;
 			base->lay= lay;
 			base->object->lay= lay;
@@ -1111,7 +1117,8 @@ static int move_to_layer_exec(bContext *C, wmOperator *op)
 	}
 	else {
 		/* normal non localview operation */
-		CTX_DATA_BEGIN(C, Base*, base, selected_editable_bases) {
+		/* note: layers are set in bases, library objects work for this */
+		CTX_DATA_BEGIN(C, Base*, base, selected_bases) {
 			/* upper byte is used for local view */
 			local= base->lay & 0xFF000000;  
 			base->lay= lay + local;
@@ -1154,9 +1161,9 @@ void OBJECT_OT_move_to_layer(wmOperatorType *ot)
 
 /************************** Link to Scene Operator *****************************/
 
-void link_to_scene(Main *UNUSED(bmain), unsigned short UNUSED(nr))
-{
 #if 0
+static void link_to_scene(Main *UNUSED(bmain), unsigned short UNUSED(nr))
+{
 	Scene *sce= (Scene*) BLI_findlink(&bmain->scene, G.curscreen->scenenr-1);
 	Base *base, *nbase;
 	
@@ -1172,8 +1179,8 @@ void link_to_scene(Main *UNUSED(bmain), unsigned short UNUSED(nr))
 			id_us_plus((ID *)base->object);
 		}
 	}
-#endif
 }
+#endif
 
 static int make_links_scene_exec(bContext *C, wmOperator *op)
 {
@@ -1247,7 +1254,7 @@ static int allow_make_links_data(int ev, Object *ob, Object *obt)
 static int make_links_data_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain= CTX_data_main(C);
-	int event = RNA_int_get(op->ptr, "type");
+	int event = RNA_enum_get(op->ptr, "type");
 	Object *ob;
 	ID *id;
 	int a;
@@ -1299,6 +1306,8 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 	}
 	CTX_DATA_END;
 
+	DAG_scene_sort(bmain, CTX_data_scene(C));
+	
 	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_SPACE|ND_SPACE_VIEW3D, CTX_wm_view3d(C));
 	return OPERATOR_FINISHED;
@@ -1338,8 +1347,6 @@ void OBJECT_OT_make_links_data(wmOperatorType *ot)
 		{MAKE_LINKS_MODIFIERS,	"MODIFIERS", 0, "Modifiers", ""},
 		{0, NULL, 0, NULL, NULL}};
 
-	PropertyRNA *prop;
-
 	/* identifiers */
 	ot->name= "Link Data";
 	ot->description = "Make links from the active object to other selected objects";
@@ -1347,24 +1354,19 @@ void OBJECT_OT_make_links_data(wmOperatorType *ot)
 
 	/* api callbacks */
 	ot->exec= make_links_data_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= ED_operator_object_active;
 
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	prop= RNA_def_enum(ot->srna, "type", make_links_items, 0, "Type", "");
+	ot->prop= RNA_def_enum(ot->srna, "type", make_links_items, 0, "Type", "");
 }
 
 
 /**************************** Make Single User ********************************/
 
-static void single_object_users__forwardModifierLinks(void *UNUSED(userData), Object *UNUSED(ob), Object **obpoin)
-{
-	ID_NEW(*obpoin);
-}
-
-void single_object_users(Scene *scene, View3D *v3d, int flag)	
+static void single_object_users(Scene *scene, View3D *v3d, int flag)	
 {
 	Base *base;
 	Object *ob, *obn;
@@ -1374,6 +1376,11 @@ void single_object_users(Scene *scene, View3D *v3d, int flag)
 	/* duplicate (must set newid) */
 	for(base= FIRSTBASE; base; base= base->next) {
 		ob= base->object;
+		
+		/* newid may still have some trash from Outliner tree building,
+		 * so clear that first to avoid errors [#26002]
+		 */
+		ob->id.newid = NULL;
 		
 		if( (base->flag & flag)==flag ) {
 			if(ob->id.lib==NULL && ob->id.us>1) {
@@ -1390,32 +1397,20 @@ void single_object_users(Scene *scene, View3D *v3d, int flag)
 	
 	/* object pointers */
 	for(base= FIRSTBASE; base; base= base->next) {
-		ob= base->object;
-		if(ob->id.lib==NULL) {
-			relink_constraints(&base->object->constraints);
-			if (base->object->pose){
-				bPoseChannel *chan;
-				for (chan = base->object->pose->chanbase.first; chan; chan=chan->next){
-					relink_constraints(&chan->constraints);
-				}
-			}
-			modifiers_foreachObjectLink(base->object, single_object_users__forwardModifierLinks, NULL);
-			
-			ID_NEW(ob->parent);
-		}
+		object_relink(base->object);
 	}
 
 	set_sca_new_poins();
 }
 
-void new_id_matar(Material **matar, int totcol)
+static void new_id_matar(Material **matar, int totcol)
 {
 	ID *id;
 	int a;
 	
 	for(a=0; a<totcol; a++) {
 		id= (ID *)matar[a];
-		if(id && id->lib==0) {
+		if(id && id->lib == NULL) {
 			if(id->newid) {
 				matar[a]= (Material *)id->newid;
 				id_us_plus(id->newid);
@@ -1430,7 +1425,7 @@ void new_id_matar(Material **matar, int totcol)
 	}
 }
 
-void single_obdata_users(Main *bmain, Scene *scene, int flag)
+static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 {
 	Object *ob;
 	Lamp *la;
@@ -1464,7 +1459,8 @@ void single_obdata_users(Main *bmain, Scene *scene, int flag)
 					ob->data= copy_camera(ob->data);
 					break;
 				case OB_MESH:
-					me= ob->data= copy_mesh(ob->data);
+					ob->data= copy_mesh(ob->data);
+					//me= ob->data;
 					//if(me && me->key)
 					//	ipo_idnew(me->key->ipo);	/* drivers */
 					break;
@@ -1563,12 +1559,12 @@ static void single_mat_users(Scene *scene, int flag, int do_textures)
 	}
 }
 
-void do_single_tex_user(Tex **from)
+static void do_single_tex_user(Tex **from)
 {
 	Tex *tex, *texn;
 	
 	tex= *from;
-	if(tex==0) return;
+	if(tex==NULL) return;
 	
 	if(tex->id.newid) {
 		*from= (Tex *)tex->id.newid;
@@ -1584,7 +1580,7 @@ void do_single_tex_user(Tex **from)
 	}
 }
 
-void single_tex_users_expand(Main *bmain)
+static void single_tex_users_expand(Main *bmain)
 {
 	/* only when 'parent' blocks are LIB_NEW */
 	Material *ma;

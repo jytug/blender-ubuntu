@@ -16,16 +16,20 @@
 #
 #======================= END GPL LICENSE BLOCK ========================
 
-bl_addon_info = {
+bl_info = {
     "name": "Rigify",
     "author": "Nathan Vegdahl",
-    "version": (0, 5),
-    "blender": (2, 5, 5),
-    "api": 33110,
+    "blender": (2, 5, 7),
+    "api": 35622,
+    "location": "View3D > Add > Armature",
+    "description": "Adds various Rig Templates",
     "location": "Armature properties",
-    "wiki_url": "",
-    "tracker_url": "",
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
+        "Scripts/Rigging/Rigify",
+    "tracker_url": "http://projects.blender.org/tracker/index.php?"\
+        "func=detail&aid=25546",
     "category": "Rigging"}
+
 
 if "bpy" in locals():
     import imp
@@ -69,7 +73,7 @@ def get_rig_list(path):
                     # Check if it's a rig itself
                     if not hasattr(rig, "Rig"):
                         # Check for sub-rigs
-                        ls = get_rig_list(os.path.join(path, f, "")) # "" adds a final slash
+                        ls = get_rig_list(os.path.join(path, f, ""))  # "" adds a final slash
                         rigs.extend(["%s.%s" % (f, l) for l in ls])
                     else:
                         rigs += [f]
@@ -103,25 +107,23 @@ for c in collection_list:
     col_enum_list += [(c, c, "")]
 
 
-class RigifyName(bpy.types.IDPropertyGroup):
+class RigifyName(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty()
 
 
-class RigifyParameters(bpy.types.IDPropertyGroup):
+class RigifyParameters(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty()
-
-
-for rig in rig_list:
-    r = utils.get_rig_type(rig).Rig
-    try:
-        r.add_parameters(RigifyParameters)
-    except AttributeError:
-        pass
 
 
 ##### REGISTER #####
 
 def register():
+    ui.register()
+    metarig_menu.register()
+
+    bpy.utils.register_class(RigifyName)
+    bpy.utils.register_class(RigifyParameters)
+
     bpy.types.PoseBone.rigify_type = bpy.props.StringProperty(name="Rigify Type", description="Rig type for this bone.")
     bpy.types.PoseBone.rigify_parameters = bpy.props.CollectionProperty(type=RigifyParameters)
 
@@ -130,7 +132,13 @@ def register():
     IDStore.rigify_types = bpy.props.CollectionProperty(type=RigifyName)
     IDStore.rigify_active_type = bpy.props.IntProperty(name="Rigify Active Type", description="The selected rig type.")
 
-    metarig_menu.register()
+    # Add rig parameters
+    for rig in rig_list:
+        r = utils.get_rig_type(rig).Rig
+        try:
+            r.add_parameters(RigifyParameters)
+        except AttributeError:
+            pass
 
 
 def unregister():
@@ -142,5 +150,8 @@ def unregister():
     del IDStore.rigify_types
     del IDStore.rigify_active_type
 
-    metarig_menu.unregister()
+    bpy.utils.unregister_class(RigifyName)
+    bpy.utils.unregister_class(RigifyParameters)
 
+    metarig_menu.unregister()
+    ui.unregister()

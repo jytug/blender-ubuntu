@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_bevel.c 32619 2010-10-21 01:55:39Z campbellbarton $
+* $Id: MOD_bevel.c 35362 2011-03-05 10:29:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -29,12 +29,21 @@
 * ***** END GPL LICENSE BLOCK *****
 *
 */
+
+/** \file blender/modifiers/intern/MOD_bevel.c
+ *  \ingroup modifiers
+ */
+
 #include "MEM_guardedalloc.h"
+
+#include "BLI_utildefines.h"
 
 #include "BKE_bmesh.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"
 #include "BKE_particle.h"
+
+#include "MOD_util.h"
 
 
 static void initData(ModifierData *md)
@@ -126,18 +135,19 @@ ModifierTypeInfo modifierType_Bevel = {
 							| eModifierTypeFlag_EnableInEditmode,
 
 	/* copyData */          copyData,
-	/* deformVerts */       0,
-	/* deformVertsEM */     0,
-	/* deformMatricesEM */  0,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
 	/* applyModifierEM */   applyModifierEM,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          0,
-	/* isDisabled */        0,
-	/* updateDepgraph */    0,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
-	/* foreachObjectLink */ 0,
-	/* foreachIDLink */     0,
+	/* freeData */          NULL,
+	/* isDisabled */        NULL,
+	/* updateDepgraph */    NULL,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
+	/* foreachObjectLink */ NULL,
+	/* foreachIDLink */     NULL,
 };

@@ -16,19 +16,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     "name": "Measure Panel",
     "author": "Buerbaum Martin (Pontiac)",
-    "version": (0, 7, 12),
-    "blender": (2, 5, 5),
-    "api": 33931,
-    "location": "View3D > Properties > Measure",
+    "version": (0, 7, 13),
+    "blender": (2, 5, 7),
+    "api": 35864,
+    "location": "View3D > Properties > Measure Panel",
     "description": "Measure distances between objects",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/" \
         "Scripts/3D_interaction/Panel_Measure",
     "tracker_url": "https://projects.blender.org/tracker/index.php?" \
-        "func=detail&aid=21445&group_id=153&atid=469",
+        "func=detail&aid=21445",
     "category": "3D View"}
 
 """
@@ -58,7 +58,11 @@ It's very helpful to use one or two "Empty" objects with
 "Snap during transform" enabled for fast measurement.
 
 Version history:
-v0.7.12 -  Moved setting of properties to callback function
+v0.7.13 - Moved property definitions to registration function.
+    Changed automatic callback adding to manual,
+    the current API doesn't seem to allow this top be automatically yet.
+    Various API fixes.
+v0.7.12 - Moved setting of properties to callback function
     (it is bad practise to set it in the draw code).
     Fixed distance calculation of parented objects.
     API change: add_modal_handler -> modal_handler_add
@@ -79,8 +83,8 @@ v0.7.8 - Various Py API changes by Campbell ...
     bl_default_closed -> bl_options = {'DEFAULT_CLOSED'}
     x.verts -> x.vertices
     @classmethod    def poll(cls, context)
-    No "location" in bl_addon_info->name
-    bl_addon_info->api
+    No "location" in bl_info->name
+    bl_info->api
 v0.7.7 - One more change to the callback registration code.
     Now it should finally work as intended.
 v0.7.6 - API changes (r885, r886) - register & unregister function
@@ -103,7 +107,7 @@ v0.7.2 - Merged changes from trunk (scripts_addons r847):
     * obj.matrix -> obj.matrix_world
     * vert.selected -> vert.select
     * face.selected -> face.select
-    * bl_addon_info: warning, wiki_url, tracker_url
+    * bl_info: warning, wiki_url, tracker_url
     * removed __bpydoc__
     * Use fontid=0 for blf functions. 0 is the default font.
 v0.7.1 - Merged changes by Campbell:
@@ -116,7 +120,7 @@ v0.7 - Initial support for drawing lines.
     The distance value (in BUs) is also drawn in the 3D view now.
     Also fixed some wrong calculations of global/local distances.
     Now it's really "what you see is what is calculated".
-    Use bl_addon_info for Add-On information.
+    Use bl_info for Add-On information.
     Use "3D View" in category & name
     Renamed reenter_editmode to view3d.reenter_editmode.
     Renamed panel_measure.py into space_view3d_panel_measure.py
@@ -237,7 +241,7 @@ def getMeasurePoints(context):
                 # local  ... the object center to the 3D cursor.
                 # global ... the origin to the 3D cursor.
                 cur_loc = sce.cursor_location
-                obj_loc = obj.matrix_world.translation_part()
+                obj_loc = obj.matrix_world.to_translation()
 
                 # Convert to local space, if needed.
                 if measureLocal(sce):
@@ -259,7 +263,7 @@ def getMeasurePoints(context):
 
                 # Convert to local or global space.
                 if measureLocal(sce):
-                    p1 = vert_loc 
+                    p1 = vert_loc
                     p2 = cur_loc
                     return (p1, p2, COLOR_LOCAL)
 
@@ -272,7 +276,7 @@ def getMeasurePoints(context):
                 # Two vertices selected.
                 # We measure the distance between the
                 # two selected vertices.
-                obj_loc = obj.matrix_world.translation_part()
+                obj_loc = obj.matrix_world.to_translation()
                 vert1_loc = verts_selected[0].co.copy()
                 vert2_loc = verts_selected[1].co.copy()
 
@@ -299,15 +303,15 @@ def getMeasurePoints(context):
             # 2 objects selected.
             # We measure the distance between the 2 selected objects.
             obj1, obj2 = context.selected_objects
-            obj1_loc = obj1.matrix_world.translation_part()
-            obj2_loc = obj2.matrix_world.translation_part()
+            obj1_loc = obj1.matrix_world.to_translation()
+            obj2_loc = obj2.matrix_world.to_translation()
             return (obj1_loc, obj2_loc, COLOR_GLOBAL)
 
         elif (obj):
             # One object selected.
             # We measure the distance from the object to the 3D cursor.
             cur_loc = sce.cursor_location
-            obj_loc = obj.matrix_world.translation_part()
+            obj_loc = obj.matrix_world.to_translation()
             return (obj_loc, cur_loc, COLOR_GLOBAL)
 
         elif not context.selected_objects:
@@ -691,9 +695,7 @@ def draw_measurements_callback(self, context):
 
 class VIEW3D_OT_display_measurements(bpy.types.Operator):
     '''Display the measurements made in the 'Measure' panel'''
-    # Do not use bl_idname here (class name is used instead),
-    # so the callback can be added easily.
-    #bl_idname = "view3d.display_measurements"
+    bl_idname = "view3d.display_measurements"
     bl_label = "Display the measurements made in the" \
         " 'Measure' panel in the 3D View."
     bl_options = {'REGISTER'}
@@ -725,6 +727,20 @@ class VIEW3D_OT_display_measurements(bpy.types.Operator):
         else:
             self.report({'WARNING'}, "View3D not found, cannot run operator")
             return {'CANCELLED'}
+
+
+class VIEW3D_OT_activate_measure_panel(bpy.types.Operator):
+    bl_label = "Activate"
+    bl_idname = "view3d.activate_measure_panel"
+    bl_description = "Activate the callback needed to draw the lines."
+    bl_options = {'REGISTER'}
+
+    def invoke(self, context, event):
+
+        # Execute operator (this adds the callback)
+        # if it wasn't done yet.
+        bpy.ops.view3d.display_measurements()
+        return {'FINISHED'}
 
 
 class VIEW3D_OT_reenter_editmode(bpy.types.Operator):
@@ -774,23 +790,15 @@ class VIEW3D_PT_measure(bpy.types.Panel):
         # @todo Better solution?
         context.area.tag_redraw()
 
-        # Execute operator (this adds the callback)
-        # if it wasn't done yet.
-        bpy.ops.view3d.display_measurements()
+        mgr_ops = context.window_manager.operators.values()
+        if (not "VIEW3D_OT_display_measurements"
+            in [op.bl_idname for op in mgr_ops]):
+            layout.operator("view3d.activate_measure_panel",
+                        text="Activate")
+        else:
+            layout.prop(sce, "measure_panel_draw")
 
-        # Define property for the draw setting.
-        bpy.types.Scene.measure_panel_draw = bpy.props.BoolProperty(
-            description="Draw distances in 3D View",
-            default=1)
-
-        # Define property for the calc-area setting.
-        # @todo prevent double calculations for each refresh automatically?
-        bpy.types.Scene.measure_panel_calc_area = bpy.props.BoolProperty(
-            description="Calculate mesh surface area (heavy CPU" \
-                " usage on bigger meshes)",
-            default=0)
-
-        layout.prop(sce, "measure_panel_draw")
+        context.area.tag_redraw()
 
     def draw(self, context):
         layout = self.layout
@@ -798,31 +806,6 @@ class VIEW3D_PT_measure(bpy.types.Panel):
 
         # Get a single selected object (or nothing).
         obj = getSingleObject(context)
-
-        # Define a temporary attribute for the distance value
-        bpy.types.Scene.measure_panel_dist = bpy.props.FloatProperty(
-            name="Distance",
-            precision=PRECISION,
-            unit="LENGTH")
-        bpy.types.Scene.measure_panel_area1 = bpy.props.FloatProperty(
-            precision=PRECISION,
-            unit="AREA")
-        bpy.types.Scene.measure_panel_area2 = bpy.props.FloatProperty(
-            precision=PRECISION,
-            unit="AREA")
-
-        TRANSFORM = [
-            ("measure_global", "Global",
-                "Calculate values in global space."),
-            ("measure_local", "Local",
-                "Calculate values inside the local object space.")]
-
-        # Define dropdown for the global/local setting
-        bpy.types.Scene.measure_panel_transform = bpy.props.EnumProperty(
-            name="Space",
-            description="Choose in which space you want to measure.",
-            items=TRANSFORM,
-            default='measure_global')
 
         if (context.mode == 'EDIT_MESH'):
             obj = context.active_object
@@ -1102,10 +1085,51 @@ class VIEW3D_PT_measure(bpy.types.Panel):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
+    # Define a temporary attribute for the distance value
+    bpy.types.Scene.measure_panel_dist = bpy.props.FloatProperty(
+        name="Distance",
+        precision=PRECISION,
+        unit="LENGTH")
+    bpy.types.Scene.measure_panel_area1 = bpy.props.FloatProperty(
+        precision=PRECISION,
+        unit="AREA")
+    bpy.types.Scene.measure_panel_area2 = bpy.props.FloatProperty(
+        precision=PRECISION,
+        unit="AREA")
+
+    TRANSFORM = [
+        ("measure_global", "Global",
+            "Calculate values in global space."),
+        ("measure_local", "Local",
+            "Calculate values inside the local object space.")]
+
+    # Define dropdown for the global/local setting
+    bpy.types.Scene.measure_panel_transform = bpy.props.EnumProperty(
+        name="Space",
+        description="Choose in which space you want to measure.",
+        items=TRANSFORM,
+        default='measure_global')
+
+    # Define property for the draw setting.
+    bpy.types.Scene.measure_panel_draw = bpy.props.BoolProperty(
+        description="Draw distances in 3D View",
+        default=1)
+
+    # Define property for the calc-area setting.
+    # @todo prevent double calculations for each refresh automatically?
+    bpy.types.Scene.measure_panel_calc_area = bpy.props.BoolProperty(
+        description="Calculate mesh surface area (heavy CPU" \
+            " usage on bigger meshes)",
+        default=0)
+
     pass
 
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     pass
 
 if __name__ == "__main__":

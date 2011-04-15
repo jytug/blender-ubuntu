@@ -1,5 +1,5 @@
-/**
- * $Id: scanfill.c 33835 2010-12-21 14:49:34Z campbellbarton $
+/*
+ * $Id: scanfill.c 35246 2011-02-27 20:37:56Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,12 +28,18 @@
  * (uit traces) maart 95
  */
 
+/** \file blender/blenlib/intern/scanfill.c
+ *  \ingroup bli
+ */
+
+
 #include "MEM_guardedalloc.h"
 
-
+#include "BLI_callbacks.h"
 #include "BLI_editVert.h"
 #include "BLI_listbase.h"
 #include "BLI_math.h"
+#include "BLI_scanfill.h"
 
 /* callbacks for errors and interrupts and some goo */
 static void (*BLI_localErrorCallBack)(const char*) = NULL;
@@ -499,9 +505,9 @@ static void scanfill(PolyFill *pf, int mat_nr)
 	short nr, test, twoconnected=0;
 
 	nr= pf->nr;
-	verts= pf->verts;
 
 	/* PRINTS
+	verts= pf->verts;
 	eve= fillvertbase.first;
 	while(eve) {
 		printf("vert: %x co: %f %f\n",eve,eve->co[cox],eve->co[coy]);
@@ -558,7 +564,6 @@ static void scanfill(PolyFill *pf, int mat_nr)
 
 	qsort(scdata, verts, sizeof(ScFillVert), vergscdata);
 
-	sc= scdata;
 	eed= filledgebase.first;
 	while(eed) {
 		nexted= eed->next;
@@ -1005,8 +1010,8 @@ int BLI_edgefill(int mat_nr)
 		MEM_freeN(polycache);
 	}
 	
-	pf= pflist;
 	/* printf("after merge\n");
+	pf= pflist;
 	for(a=1;a<=poly;a++) {
 		printf("poly:%d edges:%d verts:%d flag: %d\n",a,pf->edges,pf->verts,pf->f);
 		pf++;

@@ -1,10 +1,5 @@
-/**
- * blenlib/BLI_editVert.h    mar 2001 Nzc
- *
- * Some editing types needed in the lib (unfortunately) for
- * scanfill.c
- *
- * $Id: BLI_editVert.h 32177 2010-09-28 19:53:45Z campbellbarton $
+/*
+ * $Id: BLI_editVert.h 35793 2011-03-26 08:28:24Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,6 +30,14 @@
 #ifndef BLI_EDITVERT_H
 #define BLI_EDITVERT_H
 
+/** \file BLI_editVert.h
+ *  \ingroup bli
+ *  \since March 2001
+ *  \author nzc
+ *  \brief Some editing types needed in the lib (unfortunately) for
+ *   scanfill.c
+ */
+
 #include "DNA_customdata_types.h"
 #include "DNA_mesh_types.h"
 
@@ -57,6 +60,7 @@ typedef struct EditVert
 		void            *p;
 		intptr_t         l;
 		float            fp;
+		int				 t;
 	} tmp;
 	float no[3]; /*vertex normal */
 	float co[3]; /*vertex location */

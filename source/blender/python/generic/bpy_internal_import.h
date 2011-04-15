@@ -1,5 +1,5 @@
 /* 
- * $Id: bpy_internal_import.h 32728 2010-10-27 06:05:22Z campbellbarton $
+ * $Id: bpy_internal_import.h 35882 2011-03-29 16:12:25Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
 */
 
+/** \file blender/python/generic/bpy_internal_import.h
+ *  \ingroup pygen
+ */
+
+
 /* Note, the BGE needs to use this too, keep it minimal */
 
 #ifndef BPY_INTERNAL_IMPORT_H
@@ -42,12 +47,14 @@
 
 struct Text;
 
+void bpy_import_init(PyObject *builtins);
+
 PyObject*	bpy_text_import(struct Text *text);
 PyObject*	bpy_text_import_name(char *name, int *found);
 PyObject*	bpy_text_reimport(PyObject *module, int *found);
 /* void		bpy_text_clear_modules(int clear_all);*/ /* Clear user modules */ 
 
-void bpy_text_filename_get(char *fn, struct Text *text);
+void bpy_text_filename_get(char *fn, size_t fn_len, struct Text *text);
 
 extern PyMethodDef bpy_import_meth;
 extern PyMethodDef bpy_reload_meth;

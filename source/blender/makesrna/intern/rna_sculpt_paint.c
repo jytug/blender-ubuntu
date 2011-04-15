@@ -1,5 +1,5 @@
-/**
- * $Id: rna_sculpt_paint.c 33611 2010-12-12 14:28:23Z campbellbarton $
+/*
+ * $Id: rna_sculpt_paint.c 35945 2011-04-01 20:36:27Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_sculpt_paint.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 
@@ -160,19 +165,23 @@ static int rna_ParticleEdit_hair_get(PointerRNA *ptr)
 static int rna_Brush_mode_poll(PointerRNA *ptr, PointerRNA value)
 {
 	Scene *scene= (Scene *)ptr->id.data;
-	Object *ob = OBACT;
+	ToolSettings *ts = scene->toolsettings;
 	Brush *brush= value.id.data;
-	
-	/* weak, for object painting we need to check against the object mode
-	 * but for 2D view image painting we always want texture brushes 
-	 * this is not quite correct since you could be in object weightpaint
-	 * mode at the same time as the 2D image view, but for now its *good enough* */
-	if(ob && ob->mode & OB_MODE_ALL_PAINT) {
-		return ob->mode & brush->ob_mode;
-	}
-	else {
-		return OB_MODE_TEXTURE_PAINT & brush->ob_mode;
-	}
+	int mode = 0;
+
+	/* check the origin of the Paint struct to see which paint
+	   mode to select from */
+
+	if(ptr->data == &ts->imapaint)
+		mode = OB_MODE_TEXTURE_PAINT;
+	else if(ptr->data == ts->sculpt)
+		mode = OB_MODE_SCULPT;
+	else if(ptr->data == ts->vpaint)
+		mode = OB_MODE_VERTEX_PAINT;
+	else if(ptr->data == ts->wpaint)
+		mode = OB_MODE_WEIGHT_PAINT;
+
+	return brush->ob_mode & mode;
 }
 
 #else
@@ -460,7 +469,7 @@ static void rna_def_particle_edit(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "size", PROP_INT, PROP_NONE);
 	RNA_def_property_range(prop, 1, SHRT_MAX);
 	RNA_def_property_ui_range(prop, 1, 100, 10, 3);
-	RNA_def_property_ui_text(prop, "Size", "Brush size");
+	RNA_def_property_ui_text(prop, "Radius", "Radius of the brush in pixels");
 
 	prop= RNA_def_property(srna, "strength", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_range(prop, 0.001, 1.0);

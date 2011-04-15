@@ -1,5 +1,5 @@
 /*
- * $Id: buildinfo.c 32581 2010-10-19 05:00:36Z jesterking $
+ * $Id: buildinfo.c 35139 2011-02-25 10:01:33Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,12 +27,26 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifdef BUILD_DATE
-#include "BKE_utildefines.h"
+/** \file creator/buildinfo.c
+ *  \ingroup creator
+ */
 
+
+#ifdef WITH_BUILDINFO_HEADER
+#include "buildinfo.h"
+#endif
+
+#ifdef BUILD_DATE
+
+/* copied from BLI_utildefines.h */
+#define STRINGIFY_ARG(x) #x
+#define STRINGIFY(x) STRINGIFY_ARG(x)
+
+/* currently only these are defined in the header */
 char build_date[]= STRINGIFY(BUILD_DATE);
 char build_time[]= STRINGIFY(BUILD_TIME);
 char build_rev[]= STRINGIFY(BUILD_REV);
+
 char build_platform[]= STRINGIFY(BUILD_PLATFORM);
 char build_type[]= STRINGIFY(BUILD_TYPE);
 

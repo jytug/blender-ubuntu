@@ -1,7 +1,5 @@
-/**
- * blenlib/DNA_view3d_types.h (mar-2001 nzc)
- *
- * $Id: DNA_view3d_types.h 33870 2010-12-23 04:26:53Z campbellbarton $ 
+/*
+ * $Id: DNA_view3d_types.h 35400 2011-03-08 07:44:30Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,6 +29,10 @@
 #ifndef DNA_VIEW3D_TYPES_H
 #define DNA_VIEW3D_TYPES_H
 
+/** \file DNA_view3d_types.h
+ *  \ingroup DNA
+ */
+
 struct ViewDepths;
 struct Object;
 struct Image;
@@ -39,7 +41,6 @@ struct SpaceLink;
 struct Base;
 struct BoundBox;
 struct RenderInfo;
-struct RetopoViewData;
 struct bGPdata;
 struct SmoothViewStore;
 struct wmTimer;
@@ -111,9 +112,8 @@ typedef struct RegionView3D {
 	
 	struct bGPdata *gpd;		/* Grease-Pencil Data (annotation layers) */
 	
-	struct RegionView3D *localvd;
+	struct RegionView3D *localvd; /* allocated backup of its self while in localview */
 	struct RenderInfo *ri;
-	struct RetopoViewData *retopo_view_data;
 	struct ViewDepths *depths;
 	
 	/* animated smooth view */
@@ -151,7 +151,7 @@ typedef struct View3D {
 	struct ListBase bgpicbase;
 	struct BGpic *bgpic; /* deprecated, use bgpicbase, only kept for do_versions(...) */
 
-	struct View3D *localvd;
+	struct View3D *localvd; /* allocated backup of its self while in localview */
 	
 	char ob_centre_bone[32];		/* optional string for armature bone to define center */
 	
@@ -204,20 +204,11 @@ typedef struct View3D {
 
 
 /* View3D->flag (short) */
-#define V3D_DISPIMAGE		1
+/*#define V3D_DISPIMAGE		1*/ /*UNUSED*/
 #define V3D_DISPBGPICS		2
 #define V3D_HIDE_HELPLINES	4
 #define V3D_INVALID_BACKBUF	8
-/* deprecated */
-/*
-#define V3D_MODE			(16+32+64+128+256+512)
-#define V3D_EDITMODE		16
-#define V3D_VERTEXPAINT		32
-#define V3D_FACESELECT		64
-#define V3D_POSEMODE		128
-#define V3D_TEXTUREPAINT	256
-#define V3D_WEIGHTPAINT		512
-*/
+
 #define V3D_ALIGN			1024
 #define V3D_SELECT_OUTLINE	2048
 #define V3D_ZBUF_SELECT		4096
@@ -294,7 +285,7 @@ typedef struct View3D {
    /* USE = user setting, DRAW = based on selection */
 #define V3D_USE_MANIPULATOR		1
 #define V3D_DRAW_MANIPULATOR	2
-#define V3D_CALC_MANIPULATOR	4
+/* #define V3D_CALC_MANIPULATOR	4 */ /*UNUSED*/
 
 /* BGPic->flag */
 /* may want to use 1 for select ?*/

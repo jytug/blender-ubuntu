@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_boolean.c 32668 2010-10-23 15:40:13Z campbellbarton $
+* $Id: MOD_boolean.c 35362 2011-03-05 10:29:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,15 +30,24 @@
 *
 */
 
+/** \file blender/modifiers/intern/MOD_boolean.c
+ *  \ingroup modifiers
+ */
+
+#include <stdio.h>
+
 #include "DNA_object_types.h"
 
-#include "BKE_utildefines.h"
+#include "BLI_utildefines.h"
+
+
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"
 
 #include "depsgraph_private.h"
 
 #include "MOD_boolean_util.h"
+#include "MOD_util.h"
 
 
 static void copyData(ModifierData *md, ModifierData *target)
@@ -136,18 +145,19 @@ ModifierTypeInfo modifierType_Boolean = {
 							| eModifierTypeFlag_UsesPointCache,
 
 	/* copyData */          copyData,
-	/* deformVerts */       0,
-	/* deformVertsEM */     0,
-	/* deformMatricesEM */  0,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   0,
-	/* initData */          0,
+	/* applyModifierEM */   NULL,
+	/* initData */          NULL,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          0,
+	/* freeData */          NULL,
 	/* isDisabled */        isDisabled,
 	/* updateDepgraph */    updateDepgraph,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
-	/* foreachIDLink */     0,
+	/* foreachIDLink */     NULL,
 };

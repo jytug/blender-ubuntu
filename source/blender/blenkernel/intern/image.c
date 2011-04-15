@@ -1,6 +1,6 @@
 /*  image.c
  * 
- * $Id: image.c 33769 2010-12-18 18:56:21Z ton $
+ * $Id: image.c 35604 2011-03-18 00:12:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenkernel/intern/image.c
+ *  \ingroup bke
+ */
+
 
 #include <stdio.h>
 #include <string.h>
@@ -54,12 +59,14 @@
 
 #include "DNA_packedFile_types.h"
 #include "DNA_scene_types.h"
+#include "DNA_object_types.h"
 #include "DNA_camera_types.h"
 #include "DNA_sequence_types.h"
 #include "DNA_userdef_types.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_threads.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_bmfont.h"
 #include "BKE_global.h"
@@ -70,8 +77,8 @@
 #include "BKE_packedFile.h"
 #include "BKE_scene.h"
 #include "BKE_node.h"
-
-//XXX #include "BIF_editseq.h"
+#include "BKE_sequencer.h" /* seq_foreground_frame_get() */
+#include "BKE_utildefines.h"
 
 #include "BLF_api.h"
 
@@ -97,7 +104,7 @@ static void de_interlace_ng(struct ImBuf *ibuf)	/* neogeo fields */
 {
 	struct ImBuf * tbuf1, * tbuf2;
 	
-	if (ibuf == 0) return;
+	if (ibuf == NULL) return;
 	if (ibuf->flags & IB_fields) return;
 	ibuf->flags |= IB_fields;
 	
@@ -125,7 +132,7 @@ static void de_interlace_st(struct ImBuf *ibuf)	/* standard fields */
 {
 	struct ImBuf * tbuf1, * tbuf2;
 	
-	if (ibuf == 0) return;
+	if (ibuf == NULL) return;
 	if (ibuf->flags & IB_fields) return;
 	ibuf->flags |= IB_fields;
 	
@@ -511,7 +518,7 @@ static void tag_all_images_time()
 }
 #endif
 
-void free_old_images()
+void free_old_images(void)
 {
 	Image *ima;
 	static int lasttime = 0;
@@ -524,6 +531,10 @@ void free_old_images()
 	if (U.textimeout == 0 || ctime % U.texcollectrate || ctime == lasttime)
 		return;
 
+	/* of course not! */
+	if (G.rendering)
+		return;
+	
 	lasttime = ctime;
 
 	ima= G.main->image.first;
@@ -839,9 +850,15 @@ int BKE_add_image_extension(char *string, int imtype)
 
 	if(extension) {
 		/* prefer this in many cases to avoid .png.tga, but in certain cases it breaks */
-		/* return BLI_replace_extension(string, FILE_MAX, extension); */
-		strcat(string, extension);
-		return TRUE;
+		/* remove any other known image extension */
+		if(BLI_testextensie_array(string, imb_ext_image)
+				  || (G.have_quicktime && BLI_testextensie_array(string, imb_ext_image_qt))) {
+			return BLI_replace_extension(string, FILE_MAX, extension);
+		} else {
+			strcat(string, extension);
+			return TRUE;
+		}
+		
 	}
 	else {
 		return FALSE;
@@ -857,6 +874,7 @@ typedef struct StampData {
 	char 	time[512];
 	char 	frame[512];
 	char 	camera[64];
+	char 	cameralens[64];
 	char 	scene[64];
 	char 	strip[64];
 	char 	rendertime[64];
@@ -869,32 +887,23 @@ static void stampdata(Scene *scene, StampData *stamp_data, int do_prefix)
 	time_t t;
 
 	if (scene->r.stamp & R_STAMP_FILENAME) {
-		if (G.relbase_valid) {
-			if (do_prefix)		sprintf(stamp_data->file, "File %s", G.main->name);
-			else				sprintf(stamp_data->file, "%s", G.main->name);
-		} else {
-			if (do_prefix)		strcpy(stamp_data->file, "File <untitled>");
-			else				strcpy(stamp_data->file, "<untitled>");
-		}
+		BLI_snprintf(stamp_data->file, sizeof(stamp_data->file), do_prefix ? "File %s":"%s", G.relbase_valid ? G.main->name:"<untitled>");
 	} else {
 		stamp_data->file[0] = '\0';
 	}
 	
 	if (scene->r.stamp & R_STAMP_NOTE) {
 		/* Never do prefix for Note */
-		sprintf(stamp_data->note, "%s", scene->r.stamp_udata);
+		BLI_snprintf(stamp_data->note, sizeof(stamp_data->note), "%s", scene->r.stamp_udata);
 	} else {
 		stamp_data->note[0] = '\0';
 	}
 	
 	if (scene->r.stamp & R_STAMP_DATE) {
-
-		t = time (NULL);
-		tl = localtime (&t);
-		sprintf (text, "%04d/%02d/%02d %02d:%02d:%02d", tl->tm_year+1900, tl->tm_mon+1, tl->tm_mday, tl->tm_hour, tl->tm_min, tl->tm_sec);
-
-		if (do_prefix)		sprintf(stamp_data->date, "Date %s", text);
-		else				sprintf(stamp_data->date, "%s", text);
+		t = time(NULL);
+		tl = localtime(&t);
+		BLI_snprintf(text, sizeof(text), "%04d/%02d/%02d %02d:%02d:%02d", tl->tm_year+1900, tl->tm_mon+1, tl->tm_mday, tl->tm_hour, tl->tm_min, tl->tm_sec);
+		BLI_snprintf(stamp_data->date, sizeof(stamp_data->date), do_prefix ? "Date %s":"%s", text);
 	} else {
 		stamp_data->date[0] = '\0';
 	}
@@ -904,18 +913,17 @@ static void stampdata(Scene *scene, StampData *stamp_data, int do_prefix)
 	
 		if (name)	strcpy(text, name);
 		else 		strcpy(text, "<none>");
-		
-		if (do_prefix)		sprintf(stamp_data->marker, "Marker %s", text);
-		else				sprintf(stamp_data->marker, "%s", text);
+
+		BLI_snprintf(stamp_data->marker, sizeof(stamp_data->marker), do_prefix ? "Marker %s":"%s", text);
 	} else {
 		stamp_data->marker[0] = '\0';
 	}
 	
 	if (scene->r.stamp & R_STAMP_TIME) {
-		int h, m, s, f;
-		h= m= s= f= 0;
-		f = (int)(scene->r.cfra % scene->r.frs_sec);
-		s = (int)(scene->r.cfra / scene->r.frs_sec);
+		int f = (int)(scene->r.cfra % scene->r.frs_sec);
+		int s = (int)(scene->r.cfra / scene->r.frs_sec);
+		int h= 0;
+		int m= 0;
 
 		if (s) {
 			m = (int)(s / 60);
@@ -928,12 +936,11 @@ static void stampdata(Scene *scene, StampData *stamp_data, int do_prefix)
 		}
 
 		if (scene->r.frs_sec < 100)
-			sprintf (text, "%02d:%02d:%02d.%02d", h, m, s, f);
+			BLI_snprintf(text, sizeof(text), "%02d:%02d:%02d.%02d", h, m, s, f);
 		else
-			sprintf (text, "%02d:%02d:%02d.%03d", h, m, s, f);
-		
-		if (do_prefix)		sprintf(stamp_data->time, "Time %s", text);
-		else				sprintf(stamp_data->time, "%s", text);
+			BLI_snprintf(text, sizeof(text), "%02d:%02d:%02d.%03d", h, m, s, f);
+
+		BLI_snprintf(stamp_data->time, sizeof(stamp_data->time), do_prefix ? "Time %s":"%s", text);
 	} else {
 		stamp_data->time[0] = '\0';
 	}
@@ -944,39 +951,43 @@ static void stampdata(Scene *scene, StampData *stamp_data, int do_prefix)
 		
 		if(scene->r.efra>9)
 			digits= 1 + (int) log10(scene->r.efra);
-		
-		if (do_prefix)		sprintf(format, "Frame %%0%di", digits);
-		else				sprintf(format, "%%0%di", digits);
-		sprintf (stamp_data->frame, format, scene->r.cfra);
+
+		BLI_snprintf(format, sizeof(format), do_prefix ? "Frame %%0%di":"%%0%di", digits);
+		BLI_snprintf (stamp_data->frame, sizeof(stamp_data->frame), format, scene->r.cfra);
 	} else {
 		stamp_data->frame[0] = '\0';
 	}
 
 	if (scene->r.stamp & R_STAMP_CAMERA) {
-		if (scene->camera) strcpy(text, ((Camera *) scene->camera)->id.name+2);
-		else 		strcpy(text, "<none>");
-		
-		if (do_prefix)		sprintf(stamp_data->camera, "Camera %s", text);
-		else				sprintf(stamp_data->camera, "%s", text);
+		BLI_snprintf(stamp_data->camera, sizeof(stamp_data->camera), do_prefix ? "Camera %s":"%s", scene->camera ? scene->camera->id.name+2 : "<none>");
 	} else {
 		stamp_data->camera[0] = '\0';
 	}
 
+	if (scene->r.stamp & R_STAMP_CAMERALENS) {
+		if (scene->camera && scene->camera->type == OB_CAMERA) {
+			BLI_snprintf(text, sizeof(text), "%.2f", ((Camera *)scene->camera->data)->lens);
+		}
+		else 		strcpy(text, "<none>");
+
+		BLI_snprintf(stamp_data->cameralens, sizeof(stamp_data->cameralens), do_prefix ? "Lens %s":"%s", text);
+	} else {
+		stamp_data->cameralens[0] = '\0';
+	}
+
 	if (scene->r.stamp & R_STAMP_SCENE) {
-		if (do_prefix)		sprintf(stamp_data->scene, "Scene %s", scene->id.name+2);
-		else				sprintf(stamp_data->scene, "%s", scene->id.name+2);
+		BLI_snprintf(stamp_data->scene, sizeof(stamp_data->scene), do_prefix ? "Scene %s":"%s", scene->id.name+2);
 	} else {
 		stamp_data->scene[0] = '\0';
 	}
 	
 	if (scene->r.stamp & R_STAMP_SEQSTRIP) {
-		Sequence *seq= NULL; //XXX = get_foreground_frame_seq(scene->r.cfra);
+		Sequence *seq= seq_foreground_frame_get(scene, scene->r.cfra);
 	
 		if (seq) strcpy(text, seq->name+2);
 		else 		strcpy(text, "<none>");
-		
-		if (do_prefix)		sprintf(stamp_data->strip, "Strip %s", text);
-		else				sprintf(stamp_data->strip, "%s", text);
+
+		BLI_snprintf(stamp_data->strip, sizeof(stamp_data->strip), do_prefix ? "Strip %s":"%s", text);
 	} else {
 		stamp_data->strip[0] = '\0';
 	}
@@ -988,8 +999,7 @@ static void stampdata(Scene *scene, StampData *stamp_data, int do_prefix)
 		if (stats && (scene->r.stamp & R_STAMP_RENDERTIME)) {
 			BLI_timestr(stats->lastframetime, text);
 
-			if (do_prefix)		sprintf(stamp_data->rendertime, "RenderTime %s", text);
-			else				sprintf(stamp_data->rendertime, "%s", text);
+			BLI_snprintf(stamp_data->rendertime, sizeof(stamp_data->rendertime), do_prefix ? "RenderTime %s":"%s", text);
 		} else {
 			stamp_data->rendertime[0] = '\0';
 		}
@@ -1143,6 +1153,18 @@ void BKE_stamp_buf(Scene *scene, unsigned char *rect, float *rectf, int width, i
 		buf_rectfill_area(rect, rectf, width, height, scene->r.bg_stamp, x, y, x+w+2, y+h+2);
 		BLF_position(mono, x, y+3, 0.0);
 		BLF_draw_buffer(mono, stamp_data.camera);
+
+		/* space width. */
+		x += w + pad;
+	}
+
+	if (stamp_data.cameralens[0]) {
+		BLF_width_and_height(mono, stamp_data.cameralens, &w, &h); h= h_fixed;
+
+		/* extra space for background. */
+		buf_rectfill_area(rect, rectf, width, height, scene->r.bg_stamp, x, y, x+w+2, y+h+2);
+		BLF_position(mono, x, y+3, 0.0);
+		BLF_draw_buffer(mono, stamp_data.cameralens);
 	}
 	
 	if (stamp_data.scene[0]) {
@@ -1193,6 +1215,7 @@ void BKE_stamp_info(Scene *scene, struct ImBuf *ibuf)
 	if (stamp_data.time[0])		IMB_metadata_change_field (ibuf, "Time",		stamp_data.time);
 	if (stamp_data.frame[0])	IMB_metadata_change_field (ibuf, "Frame",	stamp_data.frame);
 	if (stamp_data.camera[0])	IMB_metadata_change_field (ibuf, "Camera",	stamp_data.camera);
+	if (stamp_data.cameralens[0]) IMB_metadata_change_field (ibuf, "Lens",	stamp_data.cameralens);
 	if (stamp_data.scene[0])	IMB_metadata_change_field (ibuf, "Scene",	stamp_data.scene);
 	if (stamp_data.strip[0])	IMB_metadata_change_field (ibuf, "Strip",	stamp_data.strip);
 	if (stamp_data.rendertime[0]) IMB_metadata_change_field (ibuf, "RenderTime", stamp_data.rendertime);
@@ -1226,14 +1249,14 @@ int BKE_write_ibuf(Scene *scene, ImBuf *ibuf, const char *name, int imtype, int 
 	int ok;
 	(void)subimtype; /* quies unused warnings */
 
-	if(imtype==0) {
-		/* pass */
+	if(imtype == -1) {
+		/* use whatever existing image type is set by 'ibuf' */
 	}
 	else if(imtype== R_IRIS) {
 		ibuf->ftype= IMAGIC;
 	}
 #ifdef WITH_HDR
-	else if ((imtype==R_RADHDR)) {
+	else if (imtype==R_RADHDR) {
 		ibuf->ftype= RADHDR;
 	}
 #endif
@@ -1245,11 +1268,11 @@ int BKE_write_ibuf(Scene *scene, ImBuf *ibuf, const char *name, int imtype, int 
 
 	}
 #ifdef WITH_DDS
-	else if ((imtype==R_DDS)) {
+	else if (imtype==R_DDS) {
 		ibuf->ftype= DDS;
 	}
 #endif
-	else if ((imtype==R_BMP)) {
+	else if (imtype==R_BMP) {
 		ibuf->ftype= BMP;
 	}
 #ifdef WITH_TIFF
@@ -1350,7 +1373,7 @@ struct anim *openanim(char *name, int flags)
 	struct ImBuf *ibuf;
 	
 	anim = IMB_open_anim(name, flags);
-	if (anim == NULL) return(0);
+	if (anim == NULL) return NULL;
 
 	ibuf = IMB_anim_absolute(anim, 0);
 	if (ibuf == NULL) {
@@ -1359,7 +1382,7 @@ struct anim *openanim(char *name, int flags)
 		else
 			printf("anim file doesn't exist: %s\n", name);
 		IMB_free_anim(anim);
-		return(0);
+		return NULL;
 	}
 	IMB_freeImBuf(ibuf);
 	
@@ -2174,10 +2197,7 @@ ImBuf *BKE_image_acquire_ibuf(Image *ima, ImageUser *iuser, void **lock_r)
 		BLI_unlock_thread(LOCK_IMAGE);
 	}
 
-	/* we assuming that if it is not rendering, it's also not multithreaded
-	 * (a somewhat weak assumption) */
-	if(G.rendering==0)
-		tag_image_time(ima);
+	tag_image_time(ima);
 
 	return ibuf;
 }

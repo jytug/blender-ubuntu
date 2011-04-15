@@ -1,5 +1,5 @@
-/**
- * $Id: object_modifier.c 33774 2010-12-19 01:55:07Z gsrb3d $
+/*
+ * $Id: object_modifier.c 35840 2011-03-28 08:27:19Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/object/object_modifier.c
+ *  \ingroup edobj
+ */
+
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +48,7 @@
 #include "BLI_string.h"
 #include "BLI_path_util.h"
 #include "BLI_editVert.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_curve.h"
 #include "BKE_context.h"
@@ -290,7 +296,7 @@ int ED_object_modifier_convert(ReportList *UNUSED(reports), Main *bmain, Scene *
 	psys=((ParticleSystemModifierData *)md)->psys;
 	part= psys->part;
 
-	if(part->ren_as != PART_DRAW_PATH || psys->pathcache == 0)
+	if(part->ren_as != PART_DRAW_PATH || psys->pathcache == NULL)
 		return 0;
 
 	totpart= psys->totcached;
@@ -303,15 +309,21 @@ int ED_object_modifier_convert(ReportList *UNUSED(reports), Main *bmain, Scene *
 	cache= psys->pathcache;
 	for(a=0; a<totpart; a++) {
 		key= cache[a];
-		totvert+= key->steps+1;
-		totedge+= key->steps;
+
+		if(key->steps > 0) {
+			totvert+= key->steps+1;
+			totedge+= key->steps;
+		}
 	}
 
 	cache= psys->childcache;
 	for(a=0; a<totchild; a++) {
 		key= cache[a];
-		totvert+= key->steps+1;
-		totedge+= key->steps;
+
+		if(key->steps > 0) {
+			totvert+= key->steps+1;
+			totedge+= key->steps;
+		}
 	}
 
 	if(totvert==0) return 0;
@@ -626,7 +638,7 @@ static int edit_modifier_poll_generic(bContext *C, StructRNA *rna_type, int obty
 	
 	if (!ob || ob->id.lib) return 0;
 	if (obtype_flag && ((1<<ob->type) & obtype_flag)==0) return 0;
-	if (ptr.data && ((ID*)ptr.id.data)->lib) return 0;
+	if (ptr.id.data && ((ID*)ptr.id.data)->lib) return 0;
 	
 	return 1;
 }
@@ -1175,6 +1187,48 @@ void OBJECT_OT_multires_external_pack(wmOperatorType *ot)
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
+
+/********************* multires apply base ***********************/
+static int multires_base_apply_exec(bContext *C, wmOperator *op)
+{
+	Object *ob = ED_object_active_context(C);
+	MultiresModifierData *mmd = (MultiresModifierData *)edit_modifier_property_get(op, ob, eModifierType_Multires);
+	
+	if (!mmd)
+		return OPERATOR_CANCELLED;
+	
+	multiresModifier_base_apply(mmd, ob);
+
+	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
+	WM_event_add_notifier(C, NC_OBJECT|ND_MODIFIER, ob);
+	
+	return OPERATOR_FINISHED;
+}
+
+static int multires_base_apply_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+{
+	if (edit_modifier_invoke_properties(C, op))
+		return multires_base_apply_exec(C, op);
+	else
+		return OPERATOR_CANCELLED;
+}
+
+
+void OBJECT_OT_multires_base_apply(wmOperatorType *ot)
+{
+	ot->name= "Multires Apply Base";
+	ot->description= "Modify the base mesh to conform to the displaced mesh";
+	ot->idname= "OBJECT_OT_multires_base_apply";
+
+	ot->poll= multires_poll;
+	ot->invoke= multires_base_apply_invoke;
+	ot->exec= multires_base_apply_exec;
+	
+	/* flags */
+	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	edit_modifier_properties(ot);
+}
+
 
 /************************ mdef bind operator *********************/
 

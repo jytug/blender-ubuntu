@@ -1,5 +1,5 @@
-/**
- * $Id: rna_pose.c 33853 2010-12-22 16:33:13Z ton $
+/*
+ * $Id: rna_pose.c 35939 2011-04-01 14:04:26Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_pose.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -547,13 +552,17 @@ static int rna_PoseChannel_rotation_4d_editable(PointerRNA *ptr, int index)
 }
 
 /* not essential, but much faster then the default lookup function */
-PointerRNA rna_PoseBones_lookup_string(PointerRNA *ptr, const char *key)
+int rna_PoseBones_lookup_string(PointerRNA *ptr, const char *key, PointerRNA *r_ptr)
 {
-	PointerRNA rptr;
 	bPose *pose= (bPose*)ptr->data;
 	bPoseChannel *pchan= get_pose_channel(pose, key);
-	RNA_pointer_create(ptr->id.data, &RNA_PoseBone, pchan, &rptr);
-	return rptr;
+	if(pchan) {
+		RNA_pointer_create(ptr->id.data, &RNA_PoseBone, pchan, r_ptr);
+		return TRUE;
+	}
+	else {
+		return FALSE;
+	}
 }
 
 static void rna_PoseChannel_matrix_basis_get(PointerRNA *ptr, float *values)
@@ -565,7 +574,7 @@ static void rna_PoseChannel_matrix_basis_get(PointerRNA *ptr, float *values)
 static void rna_PoseChannel_matrix_basis_set(PointerRNA *ptr, const float *values)
 {
 	bPoseChannel *pchan= (bPoseChannel*)ptr->data;
-	pchan_apply_mat4(pchan, (float (*)[4])values, FALSE); /* no compat for pradictable result */
+	pchan_apply_mat4(pchan, (float (*)[4])values, FALSE); /* no compat for predictable result */
 }
 
 #else
@@ -814,7 +823,7 @@ static void rna_def_pose_channel(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "pose_mat");
 	RNA_def_property_multi_array(prop, 2, matrix_dimsize);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE); 
-	RNA_def_property_ui_text(prop, "Pose Matrix", "Final 4x4 matrix for this channel");
+	RNA_def_property_ui_text(prop, "Pose Matrix", "Final 4x4 matrix after constraints and drivers are applied (object space)");
 
 	/* Head/Tail Coordinates (in Pose Space) - Automatically calculated... */
 	prop= RNA_def_property(srna, "head", PROP_FLOAT, PROP_TRANSLATION);
@@ -1202,7 +1211,7 @@ static void rna_def_pose(BlenderRNA *brna)
 	RNA_def_property_collection_sdna(prop, NULL, "chanbase", NULL);
 	RNA_def_property_struct_type(prop, "PoseBone");
 	RNA_def_property_ui_text(prop, "Pose Bones", "Individual pose bones for the armature");
-	RNA_def_property_collection_funcs(prop, 0, 0, 0, 0, 0, 0, "rna_PoseBones_lookup_string"); /* can be removed, only for fast lookup */
+	RNA_def_property_collection_funcs(prop, NULL, NULL, NULL, NULL, NULL, NULL, "rna_PoseBones_lookup_string"); /* can be removed, only for fast lookup */
 	/* bone groups */
 	prop= RNA_def_property(srna, "bone_groups", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "agroups", NULL);

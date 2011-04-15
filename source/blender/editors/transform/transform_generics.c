@@ -1,5 +1,5 @@
-/**
- * $Id: transform_generics.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: transform_generics.c 36055 2011-04-08 12:02:30Z lukastoenne $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/transform/transform_generics.c
+ *  \ingroup edtransform
+ */
+
 
 #include <string.h>
 #include <math.h>
@@ -87,7 +92,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_editVert.h"
 #include "BLI_rand.h"
-
+#include "BLI_utildefines.h"
 
 #include "WM_types.h"
 #include "WM_api.h"
@@ -269,7 +274,7 @@ static void animrecord_check_state (Scene *scene, ID *id, wmTimer *animtimer)
 	 *	- we're not only keying for available channels
 	 *	- the option to add new actions for each round is not enabled
 	 */
-	if (IS_AUTOKEY_FLAG(INSERTAVAIL)==0 && (scene->toolsettings->autokey_flag & ANIMRECORD_FLAG_WITHNLA)) {
+	if (IS_AUTOKEY_FLAG(scene, INSERTAVAIL)==0 && (scene->toolsettings->autokey_flag & ANIMRECORD_FLAG_WITHNLA)) {
 		/* if playback has just looped around, we need to add a new NLA track+strip to allow a clean pass to occur */
 		if ((sad) && (sad->flag & ANIMPLAY_FLAG_JUMPED)) {
 			AnimData *adt= BKE_animdata_from_id(id);
@@ -333,7 +338,7 @@ void recalcData(TransInfo *t)
 		Scene *scene= t->scene;
 		SpaceAction *saction= (SpaceAction *)t->sa->spacedata.first;
 		
-		bAnimContext ac= {0};
+		bAnimContext ac= {NULL};
 		ListBase anim_data = {NULL, NULL};
 		bAnimListElem *ale;
 		int filter;
@@ -349,22 +354,29 @@ void recalcData(TransInfo *t)
 		
 		ANIM_animdata_context_getdata(&ac);
 		
-		/* get animdata blocks visible in editor, assuming that these will be the ones where things changed */
-		filter= (ANIMFILTER_VISIBLE | ANIMFILTER_ANIMDATA);
-		ANIM_animdata_filter(&ac, &anim_data, filter, ac.data, ac.datatype);
-		
-		/* just tag these animdata-blocks to recalc, assuming that some data there changed 
-		 * BUT only do this if realtime updates are enabled
-		 */
-		if ((saction->flag & SACTION_NOREALTIMEUPDATES) == 0) {
-			for (ale= anim_data.first; ale; ale= ale->next) {
-				/* set refresh tags for objects using this animation */
-				ANIM_list_elem_update(t->scene, ale);
-			}
+		/* perform flush */
+		if (ac.datatype == ANIMCONT_GPENCIL) {
+			/* flush transform values back to actual coordinates */
+			flushTransGPactionData(t);
 		}
-		
-		/* now free temp channels */
-		BLI_freelistN(&anim_data);
+		else {
+			/* get animdata blocks visible in editor, assuming that these will be the ones where things changed */
+			filter= (ANIMFILTER_VISIBLE | ANIMFILTER_ANIMDATA);
+			ANIM_animdata_filter(&ac, &anim_data, filter, ac.data, ac.datatype);
+			
+			/* just tag these animdata-blocks to recalc, assuming that some data there changed 
+			 * BUT only do this if realtime updates are enabled
+			 */
+			if ((saction->flag & SACTION_NOREALTIMEUPDATES) == 0) {
+				for (ale= anim_data.first; ale; ale= ale->next) {
+					/* set refresh tags for objects using this animation */
+					ANIM_list_elem_update(t->scene, ale);
+				}
+			}
+			
+			/* now free temp channels */
+			BLI_freelistN(&anim_data);
+		}
 	}
 	else if (t->spacetype == SPACE_IPO) {
 		Scene *scene;
@@ -952,7 +964,7 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 		t->options |= CTX_EDGE;
 	}
 
-	t->spacetype = sa->spacetype;
+	t->spacetype = sa ? sa->spacetype : SPACE_EMPTY; /* background mode */
 	if(t->spacetype == SPACE_VIEW3D)
 	{
 		View3D *v3d = sa->spacedata.first;
@@ -983,13 +995,20 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 		{
 			t->current_orientation = v3d->twmode;
 		}
+
+		/* exceptional case */
+		if(t->around==V3D_LOCAL && (t->settings->selectmode & SCE_SELECT_FACE)) {
+			if(ELEM3(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL)) {
+				t->options |= CTX_NO_PET;
+			}
+		}
 	}
 	else if(t->spacetype==SPACE_IMAGE || t->spacetype==SPACE_NODE)
 	{
 		SpaceImage *sima = sa->spacedata.first;
 		// XXX for now, get View2D  from the active region
 		t->view = &ar->v2d;
-		t->around = sima->around;
+		t->around = (sima ? sima->around : 0);
 	}
 	else if(t->spacetype==SPACE_IPO) 
 	{
@@ -1304,7 +1323,7 @@ void calculateCenterCursor2D(TransInfo *t)
 	calculateCenter2D(t);
 }
 
-void calculateCenterCursorGraph2D(TransInfo *t)
+static void calculateCenterCursorGraph2D(TransInfo *t)
 {
 	SpaceIpo *sipo= (SpaceIpo *)t->sa->spacedata.first;
 	Scene *scene= t->scene;

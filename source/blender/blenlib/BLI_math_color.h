@@ -1,5 +1,5 @@
-/**
- * $Id: BLI_math_color.h 33799 2010-12-20 03:59:22Z campbellbarton $
+/*
+ * $Id: BLI_math_color.h 34966 2011-02-18 13:58:08Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,8 +25,12 @@
  * ***** END GPL LICENSE BLOCK *****
  * */
 
-#ifndef BLI_MATH_COLOR
-#define BLI_MATH_COLOR
+#ifndef BLI_MATH_COLOR_H
+#define BLI_MATH_COLOR_H
+
+/** \file BLI_math_color.h
+ *  \ingroup bli
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,5 +106,5 @@ void rgb_float_to_byte(const float *in, unsigned char *out);
 }
 #endif
 
-#endif /* BLI_MATH_COLOR */
+#endif /* BLI_MATH_COLOR_H */
 

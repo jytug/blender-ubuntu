@@ -16,12 +16,12 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     "name": "HiRISE DTM from PDS IMG",
     "author": "Tim Spriggs (tims@uahirise.org)",
     "version": (0, 1, 2),
-    "blender": (2, 5, 3),
-    "api": 31998,
+    "blender": (2, 5, 7),
+    "api": 35622,
     "location": "File > Import > HiRISE DTM from PDS IMG (.IMG)",
     "description": "Import a HiRISE DTM formatted as a PDS IMG file",
     "warning": "May consume a lot of memory",
@@ -119,9 +119,13 @@ def menu_import(self, context):
     self.layout.operator(ImportHiRISEIMGDTM.bl_idname, text="HiRISE DTM from PDS IMG (*.IMG)")
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_import.append(menu_import)
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_import.remove(menu_import)
 
 if __name__ == "__main__":

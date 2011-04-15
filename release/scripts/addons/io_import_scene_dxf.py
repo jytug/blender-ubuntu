@@ -16,20 +16,22 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
-    'name': 'Import Autocad DXF (.dxf)',
-    'author': 'Thomas Larsson',
-    'version': (0, 1, 3),
-    'blender': (2, 5, 6),
-    'api': 32738,
-    'location': 'File > Import',
+bl_info = {
+    'name': 'Import Autocad DXF Format (.dxf)',
+    'author': 'Thomas Larsson, Remigiusz Fiedler',
+    'version': (0, 1, 5),
+    "blender": (2, 5, 7),
+    "api": 36079,
+    'location': 'File > Import > Autocad (.dxf)',
     'description': 'Import files in the Autocad DXF format (.dxf)',
-    'warning': 'supporting only a sub-set of DXF specification',
+    'warning': 'only a part of DXF specification is supported: Work in Progress',
     'wiki_url': 'http://wiki.blender.org/index.php/Extensions:2.5/Py/'\
         'Scripts/Import-Export/DXF_Importer',
     'tracker_url': 'https://projects.blender.org/tracker/index.php?'\
-        'func=detail&aid=23480&group_id=153&atid=469',
-    'category': 'Import-Export'}
+        'func=detail&aid=23480',
+    'support': 'OFFICIAL',
+    'category': 'Import-Export',
+    }
 
 """
 Release note by migius (DXF support maintainer) 2011.01.02:
@@ -50,11 +52,18 @@ Probably no more improvements will be done to this script.
 The full-feature importer script from 2.49 will be back in 2.6 release.
 
 Installation:
-Place this file to Blender addons directory (on Windows it is %Blender_directory%\2.53\scripts\addons\)
+Place this file to Blender addons directory
+  (on Windows it is %Blender_directory%\2.53\scripts\addons\)
 You must activate the script in the "Add-Ons" tab (user preferences).
 Access it from File > Import menu.
 
 History:
+ver 0.1.5 - 2011.02.05 by migius for r.34661
+- changed support level to OFFICIAL
+- fixed missing last point at building Mesh-ARCs (by pildanovak)
+- fixed for changes in API and mathutils by campbell
+ver 0.1.4 - 2011.01.13 by migius
+- modified for latest API in rev.34300 (by Filiciss Muhgue)
 ver 0.1.3 - 2011.01.02 by migius
 - added draw curves as sequence for "Draw_as_Curve"
 - added toggle "Draw as one" as user preset in UI
@@ -73,7 +82,7 @@ ver 0.1.1 - 2010.09.07 by migius
 ver 0.1 - 2010.06.10 by Thomas Larsson
 """
 
-__version__ = '.'.join([str(s) for s in bl_addon_info['version']])
+__version__ = '.'.join([str(s) for s in bl_info['version']])
 
 import os
 import codecs
@@ -275,7 +284,7 @@ class CArc(CEntity):
         v0 = vn
         points = []
         edges, faces = [], []
-        for n in range(theCircleRes):
+        for n in range(theCircleRes + 1):
             s = math.sin(n*w + phi0)
             c = math.cos(n*w + phi0)
             v = center + Vector((r*c, r*s, 0.0))
@@ -1393,34 +1402,35 @@ def getOCS(az):  #--------------------------------------------------------------
         if az.z > 0.0:
             return False
         elif az.z < 0.0:
-            return Matrix(-WORLDX, WORLDY*1, -WORLDZ)
+            return Matrix((-WORLDX, WORLDY*1, -WORLDZ))
 
     cap = 0.015625 # square polar cap value (1/64.0)
     if abs(az.x) < cap and abs(az.y) < cap:
         ax = WORLDY.cross(az)
     else:
         ax = WORLDZ.cross(az)
-    ax = ax.normalize()
+    ax.normalize()
     ay = az.cross(ax)
-    ay = ay.normalize()
-    return Matrix(ax, ay, az)
+    ay.normalize()
+    return Matrix((ax, ay, az))
 
 
 
 def transform(normal, rotation, obj):  #--------------------------------------------
     """Use the calculated ocs to determine the objects location/orientation in space.
     """
-    ma = Matrix([1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1])
+    ma = Matrix(((1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1)))
     o = Vector(obj.location)
     ma_new = getOCS(normal)
     if ma_new:
-        ma = ma_new.resize4x4()
-        o = o * ma #.copy().invert()
+        ma = ma_new
+        ma.resize_4x4()
+        o = o * ma
 
     if rotation != 0:
         g = radians(-rotation)
-        rmat = Matrix([cos(g), -sin(g), 0], [sin(g), cos(g), 0], [0, 0, 1])
-        ma = ma * rmat.resize4x4()
+        rmat = Matrix(((cos(g), -sin(g), 0), (sin(g), cos(g), 0), (0, 0, 1)))
+        ma = ma * rmat.to_4x4()
 
     obj.matrix_world = ma #must be matrix4x4
     obj.location = o
@@ -2276,10 +2286,10 @@ def drawGeometry(verts, edges=[], faces=[]):
     if verts:
         if edges and (toggle & T_Curves):
             print ('draw Curve')
-            cu = bpy.data.curves.new('DXFLines', 'CURVE')
+            cu = bpy.data.curves.new('DXFlines', 'CURVE')
             cu.dimensions = '3D'
             buildSplines(cu, verts, edges)
-            ob = addObject('DXFLines', cu)
+            ob = addObject('DXFlines', cu)
         else:
             #for v in verts: print(v)
             #print ('draw Mesh with %s vertices' %(len(verts)))
@@ -2311,9 +2321,9 @@ def buildSplines(cu, verts, edges):
             v1_old = v1
         point_list.append(newPoints)
         for points in point_list:
-            #spline = cu.splines.new('BEZIER')
             spline = cu.splines.new('POLY')
-            #spline.endpoint_u = True
+            #spline = cu.splines.new('BEZIER')
+            #spline.use_endpoint_u = True
             #spline.order_u = 2
             #spline.resolution_u = 1
             #spline.bezier_points.add(2)
@@ -2323,8 +2333,8 @@ def buildSplines(cu, verts, edges):
             for i,p in enumerate(points):
                 spline.points[i].co = (p[0],p[1],p[2],0)
                 
-        print ('spline.type=', spline.type)
-        print ('cu spline number=', len(cu.splines))
+        #print ('spline.type=', spline.type)
+        #print ('spline number=', len(cu.splines))
     
     
 def addObject(name, data):
@@ -2415,7 +2425,7 @@ class IMPORT_OT_autocad_dxf(bpy.types.Operator):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
 
-    filepath = StringProperty(name="File Path", description="Filepath used for importing the DXF file", maxlen= 1024, default= "")
+    filepath = StringProperty(name="File Path", description="Filepath used for importing the DXF file", maxlen= 1024, default= "", subtype='FILE_PATH')
 
     new_scene = BoolProperty(name="Replace scene", description="Replace scene", default=toggle&T_NewScene)
     #new_scene = BoolProperty(name="New scene", description="Create new scene", default=toggle&T_NewScene)
@@ -2471,21 +2481,21 @@ class IMPORT_OT_autocad_dxf(bpy.types.Operator):
          
     def execute(self, context):
         global toggle, theMergeLimit, theCodec, theCircleRes
-        O_Merge = T_Merge if self.properties.merge else 0
-        #O_Replace = T_Replace if self.properties.replace else 0
-        O_NewScene = T_NewScene if self.properties.new_scene else 0
-        O_Curves = T_Curves if self.properties.curves else 0
-        O_ThicON = T_ThicON if self.properties.thic_on else 0
-        O_DrawOne = T_DrawOne if self.properties.draw_one else 0
-        O_Debug = T_Debug if self.properties.debug else 0
-        O_Verbose = T_Verbose if self.properties.verbose else 0
+        O_Merge = T_Merge if self.merge else 0
+        #O_Replace = T_Replace if self.replace else 0
+        O_NewScene = T_NewScene if self.new_scene else 0
+        O_Curves = T_Curves if self.curves else 0
+        O_ThicON = T_ThicON if self.thic_on else 0
+        O_DrawOne = T_DrawOne if self.draw_one else 0
+        O_Debug = T_Debug if self.debug else 0
+        O_Verbose = T_Verbose if self.verbose else 0
 
         toggle =  O_Merge | O_DrawOne | O_NewScene | O_Curves | O_ThicON | O_Debug | O_Verbose
-        theMergeLimit = self.properties.mergeLimit*1e-4
-        theCircleRes = self.properties.circleResolution
-        theCodec = self.properties.codec
+        theMergeLimit = self.mergeLimit*1e-4
+        theCircleRes = self.circleResolution
+        theCodec = self.codec
 
-        readAndBuildDxfFile(self.properties.filepath)
+        readAndBuildDxfFile(self.filepath)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -2493,14 +2503,22 @@ class IMPORT_OT_autocad_dxf(bpy.types.Operator):
         wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
+
 def menu_func(self, context):
     self.layout.operator(IMPORT_OT_autocad_dxf.bl_idname, text="Autocad (.dxf)")
 
+
 def register():
-     bpy.types.INFO_MT_file_import.append(menu_func)
+    bpy.utils.register_module(__name__)
+
+    bpy.types.INFO_MT_file_import.append(menu_func)
+
  
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_import.remove(menu_func)
+
 
 if __name__ == "__main__":
     register()

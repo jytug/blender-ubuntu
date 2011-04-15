@@ -1,9 +1,9 @@
-/**
+/*
  * BME_tools.c    jan 2007
  *
  *	Functions for changing the topology of a mesh.
  *
- * $Id: BME_tools.c 32532 2010-10-17 06:38:56Z campbellbarton $
+ * $Id: BME_tools.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -31,6 +31,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/BME_tools.c
+ *  \ingroup bke
+ */
+
+
 #include <math.h>
 
 #include "MEM_guardedalloc.h"
@@ -38,8 +43,10 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 
-#include "BKE_bmesh.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
+
+#include "BKE_bmesh.h"
 
 /*split this all into a seperate bevel.c file in src*/
 

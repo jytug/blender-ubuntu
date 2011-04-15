@@ -1,5 +1,5 @@
 /*  
- * $Id: DNA_action_types.h 33546 2010-12-08 04:40:20Z campbellbarton $
+ * $Id: DNA_action_types.h 35936 2011-04-01 12:21:41Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,10 @@
  * Contributor(s): Animation recode, Joshua Leung
  *
  * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file DNA_action_types.h
+ *  \ingroup DNA
  */
 
 
@@ -299,8 +303,8 @@ typedef enum eRotationModes {
 		/* quaternion rotations (default, and for older Blender versions) */
 	ROT_MODE_QUAT	= 0,
 		/* euler rotations - keep in sync with enum in BLI_math.h */
-	ROT_MODE_EUL = 1,		/* Blender 'default' (classic) - must be as 1 to sync with arithb defines */
-	ROT_MODE_XYZ = 1,		/* Blender 'default' (classic) - must be as 1 to sync with arithb defines */
+	ROT_MODE_EUL = 1,		/* Blender 'default' (classic) - must be as 1 to sync with BLI_math_rotation.h defines */
+	ROT_MODE_XYZ = 1,
 	ROT_MODE_XZY,
 	ROT_MODE_YXZ,
 	ROT_MODE_YZX,
@@ -327,7 +331,9 @@ typedef struct bPose {
 	ListBase chanbase; 			/* list of pose channels, PoseBones in RNA */
 	struct GHash *chanhash;		/* ghash for quicker string lookups */
 	
-	short flag, proxy_layer;	/* proxy layer: copy from armature, gets synced */
+	short flag, pad;
+	unsigned int proxy_layer;	/* proxy layer: copy from armature, gets synced */
+	int pad1;
 	
 	float ctime;				/* local action time of this pose */
 	float stride_offset[3];		/* applied to object */
@@ -505,7 +511,8 @@ typedef struct bDopeSheet {
 	ID 		*source;			/* currently ID_SCE (for Dopesheet), and ID_SC (for Grease Pencil) */
 	ListBase chanbase;			/* cache for channels (only initialised when pinned) */  // XXX not used!
 	
-	struct Group *filter_grp;	/* object group for ADS_FILTER_ONLYOBGROUP filtering option */ 
+	struct Group *filter_grp;	/* object group for ADS_FILTER_ONLYOBGROUP filtering option */
+	char searchstr[64];			/* string to search for in displayed names of F-Curves for ADS_FILTER_BY_FCU_NAME filtering option */
 	
 	int filterflag;				/* flags to use for filtering data */
 	int flag;					/* standard flags */
@@ -530,7 +537,7 @@ typedef enum eDopeSheet_FilterFlag {
 	ADS_FILTER_NOSHAPEKEYS 		= (1<<6),
 	ADS_FILTER_NOMESH			= (1<<7),
 	ADS_FILTER_NOOBJ			= (1<<8),	/* for animdata on object level, if we only want to concentrate on materials/etc. */
-	// NOTE: there are a few more spaces for datablock filtering here...
+	ADS_FILTER_NOLAT			= (1<<9),
 	ADS_FILTER_NOCAM			= (1<<10),
 	ADS_FILTER_NOMAT			= (1<<11),
 	ADS_FILTER_NOLAM			= (1<<12),
@@ -548,6 +555,7 @@ typedef enum eDopeSheet_FilterFlag {
 	
 		/* general filtering 3 */
 	ADS_FILTER_INCL_HIDDEN		= (1<<26),	/* include 'hidden' channels too (i.e. those from hidden Objects/Bones) */
+	ADS_FILTER_BY_FCU_NAME		= (1<<27),	/* for F-Curves, filter by the displayed name (i.e. to isolate all Location curves only) */
 	
 		/* combination filters (some only used at runtime) */
 	ADS_FILTER_NOOBDATA = (ADS_FILTER_NOCAM|ADS_FILTER_NOMAT|ADS_FILTER_NOLAM|ADS_FILTER_NOCUR|ADS_FILTER_NOPART|ADS_FILTER_NOARM)
@@ -593,8 +601,8 @@ typedef enum eSAction_Flag {
 	SACTION_NOTRANSKEYCULL = (1<<4),
 		/* don't include keyframes that are out of view */
 	//SACTION_HORIZOPTIMISEON = (1<<5), // XXX depreceated... old irrelevant trick
-		/* hack for moving pose-markers (temp flag)  */
-	SACTION_POSEMARKERS_MOVE = (1<<6),
+		/* show pose-markers (local to action) in Action Editor mode  */
+	SACTION_POSEMARKERS_SHOW = (1<<6),
 		/* don't draw action channels using group colors (where applicable) */
 	SACTION_NODRAWGCOLORS = (1<<7), // XXX depreceated... irrelevant for current groups implementation
 		/* don't draw current frame number beside frame indicator */

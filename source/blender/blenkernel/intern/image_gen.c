@@ -1,6 +1,6 @@
 /*  image_gen.c	
  * 
- * $Id: image_gen.c 33579 2010-12-09 22:27:55Z bdiego $
+ * $Id: image_gen.c 35836 2011-03-28 04:22:50Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,8 +23,15 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/image_gen.c
+ *  \ingroup bke
+ */
+
+
 #include <math.h>
 #include <stdlib.h>
+
+#include "BKE_image.h"
 #include "BLI_math_color.h"
 #include "BLF_api.h"
 
@@ -154,8 +161,8 @@ void BKE_image_buf_fill_checker(unsigned char *rect, float *rect_float, int widt
 
 /* Utility functions for BKE_image_buf_fill_checker_color */
 
-#define BLEND_FLOAT(real, add)  (real+add <= 1.0) ? (real+add) : 1.0
-#define BLEND_CHAR(real, add) ((real + (char)(add * 255.0)) <= 255) ? (real + (char)(add * 255.0)) : 255
+#define BLEND_FLOAT(real, add)  (real+add <= 1.0f) ? (real+add) : 1.0f
+#define BLEND_CHAR(real, add) ((real + (char)(add * 255.0f)) <= 255) ? (real + (char)(add * 255.0f)) : 255
 
 static int is_pow2(int n)
 {

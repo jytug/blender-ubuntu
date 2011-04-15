@@ -18,7 +18,8 @@
 
 import bpy
 import imp
-from random import randint
+import random
+import time
 from mathutils import Vector
 from math import ceil, floor
 from rna_prop_ui import rna_idprop_ui_prop_get
@@ -237,12 +238,12 @@ def obj_to_bone(obj, rig, bone_name):
 
     mat = rig.matrix_world * bone.matrix_local
 
-    obj.location = mat.translation_part()
+    obj.location = mat.to_translation()
 
     obj.rotation_mode = 'XYZ'
     obj.rotation_euler = mat.to_euler()
 
-    scl = mat.scale_part()
+    scl = mat.to_scale()
     scl_avg = (scl[0] + scl[1] + scl[2]) / 3
     obj.scale = (bone.length * scl_avg), (bone.length * scl_avg), (bone.length * scl_avg)
 
@@ -385,6 +386,15 @@ def connected_children_names(obj, bone_name):
     return names
 
 
+def has_connected_children(bone):
+    """ Returns true/false whether a bone has connected children or not.
+    """
+    t = False
+    for b in bone.children:
+        t = t or b.use_connect
+    return t
+
+
 def get_layers(layers):
     """ Does it's best to exctract a set of layers from any data thrown at it.
     """
@@ -488,10 +498,16 @@ def write_metarig(obj, layers=False, func_name="create_sample"):
     return "\n".join(code)
 
 
-def random_string(length):
+def random_id(length = 8):
+    """ Generates a random alphanumeric id string.
+    """
+    tlength = int(length / 2)
+    rlength = int(length / 2) + int(length % 2)
+
     chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     text = ""
-    for i in range(0, length):
-        text += chars[randint(0, 35)]
+    for i in range(0, rlength):
+        text += random.choice(chars)
+    text += str(hex(int(time.time())))[2:][-tlength:].rjust(tlength, '0')[::-1]
     return text
 

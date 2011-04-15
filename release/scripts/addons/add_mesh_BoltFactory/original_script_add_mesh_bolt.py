@@ -1,4 +1,4 @@
-﻿# ##### BEGIN GPL LICENSE BLOCK #####
+# ##### BEGIN GPL LICENSE BLOCK #####
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -16,7 +16,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     'name': 'Add Mesh: Bolt',
     'author': 'Aaron Keith',
     'version': '3.00',
@@ -2600,9 +2600,13 @@ class CUSTOM_OT_Create_Button(bpy.types.Operator):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     pass
     
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     pass
 
  

@@ -1,4 +1,5 @@
-/**
+/*
+ * $Id: unit.c 35879 2011-03-29 14:36:55Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -20,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenkernel/intern/unit.c
+ *  \ingroup bke
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -264,10 +270,10 @@ static struct bUnitCollection buNaturalRotCollection = {buNaturalRotDef, 0, 0, s
 
 #define UNIT_SYSTEM_TOT (((sizeof(bUnitSystems) / 9) / sizeof(void *)) - 1)
 static struct bUnitCollection *bUnitSystems[][9] = {
-	{0, 0, 0, 0, 0, &buNaturalRotCollection, &buNaturalTimeCollecton, 0, 0},
-	{0, &buMetricLenCollecton, &buMetricAreaCollecton, &buMetricVolCollecton, &buMetricMassCollecton, &buNaturalRotCollection, &buNaturalTimeCollecton, &buMetricVelCollecton, &buMetricAclCollecton}, /* metric */
-	{0, &buImperialLenCollecton, &buImperialAreaCollecton, &buImperialVolCollecton, &buImperialMassCollecton, &buNaturalRotCollection, &buNaturalTimeCollecton, &buImperialVelCollecton, &buImperialAclCollecton}, /* imperial */
-	{0, 0, 0, 0, 0, 0, 0, 0, 0}
+	{NULL, NULL, NULL, NULL, NULL, &buNaturalRotCollection, &buNaturalTimeCollecton, NULL, NULL},
+	{NULL, &buMetricLenCollecton, &buMetricAreaCollecton, &buMetricVolCollecton, &buMetricMassCollecton, &buNaturalRotCollection, &buNaturalTimeCollecton, &buMetricVelCollecton, &buMetricAclCollecton}, /* metric */
+	{NULL, &buImperialLenCollecton, &buImperialAreaCollecton, &buImperialVolCollecton, &buImperialMassCollecton, &buNaturalRotCollection, &buNaturalTimeCollecton, &buImperialVelCollecton, &buImperialAclCollecton}, /* imperial */
+	{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 
 
@@ -338,9 +344,7 @@ static int unit_as_string(char *str, int len_max, double value, int prec, bUnitC
 
 	/* Convert to a string */
 	{
-		char conv_str[6] = {'%', '.', '0', 'l', 'f', '\0'}; /* "%.2lf" when prec is 2, must be under 10 */
-		conv_str[2] += prec;
-		len= snprintf(str, len_max, conv_str, (float)value_conv);
+		len= snprintf(str, len_max, "%.*lf", prec, value_conv);
 
 		if(len >= len_max)
 			len= len_max;

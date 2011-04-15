@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_array.c 33417 2010-12-01 17:47:38Z ton $
+* $Id: MOD_array.c 35362 2011-03-05 10:29:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,11 +30,17 @@
 *
 */
 
+/** \file blender/modifiers/intern/MOD_array.c
+ *  \ingroup modifiers
+ */
+
+
 /* Array modifier: duplicates the object multiple times along an axis */
 
 #include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 #include "BLI_ghash.h"
 #include "BLI_edgehash.h"
 
@@ -49,6 +55,8 @@
 #include "BKE_object.h"
 
 #include "depsgraph_private.h"
+
+#include "MOD_util.h"
 
 static void initData(ModifierData *md)
 {
@@ -545,12 +553,10 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
 				  if (inMF.v4)
 					  mf2->v4 = calc_mapping(indexMap, inMF.v4, j);
 
-				  test_index_face_maxvert(mf2, &result->faceData, numFaces, inMF.v4?4:3, numVerts);
 				  numFaces++;
 
 				  /* if the face has fewer than 3 vertices, don't create it */
-				  if(mf2->v3 == 0 || (mf2->v1 && (mf2->v1 == mf2->v3 || mf2->v1 ==
-								 mf2->v4))) {
+				  if(test_index_face_maxvert(mf2, &result->faceData, numFaces-1, inMF.v4?4:3, numVerts) < 3) {
 					  numFaces--;
 					  DM_free_face_data(result, numFaces, 1);
 								 }
@@ -805,18 +811,19 @@ ModifierTypeInfo modifierType_Array = {
 							| eModifierTypeFlag_AcceptsCVs,
 
 	/* copyData */          copyData,
-	/* deformVerts */       0,
-	/* deformVertsEM */     0,
-	/* deformMatricesEM */  0,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
 	/* applyModifierEM */   applyModifierEM,
 	/* initData */          initData,
-	/* requiredDataMask */  0,
-	/* freeData */          0,
-	/* isDisabled */        0,
+	/* requiredDataMask */  NULL,
+	/* freeData */          NULL,
+	/* isDisabled */        NULL,
 	/* updateDepgraph */    updateDepgraph,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
-	/* foreachIDLink */     0,
+	/* foreachIDLink */     NULL,
 };

@@ -1,4 +1,4 @@
-/**
+/*
 * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +22,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/interface/interface_style.c
+ *  \ingroup edinterface
+ */
+
 
 #include <limits.h>
 #include <math.h>
@@ -286,7 +291,9 @@ void uiStyleInit(void)
 	uiStyle *style= U.uistyles.first;
 	
 	/* recover from uninitialized dpi */
-	CLAMP(U.dpi, 72, 240);
+	if(U.dpi == 0)
+		U.dpi= 72;
+	CLAMP(U.dpi, 48, 128);
 	
 	/* default builtin */
 	if(font==NULL) {

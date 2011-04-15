@@ -1,5 +1,5 @@
-/**
- * $Id: object_lattice.c 33490 2010-12-05 18:59:23Z blendix $
+/*
+ * $Id: object_lattice.c 35362 2011-03-05 10:29:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,11 +25,19 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/object/object_lattice.c
+ *  \ingroup edobj
+ */
+
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
 #include "MEM_guardedalloc.h"
+
+#include "BLI_listbase.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_curve_types.h"
 #include "DNA_key_types.h"
@@ -46,8 +54,8 @@
 #include "BKE_lattice.h"
 #include "BKE_mesh.h"
 
-#include "BLI_listbase.h"
-
+#include "ED_lattice.h"
+#include "ED_object.h"
 #include "ED_screen.h"
 #include "ED_view3d.h"
 #include "ED_util.h"
@@ -84,8 +92,6 @@ void make_editLatt(Object *obedit)
 	KeyBlock *actkey;
 
 	free_editLatt(obedit);
-
-	lt= obedit->data;
 
 	actkey= ob_get_keyblock(obedit);
 	if(actkey)
@@ -182,7 +188,7 @@ void ED_setflagsLatt(Object *obedit, int flag)
 	}
 }
 
-int select_all_exec(bContext *C, wmOperator *op)
+static int select_all_exec(bContext *C, wmOperator *op)
 {
 	Object *obedit= CTX_data_edit_object(C);
 	Lattice *lt= obedit->data;
@@ -249,7 +255,7 @@ void LATTICE_OT_select_all(wmOperatorType *ot)
 	WM_operator_properties_select_all(ot);
 }
 
-int make_regular_poll(bContext *C)
+static int make_regular_poll(bContext *C)
 {
 	Object *ob;
 
@@ -259,7 +265,7 @@ int make_regular_poll(bContext *C)
 	return (ob && ob->type==OB_LATTICE);
 }
 
-int make_regular_exec(bContext *C, wmOperator *UNUSED(op))
+static int make_regular_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob= CTX_data_edit_object(C);
 	Lattice *lt;
@@ -317,7 +323,7 @@ static BPoint *findnearestLattvert(ViewContext *vc, short mval[2], int sel)
 		/* sel==1: selected gets a disadvantage */
 		/* in nurb and bezt or bp the nearest is written */
 		/* return 0 1 2: handlepunt */
-	struct { BPoint *bp; short dist, select, mval[2]; } data = {0};
+	struct { BPoint *bp; short dist, select, mval[2]; } data = {NULL};
 
 	data.dist = 100;
 	data.select = sel;

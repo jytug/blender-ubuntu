@@ -1,8 +1,8 @@
-/**
+/*
  * @file PIL_time.h
  * 
  * Platform independant time functions.
- * $Id: PIL_time.h 26841 2010-02-12 13:34:04Z campbellbarton $
+ * $Id: PIL_time.h 35587 2011-03-17 06:57:12Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenlib/PIL_time.h
+ *  \ingroup bli
+ */
+
  
 #ifndef PIL_TIME_H
 #define PIL_TIME_H
@@ -51,9 +56,29 @@ double	PIL_check_seconds_timer		(void);
 	 */
 void	PIL_sleep_ms				(int ms);
 
+/** Utility defines for timing.
+ * requires BLI_utildefines.h for 'AT'
+ * TIMEIT_VALUE returns the time since TIMEIT_START was called.
+ */
+#define TIMEIT_START(var)													\
+{ 																			\
+	double _timeit_##var= PIL_check_seconds_timer();						\
+	printf("time start (" #var "):  " AT "\n");								\
+	fflush(stdout);															\
+	{																		\
+
+
+#define TIMEIT_VALUE(var) (float)(PIL_check_seconds_timer() - _timeit_##var)
+
+
+#define TIMEIT_END(var)														\
+	}																		\
+	printf("time end   (" #var "): %.6f" "  " AT "\n",	TIMEIT_VALUE(var));	\
+	fflush(stdout);															\
+}																			\
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
-
+#endif /* !PIL_TIME_H */

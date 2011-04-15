@@ -1,5 +1,5 @@
-/**
- * $Id: rna_group.c 31437 2010-08-18 07:14:10Z campbellbarton $
+/*
+ * $Id: rna_group.c 35238 2011-02-27 20:20:01Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_group.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 

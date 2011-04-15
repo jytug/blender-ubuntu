@@ -1,5 +1,5 @@
-/**
- * $Id: render_internal.c 33887 2010-12-24 13:24:26Z ton $
+/*
+ * $Id: render_internal.c 35933 2011-04-01 08:51:12Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/render/render_internal.c
+ *  \ingroup edrend
+ */
+
+
 #include <math.h>
 #include <string.h>
 #include <stddef.h>
@@ -34,6 +39,7 @@
 #include "BLI_math.h"
 #include "BLI_threads.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_scene_types.h"
 
@@ -47,6 +53,7 @@
 #include "BKE_multires.h"
 #include "BKE_report.h"
 #include "BKE_sequencer.h"
+#include "BKE_screen.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -67,7 +74,7 @@
 
 static ScrArea *biggest_area(bContext *C);
 static ScrArea *biggest_non_image_area(bContext *C);
-static ScrArea *find_area_showing_r_result(bContext *C);
+static ScrArea *find_area_showing_r_result(bContext *C, wmWindow **win);
 static ScrArea *find_area_image_empty(bContext *C);
 
 /* called inside thread! */
@@ -140,12 +147,12 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 			float *rf= rectf;
 			float srgb[3];
 			char *rc= rectc;
-			const float dither = ibuf->dither / 255.0;
+			const float dither = ibuf->dither / 255.0f;
 
 			/* XXX temp. because crop offset */
 			if( rectc >= (char *)(ibuf->rect)) {
 				for(x1= 0; x1<xmax; x1++, rf += 4, rc+=4) {
-					const float d = (BLI_frand()-0.5)*dither;
+					const float d = (BLI_frand()-0.5f)*dither;
 					srgb[0]= d + linearrgb_to_srgb(rf[0]);
 					srgb[1]= d + linearrgb_to_srgb(rf[1]);
 					srgb[2]= d + linearrgb_to_srgb(rf[2]);
@@ -164,12 +171,12 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 			float *rf= rectf;
 			char *rc= rectc;
 			float rgb[3];
-			const float dither = ibuf->dither / 255.0;
+			const float dither = ibuf->dither / 255.0f;
 
 			/* XXX temp. because crop offset */
 			if( rectc >= (char *)(ibuf->rect)) {
 				for(x1= 0; x1<xmax; x1++, rf += 4, rc+=4) {
-					const float d = (BLI_frand()-0.5)*dither;
+					const float d = (BLI_frand()-0.5f)*dither;
 					
 					rgb[0] = d + rf[0];
 					rgb[1] = d + rf[1];
@@ -196,6 +203,9 @@ void screen_set_image_output(bContext *C, int mx, int my)
 	SpaceImage *sima;
 	int area_was_image=0;
 
+	if(scene->r.displaymode==R_OUTPUT_NONE)
+		return;
+	
 	if(scene->r.displaymode==R_OUTPUT_WINDOW) {
 		rcti rect;
 		int sizex, sizey;
@@ -228,9 +238,13 @@ void screen_set_image_output(bContext *C, int mx, int my)
 	}
 
 	if(!sa) {
-		sa= find_area_showing_r_result(C);
+		sa= find_area_showing_r_result(C, &win); 
 		if(sa==NULL)
 			sa= find_area_image_empty(C);
+		
+		/* if area found in other window, we make that one show in front */
+		if(win && win!=CTX_wm_window(C))
+			wm_window_raise(win);
 
 		if(sa==NULL) {
 			/* find largest open non-image area */
@@ -332,16 +346,15 @@ static ScrArea *biggest_area(bContext *C)
 }
 
 
-static ScrArea *find_area_showing_r_result(bContext *C)
+static ScrArea *find_area_showing_r_result(bContext *C, wmWindow **win)
 {
 	wmWindowManager *wm= CTX_wm_manager(C);
-	wmWindow *win;
 	ScrArea *sa = NULL;
 	SpaceImage *sima;
 
 	/* find an imagewindow showing render result */
-	for(win=wm->windows.first; win; win=win->next) {
-		for(sa=win->screen->areabase.first; sa; sa= sa->next) {
+	for(*win=wm->windows.first; *win; *win= (*win)->next) {
+		for(sa= (*win)->screen->areabase.first; sa; sa= sa->next) {
 			if(sa->spacetype==SPACE_IMAGE) {
 				sima= sa->spacedata.first;
 				if(sima->image && sima->image->type==IMA_TYPE_R_RESULT)
@@ -351,7 +364,7 @@ static ScrArea *find_area_showing_r_result(bContext *C)
 		if(sa)
 			break;
 	}
-
+	
 	return sa;
 }
 
@@ -593,7 +606,14 @@ static void render_endjob(void *rjv)
 		free_main(rj->main);
 
 	/* else the frame will not update for the original value */
-	ED_update_for_newframe(G.main, rj->scene, rj->win->screen, 1);
+	if(!(rj->scene->r.scemode & R_NO_FRAME_UPDATE))
+		ED_update_for_newframe(G.main, rj->scene, rj->win->screen, 1);
+	
+	/* XXX above function sets all tags in nodes */
+	ntreeClearTags(rj->scene->nodetree);
+	
+	/* potentially set by caller */
+	rj->scene->r.scemode &= ~R_NO_FRAME_UPDATE;
 	
 	if(rj->srl) {
 		NodeTagIDChanged(rj->scene->nodetree, &rj->scene->id);
@@ -615,6 +635,14 @@ static int render_breakjob(void *rjv)
 	if(rj->stop && *(rj->stop))
 		return 1;
 	return 0;
+}
+
+/* runs in thread, no cursor setting here works. careful with notifiers too (malloc conflicts) */
+/* maybe need a way to get job send notifer? */
+static void render_drawlock(void *UNUSED(rjv), int lock)
+{
+	BKE_spacedata_draw_locks(lock);
+	
 }
 
 /* catch esc */
@@ -647,6 +675,7 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	wmJob *steve;
 	RenderJob *rj;
 	Image *ima;
+	int jobflag;
 	const short is_animation= RNA_boolean_get(op->ptr, "animation");
 	const short is_write_still= RNA_boolean_get(op->ptr, "write_still");
 	
@@ -700,6 +729,8 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	/* ensure at least 1 area shows result */
 	screen_set_image_output(C, event->x, event->y);
 
+	jobflag= WM_JOB_EXCL_RENDER|WM_JOB_PRIORITY|WM_JOB_PROGRESS;
+	
 	/* single layer re-render */
 	if(RNA_property_is_set(op->ptr, "layer")) {
 		SceneRenderLayer *rl;
@@ -711,11 +742,12 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 
 		scn = (Scene *)BLI_findstring(&mainp->scene, scene_name, offsetof(ID, name) + 2);
 		rl = (SceneRenderLayer *)BLI_findstring(&scene->r.layers, rl_name, offsetof(SceneRenderLayer, name));
-
+		
 		if (scn && rl) {
 			scene = scn;
 			srl = rl;
 		}
+		jobflag |= WM_JOB_SUSPEND;
 	}
 
 	/* job custom data */
@@ -732,7 +764,7 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	rj->reports= op->reports;
 
 	/* setup job */
-	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), scene, "Render", WM_JOB_EXCL_RENDER|WM_JOB_PRIORITY|WM_JOB_PROGRESS);
+	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), scene, "Render", jobflag);
 	WM_jobs_customdata(steve, rj, render_freejob);
 	WM_jobs_timer(steve, 0.2, NC_SCENE|ND_RENDER_RESULT, 0);
 	WM_jobs_callbacks(steve, render_startjob, NULL, NULL, render_endjob);
@@ -746,6 +778,7 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	/* setup new render */
 	re= RE_NewRender(scene->id.name);
 	RE_test_break_cb(re, rj, render_breakjob);
+	RE_draw_lock_cb(re, rj, render_drawlock);
 	RE_display_draw_cb(re, rj, image_rect_update);
 	RE_stats_draw_cb(re, rj, image_renderinfo_cb);
 	RE_progress_cb(re, rj, render_progress_update);
@@ -785,7 +818,7 @@ void RENDER_OT_render(wmOperatorType *ot)
 	ot->modal= screen_render_modal;
 	ot->exec= screen_render_exec;
 
-	ot->poll= ED_operator_screenactive;
+	/*ot->poll= ED_operator_screenactive;*/ /* this isnt needed, causes failer in background mode */
 
 	RNA_def_boolean(ot->srna, "animation", 0, "Animation", "Render files from the animation range of this scene");
 	RNA_def_boolean(ot->srna, "write_still", 0, "Write Image", "Save rendered the image to the output path (used only when animation is disabled)");
@@ -847,18 +880,19 @@ void RENDER_OT_view_cancel(struct wmOperatorType *ot)
 
 static int render_view_show_invoke(bContext *C, wmOperator *UNUSED(unused), wmEvent *event)
 {
-	ScrArea *sa= find_area_showing_r_result(C);
-
-	/* test if we have a temp screen active */
-	if(CTX_wm_window(C)->screen->temp) {
-		wm_window_lower(CTX_wm_window(C));
+	wmWindow *wincur = CTX_wm_window(C);
+	
+	/* test if we have currently a temp screen active */
+	if(wincur->screen->temp) {
+		wm_window_lower(wincur);
 	}
 	else { 
-		/* is there another window? */
-		wmWindow *win;
+		wmWindow *win, *winshow;
+		ScrArea *sa= find_area_showing_r_result(C, &winshow);
 		
+		/* is there another window showing result? */
 		for(win= CTX_wm_manager(C)->windows.first; win; win= win->next) {
-			if(win->screen->temp) {
+			if(win->screen->temp || (win==winshow && winshow!=wincur)) {
 				wm_window_raise(win);
 				return OPERATOR_FINISHED;
 			}

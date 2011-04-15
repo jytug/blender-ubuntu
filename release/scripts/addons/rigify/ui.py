@@ -193,15 +193,20 @@ class Generate(bpy.types.Operator):
 
     bl_idname = "pose.rigify_generate"
     bl_label = "Rigify Generate Rig"
+    bl_options = {'UNDO'}
 
     def execute(self, context):
         import imp
         imp.reload(generate)
 
+        use_global_undo = context.user_preferences.edit.use_global_undo
+        context.user_preferences.edit.use_global_undo = False
         try:
             generate.generate_rig(context, context.object)
         except rigify.utils.MetarigError as rig_exception:
             rigify_report_exception(self, rig_exception)
+        finally:
+            context.user_preferences.edit.use_global_undo = use_global_undo
 
         return {'FINISHED'}
 
@@ -211,11 +216,14 @@ class Sample(bpy.types.Operator):
 
     bl_idname = "armature.metarig_sample_add"
     bl_label = "Add a sample metarig for a rig type"
+    bl_options = {'UNDO'}
 
     metarig_type = StringProperty(name="Type", description="Name of the rig type to generate a sample of", maxlen=128, default="")
 
     def execute(self, context):
         if context.mode == 'EDIT_ARMATURE' and self.metarig_type != "":
+            use_global_undo = context.user_preferences.edit.use_global_undo
+            context.user_preferences.edit.use_global_undo = False
             try:
                 rig = get_rig_type(self.metarig_type).Rig
                 create_sample = rig.create_sample
@@ -223,29 +231,28 @@ class Sample(bpy.types.Operator):
                 print("Rigify: rig type has no sample.")
             else:
                 create_sample(context.active_object)
-            bpy.ops.object.mode_set(mode='EDIT')
+            finally:
+                context.user_preferences.edit.use_global_undo = use_global_undo
+                bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
 
 
 #menu_func = (lambda self, context: self.layout.menu("INFO_MT_armature_metarig_add", icon='OUTLINER_OB_ARMATURE'))
 
-#import space_info  # ensure the menu is loaded first
+#from bl_ui import space_info  # ensure the menu is loaded first
 
 def register():
-    #bpy.types.register(DATA_PT_rigify_buttons)
-    #bpy.types.register(BONE_PT_rigify_buttons)
-    #bpy.types.register(Generate)
-    #bpy.types.register(Sample)
+    bpy.utils.register_class(DATA_PT_rigify_buttons)
+    bpy.utils.register_class(BONE_PT_rigify_buttons)
+    bpy.utils.register_class(Generate)
+    bpy.utils.register_class(Sample)
 
     #space_info.INFO_MT_armature_add.append(ui.menu_func)
-    pass
 
 
 def unregister():
-    #bpy.types.unregister(DATA_PT_rigify_buttons)
-    #bpy.types.unregister(BONE_PT_rigify_buttons)
-    #bpy.types.unregister(Generate)
-    #bpy.types.unregister(Sample)
-    pass
-
+    bpy.utils.unregister_class(DATA_PT_rigify_buttons)
+    bpy.utils.unregister_class(BONE_PT_rigify_buttons)
+    bpy.utils.unregister_class(Generate)
+    bpy.utils.unregister_class(Sample)

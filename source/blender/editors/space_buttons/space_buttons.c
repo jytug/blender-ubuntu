@@ -1,5 +1,5 @@
-/**
- * $Id: space_buttons.c 34040 2011-01-03 14:36:44Z ton $
+/*
+ * $Id: space_buttons.c 35629 2011-03-19 18:23:21Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,19 +26,25 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_buttons/space_buttons.c
+ *  \ingroup spbuttons
+ */
+
+
 #include <string.h>
 #include <stdio.h>
-
 
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
+#include "ED_space_api.h"
 #include "ED_screen.h"
 
 #include "BIF_gl.h"
@@ -62,14 +68,14 @@ static SpaceLink *buttons_new(const bContext *UNUSED(C))
 	
 	sbuts= MEM_callocN(sizeof(SpaceButs), "initbuts");
 	sbuts->spacetype= SPACE_BUTS;
-	sbuts->align= BUT_AUTO;
+	sbuts->align= BUT_VERTICAL;
 
 	/* header */
 	ar= MEM_callocN(sizeof(ARegion), "header for buts");
 	
 	BLI_addtail(&sbuts->regionbase, ar);
 	ar->regiontype= RGN_TYPE_HEADER;
-	ar->alignment= RGN_ALIGN_BOTTOM;
+	ar->alignment= RGN_ALIGN_TOP;
 	
 #if 0
 	/* context area */
@@ -177,13 +183,13 @@ static void buttons_main_area_draw(const bContext *C, ARegion *ar)
 	sbuts->mainbo= sbuts->mainb;
 }
 
-void buttons_operatortypes(void)
+static void buttons_operatortypes(void)
 {
 	WM_operatortype_append(BUTTONS_OT_toolbox);
 	WM_operatortype_append(BUTTONS_OT_file_browse);
 }
 
-void buttons_keymap(struct wmKeyConfig *keyconf)
+static void buttons_keymap(struct wmKeyConfig *keyconf)
 {
 	wmKeyMap *keymap= WM_keymap_find(keyconf, "Property Editor", SPACE_BUTS, 0);
 	
@@ -259,6 +265,7 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 			switch(wmn->data) {
 				case ND_TRANSFORM:
 					buttons_area_redraw(sa, BCONTEXT_OBJECT);
+					buttons_area_redraw(sa, BCONTEXT_DATA);	/* autotexpace flag */
 					break;
 				case ND_POSE:
 				case ND_BONE_ACTIVE:
@@ -280,6 +287,7 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 				case ND_PARTICLE:
 					if (wmn->action == NA_EDITED)
 						buttons_area_redraw(sa, BCONTEXT_PARTICLE);
+					sbuts->preview= 1;
 					break;
 				case ND_DRAW:
 					buttons_area_redraw(sa, BCONTEXT_OBJECT);
@@ -348,8 +356,12 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 			}
 			break;
 		case NC_NODE:
-			if(wmn->action==NA_SELECTED)
+			if(wmn->action==NA_SELECTED) {
 				ED_area_tag_redraw(sa);
+				/* new active node, update texture preview */
+				if(sbuts->mainb == BCONTEXT_TEXTURE)
+					sbuts->preview= 1;
+			}
 			break;
 		/* Listener for preview render, when doing an global undo. */
 		case NC_WINDOW:

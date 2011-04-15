@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
+# $Id: CMakeLists.txt 36024 2011-04-05 23:31:01Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -32,10 +32,10 @@ set(INC
 	../../../source/gameengine/Ketsji
 	../../../intern/string
 	../../../intern/moto/include
-	../../../extern/glew/include
 	../../../intern/guardedalloc
 	../Expressions
-	${PYTHON_INC}
+	${GLEW_INCLUDE_PATH}
+	${PYTHON_INCLUDE_DIRS}
 )
 
 set(SRC

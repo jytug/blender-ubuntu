@@ -1,5 +1,5 @@
-/**
- * $Id: space_nla.c 32915 2010-11-07 12:09:15Z aligorith $
+/*
+ * $Id: space_nla.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_nla/space_nla.c
+ *  \ingroup spnla
+ */
+
+
 #include <string.h>
 #include <stdio.h>
 
@@ -37,12 +42,14 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_screen.h"
 
+#include "ED_space_api.h"
 #include "ED_anim_api.h"
 #include "ED_markers.h"
 #include "ED_screen.h"
@@ -514,7 +521,7 @@ void ED_spacetype_nla(void)
 	art->init= nla_main_area_init;
 	art->draw= nla_main_area_draw;
 	art->listener= nla_main_area_listener;
-	art->keymapflag= ED_KEYMAP_VIEW2D/*|ED_KEYMAP_MARKERS*/|ED_KEYMAP_ANIMATION|ED_KEYMAP_FRAMES;
+	art->keymapflag= ED_KEYMAP_VIEW2D|ED_KEYMAP_MARKERS|ED_KEYMAP_ANIMATION|ED_KEYMAP_FRAMES;
 
 	BLI_addhead(&st->regiontypes, art);
 	

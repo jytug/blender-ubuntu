@@ -1,7 +1,5 @@
-/**
- * blenlib/BKE_image.h (mar-2001 nzc)
- *	
- * $Id: BKE_image.h 33401 2010-11-30 23:38:31Z campbellbarton $ 
+/*
+ * $Id: BKE_image.h 34962 2011-02-18 13:05:18Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,6 +28,12 @@
  */
 #ifndef BKE_IMAGE_H
 #define BKE_IMAGE_H
+
+/** \file BKE_image.h
+ *  \ingroup bke
+ *  \since March 2001
+ *  \author nzc
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,10 +98,6 @@ struct RenderResult;
 	/* reload only frees, doesn't read until image_get_ibuf() called */
 #define IMA_SIGNAL_RELOAD			0
 #define IMA_SIGNAL_FREE				1
-	/* pack signals are executed */
-#define IMA_SIGNAL_PACK				2
-#define IMA_SIGNAL_REPACK			3
-#define IMA_SIGNAL_UNPACK			4
 	/* source changes, from image to sequence or movie, etc */
 #define IMA_SIGNAL_SRC_CHANGE		5
 	/* image-user gets a new image, check settings */

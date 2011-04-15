@@ -1,5 +1,5 @@
-/**
- * $Id: py_capi_utils.c 33866 2010-12-23 00:19:34Z campbellbarton $
+/*
+ * $Id: py_capi_utils.c 35767 2011-03-25 04:36:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -20,8 +20,17 @@
  * ***** END GPL LICENSE BLOCK *****
 */
 
+/** \file blender/python/generic/py_capi_utils.c
+ *  \ingroup pygen
+ */
+
+
 #include <Python.h>
+#include <frameobject.h>
+
 #include "py_capi_utils.h"
+
+#define PYC_INTERPRETER_ACTIVE (((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current)) != NULL)
 
 /* for debugging */
 void PyC_ObSpit(const char *name, PyObject *var) {
@@ -44,8 +53,15 @@ void PyC_ObSpit(const char *name, PyObject *var) {
 }
 
 void PyC_LineSpit(void) {
+
 	const char *filename;
 	int lineno;
+
+	/* Note, allow calling from outside python (RNA) */
+	if(!PYC_INTERPRETER_ACTIVE) {
+		fprintf(stderr, "python line lookup failed, interpreter inactive\n");
+		return;
+	}
 
 	PyErr_Clear();
 	PyC_FileAndNum(&filename, &lineno);
@@ -55,37 +71,20 @@ void PyC_LineSpit(void) {
 
 void PyC_FileAndNum(const char **filename, int *lineno)
 {
-	PyObject *getframe, *frame;
-	PyObject *f_lineno= NULL, *co_filename= NULL;
+	PyFrameObject *frame;
 	
 	if (filename)	*filename= NULL;
 	if (lineno)		*lineno = -1;
-	
-	getframe = PySys_GetObject("_getframe"); // borrowed
-	if (getframe==NULL) {
-		PyErr_Clear();
+
+	if (!(frame= PyThreadState_GET()->frame)) {
 		return;
 	}
-	
-	frame = PyObject_CallObject(getframe, NULL);
-	if (frame==NULL) {
-		PyErr_Clear();
-		return;
-	}
-	
+
 	/* when executing a script */
 	if (filename) {
-		co_filename= PyC_Object_GetAttrStringArgs(frame, 2, "f_code", "co_filename");
-		if (co_filename==NULL) {
-			PyErr_SetString(PyExc_SystemError, "Could not access sys._getframe().f_code.co_filename");
-			Py_DECREF(frame);
-			return;
-		}
-		
-		*filename = _PyUnicode_AsString(co_filename);
-		Py_DECREF(co_filename);
+		*filename = _PyUnicode_AsString(frame->f_code->co_filename);
 	}
-	
+
 	/* when executing a module */
 	if(filename && *filename == NULL) {
 		/* try an alternative method to get the filename - module based
@@ -103,21 +102,10 @@ void PyC_FileAndNum(const char **filename, int *lineno)
 			}
 		}
 	}
-		
-	
-	if (lineno) {
-		f_lineno= PyObject_GetAttrString(frame, "f_lineno");
-		if (f_lineno==NULL) {
-			PyErr_SetString(PyExc_SystemError, "Could not access sys._getframe().f_lineno");
-			Py_DECREF(frame);
-			return;
-		}
-		
-		*lineno = (int)PyLong_AsSsize_t(f_lineno);
-		Py_DECREF(f_lineno);
-	}
 
-	Py_DECREF(frame);
+	if (lineno) {
+		*lineno = PyFrame_GetLineNumber(frame);
+	}
 }
 
 /* Would be nice if python had this built in */
@@ -171,9 +159,11 @@ PyObject *PyC_ExceptionBuffer(void)
 	
 	if(! (string_io_mod= PyImport_ImportModule("io")) ) {
 		goto error_cleanup;
-	} else if (! (string_io = PyObject_CallMethod(string_io_mod, (char *)"StringIO", NULL))) {
+	}
+	else if (! (string_io = PyObject_CallMethod(string_io_mod, (char *)"StringIO", NULL))) {
 		goto error_cleanup;
-	} else if (! (string_io_getvalue= PyObject_GetAttrString(string_io, "getvalue"))) {
+	}
+	else if (! (string_io_getvalue= PyObject_GetAttrString(string_io, "getvalue"))) {
 		goto error_cleanup;
 	}
 	
@@ -228,30 +218,12 @@ const char *PyC_UnicodeAsByte(PyObject *py_str, PyObject **coerce)
 		 * chars since blender doesnt limit this */
 		return result;
 	}
-	else {
-		/* mostly copied from fileio.c's, fileio_init */
-		PyObject *stringobj;
-		PyObject *u;
-
+	else if(PyBytes_Check(py_str)) {
 		PyErr_Clear();
-		
-		u= PyUnicode_FromObject(py_str); /* coerce into unicode */
-		
-		if (u == NULL)
-			return NULL;
-
-		stringobj= PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(u), PyUnicode_GET_SIZE(u), "surrogateescape");
-		Py_DECREF(u);
-		if (stringobj == NULL)
-			return NULL;
-		if (!PyBytes_Check(stringobj)) { /* this seems wrong but it works fine */
-			// printf("encoder failed to return bytes\n");
-			Py_DECREF(stringobj);
-			return NULL;
-		}
-		*coerce= stringobj;
-
-		return PyBytes_AS_STRING(stringobj);
+		return PyBytes_AS_STRING(py_str);
+	}
+	else {
+		return PyBytes_AS_STRING((*coerce= PyUnicode_EncodeFSDefault(py_str)));
 	}
 }
 
@@ -278,6 +250,10 @@ PyObject *PyC_UnicodeFromByte(const char *str)
   for 'pickle' to work as well as strings like this...
  >> foo = 10
  >> print(__import__("__main__").foo)
+*
+* note: this overwrites __main__ which gives problems with nested calles.
+* be sure to run PyC_MainModule_Backup & PyC_MainModule_Restore if there is
+* any chance that python is in the call stack.
 *****************************************************************************/
 PyObject *PyC_DefaultNameSpace(const char *filename)
 {
@@ -293,6 +269,20 @@ PyObject *PyC_DefaultNameSpace(const char *filename)
 	return PyModule_GetDict(mod_main);
 }
 
+/* restore MUST be called after this */
+void PyC_MainModule_Backup(PyObject **main_mod)
+{
+	PyInterpreterState *interp= PyThreadState_GET()->interp;
+	*main_mod= PyDict_GetItemString(interp->modules, "__main__");
+	Py_XINCREF(*main_mod); /* dont free */
+}
+
+void PyC_MainModule_Restore(PyObject *main_mod)
+{
+	PyInterpreterState *interp= PyThreadState_GET()->interp;
+	PyDict_SetItemString(interp->modules, "__main__", main_mod);
+	Py_XDECREF(main_mod);
+}
 
 /* Would be nice if python had this built in */
 void PyC_RunQuicky(const char *filepath, int n, ...)

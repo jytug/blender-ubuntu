@@ -1,5 +1,5 @@
-/**
- * $Id: meshtools.c 33837 2010-12-21 15:10:09Z ton $
+/*
+ * $Id: meshtools.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/mesh/meshtools.c
+ *  \ingroup edmesh
+ */
+
+
 /*
 	meshtools.c: no editmode (violated already :), tools operating on meshes
 */
@@ -46,6 +51,7 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 #include "BLI_editVert.h"
 #include "BLI_ghash.h"
 #include "BLI_rand.h" /* for randome face sorting */
@@ -91,9 +97,9 @@ int join_mesh_exec(bContext *C, wmOperator *op)
 	Object *ob= CTX_data_active_object(C);
 	Material **matar, *ma;
 	Mesh *me;
-	MVert *mvert, *mv, *mvertmain;
-	MEdge *medge = NULL, *medgemain;
-	MFace *mface = NULL, *mfacemain;
+	MVert *mvert, *mv;
+	MEdge *medge = NULL;
+	MFace *mface = NULL;
 	Key *key, *nkey=NULL;
 	KeyBlock *kb, *okb, *kbn;
 	float imat[4][4], cmat[4][4], *fp1, *fp2, curpos;
@@ -279,11 +285,7 @@ int join_mesh_exec(bContext *C, wmOperator *op)
 	mvert= CustomData_add_layer(&vdata, CD_MVERT, CD_CALLOC, NULL, totvert);
 	medge= CustomData_add_layer(&edata, CD_MEDGE, CD_CALLOC, NULL, totedge);
 	mface= CustomData_add_layer(&fdata, CD_MFACE, CD_CALLOC, NULL, totface);
-	
-	mvertmain= mvert;
-	medgemain= medge;
-	mfacemain= mface;
-	
+
 	vertofs= 0;
 	edgeofs= 0;
 	faceofs= 0;
@@ -1058,7 +1060,7 @@ long mesh_mirrtopo_table(Object *ob, char mode)
 	return 0;
 }
 
-int mesh_get_x_mirror_vert_spacial(Object *ob, int index)
+static int mesh_get_x_mirror_vert_spacial(Object *ob, int index)
 {
 	Mesh *me= ob->data;
 	MVert *mvert;

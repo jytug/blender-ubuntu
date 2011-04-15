@@ -1,4 +1,4 @@
-/**
+/*
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,8 +27,13 @@
  * cineon.c
  * contributors: joeedh
  * I hearby donate this code and all rights to the Blender Foundation.
- * $Id: cineon_dpx.c 33405 2010-12-01 02:54:10Z campbellbarton $
+ * $Id: cineon_dpx.c 35239 2011-02-27 20:23:21Z jesterking $
  */
+
+/** \file blender/imbuf/intern/cineon/cineon_dpx.c
+ *  \ingroup imbcineon
+ */
+
  
 #include <stdio.h>
 #include <string.h> /*for memcpy*/
@@ -126,7 +131,6 @@ static int imb_save_dpx_cineon(ImBuf *ibuf, const char *filename, int use_cineon
 	LogImageFile* logImage;
 	unsigned short* line, *pixel;
 	int i, j;
-	int index;
 	float *fline;
 	float *fbuf;
 	int is_alloc= 0;
@@ -155,7 +159,6 @@ static int imb_save_dpx_cineon(ImBuf *ibuf, const char *filename, int use_cineon
 		printf("error setting args\n");
 	}
 
-	index = 0;
 	line = MEM_mallocN(sizeof(unsigned short)*depth*width, "line");
 	
 	/*note that image is flipped when sent to logImageSetRowBytes (see last passed parameter).*/

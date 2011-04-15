@@ -1,5 +1,5 @@
-/**
- * $Id: KX_MeshProxy.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
+/*
+ * $Id: KX_MeshProxy.cpp 35171 2011-02-25 13:35:59Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file gameengine/Ketsji/KX_MeshProxy.cpp
+ *  \ingroup ketsji
+ */
+
 
 #ifdef WITH_PYTHON
 
@@ -181,7 +186,7 @@ PyObject* KX_MeshProxy::PyGetVertex(PyObject* args, PyObject* kwds)
 	RAS_TexVert* vertex = m_meshobj->GetVertex(matindex,vertexindex);
 	
 	if(vertex==NULL) {
-		PyErr_SetString(PyExc_ValueError, "mesh.getVertex(mat_idx, vert_idx): KX_MeshProxy, could not get a vertex at the given indicies");
+		PyErr_SetString(PyExc_ValueError, "mesh.getVertex(mat_idx, vert_idx): KX_MeshProxy, could not get a vertex at the given indices");
 		return NULL;
 	}
 	

@@ -1,5 +1,5 @@
-/**
- * $Id: math_vector.c 33776 2010-12-19 07:05:29Z campbellbarton $
+/*
+ * $Id: math_vector.c 35821 2011-03-27 15:54:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  * */
+
+/** \file blender/blenlib/intern/math_vector.c
+ *  \ingroup bli
+ */
+
 
 
 #include "BLI_math.h"
@@ -202,10 +207,10 @@ void angle_tri_v3(float angles[3], const float v1[3], const float v2[3], const f
 	normalize_v3(ed2);
 	normalize_v3(ed3);
 
-	angles[0]= M_PI - angle_normalized_v3v3(ed1, ed2);
-	angles[1]= M_PI - angle_normalized_v3v3(ed2, ed3);
+	angles[0]= (float)M_PI - angle_normalized_v3v3(ed1, ed2);
+	angles[1]= (float)M_PI - angle_normalized_v3v3(ed2, ed3);
 	// face_angles[2] = M_PI - angle_normalized_v3v3(ed3, ed1);
-	angles[2]= M_PI - (angles[0] + angles[1]);
+	angles[2]= (float)M_PI - (angles[0] + angles[1]);
 }
 
 void angle_quad_v3(float angles[4], const float v1[3], const float v2[3], const float v3[3], const float v4[3])
@@ -222,10 +227,10 @@ void angle_quad_v3(float angles[4], const float v1[3], const float v2[3], const 
 	normalize_v3(ed3);
 	normalize_v3(ed4);
 
-	angles[0]= M_PI - angle_normalized_v3v3(ed1, ed2);
-	angles[1]= M_PI - angle_normalized_v3v3(ed2, ed3);
-	angles[2]= M_PI - angle_normalized_v3v3(ed3, ed4);
-	angles[3]= M_PI - angle_normalized_v3v3(ed4, ed1);
+	angles[0]= (float)M_PI - angle_normalized_v3v3(ed1, ed2);
+	angles[1]= (float)M_PI - angle_normalized_v3v3(ed2, ed3);
+	angles[2]= (float)M_PI - angle_normalized_v3v3(ed3, ed4);
+	angles[3]= (float)M_PI - angle_normalized_v3v3(ed4, ed1);
 }
 
 /********************************* Geometry **********************************/
@@ -375,6 +380,21 @@ void range_vni(int *array_tar, const int size, const int start)
 	while(i--) { *(array_pt--) = j--; }
 }
 
+void negate_vn(float *array_tar, const int size)
+{
+	float *array_pt= array_tar + (size-1);
+	int i= size;
+	while(i--) { *(array_pt--) *= -1.0f; }
+}
+
+void negate_vn_vn(float *array_tar, const float *array_src, const int size)
+{
+	float *tar= array_tar + (size-1);
+	const float *src= array_src + (size-1);
+	int i= size;
+	while(i--) { *(tar--) = - *(src--); }
+}
+
 void mul_vn_fl(float *array_tar, const int size, const float f)
 {
 	float *array_pt= array_tar + (size-1);
@@ -396,6 +416,32 @@ void add_vn_vn(float *array_tar, const float *array_src, const int size)
 	const float *src= array_src + (size-1);
 	int i= size;
 	while(i--) { *(tar--) += *(src--); }
+}
+
+void add_vn_vnvn(float *array_tar, const float *array_src_a, const float *array_src_b, const int size)
+{
+	float *tar= array_tar + (size-1);
+	const float *src_a= array_src_a + (size-1);
+	const float *src_b= array_src_b + (size-1);
+	int i= size;
+	while(i--) { *(tar--) = *(src_a--) + *(src_b--); }
+}
+
+void sub_vn_vn(float *array_tar, const float *array_src, const int size)
+{
+	float *tar= array_tar + (size-1);
+	const float *src= array_src + (size-1);
+	int i= size;
+	while(i--) { *(tar--) -= *(src--); }
+}
+
+void sub_vn_vnvn(float *array_tar, const float *array_src_a, const float *array_src_b, const int size)
+{
+	float *tar= array_tar + (size-1);
+	const float *src_a= array_src_a + (size-1);
+	const float *src_b= array_src_b + (size-1);
+	int i= size;
+	while(i--) { *(tar--) = *(src_a--) - *(src_b--); }
 }
 
 void fill_vni(int *array_tar, const int size, const int val)

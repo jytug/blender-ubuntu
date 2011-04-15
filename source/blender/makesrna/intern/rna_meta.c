@@ -1,5 +1,5 @@
-/**
- * $Id: rna_meta.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: rna_meta.c 36095 2011-04-11 01:18:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_meta.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 
@@ -232,8 +237,8 @@ static void rna_def_metaball_elements(BlenderRNA *brna, PropertyRNA *cprop)
 
 	func= RNA_def_function(srna, "new", "rna_MetaBall_elements_new");
 	RNA_def_function_ui_description(func, "Add a new spline to the curve.");
-	parm= RNA_def_enum(func, "type", metaelem_type_items, MB_BALL, "", "type for the new meta element.");
-	parm= RNA_def_pointer(func, "element", "MetaElement", "", "The newly created metaelement.");
+	RNA_def_enum(func, "type", metaelem_type_items, MB_BALL, "", "type for the new meta-element.");
+	parm= RNA_def_pointer(func, "element", "MetaElement", "", "The newly created meta-element.");
 	RNA_def_function_return(func, parm);
 
 	func= RNA_def_function(srna, "remove", "rna_MetaBall_elements_remove");

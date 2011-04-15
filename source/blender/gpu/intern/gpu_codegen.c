@@ -1,5 +1,5 @@
-/**
- * $Id: gpu_codegen.c 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: gpu_codegen.c 35376 2011-03-06 23:12:12Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,6 +30,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/gpu/intern/gpu_codegen.c
+ *  \ingroup gpu
+ */
+
+
 #include "GL/glew.h"
 
 #include "MEM_guardedalloc.h"
@@ -38,11 +43,11 @@
 #include "DNA_image_types.h"
 #include "DNA_material_types.h"
 
-#include "BLI_dynstr.h"
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
+#include "BLI_dynstr.h"
 #include "BLI_ghash.h"
 #include "BLI_heap.h"
-
 
 #include "GPU_material.h"
 #include "GPU_extensions.h"
@@ -741,11 +746,12 @@ static char *code_generate_vertex(ListBase *nodes)
 		for (input=node->inputs.first; input; input=input->next)
 			if (input->source == GPU_SOURCE_ATTRIB && input->attribfirst) {
 				if(input->attribtype == CD_TANGENT) /* silly exception */
-					BLI_dynstr_printf(ds, "\tvar%d = gl_NormalMatrix * ", input->attribid);
+				{
+					BLI_dynstr_printf(ds, "\tvar%d.xyz = normalize((gl_ModelViewMatrix * vec4(att%d.xyz, 0)).xyz);\n", input->attribid, input->attribid);
+					BLI_dynstr_printf(ds, "\tvar%d.w = att%d.w;\n", input->attribid, input->attribid);
+				}
 				else
-					BLI_dynstr_printf(ds, "\tvar%d = ", input->attribid);
-
-				BLI_dynstr_printf(ds, "att%d;\n", input->attribid);
+					BLI_dynstr_printf(ds, "\tvar%d = att%d;\n", input->attribid, input->attribid);
 			}
 
 	BLI_dynstr_append(ds, "}\n\n");
@@ -766,7 +772,7 @@ GPUShader *GPU_pass_shader(GPUPass *pass)
 	return pass->shader;
 }
 
-void GPU_nodes_extract_dynamic_inputs(GPUPass *pass, ListBase *nodes)
+static void GPU_nodes_extract_dynamic_inputs(GPUPass *pass, ListBase *nodes)
 {
 	GPUShader *shader = pass->shader;
 	GPUNode *node;
@@ -882,7 +888,7 @@ void GPU_pass_unbind(GPUPass *pass)
 
 /* Node Link Functions */
 
-GPUNodeLink *GPU_node_link_create(int type)
+static GPUNodeLink *GPU_node_link_create(int type)
 {
 	GPUNodeLink *link = MEM_callocN(sizeof(GPUNodeLink), "GPUNodeLink");
 	link->type = type;
@@ -891,7 +897,7 @@ GPUNodeLink *GPU_node_link_create(int type)
 	return link;
 }
 
-void GPU_node_link_free(GPUNodeLink *link)
+static void GPU_node_link_free(GPUNodeLink *link)
 {
 	link->users--;
 
@@ -907,7 +913,7 @@ void GPU_node_link_free(GPUNodeLink *link)
 
 /* Node Functions */
 
-GPUNode *GPU_node_begin(const char *name)
+static GPUNode *GPU_node_begin(const char *name)
 {
 	GPUNode *node = MEM_callocN(sizeof(GPUNode), "GPUNode");
 
@@ -916,7 +922,7 @@ GPUNode *GPU_node_begin(const char *name)
 	return node;
 }
 
-void GPU_node_end(GPUNode *UNUSED(node))
+static void GPU_node_end(GPUNode *UNUSED(node))
 {
 	/* empty */
 }
@@ -977,11 +983,11 @@ static void gpu_node_input_link(GPUNode *node, GPUNodeLink *link, int type)
 		input->textype = type;
 
 		if (type == GPU_TEX1D) {
-			input->tex = GPU_texture_create_1D(link->texturesize, link->ptr1);
+			input->tex = GPU_texture_create_1D(link->texturesize, link->ptr1, NULL);
 			input->textarget = GL_TEXTURE_1D;
 		}
 		else {
-			input->tex = GPU_texture_create_2D(link->texturesize, link->texturesize, link->ptr2);
+			input->tex = GPU_texture_create_2D(link->texturesize, link->texturesize, link->ptr2, NULL);
 			input->textarget = GL_TEXTURE_2D;
 		}
 
@@ -1055,7 +1061,7 @@ static void GPU_node_output(GPUNode *node, int type, const char *UNUSED(name), G
 	BLI_addtail(&node->outputs, output);
 }
 
-void GPU_inputs_free(ListBase *inputs)
+static void GPU_inputs_free(ListBase *inputs)
 {
 	GPUInput *input;
 
@@ -1069,7 +1075,7 @@ void GPU_inputs_free(ListBase *inputs)
 	BLI_freelistN(inputs);
 }
 
-void GPU_node_free(GPUNode *node)
+static void GPU_node_free(GPUNode *node)
 {
 	GPUOutput *output;
 
@@ -1085,7 +1091,7 @@ void GPU_node_free(GPUNode *node)
 	MEM_freeN(node);
 }
 
-void GPU_nodes_free(ListBase *nodes)
+static void GPU_nodes_free(ListBase *nodes)
 {
 	GPUNode *node;
 
@@ -1098,7 +1104,7 @@ void GPU_nodes_free(ListBase *nodes)
 
 /* vertex attributes */
 
-void gpu_nodes_get_vertex_attributes(ListBase *nodes, GPUVertexAttribs *attribs)
+static void gpu_nodes_get_vertex_attributes(ListBase *nodes, GPUVertexAttribs *attribs)
 {
 	GPUNode *node;
 	GPUInput *input;
@@ -1134,7 +1140,7 @@ void gpu_nodes_get_vertex_attributes(ListBase *nodes, GPUVertexAttribs *attribs)
 	}
 }
 
-void gpu_nodes_get_builtin_flag(ListBase *nodes, int *builtin)
+static void gpu_nodes_get_builtin_flag(ListBase *nodes, int *builtin)
 {
 	GPUNode *node;
 	GPUInput *input;
@@ -1352,7 +1358,7 @@ int GPU_link_changed(GPUNodeLink *link)
 
 /* Pass create/free */
 
-void gpu_nodes_tag(GPUNodeLink *link)
+static void gpu_nodes_tag(GPUNodeLink *link)
 {
 	GPUNode *node;
 	GPUInput *input;
@@ -1370,7 +1376,7 @@ void gpu_nodes_tag(GPUNodeLink *link)
 			gpu_nodes_tag(input->link);
 }
 
-void gpu_nodes_prune(ListBase *nodes, GPUNodeLink *outlink)
+static void gpu_nodes_prune(ListBase *nodes, GPUNodeLink *outlink)
 {
 	GPUNode *node, *next;
 

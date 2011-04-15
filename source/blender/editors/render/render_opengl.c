@@ -1,5 +1,5 @@
-/**
- * $Id: render_opengl.c 33963 2010-12-31 04:48:56Z campbellbarton $
+/*
+ * $Id: render_opengl.c 35507 2011-03-13 02:44:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/render/render_opengl.c
+ *  \ingroup edrend
+ */
+
+
 #include <math.h>
 #include <string.h>
 #include <stddef.h>
@@ -36,6 +41,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_editVert.h"
 #include "BLI_dlrbTree.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
@@ -129,20 +135,19 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 	 */
 
 	if(view_context) {
-		int is_ortho;
 		GPU_offscreen_bind(oglrender->ofs); /* bind */
 
 		/* render 3d view */
 		if(rv3d->persp==RV3D_CAMOB && v3d->camera) {
+			/*int is_ortho= scene->r.mode & R_ORTHO;*/
 			RE_GetCameraWindow(oglrender->re, v3d->camera, scene->r.cfra, winmat);
-			is_ortho= scene->r.mode & R_ORTHO;
 			
 		}
 		else {
 			rctf viewplane;
 			float clipsta, clipend;
-	
-			is_ortho= get_view3d_viewplane(v3d, rv3d, sizex, sizey, &viewplane, &clipsta, &clipend, NULL);
+
+			int is_ortho= get_view3d_viewplane(v3d, rv3d, sizex, sizey, &viewplane, &clipsta, &clipend, NULL);
 			if(is_ortho) orthographic_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, -clipend, clipend);
 			else  perspective_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, clipsta, clipend);
 		}
@@ -183,9 +188,17 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 		GPU_offscreen_unbind(oglrender->ofs); /* unbind */
 	}
 	else {
-		ImBuf *ibuf_view= ED_view3d_draw_offscreen_imbuf_simple(scene, oglrender->sizex, oglrender->sizey, IB_rectfloat, OB_SOLID);
-		memcpy(rr->rectf, ibuf_view->rect_float, sizeof(float) * 4 * oglrender->sizex * oglrender->sizey);
-		IMB_freeImBuf(ibuf_view);
+		/* shouldnt suddenly give errors mid-render but possible */
+		char err_out[256]= "unknown";
+		ImBuf *ibuf_view= ED_view3d_draw_offscreen_imbuf_simple(scene, oglrender->sizex, oglrender->sizey, IB_rectfloat, OB_SOLID, err_out);
+
+		if(ibuf_view) {
+			memcpy(rr->rectf, ibuf_view->rect_float, sizeof(float) * 4 * oglrender->sizex * oglrender->sizey);
+			IMB_freeImBuf(ibuf_view);
+		}
+		else {
+			fprintf(stderr, "screen_opengl_render_apply: failed to get buffer, %s\n", err_out);
+		}
 	}
 	
 	/* rr->rectf is now filled with image data */
@@ -225,6 +238,7 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 	short is_view_context= RNA_boolean_get(op->ptr, "view_context");
 	const short is_animation= RNA_boolean_get(op->ptr, "animation");
 	const short is_write_still= RNA_boolean_get(op->ptr, "write_still");
+	char err_out[256]= "unknown";
 
 	/* ensure we have a 3d view */
 
@@ -258,10 +272,10 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 	sizey= (scene->r.size*scene->r.ysch)/100;
 
 	/* corrects render size with actual size, not every card supports non-power-of-two dimensions */
-	ofs= GPU_offscreen_create(&sizex, &sizey);
+	ofs= GPU_offscreen_create(&sizex, &sizey, err_out);
 
 	if(!ofs) {
-		BKE_report(op->reports, RPT_ERROR, "Failed to create OpenGL offscreen buffer.");
+		BKE_reportf(op->reports, RPT_ERROR, "Failed to create OpenGL offscreen buffer, %s", err_out);
 		return 0;
 	}
 
@@ -280,6 +294,9 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 		oglrender->v3d= CTX_wm_view3d(C);
 		oglrender->ar= CTX_wm_region(C);
 		oglrender->rv3d= CTX_wm_region_view3d(C);
+
+		/* MUST be cleared on exit */
+		oglrender->scene->customdata_mask_modal= ED_view3d_datamask(oglrender->scene, oglrender->v3d);
 	}
 
 	/* create image and image user */
@@ -323,6 +340,8 @@ static void screen_opengl_render_end(bContext *C, OGLRender *oglrender)
 
 	GPU_offscreen_free(oglrender->ofs);
 
+	oglrender->scene->customdata_mask_modal= 0;
+
 	MEM_freeN(oglrender);
 }
 
@@ -353,8 +372,8 @@ static int screen_opengl_render_anim_initialize(bContext *C, wmOperator *op)
 	}
 
 	oglrender->cfrao= scene->r.cfra;
-	oglrender->nfra= SFRA;
-	scene->r.cfra= SFRA;
+	oglrender->nfra= PSFRA;
+	scene->r.cfra= PSFRA;
 
 	return 1;
 }
@@ -437,7 +456,7 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 	scene->r.cfra++;
 
 	/* stop at the end or on error */
-	if(scene->r.cfra > EFRA || !ok) {
+	if(scene->r.cfra > PEFRA || !ok) {
 		screen_opengl_render_end(C, op->customdata);
 		return 0;
 	}

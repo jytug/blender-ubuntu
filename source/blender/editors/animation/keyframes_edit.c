@@ -1,5 +1,5 @@
-/**
- * $Id: keyframes_edit.c 32532 2010-10-17 06:38:56Z campbellbarton $
+/*
+ * $Id: keyframes_edit.c 35824 2011-03-27 17:22:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/animation/keyframes_edit.c
+ *  \ingroup edanimation
+ */
+
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -33,12 +38,14 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_camera_types.h"
 #include "DNA_key_types.h"
 #include "DNA_lamp_types.h"
+#include "DNA_lattice_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_material_types.h"
 #include "DNA_object_types.h"
@@ -51,7 +58,7 @@
 #include "BKE_fcurve.h"
 #include "BKE_key.h"
 #include "BKE_material.h"
-#include "BKE_utildefines.h"
+
 
 #include "ED_anim_api.h"
 #include "ED_keyframes_edit.h"
@@ -88,7 +95,7 @@ short ANIM_fcurve_keyframes_loop(KeyframeEditData *ked, FCurve *fcu, KeyframeEdi
 {
 	BezTriple *bezt;
 	short ok = 0;
-	int i;
+	unsigned int i;
 
 	/* sanity check */
 	if (ELEM(NULL, fcu, fcu->bezt))
@@ -318,6 +325,16 @@ static short ob_keyframes_loop(KeyframeEditData *ked, Object *ob, KeyframeEditFu
 			}
 		}
 			break;
+		case OB_LATTICE: /* ---- Lattice ------ */
+		{
+			Lattice *lt= (Lattice *)ob->data;
+			
+			if ((lt->adt) && !(filterflag & ADS_FILTER_NOLAT)) {
+				if (adt_keyframes_loop(ked, lt->adt, key_ok, key_cb, fcu_cb, filterflag))
+					return 1;
+			}
+		}
+			break;
 	}
 	
 	/* Add Particle System Keyframes */
@@ -520,7 +537,7 @@ static short ok_bezier_frame(KeyframeEditData *ked, BezTriple *bezt)
 	short ok = 0;
 	
 	/* frame is stored in f1 property (this float accuracy check may need to be dropped?) */
-	#define KEY_CHECK_OK(_index) IS_EQ(bezt->vec[_index][0], ked->f1)
+	#define KEY_CHECK_OK(_index) IS_EQF(bezt->vec[_index][0], ked->f1)
 		KEYFRAME_OK_CHECKS(KEY_CHECK_OK);
 	#undef KEY_CHECK_OK
 	
@@ -560,7 +577,7 @@ static short ok_bezier_value(KeyframeEditData *ked, BezTriple *bezt)
 	 *	- this float accuracy check may need to be dropped?
 	 *	- should value be stored in f2 instead so that we won't have conflicts when using f1 for frames too?
 	 */
-	#define KEY_CHECK_OK(_index) IS_EQ(bezt->vec[_index][1], ked->f1)
+	#define KEY_CHECK_OK(_index) IS_EQF(bezt->vec[_index][1], ked->f1)
 		KEYFRAME_OK_CHECKS(KEY_CHECK_OK);
 	#undef KEY_CHECK_OK
 	
@@ -680,7 +697,7 @@ void bezt_remap_times(KeyframeEditData *ked, BezTriple *bezt)
 static short snap_bezier_nearest(KeyframeEditData *UNUSED(ked), BezTriple *bezt)
 {
 	if (bezt->f2 & SELECT)
-		bezt->vec[1][0]= (float)(floor(bezt->vec[1][0]+0.5));
+		bezt->vec[1][0]= (float)(floorf(bezt->vec[1][0]+0.5f));
 	return 0;
 }
 
@@ -983,6 +1000,13 @@ static short set_keytype_extreme(KeyframeEditData *UNUSED(ked), BezTriple *bezt)
 	return 0;
 }
 
+static short set_keytype_jitter(KeyframeEditData *UNUSED(ked), BezTriple *bezt) 
+{
+	if (bezt->f2 & SELECT) 
+		BEZKEYTYPE(bezt)= BEZT_KEYTYPE_JITTER;
+	return 0;
+}
+
 /* Set the interpolation type of the selected BezTriples in each F-Curve to the specified one */
 KeyframeEditFunc ANIM_editkeyframes_keytype(short code)
 {
@@ -992,6 +1016,9 @@ KeyframeEditFunc ANIM_editkeyframes_keytype(short code)
 			
 		case BEZT_KEYTYPE_EXTREME: /* extreme keyframe */
 			return set_keytype_extreme;
+			
+		case BEZT_KEYTYPE_JITTER: /* jitter keyframe */
+			return set_keytype_jitter;
 			
 		case BEZT_KEYTYPE_KEYFRAME: /* proper keyframe */	
 		default:

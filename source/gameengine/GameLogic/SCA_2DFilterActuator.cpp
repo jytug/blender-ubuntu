@@ -1,7 +1,7 @@
-/**
+/*
  * SCA_2DFilterActuator.cpp
  *
- * $Id: SCA_2DFilterActuator.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
+ * $Id: SCA_2DFilterActuator.cpp 35169 2011-02-25 13:32:11Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -22,6 +22,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file gameengine/GameLogic/SCA_2DFilterActuator.cpp
+ *  \ingroup gamelogic
+ */
+
+
+#include <stddef.h>
 
 #include "SCA_IActuator.h"
 #include "SCA_2DFilterActuator.h"

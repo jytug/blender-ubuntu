@@ -22,6 +22,7 @@
 set(INC
 	../include
 	../../blenkernel
+	../../blenloader
 	../../blenlib
 	../../makesdna
 	../../makesrna
@@ -34,6 +35,7 @@ set(SRC
 	editmode_undo.c
 	numinput.c
 	undo.c
+	crazyspace.c
 
 	util_intern.h
 	# general includes
@@ -62,7 +64,6 @@ set(SRC
 	../include/ED_particle.h
 	../include/ED_physics.h
 	../include/ED_render.h
-	../include/ED_retopo.h
 	../include/ED_screen.h
 	../include/ED_screen_types.h
 	../include/ED_sculpt.h

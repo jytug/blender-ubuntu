@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_smoke.c 33693 2010-12-15 17:36:08Z campbellbarton $
+* $Id: MOD_smoke.c 35918 2011-03-31 11:21:21Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,7 +30,12 @@
 *
 */
 
-#include "stddef.h"
+/** \file blender/modifiers/intern/MOD_smoke.c
+ *  \ingroup modifiers
+ */
+
+
+#include <stddef.h>
 
 #include "MEM_guardedalloc.h"
 
@@ -39,7 +44,9 @@
 #include "DNA_scene_types.h"
 #include "DNA_smoke_types.h"
 
-#include "BKE_utildefines.h"
+#include "BLI_utildefines.h"
+
+
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"
 #include "BKE_smoke.h"
@@ -83,7 +90,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 						int UNUSED(isFinalCalc))
 {
 	SmokeModifierData *smd = (SmokeModifierData*) md;
-	DerivedMesh *dm = dm= get_cddm(ob, NULL, derivedData, vertexCos);
+	DerivedMesh *dm = get_cddm(ob, NULL, derivedData, vertexCos);
 
 	smokeModifier_do(smd, md->scene, ob, dm);
 
@@ -140,6 +147,17 @@ static void updateDepgraph(ModifierData *md, DagForest *forest,
 	}
 }
 
+static void foreachIDLink(ModifierData *md, Object *ob,
+					   IDWalkFunc walk, void *userData)
+{
+	SmokeModifierData *smd = (SmokeModifierData*) md;
+
+	if(smd->type==MOD_SMOKE_TYPE_DOMAIN && smd->domain) {
+		walk(userData, ob, (ID **)&smd->domain->coll_group);
+		walk(userData, ob, (ID **)&smd->domain->fluid_group);
+		walk(userData, ob, (ID **)&smd->domain->eff_group);
+	}
+}
 
 ModifierTypeInfo modifierType_Smoke = {
 	/* name */              "Smoke",
@@ -152,17 +170,18 @@ ModifierTypeInfo modifierType_Smoke = {
 
 	/* copyData */          copyData,
 	/* deformVerts */       deformVerts,
-	/* deformVertsEM */     0,
-	/* deformMatricesEM */  0,
-	/* applyModifier */     0,
-	/* applyModifierEM */   0,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
+	/* applyModifier */     NULL,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
-	/* requiredDataMask */  0,
+	/* requiredDataMask */  NULL,
 	/* freeData */          freeData,
-	/* isDisabled */        0,
+	/* isDisabled */        NULL,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     dependsOnTime,
-	/* dependsOnNormals */	0,
-	/* foreachObjectLink */ 0,
-	/* foreachIDLink */     0,
+	/* dependsOnNormals */	NULL,
+	/* foreachObjectLink */ NULL,
+	/* foreachIDLink */     foreachIDLink,
 };

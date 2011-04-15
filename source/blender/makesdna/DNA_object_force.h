@@ -1,6 +1,6 @@
-/**
+/*
  *
- * $Id: DNA_object_force.h 33996 2011-01-02 06:52:47Z jhk $
+ * $Id: DNA_object_force.h 35124 2011-02-24 13:37:53Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,10 @@
  */
 #ifndef DNA_OBJECT_FORCE_H
 #define DNA_OBJECT_FORCE_H
+
+/** \file DNA_object_force.h
+ *  \ingroup DNA
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,18 +145,18 @@ typedef struct EffectorWeights {
 
 #define BPHYS_TOT_DATA			8
 
+#define BPHYS_EXTRA_FLUID_SPRINGS	1
+
 typedef struct PTCacheExtra {
 	struct PTCacheExtra *next, *prev;
-	unsigned int type, flag;
-	unsigned int totdata, datasize;
+	unsigned int type, totdata;
 	void *data;
 } PTCacheExtra;
 
 typedef struct PTCacheMem {
 	struct PTCacheMem *next, *prev;
-	int frame, totpoint;
+	unsigned int frame, totpoint;
 	unsigned int data_types, flag;
-	int *index_array; /* quick access to stored points with index */
 
 	void *data[8]; /* BPHYS_TOT_DATA */
 	void *cur[8]; /* BPHYS_TOT_DATA */
@@ -339,7 +343,7 @@ typedef struct SoftBody {
 
 /* pd->flag: various settings */
 #define PFIELD_USEMAX			1
-#define PDEFLE_DEFORM			2
+/*#define PDEFLE_DEFORM			2*/			/*UNUSED*/
 #define PFIELD_GUIDE_PATH_ADD	4			/* TODO: do_versions for below */
 #define PFIELD_PLANAR			8			/* used for do_versions */
 #define PDEFLE_KILL_PART		16
@@ -393,6 +397,8 @@ typedef struct SoftBody {
 #define PTCACHE_READ_INFO			1024
 /* dont use the filename of the blendfile the data is linked from (write a local cache) */
 #define PTCACHE_IGNORE_LIBPATH		2048
+/* high resolution cache is saved for smoke for backwards compatibility, so set this flag to know it's a "fake" cache */
+#define PTCACHE_FAKE_SMOKE			(1<<12)
 
 /* PTCACHE_OUTDATED + PTCACHE_FRAMES_SKIPPED */
 #define PTCACHE_REDO_NEEDED			258

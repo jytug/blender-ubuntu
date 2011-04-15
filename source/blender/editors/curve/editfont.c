@@ -1,5 +1,5 @@
-/**
- * $Id: editfont.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: editfont.c 35797 2011-03-26 09:36:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/curve/editfont.c
+ *  \ingroup edcurve
+ */
+
+
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
@@ -40,6 +45,7 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_curve_types.h"
 #include "DNA_object_types.h"
@@ -61,6 +67,7 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+#include "ED_curve.h"
 #include "ED_object.h"
 #include "ED_screen.h"
 #include "ED_util.h"
@@ -205,7 +212,7 @@ static char findaccent(char char1, unsigned int code)
 }
 
 
-void update_string(Curve *cu)
+static void update_string(Curve *cu)
 {
 	EditFont *ef= cu->editfont;
 	int len;
@@ -609,7 +616,7 @@ static EnumPropertyItem style_items[]= {
 	{CU_CHINFO_SMALLCAPS, "SMALL_CAPS", 0, "Small Caps", ""},
 	{0, NULL, 0, NULL, NULL}};
 
-static int set_style(bContext *C, int style, int clear)
+static int set_style(bContext *C, const int style, const int clear)
 {
 	Object *obedit= CTX_data_edit_object(C);
 	Curve *cu= obedit->data;
@@ -634,10 +641,8 @@ static int set_style(bContext *C, int style, int clear)
 
 static int set_style_exec(bContext *C, wmOperator *op)
 {
-	int style, clear;
-
-	style= RNA_enum_get(op->ptr, "style");
-	clear= RNA_enum_get(op->ptr, "clear");
+	const int style= RNA_enum_get(op->ptr, "style");
+	const int clear= RNA_boolean_get(op->ptr, "clear");
 
 	return set_style(C, style, clear);
 }
@@ -1088,7 +1093,7 @@ static int line_break_exec(bContext *C, wmOperator *op)
 	Object *obedit= CTX_data_edit_object(C);
 	Curve *cu= obedit->data;
 	EditFont *ef= cu->editfont;
-	int ctrl= RNA_enum_get(op->ptr, "ctrl");
+	const int ctrl= RNA_boolean_get(op->ptr, "ctrl");
 
 	if(ctrl) {
 		insert_into_textbuf(obedit, 1);
@@ -1220,7 +1225,7 @@ static int insert_text_exec(bContext *C, wmOperator *op)
 	Scene *scene= CTX_data_scene(C);
 	Object *obedit= CTX_data_edit_object(C);
 	char *inserted_utf8;
-	wchar_t *inserted_text, first;
+	wchar_t *inserted_text;
 	int a, len;
 
 	if(!RNA_property_is_set(op->ptr, "text"))
@@ -1231,7 +1236,6 @@ static int insert_text_exec(bContext *C, wmOperator *op)
 
 	inserted_text= MEM_callocN(sizeof(wchar_t)*(len+1), "FONT_insert_text");
 	utf8towchar(inserted_text, inserted_utf8);
-	first= inserted_text[0];
 
 	for(a=0; a<len; a++)
 		insert_into_textbuf(obedit, inserted_text[a]);
@@ -1367,16 +1371,6 @@ void FONT_OT_text_insert(wmOperatorType *ot)
 
 
 /*********************** textbox add operator *************************/
-static int textbox_poll(bContext *C)
-{
-	Object *ob = CTX_data_active_object(C);
-	
-	if (!ED_operator_object_active_editable(C) ) return 0;
-	if (ob->type != OB_FONT) return 0;
-	
-	return 1;
-}
-
 static int textbox_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Object *obedit= CTX_data_active_object(C);
@@ -1403,8 +1397,8 @@ void FONT_OT_textbox_add(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec= textbox_add_exec;
-	ot->poll= textbox_poll;
-	
+	ot->poll= ED_operator_object_active_editable_font;
+
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
@@ -1446,7 +1440,7 @@ void FONT_OT_textbox_remove(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec= textbox_remove_exec;
-	ot->poll= textbox_poll;
+	ot->poll= ED_operator_object_active_editable_font;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;

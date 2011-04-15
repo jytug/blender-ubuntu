@@ -1,5 +1,5 @@
-/**
- * $Id: view2d_ops.c 33442 2010-12-03 12:30:59Z campbellbarton $
+/*
+ * $Id: view2d_ops.c 35819 2011-03-27 14:52:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/interface/view2d_ops.c
+ *  \ingroup edinterface
+ */
+
+
 #include <math.h>
 
 #include "MEM_guardedalloc.h"
@@ -32,6 +37,7 @@
 #include "DNA_userdef_types.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 
@@ -279,7 +285,7 @@ static int view_pan_cancel(bContext *UNUSED(C), wmOperator *op)
 	return OPERATOR_CANCELLED;
 }
 
-void VIEW2D_OT_pan(wmOperatorType *ot)
+static void VIEW2D_OT_pan(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Pan View";
@@ -329,7 +335,7 @@ static int view_scrollright_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-void VIEW2D_OT_scroll_right(wmOperatorType *ot)
+static void VIEW2D_OT_scroll_right(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Scroll Right";
@@ -373,7 +379,7 @@ static int view_scrollleft_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-void VIEW2D_OT_scroll_left(wmOperatorType *ot)
+static void VIEW2D_OT_scroll_left(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Scroll Left";
@@ -409,6 +415,11 @@ static int view_scrolldown_exec(bContext *C, wmOperator *op)
 	RNA_int_set(op->ptr, "deltax", 0);
 	RNA_int_set(op->ptr, "deltay", -40);
 	
+	if(RNA_boolean_get(op->ptr, "page")) {
+		ARegion *ar= CTX_wm_region(C);
+		RNA_int_set(op->ptr, "deltay", ar->v2d.mask.ymin - ar->v2d.mask.ymax);
+	}
+	
 	/* apply movement, then we're done */
 	view_pan_apply(op);
 	view_pan_exit(op);
@@ -416,7 +427,7 @@ static int view_scrolldown_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-void VIEW2D_OT_scroll_down(wmOperatorType *ot)
+static void VIEW2D_OT_scroll_down(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Scroll Down";
@@ -429,6 +440,7 @@ void VIEW2D_OT_scroll_down(wmOperatorType *ot)
 	/* rna - must keep these in sync with the other operators */
 	RNA_def_int(ot->srna, "deltax", 0, INT_MIN, INT_MAX, "Delta X", "", INT_MIN, INT_MAX);
 	RNA_def_int(ot->srna, "deltay", 0, INT_MIN, INT_MAX, "Delta Y", "", INT_MIN, INT_MAX);
+	RNA_def_boolean(ot->srna, "page", 0, "Page", "Scroll down one page.");
 }
 
 
@@ -453,6 +465,11 @@ static int view_scrollup_exec(bContext *C, wmOperator *op)
 	RNA_int_set(op->ptr, "deltax", 0);
 	RNA_int_set(op->ptr, "deltay", 40);
 	
+	if(RNA_boolean_get(op->ptr, "page")) {
+		ARegion *ar= CTX_wm_region(C);
+		RNA_int_set(op->ptr, "deltay", ar->v2d.mask.ymax - ar->v2d.mask.ymin);
+	}
+	
 	/* apply movement, then we're done */
 	view_pan_apply(op);
 	view_pan_exit(op);
@@ -460,7 +477,7 @@ static int view_scrollup_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-void VIEW2D_OT_scroll_up(wmOperatorType *ot)
+static void VIEW2D_OT_scroll_up(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Scroll Up";
@@ -473,6 +490,7 @@ void VIEW2D_OT_scroll_up(wmOperatorType *ot)
 	/* rna - must keep these in sync with the other operators */
 	RNA_def_int(ot->srna, "deltax", 0, INT_MIN, INT_MAX, "Delta X", "", INT_MIN, INT_MAX);
 	RNA_def_int(ot->srna, "deltay", 0, INT_MIN, INT_MAX, "Delta Y", "", INT_MIN, INT_MAX);
+	RNA_def_boolean(ot->srna, "page", 0, "Page", "Scroll up one page.");
 }
 
 /* ********************************************************* */
@@ -589,7 +607,7 @@ static void view_zoomstep_apply(bContext *C, wmOperator *op)
 		else {
 			if (U.uiflag & USER_ZOOM_TO_MOUSEPOS) {
 				float mval_fac = (vzd->mx_2d - v2d->cur.xmin) / (v2d->cur.xmax-v2d->cur.xmin);
-				float mval_faci = 1.0 - mval_fac;
+				float mval_faci = 1.0f - mval_fac;
 				float ofs= (mval_fac * dx) - (mval_faci * dx);
 				
 				v2d->cur.xmin += ofs + dx;
@@ -614,7 +632,7 @@ static void view_zoomstep_apply(bContext *C, wmOperator *op)
 		else {
 			if (U.uiflag & USER_ZOOM_TO_MOUSEPOS) {
 				float mval_fac = (vzd->my_2d - v2d->cur.ymin) / (v2d->cur.ymax-v2d->cur.ymin);
-				float mval_faci = 1.0 - mval_fac;
+				float mval_faci = 1.0f - mval_fac;
 				float ofs= (mval_fac * dy) - (mval_faci * dy);
 				
 				v2d->cur.ymin += ofs + dy;
@@ -686,7 +704,7 @@ static int view_zoomin_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	return view_zoomin_exec(C, op);
 }
 
-void VIEW2D_OT_zoom_in(wmOperatorType *ot)
+static void VIEW2D_OT_zoom_in(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Zoom In";
@@ -743,7 +761,7 @@ static int view_zoomout_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	return view_zoomout_exec(C, op);
 }
 
-void VIEW2D_OT_zoom_out(wmOperatorType *ot)
+static void VIEW2D_OT_zoom_out(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Zoom Out";
@@ -799,7 +817,7 @@ static void view_zoomdrag_apply(bContext *C, wmOperator *op)
 		else {
 			if (U.uiflag & USER_ZOOM_TO_MOUSEPOS) {
 				float mval_fac = (vzd->mx_2d - v2d->cur.xmin) / (v2d->cur.xmax-v2d->cur.xmin);
-				float mval_faci = 1.0 - mval_fac;
+				float mval_faci = 1.0f - mval_fac;
 				float ofs= (mval_fac * dx) - (mval_faci * dx);
 				
 				v2d->cur.xmin += ofs + dx;
@@ -818,7 +836,7 @@ static void view_zoomdrag_apply(bContext *C, wmOperator *op)
 		else {
 			if (U.uiflag & USER_ZOOM_TO_MOUSEPOS) {
 				float mval_fac = (vzd->my_2d - v2d->cur.ymin) / (v2d->cur.ymax-v2d->cur.ymin);
-				float mval_faci = 1.0 - mval_fac;
+				float mval_faci = 1.0f - mval_fac;
 				float ofs= (mval_fac * dy) - (mval_faci * dy);
 				
 				v2d->cur.ymin += ofs + dy;
@@ -1027,7 +1045,7 @@ static int view_zoomdrag_modal(bContext *C, wmOperator *op, wmEvent *event)
 	return OPERATOR_RUNNING_MODAL;
 }
 
-void VIEW2D_OT_zoom(wmOperatorType *ot)
+static void VIEW2D_OT_zoom(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Zoom View";
@@ -1127,7 +1145,7 @@ static int view_borderzoom_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 } 
 
-void VIEW2D_OT_zoom_border(wmOperatorType *ot)
+static void VIEW2D_OT_zoom_border(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Zoom to Border";
@@ -1196,7 +1214,7 @@ enum {
 	SCROLLHANDLE_MAX,
 	SCROLLHANDLE_MIN_OUTSIDE,
 	SCROLLHANDLE_MAX_OUTSIDE
-} eV2DScrollerHandle_Zone;
+} /*eV2DScrollerHandle_Zone*/;
 
 /* ------------------------ */
 
@@ -1430,9 +1448,9 @@ static int scroller_activate_modal(bContext *C, wmOperator *op, wmEvent *event)
 				/* single-click was in empty space outside bubble, so scroll by 1 'page' */
 				if (ELEM(vsm->zone, SCROLLHANDLE_MIN_OUTSIDE, SCROLLHANDLE_MAX_OUTSIDE)) {
 					if (vsm->zone == SCROLLHANDLE_MIN_OUTSIDE)
-						vsm->delta = -vsm->scrollbarwidth * 0.8;
+						vsm->delta = -vsm->scrollbarwidth * 0.8f;
 					else if (vsm->zone == SCROLLHANDLE_MAX_OUTSIDE)
-						vsm->delta = vsm->scrollbarwidth * 0.8;
+						vsm->delta = vsm->scrollbarwidth * 0.8f;
 					
 					scroller_activate_apply(C, op);
 					scroller_activate_exit(C, op);
@@ -1524,7 +1542,7 @@ static int scroller_activate_invoke(bContext *C, wmOperator *op, wmEvent *event)
 }
 
 /* LMB-Drag in Scrollers - not repeatable operator! */
-void VIEW2D_OT_scroller_activate(wmOperatorType *ot)
+static void VIEW2D_OT_scroller_activate(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Scroller Activate";
@@ -1590,7 +1608,7 @@ static int reset_exec(bContext *C, wmOperator *UNUSED(op))
 	return OPERATOR_FINISHED;
 }
  
-void VIEW2D_OT_reset(wmOperatorType *ot)
+static void VIEW2D_OT_reset(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Reset View";
@@ -1683,8 +1701,10 @@ void UI_view2d_keymap(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "VIEW2D_OT_pan", MOUSEPAN, 0, 0, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_scroll_down", WHEELDOWNMOUSE, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_scroll_up", WHEELUPMOUSE, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "VIEW2D_OT_scroll_down", PAGEDOWNKEY, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "VIEW2D_OT_scroll_up", PAGEUPKEY, KM_PRESS, 0, 0);
+	
+	RNA_boolean_set(WM_keymap_add_item(keymap, "VIEW2D_OT_scroll_down", PAGEDOWNKEY, KM_PRESS, 0, 0)->ptr, "page", 1);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "VIEW2D_OT_scroll_up", PAGEUPKEY, KM_PRESS, 0, 0)->ptr, "page", 1);
+	
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom", MIDDLEMOUSE, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom", MOUSEZOOM, 0, 0, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom_out", PADMINUS, KM_PRESS, 0, 0);

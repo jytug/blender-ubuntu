@@ -2,7 +2,7 @@
 /*  key.c      
  *  
  * 
- * $Id: key.c 34020 2011-01-03 04:59:57Z campbellbarton $
+ * $Id: key.c 35836 2011-03-28 04:22:50Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,6 +30,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/key.c
+ *  \ingroup bke
+ */
+
+
 #include <math.h>
 #include <string.h>
 #include <stddef.h>
@@ -39,6 +44,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_editVert.h"
 #include "BLI_math_vector.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_key_types.h"
@@ -57,7 +63,7 @@
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_object.h"
-#include "BKE_utildefines.h"
+
 
 #include "RNA_access.h"
 
@@ -149,13 +155,9 @@ Key *copy_key(Key *key)
 	Key *keyn;
 	KeyBlock *kbn, *kb;
 	
-	if(key==0) return 0;
+	if(key==NULL) return NULL;
 	
 	keyn= copy_libblock(key);
-	
-#if 0 // XXX old animation system
-	keyn->ipo= copy_ipo(key->ipo);
-#endif // XXX old animation system
 	
 	BLI_duplicatelist(&keyn->block, &key->block);
 	
@@ -180,14 +182,10 @@ void make_local_key(Key *key)
 	* - only local users: set flag
 	* - mixed: make copy
 	*/
-	if(key==0) return;
+	if(key==NULL) return;
 	
-	key->id.lib= 0;
-	new_id(0, (ID *)key, 0);
-
-#if 0 // XXX old animation system
-	make_local_ipo(key->ipo);
-#endif // XXX old animation system
+	key->id.lib= NULL;
+	new_id(NULL, (ID *)key, NULL);
 }
 
 /* Sort shape keys and Ipo curves after a change.  This assumes that at most
@@ -372,14 +370,14 @@ static int setkeys(float fac, ListBase *lb, KeyBlock *k[], float *t, int cycl)
 
 	/* if(fac<0.0 || fac>1.0) return 1; */
 
-	if(k1->next==0) return 1;
+	if(k1->next==NULL) return 1;
 
 	if(cycl) {	/* pre-sort */
 		k[2]= k1->next;
 		k[3]= k[2]->next;
-		if(k[3]==0) k[3]=k1;
+		if(k[3]==NULL) k[3]=k1;
 		while(k1) {
-			if(k1->next==0) k[0]=k1;
+			if(k1->next==NULL) k[0]=k1;
 			k1=k1->next;
 		}
 		k1= k[1];
@@ -400,13 +398,13 @@ static int setkeys(float fac, ListBase *lb, KeyBlock *k[], float *t, int cycl)
 		k[2]= k1->next;
 		t[2]= k[2]->pos;
 		k[3]= k[2]->next;
-		if(k[3]==0) k[3]= k[2];
+		if(k[3]==NULL) k[3]= k[2];
 		t[3]= k[3]->pos;
 		k1= k[3];
 	}
 	
 	while( t[2]<fac ) {	/* find correct location */
-		if(k1->next==0) {
+		if(k1->next==NULL) {
 			if(cycl) {
 				k1= firstkey;
 				ofs+= dpos;
@@ -424,7 +422,7 @@ static int setkeys(float fac, ListBase *lb, KeyBlock *k[], float *t, int cycl)
 		t[3]= k1->pos+ofs; 
 		k[3]= k1;
 
-		if(ofs>2.1+lastpos) break;
+		if(ofs > 2.1f + lastpos) break;
 	}
 	
 	bsplinetype= 0;
@@ -450,7 +448,7 @@ static int setkeys(float fac, ListBase *lb, KeyBlock *k[], float *t, int cycl)
 	}
 
 	d= t[2]-t[1];
-	if(d==0.0) {
+	if(d == 0.0f) {
 		if(bsplinetype==0) {
 			return 1;	/* both keys equal */
 		}
@@ -551,7 +549,7 @@ static short key_pointer_size(const Key *key, const int mode, int *poinsize, int
 
 		break;
 	default:
-		BKE_assert(!"invalid 'key->from' ID type");
+		BLI_assert(!"invalid 'key->from' ID type");
 		return FALSE;
 	}
 
@@ -640,7 +638,7 @@ static void cp_key(const int start, int end, const int tot, char *poin, Key *key
 				/* should never happen */
 				if(freek1) MEM_freeN(freek1);
 				if(freekref) MEM_freeN(freekref);
-				BKE_assert(!"invalid 'cp[1]'");
+				BLI_assert(!"invalid 'cp[1]'");
 				return;
 			}
 
@@ -651,8 +649,8 @@ static void cp_key(const int start, int end, const int tot, char *poin, Key *key
 		/* are we going to be nasty? */
 		if(flagflo) {
 			ktot+= kd;
-			while(ktot>=1.0) {
-				ktot-= 1.0;
+			while(ktot >= 1.0f) {
+				ktot -= 1.0f;
 				k1+= elemsize;
 				kref+= elemsize;
 			}
@@ -776,7 +774,7 @@ void do_rel_key(const int start, int end, const int tot, char *basispoin, Key *k
 							/* should never happen */
 							if(freefrom) MEM_freeN(freefrom);
 							if(freereffrom) MEM_freeN(freereffrom);
-							BKE_assert(!"invalid 'cp[1]'");
+							BLI_assert(!"invalid 'cp[1]'");
 							return;
 						}
 
@@ -943,7 +941,7 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 				if(freek2) MEM_freeN(freek2);
 				if(freek3) MEM_freeN(freek3);
 				if(freek4) MEM_freeN(freek4);
-				BKE_assert(!"invalid 'cp[1]'");
+				BLI_assert(!"invalid 'cp[1]'");
 				return;
 			}
 			
@@ -955,8 +953,8 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 		if(flagdo & 1) {
 			if(flagflo & 1) {
 				k1tot+= k1d;
-				while(k1tot>=1.0) {
-					k1tot-= 1.0;
+				while(k1tot >= 1.0f) {
+					k1tot -= 1.0f;
 					k1+= elemsize;
 				}
 			}
@@ -965,8 +963,8 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 		if(flagdo & 2) {
 			if(flagflo & 2) {
 				k2tot+= k2d;
-				while(k2tot>=1.0) {
-					k2tot-= 1.0;
+				while(k2tot >= 1.0f) {
+					k2tot -= 1.0f;
 					k2+= elemsize;
 				}
 			}
@@ -975,8 +973,8 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 		if(flagdo & 4) {
 			if(flagflo & 4) {
 				k3tot+= k3d;
-				while(k3tot>=1.0) {
-					k3tot-= 1.0;
+				while(k3tot >= 1.0f) {
+					k3tot -= 1.0f;
 					k3+= elemsize;
 				}
 			}
@@ -985,8 +983,8 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 		if(flagdo & 8) {
 			if(flagflo & 8) {
 				k4tot+= k4d;
-				while(k4tot>=1.0) {
-					k4tot-= 1.0;
+				while(k4tot >= 1.0f) {
+					k4tot -= 1.0f;
 					k4+= elemsize;
 				}
 			}
@@ -1088,7 +1086,7 @@ static void do_mesh_key(Scene *scene, Object *ob, Key *key, char *out, const int
 		
 		for(a=0; a<tot; a+=step, cfra+= delta) {
 			
-			ctime= bsystem_time(scene, 0, cfra, 0.0); // xxx  ugly cruft!
+			ctime= bsystem_time(scene, NULL, cfra, 0.0); // xxx  ugly cruft!
 #if 0 // XXX old animation system
 			if(calc_ipo_spec(key->ipo, KEY_SPEED, &ctime)==0) {
 				ctime /= 100.0;
@@ -1220,7 +1218,7 @@ static void do_curve_key(Scene *scene, Object *ob, Key *key, char *out, const in
 			while (a < estep) {
 				if (remain <= 0) {
 					cfra+= delta;
-					ctime= bsystem_time(scene, 0, cfra, 0.0f); // XXX old cruft
+					ctime= bsystem_time(scene, NULL, cfra, 0.0f); // XXX old cruft
 
 					ctime /= 100.0f;
 					CLAMP(ctime, 0.0f, 1.0f); // XXX for compat, we use this, but this clamping was confusing
@@ -1283,7 +1281,7 @@ static void do_latt_key(Scene *scene, Object *ob, Key *key, char *out, const int
 		
 		for(a=0; a<tot; a++, cfra+= delta) {
 			
-			ctime= bsystem_time(scene, 0, cfra, 0.0); // XXX old cruft
+			ctime= bsystem_time(scene, NULL, cfra, 0.0); // XXX old cruft
 #if 0 // XXX old animation system
 			if(calc_ipo_spec(key->ipo, KEY_SPEED, &ctime)==0) {
 				ctime /= 100.0;
@@ -1475,7 +1473,7 @@ KeyBlock *add_keyblock(Key *key, const char *name)
 	
 	// XXX kb->pos is the confusing old horizontal-line RVK crap in old IPO Editor...
 	if(key->type == KEY_RELATIVE) 
-		kb->pos= curpos+0.1;
+		kb->pos= curpos + 0.1f;
 	else {
 #if 0 // XXX old animation system
 		curpos= bsystem_time(scene, 0, (float)CFRA, 0.0);

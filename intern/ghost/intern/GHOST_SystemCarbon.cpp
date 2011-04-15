@@ -1,5 +1,5 @@
-/**
- * $Id: GHOST_SystemCarbon.cpp 32332 2010-10-05 19:10:15Z campbellbarton $
+/*
+ * $Id: GHOST_SystemCarbon.cpp 35152 2011-02-25 11:28:33Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,9 +26,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file ghost/intern/GHOST_SystemCarbon.cpp
+ *  \ingroup GHOST
+ */
+
+
 /**
 
- * $Id: GHOST_SystemCarbon.cpp 32332 2010-10-05 19:10:15Z campbellbarton $
+ * $Id: GHOST_SystemCarbon.cpp 35152 2011-02-25 11:28:33Z jesterking $
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 7, 2001
@@ -1213,40 +1218,4 @@ void GHOST_SystemCarbon::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 	if(textData) {
 		CFRelease(textData);
 	}
-}
-
-
-const GHOST_TUns8* GHOST_SystemCarbon::getSystemDir() const
-{
-	return (GHOST_TUns8*)"/Library/Application Support";
-}
-
-const GHOST_TUns8* GHOST_SystemCarbon::getUserDir() const
-{
-	static char usrPath[256] = "";
-	char* env = getenv("HOME");
-	
-	if (env) {
-		strncpy(usrPath, env, 245);
-		usrPath[245]=0;
-		strcat(usrPath, "/Library/Application Support");
-		return (GHOST_TUns8*) usrPath;
-	}
-	else
-		return NULL;
-}
-
-const GHOST_TUns8* GHOST_SystemCarbon::getBinaryDir() const
-{
-	CFURLRef bundleURL;
-	CFStringRef pathStr;
-	static char path[256];
-	CFBundleRef mainBundle = CFBundleGetMainBundle();
-	
-	bundleURL = CFBundleCopyBundleURL(mainBundle);
-	pathStr = CFURLCopyFileSystemPath(bundleURL, kCFURLPOSIXPathStyle);
-	CFStringGetCString(pathStr, path, 255, kCFStringEncodingASCII);
-	CFRelease(pathStr);
-	CFRelease(bundleURL);
-	return (GHOST_TUns8*)path;
 }

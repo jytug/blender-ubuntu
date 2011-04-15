@@ -1,5 +1,5 @@
-/**
- * $Id: editmesh_add.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: editmesh_add.c 35933 2011-04-01 08:51:12Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/mesh/editmesh_add.c
+ *  \ingroup edmesh
+ */
+
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,10 +45,12 @@
 
 #include "RNA_define.h"
 #include "RNA_access.h"
+#include "RNA_enum_types.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_editVert.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
@@ -287,7 +294,7 @@ void MESH_OT_dupli_extrude_cursor(wmOperatorType *ot)
 /* ********************** */
 
 /* selected faces get hidden edges */
-int make_fgon(EditMesh *em, wmOperator *op, int make)
+static int make_fgon(EditMesh *em, wmOperator *op, int make)
 {
 	EditFace *efa;
 	EditEdge *eed;
@@ -666,7 +673,7 @@ static void fix_new_face(EditMesh *em, EditFace *eface)
 }
 
 /* only adds quads or trias when there's edges already */
-void addfaces_from_edgenet(EditMesh *em)
+static void addfaces_from_edgenet(EditMesh *em)
 {
 	EditVert *eve1, *eve2, *eve3, *eve4;
 	
@@ -867,10 +874,10 @@ void MESH_OT_edge_face_add(wmOperatorType *ot)
 // this hack is only used so that scons+mingw + split-sources hack works
 	// ------------------------------- start copied code
 /* these are not the monkeys you are looking for */
-int monkeyo= 4;
-int monkeynv= 271;
-int monkeynf= 250;
-signed char monkeyv[271][3]= {
+static int monkeyo= 4;
+static int monkeynv= 271;
+static int monkeynf= 250;
+static signed char monkeyv[271][3]= {
 {-71,21,98},{-63,12,88},{-57,7,74},{-82,-3,79},{-82,4,92},
 {-82,17,100},{-92,21,102},{-101,12,95},{-107,7,83},
 {-117,31,84},{-109,31,95},{-96,31,102},{-92,42,102},
@@ -941,7 +948,7 @@ signed char monkeyv[271][3]= {
 {-26,-16,-42},{-17,49,-49},
 };
 
-signed char monkeyf[250][4]= {
+static signed char monkeyf[250][4]= {
 {27,4,5,26}, {25,4,5,24}, {3,6,5,4}, {1,6,5,2}, {5,6,7,4}, 
 {3,6,7,2}, {5,8,7,6}, {3,8,7,4}, {7,8,9,6}, 
 {5,8,9,4}, {7,10,9,8}, {5,10,9,6}, {9,10,11,8}, 
@@ -1093,9 +1100,9 @@ static void make_prim(Object *obedit, int type, float mat[4][4], int tot, int se
 		phi= 0; 
 		phid/=2;
 		for(a=0; a<=tot; a++) {
-			vec[0]= dia*sin(phi);
+			vec[0]= dia*sinf(phi);
 			vec[1]= 0.0;
-			vec[2]= dia*cos(phi);
+			vec[2]= dia*cosf(phi);
 			eve= addvertlist(em, vec, NULL);
 			eve->f= 1+2+4;
 			if(a==0) v1= eve;
@@ -1220,8 +1227,8 @@ static void make_prim(Object *obedit, int type, float mat[4][4], int tot, int se
 		for(b=0; b<=ext; b++) {
 			for(a=0; a<tot; a++) {
 				
-				vec[0]= dia*sin(phi);
-				vec[1]= dia*cos(phi);
+				vec[0]= dia*sinf(phi);
+				vec[1]= dia*cosf(phi);
 				vec[2]= b?depth:-depth;
 				
 				mul_m4_v3(mat, vec);
@@ -1762,6 +1769,6 @@ void MESH_OT_duplicate(wmOperatorType *ot)
 	ot->poll= ED_operator_editmesh;
 	
 	/* to give to transform */
-	RNA_def_int(ot->srna, "mode", TFM_TRANSLATION, 0, INT_MAX, "Mode", "", 0, INT_MAX);
+	RNA_def_enum(ot->srna, "mode", transform_mode_types, TFM_TRANSLATION, "Mode", "");
 }
 

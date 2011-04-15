@@ -1,5 +1,5 @@
-/**
- * $Id: image_draw.c 33697 2010-12-15 19:21:02Z ton $
+/*
+ * $Id: image_draw.c 35986 2011-04-04 04:14:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_image/image_draw.c
+ *  \ingroup spimage
+ */
+
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +44,10 @@
 #include "DNA_brush_types.h"
 
 #include "PIL_time.h"
+
 #include "BLI_threads.h"
+#include "BLI_string.h"
+#include "BLI_utildefines.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -81,7 +89,7 @@ static void image_verify_buffer_float(Image *ima, ImBuf *ibuf, int color_manage)
 	   NOTE: if float buffer changes, we have to manually remove the rect
 	*/
 
-	if(ibuf->rect_float && ibuf->rect==NULL) {
+	if(ibuf->rect_float && (ibuf->rect==NULL || (ibuf->userflags & IB_RECT_INVALID)) ) {
 		if(color_manage) {
 			if(ima && ima->source == IMA_SRC_VIEWER)
 				ibuf->profile = IB_PROFILE_LINEAR_RGB;
@@ -127,30 +135,32 @@ static void draw_render_info(Scene *scene, Image *ima, ARegion *ar)
 void draw_image_info(ARegion *ar, int channels, int x, int y, char *cp, float *fp, int *zp, float *zpf)
 {
 	char str[256];
-	int ofs;
-	
-	ofs= sprintf(str, "X: %4d Y: %4d ", x, y);
+	int ofs= 0;
+
+	ofs += BLI_snprintf(str + ofs, sizeof(str)-ofs, "X: %4d Y: %4d ", x, y);
 	if(cp)
-		ofs+= sprintf(str+ofs, "| R: %3d G: %3d B: %3d A: %3d ", cp[0], cp[1], cp[2], cp[3]);
+		ofs+= BLI_snprintf(str + ofs, sizeof(str)-ofs, "| R: %3d G: %3d B: %3d A: %3d ", cp[0], cp[1], cp[2], cp[3]);
 
 	if(fp) {
 		if(channels==4)
-			ofs+= sprintf(str+ofs, "| R: %.3f G: %.3f B: %.3f A: %.3f ", fp[0], fp[1], fp[2], fp[3]);
+			ofs+= BLI_snprintf(str + ofs, sizeof(str)-ofs, "| R: %.4f G: %.4f B: %.4f A: %.4f ", fp[0], fp[1], fp[2], fp[3]);
 		else if(channels==1)
-			ofs+= sprintf(str+ofs, "| Val: %.3f ", fp[0]);
+			ofs+= BLI_snprintf(str + ofs, sizeof(str)-ofs, "| Val: %.4f ", fp[0]);
 		else if(channels==3)
-			ofs+= sprintf(str+ofs, "| R: %.3f G: %.3f B: %.3f ", fp[0], fp[1], fp[2]);
+			ofs+= BLI_snprintf(str + ofs, sizeof(str)-ofs, "| R: %.4f G: %.4f B: %.4f ", fp[0], fp[1], fp[2]);
 	}
 
 	if(zp)
-		ofs+= sprintf(str+ofs, "| Z: %.4f ", 0.5+0.5*(((float)*zp)/(float)0x7fffffff));
+		ofs+= BLI_snprintf(str + ofs, sizeof(str)-ofs, "| Z: %.4f ", 0.5f+0.5f*(((float)*zp)/(float)0x7fffffff));
 	if(zpf)
-		ofs+= sprintf(str+ofs, "| Z: %.3f ", *zpf);
-	
+		ofs+= BLI_snprintf(str + ofs, sizeof(str)-ofs, "| Z: %.3f ", *zpf);
+	(void)ofs; /* quiet clang */
+
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
-	
-	glColor4f(.0,.0,.0,.25);
+
+	/* noisy, high contrast make impossible to read if lower alpha is used. */
+	glColor4ub(0, 0, 0, 190);
 	glRecti(0.0, 0.0, ar->winrct.xmax - ar->winrct.xmin + 1, 20);
 	glDisable(GL_BLEND);
 	
@@ -184,21 +194,21 @@ static void draw_image_grid(ARegion *ar, float zoomx, float zoomy)
 	
 	if(gridsize<1.0f) {
 		while(gridsize<1.0f) {
-			gridsize*= 4.0;
-			gridstep*= 4.0;
+			gridsize*= 4.0f;
+			gridstep*= 4.0f;
 		}
 	}
 	else {
 		while(gridsize>=4.0f) {
-			gridsize/= 4.0;
-			gridstep/= 4.0;
+			gridsize/= 4.0f;
+			gridstep/= 4.0f;
 		}
 	}
 	
 	/* the fine resolution level */
-	blendfac= 0.25*gridsize - floor(0.25*gridsize);
-	CLAMP(blendfac, 0.0, 1.0);
-	UI_ThemeColorShade(TH_BACK, (int)(20.0*(1.0-blendfac)));
+	blendfac= 0.25f*gridsize - floorf(0.25f*gridsize);
+	CLAMP(blendfac, 0.0f, 1.0f);
+	UI_ThemeColorShade(TH_BACK, (int)(20.0f*(1.0f-blendfac)));
 	
 	fac= 0.0f;
 	glBegin(GL_LINES);
@@ -388,7 +398,7 @@ static void draw_image_buffer(SpaceImage *sima, ARegion *ar, Scene *scene, Image
 			sima_draw_alpha_backdrop(x, y, ibuf->x, ibuf->y, zoomx, zoomy, col1, col2);
 
 			glEnable(GL_BLEND);
-			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		}
 
 		/* we don't draw floats buffers directly but
@@ -471,13 +481,18 @@ static void draw_image_buffer_tiled(SpaceImage *sima, ARegion *ar, Scene *scene,
 
 static void draw_image_buffer_repeated(SpaceImage *sima, ARegion *ar, Scene *scene, Image *ima, ImBuf *ibuf, float zoomx, float zoomy)
 {
-	float x, y;
-	double time_current;
-	
-	time_current = PIL_check_seconds_timer();
+	const double time_current= PIL_check_seconds_timer();
 
-	for(x=floor(ar->v2d.cur.xmin); x<ar->v2d.cur.xmax; x += 1.0f) { 
-		for(y=floor(ar->v2d.cur.ymin); y<ar->v2d.cur.ymax; y += 1.0f) { 
+	const int xmax= ceil(ar->v2d.cur.xmax);
+	const int ymax= ceil(ar->v2d.cur.ymax);
+	const int xmin= floor(ar->v2d.cur.xmin);
+	const int ymin= floor(ar->v2d.cur.ymin);
+
+	int x;
+
+	for(x=xmin; x<xmax; x++) {
+		int y;
+		for(y=ymin; y<ymax; y++) { 
 			if(ima && (ima->tpageflag & IMA_TILES))
 				draw_image_buffer_tiled(sima, ar, scene, ima, ibuf, x, y, zoomx, zoomy);
 			else

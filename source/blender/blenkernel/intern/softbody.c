@@ -1,6 +1,6 @@
 /*  softbody.c
  *
- * $Id: softbody.c 33996 2011-01-02 06:52:47Z jhk $
+ * $Id: softbody.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenkernel/intern/softbody.c
+ *  \ingroup bke
+ */
+
 
 /*
 ******
@@ -63,6 +68,7 @@ variables on the UI for now
 #include "DNA_meshdata_types.h"
 
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 #include "BLI_ghash.h"
 #include "BLI_threads.h"
 
@@ -160,7 +166,7 @@ typedef struct  SB_thread_context {
 #define BFF_CLOSEVERT   2 /* collider vertex repulses face */
 
 
-float SoftHeunTol = 1.0f; /* humm .. this should be calculated from sb parameters and sizes */
+static float SoftHeunTol = 1.0f; /* humm .. this should be calculated from sb parameters and sizes */
 
 /* local prototypes */
 static void free_softbody_intern(SoftBody *sb);
@@ -260,7 +266,7 @@ float operations still
 /* just an ID here to reduce the prob for killing objects
 ** ob->sumohandle points to we should not kill :)
 */
-const int CCD_SAVETY = 190561;
+static const int CCD_SAVETY = 190561;
 
 typedef struct ccdf_minmax{
 float minx,miny,minz,maxx,maxy,maxz;
@@ -548,7 +554,7 @@ static void ccd_build_deflector_hash(Scene *scene, Object *vertexowner, GHash *h
 			}
 
 			/*+++ only with deflecting set */
-			if(ob->pd && ob->pd->deflect && BLI_ghash_lookup(hash, ob) == 0) {
+			if(ob->pd && ob->pd->deflect && BLI_ghash_lookup(hash, ob) == NULL) {
 				DerivedMesh *dm= NULL;
 
 				if(ob->softflag & OB_SB_COLLFINAL) /* so maybe someone wants overkill to collide with subsurfed */
@@ -697,12 +703,12 @@ static void add_2nd_order_roller(Object *ob,float UNUSED(stiffness), int *counte
 			bs = sb->bspring + bp->springs[b-1];
 			/*nasty thing here that springs have two ends
 			so here we have to make sure we examine the other */
-			if (( v0 == bs->v1) ){
+			if (v0 == bs->v1){
 				bpo =sb->bpoint+bs->v2;
 				notthis = bs->v2;
 			}
 			else {
-			if (( v0 == bs->v2) ){
+			if (v0 == bs->v2){
 				bpo =sb->bpoint+bs->v1;
 				notthis = bs->v1;
 			}
@@ -1646,9 +1652,7 @@ static void scan_for_ext_spring_forces(Scene *scene, Object *ob, float timenow)
   ListBase *do_effector = NULL;
 
   do_effector = pdInitEffectors(scene, ob, NULL, sb->effector_weights);
-  if (sb){
-	  _scan_for_ext_spring_forces(scene, ob, timenow, 0, sb->totspring, do_effector);
-  }
+  _scan_for_ext_spring_forces(scene, ob, timenow, 0, sb->totspring, do_effector);
   pdEndEffectors(&do_effector);
 }
 
@@ -1656,7 +1660,7 @@ static void *exec_scan_for_ext_spring_forces(void *data)
 {
 	SB_thread_context *pctx = (SB_thread_context*)data;
 	_scan_for_ext_spring_forces(pctx->scene, pctx->ob, pctx->timenow, pctx->ifirst, pctx->ilast, pctx->do_effector);
-	return 0;
+	return NULL;
 }
 
 static void sb_sfesf_threads_run(Scene *scene, struct Object *ob, float timenow,int totsprings,int *UNUSED(ptr_to_break_func(void)))
@@ -2383,7 +2387,7 @@ static void *exec_softbody_calc_forces(void *data)
 {
 	SB_thread_context *pctx = (SB_thread_context*)data;
 	_softbody_calc_forces_slice_in_a_thread(pctx->scene, pctx->ob, pctx->forcetime, pctx->timenow, pctx->ifirst, pctx->ilast, NULL, pctx->do_effector,pctx->do_deflector,pctx->fieldfactor,pctx->windfactor);
-	return 0;
+	return NULL;
 }
 
 static void sb_cf_threads_run(Scene *scene, Object *ob, float forcetime, float timenow,int totpoint,int *UNUSED(ptr_to_break_func(void)),struct ListBase *do_effector,int do_deflector,float fieldfactor, float windfactor)
@@ -2452,7 +2456,8 @@ static void softbody_calc_forcesEx(Scene *scene, Object *ob, float forcetime, fl
 	SoftBody *sb= ob->soft;	/* is supposed to be there */
 	BodyPoint *bproot;
 	ListBase *do_effector = NULL;
-	float iks, gravity;
+	float gravity;
+	/* float iks; */
 	float fieldfactor = -1.0f, windfactor  = 0.25;
 	int   do_deflector,do_selfcollision,do_springcollision,do_aero;
 
@@ -2464,7 +2469,7 @@ static void softbody_calc_forcesEx(Scene *scene, Object *ob, float forcetime, fl
 	do_springcollision=do_deflector && (ob->softflag & OB_SB_EDGES) &&(ob->softflag & OB_SB_EDGECOLL);
 	do_aero=((sb->aeroedge)&& (ob->softflag & OB_SB_EDGES));
 
-	iks  = 1.0f/(1.0f-sb->inspring)-1.0f ;/* inner spring constants function */
+	/* iks  = 1.0f/(1.0f-sb->inspring)-1.0f; */ /* inner spring constants function */ /* UNUSED */
 	bproot= sb->bpoint; /* need this for proper spring addressing */
 
 	if (do_springcollision || do_aero)
@@ -3822,7 +3827,7 @@ void SB_estimate_transform(Object *ob,float lloc[3],float lrot[3][3],float lscal
 {
 	BodyPoint *bp;
 	ReferenceVert *rp;
-	SoftBody *sb = 0;
+	SoftBody *sb = NULL;
 	float (*opos)[3];
 	float (*rpos)[3];
 	float com[3],rcom[3];
@@ -4149,7 +4154,7 @@ void sbObjectStep(Scene *scene, Object *ob, float cfra, float (*vertexCos)[3], i
 	else if(cache_result==PTCACHE_READ_OLD) {
 		; /* do nothing */
 	}
-	else if(ob->id.lib || (cache->flag & PTCACHE_BAKED)) {
+	else if(/*ob->id.lib || */(cache->flag & PTCACHE_BAKED)) { /* "library linking & pointcaches" has to be solved properly at some point */
 		/* if baked and nothing in cache, do nothing */
 		BKE_ptcache_invalidate(cache);
 		return;

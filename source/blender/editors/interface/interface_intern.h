@@ -1,5 +1,5 @@
-/**
- * $Id: interface_intern.h 33648 2010-12-14 02:38:29Z campbellbarton $
+/*
+ * $Id: interface_intern.h 35741 2011-03-24 09:27:41Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/interface/interface_intern.h
+ *  \ingroup edinterface
+ */
+
 
 #ifndef INTERFACE_H
 #define INTERFACE_H
@@ -96,7 +101,6 @@ typedef enum {
 
 #define UI_MAX_DRAW_STR	400
 #define UI_MAX_NAME_STR	128
-#define UI_ARRAY	29
 
 /* panel limits */
 #define UI_PANEL_MINX	100
@@ -104,7 +108,7 @@ typedef enum {
 
 /* uiBut->flag */
 #define UI_SELECT		1 /* use when the button is pressed */
-#define UI_MOUSE_OVER	2
+/*#define UI_MOUSE_OVER	2*/  /*UNUSED, free flag*/
 #define UI_ACTIVE		4
 #define UI_HAS_ICON		8
 #define UI_TEXTINPUT	16
@@ -120,7 +124,7 @@ typedef enum {
 #define PNL_CLOSEDX	2
 #define PNL_CLOSEDY	4
 #define PNL_CLOSED	6
-#define PNL_TABBED	8
+/*#define PNL_TABBED	8*/ /*UNUSED*/
 #define PNL_OVERLAP	16
 
 /* Button text selection:
@@ -365,13 +369,14 @@ extern void ui_convert_to_unit_alt_name(uiBut *but, char *str, int maxlen);
 extern int ui_set_but_string(struct bContext *C, uiBut *but, const char *str);
 extern int ui_get_but_string_max_length(uiBut *but);
 
-extern void ui_set_but_default(struct bContext *C, uiBut *but);
+extern void ui_set_but_default(struct bContext *C, uiBut *but, short all);
 
 extern void ui_set_but_soft_range(uiBut *but, double value);
 
 extern void ui_check_but(uiBut *but);
 extern int  ui_is_but_float(uiBut *but);
 extern int  ui_is_but_unit(uiBut *but);
+extern int  ui_is_but_rna_valid(uiBut *but);
 
 extern void ui_bounds_block(uiBlock *block);
 extern void ui_block_translate(uiBlock *block, int x, int y);
@@ -473,14 +478,13 @@ extern void ui_draw_but(const struct bContext *C, ARegion *ar, struct uiStyle *s
 struct ThemeUI;
 void ui_widget_color_init(struct ThemeUI *tui);
 
-void ui_draw_menu_item(struct uiFontStyle *fstyle, rcti *rect, char *name, int iconid, int state);
-void ui_draw_preview_item(struct uiFontStyle *fstyle, rcti *rect, char *name, int iconid, int state);
+void ui_draw_menu_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state);
+void ui_draw_preview_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state);
 
 /* interface_style.c */
 void uiStyleInit(void);
 
 /* interface_icons.c */
-void ui_id_icon_render(struct bContext *C, struct ID *id, int preview);
 int ui_id_icon_get(struct bContext *C, struct ID *id, int preview);
 
 /* resources.c */

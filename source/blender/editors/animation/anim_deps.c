@@ -1,5 +1,5 @@
-/**
- * $Id: anim_deps.c 33743 2010-12-17 15:51:42Z campbellbarton $
+/*
+ * $Id: anim_deps.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/animation/anim_deps.c
+ *  \ingroup edanimation
+ */
+
+
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
@@ -38,6 +43,7 @@
 #include "DNA_sequence_types.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_animsys.h"
 #include "BKE_action.h"

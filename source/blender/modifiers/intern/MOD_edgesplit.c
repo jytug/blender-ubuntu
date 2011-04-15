@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_edgesplit.c 32462 2010-10-14 06:29:17Z campbellbarton $
+* $Id: MOD_edgesplit.c 35817 2011-03-27 13:49:53Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -30,6 +30,11 @@
 *
 */
 
+/** \file blender/modifiers/intern/MOD_edgesplit.c
+ *  \ingroup modifiers
+ */
+
+
 /* EdgeSplit modifier: Splits edges in the mesh according to sharpness flag
  * or edge angle (can be used to achieve autosmoothing) */
 
@@ -39,14 +44,16 @@
 #include "BLI_memarena.h"
 #include "BLI_edgehash.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
-#include "BKE_utildefines.h"
+
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"
 #include "BKE_particle.h"
 
 #include "MEM_guardedalloc.h"
 
+#include "MOD_util.h"
 
 #if 0
 #define EDGESPLIT_DEBUG_3
@@ -841,6 +848,12 @@ static void split_single_vert(SmoothVert *vert, SmoothFace *face,
 
 	copy_vert = smoothvert_copy(vert, mesh);
 
+	if(copy_vert == NULL) {
+		/* bug [#26316], this prevents a segfault
+		 * but this still needs fixing */
+		return;
+	}
+
 	repdata.find = vert;
 	repdata.replace = copy_vert;
 	face_replace_vert(face, &repdata);
@@ -1039,7 +1052,7 @@ static void tag_and_count_extra_edges(SmoothMesh *mesh, float split_angle,
 	/* if normal1 dot normal2 < threshold, angle is greater, so split */
 	/* FIXME not sure if this always works */
 	/* 0.00001 added for floating-point rounding */
-	float threshold = cos((split_angle + 0.00001) * M_PI / 180.0);
+	float threshold = cos((split_angle + 0.00001f) * (float)M_PI / 180.0f);
 	int i;
 
 	*extra_edges = 0;
@@ -1100,7 +1113,7 @@ static void split_sharp_edges(SmoothMesh *mesh, float split_angle, int flags)
 	/* if normal1 dot normal2 < threshold, angle is greater, so split */
 	/* FIXME not sure if this always works */
 	/* 0.00001 added for floating-point rounding */
-	mesh->threshold = cos((split_angle + 0.00001) * M_PI / 180.0);
+	mesh->threshold = cosf((split_angle + 0.00001f) * (float)M_PI / 180.0f);
 	mesh->flags = flags;
 
 	/* loop through edges, splitting sharp ones */
@@ -1276,18 +1289,19 @@ ModifierTypeInfo modifierType_EdgeSplit = {
 							| eModifierTypeFlag_EnableInEditmode,
 
 	/* copyData */          copyData,
-	/* deformVerts */       0,
-	/* deformVertsEM */     0,
-	/* deformMatricesEM */  0,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
 	/* applyModifierEM */   applyModifierEM,
 	/* initData */          initData,
-	/* requiredDataMask */  0,
-	/* freeData */          0,
-	/* isDisabled */        0,
-	/* updateDepgraph */    0,
-	/* dependsOnTime */     0,
-	/* dependsOnNormals */	0,
-	/* foreachObjectLink */ 0,
-	/* foreachIDLink */     0,
+	/* requiredDataMask */  NULL,
+	/* freeData */          NULL,
+	/* isDisabled */        NULL,
+	/* updateDepgraph */    NULL,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */	NULL,
+	/* foreachObjectLink */ NULL,
+	/* foreachIDLink */     NULL,
 };

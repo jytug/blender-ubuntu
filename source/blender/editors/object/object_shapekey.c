@@ -1,5 +1,5 @@
-/**
- * $Id: object_shapekey.c 33572 2010-12-09 16:50:32Z sirdude $
+/*
+ * $Id: object_shapekey.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/object/object_shapekey.c
+ *  \ingroup edobj
+ */
+
+
 #include <math.h>
 #include <string.h>
 
@@ -38,6 +43,7 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_curve_types.h"
 #include "DNA_key_types.h"

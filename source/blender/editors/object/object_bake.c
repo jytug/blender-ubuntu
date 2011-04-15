@@ -1,5 +1,5 @@
-/**
- * $Id: object_bake.c 33641 2010-12-13 17:23:03Z ton $
+/*
+ * $Id: object_bake.c 35362 2011-03-05 10:29:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/object/object_bake.c
+ *  \ingroup edobj
+ */
+
+
 /*
 	meshtools.c: no editmode (violated already :), tools operating on meshes
 */
@@ -42,6 +47,7 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_threads.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_blender.h"
 #include "BKE_context.h"
@@ -65,6 +71,8 @@
 #include "WM_types.h"
 
 #include "ED_object.h"
+
+#include "object_intern.h"
 
 /* ****************** render BAKING ********************** */
 
@@ -116,7 +124,7 @@ typedef struct BakeRender {
 } BakeRender;
 
 /* use by exec and invoke */
-int test_bake_internal(bContext *C, ReportList *reports)
+static int test_bake_internal(bContext *C, ReportList *reports)
 {
 	Scene *scene= CTX_data_scene(C);
 
@@ -307,7 +315,7 @@ static int bake_image_exec(bContext *C, wmOperator *op)
 	}
 	else {
 		ListBase threads;
-		BakeRender bkr= {0};
+		BakeRender bkr= {NULL};
 
 		init_bake_internal(&bkr, C);
 		bkr.reports= op->reports;

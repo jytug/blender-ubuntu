@@ -26,12 +26,35 @@ imp.reload(ik)
 imp.reload(deform)
 
 script = """
-fk_leg = ["%s", "%s", "%s"]
-ik_leg = ["%s", "%s", "%s"]
+fk_leg = ["%s", "%s", "%s", "%s"]
+ik_leg = ["%s", "%s", "%s", "%s", "%s", "%s"]
 if is_selected(fk_leg+ik_leg):
-    layout.prop(pose_bones[ik_leg[0]], '["ikfk_switch"]', text="FK / IK (" + ik_leg[0] + ")", slider=True)
+    layout.prop(pose_bones[ik_leg[2]], '["ikfk_switch"]', text="FK / IK (" + ik_leg[2] + ")", slider=True)
 if is_selected(fk_leg):
-    layout.prop(pose_bones[fk_leg[0]], '["isolate"]', text="Isolate Rotation (" + fk_leg[0] + ")", slider=True)
+    try:
+        pose_bones[fk_leg[0]]["isolate"]
+        layout.prop(pose_bones[fk_leg[0]], '["isolate"]', text="Isolate Rotation (" + fk_leg[0] + ")", slider=True)
+    except KeyError:
+        pass
+if is_selected(fk_leg+ik_leg):
+    p = layout.operator("pose.rigify_leg_fk2ik_" + rig_id, text="Snap FK->IK (" + fk_leg[0] + ")")
+    p.thigh_fk = fk_leg[0]
+    p.shin_fk  = fk_leg[1]
+    p.foot_fk  = fk_leg[2]
+    p.mfoot_fk = fk_leg[3]
+    p.thigh_ik = ik_leg[0]
+    p.shin_ik  = ik_leg[1]
+    p.mfoot_ik = ik_leg[5]
+    p = layout.operator("pose.rigify_leg_ik2fk_" + rig_id, text="Snap IK->FK (" + fk_leg[0] + ")")
+    p.thigh_fk  = fk_leg[0]
+    p.shin_fk   = fk_leg[1]
+    p.mfoot_fk  = fk_leg[3]
+    p.thigh_ik  = ik_leg[0]
+    p.shin_ik   = ik_leg[1]
+    p.foot_ik   = ik_leg[2]
+    p.pole      = ik_leg[3]
+    p.footroll  = ik_leg[4]
+    p.mfoot_ik  = ik_leg[5]
 """
 
 
@@ -64,12 +87,12 @@ class Rig:
         self.deform_rig.generate()
         fk_controls = self.fk_rig.generate()
         ik_controls = self.ik_rig.generate()
-        return [script % (fk_controls[0], fk_controls[1], fk_controls[2], ik_controls[0], ik_controls[1], ik_controls[2])]
+        return [script % (fk_controls[0], fk_controls[1], fk_controls[2], fk_controls[3], ik_controls[0], ik_controls[1], ik_controls[2], ik_controls[3], ik_controls[4], ik_controls[5])]
 
     @classmethod
     def add_parameters(self, group):
         """ Add the parameters of this rig type to the
-            RigifyParameters IDPropertyGroup
+            RigifyParameters PropertyGroup
 
         """
         items = [('X', 'X', ''), ('Y', 'Y', ''), ('Z', 'Z', ''), ('-X', '-X', ''), ('-Y', '-Y', ''), ('-Z', '-Z', '')]
@@ -177,6 +200,13 @@ class Rig:
         bone.use_connect = True
         bone.parent = arm.edit_bones[bones['shin']]
         bones['heel'] = bone.name
+        bone = arm.edit_bones.new('heel.02')
+        bone.head[:] = -0.0500, -0.0200, 0.0000
+        bone.tail[:] = 0.0500, -0.0200, 0.0000
+        bone.roll = 0.0000
+        bone.use_connect = False
+        bone.parent = arm.edit_bones[bones['heel']]
+        bones['heel.02'] = bone.name
         bone = arm.edit_bones.new('toe')
         bone.head[:] = 0.0000, -0.1200, 0.0300
         bone.tail[:] = 0.0000, -0.2000, 0.0300

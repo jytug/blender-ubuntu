@@ -1,5 +1,5 @@
-/**
- * $Id: MEM_RefCounted.h 26841 2010-02-12 13:34:04Z campbellbarton $
+/*
+ * $Id: MEM_RefCounted.h 35156 2011-02-25 11:47:18Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,13 +25,18 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file memutil/MEM_RefCounted.h
+ *  \ingroup memutil
+ */
+
 /**
  * @file	MEM_RefCounted.h
  * Declaration of MEM_RefCounted class.
  */
 
-#ifndef _H_MEM_REF_COUNTED
-#define _H_MEM_REF_COUNTED
+#ifndef MEM_REFCOUNTED_H
+#define MEM_REFCOUNTED_H
 
 /**
  * An object with reference counting.
@@ -108,5 +113,5 @@ inline int MEM_RefCounted::decRef()
 	return m_refCount;
 }
 
-#endif // _H_MEM_REF_COUNTED
+#endif // MEM_REFCOUNTED_H
 

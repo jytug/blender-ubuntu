@@ -1,5 +1,5 @@
-/**
- * $Id: outliner_intern.h 33448 2010-12-03 17:05:21Z campbellbarton $
+/*
+ * $Id: outliner_intern.h 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/space_outliner/outliner_intern.h
+ *  \ingroup spoutliner
+ */
+
 
 #ifndef ED_OUTLINER_INTERN_H
 #define ED_OUTLINER_INTERN_H
@@ -130,6 +135,8 @@ void OUTLINER_OT_show_hierarchy(struct wmOperatorType *ot);
 
 void OUTLINER_OT_selected_toggle(struct wmOperatorType *ot);
 void OUTLINER_OT_expanded_toggle(struct wmOperatorType *ot);
+
+void OUTLINER_OT_scroll_page(struct wmOperatorType *ot);
 
 void OUTLINER_OT_renderability_toggle(struct wmOperatorType *ot);
 void OUTLINER_OT_selectability_toggle(struct wmOperatorType *ot);

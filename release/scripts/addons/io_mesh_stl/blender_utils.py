@@ -1,3 +1,23 @@
+# ##### BEGIN GPL LICENSE BLOCK #####
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ##### END GPL LICENSE BLOCK #####
+
+# <pep8 compliant>
+
 import bpy
 
 
@@ -14,6 +34,7 @@ def create_and_link_mesh(name, faces, points):
     bpy.context.scene.objects.link(ob)
 
     # update mesh to allow proper display
+    mesh.validate()
     mesh.update()
 
 
@@ -33,21 +54,24 @@ def faces_from_mesh(ob, apply_modifier=False, triangulate=True):
 
     # get the modifiers
     try:
-        mesh = ob.create_mesh(bpy.context.scene,
-                                apply_modifier, "PREVIEW")
-    except SystemError:
+        mesh = ob.to_mesh(bpy.context.scene, apply_modifier, "PREVIEW")
+    except RuntimeError:
         return ()
 
-    def iter_face_index():
-        '''
-        From a list of faces, return the face triangulated if needed.
-        '''
-        for face in mesh.faces:
-            if triangulate and len(face.vertices) == 4:
-                yield face.vertices[:3]
-                yield face.vertices[2:] + [face.vertices[0]]
-            else:
-                yield list(face.vertices)
+    if triangulate:
+        # From a list of faces, return the face triangulated if needed.
+        def iter_face_index():
+            for face in mesh.faces:
+                vertices = face.vertices[:]
+                if len(vertices) == 4:
+                    yield vertices[0], vertices[1], vertices[2]
+                    yield vertices[2], vertices[3], vertices[0]
+                else:
+                    yield vertices
+    else:
+        def iter_face_index():
+            for face in mesh.faces:
+                yield face.vertices[:]
 
-    return ([tuple(mesh.vertices[index].co * ob.matrix_world)
+    return ([(mesh.vertices[index].co * ob.matrix_world)[:]
              for index in indexes] for indexes in iter_face_index())

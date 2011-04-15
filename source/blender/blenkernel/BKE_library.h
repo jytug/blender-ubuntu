@@ -1,9 +1,5 @@
-/**
- * blenlib/BKE_library.h (mar-2001 nzc)
- *	
- * Library
- *
- * $Id: BKE_library.h 33801 2010-12-20 07:21:08Z campbellbarton $ 
+/*
+ * $Id: BKE_library.h 34962 2011-02-18 13:05:18Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,6 +29,11 @@
 #ifndef BKE_LIBRARY_TYPES_H
 #define BKE_LIBRARY_TYPES_H
 
+/** \file BKE_library.h
+ *  \ingroup bke
+ *  \since March 2001
+ *  \author nzc
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -65,7 +66,10 @@ int set_listbasepointers(struct Main *main, struct ListBase **lb);
 void free_libblock(struct ListBase *lb, void *idv);
 void free_libblock_us(struct ListBase *lb, void *idv);
 void free_main(struct Main *mainvar);
-void tag_main(struct Main *mainvar, int tag);
+
+void tag_main_idcode(struct Main *mainvar, const short type, const short tag);
+void tag_main_lb(struct ListBase *lb, const short tag);
+void tag_main(struct Main *mainvar, const short tag);
 
 void rename_id(struct ID *id, const char *name);
 void name_uiprefix_id(char *name, struct ID *id);

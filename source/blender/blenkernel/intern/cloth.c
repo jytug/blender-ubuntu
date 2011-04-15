@@ -1,29 +1,34 @@
-/*  cloth.c
-*
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) Blender Foundation
-* All rights reserved.
-*
-* Contributor(s): Daniel Genrich
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
+/*
+ * $Id: cloth.c 35247 2011-02-27 20:40:57Z jesterking $
+ *
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) Blender Foundation
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Genrich
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file blender/blenkernel/intern/cloth.c
+ *  \ingroup bke
+ */
+
 
 #include "MEM_guardedalloc.h"
 
@@ -34,6 +39,7 @@
 
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_cloth.h"
@@ -41,7 +47,7 @@
 #include "BKE_global.h"
 #include "BKE_modifier.h"
 #include "BKE_pointcache.h"
-#include "BKE_utildefines.h"
+
 
 #ifdef _WIN32
 void tstart ( void )
@@ -163,7 +169,6 @@ static BVHTree *bvhselftree_build_from_cloth (ClothModifierData *clmd, float eps
 	BVHTree *bvhtree;
 	Cloth *cloth;
 	ClothVertex *verts;
-	MFace *mfaces;
 	float co[12];
 
 	if(!clmd)
@@ -175,7 +180,6 @@ static BVHTree *bvhselftree_build_from_cloth (ClothModifierData *clmd, float eps
 		return NULL;
 	
 	verts = cloth->verts;
-	mfaces = cloth->mfaces;
 	
 	// in the moment, return zero if no faces there
 	if(!cloth->numverts)
@@ -430,7 +434,7 @@ DerivedMesh *clothModifier_do(ClothModifierData *clmd, Scene *scene, Object *ob,
 	PointCache *cache;
 	PTCacheID pid;
 	float timescale;
-	int framedelta, framenr, startframe, endframe;
+	int framenr, startframe, endframe;
 	int cache_result;
 
 	clmd->scene= scene;	/* nice to pass on later :) */
@@ -485,11 +489,6 @@ DerivedMesh *clothModifier_do(ClothModifierData *clmd, Scene *scene, Object *ob,
 	else if(framenr > endframe) {
 		framenr= endframe;
 	}
-
-	if(cache->flag & PTCACHE_SIMULATION_VALID)
-		framedelta= framenr - cache->simframe;
-	else
-		framedelta= -1;
 
 	/* initialize simulation data if it didn't exist already */
 	if(!do_init_cloth(ob, clmd, dm, framenr))

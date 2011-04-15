@@ -21,19 +21,19 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
-bl_addon_info = {
+bl_info = {
     "name": "Relax",
     "author": "Fabian Fricke",
     "version": (1,1),
-    "blender": (2, 5, 3),
-    "api": 31847,
+    "blender": (2, 5, 7),
+    "api": 35622,
     "location": "View3D > Specials > Relax ",
     "description": "Relax the selected verts while retaining the shape",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Modeling/Relax",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=21421&group_id=153&atid=469",
+        "func=detail&aid=21421",
     "category": "Mesh"}
 
 """
@@ -117,10 +117,14 @@ def menu_func(self, context):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.VIEW3D_MT_edit_mesh_specials.append(menu_func)
     bpy.types.VIEW3D_MT_edit_mesh_vertices.append(menu_func)
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.VIEW3D_MT_edit_mesh_specials.remove(menu_func)
     bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(menu_func)
 

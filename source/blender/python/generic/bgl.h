@@ -1,5 +1,5 @@
 /* 
- * $Id: bgl.h 33205 2010-11-21 05:35:29Z campbellbarton $
+ * $Id: bgl.h 35236 2011-02-27 20:10:08Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,16 +27,19 @@
  * ***** END GPL LICENSE BLOCK *****
 */
 
+/** \file blender/python/generic/bgl.h
+ *  \ingroup pygen
+ */
+
+
 /* This is the Blender.BGL part of opy_draw.c, from the old bpython/intern
  * dir, with minor changes to adapt it to the new Python implementation.
  * The BGL submodule "wraps" OpenGL functions and constants, allowing script
  * writers to make OpenGL calls in their Python scripts for Blender.  The
  * more important original comments are marked with an @ symbol. */
 
-#ifndef EXPP_BGL_H
-#define EXPP_BGL_H
-
-#include <Python.h>
+#ifndef BGL_H
+#define BGL_H
 
 PyObject *BPyInit_bgl(void);
 
@@ -337,4 +340,4 @@ extern PyTypeObject BGL_bufferType;
 		return NULL;\
 	}
 
-#endif  /*  EXPP_BGL_H */
+#endif /* BGL_H */

@@ -1,5 +1,5 @@
-/**
- * $Id: KX_ConvertControllers.cpp 32788 2010-10-31 04:11:39Z campbellbarton $
+/*
+ * $Id: KX_ConvertControllers.cpp 35167 2011-02-25 13:30:41Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file gameengine/Converter/KX_ConvertControllers.cpp
+ *  \ingroup bgeconv
+ */
+
 
 #include "MEM_guardedalloc.h"
 
@@ -214,7 +219,7 @@ void BL_ConvertControllers(
 			if (bcontr->type==CONT_PYTHON) {
 				SCA_PythonController *pyctrl= static_cast<SCA_PythonController*>(gamecontroller);
 				/* not strictly needed but gives syntax errors early on and
-				 * gives more pradictable performance for larger scripts */
+				 * gives more predictable performance for larger scripts */
 				if(pyctrl->m_mode==SCA_PythonController::SCA_PYEXEC_SCRIPT)
 					pyctrl->Compile();
 				else {

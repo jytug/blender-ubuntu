@@ -1,5 +1,5 @@
-/**
- * $Id: GHOST_WindowWin32.cpp 32622 2010-10-21 07:16:02Z jesterking $
+/*
+ * $Id: GHOST_WindowWin32.cpp 36115 2011-04-12 14:31:59Z nazgul $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,9 +26,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file ghost/intern/GHOST_WindowWin32.cpp
+ *  \ingroup GHOST
+ */
+
+
 /**
 
- * $Id: GHOST_WindowWin32.cpp 32622 2010-10-21 07:16:02Z jesterking $
+ * $Id: GHOST_WindowWin32.cpp 36115 2011-04-12 14:31:59Z nazgul $
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 10, 2001
@@ -100,6 +105,22 @@ static PIXELFORMATDESCRIPTOR sPreferredFormat = {
 	0, 0, 0                         /* no layer, visible, damage masks */
 };
 
+/* Intel videocards don't work fine with multiple contexts and
+   have to share the same context for all windows.
+   But if we just share context for all windows it could work incorrect
+   with multiple videocards configuration. Suppose, that Intel videocards
+   can't be in multiple-devices configuration. */
+static int is_crappy_intel_card(void)
+{
+	int crappy = 0;
+	const char *vendor = (const char*)glGetString(GL_VENDOR);
+
+	if (strstr(vendor, "Intel"))
+		crappy = 1;
+
+	return crappy;
+}
+
 GHOST_WindowWin32::GHOST_WindowWin32(
 	GHOST_SystemWin32 * system,
 	const STR_String& title,
@@ -120,6 +141,7 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 	m_hDC(0),
 	m_hGlRc(0),
 	m_hasMouseCaptured(false),
+	m_hasGrabMouse(false),
 	m_nPressedButtons(0),
 	m_customCursor(0),
 	m_wintab(NULL),
@@ -139,33 +161,67 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 	m_stereo(stereoVisual),
 	m_nextWindow(NULL)
 {
+	OSVERSIONINFOEX versionInfo;
+	bool hasMinVersionForTaskbar = false;
+	
+	ZeroMemory(&versionInfo, sizeof(OSVERSIONINFOEX));
+	
+	versionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+	
+	if(!GetVersionEx((OSVERSIONINFO *)&versionInfo)) {
+		versionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		if(GetVersionEx((OSVERSIONINFO*)&versionInfo)) {
+			if((versionInfo.dwMajorVersion==6 && versionInfo.dwMinorVersion>=1) || versionInfo.dwMajorVersion >= 7) {
+				hasMinVersionForTaskbar = true;
+			}
+		}
+	} else {
+		if((versionInfo.dwMajorVersion==6 && versionInfo.dwMinorVersion>=1) || versionInfo.dwMajorVersion >= 7) {
+			hasMinVersionForTaskbar = true;
+		}
+	}
+
 	if (state != GHOST_kWindowStateFullScreen) {
 		RECT rect;
+		MONITORINFO monitor;
 		GHOST_TUns32 tw, th; 
 
 		width += GetSystemMetrics(SM_CXSIZEFRAME)*2;
 		height += GetSystemMetrics(SM_CYSIZEFRAME)*2 + GetSystemMetrics(SM_CYCAPTION);
 
+		rect.left = left;
+		rect.right = left + width;
+		rect.top = top;
+		rect.bottom = top + height;
+
+		monitor.cbSize=sizeof(monitor);
+		monitor.dwFlags=0;
+
 		// take taskbar into account
-		SystemParametersInfo(SPI_GETWORKAREA,0,&rect,0);
-		th = rect.bottom - rect.top;
-		tw = rect.right - rect.left;
+		GetMonitorInfo(MonitorFromRect(&rect,MONITOR_DEFAULTTONEAREST),&monitor);
+
+		th = monitor.rcWork.bottom - monitor.rcWork.top;
+		tw = monitor.rcWork.right - monitor.rcWork.left;
 
 		if(tw < width)
 		{
 			width = tw;
-			left = rect.left;
+			left = monitor.rcWork.left;
 		}
-		else if(left < rect.left)
-			left = rect.left;
+		else if(monitor.rcWork.right < left + (int)width)
+			left = monitor.rcWork.right - width;
+		else if(left < monitor.rcWork.left)
+			left = monitor.rcWork.left;
 
 		if(th < height)
 		{
 			height = th;
-			top = rect.top;
+			top = monitor.rcWork.top;
 		}
-		else if(top < rect.top)
-			top = rect.top;
+		else if(monitor.rcWork.bottom < top + (int)height)
+			top = monitor.rcWork.bottom - height;
+		else if(top < monitor.rcWork.top)
+			top = monitor.rcWork.top;
 
 		m_hWnd = ::CreateWindow(
 			s_windowClassName,			// pointer to registered class name
@@ -294,11 +350,22 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 			}
 		}
 	}
+
+	if(hasMinVersionForTaskbar)
+		CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList ,(LPVOID*)&m_Bar);
+	else
+		m_Bar=NULL;
 }
 
 
 GHOST_WindowWin32::~GHOST_WindowWin32()
 {
+	if(m_Bar)
+	{
+		m_Bar->SetProgressState(m_hWnd, TBPF_NOPROGRESS);
+		m_Bar->Release();
+	};
+
 	if (m_wintab) {
 		GHOST_WIN32_WTClose fpWTClose = ( GHOST_WIN32_WTClose ) ::GetProcAddress( m_wintab, "WTClose" );
 		if (fpWTClose) {
@@ -542,7 +609,12 @@ GHOST_TSuccess GHOST_WindowWin32::setOrder(GHOST_TWindowOrder order)
 
 GHOST_TSuccess GHOST_WindowWin32::swapBuffers()
 {
-	return ::SwapBuffers(m_hDC) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
+	HDC hDC = m_hDC;
+
+	if (is_crappy_intel_card())
+		hDC = ::wglGetCurrentDC();
+
+	return ::SwapBuffers(hDC) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
 }
 
 
@@ -658,18 +730,44 @@ GHOST_TSuccess GHOST_WindowWin32::installDrawingContext(GHOST_TDrawingContextTyp
 			// Create the context
 			m_hGlRc = ::wglCreateContext(m_hDC);
 			if (m_hGlRc) {
-				if (s_firsthGLRc) {
-					::wglCopyContext(s_firsthGLRc, m_hGlRc, GL_ALL_ATTRIB_BITS);
-					wglShareLists(s_firsthGLRc, m_hGlRc);
-				} else {
-					s_firsthGLRc = m_hGlRc;
-				}
+				if (::wglMakeCurrent(m_hDC, m_hGlRc) == TRUE) {
+					if (s_firsthGLRc) {
+						if (is_crappy_intel_card()) {
+							if (::wglMakeCurrent(NULL, NULL) == TRUE) {
+								::wglDeleteContext(m_hGlRc);
+								m_hGlRc = s_firsthGLRc;
+							}
+							else {
+								::wglDeleteContext(m_hGlRc);
+								m_hGlRc = NULL;
+							}
+						}
+						else {
+							::wglCopyContext(s_firsthGLRc, m_hGlRc, GL_ALL_ATTRIB_BITS);
+							::wglShareLists(s_firsthGLRc, m_hGlRc);
+						}
+					}
+					else {
+						s_firsthGLRc = m_hGlRc;
+					}
 
-				success = ::wglMakeCurrent(m_hDC, m_hGlRc) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
+					if (m_hGlRc) {
+						success = ::wglMakeCurrent(m_hDC, m_hGlRc) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
+					}
+					else {
+						success = GHOST_kFailure;
+					}
+				}
+				else {
+					success = GHOST_kFailure;
+				}
 			}
 			else {
-				printf("Failed to get a context....\n");
 				success = GHOST_kFailure;
+			}
+
+			if (success == GHOST_kFailure) {
+				printf("Failed to get a context....\n");
 			}
 		}
 		else
@@ -694,17 +792,43 @@ GHOST_TSuccess GHOST_WindowWin32::installDrawingContext(GHOST_TDrawingContextTyp
 			// Create the context
 			m_hGlRc = ::wglCreateContext(m_hDC);
 			if (m_hGlRc) {
-				if (s_firsthGLRc) {
-					::wglShareLists(s_firsthGLRc, m_hGlRc);
-				} else {
-					s_firsthGLRc = m_hGlRc;
-				}
+				if (::wglMakeCurrent(m_hDC, m_hGlRc) == TRUE) {
+					if (s_firsthGLRc) {
+						if (is_crappy_intel_card()) {
+							if (::wglMakeCurrent(NULL, NULL) == TRUE) {
+								::wglDeleteContext(m_hGlRc);
+								m_hGlRc = s_firsthGLRc;
+							}
+							else {
+								::wglDeleteContext(m_hGlRc);
+								m_hGlRc = NULL;
+							}
+						}
+						else {
+							::wglShareLists(s_firsthGLRc, m_hGlRc);
+						}
+					}
+					else {
+						s_firsthGLRc = m_hGlRc;
+					}
 
-				success = ::wglMakeCurrent(m_hDC, m_hGlRc) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
+					if (m_hGlRc) {
+						success = ::wglMakeCurrent(m_hDC, m_hGlRc) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
+					}
+					else {
+						success = GHOST_kFailure;
+					}
+				}
+				else {
+					success = GHOST_kFailure;
+				}
 			}
 			else {
-				printf("Failed to get a context....\n");
 				success = GHOST_kFailure;
+			}
+
+			if (success == GHOST_kFailure) {
+				printf("Failed to get a context....\n");
 			}
 					
 			// Attempt to enable multisample
@@ -760,12 +884,10 @@ GHOST_TSuccess GHOST_WindowWin32::removeDrawingContext()
 	GHOST_TSuccess success;
 	switch (m_drawingContextType) {
 	case GHOST_kDrawingContextTypeOpenGL:
-		if (m_hGlRc) {
-			bool first = m_hGlRc == s_firsthGLRc;
+		// we shouldn't remove the drawing context if it's the first OpenGL context
+		// If we do, we get corrupted drawing. See #19997
+		if (m_hGlRc && m_hGlRc!=s_firsthGLRc) {
 			success = ::wglDeleteContext(m_hGlRc) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
-			if (first) {
-				s_firsthGLRc = 0;
-			}
 			m_hGlRc = 0;
 		}
 		else {
@@ -783,28 +905,34 @@ GHOST_TSuccess GHOST_WindowWin32::removeDrawingContext()
 
 void GHOST_WindowWin32::lostMouseCapture()
 {
-	if (m_hasMouseCaptured) {
-		m_hasMouseCaptured = false;
-		m_nPressedButtons = 0;
-	}
+	if(m_hasMouseCaptured)
+		{	m_hasGrabMouse = false;
+			m_nPressedButtons = 0;
+			m_hasMouseCaptured = false;
+		};
 }
 
-void GHOST_WindowWin32::registerMouseClickEvent(bool press)
+void GHOST_WindowWin32::registerMouseClickEvent(int press)
 {
-	if (press) {
-		if (!m_hasMouseCaptured) {
+
+	switch(press)
+	{
+		case 0:	m_nPressedButtons++;	break;
+		case 1:	if(m_nPressedButtons)	m_nPressedButtons--; break;
+		case 2:	m_hasGrabMouse=true;	break;
+		case 3: m_hasGrabMouse=false;	break;
+	}
+
+	if(!m_nPressedButtons && !m_hasGrabMouse && m_hasMouseCaptured)
+	{
+			::ReleaseCapture();
+			m_hasMouseCaptured = false;
+	}
+	else if((m_nPressedButtons || m_hasGrabMouse) && !m_hasMouseCaptured)
+	{
 			::SetCapture(m_hWnd);
 			m_hasMouseCaptured = true;
-		}
-		m_nPressedButtons++;
-	} else {
-		if (m_nPressedButtons) {
-			m_nPressedButtons--;
-			if (!m_nPressedButtons) {
-				::ReleaseCapture();
-				m_hasMouseCaptured = false;
-			}
-		}
+
 	}
 }
 
@@ -876,7 +1004,7 @@ GHOST_TSuccess GHOST_WindowWin32::setWindowCursorGrab(GHOST_TGrabCursorMode mode
 			if(mode == GHOST_kGrabHide)
 				setWindowCursorVisibility(false);
 		}
-		registerMouseClickEvent(true);
+		registerMouseClickEvent(2);
 	}
 	else {
 		if (m_cursorGrab==GHOST_kGrabHide) {
@@ -895,7 +1023,7 @@ GHOST_TSuccess GHOST_WindowWin32::setWindowCursorGrab(GHOST_TGrabCursorMode mode
 		/* Almost works without but important otherwise the mouse GHOST location can be incorrect on exit */
 		setCursorGrabAccum(0, 0);
 		m_cursorGrabBounds.m_l= m_cursorGrabBounds.m_r= -1; /* disable */
-		registerMouseClickEvent(false);
+		registerMouseClickEvent(3);
 	}
 	
 	return GHOST_kSuccess;
@@ -1088,6 +1216,23 @@ GHOST_TSuccess GHOST_WindowWin32::setWindowCustomCursorShape(GHOST_TUns8 *bitmap
 	return GHOST_kSuccess;
 }
 
+
+GHOST_TSuccess GHOST_WindowWin32::setProgressBar(float progress)
+{	
+	/*SetProgressValue sets state to TBPF_NORMAL automaticly*/
+	if(m_Bar && S_OK == m_Bar->SetProgressValue(m_hWnd,10000*progress,10000))
+		return GHOST_kSuccess;
+
+	return GHOST_kFailure;
+}
+
+GHOST_TSuccess GHOST_WindowWin32::endProgressBar()
+{
+	if(m_Bar && S_OK == m_Bar->SetProgressState(m_hWnd,TBPF_NOPROGRESS))
+		return GHOST_kSuccess;
+
+	return GHOST_kFailure;
+}
 
 /*  Ron Fosner's code for weighting pixel formats and forcing software.
 	See http://www.opengl.org/resources/faq/technical/weight.cpp */

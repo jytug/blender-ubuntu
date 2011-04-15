@@ -1,5 +1,5 @@
-/**
- * $Id: loopcut.c 34035 2011-01-03 12:41:16Z campbellbarton $
+/*
+ * $Id: loopcut.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/mesh/loopcut.c
+ *  \ingroup edmesh
+ */
+
+
 #include <float.h>
 #include <string.h>
 #include <ctype.h>
@@ -46,6 +51,7 @@
 #include "BLI_dynstr.h" /*for WM_operator_pystring */
 #include "BLI_editVert.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_blender.h"
 #include "BKE_context.h"
@@ -54,6 +60,7 @@
 #include "BKE_modifier.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
+#include "BKE_array_mallocn.h"
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h" /* for paint cursor */
@@ -270,9 +277,12 @@ static void ringsel_finish(bContext *C, wmOperator *op)
 	int cuts= (lcd->do_cut)? RNA_int_get(op->ptr,"number_cuts"): 0;
 
 	if (lcd->eed) {
+		EditMesh *em = BKE_mesh_get_editmesh(lcd->ob->data);
+		
 		edgering_sel(lcd, cuts, 1);
+		
 		if (lcd->do_cut) {
-			EditMesh *em = BKE_mesh_get_editmesh(lcd->ob->data);
+
 			esubdivideflag(lcd->ob, em, SELECT, 0.0f, 0.0f, 0, cuts, 0, SUBDIV_SELECT_LOOPCUT);
 
 			/* force edge slide to edge select mode in in face select mode */
@@ -291,6 +301,13 @@ static void ringsel_finish(bContext *C, wmOperator *op)
 			WM_event_add_notifier(C, NC_GEOM|ND_DATA, lcd->ob->data);
 		}
 		else {
+			
+			/* sets as active, useful for other tools */
+			if(em->selectmode & SCE_SELECT_VERTEX)
+				EM_store_selection(em, lcd->eed->v1, EDITVERT);
+			if(em->selectmode & SCE_SELECT_EDGE)
+				EM_store_selection(em, lcd->eed, EDITEDGE);
+			
 			EM_selectmode_flush(lcd->em);
 			WM_event_add_notifier(C, NC_GEOM|ND_SELECT, lcd->ob->data);
 		}

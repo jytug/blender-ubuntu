@@ -1,5 +1,5 @@
-/**
- * $Id: wm_window.h 32506 2010-10-16 02:40:31Z campbellbarton $
+/*
+ * $Id: wm_window.h 35179 2011-02-25 14:04:21Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/windowmanager/wm_window.h
+ *  \ingroup wm
+ */
+
 
 #ifndef WM_WINDOW_H
 #define WM_WINDOW_H
@@ -55,7 +60,6 @@ void		wm_window_set_size		(wmWindow *win, int width, int height);
 void		wm_window_get_size		(wmWindow *win, int *width_r, int *height_r);
 void		wm_window_get_size_ghost	(wmWindow *win, int *width_r, int *height_r);
 void		wm_window_get_position	(wmWindow *win, int *posx_r, int *posy_r);
-void		wm_window_set_title		(wmWindow *win, char *title);
 void		wm_window_swap_buffers	(wmWindow *win);
 
 void		wm_get_cursor_position	(wmWindow *win, int *x, int *y);

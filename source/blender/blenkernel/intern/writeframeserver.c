@@ -1,5 +1,8 @@
+/** \file blender/blenkernel/intern/writeframeserver.c
+ *  \ingroup bke
+ */
 /*
- * $Id: writeframeserver.c 33447 2010-12-03 16:45:04Z campbellbarton $
+ * $Id: writeframeserver.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * Frameserver
  * Makes Blender accessible from TMPGenc directly using VFAPI (you can
@@ -47,10 +50,11 @@
 
 #include "DNA_userdef_types.h"
 
-#include "BKE_utildefines.h"
+#include "BLI_utildefines.h"
+
+#include "BKE_writeframeserver.h"
 #include "BKE_global.h"
 #include "BKE_report.h"
-
 
 #include "DNA_scene_types.h"
 

@@ -1,5 +1,5 @@
-/**
- * $Id: render_shading.c 33855 2010-12-22 17:38:08Z ton $
+/*
+ * $Id: render_shading.c 36063 2011-04-08 16:56:44Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -24,6 +24,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/render/render_shading.c
+ *  \ingroup edrend
+ */
+
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -34,9 +39,16 @@
 #include "DNA_material_types.h"
 #include "DNA_node_types.h"
 #include "DNA_object_types.h"
+#include "DNA_particle_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_space_types.h"
 #include "DNA_world_types.h"
+
+#include "BLI_blenlib.h"
+#include "BLI_math.h"
+#include "BLI_editVert.h"
+#include "BLI_listbase.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_animsys.h"
 #include "BKE_context.h"
@@ -57,11 +69,6 @@
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
-#include "BLI_editVert.h"
-#include "BLI_listbase.h"
-
 #include "GPU_material.h"
 
 #include "RNA_access.h"
@@ -71,6 +78,8 @@
 
 #include "ED_curve.h"
 #include "ED_mesh.h"
+#include "ED_render.h"
+#include "ED_screen.h"
 
 #include "RNA_define.h"
 
@@ -277,6 +286,7 @@ void OBJECT_OT_material_slot_add(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec= material_slot_add_exec;
+	ot->poll= ED_operator_object_active_editable;
 
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -312,6 +322,7 @@ void OBJECT_OT_material_slot_remove(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec= material_slot_remove_exec;
+	ot->poll= ED_operator_object_active_editable;
 
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -351,7 +362,7 @@ static int material_slot_assign_exec(bContext *C, wmOperator *UNUSED(op))
 
 			if(ef && BKE_font_getselection(ob, &selstart, &selend)) {
 				for(i=selstart; i<=selend; i++)
-					ef->textbufinfo[i].mat_nr = ob->actcol-1;
+					ef->textbufinfo[i].mat_nr = ob->actcol;
 			}
 		}
 	}
@@ -371,6 +382,7 @@ void OBJECT_OT_material_slot_assign(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec= material_slot_assign_exec;
+	ot->poll= ED_operator_object_active_editable;
 
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -790,6 +802,7 @@ static int texture_slot_move(bContext *C, wmOperator *op)
 			}
 		}
 
+		DAG_id_tag_update(id, 0);
 		WM_event_add_notifier(C, NC_TEXTURE, CTX_data_scene(C));
 	}
 
@@ -849,6 +862,10 @@ static int save_envmap(wmOperator *op, Scene *scene, EnvMap *env, char *str, int
 	else if (env->type == ENV_PLANE) {
 		ibuf = IMB_allocImBuf(dx, dx, 24, IB_rectfloat);
 		IMB_rectcpy(ibuf, env->cube[1], 0, 0, 0, 0, dx, dx);		
+	}
+	else {
+		BKE_report(op->reports, RPT_ERROR, "Invalid environment map type");
+		return OPERATOR_CANCELLED;
 	}
 	
 	if (scene->r.color_mgt_flag & R_COLOR_MANAGEMENT)
@@ -1088,7 +1105,7 @@ void ED_render_clear_mtex_copybuf(void)
 	mtexcopied= 0;
 }
 
-void copy_mtex_copybuf(ID *id)
+static void copy_mtex_copybuf(ID *id)
 {
 	MTex **mtex= NULL;
 	
@@ -1104,6 +1121,9 @@ void copy_mtex_copybuf(ID *id)
 			mtex= &(((World *)id)->mtex[(int)((World *)id)->texact]);
 			// mtex= wrld->mtex[(int)wrld->texact]; // TODO
 			break;
+		case ID_PA:
+			mtex= &(((ParticleSettings *)id)->mtex[(int)((ParticleSettings *)id)->texact]);
+			break;
 	}
 	
 	if(mtex && *mtex) {
@@ -1115,7 +1135,7 @@ void copy_mtex_copybuf(ID *id)
 	}
 }
 
-void paste_mtex_copybuf(ID *id)
+static void paste_mtex_copybuf(ID *id)
 {
 	MTex **mtex= NULL;
 	
@@ -1134,6 +1154,12 @@ void paste_mtex_copybuf(ID *id)
 			mtex= &(((World *)id)->mtex[(int)((World *)id)->texact]);
 			// mtex= wrld->mtex[(int)wrld->texact]; // TODO
 			break;
+		case ID_PA:
+			mtex= &(((ParticleSettings *)id)->mtex[(int)((ParticleSettings *)id)->texact]);
+			break;
+		default:
+			BLI_assert("invalid id type");
+			return;
 	}
 	
 	if(mtex) {
@@ -1198,6 +1224,7 @@ static int paste_mtex_exec(bContext *C, wmOperator *UNUSED(op))
 		Material *ma= CTX_data_pointer_get_type(C, "material", &RNA_Material).data;
 		Lamp *la= CTX_data_pointer_get_type(C, "lamp", &RNA_Lamp).data;
 		World *wo= CTX_data_pointer_get_type(C, "world", &RNA_World).data;
+		ParticleSystem *psys= CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem).data;
 		
 		if (ma)
 			id = &ma->id;
@@ -1205,6 +1232,8 @@ static int paste_mtex_exec(bContext *C, wmOperator *UNUSED(op))
 			id = &la->id;
 		else if (wo)
 			id = &wo->id;
+		else if (psys)
+			id = &psys->part->id;
 		
 		if (id==NULL)
 			return OPERATOR_CANCELLED;

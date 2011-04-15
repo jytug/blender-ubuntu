@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
+# $Id: CMakeLists.txt 36110 2011-04-12 11:09:10Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -38,7 +38,6 @@ set(INC
 	../nodes
 	../editors/include
 	../render/extern/include
-	../../../extern/glew/include
 	../../../intern/audaspace/intern
 	../../../intern/bsp/extern ../blenfont
 	../../../intern/decimation/extern
@@ -48,8 +47,10 @@ set(INC
 	../../../intern/memutil
 	../../../intern/opennl/extern
 	../../../intern/smoke/extern
+	../../../intern/mikktspace
     ../../../source/blender/windowmanager # XXX - BAD LEVEL CALL WM_api.h
-	${ZLIB_INC}
+	${GLEW_INCLUDE_PATH}
+	${ZLIB_INCLUDE_DIRS}
 )
 
 set(SRC
@@ -105,6 +106,7 @@ set(SRC
 	intern/material.c
 	intern/mball.c
 	intern/mesh.c
+	intern/mesh_validate.c
 	intern/modifier.c
 	intern/multires.c
 	intern/nla.c
@@ -144,6 +146,7 @@ set(SRC
 	BKE_anim.h
 	BKE_animsys.h
 	BKE_armature.h
+	BKE_array_mallocn.h
 	BKE_blender.h
 	BKE_bmesh.h
 	BKE_bmeshCustomData.h
@@ -272,7 +275,7 @@ if(WITH_LCMS)
 endif()
 
 if(WITH_PYTHON)
-	list(APPEND INC ../python ${PYTHON_INC})
+	list(APPEND INC ../python ${PYTHON_INCLUDE_DIRS})
 	add_definitions(-DWITH_PYTHON)
 endif()
 

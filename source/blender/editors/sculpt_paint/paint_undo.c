@@ -1,5 +1,5 @@
-/**
- * $Id: paint_undo.c 32532 2010-10-17 06:38:56Z campbellbarton $
+/*
+ * $Id: paint_undo.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * Undo system for painting and sculpting.
  * 
@@ -22,16 +22,22 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/sculpt_paint/paint_undo.c
+ *  \ingroup edsculpt
+ */
+
+
 #include <stdlib.h>
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_listbase.h"
+#include "BLI_utildefines.h"
+
 #include "DNA_userdef_types.h"
 
-#include "BLI_listbase.h"
 
-#include "BKE_utildefines.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 
@@ -235,6 +241,27 @@ int ED_undo_paint_step(bContext *C, int type, int step, const char *name)
 	else if(type == UNDO_PAINT_MESH)
 		return undo_stack_step(C, &MeshUndoStack, step, name);
 	
+	return 0;
+}
+
+int ED_undo_paint_valid(int type, const char *name)
+{
+	UndoStack *stack;
+	
+	if(type == UNDO_PAINT_IMAGE)
+		stack= &ImageUndoStack;
+	else if(type == UNDO_PAINT_MESH)
+		stack= &MeshUndoStack;
+	else 
+		return 0;
+	
+	if(stack->current==NULL);
+	else {
+		if(name && strcmp(stack->current->name, name) == 0)
+			return 1;
+		else
+			return stack->elems.first != stack->elems.last;
+	}
 	return 0;
 }
 

@@ -16,17 +16,18 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     'name': 'Corrective shape keys',
     'author': 'Ivo Grigull (loolarge), Tal Trachtman',
     'version': (1, 0),
-    'blender': (2, 5, 5),
+    "blender": (2, 5, 7),
+    "api": 35622,
     'location': 'Object Data > Shape Keys (Search: corrective) ',
     'description': 'Creates a corrective shape key for the current pose',
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Animation/Corrective_Shape_Key",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=22129&group_id=153&atid=469",
+        "func=detail&aid=22129",
     'category': 'Animation'}
 
 """
@@ -101,7 +102,7 @@ def extractX_2(ob, mesh):
 def extractMappedX(ob, mesh):
     totvert = len(mesh)
     
-    mesh = ob.create_mesh( bpy.context.scene, True, 'PREVIEW' )
+    mesh = ob.to_mesh( bpy.context.scene, True, 'PREVIEW' )
 
     x = []
 
@@ -199,7 +200,7 @@ def func_add_corrective_pose_shape( source, target):
                 Gx = list((dx[0][i] - dx[1][i])/epsilon)
                 Gy = list((dx[2][i] - dx[3][i])/epsilon)
                 Gz = list((dx[4][i] - dx[5][i])/epsilon)
-                G = mathutils.Matrix(Gx, Gy, Gz)
+                G = mathutils.Matrix((Gx, Gy, Gz))
                 G = flip_matrix_direction(G)
     
                 x[i] += (targetx[i] - mapx[i]) * G
@@ -246,7 +247,7 @@ class add_corrective_pose_shape(bpy.types.Operator):
         return {'FINISHED'}
 
 def func_object_duplicate_flatten_modifiers(ob, scene):
-    mesh = ob.create_mesh( bpy.context.scene, True, 'PREVIEW' )
+    mesh = ob.to_mesh( bpy.context.scene, True, 'PREVIEW' )
     name = ob.name + "_clean"
     new_object = bpy.data.objects.new( name, mesh)
     new_object.data = mesh
@@ -480,18 +481,22 @@ class add_corrective_pose_shape_fast(bpy.types.Operator):
 def vgroups_draw(self, context):
     layout = self.layout
 
+    layout.row().operator("object.object_duplicate_flatten_modifiers", text='Create duplicate for editing' )
     layout.row().operator("object.add_corrective_pose_shape_fast", text='Add as corrective pose-shape (fast, armatures only)', icon='COPY_ID') # icon is not ideal
     layout.row().operator("object.add_corrective_pose_shape", text='Add as corrective pose-shape (slow, all modifiers)', icon='COPY_ID') # icon is not ideal
 
 def modifiers_draw(self, context):
     layout = self.layout
 
-    layout.operator("object.object_duplicate_flatten_modifiers" )
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.MESH_MT_shape_key_specials.append( vgroups_draw )
     bpy.types.DATA_PT_modifiers.append( modifiers_draw )
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     pass

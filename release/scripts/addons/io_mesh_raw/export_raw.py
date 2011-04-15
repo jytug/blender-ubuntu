@@ -27,8 +27,8 @@ listed on each line. In addition, also quads can be exported as a line
 of 12 values (this was the default before blender 2.5). Now default
 settings will triangulate the mesh.
 
-Usage:<br>
-    Execute this script from the "File->Export" menu. You can select
+Usage:
+Execute this script from the "File->Export" menu. You can select
 whether modifiers should be applied and if the mesh is triangulated.
 
 """
@@ -49,8 +49,8 @@ def faceToTriangles(face):
 
 def faceValues(face, mesh, matrix):
     fv = []
-    for verti in face.vertices_raw:
-        fv.append(matrix * mesh.vertices[verti].co)
+    for verti in face.vertices:
+        fv.append(mesh.vertices[verti].co * matrix)
     return fv
 
 
@@ -68,7 +68,7 @@ def export_raw(filepath, applyMods, triangulate):
             matrix = obj.matrix_world
 
             if (applyMods):
-                me = obj.create_mesh(bpy.context.scene, True, "PREVIEW")
+                me = obj.to_mesh(bpy.context.scene, True, "PREVIEW")
             else:
                 me = obj.data
 

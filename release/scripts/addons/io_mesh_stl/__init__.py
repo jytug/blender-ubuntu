@@ -16,19 +16,22 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+# <pep8 compliant>
+
+bl_info = {
     "name": "STL format",
     "author": "Guillaume Bouchard (Guillaum)",
-    "version": (1, ),
-    "blender": (2, 5, 3),
-    "api": 31667,
+    "version": (1, 0),
+    "blender": (2, 5, 7),
+    "api": 35622,
     "location": "File > Import-Export > Stl",
     "description": "Import-Export STL files",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Import-Export/STL",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"
-        "func=detail&aid=22837&group_id=153&atid=469",
+        "func=detail&aid=22837",
+    "support": 'OFFICIAL',
     "category": "Import-Export"}
 
 # @todo write the wiki page
@@ -48,28 +51,26 @@ Import:
 
 if "bpy" in locals():
     import imp
-    imp.reload(stl_utils)
-    imp.reload(blender_utils)
-else:
-    from . import stl_utils
-    from . import blender_utils
+    if "stl_utils" in locals():
+        imp.reload(stl_utils)
+    if "blender_utils" in locals():
+        imp.reload(blender_utils)
 
-import itertools
 import os
 
 import bpy
-from bpy.props import *
+from bpy.props import StringProperty, BoolProperty, CollectionProperty
 from io_utils import ExportHelper, ImportHelper
 
 
-class StlImporter(bpy.types.Operator, ImportHelper):
-    '''
-    Load STL triangle mesh data
-    '''
+class ImportSTL(bpy.types.Operator, ImportHelper):
+    '''Load STL triangle mesh data'''
     bl_idname = "import_mesh.stl"
     bl_label = "Import STL"
-    
+
     filename_ext = ".stl"
+
+    filter_glob = StringProperty(default="*.stl", options={'HIDDEN'})
 
     files = CollectionProperty(name="File Path",
                           description="File path used for importing "
@@ -79,7 +80,13 @@ class StlImporter(bpy.types.Operator, ImportHelper):
     directory = StringProperty()
 
     def execute(self, context):
-        paths = (os.path.join(self.directory, name.name) for name in self.files)
+        from . import stl_utils
+        from . import blender_utils
+
+        paths = [os.path.join(self.directory, name.name) for name in self.files]
+
+        if not paths:
+            paths.append(self.filepath)
 
         for path in paths:
             objName = bpy.path.display_name(path.split("\\")[-1].split("/")[-1])
@@ -90,7 +97,7 @@ class StlImporter(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
 
 
-class StlExporter(bpy.types.Operator, ExportHelper):
+class ExportSTL(bpy.types.Operator, ExportHelper):
     '''
     Save STL triangle mesh data from the active object
     '''
@@ -108,6 +115,10 @@ class StlExporter(bpy.types.Operator, ExportHelper):
                                    default=True)
 
     def execute(self, context):
+        from . import stl_utils
+        from . import blender_utils
+        import itertools
+
         faces = itertools.chain.from_iterable(
             blender_utils.faces_from_mesh(ob, self.apply_modifiers)
             for ob in context.selected_objects)
@@ -118,22 +129,26 @@ class StlExporter(bpy.types.Operator, ExportHelper):
 
 
 def menu_import(self, context):
-    self.layout.operator(StlImporter.bl_idname,
+    self.layout.operator(ImportSTL.bl_idname,
                          text="Stl (.stl)").filepath = "*.stl"
 
 
 def menu_export(self, context):
     default_path = os.path.splitext(bpy.data.filepath)[0] + ".stl"
-    self.layout.operator(StlExporter.bl_idname,
+    self.layout.operator(ExportSTL.bl_idname,
                          text="Stl (.stl)").filepath = default_path
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_file_import.append(menu_import)
     bpy.types.INFO_MT_file_export.append(menu_export)
 
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_file_import.remove(menu_import)
     bpy.types.INFO_MT_file_export.remove(menu_export)
 

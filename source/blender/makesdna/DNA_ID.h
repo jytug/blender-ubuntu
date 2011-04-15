@@ -1,9 +1,5 @@
-/**
- * blenlib/DNA_ID.h (mar-2001 nzc)
- *
- * ID and Library types, which are fundamental for sdna,
- *
- * $Id: DNA_ID.h 33490 2010-12-05 18:59:23Z blendix $
+/*
+ * $Id: DNA_ID.h 34941 2011-02-17 20:48:12Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,6 +28,11 @@
  */
 #ifndef DNA_ID_H
 #define DNA_ID_H
+
+/** \file DNA_ID.h
+ *  \ingroup DNA
+ *  \brief ID and Library types, which are fundamental for sdna.
+ */
 
 #include "DNA_listBase.h"
 
@@ -127,8 +128,9 @@ typedef struct Library {
 #define PREVIEW_MIPMAP_LARGE 1
 
 typedef struct PreviewImage {
+	/* All values of 2 are really PREVIEW_MIPMAPS */
 	unsigned int w[2];
-	unsigned int h[2];	
+	unsigned int h[2];
 	short changed[2];
 	short changed_timestamp[2];
 	unsigned int * rect[2];
@@ -198,6 +200,11 @@ typedef struct PreviewImage {
 #define ID_FLUIDSIM	MAKE_ID2('F', 'S')
 
 #define ID_REAL_USERS(id) (((ID *)id)->us - ((((ID *)id)->flag & LIB_FAKEUSER) ? 1:0))
+
+#ifdef GS
+#undef GS
+#endif
+#define GS(a)	(*((short *)(a)))
 
 /* id->flag: set frist 8 bits always at zero while reading */
 #define LIB_LOCAL		0

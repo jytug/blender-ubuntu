@@ -1,5 +1,5 @@
-/**
- * $Id: object_intern.h 31209 2010-08-10 06:36:42Z nazgul $
+/*
+ * $Id: object_intern.h 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/editors/object/object_intern.h
+ *  \ingroup edobj
+ */
+
 #ifndef ED_OBJECT_INTERN_H
 #define ED_OBJECT_INTERN_H
 
@@ -84,6 +89,7 @@ void OBJECT_OT_shade_smooth(struct wmOperatorType *ot);
 void OBJECT_OT_shade_flat(struct wmOperatorType *ot);
 void OBJECT_OT_paths_calculate(struct wmOperatorType *ot);
 void OBJECT_OT_paths_clear(struct wmOperatorType *ot);
+void OBJECT_OT_forcefield_toggle(struct wmOperatorType *ot);
 
 void OBJECT_OT_game_property_new(struct wmOperatorType *ot);
 void OBJECT_OT_game_property_remove(struct wmOperatorType *ot);
@@ -151,6 +157,7 @@ void OBJECT_OT_modifier_copy(struct wmOperatorType *ot);
 void OBJECT_OT_multires_subdivide(struct wmOperatorType *ot);
 void OBJECT_OT_multires_reshape(struct wmOperatorType *ot);
 void OBJECT_OT_multires_higher_levels_delete(struct wmOperatorType *ot);
+void OBJECT_OT_multires_base_apply(struct wmOperatorType *ot);
 void OBJECT_OT_multires_external_save(struct wmOperatorType *ot);
 void OBJECT_OT_multires_external_pack(struct wmOperatorType *ot);
 void OBJECT_OT_meshdeform_bind(struct wmOperatorType *ot);

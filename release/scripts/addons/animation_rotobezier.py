@@ -16,19 +16,19 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     'name': 'RotoBezier',
     'author': 'Daniel Salazar <zanqdo@gmail.com>',
     'version': (0, 8),
-    'blender': (2, 5, 5),
-    'api': 33232,
-    'location': 'Select a Curve: Toolbar > RotoBezier panel',
+    "blender": (2, 5, 7),
+    "api": 35622,
+    'location': 'Select a Curve: Tool Shelf > RotoBezier Panel',
     'description': 'Allows animation of Bezier and NURBS curves',
     'warning': '',
     'wiki_url': 'http://wiki.blender.org/index.php/Extensions:2.5/Py/'\
         'Scripts/Animation/RotoBezier',
     'tracker_url': 'http://projects.blender.org/tracker/index.php?'\
-        'func=detail&aid=24839&group_id=153&atid=469',
+        'func=detail&aid=24839',
     'category': 'Animation'}
 
 '''
@@ -59,9 +59,9 @@ bpy.types.WindowManager.key_points = BoolProperty(
     description="Insert keyframes on point locations",
     default=True)
 
-bpy.types.WindowManager.key_bevel = BoolProperty(
-    name="Bevel",
-    description="Insert keyframes on point bevel (Shrink/Fatten)",
+bpy.types.WindowManager.key_radius = BoolProperty(
+    name="Radius",
+    description="Insert keyframes on point radius (Shrink/Fatten)",
     default=False)
 
 bpy.types.WindowManager.key_tilt = BoolProperty(
@@ -93,7 +93,7 @@ class VIEW3D_PT_rotobezier(bpy.types.Panel):
         col.label(text="Keyframing:")
         row = col.row()
         row.prop(context.window_manager, "key_points")
-        row.prop(context.window_manager, "key_bevel")
+        row.prop(context.window_manager, "key_radius")
         row.prop(context.window_manager, "key_tilt")
         
         row = col.row()
@@ -125,7 +125,7 @@ class VIEW3D_PT_rotobezier(bpy.types.Panel):
 class CURVE_OT_insert_keyframe_rotobezier(bpy.types.Operator):
     bl_label = 'Insert'
     bl_idname = 'curve.insert_keyframe_rotobezier'
-    bl_description = 'Insert a RotoBezier Keyframe'
+    bl_description = 'Insert/Replace all Keyframes in current frame'
     bl_options = {'REGISTER', 'UNDO'}
     
     # on mouse up:
@@ -154,7 +154,7 @@ class CURVE_OT_insert_keyframe_rotobezier(bpy.types.Operator):
                         CV.keyframe_insert('co')
                         CV.keyframe_insert('handle_left')
                         CV.keyframe_insert('handle_right')
-                    if context.window_manager.key_bevel:
+                    if context.window_manager.key_radius:
                         CV.keyframe_insert('radius')
                     if context.window_manager.key_tilt:
                         CV.keyframe_insert('tilt')
@@ -163,7 +163,7 @@ class CURVE_OT_insert_keyframe_rotobezier(bpy.types.Operator):
                 for CV in Spline.points:
                     if context.window_manager.key_points:
                         CV.keyframe_insert('co')
-                    if context.window_manager.key_bevel:
+                    if context.window_manager.key_radius:
                         CV.keyframe_insert('radius')
                     if context.window_manager.key_tilt:
                         CV.keyframe_insert('tilt')
@@ -178,7 +178,7 @@ class CURVE_OT_insert_keyframe_rotobezier(bpy.types.Operator):
 class CURVE_OT_delete_keyframe_rotobezier(bpy.types.Operator):
     bl_label = 'Delete'
     bl_idname = 'curve.delete_keyframe_rotobezier'
-    bl_description = 'Delete a RotoBezier Keyframe'
+    bl_description = 'Delete all keyframes in current frame'
     bl_options = {'REGISTER', 'UNDO'}
     
     # on mouse up:
@@ -207,7 +207,7 @@ class CURVE_OT_delete_keyframe_rotobezier(bpy.types.Operator):
                         CV.keyframe_delete('co')
                         CV.keyframe_delete('handle_left')
                         CV.keyframe_delete('handle_right')
-                    if context.window_manager.key_bevel:
+                    if context.window_manager.key_radius:
                         CV.keyframe_delete('radius')
                     if context.window_manager.key_tilt:
                         CV.keyframe_delete('tilt')
@@ -216,7 +216,7 @@ class CURVE_OT_delete_keyframe_rotobezier(bpy.types.Operator):
                 for CV in Spline.points:
                     if context.window_manager.key_points:
                         CV.keyframe_delete('co')
-                    if context.window_manager.key_bevel:
+                    if context.window_manager.key_radius:
                         CV.keyframe_delete('radius')
                     if context.window_manager.key_tilt:
                         CV.keyframe_delete('tilt')
@@ -369,9 +369,13 @@ class CURVE_OT_toggle_draw_rotobezier(bpy.types.Operator):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     pass
     
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     pass
     
 if __name__ == "__main__":

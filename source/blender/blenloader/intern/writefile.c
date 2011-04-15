@@ -1,5 +1,5 @@
 /*
- * $Id: writefile.c 34004 2011-01-02 13:33:32Z ton $
+ * $Id: writefile.c 36031 2011-04-06 06:03:48Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenloader/intern/writefile.c
+ *  \ingroup blenloader
+ */
+
 
 /*
 FILEFORMAT: IFF-style structure  (but not IFF compatible!)
@@ -129,6 +134,7 @@ Any case: direct data is ALWAYS after the lib block
 #include "BLI_blenlib.h"
 #include "BLI_linklist.h"
 #include "BLI_bpath.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_action.h"
 #include "BKE_blender.h"
@@ -140,7 +146,7 @@ Any case: direct data is ALWAYS after the lib block
 #include "BKE_node.h"
 #include "BKE_report.h"
 #include "BKE_sequencer.h"
-#include "BKE_utildefines.h" // for defines
+#include "BKE_utildefines.h"
 #include "BKE_modifier.h"
 #include "BKE_fcurve.h"
 #include "BKE_pointcache.h"
@@ -212,8 +218,6 @@ static void writedata_free(WriteData *wd)
 }
 
 /***/
-
-int mywfile;
 
 /**
  * Low level WRITE(2) wrapper that buffers data
@@ -342,7 +346,7 @@ static void writedata(WriteData *wd, int filecode, int len, void *adr)	/* do not
 {
 	BHead bh;
 
-	if(adr==0) return;
+	if(adr==NULL) return;
 	if(len==0) return;
 
 	len+= 3;
@@ -464,7 +468,7 @@ static void write_fmodifiers(WriteData *wd, ListBase *fmodifiers)
 					
 					/* write envelope data */
 					if (data->data)
-						writedata(wd, DATA, sizeof(FCM_EnvelopeData)*(data->totvert), data->data);
+						writestruct(wd, DATA, "FCM_EnvelopeData", data->totvert, data->data);
 				}
 					break;
 				case FMODIFIER_TYPE_PYTHON:
@@ -671,6 +675,12 @@ static void write_nodetree(WriteData *wd, bNodeTree *ntree)
 	
 	for(link= ntree->links.first; link; link= link->next)
 		writestruct(wd, DATA, "bNodeLink", 1, link);
+	
+	/* external sockets */
+	for(sock= ntree->inputs.first; sock; sock= sock->next)
+		writestruct(wd, DATA, "bNodeSocket", 1, sock);
+	for(sock= ntree->outputs.first; sock; sock= sock->next)
+		writestruct(wd, DATA, "bNodeSocket", 1, sock);
 }
 
 static void current_screen_compat(Main *mainvar, bScreen **screen)
@@ -767,9 +777,22 @@ static void write_boid_state(WriteData *wd, BoidState *state)
 	//for(; cond; cond=cond->next)
 	//	writestruct(wd, DATA, "BoidCondition", 1, cond);
 }
-/* TODO: replace *cache with *cachelist once it's coded */
-#define PTCACHE_WRITE_PSYS	0
-#define PTCACHE_WRITE_CLOTH	1
+
+/* update this also to readfile.c */
+static const char *ptcache_data_struct[] = {
+	"", // BPHYS_DATA_INDEX
+	"", // BPHYS_DATA_LOCATION
+	"", // BPHYS_DATA_VELOCITY
+	"", // BPHYS_DATA_ROTATION
+	"", // BPHYS_DATA_AVELOCITY / BPHYS_DATA_XCONST */
+	"", // BPHYS_DATA_SIZE:
+	"", // BPHYS_DATA_TIMES:	
+	"BoidData" // case BPHYS_DATA_BOIDS:
+};
+static const char *ptcache_extra_struct[] = {
+	"",
+	"ParticleSpring"
+};
 static void write_pointcaches(WriteData *wd, ListBase *ptcaches)
 {
 	PointCache *cache = ptcaches->first;
@@ -782,13 +805,24 @@ static void write_pointcaches(WriteData *wd, ListBase *ptcaches)
 			PTCacheMem *pm = cache->mem_cache.first;
 
 			for(; pm; pm=pm->next) {
+				PTCacheExtra *extra = pm->extradata.first;
+
 				writestruct(wd, DATA, "PTCacheMem", 1, pm);
-				if(pm->index_array)
-					writedata(wd, DATA, MEM_allocN_len(pm->index_array), pm->index_array);
 				
 				for(i=0; i<BPHYS_TOT_DATA; i++) {
-					if(pm->data[i] && pm->data_types & (1<<i))
-						writedata(wd, DATA, MEM_allocN_len(pm->data[i]), pm->data[i]);
+					if(pm->data[i] && pm->data_types & (1<<i)) {
+						if(strcmp(ptcache_data_struct[i], "")==0)
+							writedata(wd, DATA, MEM_allocN_len(pm->data[i]), pm->data[i]);
+						else
+							writestruct(wd, DATA, ptcache_data_struct[i], pm->totpoint, pm->data[i]);
+					}
+				}
+
+				for(; extra; extra=extra->next) {
+					if(strcmp(ptcache_extra_struct[extra->type], "")==0)
+						continue;
+					writestruct(wd, DATA, "PTCacheExtra", 1, extra);
+					writestruct(wd, DATA, ptcache_extra_struct[extra->type], extra->totdata, extra->data);
 				}
 			}
 		}
@@ -798,6 +832,7 @@ static void write_particlesettings(WriteData *wd, ListBase *idbase)
 {
 	ParticleSettings *part;
 	ParticleDupliWeight *dw;
+	int a;
 
 	part= idbase->first;
 	while(part) {
@@ -825,6 +860,10 @@ static void write_particlesettings(WriteData *wd, ListBase *idbase)
 			if(part->fluid && part->phystype == PART_PHYS_FLUID){
 				writestruct(wd, DATA, "SPHFluidSettings", 1, part->fluid); 
 			}
+
+			for(a=0; a<MAX_MTEX; a++) {
+				if(part->mtex[a]) writestruct(wd, DATA, "MTex", 1, part->mtex[a]);
+			}
 		}
 		part= part->id.next;
 	}
@@ -850,6 +889,9 @@ static void write_particlesystems(WriteData *wd, ListBase *particles)
 
 			if(psys->particles->boid && psys->part->phystype == PART_PHYS_BOIDS)
 				writestruct(wd, DATA, "BoidParticle", psys->totpart, psys->particles->boid);
+
+			if(psys->part->fluid && psys->part->phystype == PART_PHYS_FLUID && (psys->part->fluid->flag & SPH_VISCOELASTIC_SPRINGS))
+				writestruct(wd, DATA, "ParticleSpring", psys->tot_fluidsprings, psys->fluid_springs);
 		}
 		pt = psys->targets.first;
 		for(; pt; pt=pt->next)
@@ -1183,7 +1225,7 @@ static void write_modifiers(WriteData *wd, ListBase *modbase)
 
 					/* create fake pointcache so that old blender versions can read it */
 					smd->domain->point_cache[1] = BKE_ptcache_add(&smd->domain->ptcaches[1]);
-					smd->domain->point_cache[1]->flag |= PTCACHE_DISK_CACHE;
+					smd->domain->point_cache[1]->flag |= PTCACHE_DISK_CACHE|PTCACHE_FAKE_SMOKE;
 					smd->domain->point_cache[1]->step = 1;
 
 					write_pointcaches(wd, &(smd->domain->ptcaches[1]));
@@ -1263,7 +1305,7 @@ static void write_objects(WriteData *wd, ListBase *idbase)
 			if (ob->type == OB_ARMATURE) {
 				bArmature *arm = ob->data;
 				if (arm && ob->pose && arm->act_bone) {
-					strcpy(ob->pose->proxy_act_bone, arm->act_bone->name);
+					BLI_strncpy(ob->pose->proxy_act_bone, arm->act_bone->name, sizeof(ob->pose->proxy_act_bone));
 				}
 			}
 
@@ -1920,21 +1962,23 @@ static void write_gpencils(WriteData *wd, ListBase *lb)
 	bGPDstroke *gps;
 	
 	for (gpd= lb->first; gpd; gpd= gpd->id.next) {
-		/* write gpd data block to file */
-		writestruct(wd, ID_GD, "bGPdata", 1, gpd);
-		
-		/* write grease-pencil layers to file */
-		for (gpl= gpd->layers.first; gpl; gpl= gpl->next) {
-			writestruct(wd, DATA, "bGPDlayer", 1, gpl);
+		if (gpd->id.us>0 || wd->current) {
+			/* write gpd data block to file */
+			writestruct(wd, ID_GD, "bGPdata", 1, gpd);
 			
-			/* write this layer's frames to file */
-			for (gpf= gpl->frames.first; gpf; gpf= gpf->next) {
-				writestruct(wd, DATA, "bGPDframe", 1, gpf);
+			/* write grease-pencil layers to file */
+			for (gpl= gpd->layers.first; gpl; gpl= gpl->next) {
+				writestruct(wd, DATA, "bGPDlayer", 1, gpl);
 				
-				/* write strokes */
-				for (gps= gpf->strokes.first; gps; gps= gps->next) {
-					writestruct(wd, DATA, "bGPDstroke", 1, gps);
-					writestruct(wd, DATA, "bGPDspoint", gps->totpoints, gps->points);				
+				/* write this layer's frames to file */
+				for (gpf= gpl->frames.first; gpf; gpf= gpf->next) {
+					writestruct(wd, DATA, "bGPDframe", 1, gpf);
+					
+					/* write strokes */
+					for (gps= gpf->strokes.first; gps; gps= gps->next) {
+						writestruct(wd, DATA, "bGPDstroke", 1, gps);
+						writestruct(wd, DATA, "bGPDspoint", gps->totpoints, gps->points);				
+					}
 				}
 			}
 		}
@@ -2109,6 +2153,7 @@ static void write_screens(WriteData *wd, ListBase *scrbase)
 					ConsoleLine *cl;
 
 					for (cl=con->history.first; cl; cl=cl->next) {
+						/* 'len_alloc' is invalid on write, set from 'len' on read */
 						writestruct(wd, DATA, "ConsoleLine", 1, cl);
 						writedata(wd, DATA, cl->len+1, cl->line);
 					}
@@ -2358,6 +2403,10 @@ static void write_global(WriteData *wd, int fileflags, Main *mainvar)
 	bScreen *screen;
 	char subvstr[8];
 	
+	/* prevent mem checkers from complaining */
+	fg.pads= fg.pad= 0;
+	memset(fg.filename, 0, sizeof(fg.filename));
+
 	current_screen_compat(mainvar, &screen);
 
 	/* XXX still remap G */
@@ -2383,7 +2432,6 @@ static void write_global(WriteData *wd, int fileflags, Main *mainvar)
 #else
 	fg.revision= 0;
 #endif
-	fg.pads= fg.pad= 0; /* prevent mem checkers from complaining */
 	writestruct(wd, GLOB, "FileGlobal", 1, &fg);
 }
 
@@ -2499,7 +2547,7 @@ int BLO_write_file(Main *mainvar, char *dir, int write_flags, ReportList *report
 	}
 
 	BLI_make_file_string(G.main->name, userfilename, BLI_get_folder_create(BLENDER_USER_CONFIG, NULL), BLENDER_STARTUP_FILE);
-	write_user_block= BLI_streq(dir, userfilename);
+	write_user_block= (BLI_path_cmp(dir, userfilename) == 0);
 
 	if(write_flags & G_FILE_RELATIVE_REMAP)
 		makeFilesRelative(mainvar, dir, NULL); /* note, making relative to something OTHER then G.main->name */
@@ -2567,28 +2615,19 @@ int BLO_write_file_mem(Main *mainvar, MemFile *compare, MemFile *current, int wr
 
 	/* Runtime writing */
 
-#ifdef WIN32
-#define PATHSEPERATOR		"\\"
-#else
-#define PATHSEPERATOR		"/"
-#endif
-
 static char *get_runtime_path(char *exename) {
 	char *installpath= get_install_dir();
 
 	if (!installpath) {
 		return NULL;
-	} else {
-		char *path= MEM_mallocN(strlen(installpath)+strlen(PATHSEPERATOR)+strlen(exename)+1, "runtimepath");
+	}
+	else {
+		char *path= BLI_sprintfN("%s%c%s", installpath, SEP, exename);
 
 		if (path == NULL) {
 			MEM_freeN(installpath);
 			return NULL;
 		}
-
-		strcpy(path, installpath);
-		strcat(path, PATHSEPERATOR);
-		strcat(path, exename);
 
 		MEM_freeN(installpath);
 
@@ -2598,7 +2637,7 @@ static char *get_runtime_path(char *exename) {
 
 #ifdef __APPLE__
 
-static int recursive_copy_runtime(char *outname, char *exename, ReportList *reports)
+static int recursive_copy_runtime(const char *outname, char *exename, ReportList *reports)
 {
 	char *runtime = get_runtime_path(exename);
 	char command[2 * (FILE_MAXDIR+FILE_MAXFILE) + 32];
@@ -2634,7 +2673,7 @@ cleanup:
 	return !error;
 }
 
-int BLO_write_runtime(Main *mainvar, char *file, char *exename, ReportList *reports) 
+int BLO_write_runtime(Main *mainvar, const char *file, char *exename, ReportList *reports) 
 {
 	char gamename[FILE_MAXDIR+FILE_MAXFILE];
 	int outfd = -1, error= 0;
@@ -2648,8 +2687,7 @@ int BLO_write_runtime(Main *mainvar, char *file, char *exename, ReportList *repo
 		goto cleanup;
 	}
 
-	strcpy(gamename, file);
-	strcat(gamename, "/Contents/Resources/game.blend");
+	BLI_snprintf(gamename, sizeof(gamename), "%s/Contents/Resources/game.blend", file);
 	//printf("gamename %s\n", gamename);
 	outfd= open(gamename, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0777);
 	if (outfd != -1) {
@@ -2723,7 +2761,7 @@ static int handle_write_msb_int(int handle, int i)
 	return (write(handle, buf, 4)==4);
 }
 
-int BLO_write_runtime(Main *mainvar, char *file, char *exename, ReportList *reports)
+int BLO_write_runtime(Main *mainvar, const char *file, char *exename, ReportList *reports)
 {
 	int outfd= open(file, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0777);
 	int datastart, error= 0;

@@ -1,6 +1,6 @@
-/**
+/*
  *
- * $Id: sketch.c 31352 2010-08-15 15:14:08Z campbellbarton $
+ * $Id: sketch.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,6 +23,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/sketch.c
+ *  \ingroup bke
+ */
+
+
 #include <string.h>
 #include <math.h>
 #include <float.h>
@@ -31,9 +36,10 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_sketch.h"
-#include "BKE_utildefines.h"
+
 
 #include "DNA_userdef_types.h"
 
@@ -53,7 +59,7 @@ void freeSketch(SK_Sketch *sketch)
 	MEM_freeN(sketch);
 }
 
-SK_Sketch* createSketch()
+SK_Sketch* createSketch(void)
 {
 	SK_Sketch *sketch;
 
@@ -101,7 +107,7 @@ void sk_freeStroke(SK_Stroke *stk)
 	MEM_freeN(stk);
 }
 
-SK_Stroke* sk_createStroke()
+SK_Stroke* sk_createStroke(void)
 {
 	SK_Stroke *stk;
 

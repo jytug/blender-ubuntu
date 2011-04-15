@@ -16,17 +16,18 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_addon_info = {
+bl_info = {
     "name": "BoltFactory",
     "author": "Aaron Keith",
-    "version": (3,9),
-    "blender": (2, 5, 3),
-    "api": 32411,
-    "location": "add Mesh",
+    "version": (3, 9),
+    "blender": (2, 5, 7),
+    "api": 35853,
+    "location": "View3D > Add > Mesh",
+    "description": "Adds a Bolt or Nut",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Add_Mesh/BoltFactory",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=22842&group_id=153&atid=468",
+        "func=detail&aid=22842",
     "category": "Add Mesh"}
 
 if "bpy" in locals():
@@ -45,10 +46,14 @@ def add_mesh_bolt_button(self, context):
 
 
 def register():
+    bpy.utils.register_module(__name__)
+
     bpy.types.INFO_MT_mesh_add.append(add_mesh_bolt_button)
     #bpy.types.VIEW3D_PT_tools_objectmode.prepend(add_mesh_bolt_button) #just for testing
 
 def unregister():
+    bpy.utils.unregister_module(__name__)
+
     bpy.types.INFO_MT_mesh_add.remove(add_mesh_bolt_button)
     #bpy.types.VIEW3D_PT_tools_objectmode.remove(add_mesh_bolt_button) #just for testing
     

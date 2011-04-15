@@ -1,5 +1,5 @@
-/**
- * $Id: particle_boids.c 33490 2010-12-05 18:59:23Z blendix $
+/*
+ * $Id: particle_boids.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/physics/particle_boids.c
+ *  \ingroup edphys
+ */
+
+
 #include <stdlib.h>
 
 #include "MEM_guardedalloc.h"
@@ -32,13 +37,15 @@
 #include "DNA_particle_types.h"
 #include "DNA_scene_types.h"
 
+#include "BLI_listbase.h"
+#include "BLI_utildefines.h"
+
 #include "BKE_boids.h"
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_main.h"
 #include "BKE_particle.h"
 
-#include "BLI_listbase.h"
 #include "RNA_access.h"
 #include "RNA_enum_types.h"
 #include "RNA_define.h"

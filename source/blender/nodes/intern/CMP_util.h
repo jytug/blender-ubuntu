@@ -1,5 +1,5 @@
-/**
- * $Id: CMP_util.h 33367 2010-11-28 18:34:16Z ton $
+/*
+ * $Id: CMP_util.h 35237 2011-02-27 20:13:22Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/nodes/intern/CMP_util.h
+ *  \ingroup nodes
+ */
+
+
 #ifndef CMP_NODE_UTILS_H_
 #define CMP_NODE_UTILS_H_
 
@@ -46,24 +51,27 @@
 #include "DNA_scene_types.h"
 #include "DNA_texture_types.h"
 
+#include "BLI_math.h"
+#include "BLI_blenlib.h"
+#include "BLI_rand.h"
+#include "BLI_threads.h"
+#include "BLI_utildefines.h"
+#include "BLI_utildefines.h"
+
 #include "BKE_blender.h"
 #include "BKE_colortools.h"
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_main.h"
 #include "BKE_material.h"
+#include "BKE_node.h"
 #include "BKE_texture.h"
-#include "BKE_utildefines.h"
+
 #include "BKE_library.h"
 #include "BKE_object.h"
 
 #include "../CMP_node.h"
 #include "node_util.h"
-
-#include "BLI_math.h"
-#include "BLI_blenlib.h"
-#include "BLI_rand.h"
-#include "BLI_threads.h"
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
@@ -162,7 +170,7 @@ void convolve(CompBuf* dst, CompBuf* in1, CompBuf* in2);
 extern void node_ID_title_cb(void *node_v, void *unused_v);
 
 
-/* utility functions used by glare, tonemap and lense distortion */
+/* utility functions used by glare, tonemap and lens distortion */
 /* soms macros for color handling */
 typedef float fRGB[4];
 /* clear color */

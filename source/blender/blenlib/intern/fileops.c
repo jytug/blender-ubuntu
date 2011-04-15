@@ -1,5 +1,5 @@
 /*
- * $Id: fileops.c 33718 2010-12-16 19:05:47Z gsrb3d $
+ * $Id: fileops.c 36083 2011-04-10 09:37:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/blenlib/intern/fileops.c
+ *  \ingroup bli
+ */
+
 
 #include <string.h>
 #include <stdio.h>
@@ -218,9 +223,10 @@ int BLI_copy_fileops(const char *file, const char *to) {
 	return err;
 }
 
-int BLI_link(const char *UNUSED(file), const char *UNUSED(to)) {
+int BLI_link(const char *file, const char *to) {
 	callLocalErrorCallBack("Linking files is unsupported on Windows");
-	
+	(void)file;
+	(void)to;
 	return 1;
 }
 
@@ -271,7 +277,7 @@ int BLI_rename(const char *from, const char *to) {
  * timer, and... We implement a callback mechanism. The system will
  * have to initialise the callback before the functions will work!
  * */
-static char str[MAXPATHLEN+12];
+static char str[12 + (MAXPATHLEN * 2)];
 
 int BLI_delete(const char *file, int dir, int recursive) 
 {
@@ -280,34 +286,34 @@ int BLI_delete(const char *file, int dir, int recursive)
 	}
 	else {
 		if (recursive) {
-			sprintf(str, "/bin/rm -rf \"%s\"", file);
+			BLI_snprintf(str, sizeof(str), "/bin/rm -rf \"%s\"", file);
 			return system(str);
 		}
 		else if (dir) {
-			sprintf(str, "/bin/rmdir \"%s\"", file);
+			BLI_snprintf(str, sizeof(str), "/bin/rmdir \"%s\"", file);
 			return system(str);
 		}
 		else {
-			return remove(file); //sprintf(str, "/bin/rm -f \"%s\"", file);
+			return remove(file); //BLI_snprintf(str, sizeof(str), "/bin/rm -f \"%s\"", file);
 		}
 	}
 	return -1;
 }
 
 int BLI_move(const char *file, const char *to) {
-	sprintf(str, "/bin/mv -f \"%s\" \"%s\"", file, to);
+	BLI_snprintf(str, sizeof(str), "/bin/mv -f \"%s\" \"%s\"", file, to);
 
 	return system(str);
 }
 
 int BLI_copy_fileops(const char *file, const char *to) {
-	sprintf(str, "/bin/cp -rf \"%s\" \"%s\"", file, to);
+	BLI_snprintf(str, sizeof(str), "/bin/cp -rf \"%s\" \"%s\"", file, to);
 
 	return system(str);
 }
 
 int BLI_link(const char *file, const char *to) {
-	sprintf(str, "/bin/ln -f \"%s\" \"%s\"", file, to);
+	BLI_snprintf(str, sizeof(str), "/bin/ln -f \"%s\" \"%s\"", file, to);
 	
 	return system(str);
 }

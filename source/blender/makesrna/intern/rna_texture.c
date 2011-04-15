@@ -1,5 +1,5 @@
-/**
- * $Id: rna_texture.c 34001 2011-01-02 10:52:21Z blendix $
+/*
+ * $Id: rna_texture.c 36118 2011-04-12 15:55:04Z lmg $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_texture.c
+ *  \ingroup RNA
+ */
+
 
 #include <float.h>
 #include <stdio.h>
@@ -144,9 +149,12 @@ static void rna_Texture_voxeldata_image_update(Main *bmain, Scene *scene, Pointe
 {
 	Tex *tex= ptr->id.data;
 	
-	tex->ima->source = IMA_SRC_SEQUENCE;
+	if(tex->ima) { /* may be getting cleared too */
+		tex->ima->source = IMA_SRC_SEQUENCE;
+	}
 	rna_Texture_voxeldata_update(bmain, scene, ptr);
 }
+
 
 /* Used for Texture Properties, used (also) for/in Nodes */
 static void rna_Texture_nodes_update(Main *bmain, Scene *scene, PointerRNA *ptr)
@@ -173,6 +181,7 @@ void rna_TextureSlot_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 	switch(GS(id->name)) {
 		case ID_MA: 
 			WM_main_add_notifier(NC_MATERIAL|ND_SHADING, id);
+			WM_main_add_notifier(NC_MATERIAL|ND_SHADING_DRAW, id);
 			break;
 		case ID_WO: 
 			WM_main_add_notifier(NC_WORLD, id);
@@ -183,6 +192,20 @@ void rna_TextureSlot_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 		case ID_BR: 
 			WM_main_add_notifier(NC_BRUSH, id);
 			break;
+		case ID_PA:
+		{
+			MTex *mtex= ptr->data;
+			int recalc = OB_RECALC_DATA;
+
+			if(mtex->mapto & PAMAP_INIT)
+				recalc |= PSYS_RECALC_RESET;
+			if(mtex->mapto & PAMAP_CHILD)
+				recalc |= PSYS_RECALC_CHILD;
+
+			DAG_id_tag_update(id, recalc);
+			WM_main_add_notifier(NC_OBJECT|ND_PARTICLE|NA_EDITED, NULL);
+			break;
+		}
 	}
 }
 
@@ -358,6 +381,16 @@ static void rna_PointDensity_psys_set(PointerRNA *ptr, PointerRNA value)
 
 	if(ob && value.id.data == ob)
 		pd->psys= BLI_findindex(&ob->particlesystem, value.data) + 1;
+}
+
+static char *rna_PointDensity_path(PointerRNA *ptr)
+{
+	return BLI_sprintfN("point_density");
+}
+
+static char *rna_VoxelData_path(PointerRNA *ptr)
+{
+	return BLI_sprintfN("voxel_data");
 }
 
 #else
@@ -757,7 +790,7 @@ static void rna_def_texture_wood(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Pattern", "");
 	RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
 
-	prop= RNA_def_property(srna, "noisebasis_2", PROP_ENUM, PROP_NONE);
+	prop= RNA_def_property(srna, "noise_basis_2", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "noisebasis2");
 	RNA_def_property_enum_items(prop, prop_wood_noisebasis2);
 	RNA_def_property_ui_text(prop, "Noise Basis 2", "");
@@ -831,7 +864,7 @@ static void rna_def_texture_marble(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Noise Basis", "Sets the noise basis used for turbulence");
 	RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
 
-	prop= RNA_def_property(srna, "noisebasis_2", PROP_ENUM, PROP_NONE);
+	prop= RNA_def_property(srna, "noise_basis_2", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "noisebasis2");
 	RNA_def_property_enum_items(prop, prop_marble_noisebasis2);
 	RNA_def_property_ui_text(prop, "Noise Basis 2", "");
@@ -983,7 +1016,7 @@ static void rna_def_texture_image(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "use_interpolation", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "imaflag", TEX_INTERPOL);
-	RNA_def_property_ui_text(prop, "Interpolation", "Interpolates pixels using Area filter");
+	RNA_def_property_ui_text(prop, "Interpolation", "Interpolates pixels using selected filter");
 	RNA_def_property_update(prop, 0, "rna_Texture_update");
 
 	/* XXX: I think flip_axis should be a generic Texture property, enabled for all the texture types */
@@ -1413,6 +1446,7 @@ static void rna_def_texture_pointdensity(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "PointDensity", NULL);
 	RNA_def_struct_sdna(srna, "PointDensity");
 	RNA_def_struct_ui_text(srna, "PointDensity", "Point density settings");
+	RNA_def_struct_path_func(srna, "rna_PointDensity_path");
 	
 	prop= RNA_def_property(srna, "point_source", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "source");
@@ -1565,6 +1599,7 @@ static void rna_def_texture_voxeldata(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "VoxelData", NULL);
 	RNA_def_struct_sdna(srna, "VoxelData");
 	RNA_def_struct_ui_text(srna, "VoxelData", "Voxel data settings");
+	RNA_def_struct_path_func(srna, "rna_VoxelData_path");
 	
 	prop= RNA_def_property(srna, "interpolation", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "interp_type");

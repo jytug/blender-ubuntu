@@ -1,5 +1,5 @@
-/**
- * $Id: gpu_draw.c 33442 2010-12-03 12:30:59Z campbellbarton $
+/*
+ * $Id: gpu_draw.c 35971 2011-04-03 10:04:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,11 +30,17 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/gpu/intern/gpu_draw.c
+ *  \ingroup gpu
+ */
+
+
 #include <string.h>
 
 #include "GL/glew.h"
 
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_lamp_types.h"
 #include "DNA_material_types.h"
@@ -58,7 +64,7 @@
 #include "BKE_material.h"
 #include "BKE_node.h"
 #include "BKE_object.h"
-#include "BKE_utildefines.h"
+
 
 #include "BLI_threads.h"
 #include "BLI_blenlib.h"
@@ -100,7 +106,7 @@ void GPU_render_text(MTFace *tface, int mode,
 			line_height= MAX4(v1[1], v2[1], v3[1], v4[2]) - MIN4(v1[1], v2[1], v3[1], v4[2]);
 		else
 			line_height= MAX3(v1[1], v2[1], v3[1]) - MIN3(v1[1], v2[1], v3[1]);
-		line_height *= 1.2; /* could be an option? */
+		line_height *= 1.2f; /* could be an option? */
 		/* end multiline */
 
 		
@@ -297,7 +303,7 @@ static void gpu_make_repbind(Image *ima)
 	if(ima->repbind) {
 		glDeleteTextures(ima->totbind, (GLuint *)ima->repbind);
 		MEM_freeN(ima->repbind);
-		ima->repbind= 0;
+		ima->repbind= NULL;
 		ima->tpageflag &= ~IMA_MIPMAP_COMPLETE;
 	}
 
@@ -309,12 +315,12 @@ static void gpu_make_repbind(Image *ima)
 
 static void gpu_clear_tpage(void)
 {
-	if(GTS.lasttface==0)
+	if(GTS.lasttface==NULL)
 		return;
 	
-	GTS.lasttface= 0;
+	GTS.lasttface= NULL;
 	GTS.curtile= 0;
-	GTS.curima= 0;
+	GTS.curima= NULL;
 	if(GTS.curtilemode!=0) {
 		glMatrixMode(GL_TEXTURE);
 		glLoadIdentity();
@@ -352,7 +358,7 @@ static void gpu_set_blend_mode(GPUBlendMode blendmode)
 		 * turn off alpha test in this case */
 
 		/* added after 2.45 to clip alpha */
-		if(U.glalphaclip == 1.0) {
+		if(U.glalphaclip == 1.0f) {
 			glDisable(GL_ALPHA_TEST);
 		}
 		else {
@@ -426,7 +432,7 @@ int GPU_verify_image(Image *ima, ImageUser *iuser, int tftile, int compare, int 
 	if(compare && ima == GTS.curima && GTS.curtile == GTS.tile &&
 	   GTS.tilemode == GTS.curtilemode && GTS.curtileXRep == GTS.tileXRep &&
 	   GTS.curtileYRep == GTS.tileYRep)
-		return (ima!=0);
+		return (ima != NULL);
 
 	/* if tiling mode or repeat changed, change texture matrix to fit */
 	if(GTS.tilemode!=GTS.curtilemode || GTS.curtileXRep!=GTS.tileXRep ||
@@ -463,7 +469,7 @@ int GPU_verify_image(Image *ima, ImageUser *iuser, int tftile, int compare, int 
 	
 	if(GTS.tilemode) {
 		/* tiled mode */
-		if(ima->repbind==0) gpu_make_repbind(ima);
+		if(ima->repbind==NULL) gpu_make_repbind(ima);
 		if(GTS.tile>=ima->totbind) GTS.tile= 0;
 		
 		/* this happens when you change repeat buttons */
@@ -582,7 +588,7 @@ int GPU_set_tpage(MTFace *tface, int mipmap)
 	Image *ima;
 	
 	/* check if we need to clear the state */
-	if(tface==0) {
+	if(tface==NULL) {
 		gpu_clear_tpage();
 		return 0;
 	}
@@ -606,7 +612,7 @@ int GPU_set_tpage(MTFace *tface, int mipmap)
 		glDisable(GL_TEXTURE_2D);
 		
 		GTS.curtile= 0;
-		GTS.curima= 0;
+		GTS.curima= NULL;
 		GTS.curtilemode= 0;
 		GTS.curtileXRep = 0;
 		GTS.curtileYRep = 0;
@@ -775,9 +781,9 @@ void GPU_free_smoke(SmokeModifierData *smd)
 
 void GPU_create_smoke(SmokeModifierData *smd, int highres)
 {
-	if(smd->type & MOD_SMOKE_TYPE_DOMAIN && smd->domain && !smd->domain->tex && !highres)
+	if(smd->type & MOD_SMOKE_TYPE_DOMAIN && !smd->domain->tex && !highres)
 		smd->domain->tex = GPU_texture_create_3D(smd->domain->res[0], smd->domain->res[1], smd->domain->res[2], smoke_get_density(smd->domain->fluid));
-	else if(smd->type & MOD_SMOKE_TYPE_DOMAIN && smd->domain && !smd->domain->tex && highres)
+	else if(smd->type & MOD_SMOKE_TYPE_DOMAIN && !smd->domain->tex && highres)
 		smd->domain->tex = GPU_texture_create_3D(smd->domain->res_wt[0], smd->domain->res_wt[1], smd->domain->res_wt[2], smoke_turbulence_get_density(smd->domain->wt));
 
 	smd->domain->tex_shadow = GPU_texture_create_3D(smd->domain->res[0], smd->domain->res[1], smd->domain->res[2], smd->domain->shadow);
@@ -901,7 +907,7 @@ static struct GPUMaterialState {
 } GMS = {NULL};
 
 /* fixed function material, alpha handed by caller */
-static void gpu_material_to_fixed(GPUMaterialFixed *smat, const Material *bmat, const int gamma)
+static void gpu_material_to_fixed(GPUMaterialFixed *smat, const Material *bmat, const int gamma, const Object *ob)
 {
 	if (bmat->mode & MA_SHLESS) {
 		copy_v3_v3(smat->diff, &bmat->r);
@@ -915,6 +921,9 @@ static void gpu_material_to_fixed(GPUMaterialFixed *smat, const Material *bmat, 
 		mul_v3_v3fl(smat->diff, &bmat->r, bmat->ref + bmat->emit);
 		smat->diff[3]= 1.0; /* caller may set this to bmat->alpha */
 
+		if(bmat->shade_flag & MA_OBCOLOR)
+			mul_v3_v3(smat->diff, ob->col);
+		
 		mul_v3_v3fl(smat->spec, &bmat->specr, bmat->spec);
 		smat->spec[3]= 1.0; /* always 1 */
 		smat->hard= CLAMPIS(bmat->har, 0, 128);
@@ -926,7 +935,7 @@ static void gpu_material_to_fixed(GPUMaterialFixed *smat, const Material *bmat, 
 	}
 }
 
-Material *gpu_active_node_material(Material *ma)
+static Material *gpu_active_node_material(Material *ma)
 {
 	if(ma && ma->use_nodes && ma->nodetree) {
 		bNode *node= nodeGetActiveID(ma->nodetree, ID_MA);
@@ -979,7 +988,7 @@ void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, O
 
 	/* no materials assigned? */
 	if(ob->totcol==0) {
-		gpu_material_to_fixed(&GMS.matbuf[0], &defmaterial, 0);
+		gpu_material_to_fixed(&GMS.matbuf[0], &defmaterial, 0, ob);
 
 		/* do material 1 too, for displists! */
 		memcpy(&GMS.matbuf[1], &GMS.matbuf[0], sizeof(GPUMaterialFixed));
@@ -1009,7 +1018,7 @@ void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, O
 		}
 		else {
 			/* fixed function opengl materials */
-			gpu_material_to_fixed(&GMS.matbuf[a], ma, gamma);
+			gpu_material_to_fixed(&GMS.matbuf[a], ma, gamma, ob);
 
 			blendmode = (ma->alpha == 1.0f)? GPU_BLEND_SOLID: GPU_BLEND_ALPHA;
 			if(do_alpha_pass && GMS.alphapass)
@@ -1279,8 +1288,8 @@ int GPU_scene_object_lights(Scene *scene, Object *ob, int lay, float viewmat[][4
 				/* spot lamp */
 				negate_v3_v3(direction, base->object->obmat[2]);
 				glLightfv(GL_LIGHT0+count, GL_SPOT_DIRECTION, direction);
-				glLightf(GL_LIGHT0+count, GL_SPOT_CUTOFF, la->spotsize/2.0);
-				glLightf(GL_LIGHT0+count, GL_SPOT_EXPONENT, 128.0*la->spotblend);
+				glLightf(GL_LIGHT0+count, GL_SPOT_CUTOFF, la->spotsize/2.0f);
+				glLightf(GL_LIGHT0+count, GL_SPOT_EXPONENT, 128.0f*la->spotblend);
 			}
 			else
 				glLightf(GL_LIGHT0+count, GL_SPOT_CUTOFF, 180.0);

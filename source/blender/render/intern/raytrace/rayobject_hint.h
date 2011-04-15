@@ -1,5 +1,5 @@
-/**
- * $Id: rayobject_hint.h 26841 2010-02-12 13:34:04Z campbellbarton $
+/*
+ * $Id: rayobject_hint.h 35233 2011-02-27 19:31:27Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,12 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/render/intern/raytrace/rayobject_hint.h
+ *  \ingroup render
+ */
+
+
 #ifndef RE_RAYTRACE_RAYOBJECT_HINT_H
 #define RE_RAYTRACE_RAYOBJECT_HINT_H
 
@@ -68,3 +74,4 @@ inline int hint_test_bb(HintFrustum &obj, float *Nmin, float *Nmax)
 */
 
 #endif
+

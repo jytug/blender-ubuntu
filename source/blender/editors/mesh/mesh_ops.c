@@ -1,5 +1,5 @@
-/**
- * $Id: mesh_ops.c 32933 2010-11-07 23:02:08Z campbellbarton $
+/*
+ * $Id: mesh_ops.c 35679 2011-03-22 01:38:26Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,6 +26,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/mesh/mesh_ops.c
+ *  \ingroup edmesh
+ */
+
+
 #include <stdlib.h>
 #include <math.h>
 
@@ -45,6 +50,7 @@
 #include "WM_types.h"
 
 #include "ED_object.h"
+#include "ED_mesh.h"
 #include "ED_screen.h"
 #include "ED_view3d.h"
 
@@ -85,6 +91,8 @@ void ED_operatortypes_mesh(void)
 	WM_operatortype_append(MESH_OT_fgon_make);
 	WM_operatortype_append(MESH_OT_duplicate);
 	WM_operatortype_append(MESH_OT_remove_doubles);
+	WM_operatortype_append(MESH_OT_vertices_sort);
+	WM_operatortype_append(MESH_OT_vertices_randomize);
 	WM_operatortype_append(MESH_OT_extrude);
 	WM_operatortype_append(MESH_OT_spin);
 	WM_operatortype_append(MESH_OT_screw);
@@ -145,7 +153,8 @@ void ED_operatortypes_mesh(void)
 	WM_operatortype_append(MESH_OT_select_nth);
 }
 
-int ED_operator_editmesh_face_select(bContext *C)
+#if 0 /* UNUSED, remove? */
+static int ED_operator_editmesh_face_select(bContext *C)
 {
 	Object *obedit= CTX_data_edit_object(C);
 	if(obedit && obedit->type==OB_MESH) {
@@ -156,6 +165,7 @@ int ED_operator_editmesh_face_select(bContext *C)
 	}
 	return 0;
 }
+#endif
 
 void ED_operatormacros_mesh(void)
 {
@@ -231,7 +241,7 @@ void ED_keymap_mesh(wmKeyConfig *keyconf)
 	kmi= WM_keymap_add_item(keymap, "MESH_OT_loop_select", SELECTMOUSE, KM_PRESS, KM_SHIFT|KM_ALT, 0);
 	RNA_boolean_set(kmi->ptr, "extend", 1);
 
-	kmi= WM_keymap_add_item(keymap, "MESH_OT_edgering_select", SELECTMOUSE, KM_PRESS, KM_ALT|KM_CTRL, 0);
+	WM_keymap_add_item(keymap, "MESH_OT_edgering_select", SELECTMOUSE, KM_PRESS, KM_ALT|KM_CTRL, 0);
 	kmi= WM_keymap_add_item(keymap, "MESH_OT_edgering_select", SELECTMOUSE, KM_PRESS, KM_SHIFT|KM_ALT|KM_CTRL, 0);
 	RNA_boolean_set(kmi->ptr, "extend", 1);
 
@@ -247,7 +257,7 @@ void ED_keymap_mesh(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "MESH_OT_select_linked_pick", LKEY, KM_PRESS, 0, 0);
 	RNA_boolean_set(WM_keymap_add_item(keymap, "MESH_OT_select_linked_pick", LKEY, KM_PRESS, KM_SHIFT, 0)->ptr, "deselect", 1);
 	
-	RNA_float_set(WM_keymap_add_item(keymap, "MESH_OT_faces_select_linked_flat", FKEY, KM_PRESS, (KM_CTRL|KM_SHIFT|KM_ALT), 0)->ptr,"sharpness",135.0);
+	WM_keymap_add_item(keymap, "MESH_OT_faces_select_linked_flat", FKEY, KM_PRESS, (KM_CTRL|KM_SHIFT|KM_ALT), 0);
 
 	WM_keymap_add_item(keymap, "MESH_OT_select_similar", GKEY, KM_PRESS, KM_SHIFT, 0);
 	
@@ -272,7 +282,6 @@ void ED_keymap_mesh(wmKeyConfig *keyconf)
 	
 	WM_keymap_add_item(keymap, "MESH_OT_fill", FKEY, KM_PRESS, KM_ALT, 0);
 	WM_keymap_add_item(keymap, "MESH_OT_beautify_fill", FKEY, KM_PRESS, KM_SHIFT|KM_ALT, 0);
-	WM_keymap_add_item(keymap, "MESH_OT_sort_faces", FKEY, KM_PRESS, KM_ALT|KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "MESH_OT_quads_convert_to_tris", TKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "MESH_OT_tris_convert_to_quads", JKEY, KM_PRESS, KM_ALT, 0);
 	WM_keymap_add_item(keymap, "MESH_OT_edge_flip", FKEY, KM_PRESS, KM_SHIFT|KM_CTRL, 0);

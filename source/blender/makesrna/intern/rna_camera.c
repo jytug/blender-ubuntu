@@ -1,5 +1,5 @@
-/**
- * $Id: rna_camera.c 33114 2010-11-17 01:15:31Z zanqdo $
+/*
+ * $Id: rna_camera.c 35238 2011-02-27 20:20:01Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -21,6 +21,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file blender/makesrna/intern/rna_camera.c
+ *  \ingroup RNA
+ */
+
 
 #include <stdlib.h>
 

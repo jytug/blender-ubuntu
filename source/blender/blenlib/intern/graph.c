@@ -1,5 +1,5 @@
-/**
- * $Id: graph.c 33435 2010-12-03 01:52:28Z campbellbarton $
+/*
+ * $Id: graph.c 35246 2011-02-27 20:37:56Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -23,6 +23,11 @@
  * graph.c: Common graph interface and methods
  */
 
+/** \file blender/blenlib/intern/graph.c
+ *  \ingroup bli
+ */
+
+
 #include <float.h> 
 #include <math.h>
 
@@ -31,8 +36,9 @@
 #include "BLI_graph.h"
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 
-#include "BKE_utildefines.h"
+
 
 static void testRadialSymmetry(BGraph *graph, BNode* root_node, RadialArc* ring, int total, float axis[3], float limit, int group);
 
@@ -295,7 +301,7 @@ BNode * BLI_FindNodeByPosition(BGraph *graph, float *p, float limit)
 }
 /************************************* SUBGRAPH DETECTION **********************************************/
 
-void flagSubgraph(BNode *node, int subgraph)
+static void flagSubgraph(BNode *node, int subgraph)
 {
 	if (node->subgraph_index == 0)
 	{
@@ -409,7 +415,7 @@ int	BLI_isGraphCyclic(BGraph *graph)
 
 BArc * BLI_findConnectedArc(BGraph *graph, BArc *arc, BNode *v)
 {
-	BArc *nextArc = arc->next;
+	BArc *nextArc;
 	
 	for(nextArc = graph->arcs.first; nextArc; nextArc = nextArc->next)
 	{
@@ -424,7 +430,7 @@ BArc * BLI_findConnectedArc(BGraph *graph, BArc *arc, BNode *v)
 
 /*********************************** GRAPH AS TREE FUNCTIONS *******************************************/
 
-int subtreeShape(BNode *node, BArc *rootArc, int include_root)
+static int subtreeShape(BNode *node, BArc *rootArc, int include_root)
 {
 	int depth = 0;
 	

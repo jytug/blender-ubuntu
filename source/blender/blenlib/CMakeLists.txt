@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 33864 2010-12-22 23:09:30Z campbellbarton $
+# $Id: CMakeLists.txt 35032 2011-02-21 13:13:08Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -28,10 +28,11 @@ set(INC
 	.
 	../makesdna
 	../blenkernel
+	../blenloader
 	../gpu
 	../../../intern/ghost
 	../../../intern/guardedalloc
-	${ZLIB_INC}
+	${ZLIB_INCLUDE_DIRS}
 	${FREETYPE_INCLUDE_DIRS}
 )
 
@@ -121,6 +122,7 @@ set(SRC
 	BLI_storage_types.h
 	BLI_string.h
 	BLI_threads.h
+	BLI_utildefines.h
 	BLI_uvproject.h
 	BLI_vfontdata.h
 	BLI_voxel.h
@@ -131,7 +133,8 @@ set(SRC
 	intern/dynamiclist.h
 )
 
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+if(WITH_BINRELOC)
+	add_definitions(-DWITH_BINRELOC)
 	list(APPEND INC "${BINRELOC_INC}")
 endif()
 

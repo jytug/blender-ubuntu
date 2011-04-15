@@ -1,5 +1,5 @@
-/**
- * $Id: BLI_math_rotation.h 33523 2010-12-07 01:56:32Z campbellbarton $
+/*
+ * $Id: BLI_math_rotation.h 35954 2011-04-02 03:05:49Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,8 +25,12 @@
  * ***** END GPL LICENSE BLOCK *****
  * */
 
-#ifndef BLI_MATH_ROTATION
-#define BLI_MATH_ROTATION
+#ifndef BLI_MATH_ROTATION_H
+#define BLI_MATH_ROTATION_H
+
+/** \file BLI_math_rotation.h
+ *  \ingroup bli
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,10 +39,15 @@ extern "C" {
 #define RAD2DEG(_rad) ((_rad)*(180.0/M_PI))
 #define DEG2RAD(_deg) ((_deg)*(M_PI/180.0))
 
+
+#define RAD2DEGF(_rad) ((_rad)*(float)(180.0/M_PI))
+#define DEG2RADF(_deg) ((_deg)*(float)(M_PI/180.0))
+
 /******************************** Quaternions ********************************/
 /* stored in (w, x, y, z) order                                              */
 
 /* init */
+void unit_axis_angle(float axis[3], float *angle);
 void unit_qt(float q[4]);
 void copy_qt_qt(float q[4], const float a[4]);
 
@@ -80,7 +89,7 @@ void rotation_between_quats_to_quat(float q[4], const float q1[4], const float q
 void mat3_to_quat_is_ok(float q[4], float mat[3][3]);
 
 /* other */
-void print_qt(char *str, float q[4]);
+void print_qt(const char *str, const float q[4]);
 
 /******************************** Axis Angle *********************************/
 
@@ -176,9 +185,12 @@ void vec_apply_track(float vec[3], short axis);
 float lens_to_angle(float lens);
 float angle_to_lens(float angle);
 
+float angle_wrap_rad(float angle);
+float angle_wrap_deg(float angle);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* BLI_MATH_ROTATION */
+#endif /* BLI_MATH_ROTATION_H */
 

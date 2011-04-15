@@ -1,5 +1,5 @@
-/**
- * $Id: space_outliner.c 33380 2010-11-29 17:10:46Z ton $
+/*
+ * $Id: space_outliner.c 35242 2011-02-27 20:29:51Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,19 +26,25 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/space_outliner/space_outliner.c
+ *  \ingroup spoutliner
+ */
+
+
 #include <string.h>
 #include <stdio.h>
-
 
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
+#include "ED_space_api.h"
 #include "ED_screen.h"
 
 #include "WM_api.h"
@@ -117,6 +123,7 @@ static void outliner_main_area_listener(ARegion *ar, wmNotifier *wmn)
 					break;
 				case ND_BONE_ACTIVE:
 				case ND_BONE_SELECT:
+				case ND_DRAW:
 				case ND_PARENT:
 				case ND_OB_SHADING:
 					ED_region_tag_redraw(ar);

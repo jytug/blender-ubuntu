@@ -1,7 +1,7 @@
-/**
+/*
  * smoke.c
  *
- * $Id: smoke.c 33996 2011-01-02 06:52:47Z jhk $
+ * $Id: smoke.c 35247 2011-02-27 20:40:57Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenkernel/intern/smoke.c
+ *  \ingroup bke
+ */
+
+
 /* Part of the code copied from elbeem fluid library, copyright by Nils Thuerey */
 
 #include <GL/glew.h>
@@ -48,6 +53,7 @@
 #include "BLI_edgehash.h"
 #include "BLI_kdtree.h"
 #include "BLI_kdopbvh.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_bvhutils.h"
 #include "BKE_cdderivedmesh.h"
@@ -58,7 +64,7 @@
 #include "BKE_particle.h"
 #include "BKE_pointcache.h"
 #include "BKE_smoke.h"
-#include "BKE_utildefines.h"
+
 
 #include "DNA_customdata_types.h"
 #include "DNA_group_types.h"
@@ -134,7 +140,7 @@ static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs)
 
 #define TRI_UVOFFSET (1./4.)
 
-int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene, DerivedMesh *dm)
+static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene, DerivedMesh *dm)
 {
 	if((smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain && !smd->domain->fluid)
 	{

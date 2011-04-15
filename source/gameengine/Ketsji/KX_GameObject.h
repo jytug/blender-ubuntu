@@ -1,5 +1,5 @@
 /*
- * $Id: KX_GameObject.h 32788 2010-10-31 04:11:39Z campbellbarton $
+ * $Id: KX_GameObject.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,7 +25,11 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * General KX game object.
+ */
+
+/** \file KX_GameObject.h
+ *  \ingroup ketsji
+ *  \brief General KX game object.
  */
 
 #ifndef __KX_GAMEOBJECT
@@ -36,6 +40,7 @@
 #pragma warning (disable : 4355) 
 #endif 
 
+#include <stddef.h>
 
 #include "ListValue.h"
 #include "SCA_IObject.h"

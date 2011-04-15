@@ -1,4 +1,4 @@
-/* $Id: BKE_subsurf.h 29164 2010-06-02 18:04:31Z blendix $ 
+/* $Id: BKE_subsurf.h 34962 2011-02-18 13:05:18Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,6 +27,10 @@
  */
 #ifndef BKE_SUBSURF_H
 #define BKE_SUBSURF_H
+
+/** \file BKE_subsurf.h
+ *  \ingroup bke
+ */
 
 struct DMGridAdjacency;
 struct DMGridData;
@@ -72,7 +76,6 @@ typedef struct CCGDerivedMesh {
 	char *faceFlags;
 
 	struct PBVH *pbvh;
-	int pbvh_draw;
 	struct ListBase *fmap;
 	struct IndexNode *fmap_mem;
 

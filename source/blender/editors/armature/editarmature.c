@@ -1,5 +1,5 @@
-/**
- * $Id: editarmature.c 33967 2010-12-31 10:42:31Z campbellbarton $
+/*
+ * $Id: editarmature.c 35824 2011-03-27 17:22:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/armature/editarmature.c
+ *  \ingroup edarmature
+ */
+
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -44,6 +49,7 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
 #include "BLI_editVert.h"
 #include "BLI_ghash.h"
 
@@ -81,6 +87,7 @@
 #include "ED_view3d.h"
 
 #include "UI_interface.h"
+#include "UI_resources.h"
 
 #include "armature_intern.h"
 #include "meshlaplacian.h"
@@ -245,11 +252,6 @@ EditBone *make_boneList(ListBase *edbo, ListBase *bones, EditBone *parent, Bone 
 	EditBone	*eBoneAct= NULL;
 	EditBone	*eBoneTest= NULL;
 	Bone		*curBone;
-	float delta[3];
-	float premat[3][3];
-	float postmat[3][3];
-	float imat[3][3];
-	float difmat[3][3];
 		
 	for (curBone=bones->first; curBone; curBone=curBone->next) {
 		eBone= MEM_callocN(sizeof(EditBone), "make_editbone");
@@ -290,20 +292,8 @@ EditBone *make_boneList(ListBase *edbo, ListBase *bones, EditBone *parent, Bone 
 		}
 
 		copy_v3_v3(eBone->head, curBone->arm_head);
-		copy_v3_v3(eBone->tail, curBone->arm_tail);		
-		
-		eBone->roll= 0.0f;
-		
-		/* roll fixing */
-		sub_v3_v3v3(delta, eBone->tail, eBone->head);
-		vec_roll_to_mat3(delta, 0.0f, postmat);
-		
-		copy_m3_m4(premat, curBone->arm_mat);
-		
-		invert_m3_m3(imat, postmat);
-		mul_m3_m3m3(difmat, imat, premat);
-		
-		eBone->roll = (float)atan2(difmat[2][0], difmat[2][2]);
+		copy_v3_v3(eBone->tail, curBone->arm_tail);
+		eBone->roll = curBone->arm_roll;
 		
 		/* rest of stuff copy */
 		eBone->length= curBone->length;
@@ -419,8 +409,10 @@ void ED_armature_from_edit(Object *obedit)
 		eBone->temp= newBone;	/* Associate the real Bones with the EditBones */
 		
 		BLI_strncpy(newBone->name, eBone->name, sizeof(newBone->name));
-		memcpy(newBone->head, eBone->head, sizeof(newBone->head));
-		memcpy(newBone->tail, eBone->tail, sizeof(newBone->tail));
+		copy_v3_v3(newBone->arm_head, eBone->head);
+		copy_v3_v3(newBone->arm_tail, eBone->tail);
+		newBone->arm_roll = eBone->roll;
+		
 		newBone->flag= eBone->flag;
 		
 		if (eBone == arm->act_edbone) {
@@ -455,7 +447,6 @@ void ED_armature_from_edit(Object *obedit)
 			BLI_addtail(&newBone->parent->childbase, newBone);
 			
 			{
-				float M_boneRest[3][3];
 				float M_parentRest[3][3];
 				float iM_parentRest[3][3];
 				float	delta[3];
@@ -463,10 +454,6 @@ void ED_armature_from_edit(Object *obedit)
 				/* Get the parent's  matrix (rotation only) */
 				sub_v3_v3v3(delta, eBone->parent->tail, eBone->parent->head);
 				vec_roll_to_mat3(delta, eBone->parent->roll, M_parentRest);
-				
-				/* Get this bone's  matrix (rotation only) */
-				sub_v3_v3v3(delta, eBone->tail, eBone->head);
-				vec_roll_to_mat3(delta, eBone->roll, M_boneRest);
 				
 				/* Invert the parent matrix */
 				invert_m3_m3(iM_parentRest, M_parentRest);
@@ -480,8 +467,11 @@ void ED_armature_from_edit(Object *obedit)
 			}
 		}
 		/*	...otherwise add this bone to the armature's bonebase */
-		else
+		else {
+			copy_v3_v3(newBone->head, eBone->head);
+			copy_v3_v3(newBone->tail, eBone->tail);
 			BLI_addtail(&arm->bonebase, newBone);
+		}
 	}
 	
 	/* Make a pass through the new armature to fix rolling */
@@ -648,6 +638,8 @@ static int apply_armature_pose2bones_exec (bContext *C, wmOperator *op)
 	
 	/* helpful warnings... */
 	// TODO: add warnings to be careful about actions, applying deforms first, etc.
+	if (ob->adt && ob->adt->action) 
+		BKE_report(op->reports, RPT_WARNING, "Actions on this armature will be destroyed by this new rest pose as the transforms stored are relative to the old rest pose");
 	
 	/* Get editbones of active armature to alter */
 	ED_armature_to_edit(ob);	
@@ -687,10 +679,11 @@ static int apply_armature_pose2bones_exec (bContext *C, wmOperator *op)
 		}
 		
 		/* clear transform values for pchan */
-		pchan->loc[0]= pchan->loc[1]= pchan->loc[2]= 0.0f;
-		pchan->eul[0]= pchan->eul[1]= pchan->eul[2]= 0.0f;
-		pchan->quat[1]= pchan->quat[2]= pchan->quat[3]= 0.0f;
-		pchan->quat[0]= pchan->size[0]= pchan->size[1]= pchan->size[2]= 1.0f;
+		zero_v3(pchan->loc);
+		zero_v3(pchan->eul);
+		unit_qt(pchan->quat);
+		unit_axis_angle(pchan->rotAxis, &pchan->rotAngle);
+		pchan->size[0]= pchan->size[1]= pchan->size[2]= 1.0f;
 		
 		/* set anim lock */
 		curbone->flag |= BONE_UNKEYED;
@@ -731,7 +724,6 @@ void POSE_OT_armature_apply (wmOperatorType *ot)
 /* set the current pose as the restpose */
 static int pose_visual_transform_apply_exec (bContext *C, wmOperator *UNUSED(op))
 {
-	Scene *scene= CTX_data_scene(C);
 	Object *ob= ED_object_pose_armature(CTX_data_active_object(C)); // must be active object, not edit-object
 
 	/* don't check if editmode (should be done by caller) */
@@ -744,24 +736,18 @@ static int pose_visual_transform_apply_exec (bContext *C, wmOperator *UNUSED(op)
 	 * at once are to be predictable*/
 	CTX_DATA_BEGIN(C, bPoseChannel *, pchan, selected_pose_bones)
 	{
-		float delta_mat[4][4], imat[4][4], mat[4][4];
-
-		where_is_pose_bone(scene, ob, pchan, CFRA, 1);
-
-		copy_m4_m4(mat, pchan->pose_mat);
-
-		/* calculate pchan->pose_mat without loc/size/rot & constraints applied */
-		where_is_pose_bone(scene, ob, pchan, CFRA, 0);
-		invert_m4_m4(imat, pchan->pose_mat);
-		mul_m4_m4m4(delta_mat, mat, imat);
-
+		float delta_mat[4][4];
+		
+		/* chan_mat already contains the delta transform from rest pose to pose-mode pose
+		 * as that is baked into there so that B-Bones will work. Once we've set this as the
+		 * new raw-transform components, don't recalc the poses yet, otherwise IK result will 
+		 * change, thus changing the result we may be trying to record.
+		 */
+		copy_m4_m4(delta_mat, pchan->chan_mat);
 		pchan_apply_mat4(pchan, delta_mat, TRUE);
-
-		where_is_pose_bone(scene, ob, pchan, CFRA, 1);
 	}
 	CTX_DATA_END;
-
-	// ob->pose->flag |= (POSE_LOCKED|POSE_DO_UNLOCK);
+	
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 
 	/* note, notifier might evolve */
@@ -1208,12 +1194,10 @@ static int separate_armature_exec (bContext *C, wmOperator *UNUSED(op))
 	Object *obedit= CTX_data_edit_object(C);
 	Object *oldob, *newob;
 	Base *oldbase, *newbase;
-	bArmature *arm;
 	
 	/* sanity checks */
 	if (obedit == NULL)
 		return OPERATOR_CANCELLED;
-	arm= obedit->data;
 	
 	/* set wait cursor in case this takes a while */
 	WM_cursor_wait(1);
@@ -1632,6 +1616,7 @@ void POSE_OT_select_linked(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Select Connected";
 	ot->idname= "POSE_OT_select_linked";
+	ot->description= "Select bones related to selected ones by parent/child relationships";
 	
 	/* api callbacks */
 	ot->exec= NULL;
@@ -1731,6 +1716,7 @@ void ARMATURE_OT_select_linked(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Select Connected";
 	ot->idname= "ARMATURE_OT_select_linked";
+	ot->description= "Select bones related to selected ones by parent/child relationships";
 	
 	/* api callbacks */
 	ot->exec= NULL;
@@ -1915,6 +1901,7 @@ void ARMATURE_OT_delete(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Delete Selected Bone(s)";
 	ot->idname= "ARMATURE_OT_delete";
+	ot->description= "Remove selected bones from the armature";
 	
 	/* api callbacks */
 	ot->invoke = WM_operator_confirm;
@@ -2140,7 +2127,7 @@ float ED_rollBoneToVector(EditBone *bone, const float align_axis[3], const short
 		sub_v3_v3v3(align_axis_proj, align_axis, vec);
 		
 		if(axis_only) {
-			if(angle_v3v3(align_axis_proj, mat[2]) > M_PI/2) {
+			if(angle_v3v3(align_axis_proj, mat[2]) > (float)(M_PI/2.0)) {
 				negate_v3(align_axis_proj);
 			}
 		}
@@ -2219,10 +2206,8 @@ static int armature_calc_roll_exec(bContext *C, wmOperator *op)
 			mul_m3_v3(imat, vec);
 		}
 		else if (type==5) {
-			bArmature *arm= ob->data;
-			EditBone *ebone= (EditBone *)arm->act_edbone;
 			float mat[3][3], nor[3];
-
+			ebone= (EditBone *)arm->act_edbone;
 			if(ebone==NULL) {
 				BKE_report(op->reports, RPT_ERROR, "No active bone set");
 				return OPERATOR_CANCELLED;
@@ -2271,6 +2256,7 @@ void ARMATURE_OT_calculate_roll(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Recalculate Roll";
 	ot->idname= "ARMATURE_OT_calculate_roll";
+	ot->description= "Automatically fix alignment of select bones' axes";
 	
 	/* api callbacks */
 	ot->invoke = WM_menu_invoke;
@@ -2597,6 +2583,7 @@ void ARMATURE_OT_click_extrude(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Click-Extrude";
 	ot->idname= "ARMATURE_OT_click_extrude";
+	ot->description= "Create a new bone going from the last selected joint to the mouse position";
 	
 	/* api callbacks */
 	ot->invoke = armature_click_extrude_invoke;
@@ -2865,6 +2852,7 @@ void ARMATURE_OT_duplicate(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Duplicate Selected Bone(s)";
 	ot->idname= "ARMATURE_OT_duplicate";
+	ot->description= "Make copies of the selected bones within the same armature";
 	
 	/* api callbacks */
 	ot->exec = armature_duplicate_selected_exec;
@@ -2995,14 +2983,13 @@ static int armature_fill_bones_exec (bContext *C, wmOperator *op)
 	bArmature *arm= (obedit) ? obedit->data : NULL;
 	Scene *scene= CTX_data_scene(C);
 	View3D *v3d= CTX_wm_view3d(C);
-	EditBone *newbone=NULL;
 	ListBase points = {NULL, NULL};
 	int count;
-	
+
 	/* sanity checks */
-	if ELEM(NULL, obedit, arm)
+	if (ELEM(NULL, obedit, arm))
 		return OPERATOR_CANCELLED;
-	
+
 	/* loop over all bones, and only consider if visible */
 	CTX_DATA_BEGIN(C, EditBone *, ebone, visible_bones)
 	{
@@ -3036,7 +3023,7 @@ static int armature_fill_bones_exec (bContext *C, wmOperator *op)
 		mul_v3_m4v3(curs, obedit->imat, give_cursor(scene, v3d));
 		
 		/* Create a bone */
-		newbone= add_points_bone(obedit, ebp->vec, curs);
+		/* newbone= */ add_points_bone(obedit, ebp->vec, curs);
 	}
 	else if (count == 2) {
 		EditBonePoint *ebp, *ebp2;
@@ -3097,7 +3084,7 @@ static int armature_fill_bones_exec (bContext *C, wmOperator *op)
 		
 		/* add new bone and parent it to the appropriate end */
 		if (headtail) {
-			newbone= add_points_bone(obedit, head, tail);
+			EditBone *newbone= add_points_bone(obedit, head, tail);
 			
 			/* do parenting (will need to set connected flag too) */
 			if (headtail == 2) {
@@ -3337,11 +3324,12 @@ void ARMATURE_OT_merge (wmOperatorType *ot)
 /* ************** END Add/Remove stuff in editmode ************ */
 /* *************** Tools in editmode *********** */
 
-static int armature_hide_exec(bContext *C, wmOperator *UNUSED(op))
+static int armature_hide_exec(bContext *C, wmOperator *op)
 {
 	Object *obedit= CTX_data_edit_object(C);
 	bArmature *arm= obedit->data;
 	EditBone *ebone;
+	const int invert= RNA_boolean_get(op->ptr, "unselected") ? BONE_SELECTED : 0;
 
 	/* cancel if nothing selected */
 	if (CTX_DATA_COUNT(C, selected_bones) == 0)
@@ -3349,7 +3337,7 @@ static int armature_hide_exec(bContext *C, wmOperator *UNUSED(op))
 
 	for (ebone = arm->edbo->first; ebone; ebone=ebone->next) {
 		if (EBONE_VISIBLE(arm, ebone)) {
-			if (ebone->flag & BONE_SELECTED) {
+			if ((ebone->flag & BONE_SELECTED) != invert) {
 				ebone->flag &= ~(BONE_TIPSEL|BONE_SELECTED|BONE_ROOTSEL);
 				ebone->flag |= BONE_HIDDEN_A;
 			}
@@ -3368,6 +3356,7 @@ void ARMATURE_OT_hide(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Hide Selected Bones";
 	ot->idname= "ARMATURE_OT_hide";
+	ot->description= "Tag selected bones to not be visible in Edit Mode";
 	
 	/* api callbacks */
 	ot->exec= armature_hide_exec;
@@ -3375,6 +3364,9 @@ void ARMATURE_OT_hide(wmOperatorType *ot)
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+
+	/* props */
+	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected.");
 }
 
 static int armature_reveal_exec(bContext *C, wmOperator *UNUSED(op))
@@ -3404,6 +3396,7 @@ void ARMATURE_OT_reveal(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Reveal Bones";
 	ot->idname= "ARMATURE_OT_reveal";
+	ot->description= "Unhide all bones that have been tagged to be hidden in Edit Mode";
 	
 	/* api callbacks */
 	ot->exec= armature_reveal_exec;
@@ -3411,9 +3404,10 @@ void ARMATURE_OT_reveal(wmOperatorType *ot)
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-}
 
-void hide_selected_armature_bones(Scene *scene)
+}
+#if 0 // remove this?
+static void hide_selected_armature_bones(Scene *scene)
 {
 	Object *obedit= scene->obedit; // XXX get from context
 	bArmature *arm= obedit->data;
@@ -3431,8 +3425,6 @@ void hide_selected_armature_bones(Scene *scene)
 	ED_armature_sync_selection(arm->edbo);
 }
 
-
-#if 0 // remove this?
 static void hide_unselected_armature_bones(Scene *scene)
 {
 	Object *obedit= scene->obedit; // XXX get from context
@@ -3452,9 +3444,7 @@ static void hide_unselected_armature_bones(Scene *scene)
 	ED_armature_validate_active(arm);
 	ED_armature_sync_selection(arm->edbo);
 }
-#endif
 
-#if 0 // remove this?
 void show_all_armature_bones(Scene *scene)
 {
 	Object *obedit= scene->obedit; // XXX get from context
@@ -3615,6 +3605,7 @@ void ARMATURE_OT_extrude(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Extrude";
 	ot->idname= "ARMATURE_OT_extrude";
+	ot->description= "Create new bones from the selected joints";
 	
 	/* api callbacks */
 	ot->exec= armature_extrude_exec;
@@ -3677,6 +3668,7 @@ void ARMATURE_OT_bone_primitive_add(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Add Bone";
 	ot->idname= "ARMATURE_OT_bone_primitive_add";
+	ot->description= "Add a new bone located at the 3D-Cursor";
 	
 	/* api callbacks */
 	ot->exec = armature_bone_primitive_add_exec;
@@ -3766,6 +3758,7 @@ void ARMATURE_OT_subdivide(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Subdivide Multi";
 	ot->idname= "ARMATURE_OT_subdivide";
+	ot->description= "Break selected bones into chains of smaller bones";
 	
 	/* api callbacks */
 	ot->exec = armature_subdivide_exec;
@@ -3867,6 +3860,7 @@ void ARMATURE_OT_switch_direction(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Switch Direction";
 	ot->idname= "ARMATURE_OT_switch_direction";
+	ot->description= "Change the direction that a chain of bones points in (head <-> tail swap)";
 	
 	/* api callbacks */
 	ot->exec = armature_switch_direction_exec;
@@ -4014,7 +4008,7 @@ static int armature_parent_set_exec(bContext *C, wmOperator *op)
 static int armature_parent_set_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(event))
 {
 	EditBone *actbone = CTX_data_active_bone(C);
-	uiPopupMenu *pup= uiPupMenuBegin(C, "Make Parent ", ICON_NULL);
+	uiPopupMenu *pup= uiPupMenuBegin(C, "Make Parent ", ICON_NONE);
 	uiLayout *layout= uiPupMenuLayout(pup);
 	int allchildbones = 0;
 	
@@ -4041,6 +4035,7 @@ void ARMATURE_OT_parent_set(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Make Parent";
 	ot->idname= "ARMATURE_OT_parent_set";
+	ot->description= "Set the active bone as the parent of the selected bones";
 	
 	/* api callbacks */
 	ot->invoke = armature_parent_set_invoke;
@@ -4094,6 +4089,7 @@ void ARMATURE_OT_parent_clear(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Clear Parent";
 	ot->idname= "ARMATURE_OT_parent_clear";
+	ot->description= "Remove the parent-child relationship between selected bones and their parents";
 	
 	/* api callbacks */
 	ot->invoke = WM_menu_invoke;
@@ -4130,6 +4126,7 @@ void ARMATURE_OT_select_inverse(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Select Inverse";
 	ot->idname= "ARMATURE_OT_select_inverse";
+	ot->description= "Flip the selection status of bones (selected -> unselected, unselected -> selected)";
 	
 	/* api callbacks */
 	ot->exec= armature_select_inverse_exec;
@@ -4167,7 +4164,8 @@ static int armature_de_select_all_exec(bContext *C, wmOperator *op)
 			case SEL_INVERT:
 				if (ebone->flag & BONE_SELECTED) {
 					ebone->flag &= ~(BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
-				} else {
+				} 
+				else {
 					ebone->flag |= (BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
 					if(ebone->parent)
 						ebone->parent->flag |= (BONE_TIPSEL);
@@ -4185,10 +4183,10 @@ static int armature_de_select_all_exec(bContext *C, wmOperator *op)
 
 void ARMATURE_OT_select_all(wmOperatorType *ot)
 {
-	
 	/* identifiers */
 	ot->name= "Select or Deselect All";
 	ot->idname= "ARMATURE_OT_select_all";
+	ot->description= "Toggle selection status of all bones";
 	
 	/* api callbacks */
 	ot->exec= armature_de_select_all_exec;
@@ -4269,6 +4267,7 @@ void ARMATURE_OT_select_hierarchy(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Select Hierarchy";
 	ot->idname= "ARMATURE_OT_select_hierarchy";
+	ot->description= "Select immediate parent/children of selected bones";
 	
 	/* api callbacks */
 	ot->exec= armature_select_hierarchy_exec;
@@ -4705,14 +4704,14 @@ static void envelope_bone_weighting(Object *ob, Mesh *mesh, float (*verts)[3], i
 				bone->rad_head * scale, bone->rad_tail * scale, bone->dist * scale);
 			
 			/* add the vert to the deform group if weight!=0.0 */
-			if (distance!=0.0)
+			if (distance != 0.0f)
 				ED_vgroup_vert_add (ob, dgroup, i, distance, WEIGHT_REPLACE);
 			else
 				ED_vgroup_vert_remove (ob, dgroup, i);
 			
 			/* do same for mirror */
 			if (dgroupflip && dgroupflip[j] && iflip >= 0) {
-				if (distance!=0.0)
+				if (distance != 0.0f)
 					ED_vgroup_vert_add (ob, dgroupflip[j], iflip, distance,
 						WEIGHT_REPLACE);
 				else
@@ -4722,7 +4721,7 @@ static void envelope_bone_weighting(Object *ob, Mesh *mesh, float (*verts)[3], i
 	}
 }
 
-void add_verts_to_dgroups(ReportList *reports, Scene *scene, Object *ob, Object *par, int heat, int mirror)
+static void add_verts_to_dgroups(ReportList *reports, Scene *scene, Object *ob, Object *par, int heat, int mirror)
 {
 	/* This functions implements the automatic computation of vertex group
 	 * weights, either through envelopes or using a heat equilibrium.
@@ -4921,21 +4920,157 @@ void create_vgroups_from_armature(ReportList *reports, Scene *scene, Object *ob,
 } 
 /* ************* Clear Pose *****************************/
 
-static int pose_clear_scale_exec(bContext *C, wmOperator *UNUSED(op)) 
+/* clear scale of pose-channel */
+static void pchan_clear_scale(bPoseChannel *pchan)
+{
+	if ((pchan->protectflag & OB_LOCK_SCALEX)==0)
+		pchan->size[0]= 1.0f;
+	if ((pchan->protectflag & OB_LOCK_SCALEY)==0)
+		pchan->size[1]= 1.0f;
+	if ((pchan->protectflag & OB_LOCK_SCALEZ)==0)
+		pchan->size[2]= 1.0f;
+}
+
+/* clear location of pose-channel */
+static void pchan_clear_loc(bPoseChannel *pchan)
+{
+	if ((pchan->protectflag & OB_LOCK_LOCX)==0)
+		pchan->loc[0]= 0.0f;
+	if ((pchan->protectflag & OB_LOCK_LOCY)==0)
+		pchan->loc[1]= 0.0f;
+	if ((pchan->protectflag & OB_LOCK_LOCZ)==0)
+		pchan->loc[2]= 0.0f;
+}
+
+/* clear rotation of pose-channel */
+static void pchan_clear_rot(bPoseChannel *pchan)
+{
+	if (pchan->protectflag & (OB_LOCK_ROTX|OB_LOCK_ROTY|OB_LOCK_ROTZ|OB_LOCK_ROTW)) {
+		/* check if convert to eulers for locking... */
+		if (pchan->protectflag & OB_LOCK_ROT4D) {
+			/* perform clamping on a component by component basis */
+			if (pchan->rotmode == ROT_MODE_AXISANGLE) {
+				if ((pchan->protectflag & OB_LOCK_ROTW) == 0)
+					pchan->rotAngle= 0.0f;
+				if ((pchan->protectflag & OB_LOCK_ROTX) == 0)
+					pchan->rotAxis[0]= 0.0f;
+				if ((pchan->protectflag & OB_LOCK_ROTY) == 0)
+					pchan->rotAxis[1]= 0.0f;
+				if ((pchan->protectflag & OB_LOCK_ROTZ) == 0)
+					pchan->rotAxis[2]= 0.0f;
+					
+				/* check validity of axis - axis should never be 0,0,0 (if so, then we make it rotate about y) */
+				if (IS_EQF(pchan->rotAxis[0], pchan->rotAxis[1]) && IS_EQF(pchan->rotAxis[1], pchan->rotAxis[2]))
+					pchan->rotAxis[1] = 1.0f;
+			}
+			else if (pchan->rotmode == ROT_MODE_QUAT) {
+				if ((pchan->protectflag & OB_LOCK_ROTW) == 0)
+					pchan->quat[0]= 1.0f;
+				if ((pchan->protectflag & OB_LOCK_ROTX) == 0)
+					pchan->quat[1]= 0.0f;
+				if ((pchan->protectflag & OB_LOCK_ROTY) == 0)
+					pchan->quat[2]= 0.0f;
+				if ((pchan->protectflag & OB_LOCK_ROTZ) == 0)
+					pchan->quat[3]= 0.0f;
+			}
+			else {
+				/* the flag may have been set for the other modes, so just ignore the extra flag... */
+				if ((pchan->protectflag & OB_LOCK_ROTX) == 0)
+					pchan->eul[0]= 0.0f;
+				if ((pchan->protectflag & OB_LOCK_ROTY) == 0)
+					pchan->eul[1]= 0.0f;
+				if ((pchan->protectflag & OB_LOCK_ROTZ) == 0)
+					pchan->eul[2]= 0.0f;
+			}
+		}
+		else {
+			/* perform clamping using euler form (3-components) */
+			float eul[3], oldeul[3], quat1[4] = {0};
+			float qlen = 0.0f;
+			
+			if (pchan->rotmode == ROT_MODE_QUAT) {
+				qlen= normalize_qt_qt(quat1, pchan->quat);
+				quat_to_eul(oldeul, quat1);
+			}
+			else if (pchan->rotmode == ROT_MODE_AXISANGLE) {
+				axis_angle_to_eulO( oldeul, EULER_ORDER_DEFAULT,pchan->rotAxis, pchan->rotAngle);
+			}
+			else {
+				copy_v3_v3(oldeul, pchan->eul);
+			}
+			
+			eul[0]= eul[1]= eul[2]= 0.0f;
+			
+			if (pchan->protectflag & OB_LOCK_ROTX)
+				eul[0]= oldeul[0];
+			if (pchan->protectflag & OB_LOCK_ROTY)
+				eul[1]= oldeul[1];
+			if (pchan->protectflag & OB_LOCK_ROTZ)
+				eul[2]= oldeul[2];
+			
+			if (pchan->rotmode == ROT_MODE_QUAT) {
+				eul_to_quat(pchan->quat, eul);
+				
+				/* restore original quat size */
+				mul_qt_fl(pchan->quat, qlen);
+				
+				/* quaternions flip w sign to accumulate rotations correctly */
+				if ((quat1[0]<0.0f && pchan->quat[0]>0.0f) || (quat1[0]>0.0f && pchan->quat[0]<0.0f)) {
+					mul_qt_fl(pchan->quat, -1.0f);
+				}
+			}
+			else if (pchan->rotmode == ROT_MODE_AXISANGLE) {
+				eulO_to_axis_angle( pchan->rotAxis, &pchan->rotAngle,eul, EULER_ORDER_DEFAULT);
+			}
+			else {
+				copy_v3_v3(pchan->eul, eul);
+			}
+		}
+	}						// Duplicated in source/blender/editors/object/object_transform.c
+	else { 
+		if (pchan->rotmode == ROT_MODE_QUAT) {
+			unit_qt(pchan->quat);
+		}
+		else if (pchan->rotmode == ROT_MODE_AXISANGLE) {
+			/* by default, make rotation of 0 radians around y-axis (roll) */
+			unit_axis_angle(pchan->rotAxis, &pchan->rotAngle);
+		}
+		else {
+			zero_v3(pchan->eul);
+		}
+	}
+}
+
+/* clear loc/rot/scale of pose-channel */
+static void pchan_clear_transforms(bPoseChannel *pchan)
+{
+	pchan_clear_loc(pchan);
+	pchan_clear_rot(pchan);
+	pchan_clear_scale(pchan);
+}
+
+/* --------------- */
+
+/* generic exec for clear-pose operators */
+static int pose_clear_transform_generic_exec(bContext *C, wmOperator *op, 
+		void (*clear_func)(bPoseChannel*), const char default_ksName[])
 {
 	Scene *scene= CTX_data_scene(C);
 	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
 	short autokey = 0;
 	
-	/* only clear those channels that are not locked */
-	CTX_DATA_BEGIN(C, bPoseChannel*, pchan, selected_pose_bones) {
-		if ((pchan->protectflag & OB_LOCK_SCALEX)==0)
-			pchan->size[0]= 1.0f;
-		if ((pchan->protectflag & OB_LOCK_SCALEY)==0)
-			pchan->size[1]= 1.0f;
-		if ((pchan->protectflag & OB_LOCK_SCALEZ)==0)
-			pchan->size[2]= 1.0f;
-			
+	/* sanity checks */
+	if ELEM(NULL, clear_func, default_ksName) {
+		BKE_report(op->reports, RPT_ERROR, "Programming error: missing clear transform func or Keying Set Name");
+		return OPERATOR_CANCELLED;
+	}
+	
+	/* only clear relevant transforms for selected bones */
+	CTX_DATA_BEGIN(C, bPoseChannel*, pchan, selected_pose_bones) 
+	{
+		/* run provided clearing function */
+		clear_func(pchan);
+		
 		/* do auto-keyframing as appropriate */
 		if (autokeyframe_cfra_can_key(scene, &ob->id)) {
 			/* clear any unkeyed tags */
@@ -4956,7 +5091,7 @@ static int pose_clear_scale_exec(bContext *C, wmOperator *UNUSED(op))
 	/* perform autokeying on the bones if needed */
 	if (autokey) {
 		/* get KeyingSet to use */
-		KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, "Scaling");
+		KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, default_ksName);
 		
 		/* insert keyframes */
 		ANIM_apply_keyingset(C, NULL, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
@@ -4974,11 +5109,19 @@ static int pose_clear_scale_exec(bContext *C, wmOperator *UNUSED(op))
 	return OPERATOR_FINISHED;
 }
 
+/* --------------- */
+
+static int pose_clear_scale_exec(bContext *C, wmOperator *op) 
+{
+	return pose_clear_transform_generic_exec(C, op, pchan_clear_scale, "Scaling");
+}
+
 void POSE_OT_scale_clear(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Clear Pose Scale";
 	ot->idname= "POSE_OT_scale_clear";
+	ot->description = "Reset scaling of selected bones to their default values";
 	
 	/* api callbacks */
 	ot->exec = pose_clear_scale_exec;
@@ -4988,58 +5131,31 @@ void POSE_OT_scale_clear(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
-static int pose_clear_loc_exec(bContext *C, wmOperator *UNUSED(op)) 
-{
-	Scene *scene= CTX_data_scene(C);
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
-	short autokey = 0;
-	
-	/* only clear those channels that are not locked */
-	CTX_DATA_BEGIN(C, bPoseChannel*, pchan, selected_pose_bones) {
-		/* clear location */
-		if ((pchan->protectflag & OB_LOCK_LOCX)==0)
-			pchan->loc[0]= 0.0f;
-		if ((pchan->protectflag & OB_LOCK_LOCY)==0)
-			pchan->loc[1]= 0.0f;
-		if ((pchan->protectflag & OB_LOCK_LOCZ)==0)
-			pchan->loc[2]= 0.0f;
-			
-		/* do auto-keyframing as appropriate */
-		if (autokeyframe_cfra_can_key(scene, &ob->id)) {
-			/* clear any unkeyed tags */
-			if (pchan->bone)
-				pchan->bone->flag &= ~BONE_UNKEYED;
-				
-			/* tag for autokeying later */
-			autokey = 1;
-		}
-		else {
-			/* add unkeyed tags */
-			if (pchan->bone)
-				pchan->bone->flag |= BONE_UNKEYED;
-		}
-	}
-	CTX_DATA_END;
-	
-	/* perform autokeying on the bones if needed */
-	if (autokey) {
-		/* get KeyingSet to use */
-		KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, "Location");
-		
-		/* insert keyframes */
-		ANIM_apply_keyingset(C, NULL, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
-		
-		/* now recalculate paths */
-		if ((ob->pose->avs.path_bakeflag & MOTIONPATH_BAKE_HAS_PATHS))
-			ED_pose_recalculate_paths(scene, ob);
-	}
-	
-	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 
-	/* note, notifier might evolve */
-	WM_event_add_notifier(C, NC_OBJECT|ND_TRANSFORM, ob);
+static int pose_clear_rot_exec(bContext *C, wmOperator *op) 
+{
+	return pose_clear_transform_generic_exec(C, op, pchan_clear_rot, "Rotation");
+}
+
+void POSE_OT_rot_clear(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "Clear Pose Rotation";
+	ot->idname= "POSE_OT_rot_clear";
+	ot->description = "Reset rotations of selected bones to their default values";
 	
-	return OPERATOR_FINISHED;
+	/* api callbacks */
+	ot->exec = pose_clear_rot_exec;
+	ot->poll = ED_operator_posemode;
+	
+	/* flags */
+	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+}
+
+
+static int pose_clear_loc_exec(bContext *C, wmOperator *op) 
+{
+	return pose_clear_transform_generic_exec(C, op, pchan_clear_loc, "Location");
 }
 
 void POSE_OT_loc_clear(wmOperatorType *ot)
@@ -5047,6 +5163,7 @@ void POSE_OT_loc_clear(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Clear Pose Location";
 	ot->idname= "POSE_OT_loc_clear";
+	ot->description = "Reset locations of selected bones to their default values";
 	
 	/* api callbacks */
 	ot->exec = pose_clear_loc_exec;
@@ -5056,161 +5173,25 @@ void POSE_OT_loc_clear(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
-static int pose_clear_rot_exec(bContext *C, wmOperator *UNUSED(op)) 
-{
-	Scene *scene= CTX_data_scene(C);
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
-	short autokey = 0;
-	
-	/* only clear those channels that are not locked */
-	CTX_DATA_BEGIN(C, bPoseChannel*, pchan, selected_pose_bones) {
-		if (pchan->protectflag & (OB_LOCK_ROTX|OB_LOCK_ROTY|OB_LOCK_ROTZ|OB_LOCK_ROTW)) {
-			/* check if convert to eulers for locking... */
-			if (pchan->protectflag & OB_LOCK_ROT4D) {
-				/* perform clamping on a component by component basis */
-				if (pchan->rotmode == ROT_MODE_AXISANGLE) {
-					if ((pchan->protectflag & OB_LOCK_ROTW) == 0)
-						pchan->rotAngle= 0.0f;
-					if ((pchan->protectflag & OB_LOCK_ROTX) == 0)
-						pchan->rotAxis[0]= 0.0f;
-					if ((pchan->protectflag & OB_LOCK_ROTY) == 0)
-						pchan->rotAxis[1]= 0.0f;
-					if ((pchan->protectflag & OB_LOCK_ROTZ) == 0)
-						pchan->rotAxis[2]= 0.0f;
-						
-					/* check validity of axis - axis should never be 0,0,0 (if so, then we make it rotate about y) */
-					if (IS_EQ(pchan->rotAxis[0], pchan->rotAxis[1]) && IS_EQ(pchan->rotAxis[1], pchan->rotAxis[2]))
-						pchan->rotAxis[1] = 1.0f;
-				}
-				else if (pchan->rotmode == ROT_MODE_QUAT) {
-					if ((pchan->protectflag & OB_LOCK_ROTW) == 0)
-						pchan->quat[0]= 1.0f;
-					if ((pchan->protectflag & OB_LOCK_ROTX) == 0)
-						pchan->quat[1]= 0.0f;
-					if ((pchan->protectflag & OB_LOCK_ROTY) == 0)
-						pchan->quat[2]= 0.0f;
-					if ((pchan->protectflag & OB_LOCK_ROTZ) == 0)
-						pchan->quat[3]= 0.0f;
-				}
-				else {
-					/* the flag may have been set for the other modes, so just ignore the extra flag... */
-					if ((pchan->protectflag & OB_LOCK_ROTX) == 0)
-						pchan->eul[0]= 0.0f;
-					if ((pchan->protectflag & OB_LOCK_ROTY) == 0)
-						pchan->eul[1]= 0.0f;
-					if ((pchan->protectflag & OB_LOCK_ROTZ) == 0)
-						pchan->eul[2]= 0.0f;
-				}
-			}
-			else {
-				/* perform clamping using euler form (3-components) */
-				float eul[3], oldeul[3], quat1[4] = {0};
-				float qlen = 0.0f;
-				
-				if (pchan->rotmode == ROT_MODE_QUAT) {
-					qlen= normalize_qt_qt(quat1, pchan->quat);
-					quat_to_eul(oldeul, quat1);
-				}
-				else if (pchan->rotmode == ROT_MODE_AXISANGLE) {
-					axis_angle_to_eulO( oldeul, EULER_ORDER_DEFAULT,pchan->rotAxis, pchan->rotAngle);
-				}
-				else {
-					copy_v3_v3(oldeul, pchan->eul);
-				}
-				
-				eul[0]= eul[1]= eul[2]= 0.0f;
-				
-				if (pchan->protectflag & OB_LOCK_ROTX)
-					eul[0]= oldeul[0];
-				if (pchan->protectflag & OB_LOCK_ROTY)
-					eul[1]= oldeul[1];
-				if (pchan->protectflag & OB_LOCK_ROTZ)
-					eul[2]= oldeul[2];
-				
-				if (pchan->rotmode == ROT_MODE_QUAT) {
-					eul_to_quat(pchan->quat, eul);
-					
-					/* restore original quat size */
-					mul_qt_fl(pchan->quat, qlen);
-					
-					/* quaternions flip w sign to accumulate rotations correctly */
-					if ((quat1[0]<0.0f && pchan->quat[0]>0.0f) || (quat1[0]>0.0f && pchan->quat[0]<0.0f)) {
-						mul_qt_fl(pchan->quat, -1.0f);
-					}
-				}
-				else if (pchan->rotmode == ROT_MODE_AXISANGLE) {
-					eulO_to_axis_angle( pchan->rotAxis, &pchan->rotAngle,eul, EULER_ORDER_DEFAULT);
-				}
-				else {
-					copy_v3_v3(pchan->eul, eul);
-				}
-			}
-		}						// Duplicated in source/blender/editors/object/object_transform.c
-		else { 
-			if (pchan->rotmode == ROT_MODE_QUAT) {
-				unit_qt(pchan->quat);
-			}
-			else if (pchan->rotmode == ROT_MODE_AXISANGLE) {
-				/* by default, make rotation of 0 radians around y-axis (roll) */
-				pchan->rotAxis[0]=pchan->rotAxis[2]=pchan->rotAngle= 0.0f;
-				pchan->rotAxis[1]= 1.0f;
-			}
-			else {
-				pchan->eul[0]= pchan->eul[1]= pchan->eul[2]= 0.0f;
-			}
-		}
-		
-		/* do auto-keyframing as appropriate */
-		if (autokeyframe_cfra_can_key(scene, &ob->id)) {
-			/* clear any unkeyed tags */
-			if (pchan->bone)
-				pchan->bone->flag &= ~BONE_UNKEYED;
-				
-			/* tag for autokeying later */
-			autokey = 1;
-		}
-		else {
-			/* add unkeyed tags */
-			if (pchan->bone)
-				pchan->bone->flag |= BONE_UNKEYED;
-		}
-	}
-	CTX_DATA_END;
-	
-	/* perform autokeying on the bones if needed */
-	if (autokey) {
-		/* get KeyingSet to use */
-		KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, "Rotation");
-		
-		/* insert keyframes */
-		ANIM_apply_keyingset(C, NULL, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
-		
-		/* now recalculate paths */
-		if ((ob->pose->avs.path_bakeflag & MOTIONPATH_BAKE_HAS_PATHS))
-			ED_pose_recalculate_paths(scene, ob);
-	}
-	
-	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 
-	/* note, notifier might evolve */
-	WM_event_add_notifier(C, NC_OBJECT|ND_TRANSFORM, ob);
-	
-	return OPERATOR_FINISHED;
+static int pose_clear_transforms_exec(bContext *C, wmOperator *op) 
+{
+	return pose_clear_transform_generic_exec(C, op, pchan_clear_transforms, "LocRotScale");
 }
 
-void POSE_OT_rot_clear(wmOperatorType *ot)
+void POSE_OT_transforms_clear(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Clear Pose Rotation";
-	ot->idname= "POSE_OT_rot_clear";
+	ot->name= "Clear Pose Transforms";
+	ot->idname= "POSE_OT_transforms_clear";
+	ot->description = "Reset location, rotation, and scaling of selected bones to their default values";
 	
 	/* api callbacks */
-	ot->exec = pose_clear_rot_exec;
+	ot->exec = pose_clear_transforms_exec;
 	ot->poll = ED_operator_posemode;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-
 }
 
 /* ***************** selections ********************** */
@@ -5234,10 +5215,10 @@ static int pose_select_inverse_exec(bContext *C, wmOperator *UNUSED(op))
 
 void POSE_OT_select_inverse(wmOperatorType *ot)
 {
-	
 	/* identifiers */
 	ot->name= "Select Inverse";
 	ot->idname= "POSE_OT_select_inverse";
+	ot->description= "Flip the selection status of bones (selected -> unselected, unselected -> selected)";
 	
 	/* api callbacks */
 	ot->exec= pose_select_inverse_exec;
@@ -5269,7 +5250,8 @@ static int pose_de_select_all_exec(bContext *C, wmOperator *op)
 		case SEL_INVERT:
 			if (pchan->bone->flag & BONE_SELECTED) {
 				pchan->bone->flag &= ~(BONE_SELECTED|BONE_TIPSEL|BONE_ROOTSEL);
-			} else if ((pchan->bone->flag & BONE_UNSELECTABLE)==0) {
+			} 
+			else if ((pchan->bone->flag & BONE_UNSELECTABLE)==0) {
 					pchan->bone->flag |= BONE_SELECTED;
 			}
 			break;
@@ -5284,10 +5266,10 @@ static int pose_de_select_all_exec(bContext *C, wmOperator *op)
 
 void POSE_OT_select_all(wmOperatorType *ot)
 {
-	
 	/* identifiers */
 	ot->name= "Select or Deselect All";
 	ot->idname= "POSE_OT_select_all";
+	ot->description= "Toggle selection status of all bones";
 	
 	/* api callbacks */
 	ot->exec= pose_de_select_all_exec;
@@ -5329,8 +5311,9 @@ static int pose_select_parent_exec(bContext *C, wmOperator *UNUSED(op))
 void POSE_OT_select_parent(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "select parent bone";
+	ot->name= "Select Parent Bone";
 	ot->idname= "POSE_OT_select_parent";
+	ot->description= "Select bones that are parents of the currently selected bones";
 
 	/* api callbacks */
 	ot->exec= pose_select_parent_exec;
@@ -5395,6 +5378,7 @@ void POSE_OT_hide(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Hide Selected";
 	ot->idname= "POSE_OT_hide";
+	ot->description= "Tag selected bones to not be visible in Pose Mode";
 	
 	/* api callbacks */
 	ot->exec= pose_hide_exec;
@@ -5440,6 +5424,7 @@ void POSE_OT_reveal(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Reveal Selected";
 	ot->idname= "POSE_OT_reveal";
+	ot->description= "Unhide all bones that have been tagged to be hidden in Pose Mode";
 	
 	/* api callbacks */
 	ot->exec= pose_reveal_exec;
@@ -5456,13 +5441,11 @@ static int bone_unique_check(void *arg, const char *name)
 	return get_named_bone((bArmature *)arg, name) != NULL;
 }
 
-void unique_bone_name(bArmature *arm, char *name)
+static void unique_bone_name(bArmature *arm, char *name)
 {
 	BLI_uniquename_cb(bone_unique_check, (void *)arm, "Bone", '.', name, sizeof(((Bone *)NULL)->name));
 }
 
-
-#define MAXBONENAME 32
 /* helper call for armature_bone_rename */
 static void constraint_bone_name_fix(Object *ob, ListBase *conlist, char *oldname, char *newname)
 {
@@ -5636,7 +5619,7 @@ void ARMATURE_OT_flip_names (wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Flip Names";
 	ot->idname= "ARMATURE_OT_flip_names";
-	ot->description= "Flips (and corrects) the names of selected bones";
+	ot->description= "Flips (and corrects) the axis suffixes of the names of selected bones";
 	
 	/* api callbacks */
 	ot->exec= armature_flip_names_exec;
