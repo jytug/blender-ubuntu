@@ -1,5 +1,5 @@
 /**
- * $Id: WM_api.h 33675 2010-12-15 04:06:19Z campbellbarton $
+ * $Id: WM_api.h 34067 2011-01-04 14:59:55Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -316,6 +316,7 @@ int			WM_framebuffer_to_index(unsigned int col);
 #define WM_JOB_PRIORITY		1
 #define WM_JOB_EXCL_RENDER	2
 #define WM_JOB_PROGRESS		4
+#define WM_JOB_SUSPEND		8
 
 struct wmJob *WM_jobs_get(struct wmWindowManager *wm, struct wmWindow *win, void *owner, const char *name, int flag);
 

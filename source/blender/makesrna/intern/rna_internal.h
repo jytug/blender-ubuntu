@@ -1,5 +1,5 @@
 /**
- * $Id: rna_internal.h 33525 2010-12-07 04:47:38Z campbellbarton $
+ * $Id: rna_internal.h 33986 2011-01-01 13:49:22Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -324,6 +324,7 @@ typedef struct ArrayIterator {
 	char *endptr;
 	void *free_ptr; /* will be free'd if set */
 	int itemsize;
+	int length;
 	IteratorSkipFunc skip;
 } ArrayIterator;
 

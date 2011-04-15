@@ -1,5 +1,5 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 33862 2010-12-22 22:15:20Z gsrb3d $
+# $Id: CMakeLists.txt 33962 2010-12-31 04:29:11Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -27,7 +27,7 @@
 
 # there are too many inter-includes so best define here
 if(WITH_PYTHON)
-	blender_include_dirs(${PYTHON_INC})
+	blender_include_dirs("${PYTHON_INC}")
 	add_definitions(-DWITH_PYTHON)
 endif()
 

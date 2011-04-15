@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: bpy_introspect_ui.py 33749 2010-12-17 17:17:05Z gsrb3d $
+# $Id: bpy_introspect_ui.py 33972 2010-12-31 15:09:05Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -197,8 +197,20 @@ def fake_main():
     bpy.types.IDPropertyGroup = IDPropertyGroup
     bpy.types.Operator = Operator
     
+    bpy.types.Armature = type("Armature", (), {})
+    bpy.types.Bone = type("Bone", (), {})
+    bpy.types.EditBone = type("EditBone", (), {})
+    bpy.types.PoseBone = type("PoseBone", (), {})
     bpy.types.Material = type("Material", (), {})
     bpy.types.Lamp = type("Lamp", (), {})
+    bpy.types.Camera = type("Camera", (), {})
+    bpy.types.Curve = type("Curve", (), {})
+    bpy.types.Lattice = type("Lattice", (), {})
+    bpy.types.Mesh = type("Mesh", (), {})
+    bpy.types.MetaBall = type("MetaBall", (), {})
+    bpy.types.Object = type("Object", (), {})
+    bpy.types.Texture = type("Texture", (), {})
+    bpy.types.ParticleSettings = type("ParticleSettings", (), {})
     bpy.types.World = type("World", (), {})
     bpy.types.Brush = type("Brush", (), {})
     bpy.types.WindowManager = type("WindowManager", (), {})

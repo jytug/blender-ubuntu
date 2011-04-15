@@ -1,5 +1,5 @@
 /**
- * $Id: editmesh.c 33490 2010-12-05 18:59:23Z blendix $
+ * $Id: editmesh.c 34007 2011-01-02 17:08:25Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -380,6 +380,7 @@ EditFace *addfacelist(EditMesh *em, EditVert *v1, EditVert *v2, EditVert *v3, Ed
 		efa->mat_nr= example->mat_nr;
 		efa->flag= example->flag;
 		CustomData_em_copy_data(&em->fdata, &em->fdata, example->data, &efa->data);
+		CustomData_em_validate_data(&em->fdata, efa->data, efa->v4 ? 4 : 3);
 	}
 	else {
 		efa->mat_nr= em->mat_nr;

@@ -1,7 +1,7 @@
 /**
  * blenlib/DNA_fileglobal_types.h (mar-2001 nzc)
  *	
- * $Id: DNA_fileglobal_types.h 26841 2010-02-12 13:34:04Z campbellbarton $ 
+ * $Id: DNA_fileglobal_types.h 34004 2011-01-02 13:33:32Z ton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,7 +47,8 @@ typedef struct FileGlobal {
 	struct Scene *curscene;
 	int fileflags;
 	int globalf;
-	
+	int revision;		/* svn revision from buildinfo */
+	int pad;
 	/* file path where this was saved, for recover */
 	char filename[240]; /* 240 = FILE_MAX */
 } FileGlobal;

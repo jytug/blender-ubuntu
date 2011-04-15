@@ -1,5 +1,5 @@
 /**
- * $Id: rna_meta.c 33557 2010-12-08 13:02:16Z campbellbarton $
+ * $Id: rna_meta.c 34035 2011-01-03 12:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -98,7 +98,7 @@ static void rna_MetaBall_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
 			if(ob->data == mb)
 				copy_mball_properties(scene, ob);
 	
-		DAG_id_tag_update(&mb->id, OB_RECALC_DATA);
+		DAG_id_tag_update(&mb->id, 0);
 		WM_main_add_notifier(NC_GEOM|ND_DATA, mb);
 	}
 }
@@ -116,7 +116,7 @@ static MetaElem *rna_MetaBall_elements_new(MetaBall *mb, int type)
 
 	/* cheating way for importers to avoid slow updates */
 	if(mb->id.us > 0) {
-		DAG_id_tag_update(&mb->id, OB_RECALC_DATA);
+		DAG_id_tag_update(&mb->id, 0);
 		WM_main_add_notifier(NC_GEOM|ND_DATA, &mb->id);
 	}
 
@@ -139,7 +139,7 @@ static void rna_MetaBall_elements_remove(MetaBall *mb, ReportList *reports, Meta
 
 	/* cheating way for importers to avoid slow updates */
 	if(mb->id.us > 0) {
-		DAG_id_tag_update(&mb->id, OB_RECALC_DATA);
+		DAG_id_tag_update(&mb->id, 0);
 		WM_main_add_notifier(NC_GEOM|ND_DATA, &mb->id);
 	}
 }

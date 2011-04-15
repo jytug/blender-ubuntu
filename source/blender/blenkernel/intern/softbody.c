@@ -1,6 +1,6 @@
 /*  softbody.c
  *
- * $Id: softbody.c 33767 2010-12-18 15:03:31Z jhk $
+ * $Id: softbody.c 33996 2011-01-02 06:52:47Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -4134,7 +4134,7 @@ void sbObjectStep(Scene *scene, Object *ob, float cfra, float (*vertexCos)[3], i
 	}
 
 	/* try to read from cache */
-	cache_result = BKE_ptcache_read(&pid, framenr, scene->r.frs_sec);
+	cache_result = BKE_ptcache_read(&pid, framenr);
 
 	if(cache_result == PTCACHE_READ_EXACT || cache_result == PTCACHE_READ_INTERPOLATED) {
 		softbody_to_object(ob, vertexCos, numVerts, sb->local);

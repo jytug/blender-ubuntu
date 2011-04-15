@@ -1,5 +1,5 @@
 /**
- * $Id: view3d_draw.c 33870 2010-12-23 04:26:53Z campbellbarton $
+ * $Id: view3d_draw.c 33954 2010-12-30 14:47:40Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2066,6 +2066,10 @@ void ED_view3d_draw_offscreen(Scene *scene, View3D *v3d, ARegion *ar, int winx, 
 	/* free images which can have changed on frame-change
 	 * warning! can be slow so only free animated images - campbell */
 	GPU_free_images_anim();
+	
+	/* shadow buffers, before we setup matrices */
+	if(draw_glsl_material(scene, NULL, v3d, v3d->drawtype))
+		gpu_update_lamps_shadows(scene, v3d);
 
 	/* set background color, fallback on the view background color */
 	if(scene->world) {
@@ -2294,6 +2298,7 @@ static void draw_viewport_fps(Scene *scene, ARegion *ar)
 	BLF_draw_default(22,  ar->winy-17, 0.0f, printable, sizeof(printable)-1);
 }
 
+/* warning: this function has duplicate drawing in ED_view3d_draw_offscreen() */
 void view3d_main_area_draw(const bContext *C, ARegion *ar)
 {
 	Scene *scene= CTX_data_scene(C);

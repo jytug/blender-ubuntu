@@ -1,5 +1,5 @@
 /**
-* $Id: sequencer.c 33936 2010-12-29 12:27:03Z aligorith $
+* $Id: sequencer.c 34012 2011-01-02 19:00:32Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -330,7 +330,7 @@ unsigned int seq_hash_render_data(const SeqRenderData * a)
 	return rval;
 }
 
-/* ************************* itterator ************************** */
+/* ************************* iterator ************************** */
 /* *************** (replaces old WHILE_SEQ) ********************* */
 /* **************** use now SEQ_BEGIN() SEQ_END ***************** */
 

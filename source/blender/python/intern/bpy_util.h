@@ -1,5 +1,5 @@
 /**
- * $Id: bpy_util.h 31701 2010-09-01 14:13:48Z campbellbarton $
+ * $Id: bpy_util.h 33964 2010-12-31 05:40:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -57,8 +57,8 @@ char *BPy_enum_as_string(struct EnumPropertyItem *item);
 #define BLANK_PYTHON_TYPE {PyVarObject_HEAD_INIT(NULL, 0) 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 
 /* error reporting */
-int BPy_reports_to_error(struct ReportList *reports);
-int BPy_errors_to_report(struct ReportList *reports);
+short BPy_reports_to_error(struct ReportList *reports, const short clear);
+short BPy_errors_to_report(struct ReportList *reports);
 
 /* TODO - find a better solution! */
 struct bContext *BPy_GetContext(void);

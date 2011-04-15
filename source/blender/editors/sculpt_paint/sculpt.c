@@ -1,5 +1,5 @@
 /*
- * $Id: sculpt.c 33888 2010-12-24 15:30:13Z ton $
+ * $Id: sculpt.c 34065 2011-01-04 14:46:29Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2904,6 +2904,11 @@ static void sculpt_update_cache_invariants(bContext* C, Sculpt *sd, SculptSessio
 	cache->invert = mode == WM_BRUSHSTROKE_INVERT;
 	cache->alt_smooth = mode == WM_BRUSHSTROKE_SMOOTH;
 
+	/* not very nice, but with current events system implementation
+	   we can't handle brush appearance inversion hotkey separately (sergey) */
+	if(cache->invert) brush->flag |= BRUSH_INVERTED;
+	else brush->flag &= ~BRUSH_INVERTED;
+
 	/* Alt-Smooth */
 	if (ss->cache->alt_smooth) {
 		Paint *p= &sd->paint;
@@ -3452,14 +3457,17 @@ static void sculpt_stroke_done(bContext *C, struct PaintStroke *unused)
 
 	/* Finished */
 	if(ss->cache) {
+		Brush *brush= paint_brush(&sd->paint);
+		brush->flag &= ~BRUSH_INVERTED;
+
 		sculpt_stroke_modifiers_check(C, ss);
 
 		/* Alt-Smooth */
 		if (ss->cache->alt_smooth) {
 			Paint *p= &sd->paint;
-			Brush *br= (Brush *)find_id("BR", ss->cache->saved_active_brush_name);
-			if(br) {
-				paint_brush_set(p, br);
+			brush= (Brush *)find_id("BR", ss->cache->saved_active_brush_name);
+			if(brush) {
+				paint_brush_set(p, brush);
 			}
 		}
 

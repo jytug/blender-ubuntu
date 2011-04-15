@@ -1,5 +1,5 @@
 /**
- * $Id: rna_sequencer_api.c 29601 2010-06-21 22:16:13Z gsrb3d $
+ * $Id: rna_sequencer_api.c 33993 2011-01-02 02:48:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,7 +66,7 @@ void RNA_api_sequence_strip(StructRNA *srna)
 	func= RNA_def_function(srna, "swap", "rna_Sequence_swap_internal");
 	RNA_def_function_flag(func, FUNC_USE_REPORTS);
 	parm= RNA_def_pointer(func, "other", "Sequence", "Other", "");
-	RNA_def_property_flag(parm, PROP_REQUIRED);
+	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_NEVER_NULL);
 }
 
 #endif

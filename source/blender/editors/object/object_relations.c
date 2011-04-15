@@ -1,5 +1,5 @@
 /**
- * $Id: object_relations.c 33911 2010-12-27 18:54:43Z ton $
+ * $Id: object_relations.c 34012 2011-01-02 19:00:32Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -571,7 +571,7 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 		}
 	}
 	
-	/* context itterator */
+	/* context iterator */
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
 		
 		if(ob!=par) {
@@ -746,7 +746,7 @@ static int parent_noinv_set_exec(bContext *C, wmOperator *op)
 	
 	par->recalc |= OB_RECALC_OB;
 	
-	/* context itterator */
+	/* context iterator */
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
 		if (ob != par) {
 			if (test_parent_loop(par, ob)) {

@@ -1,5 +1,5 @@
 /**
- * $Id: node_select.c 33563 2010-12-08 21:56:50Z sirdude $
+ * $Id: node_select.c 34040 2011-01-03 14:36:44Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -108,13 +108,6 @@ static int node_select_exec(bContext *C, wmOperator *op)
 	
 	/* perform the select */
 	node= node_mouse_select(snode, ar, mval, extend);
-
-	/* WATCH THIS, there are a few other ways to change the active material */
-	if(node) {
-		if (node->id && ELEM(GS(node->id->name), ID_MA, ID_TE)) {
-			WM_event_add_notifier(C, NC_MATERIAL|ND_SHADING_DRAW, node->id);
-		}
-	}
 	
 	/* send notifiers */
 	WM_event_add_notifier(C, NC_NODE|NA_SELECTED, NULL);

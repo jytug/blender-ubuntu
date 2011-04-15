@@ -2,7 +2,7 @@
 /*  material.c
  *
  * 
- * $Id: material.c 33796 2010-12-19 20:12:12Z ton $
+ * $Id: material.c 34036 2011-01-03 12:48:16Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -85,7 +85,8 @@ void free_material(Material *ma)
 	
 	BKE_free_animdata((ID *)ma);
 	
-	BKE_previewimg_free(&ma->preview);
+	if(ma->preview)
+		BKE_previewimg_free(&ma->preview);
 	BKE_icon_delete((struct ID*)ma);
 	ma->id.icon_id = 0;
 	
@@ -250,7 +251,7 @@ Material *localize_material(Material *ma)
 	if(ma->ramp_col) man->ramp_col= MEM_dupallocN(ma->ramp_col);
 	if(ma->ramp_spec) man->ramp_spec= MEM_dupallocN(ma->ramp_spec);
 	
-	if (ma->preview) man->preview = BKE_previewimg_copy(ma->preview);
+	man->preview = NULL;
 	
 	if(ma->nodetree) {
 		man->nodetree= ntreeLocalize(ma->nodetree);
@@ -1340,7 +1341,6 @@ void ramp_blend(int type, float *r, float *g, float *b, float fac, float *col)
 
 /* copy/paste buffer, if we had a propper py api that would be better */
 Material matcopybuf;
-// MTex mtexcopybuf;
 static short matcopied=0;
 
 void clear_matcopybuf(void)
@@ -1351,7 +1351,6 @@ void clear_matcopybuf(void)
 
 void free_matcopybuf(void)
 {
-//	extern MTex mtexcopybuf;	/* buttons.c */
 	int a;
 
 	for(a=0; a<MAX_MTEX; a++) {
@@ -1372,7 +1371,6 @@ void free_matcopybuf(void)
 		MEM_freeN(matcopybuf.nodetree);
 		matcopybuf.nodetree= NULL;
 	}
-//	default_mtex(&mtexcopybuf);
 
 	matcopied= 0;
 }
@@ -1441,10 +1439,4 @@ void paste_matcopybuf(Material *ma)
 	}
 
 	ma->nodetree= ntreeCopyTree(matcopybuf.nodetree, 0);
-
-	/*
-	BIF_preview_changed(ID_MA);
-	BIF_undo_push("Paste material settings");
-	scrarea_queue_winredraw(curarea);
-	*/
 }

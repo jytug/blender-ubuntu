@@ -1,5 +1,5 @@
 /**
- * $Id: view2d.c 33890 2010-12-26 10:34:09Z nazgul $
+ * $Id: view2d.c 34049 2011-01-03 18:57:13Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1073,7 +1073,7 @@ static void step_to_grid(float *step, int *power, int unit)
 		/* for frames, we want 1.0 frame intervals only */
 		if (unit == V2D_UNIT_FRAMES) {
 			rem = 1.0f;
-			*step = 2.0f; /* use 2 since there are grid lines drawn inbetween, this way to get 1 line per frane */
+			*step = 2.0f; /* use 2 since there are grid lines drawn in between, this way to get 1 line per frane */
 		}
 		
 		/* prevents printing 1.0 2.0 3.0 etc */
@@ -1133,9 +1133,11 @@ View2DGrid *UI_view2d_grid_calc(Scene *scene, View2D *v2d, short xunits, short x
 		space= v2d->cur.xmax - v2d->cur.xmin;
 		pixels= (float)(v2d->mask.xmax - v2d->mask.xmin);
 		
-		grid->dx= (U.v2d_min_gridsize * space) / (seconddiv * pixels);
-		step_to_grid(&grid->dx, &grid->powerx, xunits);
-		grid->dx *= seconddiv;
+		if(pixels!=0.0f) {
+			grid->dx= (U.v2d_min_gridsize * space) / (seconddiv * pixels);
+			step_to_grid(&grid->dx, &grid->powerx, xunits);
+			grid->dx *= seconddiv;
+		}
 		
 		if (xclamp == V2D_GRID_CLAMP) {
 			if (grid->dx < 0.1f) grid->dx= 0.1f;
@@ -1573,6 +1575,9 @@ void UI_view2d_scrollers_draw(const bContext *C, View2D *v2d, View2DScrollers *v
 				state |= UI_SCROLL_ARROWS;
 			}
 			
+			UI_ThemeColor(TH_BACK);
+			glRecti(v2d->hor.xmin, v2d->hor.ymin, v2d->hor.xmax, v2d->hor.ymax);
+			
 			uiWidgetScrollDraw(&wcol, &hor, &slider, state);
 		}
 		
@@ -1681,6 +1686,9 @@ void UI_view2d_scrollers_draw(const bContext *C, View2D *v2d, View2DScrollers *v
 				state |= UI_SCROLL_ARROWS;
 			}
 				
+			UI_ThemeColor(TH_BACK);
+			glRecti(v2d->vert.xmin, v2d->vert.ymin, v2d->vert.xmax, v2d->vert.ymax);
+			
 			uiWidgetScrollDraw(&wcol, &vert, &slider, state);
 		}
 		

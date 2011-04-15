@@ -1,5 +1,5 @@
 /**
- * $Id: RAS_OpenGLRasterizer.cpp 29068 2010-05-29 21:31:57Z dfelinto $
+ * $Id: RAS_OpenGLRasterizer.cpp 34057 2011-01-04 07:43:32Z moguri $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -784,6 +784,13 @@ void RAS_OpenGLRasterizer::IndexPrimitivesInternal(RAS_MeshSlot& ms, bool multi)
 		current_mesh = ms.m_mesh;
 		current_wireframe = wireframe;
 		MCol *mcol = (MCol*)ms.m_pDerivedMesh->getFaceDataArray(ms.m_pDerivedMesh, CD_MCOL);
+
+		// handle two-side
+		if (current_polymat->GetDrawingMode() & RAS_IRasterizer::KX_TWOSIDE)
+			this->SetCullFace(false);
+		else
+			this->SetCullFace(true);
+
 		if (current_polymat->GetFlag() & RAS_BLENDERGLSL) {
 			// GetMaterialIndex return the original mface material index, 
 			// increment by 1 to match what derived mesh is doing

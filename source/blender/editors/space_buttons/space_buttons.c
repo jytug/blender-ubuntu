@@ -1,5 +1,5 @@
 /**
- * $Id: space_buttons.c 33175 2010-11-19 08:17:57Z jhk $
+ * $Id: space_buttons.c 34040 2011-01-03 14:36:44Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -346,6 +346,10 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 						ED_area_tag_redraw(sa);
 					break;
 			}
+			break;
+		case NC_NODE:
+			if(wmn->action==NA_SELECTED)
+				ED_area_tag_redraw(sa);
 			break;
 		/* Listener for preview render, when doing an global undo. */
 		case NC_WINDOW:

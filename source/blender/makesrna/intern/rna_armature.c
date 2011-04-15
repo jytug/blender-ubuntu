@@ -1,5 +1,5 @@
 /**
- * $Id: rna_armature.c 33630 2010-12-13 09:04:04Z aligorith $
+ * $Id: rna_armature.c 34035 2011-01-03 12:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,7 +51,7 @@ static void rna_Armature_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	ID *id= ptr->id.data;
 
-	DAG_id_tag_update(id, OB_RECALC_DATA);
+	DAG_id_tag_update(id, 0);
 	WM_main_add_notifier(NC_GEOM|ND_DATA, id);
 	//WM_main_add_notifier(NC_OBJECT|ND_POSE, NULL);
 }

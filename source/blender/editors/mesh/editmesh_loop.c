@@ -1,5 +1,5 @@
 /**
- * $Id: editmesh_loop.c 33490 2010-12-05 18:59:23Z blendix $
+ * $Id: editmesh_loop.c 34035 2011-01-03 12:41:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -376,7 +376,7 @@ void CutEdgeloop(Object *obedit, wmOperator *op, EditMesh *em, int numcuts)
 		EM_selectmode_set(em);
 	}	
 	
-//	DAG_id_tag_update(obedit->data, OB_RECALC_DATA);
+//	DAG_id_tag_update(obedit->data, 0);
 	return;
 }
 
@@ -696,7 +696,7 @@ static int knife_cut_exec(bContext *C, wmOperator *op)
 	
 	BKE_mesh_end_editmesh(obedit->data, em);
 
-	DAG_id_tag_update(obedit->data, OB_RECALC_DATA);
+	DAG_id_tag_update(obedit->data, 0);
 	WM_event_add_notifier(C, NC_GEOM|ND_DATA, obedit->data);
 
 	return OPERATOR_FINISHED;

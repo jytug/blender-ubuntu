@@ -1,5 +1,5 @@
 /*
- * $Id: readfile.c 33876 2010-12-23 13:16:56Z ton $
+ * $Id: readfile.c 34052 2011-01-04 04:56:27Z xat $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2456,7 +2456,7 @@ static void direct_link_key(FileData *fd, Key *key)
 	while(kb) {
 
 		kb->data= newdataadr(fd, kb->data);
-
+		
 		if(fd->flags & FD_FLAGS_SWITCH_ENDIAN)
 			switch_endian_keyblock(key, kb);
 
@@ -4540,6 +4540,7 @@ static void direct_link_windowmanager(FileData *fd, wmWindowManager *wm)
 	wm->drags.first= wm->drags.last= NULL;
 	
 	wm->windrawable= NULL;
+	wm->winactive= NULL;
 	wm->initialized= 0;
 	wm->op_undo_depth= 0;
 }
@@ -5653,12 +5654,14 @@ static BHead *read_global(BlendFileData *bfd, FileData *fd, BHead *bhead)
 	bfd->main->subversionfile= fg->subversion;
 	bfd->main->minversionfile= fg->minversion;
 	bfd->main->minsubversionfile= fg->minsubversion;
+	bfd->main->revision= fg->revision;
 	
 	bfd->winpos= fg->winpos;
 	bfd->fileflags= fg->fileflags;
 	bfd->displaymode= fg->displaymode;
 	bfd->globalf= fg->globalf;
 	BLI_strncpy(bfd->filename, fg->filename, sizeof(bfd->filename));
+	
 	if(G.fileflags & G_FILE_RECOVER)
 		BLI_strncpy(fd->relabase, fg->filename, sizeof(fd->relabase));
 	
@@ -6641,7 +6644,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 	/* WATCH IT!!!: pointers from libdata have not been converted */
 
 	if(G.f & G_DEBUG)
-		printf("read file %s\n  Version %d sub %d\n", fd->relabase, main->versionfile, main->subversionfile);
+		printf("read file %s\n  Version %d sub %d svn r%d\n", fd->relabase, main->versionfile, main->subversionfile, main->revision);
 	
 	if(main->versionfile == 100) {
 		/* tex->extend and tex->imageflag have changed: */
@@ -11222,7 +11225,42 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 	}
 
 	/* put compatibility code here until next subversion bump */
+	
 	{
+		/* Fix for sample line scope initializing with no height */
+		bScreen *sc;
+		ScrArea *sa;
+		for(sc= main->screen.first; sc; sc= sc->id.next) {
+			sa= sc->areabase.first;
+			while(sa) {
+				SpaceLink *sl;
+				for (sl= sa->spacedata.first; sl; sl= sl->next) {
+					if(sl->spacetype==SPACE_IMAGE) {
+						SpaceImage *sima= (SpaceImage *)sl;
+						if (sima->sample_line_hist.height == 0 )
+							sima->sample_line_hist.height = 100;
+					}
+				}
+				sa= sa->next;
+			}
+		}
+	}
+	
+	{
+		Key *key;
+		
+		/* old files could have been saved with slidermin = slidermax = 0.0, but the UI in
+		 * 2.4x would never reveal this to users as a dummy value always ended up getting used
+		 * instead
+		 */
+		for (key = main->key.first; key; key = key->id.next) {
+			KeyBlock *kb;
+			
+			for (kb = key->block.first; kb; kb = kb->next) {
+				if (IS_EQ(kb->slidermin, kb->slidermax) && IS_EQ(kb->slidermax, 0))
+					kb->slidermax = kb->slidermin + 1.0f;
+			}
+		}
 	}
 
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */

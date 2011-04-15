@@ -1,5 +1,5 @@
 /**
- * $Id: depsgraph.c 33742 2010-12-17 15:37:59Z campbellbarton $
+ * $Id: depsgraph.c 34029 2011-01-03 09:09:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2462,6 +2462,9 @@ void DAG_id_tag_update(ID *id, short flag)
 					}
 				}
 			}
+		}
+		else {
+			BKE_assert(!"invalid flag for this 'idtype'");
 		}
 	}
 }

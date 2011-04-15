@@ -1,7 +1,7 @@
 /**
  * blenlib/BKE_key.h (mar-2001 nzc)
  *	
- * $Id: BKE_key.h 33124 2010-11-17 09:45:45Z campbellbarton $ 
+ * $Id: BKE_key.h 34039 2011-01-03 14:30:59Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,7 +66,7 @@ struct KeyBlock *key_get_keyblock(struct Key *key, int index);
 struct KeyBlock *key_get_named_keyblock(struct Key *key, const char name[]);
 char *key_get_curValue_rnaPath(struct Key *key, struct KeyBlock *kb);
 // needed for the GE
-void do_rel_key(int start, int end, int tot, char *basispoin, struct Key *key, struct KeyBlock *actkb, int mode);
+void do_rel_key(const int start, int end, const int tot, char *basispoin, struct Key *key, struct KeyBlock *actkb, const int mode);
 
 /* conversion functions */
 void key_to_mesh(struct KeyBlock *kb, struct Mesh *me);

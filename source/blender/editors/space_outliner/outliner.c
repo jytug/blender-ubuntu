@@ -1,5 +1,5 @@
 /**
- * $Id: outliner.c 33917 2010-12-28 05:45:15Z aligorith $
+ * $Id: outliner.c 34059 2011-01-04 08:56:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -4144,12 +4144,9 @@ static void do_outliner_keyingset_editop(SpaceOops *soops, KeyingSet *ks, ListBa
 						
 						if (ksp) {
 							/* free path's data */
-							// TODO: we probably need an API method for this 
-							if (ksp->rna_path) MEM_freeN(ksp->rna_path);
+							BKE_keyingset_free_path(ks, ksp);
+
 							ks->active_path= 0;
-							
-							/* remove path from set */
-							BLI_freelinkN(&ks->paths, ksp);
 						}
 					}
 						break;

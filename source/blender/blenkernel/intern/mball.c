@@ -6,7 +6,7 @@
  *  
  * texture coordinates are patched within the displist
  * 
- * $Id: mball.c 33625 2010-12-13 06:31:49Z aligorith $
+ * $Id: mball.c 34002 2011-01-02 11:06:50Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -737,7 +737,7 @@ void accum_mballfaces(int i1, int i2, int i3, int i4)
 void *new_pgn_element(int size)
 {
 	/* during polygonize 1000s of elements are allocated
-	 * and never freed inbetween. Freeing only done at the end.
+	 * and never freed in between. Freeing only done at the end.
 	 */
 	int blocksize= 16384;
 	static int offs= 0;		/* the current free address */

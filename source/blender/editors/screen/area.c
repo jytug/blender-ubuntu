@@ -1,5 +1,5 @@
 /**
- * $Id: area.c 33448 2010-12-03 17:05:21Z campbellbarton $
+ * $Id: area.c 34064 2011-01-04 14:37:21Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1103,10 +1103,12 @@ void ED_area_newspace(bContext *C, ScrArea *sa, int type)
 				
 		/*send space change notifyer*/
 		WM_event_add_notifier(C, NC_SPACE|ND_SPACE_CHANGED, sa);
-
-		ED_area_tag_redraw(sa);
+		
 		ED_area_tag_refresh(sa);
 	}
+	
+	/* also redraw when re-used */
+	ED_area_tag_redraw(sa);
 }
 
 void ED_area_prevspace(bContext *C, ScrArea *sa)

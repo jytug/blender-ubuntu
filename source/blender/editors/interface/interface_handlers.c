@@ -646,13 +646,12 @@ static int ui_but_mouse_inside_icon(uiBut *but, ARegion *ar, wmEvent *event)
 	return BLI_in_rcti(&rect, x, y);
 }
 
-#define UI_DRAG_THRESHOLD	3
 static int ui_but_start_drag(bContext *C, uiBut *but, uiHandleButtonData *data, wmEvent *event)
 {
 	/* prevent other WM gestures to start while we try to drag */
 	WM_gestures_remove(C);
 
-	if( ABS(data->dragstartx - event->x) + ABS(data->dragstarty - event->y) > UI_DRAG_THRESHOLD ) {
+	if( ABS(data->dragstartx - event->x) + ABS(data->dragstarty - event->y) > U.dragthreshold ) {
 		wmDrag *drag;
 		
 		button_activate_state(C, but, BUTTON_STATE_EXIT);
@@ -4830,7 +4829,7 @@ static void button_activate_init(bContext *C, ARegion *ar, uiBut *but, uiButtonA
 
 	/* we disable auto_open in the block after a threshold, because we still
 	 * want to allow auto opening adjacent menus even if no button is activated
-	 * inbetween going over to the other button, but only for a short while */
+	 * in between going over to the other button, but only for a short while */
 	if(type == BUTTON_ACTIVATE_OVER && but->block->auto_open)
 		if(but->block->auto_open_last+BUTTON_AUTO_OPEN_THRESH < PIL_check_seconds_timer())
 			but->block->auto_open= 0;
@@ -5673,7 +5672,11 @@ int ui_handle_menu_event(bContext *C, wmEvent *event, uiPopupBlockHandle *menu, 
 				case YKEY:
 				case ZKEY:
 				{
-					if(event->val == KM_PRESS) {
+					if(	(event->val == KM_PRESS) &&
+						(event->shift == FALSE) &&
+						(event->ctrl == FALSE) &&
+						(event->oskey == FALSE)
+					) {
 						count= 0;
 						for(but= block->buttons.first; but; but= but->next) {
 

@@ -1,5 +1,5 @@
 /**
- * $Id: DNA_constraint_types.h 33435 2010-12-03 01:52:28Z campbellbarton $
+ * $Id: DNA_constraint_types.h 34004 2011-01-02 13:33:32Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -541,7 +541,7 @@ typedef enum eUpAxis_Modes {
 	UP_Z
 } eUpAxis_Modes;
 
-/* Tracking axis (TrackTo, Locked Track, Damped Track) */
+/* Tracking axis (TrackTo, Locked Track, Damped Track) and minmax (floor) constraint */
 typedef enum eTrackToAxis_Modes {
 	TRACK_X		= 0,
 	TRACK_Y,

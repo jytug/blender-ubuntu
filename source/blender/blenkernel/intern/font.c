@@ -1,7 +1,7 @@
 /*  font.c
  *  
  * 
- * $Id: font.c 33343 2010-11-26 18:13:27Z nazgul $
+ * $Id: font.c 33973 2010-12-31 20:01:38Z gsrb3d $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -670,7 +670,7 @@ struct chartrans *BKE_text_to_curve(Scene *scene, Object *ob, int mode)
 	VFont *vfont, *oldvfont;
 	VFontData *vfd= NULL;
 	Curve *cu;
-	CharInfo *info, *custrinfo;
+	CharInfo *info = NULL, *custrinfo;
 	TextBox *tb;
 	VChar *che;
 	struct chartrans *chartransdata=NULL, *ct;

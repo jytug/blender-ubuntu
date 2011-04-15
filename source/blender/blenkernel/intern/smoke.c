@@ -1,7 +1,7 @@
 /**
  * smoke.c
  *
- * $Id: smoke.c 33767 2010-12-18 15:03:31Z jhk $
+ * $Id: smoke.c 33996 2011-01-02 06:52:47Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1376,7 +1376,7 @@ void smokeModifier_do(SmokeModifierData *smd, Scene *scene, Object *ob, DerivedM
 		}
 
 		/* try to read from cache */
-		if(BKE_ptcache_read(&pid, (float)framenr, scene->r.frs_sec) == PTCACHE_READ_EXACT) {
+		if(BKE_ptcache_read(&pid, (float)framenr) == PTCACHE_READ_EXACT) {
 			BKE_ptcache_validate(cache, framenr);
 			smd->time = framenr;
 			return;
