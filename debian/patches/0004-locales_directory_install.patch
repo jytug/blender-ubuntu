@@ -8,7 +8,7 @@ Change where locales are installed
  1 files changed, 1 insertions(+), 1 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index a269664..c4b197b 100644
+index a745df6..1fdafee 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -320,7 +320,7 @@ if(UNIX AND NOT APPLE)
