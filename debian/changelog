@@ -1,6 +1,6 @@
 blender (2.57-svn36147-1) unstable; urgency=low
 
-  * New Upstream Release
+  * New Upstream Release (Closes #623250)
   * Bump Python version to 3.2
   * debian/patches :
     - 0001-install_in_usr_lib :
@@ -10,9 +10,11 @@ blender (2.57-svn36147-1) unstable; urgency=low
     - 0004-locales_directory_install :
         Set locales installation into /usr/share/locale
     - 0007-disable_tests.patch :
-        Disable Tests when building
+        Disable Tests Suite when building because it needs debug
+  * debian/rules :
+    - build configuration adapted for this release 
 
- -- Kevin Roy <kiniou@gmail.com>  Wed, 13 Apr 2011 17:37:57 +0200
+ -- Kevin Roy <kiniou@gmail.com>  Wed, 20 Apr 2011 19:57:35 +0200
 
 blender (2.56.1-beta-svn34076-1) unstable; urgency=low
 
