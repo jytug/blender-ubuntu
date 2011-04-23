@@ -1,12 +1,14 @@
 blender (2.57-svn36147-1) unstable; urgency=low
 
-  * New Upstream Release (Closes #623250)
+  * New Upstream Release (closes: #623250)
   * Bump Python version to 3.2
   * debian/patches :
     - 0001-install_in_usr_lib :
-        Changed system path in GHOST_SystemPathsX11.cpp instead of GHOST_SystemX11.cpp
+        Changed system path in GHOST_SystemPathsX11.cpp instead
+        of GHOST_SystemX11.cpp
     - 0002-use_systemwide_libraries :
-        Deactivated hardcoded linked libraries glew and openjpeg which are detected automatically now
+        Deactivated hardcoded linked libraries glew and openjpeg
+        which are detected automatically now
     - 0004-locales_directory_install :
         Set locales installation into /usr/share/locale
     - 0007-disable_tests.patch :
