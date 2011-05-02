@@ -1,3 +1,9 @@
+blender (2.57.2-svn36339-1) unstable; urgency=low
+
+  * New Upstream Release 
+
+ -- Kevin Roy <kiniou@gmail.com>  Mon, 02 May 2011 15:18:20 +0200
+
 blender (2.57-svn36147-1) unstable; urgency=low
 
   * New Upstream Release (closes: #623250)
