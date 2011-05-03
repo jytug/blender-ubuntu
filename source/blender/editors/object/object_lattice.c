@@ -1,5 +1,5 @@
 /*
- * $Id: object_lattice.c 35362 2011-03-05 10:29:10Z campbellbarton $
+ * $Id: object_lattice.c 36278 2011-04-21 17:25:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -318,7 +318,7 @@ static void findnearestLattvert__doClosest(void *userData, BPoint *bp, int x, in
 	}
 }
 
-static BPoint *findnearestLattvert(ViewContext *vc, short mval[2], int sel)
+static BPoint *findnearestLattvert(ViewContext *vc, const short mval[2], int sel)
 {
 		/* sel==1: selected gets a disadvantage */
 		/* in nurb and bezt or bp the nearest is written */
@@ -336,7 +336,7 @@ static BPoint *findnearestLattvert(ViewContext *vc, short mval[2], int sel)
 	return data.bp;
 }
 
-int mouse_lattice(bContext *C, short mval[2], int extend)
+int mouse_lattice(bContext *C, const short mval[2], int extend)
 {
 	ViewContext vc;
 	BPoint *bp= NULL;

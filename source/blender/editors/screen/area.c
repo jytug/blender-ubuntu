@@ -1,5 +1,5 @@
 /*
- * $Id: area.c 35913 2011-03-31 04:55:57Z campbellbarton $
+ * $Id: area.c 36240 2011-04-20 10:10:07Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1457,7 +1457,7 @@ void ED_region_header(const bContext *C, ARegion *ar)
 	UI_view2d_view_ortho(&ar->v2d);
 
 	xco= maxco= 8;
-	yco= HEADERY-3;
+	yco= HEADERY-4;
 
 	/* draw all headers types */
 	for(ht= ar->type->headertypes.first; ht; ht= ht->next) {

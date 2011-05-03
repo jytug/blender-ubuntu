@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_PyAPI.cpp 35141 2011-02-25 10:21:56Z jesterking $
+ * $Id: AUD_PyAPI.cpp 36174 2011-04-15 01:32:37Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2214,6 +2214,7 @@ Device_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			switch(device)
 			{
 			case AUD_DEVICE_NULL:
+				(void)specs; /* quiet warning when others disabled */
 				self->device = new AUD_NULLDevice();
 				break;
 			case AUD_DEVICE_OPENAL:

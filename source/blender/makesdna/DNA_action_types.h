@@ -1,5 +1,5 @@
 /*  
- * $Id: DNA_action_types.h 35936 2011-04-01 12:21:41Z aligorith $
+ * $Id: DNA_action_types.h 36222 2011-04-19 13:01:50Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -487,6 +487,9 @@ typedef struct bAction {
 	
 	int flag;			/* settings for this action */
 	int active_marker;	/* index of the active marker */
+	
+	int idroot;			/* type of ID-blocks that action can be assigned to (if 0, will be set to whatever ID first evaluates it) */
+	int pad;
 } bAction;
 
 

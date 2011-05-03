@@ -1,5 +1,5 @@
 /*
- * $Id: rna_nla.c 36095 2011-04-11 01:18:25Z campbellbarton $
+ * $Id: rna_nla.c 36222 2011-04-19 13:01:50Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -426,6 +426,7 @@ static void rna_def_nlastrip(BlenderRNA *brna)
 	/* Action */
 	prop= RNA_def_property(srna, "action", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "act");
+	RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Action_id_poll");
 	RNA_def_property_flag(prop, PROP_EDITABLE); 
 	RNA_def_property_ui_text(prop, "Action", "Action referenced by this strip");
 	RNA_def_property_update(prop, NC_ANIMATION|ND_NLA, NULL); /* this will do? */

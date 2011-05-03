@@ -1,5 +1,5 @@
 /*
- * $Id: interface_panel.c 35835 2011-03-28 02:34:55Z campbellbarton $
+ * $Id: interface_panel.c 36242 2011-04-20 11:15:58Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1211,7 +1211,7 @@ static void panel_activate_state(const bContext *C, Panel *pa, uiHandlePanelStat
 		MEM_freeN(data);
 		pa->activedata= NULL;
 
-		WM_event_remove_ui_handler(&win->modalhandlers, ui_handler_panel, ui_handler_remove_panel, pa);
+		WM_event_remove_ui_handler(&win->modalhandlers, ui_handler_panel, ui_handler_remove_panel, pa, 0);
 	}
 	else {
 		if(!data) {

@@ -1,5 +1,5 @@
 /*
- * $Id: ED_object.h 35016 2011-02-21 07:25:24Z jesterking $
+ * $Id: ED_object.h 36278 2011-04-21 17:25:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -126,7 +126,7 @@ void ED_object_constraint_update(struct Object *ob);
 void ED_object_constraint_dependency_update(struct Main *bmain, struct Scene *scene, struct Object *ob);
 
 /* object_lattice.c */
-int  mouse_lattice(struct bContext *C, short mval[2], int extend);
+int  mouse_lattice(struct bContext *C, const short mval[2], int extend);
 void undo_push_lattice(struct bContext *C, const char *name);
 
 /* object_lattice.c */

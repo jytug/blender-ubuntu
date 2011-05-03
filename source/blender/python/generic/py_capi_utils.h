@@ -1,5 +1,5 @@
 /*
- * $Id: py_capi_utils.h 35767 2011-03-25 04:36:10Z campbellbarton $
+ * $Id: py_capi_utils.h 36208 2011-04-18 08:27:50Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,5 +47,7 @@ void			PyC_RunQuicky(const char *filepath, int n, ...);
 
 void PyC_MainModule_Backup(PyObject **main_mod);
 void PyC_MainModule_Restore(PyObject *main_mod);
+
+void PyC_SetHomePath(const char *py_path_bundle);
 
 #endif // PY_CAPI_UTILS_H

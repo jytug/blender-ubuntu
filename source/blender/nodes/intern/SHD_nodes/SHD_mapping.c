@@ -1,5 +1,5 @@
 /*
- * $Id: SHD_mapping.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: SHD_mapping.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,7 +71,7 @@ static void node_shader_exec_mapping(void *UNUSED(data), bNode *node, bNodeStack
 
 static void node_shader_init_mapping(bNode *node)
 {
-   node->storage= add_mapping();
+	node->storage= add_mapping();
 }
 
 static int gpu_shader_mapping(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)

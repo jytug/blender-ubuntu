@@ -1,5 +1,5 @@
 /*
- * $Id: BLO_readfile.h 35505 2011-03-13 01:15:14Z campbellbarton $
+ * $Id: BLO_readfile.h 36313 2011-04-24 14:45:49Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -148,7 +148,7 @@ BLO_blendhandle_from_memory(
  * 
  * @param bh The blendhandle to access.
  * @param ofblocktype The type of names to get.
- * @param totnames The length of the returned list.
+ * @param tot_names The length of the returned list.
  * @return A BLI_linklist of strings. The string links
  * should be freed with malloc.
  */
@@ -156,7 +156,7 @@ BLO_blendhandle_from_memory(
 BLO_blendhandle_get_datablock_names(
 	BlendHandle *bh, 
 	int ofblocktype,
-	int *totnames);
+	int *tot_names);
 
 /**
  * Gets the previews of all the datablocks in a file
@@ -165,13 +165,15 @@ BLO_blendhandle_get_datablock_names(
  * 
  * @param bh The blendhandle to access.
  * @param ofblocktype The type of names to get.
+ * @param tot_prev The length of the returned list.
  * @return A BLI_linklist of PreviewImage. The PreviewImage links
  * should be freed with malloc.
  */
 	struct LinkNode*
 BLO_blendhandle_get_previews(
 	BlendHandle *bh, 
-	int ofblocktype);
+	int ofblocktype,
+	int *tot_prev);
 
 /**
  * Gets the names of all the datablock groups in a

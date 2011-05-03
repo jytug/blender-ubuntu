@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_material.h 34962 2011-02-18 13:05:18Z jesterking $
+ * $Id: BKE_material.h 36332 2011-04-26 07:17:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -55,6 +55,7 @@ struct Material *copy_material(struct Material *ma);
 struct Material *localize_material(struct Material *ma);
 struct Material *give_node_material(struct Material *ma); /* returns node material or self */
 void make_local_material(struct Material *ma);
+void extern_local_matarar(struct Material **matar, short totcol);
 
 void automatname(struct Material *);
 

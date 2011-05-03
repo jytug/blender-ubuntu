@@ -1,5 +1,5 @@
 /*
- * $Id: TEX_image.c 35971 2011-04-03 10:04:16Z campbellbarton $
+ * $Id: TEX_image.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -90,11 +90,11 @@ static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
 
 static void init(bNode* node)
 {
-   ImageUser *iuser= MEM_callocN(sizeof(ImageUser), "node image user");
-   node->storage= iuser;
-   iuser->sfra= 1;
-   iuser->fie_ima= 2;
-   iuser->ok= 1;
+	ImageUser *iuser= MEM_callocN(sizeof(ImageUser), "node image user");
+	node->storage= iuser;
+	iuser->sfra= 1;
+	iuser->fie_ima= 2;
+	iuser->ok= 1;
 }
 
 void register_node_type_tex_image(ListBase *lb)

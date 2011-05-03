@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_viewer.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_viewer.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -126,11 +126,11 @@ static void node_composit_exec_viewer(void *data, bNode *node, bNodeStack **in, 
 
 static void node_composit_init_viewer(bNode* node)
 {
-   ImageUser *iuser= MEM_callocN(sizeof(ImageUser), "node image user");
-   node->storage= iuser;
-   iuser->sfra= 1;
-   iuser->fie_ima= 2;
-   iuser->ok= 1;
+	ImageUser *iuser= MEM_callocN(sizeof(ImageUser), "node image user");
+	node->storage= iuser;
+	iuser->sfra= 1;
+	iuser->fie_ima= 2;
+	iuser->ok= 1;
 }
 
 void register_node_type_cmp_viewer(ListBase *lb)

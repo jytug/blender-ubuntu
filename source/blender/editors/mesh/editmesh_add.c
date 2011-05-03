@@ -1,5 +1,5 @@
 /*
- * $Id: editmesh_add.c 35933 2011-04-01 08:51:12Z campbellbarton $
+ * $Id: editmesh_add.c 36323 2011-04-25 10:04:07Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -139,7 +139,7 @@ static int dupli_extrude_cursor(bContext *C, wmOperator *op, wmEvent *event)
 
 	/* call extrude? */
 	if(done) {
-		short rot_src= RNA_boolean_get(op->ptr, "rotate_source");
+		const short rot_src= RNA_boolean_get(op->ptr, "rotate_source");
 		EditEdge *eed;
 		float vec[3], cent[3], mat[3][3];
 		float nor[3]= {0.0, 0.0, 0.0};
@@ -198,7 +198,7 @@ static int dupli_extrude_cursor(bContext *C, wmOperator *op, wmEvent *event)
 		copy_v3_v3(min, cent);
 		
 		mul_m4_v3(vc.obedit->obmat, min);	// view space
-		view3d_get_view_aligned_coordinate(&vc, min, event->mval);
+		view3d_get_view_aligned_coordinate(&vc, min, event->mval, TRUE);
 		mul_m4_v3(vc.obedit->imat, min); // back in object space
 		
 		sub_v3_v3(min, cent);
@@ -246,20 +246,16 @@ static int dupli_extrude_cursor(bContext *C, wmOperator *op, wmEvent *event)
 	}
 	else if(vc.em->selectmode & SCE_SELECT_VERTEX) {
 
-		float mat[3][3],imat[3][3];
-		float *curs= give_cursor(vc.scene, vc.v3d);
+		float imat[4][4];
+		const float *curs= give_cursor(vc.scene, vc.v3d);
 		
 		copy_v3_v3(min, curs);
-		view3d_get_view_aligned_coordinate(&vc, min, event->mval);
-		
+		view3d_get_view_aligned_coordinate(&vc, min, event->mval, TRUE);
+
 		eve= addvertlist(vc.em, 0, NULL);
 
-		copy_m3_m4(mat, vc.obedit->obmat);
-		invert_m3_m3(imat, mat);
-		
-		copy_v3_v3(eve->co, min);
-		mul_m3_v3(imat, eve->co);
-		sub_v3_v3v3(eve->co, eve->co, vc.obedit->obmat[3]);
+		invert_m4_m4(imat, vc.obedit->obmat);
+		mul_v3_m4v3(eve->co, imat, min);
 		
 		eve->f= SELECT;
 	}
@@ -1085,6 +1081,7 @@ static void make_prim(Object *obedit, int type, float mat[4][4], int tot, int se
 			}
 			eve= eve->next;
 		}
+		recalc_editnormals(em);
 		break;
 			
 	case PRIM_UVSPHERE: /*  UVsphere */
@@ -1106,7 +1103,7 @@ static void make_prim(Object *obedit, int type, float mat[4][4], int tot, int se
 			eve= addvertlist(em, vec, NULL);
 			eve->f= 1+2+4;
 			if(a==0) v1= eve;
-			else addedgelist(em, eve->prev, eve, NULL);
+			else addedgelist(em, eve, eve->prev, NULL);
 			phi+= phid;
 		}
 		
@@ -1132,6 +1129,7 @@ static void make_prim(Object *obedit, int type, float mat[4][4], int tot, int se
 			}
 			eve= eve->next;
 		}
+		recalc_editnormals(em);
 		break;
 	case PRIM_ICOSPHERE: /* Icosphere */
 		{
@@ -1324,9 +1322,9 @@ static void make_prim(Object *obedit, int type, float mat[4][4], int tot, int se
 	EM_stats_update(em);
 	/* simple selection flush OK, based on fact it's a single model */
 	EM_select_flush(em); /* flushes vertex -> edge -> face selection */
-	
-	if(type!=PRIM_PLANE && type!=PRIM_MONKEY)
-		EM_recalc_normal_direction(em, 0, 0);	/* otherwise monkey has eyes in wrong direction */
+
+	if(!ELEM5(type, PRIM_GRID, PRIM_PLANE, PRIM_ICOSPHERE, PRIM_UVSPHERE, PRIM_MONKEY))
+		EM_recalc_normal_direction(em, FALSE, TRUE);	/* otherwise monkey has eyes in wrong direction */
 
 	BKE_mesh_end_editmesh(obedit->data, em);
 }
@@ -1758,7 +1756,7 @@ static int mesh_duplicate_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(ev
 void MESH_OT_duplicate(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Duplicate";
+	ot->name= "Duplicate Mesh";
 	ot->description= "Duplicate selected vertices, edges or faces";
 	ot->idname= "MESH_OT_duplicate";
 	

@@ -1,5 +1,5 @@
 /*
- * $Id: meshlaplacian.c 35853 2011-03-28 17:08:33Z campbellbarton $
+ * $Id: meshlaplacian.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -471,7 +471,7 @@ static void heat_ray_tree_create(LaplacianSystem *sys)
 
 static int heat_ray_source_visible(LaplacianSystem *sys, int vertex, int source)
 {
-    BVHTreeRayHit hit;
+	BVHTreeRayHit hit;
 	BVHCallbackUserData data;
 	MFace *mface;
 	float end[3];
@@ -1123,7 +1123,7 @@ static int meshdeform_tri_intersect(float orig[3], float end[3], float vert0[3],
 	det = INPR(edge1, pvec);
 
 	if (det == 0.0f)
-	  return 0;
+		return 0;
 	inv_det = 1.0f / det;
 
 	/* calculate distance from vert0 to ray origin */
@@ -1132,7 +1132,7 @@ static int meshdeform_tri_intersect(float orig[3], float end[3], float vert0[3],
 	/* calculate U parameter and test bounds */
 	u = INPR(tvec, pvec) * inv_det;
 	if (u < -EPSILON || u > 1.0f+EPSILON)
-	  return 0;
+		return 0;
 
 	/* prepare to test V parameter */
 	cross_v3_v3v3(qvec, tvec, edge1);
@@ -1140,7 +1140,7 @@ static int meshdeform_tri_intersect(float orig[3], float end[3], float vert0[3],
 	/* calculate V parameter and test bounds */
 	v = INPR(dir, qvec) * inv_det;
 	if (v < -EPSILON || u + v > 1.0f+EPSILON)
-	  return 0;
+		return 0;
 
 	isectco[0]= (1.0f - u - v)*vert0[0] + u*vert1[0] + v*vert2[0];
 	isectco[1]= (1.0f - u - v)*vert0[1] + u*vert1[1] + v*vert2[1];

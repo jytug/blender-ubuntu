@@ -1,7 +1,7 @@
 /* object.c
  *
  * 
- * $Id: object.c 35952 2011-04-02 01:36:40Z campbellbarton $
+ * $Id: object.c 36332 2011-04-26 07:17:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -97,6 +97,7 @@
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
 #include "BKE_softbody.h"
+#include "BKE_material.h"
 
 #include "LBM_fluidsim.h"
 
@@ -208,8 +209,8 @@ void object_link_modifiers(struct Object *ob, struct Object *from)
 		BLI_addtail(&ob->modifiers, nmd);
 	}
 
-	copy_object_particlesystems(from, ob);
-	copy_object_softbody(from, ob);
+	copy_object_particlesystems(ob, from);
+	copy_object_softbody(ob, from);
 
 	// TODO: smoke?, cloth?
 }
@@ -736,51 +737,45 @@ void make_local_camera(Camera *cam)
 {
 	Main *bmain= G.main;
 	Object *ob;
-	Camera *camn;
 	int local=0, lib=0;
 
 	/* - only lib users: do nothing
-		* - only local users: set flag
-		* - mixed: make copy
-		*/
+	 * - only local users: set flag
+	 * - mixed: make copy
+	 */
 	
 	if(cam->id.lib==NULL) return;
 	if(cam->id.us==1) {
 		cam->id.lib= NULL;
 		cam->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)cam, NULL);
+		new_id(&bmain->camera, (ID *)cam, NULL);
 		return;
 	}
 	
-	ob= bmain->object.first;
-	while(ob) {
+	for(ob= bmain->object.first; ob && ELEM(0, lib, local); ob= ob->id.next) {
 		if(ob->data==cam) {
 			if(ob->id.lib) lib= 1;
 			else local= 1;
 		}
-		ob= ob->id.next;
 	}
 	
 	if(local && lib==0) {
 		cam->id.lib= NULL;
 		cam->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)cam, NULL);
+		new_id(&bmain->camera, (ID *)cam, NULL);
 	}
 	else if(local && lib) {
-		camn= copy_camera(cam);
+		Camera *camn= copy_camera(cam);
 		camn->id.us= 0;
 		
-		ob= bmain->object.first;
-		while(ob) {
-			if(ob->data==cam) {
-				
+		for(ob= bmain->object.first; ob; ob= ob->id.next) {
+			if(ob->data == cam) {
 				if(ob->id.lib==NULL) {
 					ob->data= camn;
 					camn->id.us++;
 					cam->id.us--;
 				}
 			}
-			ob= ob->id.next;
 		}
 	}
 }
@@ -897,7 +892,7 @@ void make_local_lamp(Lamp *la)
 	if(la->id.us==1) {
 		la->id.lib= NULL;
 		la->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)la, NULL);
+		new_id(&bmain->lamp, (ID *)la, NULL);
 		return;
 	}
 	
@@ -913,7 +908,7 @@ void make_local_lamp(Lamp *la)
 	if(local && lib==0) {
 		la->id.lib= NULL;
 		la->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)la, NULL);
+		new_id(&bmain->lamp, (ID *)la, NULL);
 	}
 	else if(local && lib) {
 		lan= copy_lamp(la);
@@ -1366,11 +1361,10 @@ Object *copy_object(Object *ob)
 	return obn;
 }
 
-void expand_local_object(Object *ob)
+static void extern_local_object(Object *ob)
 {
 	//bActionStrip *strip;
 	ParticleSystem *psys;
-	int a;
 
 #if 0 // XXX old animation system
 	id_lib_extern((ID *)ob->action);
@@ -1378,10 +1372,11 @@ void expand_local_object(Object *ob)
 #endif // XXX old animation system
 	id_lib_extern((ID *)ob->data);
 	id_lib_extern((ID *)ob->dup_group);
-	
-	for(a=0; a<ob->totcol; a++) {
-		id_lib_extern((ID *)ob->mat[a]);
-	}
+	id_lib_extern((ID *)ob->poselib);
+	id_lib_extern((ID *)ob->gpd);
+
+	extern_local_matarar(ob->mat, ob->totcol);
+
 #if 0 // XXX old animation system
 	for (strip=ob->nlastrips.first; strip; strip=strip->next) {
 		id_lib_extern((ID *)strip->act);
@@ -1394,16 +1389,15 @@ void expand_local_object(Object *ob)
 void make_local_object(Object *ob)
 {
 	Main *bmain= G.main;
-	Object *obn;
 	Scene *sce;
 	Base *base;
 	int local=0, lib=0;
 
 	/* - only lib users: do nothing
-		* - only local users: set flag
-		* - mixed: make copy
-		*/
-	
+	 * - only local users: set flag
+	 * - mixed: make copy
+	 */
+
 	if(ob->id.lib==NULL) return;
 	
 	ob->proxy= ob->proxy_from= NULL;
@@ -1411,31 +1405,23 @@ void make_local_object(Object *ob)
 	if(ob->id.us==1) {
 		ob->id.lib= NULL;
 		ob->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)ob, NULL);
-
+		new_id(&bmain->object, (ID *)ob, NULL);
 	}
 	else {
-		sce= bmain->scene.first;
-		while(sce) {
-			base= sce->base.first;
-			while(base) {
-				if(base->object==ob) {
-					if(sce->id.lib) lib++;
-					else local++;
-					break;
-				}
-				base= base->next;
+		for(sce= bmain->scene.first; sce && ELEM(0, lib, local); sce= sce->id.next) {
+			if(object_in_scene(ob, sce)) {
+				if(sce->id.lib) lib= 1;
+				else local= 1;
 			}
-			sce= sce->id.next;
 		}
-		
+
 		if(local && lib==0) {
 			ob->id.lib= NULL;
 			ob->id.flag= LIB_LOCAL;
-			new_id(NULL, (ID *)ob, NULL);
+			new_id(&bmain->object, (ID *)ob, NULL);
 		}
 		else if(local && lib) {
-			obn= copy_object(ob);
+			Object *obn= copy_object(ob);
 			obn->id.us= 0;
 			
 			sce= bmain->scene.first;
@@ -1456,7 +1442,7 @@ void make_local_object(Object *ob)
 		}
 	}
 	
-	expand_local_object(ob);
+	extern_local_object(ob);
 }
 
 /*
@@ -2271,7 +2257,7 @@ void what_does_parent(Scene *scene, Object *ob, Object *workob)
 	workob->constraints.first = ob->constraints.first;
 	workob->constraints.last = ob->constraints.last;
 
-	strcpy(workob->parsubstr, ob->parsubstr); 
+	BLI_strncpy(workob->parsubstr, ob->parsubstr, sizeof(workob->parsubstr));
 
 	where_is_object(scene, workob);
 }
@@ -2818,6 +2804,16 @@ int object_insert_ptcache(Object *ob)
 	return i;
 }
 
+void object_camera_mode(RenderData *rd, Object *camera)
+{
+	rd->mode &= ~(R_ORTHO|R_PANORAMA);
+	if(camera && camera->type==OB_CAMERA) {
+		Camera *cam= camera->data;
+		if(cam->type == CAM_ORTHO) rd->mode |= R_ORTHO;
+		if(cam->flag & CAM_PANORAMA) rd->mode |= R_PANORAMA;
+	}
+}
+
 /* 'lens' may be set for envmap only */
 void object_camera_matrix(
 		RenderData *rd, Object *camera, int winx, int winy, short field_second,
@@ -2827,8 +2823,7 @@ void object_camera_matrix(
 	Camera *cam=NULL;
 	float pixsize;
 	float shiftx=0.0, shifty=0.0, winside, viewfac;
-
-	rd->mode &= ~(R_ORTHO|R_PANORAMA);
+	short is_ortho= FALSE;
 
 	/* question mark */
 	(*ycor)= rd->yasp / rd->xasp;
@@ -2838,8 +2833,9 @@ void object_camera_matrix(
 	if(camera->type==OB_CAMERA) {
 		cam= camera->data;
 
-		if(cam->type==CAM_ORTHO) rd->mode |= R_ORTHO;
-		if(cam->flag & CAM_PANORAMA) rd->mode |= R_PANORAMA;
+		if(cam->type == CAM_ORTHO) {
+			is_ortho= TRUE;
+		}
 
 		/* solve this too... all time depending stuff is in convertblender.c?
 		 * Need to update the camera early because it's used for projection matrices
@@ -2879,7 +2875,7 @@ void object_camera_matrix(
 	}
 
 	/* ortho only with camera available */
-	if(cam && rd->mode & R_ORTHO) {
+	if(cam && is_ortho) {
 		if(rd->xasp*winx >= rd->yasp*winy) {
 			viewfac= winx;
 		}
@@ -2922,7 +2918,7 @@ void object_camera_matrix(
 	(*viewdx)= pixsize;
 	(*viewdy)= (*ycor) * pixsize;
 
-	if(rd->mode & R_ORTHO)
+	if(is_ortho)
 		orthographic_m4(winmat, viewplane->xmin, viewplane->xmax, viewplane->ymin, viewplane->ymax, *clipsta, *clipend);
 	else
 		perspective_m4(winmat, viewplane->xmin, viewplane->xmax, viewplane->ymin, viewplane->ymax, *clipsta, *clipend);

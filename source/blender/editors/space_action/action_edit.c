@@ -1,5 +1,5 @@
 /*
- * $Id: action_edit.c 35933 2011-04-01 08:51:12Z campbellbarton $
+ * $Id: action_edit.c 36220 2011-04-19 10:35:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1220,7 +1220,7 @@ void ACTION_OT_keyframe_type (wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Set Keyframe Type";
 	ot->idname= "ACTION_OT_keyframe_type";
-	ot->description= "Set type of keyframe for the seleced keyframes";
+	ot->description= "Set type of keyframe for the selected keyframes";
 	
 	/* api callbacks */
 	ot->invoke= WM_menu_invoke;

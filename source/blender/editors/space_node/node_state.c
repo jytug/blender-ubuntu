@@ -1,5 +1,5 @@
 /*
- * $Id: node_state.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: node_state.c 36278 2011-04-21 17:25:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -158,7 +158,7 @@ static int do_header_hidden_node(bNode *node, float mx, float my)
 	return 0;
 }
 
-static int node_toggle_visibility(SpaceNode *snode, ARegion *ar, short *mval)
+static int node_toggle_visibility(SpaceNode *snode, ARegion *ar, const short mval[2])
 {
 	bNode *node;
 	float mx, my;

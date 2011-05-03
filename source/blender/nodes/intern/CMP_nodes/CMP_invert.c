@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_invert.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_invert.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -116,7 +116,7 @@ static void node_composit_exec_invert(void *UNUSED(data), bNode *node, bNodeStac
 
 static void node_composit_init_invert(bNode *node)
 {
-   node->custom1 |= CMP_CHAN_RGB;
+	node->custom1 |= CMP_CHAN_RGB;
 }
 
 /* custom1 = mix type */

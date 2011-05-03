@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_blur.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_blur.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -715,7 +715,7 @@ static void node_composit_exec_blur(void *data, bNode *node, bNodeStack **in, bN
 
 static void node_composit_init_blur(bNode* node)
 {
-   node->storage= MEM_callocN(sizeof(NodeBlurData), "node blur data");
+	node->storage= MEM_callocN(sizeof(NodeBlurData), "node blur data");
 }
 
 void register_node_type_cmp_blur(ListBase *lb)

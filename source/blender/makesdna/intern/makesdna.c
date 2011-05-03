@@ -1,5 +1,5 @@
 /*
- * $Id: makesdna.c 35336 2011-03-03 17:58:06Z campbellbarton $
+ * $Id: makesdna.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -50,7 +50,7 @@
  * numbers give more output.
  * */
 
-#define DNA_VERSION_DATE "$Id: makesdna.c 35336 2011-03-03 17:58:06Z campbellbarton $"
+#define DNA_VERSION_DATE "$Id: makesdna.c 36271 2011-04-21 13:11:51Z campbellbarton $"
 
 #include <string.h>
 #include <stdlib.h>
@@ -1065,7 +1065,7 @@ int make_structDNA(char *baseDirectory, FILE *file)
 	MEM_freeN(names);
 	MEM_freeN(types);
 	MEM_freeN(typelens);
-    MEM_freeN(alphalens);
+	MEM_freeN(alphalens);
 	MEM_freeN(structs);
 
 	if (debugSDNA > -1) printf("done.\n");

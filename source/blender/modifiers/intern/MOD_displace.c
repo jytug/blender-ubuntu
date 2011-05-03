@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_displace.c 35362 2011-03-05 10:29:10Z campbellbarton $
+* $Id: MOD_displace.c 36319 2011-04-25 06:27:32Z aligorith $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -260,6 +260,7 @@ static void displaceModifier_do(
 	float (*tex_co)[3];
 
 	if(!dmd->texture) return;
+	if(dmd->strength == 0.0f) return;
 
 	defgrp_index = defgroup_name_index(ob, dmd->defgrp_name);
 
@@ -284,7 +285,7 @@ static void displaceModifier_do(
 					break;
 				}
 			}
-			if(!def_weight) continue;
+			if(!def_weight || def_weight->weight==0.0f) continue;
 		}
 
 		texres.nor = NULL;

@@ -1,5 +1,5 @@
 /*
- * $Id: rna_scene.c 36095 2011-04-11 01:18:25Z campbellbarton $
+ * $Id: rna_scene.c 36237 2011-04-20 09:41:44Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -3201,6 +3201,7 @@ void RNA_def_scene(BlenderRNA *brna)
 
 	/* Layers */
 	prop= RNA_def_property(srna, "layers", PROP_BOOLEAN, PROP_LAYER_MEMBER);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE); // this seems to be too much trouble with depsgraph updates/etc. currently (20110420)
 	RNA_def_property_boolean_sdna(prop, NULL, "lay", 1);
 	RNA_def_property_array(prop, 20);
 	RNA_def_property_boolean_funcs(prop, NULL, "rna_Scene_layer_set");

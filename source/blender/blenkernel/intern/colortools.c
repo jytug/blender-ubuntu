@@ -1,5 +1,5 @@
 /* 
- * $Id: colortools.c 35836 2011-03-28 04:22:50Z campbellbarton $
+ * $Id: colortools.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -793,7 +793,7 @@ void curvemapping_evaluate_premulRGBF(CurveMapping *cumap, float *vecout, const 
 /* basic error handler, if we dont do this blender will exit */
 static int ErrorReportingFunction(int ErrorCode, const char *ErrorText)
 {
-    fprintf(stderr, "%s:%d\n", ErrorText, ErrorCode);
+	fprintf(stderr, "%s:%d\n", ErrorText, ErrorCode);
 	return 1;
 }
 #endif

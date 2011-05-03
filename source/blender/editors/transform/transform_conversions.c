@@ -1,5 +1,5 @@
 /*
- * $Id: transform_conversions.c 36020 2011-04-05 11:04:00Z aligorith $
+ * $Id: transform_conversions.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -3745,7 +3745,7 @@ static void SeqTransInfo(TransInfo *t, Sequence *seq, int *recursive, int *count
 		}
 	}
 #endif
-    
+
 	/* for extend we need to do some tricks */
 	if (t->mode == TFM_TIME_EXTEND) {
 

@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_mesh_types.h 35987 2011-04-04 04:47:18Z campbellbarton $ 
+ * $Id: DNA_mesh_types.h 36262 2011-04-21 08:55:10Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -100,7 +100,7 @@ typedef struct Mesh {
 
 	short totcol;
 
-	struct Multires *mr;		/* Multiresolution modeling data */
+	struct Multires *mr;		/* deprecated multiresolution modeling data, only keep for loading old files */
 	struct PartialVisibility *pv;
 } Mesh;
 

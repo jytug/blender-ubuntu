@@ -1,5 +1,5 @@
 /*
- * $Id: sca.c 35247 2011-02-27 20:40:57Z jesterking $
+ * $Id: sca.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -333,12 +333,12 @@ void free_actuator(bActuator *act)
 
 	if(act->data) {
 		switch (act->type) {
-			case ACT_SOUND:
-				sa = (bSoundActuator *) act->data;
-                        	if(sa->sound)
-                                	id_us_min((ID *) sa->sound);
-                	        break;
-        	}
+		case ACT_SOUND:
+			sa = (bSoundActuator *) act->data;
+			if(sa->sound)
+				id_us_min((ID *) sa->sound);
+			break;
+		}
 
 		MEM_freeN(act->data);
 	}

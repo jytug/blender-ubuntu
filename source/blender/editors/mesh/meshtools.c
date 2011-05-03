@@ -1,5 +1,5 @@
 /*
- * $Id: meshtools.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: meshtools.c 36332 2011-04-26 07:17:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -226,8 +226,9 @@ int join_mesh_exec(bContext *C, wmOperator *op)
 						}
 						if(b==totcol) {
 							matar[b]= ma;
-							if(ma)
-								ma->id.us++;
+							if(ma) {
+								id_us_plus(&ma->id);
+							}
 							totcol++;
 						}
 						if(totcol>=MAXMAT-1) 

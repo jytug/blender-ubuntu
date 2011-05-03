@@ -1,5 +1,5 @@
 /*
- * $Id: unit.c 35879 2011-03-29 14:36:55Z campbellbarton $
+ * $Id: unit.c 36220 2011-04-19 10:35:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -95,7 +95,7 @@ typedef struct bUnitDef {
 /* define a single unit */
 typedef struct bUnitCollection {
 	struct bUnitDef *units;
-	int base_unit;				/* basic unit index (when user desn't specify unit explicitly) */
+	int base_unit;				/* basic unit index (when user doesn't specify unit explicitly) */
 	int flag;					/* options for this system */
 	int length;					/* to quickly find the last item */
 } bUnitCollection;

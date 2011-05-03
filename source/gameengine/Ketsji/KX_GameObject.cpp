@@ -1,5 +1,5 @@
 /*
- * $Id: KX_GameObject.cpp 35323 2011-03-03 08:01:11Z campbellbarton $
+ * $Id: KX_GameObject.cpp 36231 2011-04-20 02:56:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -156,7 +156,7 @@ KX_GameObject::~KX_GameObject()
 	}
 #ifdef WITH_PYTHON
 	if (m_attr_dict) {
-		PyDict_Clear(m_attr_dict); /* incase of circular refs or other weired cases */
+		PyDict_Clear(m_attr_dict); /* incase of circular refs or other weird cases */
 		/* Py_CLEAR: Py_DECREF's and NULL's */
 		Py_CLEAR(m_attr_dict);
 	}

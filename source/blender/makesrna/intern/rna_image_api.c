@@ -1,5 +1,5 @@
 /*
- * $Id: rna_image_api.c 35238 2011-02-27 20:20:01Z jesterking $
+ * $Id: rna_image_api.c 36276 2011-04-21 15:53:30Z campbellbarton $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -155,7 +155,7 @@ static int rna_Image_gl_load(Image *image, ReportList *reports, int filter, int 
 
 	ibuf= BKE_image_get_ibuf(image, NULL);
 
- 	if(ibuf == NULL || ibuf->rect == NULL ) {
+	if(ibuf == NULL || ibuf->rect == NULL ) {
 		BKE_reportf(reports, RPT_ERROR, "Image \"%s\" does not have any image data", image->id.name+2);
 		return (int)GL_INVALID_OPERATION;
 	}

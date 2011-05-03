@@ -1,5 +1,5 @@
 /*
- * $Id: ED_curve.h 35016 2011-02-21 07:25:24Z jesterking $
+ * $Id: ED_curve.h 36278 2011-04-21 17:25:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,7 +66,7 @@ void	free_editNurb	(struct Object *obedit);
 
 void	free_curve_editNurb	(struct Curve *cu);
 
-int 	mouse_nurb		(struct bContext *C, short mval[2], int extend);
+int 	mouse_nurb		(struct bContext *C, const short mval[2], int extend);
 
 struct Nurb *add_nurbs_primitive(struct bContext *C, float mat[4][4], int type, int newob);
 

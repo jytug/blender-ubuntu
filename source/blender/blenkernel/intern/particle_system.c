@@ -1,7 +1,7 @@
 /* particle_system.c
  *
  *
- * $Id: particle_system.c 36085 2011-04-10 11:24:29Z jhk $
+ * $Id: particle_system.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -644,7 +644,7 @@ static void hammersley_create(float *out, int n, int seed, float amount)
 		for (p = 0.5, kk = k; kk; p *= 0.5, kk >>= 1)
 			if (kk & 1) /* kk mod 2 = 1 */
 				t += p;
-    
+
 		out[2*k + 0]= fmod((double)k/(double)n + offs[0], 1.0);
 		out[2*k + 1]= fmod(t + offs[1], 1.0);
 	}

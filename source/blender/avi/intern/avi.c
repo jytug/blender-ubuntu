@@ -1,5 +1,5 @@
 /*
- * $Id: avi.c 35362 2011-03-05 10:29:10Z campbellbarton $
+ * $Id: avi.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * This is external code.
  *
@@ -402,7 +402,7 @@ int AVI_is_avi (const char *name) {
 
 	/* at least one video track is needed */
 	return (movie_tracks != 0); 
-				       
+
 }
 
 AviError AVI_open_movie (const char *name, AviMovie *movie) {

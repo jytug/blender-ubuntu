@@ -1,5 +1,5 @@
 /*
- * $Id: convertblender.c 35914 2011-03-31 05:20:48Z campbellbarton $
+ * $Id: convertblender.c 36301 2011-04-23 15:27:35Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -531,8 +531,8 @@ static void GetPosition(const SMikkTSpaceContext * pContext, float fPos[], const
 	//assert(vert_index>=0 && vert_index<4);
 	SRenderMeshToTangent * pMesh = (SRenderMeshToTangent *) pContext->m_pUserData;
 	VlakRen *vlr= RE_findOrAddVlak(pMesh->obr, face_num);
-	VertRen * pVerts[] = {vlr->v1, vlr->v2, vlr->v3, vlr->v4};
-	VECCOPY(fPos, pVerts[vert_index]->co);
+	const float *co= (&vlr->v1)[vert_index]->co;
+	VECCOPY(fPos, co);
 }
 
 static void GetTextureCoordinate(const SMikkTSpaceContext * pContext, float fUV[], const int face_num, const int vert_index)
@@ -541,16 +541,17 @@ static void GetTextureCoordinate(const SMikkTSpaceContext * pContext, float fUV[
 	SRenderMeshToTangent * pMesh = (SRenderMeshToTangent *) pContext->m_pUserData;
 	VlakRen *vlr= RE_findOrAddVlak(pMesh->obr, face_num);
 	MTFace *tface= RE_vlakren_get_tface(pMesh->obr, vlr, pMesh->obr->actmtface, NULL, 0);
+	const float *coord;
 	
-	if(tface!=NULL)
-	{
-		float * pTexCo = tface->uv[vert_index];
-		fUV[0]=pTexCo[0]; fUV[1]=pTexCo[1];
+	if(tface != NULL)	{
+		coord= tface->uv[vert_index];
+		fUV[0]= coord[0]; fUV[1]= coord[1];
 	}
-	else
-	{
-		VertRen * pVerts[] = {vlr->v1, vlr->v2, vlr->v3, vlr->v4};
-		map_to_sphere(&fUV[0], &fUV[1], pVerts[vert_index]->orco[0], pVerts[vert_index]->orco[1], pVerts[vert_index]->orco[2]);
+	else if((coord= (&vlr->v1)[vert_index]->orco)) {
+		map_to_sphere(&fUV[0], &fUV[1], coord[0], coord[1], coord[2]);
+	}
+	else { /* else we get un-initialized value, 0.0 ok default? */
+		fUV[0]= fUV[1]= 0.0f;
 	}
 }
 
@@ -559,8 +560,8 @@ static void GetNormal(const SMikkTSpaceContext * pContext, float fNorm[], const 
 	//assert(vert_index>=0 && vert_index<4);
 	SRenderMeshToTangent * pMesh = (SRenderMeshToTangent *) pContext->m_pUserData;
 	VlakRen *vlr= RE_findOrAddVlak(pMesh->obr, face_num);
-	VertRen * pVerts[] = {vlr->v1, vlr->v2, vlr->v3, vlr->v4};
-	VECCOPY(fNorm, pVerts[vert_index]->n);
+	const float *n= (&vlr->v1)[vert_index]->n;
+	VECCOPY(fNorm, n);
 }
 static void SetTSpace(const SMikkTSpaceContext * pContext, const float fvTangent[], const float fSign, const int face_num, const int iVert)
 {
@@ -568,8 +569,7 @@ static void SetTSpace(const SMikkTSpaceContext * pContext, const float fvTangent
 	SRenderMeshToTangent * pMesh = (SRenderMeshToTangent *) pContext->m_pUserData;
 	VlakRen *vlr= RE_findOrAddVlak(pMesh->obr, face_num);
 	float * ftang= RE_vlakren_get_nmap_tangent(pMesh->obr, vlr, 1);
-	if(ftang!=NULL)
-	{
+	if(ftang!=NULL)	{
 		VECCOPY(&ftang[iVert*4+0], fvTangent);
 		ftang[iVert*4+3]=fSign;
 	}
@@ -2868,16 +2868,9 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 				startvert= obr->totvert;
 				data= dl->verts;
 
-				n[0]= ob->imat[0][2];
-				n[1]= ob->imat[1][2];
-				n[2]= ob->imat[2][2];
-				normalize_v3(n);
-
 				for(a=0; a<dl->nr; a++, data+=3) {
 					ver= RE_findOrAddVert(obr, obr->totvert++);
 					VECCOPY(ver->co, data);
-
-					negate_v3_v3(ver->n, n);
 
 					mul_m4_v3(mat, ver->co);
 
@@ -2888,20 +2881,40 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 				}
 
 				if(timeoffset==0) {
+					float tmp[3];
+					const int startvlak= obr->totvlak;
+
+					zero_v3(n);
 					index= dl->index;
 					for(a=0; a<dl->parts; a++, index+=3) {
-
 						vlr= RE_findOrAddVlak(obr, obr->totvlak++);
 						vlr->v1= RE_findOrAddVert(obr, startvert+index[0]);
 						vlr->v2= RE_findOrAddVert(obr, startvert+index[1]);
 						vlr->v3= RE_findOrAddVert(obr, startvert+index[2]);
 						vlr->v4= NULL;
 
-						negate_v3_v3(vlr->n, n);
+						normal_tri_v3(tmp, vlr->v3->co, vlr->v2->co, vlr->v1->co);
+						add_v3_v3(n, tmp);
 
 						vlr->mat= matar[ dl->col ];
 						vlr->flag= 0;
 						vlr->ec= 0;
+					}
+
+					normalize_v3(n);
+
+					/* vertex normals */
+					for(a= startvlak; a<obr->totvlak; a++) {
+						vlr= RE_findOrAddVlak(obr, a);
+
+						copy_v3_v3(vlr->n, n);
+						add_v3_v3(vlr->v1->n, vlr->n);
+						add_v3_v3(vlr->v3->n, vlr->n);
+						add_v3_v3(vlr->v2->n, vlr->n);
+					}
+					for(a=startvert; a<obr->totvert; a++) {
+						ver= RE_findOrAddVert(obr, a);
+						normalize_v3(ver->n);
 					}
 				}
 			}
@@ -3726,7 +3739,7 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 		
 			VECCOPY(vec,ob->obmat[2]);
 			normalize_v3(vec);
-		    
+
 			InitSunSky(lar->sunsky, la->atm_turbidity, vec, la->horizon_brightness, 
 					la->spread, la->sun_brightness, la->sun_size, la->backscattered_light,
 					   la->skyblendfac, la->skyblendtype, la->sky_exposure, la->sky_colorspace);

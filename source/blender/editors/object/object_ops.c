@@ -1,5 +1,5 @@
 /*
- * $Id: object_ops.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: object_ops.c 36221 2011-04-19 11:17:29Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -220,7 +220,7 @@ void ED_operatormacros_object(void)
 	wmOperatorType *ot;
 	wmOperatorTypeMacro *otmacro;
 	
-	ot= WM_operatortype_append_macro("OBJECT_OT_duplicate_move", "Duplicate", OPTYPE_UNDO|OPTYPE_REGISTER);
+	ot= WM_operatortype_append_macro("OBJECT_OT_duplicate_move", "Duplicate Objects", OPTYPE_UNDO|OPTYPE_REGISTER);
 	if(ot) {
 		WM_operatortype_macro_define(ot, "OBJECT_OT_duplicate");
 		otmacro= WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");

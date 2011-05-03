@@ -1,5 +1,5 @@
 /*
- * $Id: bpy_util.c 35624 2011-03-19 11:12:48Z campbellbarton $
+ * $Id: bpy_util.c 36259 2011-04-21 05:49:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -98,7 +98,7 @@ short BPy_errors_to_report(ReportList *reports)
 	pystring= PyC_ExceptionBuffer();
 	
 	if(pystring==NULL) {
-		BKE_report(reports, RPT_ERROR, "unknown py-exception, could not convert");
+		BKE_report(reports, RPT_ERROR, "unknown py-exception, couldn't convert");
 		return 0;
 	}
 	

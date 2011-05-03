@@ -1,5 +1,5 @@
 /*
- * $Id: keyframes_edit.c 35824 2011-03-27 17:22:04Z campbellbarton $
+ * $Id: keyframes_edit.c 36259 2011-04-21 05:49:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -515,7 +515,7 @@ void ANIM_editkeyframes_refresh(bAnimContext *ac)
 
 /* run the given check on the 3 handles 
  *	- check should be a macro, which takes the handle index as its single arg, which it substitutes later
- *	- requires that a var, of type short, is named 'ok', and has been initialised ot 0
+ *	- requires that a var, of type short, is named 'ok', and has been initialized to 0
  */
 #define KEYFRAME_OK_CHECKS(check) \
 	{ \

@@ -1,5 +1,5 @@
 /*
- * $Id: ED_anim_api.h 35365 2011-03-05 14:03:29Z ton $
+ * $Id: ED_anim_api.h 36312 2011-04-24 10:51:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -251,7 +251,7 @@ typedef enum eAnimFilter_Flags {
 /* Actions (also used for Dopesheet) */
 	/* Action Channel Group */
 #define EDITABLE_AGRP(agrp) ((agrp->flag & AGRP_PROTECTED)==0)
-#define EXPANDED_AGRP(agrp) \
+#define EXPANDED_AGRP(ac, agrp) \
 	( ( ((ac)->spacetype == SPACE_IPO) && (agrp->flag & AGRP_EXPANDED_G) ) || \
 	  ( ((ac)->spacetype != SPACE_IPO) && (agrp->flag & AGRP_EXPANDED)   ) )
 #define SEL_AGRP(agrp) ((agrp->flag & AGRP_SELECTED) || (agrp->flag & AGRP_ACTIVE))

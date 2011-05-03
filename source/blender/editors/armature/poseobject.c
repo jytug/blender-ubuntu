@@ -1,5 +1,5 @@
 /*
- * $Id: poseobject.c 35736 2011-03-24 03:02:34Z aligorith $
+ * $Id: poseobject.c 36220 2011-04-19 10:35:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1509,7 +1509,7 @@ static int pose_group_deselect_exec (bContext *C, wmOperator *UNUSED(op))
 void POSE_OT_group_deselect (wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Deselecte Bone Group";
+	ot->name= "Deselect Bone Group";
 	ot->idname= "POSE_OT_group_deselect";
 	ot->description= "Deselect bones of active Bone Group";
 	

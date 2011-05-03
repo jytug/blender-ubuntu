@@ -1,7 +1,7 @@
 /*
  * anim.c
  *
- * $Id: anim_movie.c 35336 2011-03-03 17:58:06Z campbellbarton $
+ * $Id: anim_movie.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -185,7 +185,7 @@ static ImBuf * movie_fetchibuf(struct anim * anim, int position) {
 	if (anim->interlacing == DM_IMAGE_INTERLACED_EVEN) {
 		rect1 = ibuf->rect + (ibuf->x * ibuf->y) - 1;
 		rect2 = rect1 - ibuf->x;
-    
+
 		for (size = ibuf->x * (ibuf->y - 1); size > 0; size--){
 			*rect1-- = *rect2--;
 		}

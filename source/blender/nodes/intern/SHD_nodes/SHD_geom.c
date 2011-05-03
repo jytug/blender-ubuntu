@@ -1,5 +1,5 @@
 /*
- * $Id: SHD_geom.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: SHD_geom.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -120,7 +120,7 @@ static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(i
 
 static void node_shader_init_geometry(bNode *node)
 {
-   node->storage= MEM_callocN(sizeof(NodeGeometry), "NodeGeometry");
+	node->storage= MEM_callocN(sizeof(NodeGeometry), "NodeGeometry");
 }
 
 static int gpu_shader_geom(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)

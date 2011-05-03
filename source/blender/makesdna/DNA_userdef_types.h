@@ -1,5 +1,5 @@
 /*
- *	$Id: DNA_userdef_types.h 35530 2011-03-14 03:34:57Z campbellbarton $
+ *	$Id: DNA_userdef_types.h 36282 2011-04-22 14:47:35Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -476,7 +476,7 @@ extern UserDef U; /* from blenkernel blender.c */
 #define USER_MENUFIXEDORDER		(1 << 23)
 #define USER_CONTINUOUS_MOUSE	(1 << 24)
 #define USER_ZOOM_INVERT		(1 << 25)
-#define USER_ZOOM_DOLLY_HORIZ	(1 << 26)
+#define USER_ZOOM_HORIZ		(1 << 26) /* for CONTINUE and DOLLY zoom */
 #define USER_SPLASH_DISABLE		(1 << 27)
 #define USER_HIDE_RECENT		(1 << 28)
 #define USER_SHOW_THUMBNAILS	(1 << 29)

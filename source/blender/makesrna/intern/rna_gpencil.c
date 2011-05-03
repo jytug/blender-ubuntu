@@ -1,5 +1,5 @@
 /*
- * $Id: rna_gpencil.c 35971 2011-04-03 10:04:16Z campbellbarton $
+ * $Id: rna_gpencil.c 36223 2011-04-19 13:02:49Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -309,7 +309,7 @@ static void rna_def_gpencil_data(BlenderRNA *brna)
 	
 	static EnumPropertyItem draw_mode_items[] = {
 		{GP_DATA_VIEWALIGN, "CURSOR", 0, "Cursor", "Draw stroke at the 3D cursor"},
-		{0, "VIEW", 0, "View", "Stick stroke to the view "}, /* weired, GP_DATA_VIEWALIGN is inverted */
+		{0, "VIEW", 0, "View", "Stick stroke to the view "}, /* weird, GP_DATA_VIEWALIGN is inverted */
 		{GP_DATA_VIEWALIGN|GP_DATA_DEPTH_VIEW, "SURFACE", 0, "Surface", "Stick stroke to surfaces"},
 		{GP_DATA_VIEWALIGN|GP_DATA_DEPTH_STROKE, "STROKE", 0, "Stroke", "Stick stroke to other strokes"},
 		{0, NULL, 0, NULL, NULL}};

@@ -1,5 +1,5 @@
 /*
- * $Id: editmesh.c 35988 2011-04-04 04:54:41Z campbellbarton $
+ * $Id: editmesh.c 36296 2011-04-23 09:25:34Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1177,13 +1177,14 @@ void load_editMesh(Scene *scene, Object *obedit)
 			}
 
 			if(act_is_basis) { /* active key is a base */
+				float (*fp)[3]= actkey->data;
 				i=0;
 				ofs= MEM_callocN(sizeof(float) * 3 * em->totvert,  "currkey->data");
 				eve= em->verts.first;
 				mvert = me->mvert;
 				while(eve) {
 					if(eve->keyindex>=0)
-						VECSUB(ofs[i], mvert->co, oldverts[eve->keyindex].co);
+						VECSUB(ofs[i], mvert->co, fp[eve->keyindex]);
 
 					eve= eve->next;
 					i++;

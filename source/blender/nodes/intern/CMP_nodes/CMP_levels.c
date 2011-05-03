@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_levels.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_levels.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -330,7 +330,7 @@ static void node_composit_exec_view_levels(void *data, bNode *node, bNodeStack *
 
 static void node_composit_init_view_levels(bNode* node)
 {
-   node->custom1=1; /*All channels*/
+	node->custom1=1; /*All channels*/
 }
 
 void register_node_type_cmp_view_levels(ListBase *lb)

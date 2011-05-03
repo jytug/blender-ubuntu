@@ -1,5 +1,5 @@
 /*
- * $Id: KX_Scene.cpp 35212 2011-02-27 04:01:58Z campbellbarton $
+ * $Id: KX_Scene.cpp 36312 2011-04-24 10:51:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1514,7 +1514,7 @@ void KX_Scene::LogicUpdateFrame(double curtime, bool frame)
 void KX_Scene::LogicEndFrame()
 {
 	m_logicmgr->EndFrame();
-	int numobj = m_euthanasyobjects->GetCount();
+	int numobj;
 
 	KX_GameObject* obj;
 

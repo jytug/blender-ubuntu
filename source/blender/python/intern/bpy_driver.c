@@ -1,5 +1,5 @@
 /*
- * $Id: bpy_driver.c 35624 2011-03-19 11:12:48Z campbellbarton $
+ * $Id: bpy_driver.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -255,7 +255,7 @@ float BPY_driver_exec(ChannelDriver *driver)
 
 	if(use_gil)
 		PyGILState_Release(gilstate);
-    
+
 	if(finite(result)) {
 		return (float)result;
 	}

@@ -1,5 +1,5 @@
 /*
- * $Id: wm_jobs.c 35179 2011-02-25 14:04:21Z jesterking $
+ * $Id: wm_jobs.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -270,8 +270,8 @@ static void wm_jobs_test_suspend_stop(wmWindowManager *wm, wmJob *test)
 			
 			/* if new job is render, any render job should be stopped */
 			if(test->flag & WM_JOB_EXCL_RENDER)
-			   if(0==(steve->flag & WM_JOB_EXCL_RENDER)) 
-				   continue;
+				if(0==(steve->flag & WM_JOB_EXCL_RENDER))
+					continue;
 
 			suspend= 1;
 

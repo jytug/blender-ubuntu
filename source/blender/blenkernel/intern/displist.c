@@ -1,7 +1,7 @@
 /*  displist.c
  * 
  * 
- * $Id: displist.c 35836 2011-03-28 04:22:50Z campbellbarton $
+ * $Id: displist.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1869,9 +1869,9 @@ static void do_makeDispListCurveTypes(Scene *scene, Object *ob, ListBase *dispba
 		   already applied, thats how it worked for years, so keep for compatibility (sergey) */
 		copy_displist(&cu->disp, dispbase);
 
-		 if (!forRender) {
-			 tex_space_curve(cu);
-		 }
+		if (!forRender) {
+			tex_space_curve(cu);
+		}
 
 		if(!forOrco) curve_calc_modifiers_post(scene, ob, dispbase, derivedFinal, forRender, originalVerts, deformedVerts);
 

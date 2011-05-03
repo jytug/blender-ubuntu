@@ -1,5 +1,5 @@
 /*
- * $Id: keyframes_general.c 35483 2011-03-12 01:09:40Z aligorith $
+ * $Id: keyframes_general.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -113,7 +113,7 @@ void delete_fcurve_keys(FCurve *fcu)
 	
 	if(fcu->bezt==NULL) /* ignore baked curves */
 		return;
-    
+
 	/* Delete selected BezTriples */
 	for (i=0; i < fcu->totvert; i++) {
 		if (fcu->bezt[i].f2 & SELECT) {

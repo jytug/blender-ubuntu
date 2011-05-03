@@ -1,7 +1,7 @@
 /* texture.c
  *
  *
- * $Id: texture.c 35985 2011-04-04 03:25:05Z campbellbarton $
+ * $Id: texture.c 36332 2011-04-26 07:17:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -843,13 +843,13 @@ void make_local_texture(Tex *tex)
 	if(tex->ima) {
 		tex->ima->id.lib= NULL;
 		tex->ima->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)tex->ima, NULL);
+		new_id(&bmain->image, (ID *)tex->ima, NULL);
 	}
 
 	if(tex->id.us==1) {
 		tex->id.lib= NULL;
 		tex->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)tex, NULL);
+		new_id(&bmain->tex, (ID *)tex, NULL);
 
 		return;
 	}
@@ -906,7 +906,7 @@ void make_local_texture(Tex *tex)
 	if(local && lib==0) {
 		tex->id.lib= NULL;
 		tex->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)tex, NULL);
+		new_id(&bmain->tex, (ID *)tex, NULL);
 	}
 	else if(local && lib) {
 		texn= copy_texture(tex);

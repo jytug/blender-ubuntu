@@ -1,5 +1,5 @@
 /*
- * $Id: rna_sensor.c 35311 2011-03-02 19:08:48Z dfelinto $
+ * $Id: rna_sensor.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -243,10 +243,10 @@ static void rna_Sensor_Armature_update(Main *bmain, Scene *scene, PointerRNA *pt
 /* note: the following set functions exists only to avoid id refcounting */
 static void rna_Sensor_touch_material_set(PointerRNA *ptr, PointerRNA value)
 {
-        bSensor *sens = (bSensor *)ptr->data;
-        bTouchSensor *ts = (bTouchSensor *) sens->data;
+	bSensor *sens = (bSensor *)ptr->data;
+	bTouchSensor *ts = (bTouchSensor *) sens->data;
 
-        ts->ma = value.data;
+	ts->ma = value.data;
 }
 #else
 
