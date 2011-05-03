@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_blender.h 36122 2011-04-12 16:36:14Z campbellbarton $ 
+ * $Id: BKE_blender.h 36337 2011-04-26 12:24:08Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -44,14 +44,14 @@ extern "C" {
  * and keep comment above the defines.
  * Use STRINGIFY() rather then defining with quotes */
 #define BLENDER_VERSION			257
-#define BLENDER_SUBVERSION		0
+#define BLENDER_SUBVERSION		1
 
 #define BLENDER_MINVERSION		250
 #define BLENDER_MINSUBVERSION	0
 
 /* used by packaging tools */
 		/* can be left blank, otherwise a,b,c... etc with no quotes */
-#define BLENDER_VERSION_CHAR
+#define BLENDER_VERSION_CHAR	b
 		/* alpha/beta/rc/release, docs use this */
 #define BLENDER_VERSION_CYCLE	release
 

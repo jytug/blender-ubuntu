@@ -1,5 +1,5 @@
 /*
- * $Id: logic_ops.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: logic_ops.c 36220 2011-04-19 10:35:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -581,7 +581,7 @@ static void LOGIC_OT_sensor_move(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Move Sensor";
-	ot->description = "Move Densor";
+	ot->description = "Move Sensor";
 	ot->idname= "LOGIC_OT_sensor_move";
 	
 	/* api callbacks */

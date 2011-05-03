@@ -1,5 +1,5 @@
 /*
- * $Id: anim_channels_edit.c 35804 2011-03-26 23:42:51Z aligorith $
+ * $Id: anim_channels_edit.c 36312 2011-04-24 10:51:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -169,9 +169,9 @@ void ANIM_set_active_channel (bAnimContext *ac, void *data, short datatype, int 
 			case ANIMTYPE_DSLAT:
 			{
 				/* need to verify that this data is valid for now */
-				// XXX: ale may be null!
-				if (ale->adt)
+				if (ale && ale->adt) {
 					ale->adt->flag |= ADT_UI_ACTIVE;
+				}
 			}
 				break;
 		}
@@ -1001,7 +1001,7 @@ static void rearrange_action_channels (bAnimContext *ac, bAction *act, short mod
 		
 		for (agrp= act->groups.first; agrp; agrp= agrp->next) {
 			/* only consider F-Curves if they're visible (group expanded) */
-			if (EXPANDED_AGRP(agrp)) {
+			if (EXPANDED_AGRP(ac, agrp)) {
 				rearrange_animchannel_islands(&agrp->channels, rearrange_func, mode, ANIMTYPE_FCURVE);
 			}
 		}

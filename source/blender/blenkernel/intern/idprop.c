@@ -1,5 +1,5 @@
 /*
- * $Id: idprop.c 35397 2011-03-08 03:14:59Z campbellbarton $
+ * $Id: idprop.c 36229 2011-04-19 23:52:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -78,9 +78,12 @@ IDProperty *IDP_NewIDPArray(const char *name)
 
 IDProperty *IDP_CopyIDPArray(IDProperty *array)
 {
-	IDProperty *narray = MEM_dupallocN(array), *tmp;
+	/* dont use MEM_dupallocN because this may be part of an array */
+	IDProperty *narray = MEM_mallocN(sizeof(IDProperty), "IDP_CopyIDPArray"), *tmp;
 	int i;
-	
+
+	*narray= *array;
+
 	narray->data.pointer = MEM_dupallocN(array->data.pointer);
 	for (i=0; i<narray->len; i++) {
 		/*ok, the copy functions always allocate a new structure,

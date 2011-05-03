@@ -1,5 +1,5 @@
 /*
- * $Id: crazyspace.c 35331 2011-03-03 15:17:57Z nazgul $
+ * $Id: crazyspace.c 36259 2011-04-21 05:49:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -400,7 +400,7 @@ void crazyspace_build_sculpt(Scene *scene, Object *ob, float (**deformmats)[3][3
 			if(!modifier_isEnabled(scene, md, eModifierMode_Realtime)) continue;
 
 			if(mti->type==eModifierTypeType_OnlyDeform) {
-				/* skip leading modifiers which have been alredy
+				/* skip leading modifiers which have been already
 				   handled in sculpt_get_first_deform_matrices */
 				if(mti->deformMatrices && !deformed)
 					continue;

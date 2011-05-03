@@ -1,5 +1,5 @@
 /*
- * $Id: keyframing.c 36094 2011-04-11 00:49:08Z campbellbarton $
+ * $Id: keyframing.c 36221 2011-04-19 11:17:29Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1287,7 +1287,7 @@ void ANIM_OT_keyframe_delete (wmOperatorType *ot)
 	PropertyRNA *prop;
 	
 	/* identifiers */
-	ot->name= "Delete Keyframe";
+	ot->name= "Delete Keying-Set Keyframe";
 	ot->idname= "ANIM_OT_keyframe_delete";
 	ot->description= "Delete keyframes on the current frame for all properties in the specified Keying Set";
 	

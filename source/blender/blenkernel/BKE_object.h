@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_object.h 35773 2011-03-25 08:43:41Z campbellbarton $
+ * $Id: BKE_object.h 36332 2011-04-26 07:17:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -91,7 +91,6 @@ struct Object *add_only_object(int type, const char *name);
 struct Object *add_object(struct Scene *scene, int type);
 
 struct Object *copy_object(struct Object *ob);
-void expand_local_object(struct Object *ob);
 void make_local_object(struct Object *ob);
 int object_is_libdata(struct Object *ob);
 int object_data_is_libdata(struct Object *ob);
@@ -138,6 +137,7 @@ struct KeyBlock *object_insert_shape_key(struct Scene *scene, struct Object *ob,
 
 int object_is_modified(struct Scene *scene, struct Object *ob);
 
+void object_camera_mode(struct RenderData *rd, struct Object *camera);
 void object_camera_matrix(
 		struct RenderData *rd, struct Object *camera, int winx, int winy, short field_second,
 		float winmat[][4], struct rctf *viewplane, float *clipsta, float *clipend, float *lens, float *ycor,

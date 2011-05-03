@@ -1,5 +1,5 @@
 /*
- * $Id: graph_buttons.c 35835 2011-03-28 02:34:55Z campbellbarton $
+ * $Id: graph_buttons.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -766,7 +766,7 @@ void GRAPH_OT_properties(wmOperatorType *ot)
 	
 	ot->exec= graph_properties;
 	ot->poll= ED_operator_graphedit_active;
- 	
+
 	/* flags */
 	ot->flag= 0;
 }

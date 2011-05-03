@@ -1,5 +1,5 @@
 /*
- * $Id: winstuff.c 36083 2011-04-10 09:37:04Z campbellbarton $
+ * $Id: winstuff.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -307,21 +307,21 @@ int check_file_chars(char *filename)
 #include <string.h>
 char* dirname(char *path)
 {
-	   char *p;
-	   if( path == NULL || *path == '\0' )
-			   return ".";
-	   p = path + strlen(path) - 1;
-	   while( *p == '/' ) {
-			   if( p == path )
-					   return path;
-			   *p-- = '\0';
-	   }
-	   while( p >= path && *p != '/' )
-			   p--;
-	   return
-			   p < path ? "." :
-			   p == path ? "/" :
-			   (*p = '\0', path);
+	char *p;
+	if( path == NULL || *path == '\0' )
+	return ".";
+	p = path + strlen(path) - 1;
+	while( *p == '/' ) {
+		if( p == path )
+			return path;
+		*p-- = '\0';
+	}
+	while( p >= path && *p != '/' )
+	p--;
+	return
+	p < path ? "." :
+	p == path ? "/" :
+	(*p = '\0', path);
 }
 /* End of copied part */
 

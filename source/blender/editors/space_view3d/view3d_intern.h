@@ -1,5 +1,5 @@
 /*
- * $Id: view3d_intern.h 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: view3d_intern.h 36317 2011-04-25 03:02:26Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -68,6 +68,7 @@ void view3d_operatortypes(void);
 
 /* view3d_edit.c */
 void VIEW3D_OT_zoom(struct wmOperatorType *ot);
+void VIEW3D_OT_dolly(struct wmOperatorType *ot);
 void VIEW3D_OT_zoom_camera_1_to_1(struct wmOperatorType *ot);
 void VIEW3D_OT_move(struct wmOperatorType *ot);
 void VIEW3D_OT_rotate(struct wmOperatorType *ot);
@@ -145,10 +146,6 @@ void VIEW3D_OT_select_extend(struct wmOperatorType *ot);
 void VIEW3D_OT_select_circle(struct wmOperatorType *ot);
 void VIEW3D_OT_select_border(struct wmOperatorType *ot);
 void VIEW3D_OT_select_lasso(struct wmOperatorType *ot);
-
-/* view3d_view.c */
-void view3d_settings_from_ob(struct Object *ob, float *ofs, float *quat, float *dist, float *lens);
-int view3d_is_ortho(View3D *v3d, RegionView3D *rv3d);
 
 void VIEW3D_OT_smoothview(struct wmOperatorType *ot);
 void VIEW3D_OT_setcameratoview(struct wmOperatorType *ot);

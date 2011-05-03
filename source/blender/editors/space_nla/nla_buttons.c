@@ -1,5 +1,5 @@
 /*
- * $Id: nla_buttons.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: nla_buttons.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -504,7 +504,7 @@ void NLA_OT_properties(wmOperatorType *ot)
 	
 	ot->exec= nla_properties;
 	ot->poll= ED_operator_nla_active;
- 	
+
 	/* flags */
 	ot->flag= 0;
 }

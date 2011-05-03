@@ -1,5 +1,5 @@
 /*
- * $Id: screen_edit.c 35922 2011-03-31 15:26:51Z ton $
+ * $Id: screen_edit.c 36322 2011-04-25 09:30:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1133,7 +1133,10 @@ void ED_area_exit(bContext *C, ScrArea *sa)
 	ARegion *ar;
 
 	if (sa->spacetype == SPACE_FILE) {
-		ED_fileselect_exit(C, (SpaceFile*)(sa) ? sa->spacedata.first : CTX_wm_space_data(C));
+		SpaceLink *sl= sa->spacedata.first;
+		if(sl && sl->spacetype == SPACE_FILE) {
+			ED_fileselect_exit(C, (SpaceFile *)sl);
+		}
 	}
 
 	CTX_wm_area_set(C, sa);
@@ -1627,7 +1630,7 @@ ScrArea *ED_screen_full_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 	}
 	else {
 		ScrArea *newa;
-		char newname[20];
+		char newname[MAX_ID_NAME-2];
 
 		oldscreen= win->screen;
 

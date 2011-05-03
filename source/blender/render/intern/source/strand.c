@@ -1,5 +1,5 @@
 /*
- * $Id: strand.c 35480 2011-03-12 00:16:55Z blendix $
+ * $Id: strand.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -690,7 +690,7 @@ static void strand_render(Render *re, StrandSegment *sseg, float winmat[][4], St
 		}
 	}
 }
-  
+
 static int strand_segment_recursive(Render *re, float winmat[][4], StrandPart *spart, ZSpan *zspan, int totzspan, StrandSegment *sseg, StrandPoint *p1, StrandPoint *p2, int depth)
 {
 	StrandPoint p;

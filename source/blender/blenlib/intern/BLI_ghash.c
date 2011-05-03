@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_ghash.c 35246 2011-02-27 20:37:56Z jesterking $
+ * $Id: BLI_ghash.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -175,7 +175,7 @@ unsigned int BLI_ghashutil_inthash(const void *ptr) {
 	key += ~(key <<  9);
 	key ^=  (key >> 17);
 
-	  return (unsigned int)(key & 0xffffffff);
+	return (unsigned int)(key & 0xffffffff);
 }
 
 int BLI_ghashutil_intcmp(const void *a, const void *b) {

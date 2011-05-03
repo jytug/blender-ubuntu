@@ -19,7 +19,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ***** END GPL LICENCE BLOCK *****
-
+"""
 bl_info = {
     "name": "Twisted Torus",
     "author": "Paulo_Gomes",
@@ -34,8 +34,7 @@ bl_info = {
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
         "func=detail&aid=21622",
     "category": "Add Mesh"}
-
-"""
+	
 Usage:
 
 * Launch from Add Mesh menu
@@ -252,22 +251,3 @@ class AddTwistedTorus(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
-# Add to the menu
-def menu_func(self, context):
-    self.layout.operator(AddTwistedTorus.bl_idname, text="Twisted Torus", icon='MESH_TORUS')
-
-
-def register():
-    bpy.utils.register_module(__name__)
-
-    bpy.types.INFO_MT_mesh_add.append(menu_func)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
-    bpy.types.INFO_MT_mesh_add.remove(menu_func)
-
-if __name__ == "__main__":
-    register()

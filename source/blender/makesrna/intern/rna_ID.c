@@ -1,5 +1,5 @@
 /*
- * $Id: rna_ID.c 35336 2011-03-03 17:58:06Z campbellbarton $
+ * $Id: rna_ID.c 36219 2011-04-19 06:59:49Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -443,7 +443,7 @@ static void rna_def_ID(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Name", "Unique datablock ID name");
 	RNA_def_property_string_funcs(prop, "rna_ID_name_get", "rna_ID_name_length", "rna_ID_name_set");
-	RNA_def_property_string_maxlength(prop, sizeof(((ID*)NULL)->name)-2);
+	RNA_def_property_string_maxlength(prop, MAX_ID_NAME-2);
 	RNA_def_property_editable_func(prop, "rna_ID_name_editable");
 	RNA_def_property_update(prop, NC_ID|NA_RENAME, NULL);
 	RNA_def_struct_name_property(srna, prop);

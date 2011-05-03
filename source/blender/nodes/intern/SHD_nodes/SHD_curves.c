@@ -1,5 +1,5 @@
 /*
- * $Id: SHD_curves.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: SHD_curves.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -59,7 +59,7 @@ static void node_shader_exec_curve_vec(void *UNUSED(data), bNode *node, bNodeSta
 
 static void node_shader_init_curve_vec(bNode* node)
 {
-   node->storage= curvemapping_add(3, -1.0f, -1.0f, 1.0f, 1.0f);
+	node->storage= curvemapping_add(3, -1.0f, -1.0f, 1.0f, 1.0f);
 }
 
 static int gpu_shader_curve_vec(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
@@ -114,7 +114,7 @@ static void node_shader_exec_curve_rgb(void *UNUSED(data), bNode *node, bNodeSta
 
 static void node_shader_init_curve_rgb(bNode *node)
 {
-   node->storage= curvemapping_add(4, 0.0f, 0.0f, 1.0f, 1.0f);
+	node->storage= curvemapping_add(4, 0.0f, 0.0f, 1.0f, 1.0f);
 }
 
 static int gpu_shader_curve_rgb(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)

@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * jpeg.c
  *
- * $Id: jpeg.c 36086 2011-04-10 11:36:29Z elubie $
+ * $Id: jpeg.c 36276 2011-04-21 15:53:30Z campbellbarton $
  */
 
 /** \file blender/imbuf/intern/jpeg.c
@@ -95,9 +95,9 @@ int imb_is_a_jpeg(unsigned char *mem) {
 //----------------------------------------------------------
 
 typedef struct my_error_mgr {
-  struct jpeg_error_mgr pub;	/* "public" fields */
+	struct jpeg_error_mgr pub;	/* "public" fields */
 
-  jmp_buf setjmp_buffer;	/* for return to caller */
+	jmp_buf setjmp_buffer;	/* for return to caller */
 } my_error_mgr;
 
 typedef my_error_mgr * my_error_ptr;

@@ -1,5 +1,5 @@
 /*
- * $Id: rna_brush.c 36095 2011-04-11 01:18:25Z campbellbarton $
+ * $Id: rna_brush.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -111,7 +111,7 @@ static void rna_Brush_reset_icon(Brush *br, const char *UNUSED(type))
 	if(id->icon_id >= BIFICONID_LAST) {
 		BKE_icon_delete(id);
 		BKE_previewimg_free_id(id);
- 	}
+	}
 
 	id->icon_id = 0;
 }

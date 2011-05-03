@@ -1,5 +1,5 @@
 /*
- * $Id: BPY_extern.h 35276 2011-03-01 09:02:54Z campbellbarton $
+ * $Id: BPY_extern.h 36199 2011-04-17 12:47:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -86,7 +86,7 @@ void	BPY_modules_load_user(struct bContext *C);
 void	BPY_driver_reset(void);
 float	BPY_driver_exec(struct ChannelDriver *driver);
 
-int		BPY_button_exec(struct bContext *C, const char *expr, double *value);
+int		BPY_button_exec(struct bContext *C, const char *expr, double *value, const short verbose);
 int		BPY_string_exec(struct bContext *C, const char *expr);
 
 void	BPY_DECREF(void *pyob_ptr);	/* Py_DECREF() */

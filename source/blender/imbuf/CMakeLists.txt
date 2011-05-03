@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 35028 2011-02-21 12:35:04Z jesterking $
+# $Id: CMakeLists.txt 36207 2011-04-18 07:11:40Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -23,6 +23,11 @@
 # Contributor(s): Jacques Beaurain.
 #
 # ***** END GPL LICENSE BLOCK *****
+
+if(WITH_CODEC_FFMPEG)
+	# FFMPEG gives warnigns which are hard to avoid across multiple versions.
+	remove_strict_flags()
+endif()
 
 set(INC 
 	.

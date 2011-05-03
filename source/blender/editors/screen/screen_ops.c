@@ -1,5 +1,5 @@
 /*
- * $Id: screen_ops.c 36045 2011-04-07 15:48:33Z ton $
+ * $Id: screen_ops.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -3346,7 +3346,7 @@ static int open_file_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSE
 {
 	if(drag->type==WM_DRAG_PATH) {
 		if(drag->icon==ICON_FILE_BLEND)
-		   return 1;
+			return 1;
 	}
 	return 0;
 }

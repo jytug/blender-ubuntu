@@ -1,5 +1,5 @@
 /*
- * $Id: SHD_material.c 35385 2011-03-07 11:51:09Z ton $
+ * $Id: SHD_material.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -195,7 +195,7 @@ static void node_shader_exec_material(void *data, bNode *node, bNodeStack **in, 
 
 static void node_shader_init_material(bNode* node)
 {
-   node->custom1= SH_NODE_MAT_DIFF|SH_NODE_MAT_SPEC;
+	node->custom1= SH_NODE_MAT_DIFF|SH_NODE_MAT_SPEC;
 }
 
 static int gpu_shader_material(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)

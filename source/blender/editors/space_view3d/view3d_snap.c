@@ -1,5 +1,5 @@
 /*
- * $Id: view3d_snap.c 35822 2011-03-27 15:57:27Z campbellbarton $
+ * $Id: view3d_snap.c 36216 2011-04-19 05:34:05Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -788,9 +788,7 @@ static int snap_curs_to_sel(bContext *C, wmOperator *UNUSED(op))
 			VECCOPY(curs, centroid);
 		}
 		else {
-			curs[0]= (min[0]+max[0])/2;
-			curs[1]= (min[1]+max[1])/2;
-			curs[2]= (min[2]+max[2])/2;
+			mid_v3_v3v3(curs, min, max);
 		}
 		MEM_freeN(transvmain);
 		transvmain= NULL;
@@ -828,9 +826,7 @@ static int snap_curs_to_sel(bContext *C, wmOperator *UNUSED(op))
 				VECCOPY(curs, centroid);
 			}
 			else {
-				curs[0]= (min[0]+max[0])/2;
-				curs[1]= (min[1]+max[1])/2;
-				curs[2]= (min[2]+max[2])/2;
+				mid_v3_v3v3(curs, min, max);
 			}
 		}
 	}

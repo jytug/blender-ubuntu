@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_valToRgb.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_valToRgb.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -82,7 +82,7 @@ static void node_composit_exec_valtorgb(void *UNUSED(data), bNode *node, bNodeSt
 
 static void node_composit_init_valtorgb(bNode* node)
 {
-   node->storage= add_colorband(1);
+	node->storage= add_colorband(1);
 }
 
 void register_node_type_cmp_valtorgb(ListBase *lb)

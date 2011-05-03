@@ -1,5 +1,5 @@
 /*
- * $Id: object_add.c 36041 2011-04-07 08:23:00Z campbellbarton $
+ * $Id: object_add.c 36221 2011-04-19 11:17:29Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1704,7 +1704,7 @@ void OBJECT_OT_duplicate(wmOperatorType *ot)
 	PropertyRNA *prop;
 	
 	/* identifiers */
-	ot->name= "Duplicate";
+	ot->name= "Duplicate Objects";
 	ot->description = "Duplicate selected objects";
 	ot->idname= "OBJECT_OT_duplicate";
 	

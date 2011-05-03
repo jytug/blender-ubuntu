@@ -1,7 +1,7 @@
 /*
  * tiff.c
  *
- * $Id: tiff.c 35823 2011-03-27 17:12:59Z campbellbarton $
+ * $Id: tiff.c 36278 2011-04-21 17:25:58Z campbellbarton $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -605,8 +605,7 @@ void imb_loadtiletiff(ImBuf *ibuf, unsigned char *mem, size_t size, int tx, int 
 		return;
 	}
 
-   	if(TIFFSetDirectory(image, ibuf->miplevel)) {
-		/* allocate the image buffer */
+	if(TIFFSetDirectory(image, ibuf->miplevel)) { /* allocate the image buffer */
 		TIFFGetField(image, TIFFTAG_IMAGEWIDTH,  &width);
 		TIFFGetField(image, TIFFTAG_IMAGELENGTH, &height);
 

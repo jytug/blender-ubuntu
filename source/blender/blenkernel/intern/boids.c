@@ -1,7 +1,7 @@
 /* boids.c
  *
  *
- * $Id: boids.c 35953 2011-04-02 02:08:33Z campbellbarton $
+ * $Id: boids.c 36325 2011-04-25 12:26:33Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1299,7 +1299,7 @@ void boid_body(BoidBrainData *bbd, ParticleData *pa)
 					bpa->data.mode = eBoidMode_OnLand;
 				}
 				/* fly above ground */
-				else {
+				else if(bpa->ground) {
 					pa->state.co[2] = ground_co[2] + pa->size * boids->height;
 					pa->state.vel[2] = 0.0f;
 				}

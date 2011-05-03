@@ -1,5 +1,5 @@
 /*
- * $Id: math_vector_inline.c 35820 2011-03-27 14:59:55Z campbellbarton $
+ * $Id: math_vector_inline.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -315,7 +315,7 @@ MINLINE float dot_v3v3(const float a[3], const float b[3])
 
 MINLINE float cross_v2v2(const float a[2], const float b[2])
 {
-	 return a[0]*b[1] - a[1]*b[0];
+	return a[0]*b[1] - a[1]*b[0];
 }
 
 MINLINE void cross_v3_v3v3(float r[3], const float a[3], const float b[3])

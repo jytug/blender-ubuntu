@@ -1,5 +1,5 @@
 /*
- * $Id: initrender.c 35233 2011-02-27 19:31:27Z jesterking $
+ * $Id: initrender.c 36184 2011-04-15 12:08:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -451,6 +451,8 @@ void make_sample_tables(Render *re)
 /* per render, there's one persistant viewplane. Parts will set their own viewplanes */
 void RE_SetCamera(Render *re, Object *camera)
 {
+	object_camera_mode(&re->r, camera);
+
 	object_camera_matrix(&re->r, camera, re->winx, re->winy, re->flag & R_SEC_FIELD,
 			re->winmat, &re->viewplane, &re->clipsta, &re->clipend,
 			&re->lens, &re->ycor, &re->viewdx, &re->viewdy);

@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_text.h 34962 2011-02-18 13:05:18Z jesterking $ 
+ * $Id: BKE_text.h 36236 2011-04-20 07:44:42Z nazgul $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -89,6 +89,7 @@ void	txt_split_curline	(struct Text *text);
 void	txt_backspace_char	(struct Text *text);
 void	txt_backspace_word	(struct Text *text);
 int		txt_add_char		(struct Text *text, char add);
+int		txt_add_raw_char	(struct Text *text, char add);
 int		txt_replace_char	(struct Text *text, char add);
 void	txt_export_to_object	(struct Text *text);
 void	txt_export_to_objects(struct Text *text);

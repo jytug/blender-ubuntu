@@ -1,5 +1,5 @@
 /*
- * $Id: space_nla.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: space_nla.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -159,7 +159,7 @@ static SpaceLink *nla_new(const bContext *C)
 	
 	ar->v2d.max[0]= MAXFRAMEF;
 	ar->v2d.max[1]= 10000.0f;
- 	
+
 	ar->v2d.minzoom= 0.01f;
 	ar->v2d.maxzoom= 50;
 	ar->v2d.scroll = (V2D_SCROLL_BOTTOM|V2D_SCROLL_SCALE_HORIZONTAL);

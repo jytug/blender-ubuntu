@@ -1,7 +1,7 @@
 /*
  * blenlib/BKE_mesh.h (mar-2001 nzc)
  *	
- * $Id: BKE_mesh.h 35793 2011-03-26 08:28:24Z blendix $ 
+ * $Id: BKE_mesh.h 36332 2011-04-26 07:17:21Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,7 +66,6 @@ void free_mesh(struct Mesh *me);
 struct Mesh *add_mesh(const char *name);
 struct Mesh *copy_mesh(struct Mesh *me);
 void mesh_update_customdata_pointers(struct Mesh *me);
-void make_local_tface(struct Mesh *me);
 void make_local_mesh(struct Mesh *me);
 void boundbox_mesh(struct Mesh *me, float *loc, float *size);
 void tex_space_mesh(struct Mesh *me);

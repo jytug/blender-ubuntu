@@ -1,5 +1,5 @@
 /*
- * $Id: subsurf_ccg.c 35888 2011-03-30 02:05:10Z campbellbarton $
+ * $Id: subsurf_ccg.c 36312 2011-04-24 10:51:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1541,8 +1541,10 @@ static void ccgDM_drawFacesColored(DerivedMesh *dm, int UNUSED(useTwoSided), uns
 	}
 
 	glShadeModel(GL_SMOOTH);
-	if(col1 && col2)
+
+	if(col2) {
 		glEnable(GL_CULL_FACE);
+	}
 
 	glBegin(GL_QUADS);
 	for (; !ccgFaceIterator_isStopped(fi); ccgFaceIterator_next(fi)) {
@@ -2696,7 +2698,7 @@ void subsurf_calculate_limit_positions(Mesh *me, float (*positions_r)[3])
 		int numFaces = ccgSubSurf_getVertNumFaces(v);
 		float *co;
 		int i;
-                
+
 		edge_sum[0]= edge_sum[1]= edge_sum[2]= 0.0;
 		face_sum[0]= face_sum[1]= face_sum[2]= 0.0;
 

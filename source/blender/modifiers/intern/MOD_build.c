@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_build.c 35817 2011-03-27 13:49:53Z campbellbarton $
+* $Id: MOD_build.c 36276 2011-04-21 15:53:30Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -212,17 +212,17 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 			!BLI_ghashIterator_isDone(hashIter);
 			BLI_ghashIterator_step(hashIter)
 	) {
-	   MVert source;
-	   MVert *dest;
-	   int oldIndex = GET_INT_FROM_POINTER(BLI_ghashIterator_getKey(hashIter));
-	   int newIndex = GET_INT_FROM_POINTER(BLI_ghashIterator_getValue(hashIter));
+		MVert source;
+		MVert *dest;
+		int oldIndex = GET_INT_FROM_POINTER(BLI_ghashIterator_getKey(hashIter));
+		int newIndex = GET_INT_FROM_POINTER(BLI_ghashIterator_getValue(hashIter));
 
-	   dm->getVert(dm, oldIndex, &source);
-	   dest = CDDM_get_vert(result, newIndex);
+		dm->getVert(dm, oldIndex, &source);
+		dest = CDDM_get_vert(result, newIndex);
 
-	   DM_copy_vert_data(dm, result, oldIndex, newIndex, 1);
-	   *dest = source;
-   }
+		DM_copy_vert_data(dm, result, oldIndex, newIndex, 1);
+		*dest = source;
+	}
 	BLI_ghashIterator_free(hashIter);
 	
 	/* copy the edges across, remapping indices */

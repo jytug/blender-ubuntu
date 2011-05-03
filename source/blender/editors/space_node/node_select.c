@@ -1,5 +1,5 @@
 /*
- * $Id: node_select.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: node_select.c 36278 2011-04-21 17:25:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -70,7 +70,7 @@ static bNode *node_under_mouse(bNodeTree *ntree, int mx, int my)
 
 /* ****** Click Select ****** */
  
-static bNode *node_mouse_select(SpaceNode *snode, ARegion *ar, short *mval, short extend)
+static bNode *node_mouse_select(SpaceNode *snode, ARegion *ar, const short mval[2], short extend)
 {
 	bNode *node;
 	float mx, my;

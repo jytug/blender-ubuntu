@@ -1,5 +1,5 @@
 /*
- * $Id: editfont.c 35797 2011-03-26 09:36:45Z campbellbarton $
+ * $Id: editfont.c 36221 2011-04-19 11:17:29Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1715,7 +1715,7 @@ static int open_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 void FONT_OT_open(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Open";
+	ot->name= "Open Font";
 	ot->idname= "FONT_OT_open";
 	
 	/* api callbacks */

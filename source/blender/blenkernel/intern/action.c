@@ -1,5 +1,5 @@
 /*
- * $Id: action.c 35590 2011-03-17 10:02:37Z aligorith $
+ * $Id: action.c 36332 2011-04-26 07:17:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -95,6 +95,7 @@ bAction *add_empty_action(const char name[])
 void make_local_action(bAction *act)
 {
 	// Object *ob;
+	Main *bmain= G.main;
 	bAction *actn;
 	int local=0, lib=0;
 	
@@ -102,7 +103,7 @@ void make_local_action(bAction *act)
 	if (act->id.us==1) {
 		act->id.lib= NULL;
 		act->id.flag= LIB_LOCAL;
-		new_id(NULL, (ID *)act, NULL);
+		new_id(&bmain->action, (ID *)act, NULL);
 		return;
 	}
 	
@@ -121,7 +122,7 @@ void make_local_action(bAction *act)
 		act->id.lib= NULL;
 		act->id.flag= LIB_LOCAL;
 		//make_local_action_channels(act);
-		new_id(NULL, (ID *)act, NULL);
+		new_id(&bmain->action, (ID *)act, NULL);
 	}
 	else if(local && lib) {
 		actn= copy_action(act);

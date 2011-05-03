@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_C-api.cpp 35792 2011-03-26 08:13:42Z campbellbarton $
+ * $Id: GHOST_C-api.cpp 36300 2011-04-23 12:57:03Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,7 +37,7 @@
  *
  * C Api for GHOST
  *
- * Version: $Id: GHOST_C-api.cpp 35792 2011-03-26 08:13:42Z campbellbarton $
+ * Version: $Id: GHOST_C-api.cpp 36300 2011-04-23 12:57:03Z campbellbarton $
  */
 
 #include <stdlib.h>
@@ -403,7 +403,7 @@ GHOST_TSuccess GHOST_GetModifierKeyState(GHOST_SystemHandle systemhandle,
 {
 	GHOST_ISystem* system = (GHOST_ISystem*) systemhandle;
 	GHOST_TSuccess result;
-	bool isdown;
+	bool isdown= false;
 	
 	result = system->getModifierKeyState(mask, isdown);
 	*isDown = (int) isdown;
@@ -419,7 +419,7 @@ GHOST_TSuccess GHOST_GetButtonState(GHOST_SystemHandle systemhandle,
 {
 	GHOST_ISystem* system = (GHOST_ISystem*) systemhandle;
 	GHOST_TSuccess result;
-	bool isdown;
+	bool isdown= false;
 	
 	result = system->getButtonState(mask, isdown);
 	*isDown = (int) isdown;

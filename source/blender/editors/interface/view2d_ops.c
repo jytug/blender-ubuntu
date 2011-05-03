@@ -1,5 +1,5 @@
 /*
- * $Id: view2d_ops.c 35819 2011-03-27 14:52:16Z campbellbarton $
+ * $Id: view2d_ops.c 36221 2011-04-19 11:17:29Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1048,7 +1048,7 @@ static int view_zoomdrag_modal(bContext *C, wmOperator *op, wmEvent *event)
 static void VIEW2D_OT_zoom(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Zoom View";
+	ot->name= "Zoom 2D View";
 	ot->description= "Zoom in/out the view";
 	ot->idname= "VIEW2D_OT_zoom";
 	

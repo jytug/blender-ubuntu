@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_alphaOver.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_alphaOver.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -142,7 +142,7 @@ static void node_composit_exec_alphaover(void *UNUSED(data), bNode *node, bNodeS
 
 static void node_alphaover_init(bNode* node)
 {
-   node->storage= MEM_callocN(sizeof(NodeTwoFloats), "NodeTwoFloats");
+	node->storage= MEM_callocN(sizeof(NodeTwoFloats), "NodeTwoFloats");
 }
 
 void register_node_type_cmp_alphaover(ListBase *lb)

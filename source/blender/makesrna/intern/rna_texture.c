@@ -1,5 +1,5 @@
 /*
- * $Id: rna_texture.c 36118 2011-04-12 15:55:04Z lmg $
+ * $Id: rna_texture.c 36257 2011-04-21 00:28:05Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1638,6 +1638,7 @@ static void rna_def_texture_voxeldata(BlenderRNA *brna)
 	
 	prop= RNA_def_property(srna, "resolution", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "resol");
+	RNA_def_property_range(prop, 1, 100000);
 	RNA_def_property_ui_text(prop, "Resolution", "Resolution of the voxel grid");
 	RNA_def_property_update(prop, 0, "rna_Texture_voxeldata_update");
 	

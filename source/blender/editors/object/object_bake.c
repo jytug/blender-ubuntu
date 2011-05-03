@@ -1,5 +1,5 @@
 /*
- * $Id: object_bake.c 35362 2011-03-05 10:29:10Z campbellbarton $
+ * $Id: object_bake.c 36284 2011-04-22 16:47:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -189,9 +189,18 @@ static void finish_bake_internal(BakeRender *bkr)
 		for(ima= G.main->image.first; ima; ima= ima->id.next) {
 			if(ima->ok==IMA_OK_LOADED) {
 				ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
-				if(ibuf && (ibuf->userflags & IB_BITMAPDIRTY)) {
-					GPU_free_image(ima);
-					imb_freemipmapImBuf(ibuf);
+				if(ibuf) {
+					if(ibuf->userflags & IB_BITMAPDIRTY) {
+						GPU_free_image(ima);
+						imb_freemipmapImBuf(ibuf);
+					}
+
+					/* freed when baking is done, but if its canceled we need to free here */
+					if (ibuf->userdata) {
+						printf("freed\n");
+						MEM_freeN(ibuf->userdata);
+						ibuf->userdata= NULL;
+					}
 				}
 			}
 		}

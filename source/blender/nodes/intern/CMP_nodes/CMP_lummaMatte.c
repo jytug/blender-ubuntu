@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_lummaMatte.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_lummaMatte.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -102,10 +102,10 @@ static void node_composit_exec_luma_matte(void *data, bNode *node, bNodeStack **
 
 static void node_composit_init_luma_matte(bNode *node)
 {
-   NodeChroma *c= MEM_callocN(sizeof(NodeChroma), "node chroma");
-   node->storage=c;
-   c->t1= 1.0f;
-   c->t2= 0.0f;
+	NodeChroma *c= MEM_callocN(sizeof(NodeChroma), "node chroma");
+	node->storage=c;
+	c->t1= 1.0f;
+	c->t2= 0.0f;
 }
 
 void register_node_type_cmp_luma_matte(ListBase *lb)

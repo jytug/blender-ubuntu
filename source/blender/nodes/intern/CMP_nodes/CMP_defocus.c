@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_defocus.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_defocus.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -859,19 +859,19 @@ static void node_composit_exec_defocus(void *UNUSED(data), bNode *node, bNodeSta
 
 static void node_composit_init_defocus(bNode* node)
 {
-   /* qdn: defocus node */
-   NodeDefocus *nbd = MEM_callocN(sizeof(NodeDefocus), "node defocus data");
-   nbd->bktype = 0;
-   nbd->rotation = 0.f;
-   nbd->preview = 1;
-   nbd->gamco = 0;
-   nbd->samples = 16;
-   nbd->fstop = 128.f;
-   nbd->maxblur = 0;
-   nbd->bthresh = 1.f;
-   nbd->scale = 1.f;
-   nbd->no_zbuf = 1;
-   node->storage = nbd;
+	/* qdn: defocus node */
+	NodeDefocus *nbd = MEM_callocN(sizeof(NodeDefocus), "node defocus data");
+	nbd->bktype = 0;
+	nbd->rotation = 0.f;
+	nbd->preview = 1;
+	nbd->gamco = 0;
+	nbd->samples = 16;
+	nbd->fstop = 128.f;
+	nbd->maxblur = 0;
+	nbd->bthresh = 1.f;
+	nbd->scale = 1.f;
+	nbd->no_zbuf = 1;
+	node->storage = nbd;
 }
 
 void register_node_type_cmp_defocus(ListBase *lb)

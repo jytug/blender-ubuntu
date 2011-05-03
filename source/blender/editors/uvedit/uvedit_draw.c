@@ -1,5 +1,5 @@
 /*
- * $Id: uvedit_draw.c 35820 2011-03-27 14:59:55Z campbellbarton $
+ * $Id: uvedit_draw.c 36276 2011-04-21 15:53:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -434,7 +434,7 @@ static void draw_uvs(SpaceImage *sima, Scene *scene, Object *obedit)
 	float pointsize;
 	int drawfaces, interpedges;
 	Image *ima= sima->image;
- 	
+
 	em= BKE_mesh_get_editmesh(me);
 	activetf= EM_get_active_mtface(em, &efa_act, NULL, 0); /* will be set to NULL if hidden */
 

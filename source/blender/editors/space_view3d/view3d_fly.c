@@ -1,5 +1,5 @@
 /*
- * $Id: view3d_fly.c 35835 2011-03-28 02:34:55Z campbellbarton $
+ * $Id: view3d_fly.c 36271 2011-04-21 13:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -793,7 +793,7 @@ static int flyApply(bContext *C, FlyInfo *fly)
 				/* transform the parent or the camera? */
 				if(fly->root_parent) {
 					Object *ob_update;
-                    
+
 					float view_mat[4][4];
 					float prev_view_imat[4][4];
 					float diff_mat[4][4];

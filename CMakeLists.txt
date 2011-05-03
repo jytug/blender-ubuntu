@@ -1,5 +1,5 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 36095 2011-04-11 01:18:25Z campbellbarton $
+# $Id: CMakeLists.txt 36259 2011-04-21 05:49:47Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -31,15 +31,20 @@
 # build the libs and objects in it.
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-message(FATAL_ERROR "CMake generation for blender is not allowed within the source directory! 
-Remove the CMakeCache.txt file and try again from another folder, e.g.: 
-
-	rm CMakeCache.txt 
-	cd ..
-	mkdir cmake-make 
-	cd cmake-make
-	cmake ../blender
-")
+	if(NOT DEFINED WITH_IN_SOURCE_BUILD)
+		message(FATAL_ERROR
+			"CMake generation for blender is not allowed within the source directory!"
+			"\n Remove the CMakeCache.txt file and try again from another folder, e.g.:"
+			"\n "
+			"\n rm CMakeCache.txt"
+			"\n cd .."
+			"\n mkdir cmake-make"
+			"\n cd cmake-make"
+			"\n cmake ../blender"
+			"\n "
+			"\n Alternately define WITH_IN_SOURCE_BUILD to force this option (not recommended!)"
+		)
+	endif()
 endif()
 
 cmake_minimum_required(VERSION 2.8)

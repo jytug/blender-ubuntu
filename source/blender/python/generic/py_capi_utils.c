@@ -1,5 +1,5 @@
 /*
- * $Id: py_capi_utils.c 35767 2011-03-25 04:36:10Z campbellbarton $
+ * $Id: py_capi_utils.c 36210 2011-04-18 10:18:35Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -29,6 +29,12 @@
 #include <frameobject.h>
 
 #include "py_capi_utils.h"
+
+#include "BKE_font.h" /* only for utf8towchar, should replace with py funcs but too late in release now */
+
+#ifdef _WIN32 /* BLI_setenv */
+#include "BLI_path_util.h"
+#endif
 
 #define PYC_INTERPRETER_ACTIVE (((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current)) != NULL)
 
@@ -282,6 +288,48 @@ void PyC_MainModule_Restore(PyObject *main_mod)
 	PyInterpreterState *interp= PyThreadState_GET()->interp;
 	PyDict_SetItemString(interp->modules, "__main__", main_mod);
 	Py_XDECREF(main_mod);
+}
+
+/* must be called before Py_Initialize, expects output of BLI_get_folder(BLENDER_PYTHON, NULL) */
+void PyC_SetHomePath(const char *py_path_bundle)
+{
+	if(py_path_bundle==NULL) {
+		/* Common enough to have bundled *nix python but complain on OSX/Win */
+#if defined(__APPLE__) || defined(_WIN32)
+		fprintf(stderr, "Warning! bundled python not found and is expected on this platform. (if you built with CMake: 'install' target may have not been built)\n");
+#endif
+		return;
+	}
+	/* set the environment path */
+	printf("found bundled python: %s\n", py_path_bundle);
+
+#ifdef __APPLE__
+	/* OSX allow file/directory names to contain : character (represented as / in the Finder)
+	 but current Python lib (release 3.1.1) doesn't handle these correctly */
+	if(strchr(py_path_bundle, ':'))
+		printf("Warning : Blender application is located in a path containing : or / chars\
+			   \nThis may make python import function fail\n");
+#endif
+
+#ifdef _WIN32
+	/* cmake/MSVC debug build crashes without this, why only
+	   in this case is unknown.. */
+	{
+		BLI_setenv("PYTHONPATH", py_path_bundle);
+	}
+#endif
+
+	{
+		static wchar_t py_path_bundle_wchar[1024];
+
+		/* cant use this, on linux gives bug: #23018, TODO: try LANG="en_US.UTF-8" /usr/bin/blender, suggested 22008 */
+		/* mbstowcs(py_path_bundle_wchar, py_path_bundle, FILE_MAXDIR); */
+
+		utf8towchar(py_path_bundle_wchar, py_path_bundle);
+
+		Py_SetPythonHome(py_path_bundle_wchar);
+		// printf("found python (wchar_t) '%ls'\n", py_path_bundle_wchar);
+	}
 }
 
 /* Would be nice if python had this built in */

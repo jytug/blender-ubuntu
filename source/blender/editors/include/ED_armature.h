@@ -1,5 +1,5 @@
 /*
- * $Id: ED_armature.h 35016 2011-02-21 07:25:24Z jesterking $
+ * $Id: ED_armature.h 36278 2011-04-21 17:25:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -117,7 +117,7 @@ void ED_armature_deselect_all_visible(struct Object *obedit);
 
 int ED_do_pose_selectbuffer(struct Scene *scene, struct Base *base, unsigned int *buffer, 
 							short hits, short extend);
-int mouse_armature(struct bContext *C, short mval[2], int extend);
+int mouse_armature(struct bContext *C, const short mval[2], int extend);
 int join_armature_exec(struct bContext *C, struct wmOperator *op);
 struct Bone *get_indexed_bone (struct Object *ob, int index);
 float ED_rollBoneToVector(EditBone *bone, const float new_up_axis[3], const short axis_only);

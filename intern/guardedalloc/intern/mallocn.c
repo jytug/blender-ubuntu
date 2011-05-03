@@ -1,5 +1,5 @@
 /*
- * $Id: mallocn.c 35336 2011-03-03 17:58:06Z campbellbarton $
+ * $Id: mallocn.c 36276 2011-04-21 15:53:30Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 
 /**
 
- * $Id: mallocn.c 35336 2011-03-03 17:58:06Z campbellbarton $
+ * $Id: mallocn.c 36276 2011-04-21 15:53:30Z campbellbarton $
  * Copyright (C) 2001 NaN Technologies B.V.
  * Guarded memory allocation, and boundary-write detection.
  */
@@ -369,16 +369,16 @@ void *MEM_mapallocN(size_t len, const char *str)
 	{
 #include <fcntl.h>
 
-	  int fd;
-	  fd = open("/dev/zero", O_RDWR);
+		int fd;
+		fd = open("/dev/zero", O_RDWR);
 
-	  memh= mmap(0, len+sizeof(MemHead)+sizeof(MemTail),
-		     PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	  close(fd);
+		memh= mmap(0, len+sizeof(MemHead)+sizeof(MemTail),
+				PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+		close(fd);
 	}
 #else
 	memh= mmap(NULL, len+sizeof(MemHead)+sizeof(MemTail),
-		   PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANON, -1, 0);
+			PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANON, -1, 0);
 #endif
 
 	if(memh!=(MemHead *)-1) {
@@ -698,26 +698,26 @@ static void remlink(volatile localListBase *listbase, void *vlink)
 
 static void rem_memblock(MemHead *memh)
 {
-    remlink(membase,&memh->next);
-    if (memh->prev) {
-        if (memh->next) 
+	remlink(membase,&memh->next);
+	if (memh->prev) {
+		if (memh->next)
 			MEMNEXT(memh->prev)->nextname = MEMNEXT(memh->next)->name;
-        else 
+		else
 			MEMNEXT(memh->prev)->nextname = NULL;
-    }
+	}
 
-    totblock--;
-    mem_in_use -= memh->len;
-   
-    if(memh->mmap) {
-        mmap_in_use -= memh->len;
-        if (munmap(memh, memh->len + sizeof(MemHead) + sizeof(MemTail)))
-            printf("Couldn't unmap memory %s\n", memh->name);
-    }	
+	totblock--;
+	mem_in_use -= memh->len;
+
+	if(memh->mmap) {
+		mmap_in_use -= memh->len;
+		if (munmap(memh, memh->len + sizeof(MemHead) + sizeof(MemTail)))
+			printf("Couldn't unmap memory %s\n", memh->name);
+	}
 	else {
 		if(malloc_debug_memset && memh->len)
 			memset(memh+1, 255, memh->len);
-        free(memh);
+		free(memh);
 	}
 }
 
@@ -792,7 +792,7 @@ static const char *check_memlist(MemHead *memh)
 				forwok->nextname = backok->name;
 			} else{
 				forwok->next = NULL;
-  				membase->last = (struct localLink *) &forwok->next; 
+				membase->last = (struct localLink *) &forwok->next;
 /*  				membase->last = (struct Link *) &forwok->next; */
 			}
 		} else{

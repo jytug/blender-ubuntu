@@ -1,5 +1,5 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 36110 2011-04-12 11:09:10Z campbellbarton $
+# $Id: CMakeLists.txt 36207 2011-04-18 07:11:40Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -113,7 +113,8 @@ endif()
 		bf_blenlib 
 		bf_imbuf_cineon
 		bf_imbuf_openexr 
-		extern_openjpeg 
+		extern_openjpeg
+		extern_redcode
 		bf_imbuf_dds
 		bf_readblenfile 
 		bf_dna

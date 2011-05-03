@@ -1,5 +1,5 @@
 /*
-* $Id: transform_manipulator.c 35852 2011-03-28 17:06:15Z campbellbarton $
+* $Id: transform_manipulator.c 36278 2011-04-21 17:25:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1487,7 +1487,7 @@ void BIF_draw_manipulator(const bContext *C)
 	}
 }
 
-static int manipulator_selectbuf(ScrArea *sa, ARegion *ar, short *mval, float hotspot)
+static int manipulator_selectbuf(ScrArea *sa, ARegion *ar, const short mval[2], float hotspot)
 {
 	View3D *v3d= sa->spacedata.first;
 	RegionView3D *rv3d= ar->regiondata;
