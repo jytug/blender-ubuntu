@@ -8,10 +8,10 @@ Don't try and use extern/libopenjpeg nor extern/glew
  1 files changed, 6 insertions(+), 0 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index fdaa9b8..cd7db53 100644
+index 722e9e0..c680da8 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -469,6 +469,12 @@ if(UNIX AND NOT APPLE)
+@@ -474,6 +474,12 @@ if(UNIX AND NOT APPLE)
  		set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -static-intel")
  	endif()
  

@@ -39,7 +39,7 @@ index 1fd619d..0dc86cd 100644
  
  #ifdef WIN32
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 4051ef0..a406031 100644
+index c44d32a..ad5cd6a 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
 @@ -992,7 +992,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
@@ -52,10 +52,10 @@ index 4051ef0..a406031 100644
  	
  	if(!system_path[0])
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 9c048a7..9cf0c64 100644
+index 221ac6c..918541a 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -337,8 +337,8 @@ if(UNIX AND NOT APPLE)
+@@ -349,8 +349,8 @@ if(UNIX AND NOT APPLE)
  	if(WITH_PYTHON)
  		# install(CODE "message(\"copying blender scripts...\")")
  		install(

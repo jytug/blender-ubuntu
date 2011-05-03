@@ -8,10 +8,10 @@ Install relevant documentation
  1 files changed, 1 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 9cf0c64..a745df6 100644
+index 918541a..26761f6 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -302,9 +302,8 @@ if(UNIX AND NOT APPLE)
+@@ -314,9 +314,8 @@ if(UNIX AND NOT APPLE)
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
  		)
  		install(
