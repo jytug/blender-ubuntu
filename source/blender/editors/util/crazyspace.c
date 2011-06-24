@@ -1,5 +1,5 @@
 /*
- * $Id: crazyspace.c 36259 2011-04-21 05:49:47Z campbellbarton $
+ * $Id: crazyspace.c 36485 2011-05-04 13:15:42Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -424,5 +424,16 @@ void crazyspace_build_sculpt(Scene *scene, Object *ob, float (**deformmats)[3][3
 
 		MEM_freeN(origVerts);
 		MEM_freeN(quats);
+	}
+
+	if(!*deformmats) {
+		int a, numVerts;
+		Mesh *me= (Mesh*)ob->data;
+
+		*deformcos= mesh_getVertexCos(me, &numVerts);
+		*deformmats= MEM_callocN(sizeof(*(*deformmats))*numVerts, "defmats");
+
+		for(a=0; a<numVerts; a++)
+			unit_m3((*deformmats)[a]);
 	}
 }

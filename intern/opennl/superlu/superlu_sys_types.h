@@ -1,5 +1,5 @@
 /*
- * $Id: superlu_sys_types.h 35190 2011-02-25 19:23:23Z gsrb3d $
+ * $Id: superlu_sys_types.h 36360 2011-04-28 05:15:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -48,8 +48,8 @@
 // jesterKing: renamed to superlu_sys_types.h
 */
 
-#ifndef BLO_SYS_TYPES_H
-#define BLO_SYS_TYPES_H
+#ifndef SUPERLU_SYS_TYPES_H
+#define SUPERLU_SYS_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,5 +129,5 @@ typedef unsigned long uintptr_t;
 }
 #endif
 
-#endif /* eof */
+#endif /* SUPERLU_SYS_TYPES_H */
 

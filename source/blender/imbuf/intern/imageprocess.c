@@ -39,7 +39,7 @@
  * 
  *  april 95
  * 
- * $Id: imageprocess.c 35823 2011-03-27 17:12:59Z campbellbarton $
+ * $Id: imageprocess.c 36980 2011-05-28 13:11:24Z lmg $
  */
 
 #include <stdlib.h>
@@ -315,7 +315,7 @@ void bilinear_interpolation_color(struct ImBuf *in, unsigned char *outI, float *
 
 /* Note about wrapping, the u/v still needs to be within the image bounds,
  * just the interpolation is wrapped.
- * This the same as bilinear_interpolation_color except it wraps rather then using empty and emptyI */
+ * This the same as bilinear_interpolation_color except it wraps rather than using empty and emptyI */
 void bilinear_interpolation_color_wrap(struct ImBuf *in, unsigned char *outI, float *outF, float u, float v)
 {
 	float *row1, *row2, *row3, *row4, a, b;

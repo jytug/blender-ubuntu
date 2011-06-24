@@ -94,7 +94,7 @@ class USERPREF_HT_header(bpy.types.Header):
             layout.operator("wm.keyconfig_import")
         elif userpref.active_section == 'ADDONS':
             layout.operator("wm.addon_install")
-            layout.menu("USERPREF_MT_addons_dev_guides", text="  Addons Developer Guides", icon='INFO')
+            layout.menu("USERPREF_MT_addons_dev_guides")
         elif userpref.active_section == 'THEMES':
             layout.operator("ui.reset_default_theme")
 
@@ -199,6 +199,7 @@ class USERPREF_PT_interface(bpy.types.Panel):
         col.prop(view, "use_zoom_to_mouse")
         col.prop(view, "use_rotate_around_active")
         col.prop(view, "use_global_pivot")
+        col.prop(view, "use_camera_lock_parent")
 
         col.separator()
 
@@ -437,6 +438,8 @@ class USERPREF_PT_system(bpy.types.Panel):
         col.label(text="OpenGL:")
         col.prop(system, "gl_clip_alpha", slider=True)
         col.prop(system, "use_mipmaps")
+        col.label(text="Anisotropic Filtering")
+        col.prop(system, "anisotropic_filter", text="")
         col.prop(system, "use_vertex_buffer_objects")
         #Anti-aliasing is disabled as it breaks broder/lasso select
         #col.prop(system, "use_antialiasing")
@@ -752,7 +755,7 @@ class USERPREF_PT_file(bpy.types.Panel):
 from bl_ui.space_userpref_keymap import InputKeyMapPanel
 
 
-class USERPREF_PT_input(InputKeyMapPanel):
+class USERPREF_PT_input(bpy.types.Panel, InputKeyMapPanel):
     bl_space_type = 'USER_PREFERENCES'
     bl_label = "Input"
 
@@ -846,17 +849,14 @@ class USERPREF_PT_input(InputKeyMapPanel):
 
 
 class USERPREF_MT_addons_dev_guides(bpy.types.Menu):
-    bl_label = "Addons develoment guides"
+    bl_label = "Develoment Guides"
 
     # menu to open webpages with addons development guides
     def draw(self, context):
         layout = self.layout
-        layout.operator('wm.url_open', text='API Concepts'
-            ).url = 'http://wiki.blender.org/index.php/Dev:2.5/Py/API/Intro'
-        layout.operator('wm.url_open', text='Addons guidelines',
-            ).url = 'http://wiki.blender.org/index.php/Dev:2.5/Py/Scripts/Guidelines/Addons'
-        layout.operator('wm.url_open', text='How to share your addon',
-            ).url = 'http://wiki.blender.org/index.php/Dev:Py/Sharing'
+        layout.operator('wm.url_open', text='API Concepts', icon='URL').url = 'http://wiki.blender.org/index.php/Dev:2.5/Py/API/Intro'
+        layout.operator('wm.url_open', text='Addon Guidelines', icon='URL').url = 'http://wiki.blender.org/index.php/Dev:2.5/Py/Scripts/Guidelines/Addons'
+        layout.operator('wm.url_open', text='How to share your addon', icon='URL').url = 'http://wiki.blender.org/index.php/Dev:Py/Sharing'
 
 
 class USERPREF_PT_addons(bpy.types.Panel):
@@ -888,6 +888,7 @@ class USERPREF_PT_addons(bpy.types.Panel):
         split = layout.split(percentage=0.2)
         col = split.column()
         col.prop(context.window_manager, "addon_search", text="", icon='VIEWZOOM')
+        col.label(text="Categories")
         col.prop(context.window_manager, "addon_filter", expand=True)
 
         col.label(text="Supported Level")
@@ -1103,7 +1104,8 @@ class WM_OT_addon_install(bpy.types.Operator):
         del pyfile_dir
         # done checking for exceptional case
 
-        contents = set(os.listdir(path_addons))
+        addon_files_old = set(os.listdir(path_addons))
+        addons_old = {mod.__name__ for mod in addon_utils.modules(USERPREF_PT_addons._addons_fake_modules)}
 
         #check to see if the file is in compressed format (.zip)
         if zipfile.is_zipfile(pyfile):
@@ -1152,11 +1154,13 @@ class WM_OT_addon_install(bpy.types.Operator):
                 traceback.print_exc()
                 return {'CANCELLED'}
 
+        addons_new = {mod.__name__ for mod in addon_utils.modules(USERPREF_PT_addons._addons_fake_modules)} - addons_old
+        addons_new.discard("modules")
+
         # disable any addons we may have enabled previously and removed.
         # this is unlikely but do just incase. bug [#23978]
-        addons_new = set(os.listdir(path_addons)) - contents
         for new_addon in addons_new:
-            addon_utils.disable(os.path.splitext(new_addon)[0])
+            addon_utils.disable(new_addon)
 
         # possible the zip contains multiple addons, we could disallow this
         # but for now just use the first
@@ -1168,6 +1172,9 @@ class WM_OT_addon_install(bpy.types.Operator):
                 context.window_manager.addon_filter = 'All'
                 context.window_manager.addon_search = info["name"]
                 break
+
+        # incase a new module path was created to install this addon.
+        bpy.utils.refresh_script_paths()
 
         # TODO, should not be a warning.
         # self.report({'WARNING'}, "File installed to '%s'\n" % path_dest)

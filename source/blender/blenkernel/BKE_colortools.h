@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_colortools.h 34962 2011-02-18 13:05:18Z jesterking $ 
+ * $Id: BKE_colortools.h 36715 2011-05-16 13:34:42Z blendix $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -78,7 +78,6 @@ void				curvemapping_premultiply(struct CurveMapping *cumap, int restore);
 int					curvemapping_RGBA_does_something(struct CurveMapping *cumap);
 void				curvemapping_initialize(struct CurveMapping *cumap);
 void				curvemapping_table_RGBA(struct CurveMapping *cumap, float **array, int *size);
-void				colorcorrection_do_ibuf(struct ImBuf *ibuf, const char *profile);
 
 void				scopes_update(struct Scopes *scopes, struct ImBuf *ibuf, int use_color_management);
 void				scopes_free(struct Scopes *scopes);

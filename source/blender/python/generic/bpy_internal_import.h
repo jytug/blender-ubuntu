@@ -1,5 +1,5 @@
 /* 
- * $Id: bpy_internal_import.h 35882 2011-03-29 16:12:25Z campbellbarton $
+ * $Id: bpy_internal_import.h 36980 2011-05-28 13:11:24Z lmg $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -59,7 +59,7 @@ void bpy_text_filename_get(char *fn, size_t fn_len, struct Text *text);
 extern PyMethodDef bpy_import_meth;
 extern PyMethodDef bpy_reload_meth;
 
-/* The game engine has its own Main struct, if this is set search this rather then G.main */
+/* The game engine has its own Main struct, if this is set search this rather than G.main */
 struct Main *bpy_import_main_get(void);
 void bpy_import_main_set(struct Main *maggie);
 

@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_math.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: CMP_math.c 37335 2011-06-09 13:46:34Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -140,7 +140,12 @@ static void do_math(bNode *node, float *out, float *in, float *in2)
 		break;
 	case 14: /* Round */
 		{
-				out[0]= (out[0]<0)?(int)(in[0] - 0.5f):(int)(in[0] + 0.5f);
+			/* round by the second value */
+			if( in2[0] != 0.0f )
+				out[0]= floorf(in[0] / in2[0] + 0.5f) * in2[0];
+			else
+				out[0]= floorf(in[0] + 0.5f);
+
 		}
 		break;
 	case 15: /* Less Than */

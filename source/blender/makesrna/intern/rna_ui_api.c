@@ -1,5 +1,5 @@
 /*
- * $Id: rna_ui_api.c 35859 2011-03-29 05:10:36Z campbellbarton $
+ * $Id: rna_ui_api.c 36577 2011-05-09 16:31:54Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -389,7 +389,7 @@ void RNA_api_ui_layout(StructRNA *srna)
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 	api_ui_item_rna_common(func);
 	parm= RNA_def_pointer(func, "image_user", "ImageUser", "", "");
-	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_RNAPTR);
+	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_RNAPTR|PROP_NEVER_NULL);
 	RNA_def_boolean(func, "compact", 0, "", "Use more compact layout.");
 
 	func= RNA_def_function(srna, "template_list", "uiTemplateList");
@@ -413,6 +413,9 @@ void RNA_api_ui_layout(StructRNA *srna)
 	RNA_def_function(srna, "template_operator_search", "uiTemplateOperatorSearch");
 
 	func= RNA_def_function(srna, "template_header_3D", "uiTemplateHeader3D");
+	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+
+	func= RNA_def_function(srna, "template_edit_mode_selection", "uiTemplateEditModeSelection");
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 	
 	func= RNA_def_function(srna, "template_reports_banner", "uiTemplateReportsBanner");

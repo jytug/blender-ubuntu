@@ -1,5 +1,5 @@
 /*
- * $Id: gpu_draw.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: gpu_draw.c 37521 2011-06-15 18:59:22Z moguri $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -75,6 +75,8 @@
 #include "GPU_material.h"
 
 #include "smoke_API.h"
+
+extern Material defmaterial; /* from material.c */
 
 /* These are some obscure rendering functions shared between the
  * game engine and the blender, in this module to avoid duplicaten
@@ -244,8 +246,9 @@ static struct GPUTextureState {
 	int domipmap, linearmipmap;
 
 	int alphamode;
+	float anisotropic;
 	MTFace *lasttface;
-} GTS = {0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, 1, 0, -1, NULL};
+} GTS = {0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, 1, 0, -1, 1.f, NULL};
 
 /* Mipmap settings */
 
@@ -288,6 +291,26 @@ static GLenum gpu_get_mipmap_filter(int mag)
 		else
 			return GL_NEAREST;
 	}
+}
+
+/* Anisotropic filtering settings */
+void GPU_set_anisotropic(float value)
+{
+	if (GTS.anisotropic != value)
+	{
+		GPU_free_images();
+
+		/* Clamp value to the maximum value the graphics card supports */
+		if (value > GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)
+			value = GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT;
+
+		GTS.anisotropic = value;
+	}
+}
+
+float GPU_get_anisotropic()
+{
+	return GTS.anisotropic;
 }
 
 /* Set OpenGL state for an MTFace */
@@ -557,6 +580,8 @@ int GPU_verify_image(Image *ima, ImageUser *iuser, int tftile, int compare, int 
 		ima->tpageflag |= IMA_MIPMAP_COMPLETE;
 	}
 
+	if (GLEW_EXT_texture_filter_anisotropic)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, GPU_get_anisotropic());
 	/* set to modulate with vertex color */
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		
@@ -685,9 +710,25 @@ void GPU_paint_update_image(Image *ima, int x, int y, int w, int h, int mipmap)
 		glGetIntegerv(GL_UNPACK_SKIP_PIXELS, &skip_pixels);
 		glGetIntegerv(GL_UNPACK_SKIP_ROWS, &skip_rows);
 
-		if ((ibuf->rect==NULL) && ibuf->rect_float)
-			IMB_rect_from_float(ibuf);
-
+		if (ibuf->rect_float){
+			/*This case needs a whole new buffer*/
+			if(ibuf->rect==NULL) {
+				IMB_rect_from_float(ibuf);
+			}
+			else {
+				/* Do partial drawing. 'buffer' holds only the changed part. Needed for color corrected result */
+ 				float *buffer = (float *)MEM_mallocN(w*h*sizeof(float)*4, "temp_texpaint_float_buf");
+				IMB_partial_rect_from_float(ibuf, buffer, x, y, w, h);
+				glBindTexture(GL_TEXTURE_2D, ima->bindcode);
+				glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGBA,
+					GL_FLOAT, buffer);
+				MEM_freeN(buffer);
+				if(ima->tpageflag & IMA_MIPMAP_COMPLETE)
+					ima->tpageflag &= ~IMA_MIPMAP_COMPLETE;
+				return;
+			}
+		}
+		
 		glBindTexture(GL_TEXTURE_2D, ima->bindcode);
 
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, ibuf->x);
@@ -951,7 +992,6 @@ static Material *gpu_active_node_material(Material *ma)
 
 void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, Object *ob, int glsl, int *do_alpha_pass)
 {
-	extern Material defmaterial; /* from material.c */
 	Material *ma;
 	GPUMaterial *gpumat;
 	GPUBlendMode blendmode;
@@ -1042,7 +1082,6 @@ void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, O
 
 int GPU_enable_material(int nr, void *attribs)
 {
-	extern Material defmaterial; /* from material.c */
 	GPUVertexAttribs *gattribs = attribs;
 	GPUMaterial *gpumat;
 	GPUBlendMode blendmode;

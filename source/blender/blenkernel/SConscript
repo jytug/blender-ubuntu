@@ -14,6 +14,7 @@ incs += ' ../gpu #/extern/glew/include'
 incs += ' #/intern/smoke/extern'
 incs += ' #/intern/mikktspace'
 incs += ' #/intern/audaspace/intern'
+incs += ' #/intern/ffmpeg'
 
 incs += ' ' + env['BF_OPENGL_INC']
 incs += ' ' + env['BF_ZLIB_INC']
@@ -27,6 +28,10 @@ if env['WITH_BF_PYTHON']:
     if env['BF_DEBUG']:
         defs.append('DEBUG')
 
+if env['WITH_BF_ELTOPO']:
+    incs += ' ../../../extern/eltopo'
+    defs.append('WITH_ELTOPO')
+        
 if env['WITH_BF_QUICKTIME']:
     incs += ' ../quicktime'
 
@@ -73,10 +78,6 @@ if env['OURPLATFORM'] == 'darwin':
 
 if env['BF_NO_ELBEEM']:
     defs.append('DISABLE_ELBEEM')
-
-if env['WITH_BF_LCMS']:
-    defs.append('WITH_LCMS')
-    incs += ' ' + env['BF_LCMS_INC']
 
 if env['WITH_BF_LZO']:
     incs += ' #/extern/lzo/minilzo'

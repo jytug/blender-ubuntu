@@ -1,5 +1,5 @@
 /*
- * $Id: ED_uvedit.h 35446 2011-03-10 05:52:16Z campbellbarton $
+ * $Id: ED_uvedit.h 36434 2011-05-02 11:11:57Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,12 +32,13 @@
 #ifndef ED_UVEDIT_H
 #define ED_UVEDIT_H
 
-struct bContext;
-struct Scene;
-struct Object;
-struct MTFace;
+struct ARegionType;
 struct EditFace;
 struct Image;
+struct MTFace;
+struct Object;
+struct Scene;
+struct bContext;
 struct wmKeyConfig;
 
 /* uvedit_ops.c */
@@ -76,6 +77,9 @@ void ED_unwrap_lscm(struct Scene *scene, struct Object *obedit, const short sel)
 
 /* uvedit_draw.c */
 void draw_uvedit_main(struct SpaceImage *sima, struct ARegion *ar, struct Scene *scene, struct Object *obedit);
+
+/* uvedit_buttons.c */
+void ED_uvedit_buttons_register(struct ARegionType *art);
 
 #endif /* ED_UVEDIT_H */
 

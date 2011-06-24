@@ -34,6 +34,9 @@ set(INC
 	../../editors/include
 	../../../../intern/guardedalloc
 	../../../../intern/audaspace/intern
+)
+
+set(INC_SYS
 	${PYTHON_INCLUDE_DIRS}
 )
 
@@ -42,6 +45,7 @@ set(SRC
 	bpy_app.c
 	bpy_driver.c
 	bpy_interface.c
+	bpy_intern_string.c
 	bpy_library.c
 	bpy_operator.c
 	bpy_operator_wrap.c
@@ -57,6 +61,7 @@ set(SRC
 	bpy.h
 	bpy_app.h
 	bpy_driver.h
+	bpy_intern_string.h
 	bpy_operator.h
 	bpy_operator_wrap.h
 	bpy_props.h
@@ -81,4 +86,4 @@ if(WITH_PYTHON_SAFETY)
 	add_definitions(-DWITH_PYTHON_SAFETY)
 endif()
 
-blender_add_lib(bf_python "${SRC}" "${INC}")
+blender_add_lib(bf_python "${SRC}" "${INC}" "${INC_SYS}")

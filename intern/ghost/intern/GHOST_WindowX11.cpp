@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_WindowX11.cpp 35771 2011-03-25 05:23:58Z campbellbarton $
+ * $Id: GHOST_WindowX11.cpp 36985 2011-05-28 15:34:02Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -182,9 +182,12 @@ GHOST_WindowX11(
 	Atom atoms[2];
 	int natom;
 	int glxVersionMajor, glxVersionMinor; // As in GLX major.minor
-	
+
+#ifdef WITH_X11_XINPUT
 	/* initialize incase X11 fails to load */
 	memset(&m_xtablet, 0, sizeof(m_xtablet));
+#endif
+
 	m_visual= NULL;
 
 	if (!glXQueryVersion(m_display, &glxVersionMajor, &glxVersionMinor)) {

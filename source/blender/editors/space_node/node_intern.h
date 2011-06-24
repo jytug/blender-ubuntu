@@ -1,5 +1,5 @@
 /*
- * $Id: node_intern.h 36293 2011-04-23 08:30:28Z lukastoenne $
+ * $Id: node_intern.h 37478 2011-06-14 15:55:46Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -95,6 +95,7 @@ void draw_nodespace_color_info(struct ARegion *ar, int color_manage, int channel
 /* node_edit.c */
 void node_tree_from_ID(ID *id, bNodeTree **ntree, bNodeTree **edittree, int *treetype);
 void snode_notify(bContext *C, SpaceNode *snode);
+void snode_dag_update(bContext *C, SpaceNode *snode);
 bNode *next_node(bNodeTree *ntree);
 bNode *node_add_node(SpaceNode *snode, Scene *scene, int type, float locx, float locy);
 void snode_set_context(SpaceNode *snode, Scene *scene);
@@ -151,8 +152,8 @@ extern const char *node_context_dir[];
 // XXX from BSE_node.h
 #define HIDDEN_RAD		15.0f
 #define BASIS_RAD		8.0f
-#define NODE_DYS		10
-#define NODE_DY			20
+#define NODE_DYS		(U.widget_unit/2)
+#define NODE_DY			U.widget_unit
 #define NODE_SOCKSIZE	5
 
 // XXX button events (butspace)

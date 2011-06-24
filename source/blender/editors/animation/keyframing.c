@@ -1,5 +1,5 @@
 /*
- * $Id: keyframing.c 36221 2011-04-19 11:17:29Z ton $
+ * $Id: keyframing.c 36704 2011-05-15 17:59:48Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1360,6 +1360,7 @@ void ANIM_OT_keyframe_delete_v3d (wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Delete Keyframe";
+	ot->description= "Remove keyframes on current frame for selected object";
 	ot->idname= "ANIM_OT_keyframe_delete_v3d";
 	
 	/* callbacks */

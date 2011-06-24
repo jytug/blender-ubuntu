@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_ISystem.h 35792 2011-03-26 08:13:42Z campbellbarton $
+ * $Id: GHOST_ISystem.h 36426 2011-05-02 08:07:24Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -355,6 +355,16 @@ public:
 	 */
 	virtual GHOST_TSuccess getButtonState(GHOST_TButtonMask mask, bool& isDown) const = 0;
 
+	/**
+	 * Toggles console
+	 * @action	0 - Hides
+	 *			1 - Shows
+	 *			2 - Toggles
+	 *			3 - Hides if it runs not from  command line
+	 *			* - Does nothing
+	 * @return current status (1 -visible, 0 - hidden)
+	 */
+	virtual int toggleConsole(int action) = 0;
 	
 	/***************************************************************************************
 	 ** Access to clipboard.

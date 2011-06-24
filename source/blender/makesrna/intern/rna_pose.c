@@ -1,5 +1,5 @@
 /*
- * $Id: rna_pose.c 35939 2011-04-01 14:04:26Z campbellbarton $
+ * $Id: rna_pose.c 37031 2011-05-31 02:14:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,14 +71,14 @@
 
 #include "RNA_access.h"
 
-static void rna_Pose_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Pose_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	// XXX when to use this? ob->pose->flag |= (POSE_LOCKED|POSE_DO_UNLOCK);
 
 	DAG_id_tag_update(ptr->id.data, OB_RECALC_DATA);
 }
 
-static void rna_Pose_IK_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Pose_IK_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	// XXX when to use this? ob->pose->flag |= (POSE_LOCKED|POSE_DO_UNLOCK);
 	Object *ob= ptr->id.data;
@@ -254,7 +254,7 @@ static StructRNA *rna_Pose_ikparam_typef(PointerRNA *ptr)
 	}
 }
 
-static void rna_Itasc_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Itasc_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	Object *ob = ptr->id.data;
 	bItasc *itasc = ptr->data;
@@ -470,11 +470,19 @@ static void rna_PoseChannel_constraints_remove(ID *id, bPoseChannel *pchan, Repo
 		BKE_reportf(reports, RPT_ERROR, "Constraint '%s' not found in pose bone '%s'.", con->name, pchan->name);
 		return;
 	}
+	else {
+		Object *ob= (Object *)id;
+		const short is_ik= ELEM(con->type, CONSTRAINT_TYPE_KINEMATIC, CONSTRAINT_TYPE_SPLINEIK);
 
-	// TODO
-	//ED_object_constraint_set_active(id, NULL);
-	WM_main_add_notifier(NC_OBJECT|ND_CONSTRAINT, id);
-	remove_constraint(&pchan->constraints, con);
+		remove_constraint(&pchan->constraints, con);
+		ED_object_constraint_update(ob);
+		constraints_set_active(&pchan->constraints, NULL);
+		WM_main_add_notifier(NC_OBJECT|ND_CONSTRAINT|NA_REMOVED, id);
+
+		if (is_ik) {
+			BIK_clear_data(ob->pose);
+		}
+	}
 }
 
 static int rna_PoseChannel_proxy_editable(PointerRNA *ptr)

@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_SystemCocoa.h 35152 2011-02-25 11:28:33Z jesterking $
+ * $Id: GHOST_SystemCocoa.h 36429 2011-05-02 08:39:17Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -227,6 +227,11 @@ public:
      * @return Indication whether the event was handled. 
      */
     GHOST_TSuccess handleApplicationBecomeActiveEvent();
+
+	/**
+	 * @see GHOST_ISystem
+	 */
+	int toggleConsole(int action) { return 0; }
 	
 	
 protected:

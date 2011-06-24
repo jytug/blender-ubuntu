@@ -1,5 +1,5 @@
 /*
- * $Id: ED_mball.h 36278 2011-04-21 17:25:58Z campbellbarton $
+ * $Id: ED_mball.h 36644 2011-05-12 16:47:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,7 +42,7 @@ void ED_keymap_metaball(struct wmKeyConfig *keyconf);
 
 struct MetaElem *add_metaball_primitive(struct bContext *C, float mat[4][4], int type, int newname);
 
-int mouse_mball(struct bContext *C, const short mval[2], int extend);
+int mouse_mball(struct bContext *C, const int mval[2], int extend);
 
 void free_editMball(struct Object *obedit);
 void make_editMball(struct Object *obedit);

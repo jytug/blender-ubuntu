@@ -1,6 +1,6 @@
 /*
  *
- * $Id: sketch.c 36278 2011-04-21 17:25:58Z campbellbarton $
+ * $Id: sketch.c 36644 2011-05-12 16:47:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -543,7 +543,7 @@ int sk_stroke_filtermval(SK_DrawData *dd)
 	return retval;
 }
 
-void sk_initDrawData(SK_DrawData *dd, const short mval[2])
+void sk_initDrawData(SK_DrawData *dd, const int mval[2])
 {
 	dd->mval[0] = mval[0];
 	dd->mval[1] = mval[1];

@@ -1,5 +1,5 @@
 /*
- * $Id: RE_shader_ext.h 35385 2011-03-07 11:51:09Z ton $
+ * $Id: RE_shader_ext.h 37668 2011-06-20 15:20:33Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -193,6 +193,8 @@ typedef struct ShadeInput
 /* node shaders... */
 struct Tex;
 struct MTex;
+struct ImBuf;
+
 /* this one uses nodes */
 int	multitex_ext(struct Tex *tex, float *texvec, float *dxt, float *dyt, int osatex, struct TexResult *texres);
 /* nodes disabled */
@@ -206,9 +208,8 @@ struct Render;
 struct Image;
 struct Object;
 
-void RE_shade_external(struct Render *re, struct ShadeInput *shi, struct ShadeResult *shr);
 int RE_bake_shade_all_selected(struct Render *re, int type, struct Object *actob, short *do_update, float *progress);
 struct Image *RE_bake_shade_get_image(void);
+void RE_bake_ibuf_filter(struct ImBuf *ibuf, char *mask, const int filter);
 
 #endif /* RE_SHADER_EXT_H */
-

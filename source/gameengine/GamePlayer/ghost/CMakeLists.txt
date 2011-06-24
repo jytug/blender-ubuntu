@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 36024 2011-04-05 23:31:01Z campbellbarton $
+# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -29,17 +29,16 @@ set(INC
 	../../../../intern/string
 	../../../../intern/ghost
 	../../../../intern/guardedalloc
+	../../../../intern/container
 	../../../../intern/moto/include
 	../../../../source/gameengine/Rasterizer/RAS_OpenGLRasterizer
-	../../../../source/kernel/gen_system
-	../../../../source/kernel/gen_messaging
+	../../../../source/gameengine/BlenderRoutines
 	../../../../source/gameengine/Converter
 	../../../../source/blender/imbuf
 	../../../../source/gameengine/Ketsji
 	../../../../source/blender/blenfont
 	../../../../source/blender/blenlib
 	../../../../source/blender/blenkernel
-	../../../../source/blender/readblenfile
 	../../../../source/blender
 	../../../../source/blender/makesdna
 	../../../../source/blender/makesrna
@@ -53,6 +52,9 @@ set(INC
 	../../../../source/gameengine/GamePlayer/common
 	../../../../source/blender/blenloader
 	../../../../source/blender/gpu
+)
+
+set(INC_SYS
 	${GLEW_INCLUDE_PATH}
 	${PYTHON_INCLUDE_DIRS}
 )
@@ -76,4 +78,4 @@ if(WITH_CODEC_FFMPEG)
 	add_definitions(-DWITH_FFMPEG)
 endif()
 
-blender_add_lib_nolist(ge_player_ghost "${SRC}" "${INC}")
+blender_add_lib_nolist(ge_player_ghost "${SRC}" "${INC}" "${INC_SYS}")

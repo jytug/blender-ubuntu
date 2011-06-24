@@ -42,7 +42,7 @@ class TEXT_HT_header(bpy.types.Header):
 
         if text and text.is_modified:
             row = layout.row()
-            # row.color(redalert)
+            row.alert = True
             row.operator("text.resolve_conflict", text="", icon='HELP')
 
         layout.template_ID(st, "text", new="text.new", unlink="text.unlink")
@@ -129,6 +129,7 @@ class TEXT_PT_find(bpy.types.Panel):
         layout.operator("text.mark_all")
 
         # settings
+        layout.prop(st, "use_match_case")
         row = layout.row()
         row.prop(st, "use_find_wrap", text="Wrap")
         row.prop(st, "use_find_all", text="All")

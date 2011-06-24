@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 35868 2011-03-29 11:50:37Z campbellbarton $
+# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -34,6 +34,10 @@ remove_flag("-DDEBUG")
 set(INC
 	extern
 	superlu
+)
+
+set(INC_SYS
+
 )
 
 set(SRC
@@ -79,4 +83,4 @@ set(SRC
 	superlu/util.h
 )
 
-blender_add_lib(bf_intern_opennl "${SRC}" "${INC}")
+blender_add_lib(bf_intern_opennl "${SRC}" "${INC}" "${INC_SYS}")

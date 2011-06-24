@@ -1,5 +1,5 @@
 /*
- * $Id: rna_group.c 35238 2011-02-27 20:20:01Z jesterking $
+ * $Id: rna_group.c 37472 2011-06-14 09:41:29Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -95,7 +95,7 @@ static void rna_def_group_objects(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_function_ui_description(func, "Add this object to a group");
 	/* object to add */
 	parm= RNA_def_pointer(func, "object", "Object", "", "Object to add.");
-	RNA_def_property_flag(parm, PROP_REQUIRED);
+	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_NEVER_NULL);
 
 	/* remove object */
 	func= RNA_def_function(srna, "unlink", "rna_Group_objects_unlink");

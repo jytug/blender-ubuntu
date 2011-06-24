@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_SystemWin32.cpp 35618 2011-03-18 21:59:45Z jesterking $
+ * $Id: GHOST_SystemWin32.cpp 36647 2011-05-12 18:04:24Z nazgul $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,13 +33,17 @@
 
 /**
 
- * $Id: GHOST_SystemWin32.cpp 35618 2011-03-18 21:59:45Z jesterking $
+ * $Id: GHOST_SystemWin32.cpp 36647 2011-05-12 18:04:24Z nazgul $
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 7, 2001
  */
 
 #include <iostream>
+
+#ifdef FREE_WINDOWS
+#  define WINVER 0x0501 /* GetConsoleWindow() for MinGW */
+#endif
 
 #include "GHOST_SystemWin32.h"
 #include "GHOST_EventDragnDrop.h"
@@ -174,6 +178,8 @@ GHOST_SystemWin32::GHOST_SystemWin32()
 	GHOST_ASSERT(m_displayManager, "GHOST_SystemWin32::GHOST_SystemWin32(): m_displayManager==0\n");
 	m_displayManager->initialize();
 
+	m_consoleStatus = 1;
+
 	// Check if current keyboard layout uses AltGr and save keylayout ID for
 	// specialized handling if keys like VK_OEM_*. I.e. french keylayout
 	// generates VK_OEM_8 for their exclamation key (key left of right shift)
@@ -186,6 +192,7 @@ GHOST_SystemWin32::~GHOST_SystemWin32()
 {
 	// Shutdown COM
 	OleUninitialize();
+	toggleConsole(1);
 }
 
 
@@ -231,7 +238,7 @@ GHOST_IWindow* GHOST_SystemWin32::createWindow(
 	bool stereoVisual, const GHOST_TUns16 numOfAASamples, const GHOST_TEmbedderWindowID parentWindow )
 {
 	GHOST_Window* window = 0;
-	window = new GHOST_WindowWin32 (this, title, left, top, width, height, state, type, stereoVisual, numOfAASamples);
+	window = new GHOST_WindowWin32 (this, title, left, top, width, height, state, type, stereoVisual, numOfAASamples, parentWindow);
 	if (window) {
 		if (window->getValid()) {
 			// Store the pointer to the window
@@ -240,6 +247,14 @@ GHOST_IWindow* GHOST_SystemWin32::createWindow(
 //			}
 		}
 		else {
+
+			// Invalid parent window hwnd
+			if (((GHOST_WindowWin32*)window)->getNextWindow() == NULL) {
+				delete window;
+				window = 0;
+				return window;
+			}
+
 			// An invalid window could be one that was used to test for AA
 			window = ((GHOST_WindowWin32*)window)->getNextWindow();
 			
@@ -289,7 +304,6 @@ bool GHOST_SystemWin32::processEvents(bool waitForEvent)
 
 		// Process all the events waiting for us
 		while (::PeekMessage(&msg, 0, 0, 0, PM_REMOVE) != 0) {
-			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
 			anyProcessed = true;
 		}
@@ -804,6 +818,11 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 				// Keyboard events, processed
 				////////////////////////////////////////////////////////////////////////
 				case WM_INPUT:
+					// check WM_INPUT from input sink when ghost window is not in the foreground
+					if (wParam == RIM_INPUTSINK) {
+						if (GetFocus() != hwnd) // WM_INPUT message not for this window
+							return 0;
+					} //else wPAram == RIM_INPUT
 					event = processKeyEvent(window, wParam, lParam);
 					if (!event) {
 						GHOST_PRINT("GHOST_SystemWin32::wndProc: key event ")
@@ -847,7 +866,14 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					 * a dead key that is pressed while holding down the alt key.
 					 * To prevent the sound, DefWindowProc must be avoided by return
 					 */
-					return 0;
+					break;
+				case WM_SYSCOMMAND:
+					/* The WM_SYSCHAR message is sent to the window when system commands such as 
+					 * maximize, minimize  or close the window are triggered. Also it is sent when ALT 
+					 * button is press for menu. To prevent this we must return preventing DefWindowProc.
+					 */
+					if(wParam==SC_KEYMENU) return 0;
+					break;
 				////////////////////////////////////////////////////////////////////////
 				// Tablet events, processed
 				////////////////////////////////////////////////////////////////////////
@@ -1047,8 +1073,12 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					 * DestroyWindow function sends the WM_NCDESTROY message to the window following the WM_DESTROY
 					 * message. WM_DESTROY is used to free the allocated memory object associated with the window. 
 					 */
+					break;
 				case WM_KILLFOCUS:
-					/* The WM_KILLFOCUS message is sent to a window immediately before it loses the keyboard focus. */
+					/* The WM_KILLFOCUS message is sent to a window immediately before it loses the keyboard focus. 
+					 * We want to prevent this if a window is still active and it loses focus to nowhere*/
+					if(!wParam && hwnd==GetActiveWindow())
+						SetFocus(hwnd);
 				case WM_SHOWWINDOW:
 					/* The WM_SHOWWINDOW message is sent to a window when the window is about to be hidden or shown. */
 				case WM_WINDOWPOSCHANGING:
@@ -1148,25 +1178,29 @@ GHOST_TUns8* GHOST_SystemWin32::getClipboard(bool selection) const
 	char *temp_buff;
 	
 	if ( IsClipboardFormatAvailable(CF_TEXT) && OpenClipboard(NULL) ) {
+		size_t len = 0;
 		HANDLE hData = GetClipboardData( CF_TEXT );
 		if (hData == NULL) {
 			CloseClipboard();
 			return NULL;
 		}
 		buffer = (char*)GlobalLock( hData );
+		if (!buffer) {
+			CloseClipboard();
+			return NULL;
+		}
 		
-		temp_buff = (char*) malloc(strlen(buffer)+1);
-		strcpy(temp_buff, buffer);
+		len = strlen(buffer);
+		temp_buff = (char*) malloc(len+1);
+		strncpy(temp_buff, buffer, len);
+		temp_buff[len] = '\0';
 		
+		/* Buffer mustn't be accessed after CloseClipboard
+		   it would like accessing free-d memory */
 		GlobalUnlock( hData );
 		CloseClipboard();
 		
-		temp_buff[strlen(buffer)] = '\0';
-		if (buffer) {
-			return (GHOST_TUns8*)temp_buff;
-		} else {
-			return NULL;
-		}
+		return (GHOST_TUns8*)temp_buff;
 	} else {
 		return NULL;
 	}
@@ -1195,4 +1229,33 @@ void GHOST_SystemWin32::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 	} else {
 		return;
 	}
+}
+
+int GHOST_SystemWin32::toggleConsole(int action)
+{
+	switch(action)
+	{
+		case 3: //hide if no console
+			{
+			CONSOLE_SCREEN_BUFFER_INFO csbi = {{0}};
+			if(!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi) || csbi.dwCursorPosition.X || csbi.dwCursorPosition.Y>1)
+				break;
+			}
+		case 0: //hide
+			ShowWindow(GetConsoleWindow(),SW_HIDE);
+			m_consoleStatus = 0;
+			break;
+		case 1: //show
+			ShowWindow(GetConsoleWindow(),SW_SHOW);
+			m_consoleStatus = 1;
+			break;
+		case 2: //toggle
+			ShowWindow(GetConsoleWindow(),m_consoleStatus?SW_HIDE:SW_SHOW);
+			m_consoleStatus=!m_consoleStatus;
+			break;
+
+	};
+
+
+	return m_consoleStatus;
 }

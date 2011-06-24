@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 35028 2011-02-21 12:35:04Z jesterking $
+# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -25,14 +25,18 @@
 # ***** END GPL LICENSE BLOCK *****
 
 set(INC 
-		.
-		..
-		../..
-		../../../blenkernel
-		../../../blenloader
-		../../../blenlib
-		../../../makesdna
-		../../../../../intern/guardedalloc
+	.
+	..
+	../..
+	../../../blenkernel
+	../../../blenloader
+	../../../blenlib
+	../../../makesdna
+	../../../../../intern/guardedalloc
+)
+
+set(INC_SYS
+
 )
 
 set(SRC
@@ -44,4 +48,4 @@ set(SRC
 	logmemfile.c
 )
 
-blender_add_lib(bf_imbuf_cineon "${SRC}" "${INC}")
+blender_add_lib(bf_imbuf_cineon "${SRC}" "${INC}" "${INC_SYS}")

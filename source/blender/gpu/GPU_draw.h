@@ -1,5 +1,5 @@
 /*
- * $Id: GPU_draw.h 35014 2011-02-21 06:58:46Z jesterking $
+ * $Id: GPU_draw.h 37521 2011-06-15 18:59:22Z moguri $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -111,6 +111,11 @@ void GPU_render_text(struct MTFace *tface, int mode,
 void GPU_set_mipmap(int mipmap);
 void GPU_set_linear_mipmap(int linear);
 void GPU_paint_set_mipmap(int mipmap);
+
+/* Anisotropic filtering settings
+ * - these will free textures on changes */
+void GPU_set_anisotropic(float value);
+float GPU_get_anisotropic(void);
 
 /* Image updates and free
  * - these deal with images bound as opengl textures */

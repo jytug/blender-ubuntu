@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_math_vector.h 34966 2011-02-18 13:58:08Z jesterking $
+ * $Id: BLI_math_vector.h 37276 2011-06-06 22:10:05Z psy-fi $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -58,6 +58,8 @@ MINLINE void swap_v4_v4(float a[4], float b[4]);
 
 /********************************* Arithmetic ********************************/
 
+MINLINE void add_v3_fl(float r[3], float f);
+MINLINE void add_v4_fl(float r[4], float f);
 MINLINE void add_v2_v2(float r[2], const float a[2]);
 MINLINE void add_v2_v2v2(float r[2], const float a[2], const float b[2]);
 MINLINE void add_v3_v3(float r[3], const float a[3]);

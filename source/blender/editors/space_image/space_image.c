@@ -1,5 +1,5 @@
 /*
- * $Id: space_image.c 35824 2011-03-27 17:22:04Z campbellbarton $
+ * $Id: space_image.c 36788 2011-05-20 05:27:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -328,16 +328,13 @@ static void image_scopes_tag_refresh(ScrArea *sa)
 ARegion *image_has_buttons_region(ScrArea *sa)
 {
 	ARegion *ar, *arnew;
-	
-	for(ar= sa->regionbase.first; ar; ar= ar->next)
-		if(ar->regiontype==RGN_TYPE_UI)
-			return ar;
+
+	ar= BKE_area_find_region_type(sa, RGN_TYPE_UI);
+	if(ar) return ar;
 	
 	/* add subdiv level; after header */
-	for(ar= sa->regionbase.first; ar; ar= ar->next)
-		if(ar->regiontype==RGN_TYPE_HEADER)
-			break;
-	
+	ar= BKE_area_find_region_type(sa, RGN_TYPE_HEADER);
+
 	/* is error! */
 	if(ar==NULL) return NULL;
 	
@@ -355,16 +352,13 @@ ARegion *image_has_buttons_region(ScrArea *sa)
 ARegion *image_has_scope_region(ScrArea *sa)
 {
 	ARegion *ar, *arnew;
-	
-	for(ar= sa->regionbase.first; ar; ar= ar->next)
-		if(ar->regiontype==RGN_TYPE_PREVIEW)
-			return ar;
-	
+
+	ar= BKE_area_find_region_type(sa, RGN_TYPE_PREVIEW);
+	if(ar) return ar;
+
 	/* add subdiv level; after buttons */
-	for(ar= sa->regionbase.first; ar; ar= ar->next)
-		if(ar->regiontype==RGN_TYPE_UI)
-			break;
-	
+	ar= BKE_area_find_region_type(sa, RGN_TYPE_UI);
+
 	/* is error! */
 	if(ar==NULL) return NULL;
 	
@@ -496,7 +490,6 @@ static void image_operatortypes(void)
 
 	WM_operatortype_append(IMAGE_OT_record_composite);
 
-	WM_operatortype_append(IMAGE_OT_toolbox);
 	WM_operatortype_append(IMAGE_OT_properties);
 	WM_operatortype_append(IMAGE_OT_scopes);
 }
@@ -543,8 +536,6 @@ static void image_keymap(struct wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "IMAGE_OT_sample", ACTIONMOUSE, KM_PRESS, 0, 0);
 	RNA_enum_set(WM_keymap_add_item(keymap, "IMAGE_OT_curves_point_set", ACTIONMOUSE, KM_PRESS, KM_CTRL, 0)->ptr, "point", 0);
 	RNA_enum_set(WM_keymap_add_item(keymap, "IMAGE_OT_curves_point_set", ACTIONMOUSE, KM_PRESS, KM_SHIFT, 0)->ptr, "point", 1);
-
-	WM_keymap_add_item(keymap, "IMAGE_OT_toolbox", SPACEKEY, KM_PRESS, 0, 0);
 
 	/* toggle editmode is handy to have while UV unwrapping */
 	kmi= WM_keymap_add_item(keymap, "OBJECT_OT_mode_set", TABKEY, KM_PRESS, 0, 0);
@@ -989,6 +980,7 @@ void ED_spacetype_image(void)
 	BLI_addhead(&st->regiontypes, art);
 
 	image_buttons_register(art);
+	ED_uvedit_buttons_register(art);
 	
 	/* regions: statistics/scope buttons */
 	art= MEM_callocN(sizeof(ARegionType), "spacetype image region");

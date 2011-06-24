@@ -1,5 +1,5 @@
 /*
- * $Id: KX_Scene.cpp 36312 2011-04-24 10:51:45Z campbellbarton $
+ * $Id: KX_Scene.cpp 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -67,7 +67,7 @@
 #include "SCA_IController.h"
 #include "SCA_IActuator.h"
 #include "SG_Node.h"
-#include "SYS_System.h"
+#include "BL_System.h"
 #include "SG_Controller.h"
 #include "SG_IObject.h"
 #include "SG_Tree.h"

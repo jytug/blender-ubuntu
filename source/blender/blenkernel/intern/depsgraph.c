@@ -1,5 +1,5 @@
 /*
- * $Id: depsgraph.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: depsgraph.c 37503 2011-06-15 09:45:26Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -372,6 +372,9 @@ static void build_dag_object(DagForest *dag, DagNode *scenenode, Scene *scene, O
 		node2->first_ancestor = ob;
 		node2->ancestor_count += 1;
 	}
+
+	/* also build a custom data mask for dependencies that need certain layers */
+	node->customdata_mask= 0;
 	
 	if (ob->type == OB_ARMATURE) {
 		if (ob->pose){
@@ -451,8 +454,12 @@ static void build_dag_object(DagForest *dag, DagNode *scenenode, Scene *scene, O
 			case PARSKEL:
 				dag_add_relation(dag,node2,node,DAG_RL_DATA_DATA|DAG_RL_OB_OB, "Parent");
 				break;
-			case PARVERT1: case PARVERT3: case PARBONE:
+			case PARVERT1: case PARVERT3:
 				dag_add_relation(dag,node2,node,DAG_RL_DATA_OB|DAG_RL_OB_OB, "Vertex Parent");
+				node2->customdata_mask |= CD_MASK_ORIGINDEX;
+				break;
+			case PARBONE:
+				dag_add_relation(dag,node2,node,DAG_RL_DATA_OB|DAG_RL_OB_OB, "Bone Parent");
 				break;
 			default:
 				if(ob->parent->type==OB_LATTICE) 
@@ -647,8 +654,11 @@ static void build_dag_object(DagForest *dag, DagNode *scenenode, Scene *scene, O
 				if (ELEM(con->type, CONSTRAINT_TYPE_FOLLOWPATH, CONSTRAINT_TYPE_CLAMPTO))
 					dag_add_relation(dag, node2, node, DAG_RL_DATA_OB|DAG_RL_OB_OB, cti->name);
 				else {
-					if (ELEM3(obt->type, OB_ARMATURE, OB_MESH, OB_LATTICE) && (ct->subtarget[0]))
+					if (ELEM3(obt->type, OB_ARMATURE, OB_MESH, OB_LATTICE) && (ct->subtarget[0])) {
 						dag_add_relation(dag, node2, node, DAG_RL_DATA_OB|DAG_RL_OB_OB, cti->name);
+						if (obt->type == OB_MESH)
+							node2->customdata_mask |= CD_MASK_MDEFORMVERT;
+					}
 					else
 						dag_add_relation(dag, node2, node, DAG_RL_OB_OB, cti->name);
 				}
@@ -722,6 +732,9 @@ struct DagForest *build_dag(Main *bmain, Scene *sce, short mask)
 					itA->node->color |= itA->type;
 				}
 			}
+
+			/* also flush custom data mask */
+			((Object*)node->ob)->customdata_mask= node->customdata_mask;
 		}
 	}
 	/* now set relations equal, so that when only one parent changes, the correct recalcs are found */
@@ -1189,7 +1202,7 @@ DagNodeQueue * graph_dfs(void)
 	int skip = 0;
 	int minheight;
 	int maxpos=0;
-	int	is_cycle = 0;
+	/* int	is_cycle = 0; */ /* UNUSED */
 	/*
 	 *fprintf(stderr,"starting DFS \n ------------\n");
 	 */	
@@ -1245,7 +1258,7 @@ DagNodeQueue * graph_dfs(void)
 				} else { 
 					if (itA->node->color == DAG_GRAY) { // back edge
 						fprintf(stderr,"dfs back edge :%15s %15s \n",((ID *) node->ob)->name, ((ID *) itA->node->ob)->name);
-						is_cycle = 1;
+						/* is_cycle = 1; */ /* UNUSED */
 					} else if (itA->node->color == DAG_BLACK) {
 						;
 						/* already processed node but we may want later to change distance either to shorter to longer.
@@ -1905,7 +1918,9 @@ static void dag_scene_flush_layers(Scene *sce, int lay)
 	}
 
 	/* ensure cameras are set as if they are on a visible layer, because
-	   they ared still used for rendering or setting the camera view */
+	 * they ared still used for rendering or setting the camera view
+	 *
+	 * XXX, this wont work for local view / unlocked camera's */
 	if(sce->camera) {
 		node= dag_get_node(sce->theDag, sce->camera);
 		node->scelay |= lay;

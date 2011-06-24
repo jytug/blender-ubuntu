@@ -1,5 +1,5 @@
 /*
- * $Id: RE_pipeline.h 35785 2011-03-25 17:11:32Z ton $
+ * $Id: RE_pipeline.h 37433 2011-06-12 13:35:17Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -146,7 +146,7 @@ typedef struct RenderResult {
 typedef struct RenderStats {
 	int cfra;
 	int totface, totvert, totstrand, tothalo, totlamp, totpart;
-	short curfield, curblur, curpart, partsdone, convertdone;
+	short curfield, curblur, curpart, partsdone, convertdone, curfsa;
 	double starttime, lastframetime;
 	const char *infostr, *statstr;
 	char scenename[32];
@@ -191,6 +191,7 @@ void RE_InitState (struct Render *re, struct Render *source, struct RenderData *
 void RE_SetDispRect (struct Render *re, rcti *disprect);
 
 /* set up the viewplane/perspective matrix, three choices */
+struct Object *RE_GetCamera(struct Render *re); /* return camera override if set */
 void RE_SetCamera(struct Render *re, struct Object *camera);
 void RE_SetWindow (struct Render *re, rctf *viewplane, float clipsta, float clipend);
 void RE_SetOrtho (struct Render *re, rctf *viewplane, float clipsta, float clipend);
@@ -216,8 +217,8 @@ void RE_init_threadcount(Render *re);
 void RE_TileProcessor(struct Render *re);
 
 /* only RE_NewRender() needed, main Blender render calls */
-void RE_BlenderFrame(struct Render *re, struct Main *bmain, struct Scene *scene, struct SceneRenderLayer *srl, unsigned int lay, int frame, const short write_still);
-void RE_BlenderAnim(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, int sfra, int efra, int tfra, struct ReportList *reports);
+void RE_BlenderFrame(struct Render *re, struct Main *bmain, struct Scene *scene, struct SceneRenderLayer *srl, struct Object *camera_override, unsigned int lay, int frame, const short write_still);
+void RE_BlenderAnim(struct Render *re, struct Main *bmain, struct Scene *scene, struct Object *camera_override, unsigned int lay, int sfra, int efra, int tfra, struct ReportList *reports);
 
 /* main preview render call */
 void RE_PreviewRender(struct Render *re, struct Main *bmain, struct Scene *scene);
@@ -249,13 +250,19 @@ float RE_filter_value(int type, float x);
 void RE_zbuf_accumulate_vecblur(struct NodeBlurData *nbd, int xsize, int ysize, float *newrect, float *imgrect, float *vecbufrect, float *zbufrect);
 
 /* shaded view or baking options */
-#define RE_BAKE_LIGHT			0
-#define RE_BAKE_ALL				1
-#define RE_BAKE_AO				2
-#define RE_BAKE_NORMALS			3
-#define RE_BAKE_TEXTURE			4
-#define RE_BAKE_DISPLACEMENT	5
-#define RE_BAKE_SHADOW			6
+#define RE_BAKE_LIGHT				0	/* not listed in rna_scene.c -> can't be enabled! */
+#define RE_BAKE_ALL					1
+#define RE_BAKE_AO					2
+#define RE_BAKE_NORMALS				3
+#define RE_BAKE_TEXTURE				4
+#define RE_BAKE_DISPLACEMENT		5
+#define RE_BAKE_SHADOW				6
+#define RE_BAKE_SPEC_COLOR			7
+#define RE_BAKE_SPEC_INTENSITY		8
+#define RE_BAKE_MIRROR_COLOR		9
+#define RE_BAKE_MIRROR_INTENSITY	10
+#define RE_BAKE_ALPHA				11
+#define RE_BAKE_EMIT				12
 
 void RE_Database_Baking(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, int type, struct Object *actob);
 
@@ -305,7 +312,7 @@ void RE_engine_update_stats(RenderEngine *engine, const char *stats, const char 
 void RE_engines_init(void);
 void RE_engines_exit(void);
 
-int RE_is_rendering_allowed(struct Scene *scene, void *erh, void (*error)(void *handle, const char *str));
+int RE_is_rendering_allowed(struct Scene *scene, struct Object *camera_override, void *erh, void (*error)(void *handle, const char *str));
 
 #endif /* RE_PIPELINE_H */
 

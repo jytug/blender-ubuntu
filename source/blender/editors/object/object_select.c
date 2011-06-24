@@ -1,5 +1,5 @@
 /*
- * $Id: object_select.c 35362 2011-03-05 10:29:10Z campbellbarton $
+ * $Id: object_select.c 36525 2011-05-06 23:46:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -894,7 +894,7 @@ static int object_select_name_exec(bContext *C, wmOperator *op)
 
 	if(!extend) {
 		CTX_DATA_BEGIN(C, Base*, base, selectable_bases) {
-			if((base->flag & SELECT) == 0) {
+			if(base->flag & SELECT) {
 				ED_base_object_select(base, BA_DESELECT);
 				changed= 1;
 			}

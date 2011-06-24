@@ -1,5 +1,5 @@
 /*
- * $Id: editmesh_loop.c 36043 2011-04-07 12:36:24Z ton $
+ * $Id: editmesh_loop.c 37246 2011-06-06 11:04:54Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -199,7 +199,7 @@ static void CutEdgeloop(Object *obedit, wmOperator *op, EditMesh *em, int numcut
 	EditEdge *nearest=NULL, *eed;
 	float fac;
 	int keys = 0, holdnum=0, selectmode, dist;
-	short mvalo[2] = {0, 0}, mval[2] = {0, 0};
+	int mvalo[2] = {0, 0}, mval[2] = {0, 0};
 	short event=0, val, choosing=1, cancel=0, cuthalf = 0, smooth=0;
 	short hasHidden = 0;
 	char msg[128];
@@ -716,6 +716,7 @@ void MESH_OT_knife_cut(wmOperatorType *ot)
 	ot->invoke= WM_gesture_lines_invoke;
 	ot->modal= WM_gesture_lines_modal;
 	ot->exec= knife_cut_exec;
+	ot->cancel= WM_gesture_lines_cancel;
 	
 	ot->poll= EM_view3d_poll;
 	

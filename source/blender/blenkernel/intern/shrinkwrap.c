@@ -1,5 +1,5 @@
 /*
- * $Id: shrinkwrap.c 35336 2011-03-03 17:58:06Z campbellbarton $
+ * $Id: shrinkwrap.c 36773 2011-05-19 11:24:56Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -562,7 +562,7 @@ void shrinkwrapModifier_deform(ShrinkwrapModifierData *smd, Object *ob, DerivedM
 			ssmd.subdivType	= ME_CC_SUBSURF;		//catmull clark
 			ssmd.levels		= smd->subsurfLevels;	//levels
 
-			ss_mesh = subsurf_make_derived_from_derived(dm, &ssmd, FALSE, NULL, 0, 0);
+			ss_mesh = subsurf_make_derived_from_derived(dm, &ssmd, FALSE, NULL, 0, 0, (ob->mode & OB_MODE_EDIT));
 
 			if(ss_mesh)
 			{

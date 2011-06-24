@@ -1,6 +1,6 @@
 # -*- mode: gnumakefile; tab-width: 8; indent-tabs-mode: t; -*-
 # vim: tabstop=8
-# $Id: GNUmakefile 36090 2011-04-10 15:24:05Z campbellbarton $
+# $Id: GNUmakefile 37252 2011-06-06 16:00:32Z campbellbarton $
 #
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
@@ -64,21 +64,19 @@ endif
 
 # Build Blender
 all:
-	@echo 
+	@echo
 	@echo Configuring Blender ...
 
 	if test ! -f $(BUILD_DIR)/CMakeCache.txt ; then \
-		mkdir -p $(BUILD_DIR) ; \
-		cd $(BUILD_DIR) ; \
-		cmake $(BLENDER_DIR) -DCMAKE_BUILD_TYPE:STRING=$(BUILD_TYPE) ; \
+		cmake -H$(BLENDER_DIR) -B$(BUILD_DIR) -DCMAKE_BUILD_TYPE:STRING=$(BUILD_TYPE) ; \
 	fi
 
-	@echo 
+	@echo
 	@echo Building Blender ...
-	cd $(BUILD_DIR) ; make -s -j $(NPROCS) install
-	@echo 
+	make -C $(BUILD_DIR) -s -j $(NPROCS) install
+	@echo
 	@echo run blender from "$(BUILD_DIR)/bin/blender"
-	@echo 
+	@echo
 
 debug: all
 	# pass
@@ -91,7 +89,7 @@ package_pacman:
 	cd build_files/package_spec/pacman ; MAKEFLAGS="-j$(NPROCS)" makepkg --asroot
 
 package_archive:
-	cd $(BUILD_DIR) ; make -s package_archive
+	make -C $(BUILD_DIR) -s package_archive
 	@echo archive in "$(BUILD_DIR)/release"
 
 # forward build targets
@@ -109,6 +107,6 @@ test_cmake:
 	@echo "written: test_cmake_consistency.log"
 
 clean:
-	cd $(BUILD_DIR) ; make clean
+	make -C $(BUILD_DIR) clean
 
 .PHONY: all

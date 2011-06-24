@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_math_matrix.h 34966 2011-02-18 13:58:08Z jesterking $
+ * $Id: BLI_math_matrix.h 36792 2011-05-20 10:09:03Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -84,7 +84,7 @@ void mul_v3_m4v3(float r[3], float M[4][4], float v[3]);
 void mul_mat3_m4_v3(float M[4][4], float r[3]);
 void mul_m4_v4(float M[4][4], float r[4]);
 void mul_v4_m4v4(float r[4], float M[4][4], float v[4]);
-void mul_project_m4_v4(float M[4][4], float r[3]);
+void mul_project_m4_v3(float M[4][4], float vec[3]);
 
 void mul_m3_v3(float M[3][3], float r[3]);
 void mul_v3_m3v3(float r[3], float M[3][3], float a[3]);

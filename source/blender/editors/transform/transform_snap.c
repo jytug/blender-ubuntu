@@ -1,5 +1,5 @@
 /*
- * $Id: transform_snap.c 35852 2011-03-28 17:06:15Z campbellbarton $
+ * $Id: transform_snap.c 37695 2011-06-21 15:28:13Z theeth $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -162,11 +162,11 @@ void drawSnapping(const struct bContext *C, TransInfo *t)
 			invert_m4_m4(imat, rv3d->viewmat);
 
 			for (p = t->tsnap.points.first; p; p = p->next) {
-				drawcircball(GL_LINE_LOOP, p->co, view3d_pixel_size(rv3d, p->co) * size, imat);
+				drawcircball(GL_LINE_LOOP, p->co, ED_view3d_pixel_size(rv3d, p->co) * size, imat);
 			}
 
 			if (t->tsnap.status & POINT_INIT) {
-				drawcircball(GL_LINE_LOOP, t->tsnap.snapPoint, view3d_pixel_size(rv3d, t->tsnap.snapPoint) * size, imat);
+				drawcircball(GL_LINE_LOOP, t->tsnap.snapPoint, ED_view3d_pixel_size(rv3d, t->tsnap.snapPoint) * size, imat);
 			}
 			
 			/* draw normal if needed */
@@ -385,14 +385,14 @@ static void initSnappingMode(TransInfo *t)
 		if (t->tsnap.applySnap != NULL && // A snapping function actually exist
 			(obedit != NULL && ELEM4(obedit->type, OB_MESH, OB_ARMATURE, OB_CURVE, OB_LATTICE)) ) // Temporary limited to edit mode meshes, armature, curves
 		{
-			/* editmode meshes now supported */
-			if ((obedit->type != OB_MESH) && ((t->flag & T_PROP_EDIT) || t->tsnap.project)) /* also exclude edit for project, for now */
+			/* Exclude editmesh if using proportional edit */
+			if ((obedit->type == OB_MESH) && (t->flag & T_PROP_EDIT))
 			{
 				t->tsnap.modeSelect = SNAP_NOT_OBEDIT;
 			}
 			else
 			{
-				t->tsnap.modeSelect = SNAP_ALL;
+				t->tsnap.modeSelect = t->tsnap.project_self ? SNAP_ALL : SNAP_NOT_OBEDIT;
 			}
 		}
 		/* Particles edit mode*/
@@ -457,6 +457,11 @@ void initSnapping(TransInfo *t, wmOperator *op)
 			{
 				t->tsnap.project = RNA_boolean_get(op->ptr, "use_snap_project");
 			}
+
+			if (RNA_struct_find_property(op->ptr, "use_snap_project_self"))
+			{
+				t->tsnap.project = RNA_boolean_get(op->ptr, "use_snap_project_self");
+			}
 		}
 	}
 	/* use scene defaults only when transform is modal */
@@ -468,6 +473,7 @@ void initSnapping(TransInfo *t, wmOperator *op)
 
 		t->tsnap.align = ((t->settings->snap_flag & SCE_SNAP_ROTATE) == SCE_SNAP_ROTATE);
 		t->tsnap.project = ((t->settings->snap_flag & SCE_SNAP_PROJECT) == SCE_SNAP_PROJECT);
+		t->tsnap.project_self = !((t->settings->snap_flag & SCE_SNAP_PROJECT_NO_SELF) == SCE_SNAP_PROJECT_NO_SELF);
 		t->tsnap.peel = ((t->settings->snap_flag & SCE_SNAP_PROJECT) == SCE_SNAP_PROJECT);
 	}
 	
@@ -1581,7 +1587,7 @@ static int snapObjects(Scene *scene, View3D *v3d, ARegion *ar, Object *obedit, f
 	int retval = 0;
 	float ray_start[3], ray_normal[3];
 	
-	viewray(ar, v3d, mval, ray_start, ray_normal);
+	ED_view3d_win_to_ray(ar, v3d, mval, ray_start, ray_normal);
 
 	if (mode == SNAP_ALL && obedit)
 	{
@@ -1613,9 +1619,9 @@ static int snapObjects(Scene *scene, View3D *v3d, ARegion *ar, Object *obedit, f
 				
 				for(dupli_ob = lb->first; dupli_ob; dupli_ob = dupli_ob->next)
 				{
-					Object *ob = dupli_ob->ob;
+					Object *dob = dupli_ob->ob;
 					
-					retval |= snapObject(scene, ar, ob, 0, dupli_ob->mat, ray_start, ray_normal, mval, loc, no, dist, &depth);
+					retval |= snapObject(scene, ar, dob, 0, dupli_ob->mat, ray_start, ray_normal, mval, loc, no, dist, &depth);
 				}
 				
 				free_object_duplilist(lb);
@@ -1670,7 +1676,7 @@ static void removeDoublesPeel(ListBase *depth_peels)
 	{
 		DepthPeel *next_peel = peel->next;
 		
-		if (peel && next_peel && ABS(peel->depth - next_peel->depth) < 0.0015f)
+		if (next_peel && ABS(peel->depth - next_peel->depth) < 0.0015f)
 		{
 			peel->next = next_peel->next;
 			
@@ -1812,7 +1818,7 @@ static int peelObjects(Scene *scene, View3D *v3d, ARegion *ar, Object *obedit, L
 	int retval = 0;
 	float ray_start[3], ray_normal[3];
 	
-	viewray(ar, v3d, mval, ray_start, ray_normal);
+	ED_view3d_win_to_ray(ar, v3d, mval, ray_start, ray_normal);
 
 	for ( base = scene->base.first; base != NULL; base = base->next ) {
 		if ( BASE_SELECTABLE(v3d, base) ) {

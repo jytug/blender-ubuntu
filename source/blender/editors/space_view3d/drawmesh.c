@@ -1,5 +1,5 @@
 /*
- * $Id: drawmesh.c 35780 2011-03-25 13:37:50Z campbellbarton $
+ * $Id: drawmesh.c 36752 2011-05-18 17:52:26Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -366,7 +366,7 @@ static void draw_textured_begin(Scene *scene, View3D *v3d, RegionView3D *rv3d, O
 	}
 	else {
 		/* draw with lights in the scene otherwise */
-		Gtexdraw.islit= GPU_scene_object_lights(scene, ob, v3d->lay, rv3d->viewmat, get_view3d_ortho(v3d, rv3d));
+		Gtexdraw.islit= GPU_scene_object_lights(scene, ob, v3d->lay, rv3d->viewmat, !rv3d->is_persp);
 	}
 	
 	obcol[0]= CLAMPIS(ob->col[0]*255, 0, 255);

@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_subsurf.c 35417 2011-03-09 01:25:59Z campbellbarton $
+* $Id: MOD_subsurf.c 36777 2011-05-19 11:54:03Z blendix $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -91,7 +91,7 @@ static int isDisabled(ModifierData *md, int useRenderParams)
 	return get_render_subsurf_level(&md->scene->r, levels) == 0;
 }
 
-static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
+static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 						DerivedMesh *derivedData,
 						int useRenderParams,
 						int isFinalCalc)
@@ -100,7 +100,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
 	DerivedMesh *result;
 
 	result = subsurf_make_derived_from_derived(derivedData, smd,
-			useRenderParams, NULL, isFinalCalc, 0);
+			useRenderParams, NULL, isFinalCalc, 0, (ob->flag & OB_MODE_EDIT));
 	
 	if(useRenderParams || !isFinalCalc) {
 		DerivedMesh *cddm= CDDM_copy(result);
@@ -119,7 +119,7 @@ static DerivedMesh *applyModifierEM(ModifierData *md, Object *UNUSED(ob),
 	DerivedMesh *result;
 
 	result = subsurf_make_derived_from_derived(derivedData, smd, 0,
-			NULL, 0, 1);
+			NULL, 0, 1, 1);
 
 	return result;
 }

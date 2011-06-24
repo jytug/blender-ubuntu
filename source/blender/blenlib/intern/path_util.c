@@ -1,5 +1,5 @@
 /*
- *  $Id: path_util.c 36300 2011-04-23 12:57:03Z campbellbarton $
+ *  $Id: path_util.c 37215 2011-06-05 17:02:57Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -153,7 +153,7 @@ void BLI_stringenc(char *string, const char *head, const char *tail, unsigned sh
 int BLI_split_name_num(char *left, int *nr, const char *name, const char delim)
 {
 	int a;
-	
+
 	*nr= 0;
 	a= strlen(name);
 	memcpy(left, name, (a + 1) * sizeof(char));
@@ -216,13 +216,13 @@ int BLI_uniquename_cb(int (*unique_check)(void *, const char *), void *arg, cons
 		int		number;
 		int		len= BLI_split_name_num(left, &number, name, delim);
 		do {
-			int newlen= BLI_snprintf(tempname, name_len, "%s%c%03d", left, delim, number);
+			int newlen= BLI_snprintf(tempname, name_len, "%s%c%03d", left, delim, ++number);
 			if(newlen >= name_len) {
 				len -= ((newlen + 1) - name_len);
 				if(len < 0) len= number= 0;
 				left[len]= '\0';
 			}
-		} while(number++, unique_check(arg, tempname));
+		} while(unique_check(arg, tempname));
 
 		BLI_strncpy(name, tempname, name_len);
 		
@@ -736,7 +736,7 @@ int BLI_path_cwd(char *path)
 			* cwd should contain c:\ etc on win32 so the relbase can be NULL
 			* relbase being NULL also prevents // being misunderstood as relative to the current
 			* blend file which isnt a feature we want to use in this case since were dealing
-			* with a path from the command line, rather then from inside Blender */
+			* with a path from the command line, rather than from inside Blender */
 			
 			char origpath[FILE_MAXDIR + FILE_MAXFILE];
 			BLI_strncpy(origpath, path, FILE_MAXDIR + FILE_MAXFILE);
@@ -763,7 +763,7 @@ void BLI_splitdirstring(char *di, char *fi)
 	}
 }
 
-void BLI_getlastdir(const char* dir, char *last, int maxlen)
+void BLI_getlastdir(const char* dir, char *last, const size_t maxlen)
 {
 	const char *s = dir;
 	const char *lslash = NULL;
@@ -902,10 +902,23 @@ static int get_path_local(char *targetpath, const char *folder_name, const char 
 	return 0;
 }
 
+static int is_portable_install(void)
+{
+	/* detect portable install by the existance of config folder */
+	const int ver= BLENDER_VERSION;
+	char path[FILE_MAX];
+
+	return get_path_local(path, "config", NULL, ver);
+}
+
 static int get_path_user(char *targetpath, const char *folder_name, const char *subfolder_name, const char *envvar, const int ver)
 {
 	char user_path[FILE_MAX];
 	const char *user_base_path;
+
+	/* for portable install, user path is always local */
+	if (is_portable_install())
+		return get_path_local(targetpath, folder_name, subfolder_name, ver);
 	
 	user_path[0] = '\0';
 
@@ -1011,6 +1024,26 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
 	}
 }
 
+#if defined(WIN32) && BLENDER_VERSION < 258
+
+static int path_have_257_script_install(void)
+{
+	const int ver= BLENDER_VERSION;
+	char path[FILE_MAX] = "";
+	char system_pyfile[FILE_MAX];
+
+	if (get_path_user(path, "scripts", NULL, "BLENDER_USER_SCRIPTS", ver)) {
+		BLI_join_dirfile(system_pyfile, sizeof(system_pyfile), path, "modules/bpy_types.py");
+
+		if (BLI_exists(system_pyfile))
+			return 1;
+	}
+
+	return 0;
+}
+
+#endif
+
 /* get a folder out of the 'folder_id' presets for paths */
 /* returns the path if found, NULL string if not */
 char *BLI_get_folder(int folder_id, const char *subfolder)
@@ -1020,13 +1053,12 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
 	
 	switch (folder_id) {
 		case BLENDER_DATAFILES:		/* general case */
-			if (get_path_local(path, "datafiles", subfolder, ver)) break;
 			if (get_path_user(path, "datafiles", subfolder, "BLENDER_USER_DATAFILES", ver))	break;
+			if (get_path_local(path, "datafiles", subfolder, ver)) break;
 			if (get_path_system(path, "datafiles", subfolder, "BLENDER_SYSTEM_DATAFILES", ver)) break;
 			return NULL;
 			
 		case BLENDER_USER_DATAFILES:
-			if (get_path_local(path, "datafiles", subfolder, ver)) break;
 			if (get_path_user(path, "datafiles", subfolder, "BLENDER_USER_DATAFILES", ver))	break;
 			return NULL;
 			
@@ -1036,45 +1068,33 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
 			return NULL;
 			
 		case BLENDER_USER_AUTOSAVE:
-			if (get_path_local(path, "autosave", subfolder, ver)) break;
 			if (get_path_user(path, "autosave", subfolder, "BLENDER_USER_DATAFILES", ver))	break;
 			return NULL;
 
-		case BLENDER_CONFIG:		/* general case */
-			if (get_path_local(path, "config", subfolder, ver)) break;
-			if (get_path_user(path, "config", subfolder, "BLENDER_USER_CONFIG", ver)) break;
-			if (get_path_system(path, "config", subfolder, "BLENDER_SYSTEM_CONFIG", ver)) break;
-			return NULL;
-			
 		case BLENDER_USER_CONFIG:
-			if (get_path_local(path, "config", subfolder, ver)) break;
 			if (get_path_user(path, "config", subfolder, "BLENDER_USER_CONFIG", ver)) break;
-			return NULL;
-			
-		case BLENDER_SYSTEM_CONFIG:
-			if (get_path_local(path, "config", subfolder, ver)) break;
-			if (get_path_system(path, "config", subfolder, "BLENDER_SYSTEM_CONFIG", ver)) break;
-			return NULL;
-			
-		case BLENDER_SCRIPTS:		/* general case */
-			if (get_path_local(path, "scripts", subfolder, ver)) break;
-			if (get_path_user(path, "scripts", subfolder, "BLENDER_USER_SCRIPTS", ver)) break;
-			if (get_path_system(path, "scripts", subfolder, "BLENDER_SYSTEM_SCRIPTS", ver)) break;
 			return NULL;
 			
 		case BLENDER_USER_SCRIPTS:
-			if (get_path_local(path, "scripts", subfolder, ver)) break;
-			if (get_path_user(path, "scripts", subfolder, "BLENDER_USER_SCRIPTS", ver)) break;
+#if defined(WIN32) && BLENDER_VERSION < 258
+			/* if we have a 2.57 installation, then we may have system script
+			 * files in the user configuration folder. avoid using that folder
+			 * if they are there, until the version gets bumped to 2.58, so
+			 * we can be sure that folder only has addons etc. */
+			if (path_have_257_script_install()) {
+				if (get_path_local(path, "scripts", subfolder, ver)) break;
+			}
+			else
+#endif
+			{
+				if (get_path_user(path, "scripts", subfolder, "BLENDER_USER_SCRIPTS", ver)) break;
+			}
+
 			return NULL;
 			
 		case BLENDER_SYSTEM_SCRIPTS:
 			if (get_path_local(path, "scripts", subfolder, ver)) break;
 			if (get_path_system(path, "scripts", subfolder, "BLENDER_SYSTEM_SCRIPTS", ver)) break;
-			return NULL;
-			
-		case BLENDER_PYTHON:		/* general case */
-			if (get_path_local(path, "python", subfolder, ver)) break;
-			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
 			return NULL;
 			
 		case BLENDER_SYSTEM_PYTHON:
@@ -1441,7 +1461,7 @@ void BLI_split_dirfile(const char *string, char *dir, char *file)
 }
 
 /* simple appending of filename to dir, does not check for valid path! */
-void BLI_join_dirfile(char *string, const int maxlen, const char *dir, const char *file)
+void BLI_join_dirfile(char *string, const size_t maxlen, const char *dir, const char *file)
 {
 	int sl_dir;
 	
@@ -1491,7 +1511,7 @@ char *BLI_path_basename(char *path)
   that a user gets his images in one place. It'll also provide
   consistent behaviour across exporters.
  */
-int BKE_rebase_path(char *abs, int abs_size, char *rel, int rel_size, const char *base_dir, const char *src_dir, const char *dest_dir)
+int BKE_rebase_path(char *abs, size_t abs_len, char *rel, size_t rel_len, const char *base_dir, const char *src_dir, const char *dest_dir)
 {
 	char path[FILE_MAX];
 	char dir[FILE_MAX];
@@ -1547,11 +1567,11 @@ int BKE_rebase_path(char *abs, int abs_size, char *rel, int rel_size, const char
 	}
 
 	if (abs)
-		BLI_strncpy(abs, dest_path, abs_size);
+		BLI_strncpy(abs, dest_path, abs_len);
 
 	if (rel) {
-		strncat(rel, rel_dir, rel_size);
-		strncat(rel, base, rel_size);
+		strncat(rel, rel_dir, rel_len);
+		strncat(rel, base, rel_len);
 	}
 
 	/* return 2 if src=dest */
@@ -1667,7 +1687,7 @@ static int add_win32_extension(char *name)
 }
 
 /* filename must be FILE_MAX length minimum */
-void BLI_where_am_i(char *fullname, const int maxlen, const char *name)
+void BLI_where_am_i(char *fullname, const size_t maxlen, const char *name)
 {
 	char filename[FILE_MAXDIR+FILE_MAXFILE];
 	const char *path = NULL, *temp;
@@ -1691,7 +1711,10 @@ void BLI_where_am_i(char *fullname, const int maxlen, const char *name)
 
 #ifdef _WIN32
 	if(GetModuleFileName(0, fullname, maxlen)) {
-		GetShortPathName(fullname, fullname, maxlen);
+		if(!BLI_exists(fullname)) {
+			printf("path can't be found: \"%.*s\"\n", maxlen, fullname);
+			MessageBox(NULL, "path constains invalid characters or is too long (see console)", "Error", MB_OK);
+		}
 		return;
 	}
 #endif
@@ -1741,22 +1764,10 @@ void BLI_where_am_i(char *fullname, const int maxlen, const char *name)
 			printf("guessing '%s' == '%s'\n", name, fullname);
 		}
 #endif
-
-#ifdef _WIN32
-		// in windows change long filename to short filename because
-		// win2k doesn't know how to parse a commandline with lots of
-		// spaces and double-quotes. There's another solution to this
-		// with spawnv(P_WAIT, bprogname, argv) instead of system() but
-		// that's even uglier
-		GetShortPathName(fullname, fullname, maxlen);
-#if defined(DEBUG)
-		printf("Shortname = '%s'\n", fullname);
-#endif
-#endif
 	}
 }
 
-void BLI_where_is_temp(char *fullname, const int maxlen, int usertemp)
+void BLI_where_is_temp(char *fullname, const size_t maxlen, int usertemp)
 {
 	fullname[0] = '\0';
 	
@@ -1799,26 +1810,6 @@ void BLI_where_is_temp(char *fullname, const int maxlen, int usertemp)
 			BLI_strncpy(U.tempdir, fullname, maxlen); /* also set user pref to show %TEMP%. /tmp/ is just plain confusing for Windows users. */
 		}
 #endif
-	}
-}
-
-char *get_install_dir(void) {
-	char *tmpname = BLI_strdup(bprogname);
-	char *cut;
-
-#ifdef __APPLE__
-	cut = strstr(tmpname, ".app");
-	if (cut) cut[0] = 0;
-#endif
-
-	cut = BLI_last_slash(tmpname);
-
-	if (cut) {
-		cut[0] = 0;
-		return tmpname;
-	} else {
-		MEM_freeN(tmpname);
-		return NULL;
 	}
 }
 

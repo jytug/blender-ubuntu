@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_winstuff.h 36057 2011-04-08 12:49:38Z jesterking $ 
+ * $Id: BLI_winstuff.h 36426 2011-05-02 08:07:24Z jesterking $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -127,7 +127,6 @@ typedef struct _DIR {
 	struct dirent direntry;
 } DIR;
 
-int IsConsoleEmpty(void);
 void RegisterBlendExtension(void);
 DIR *opendir (const char *path);
 struct dirent *readdir(DIR *dp);

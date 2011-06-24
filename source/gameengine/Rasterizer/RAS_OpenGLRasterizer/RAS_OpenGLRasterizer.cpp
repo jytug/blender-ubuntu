@@ -1,5 +1,5 @@
 /*
- * $Id: RAS_OpenGLRasterizer.cpp 35760 2011-03-25 00:23:02Z campbellbarton $
+ * $Id: RAS_OpenGLRasterizer.cpp 36470 2011-05-04 01:50:17Z dfelinto $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -303,6 +303,8 @@ bool RAS_OpenGLRasterizer::BeginFrame(int drawingmode, double time)
 
 	glShadeModel(GL_SMOOTH);
 
+	glEnable(GL_MULTISAMPLE_ARB);
+
 	m_2DCanvas->BeginFrame();
 	
 	return true;
@@ -387,6 +389,9 @@ void RAS_OpenGLRasterizer::EndFrame()
 	FlushDebugLines();
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	glDisable(GL_MULTISAMPLE_ARB);
+
 	m_2DCanvas->EndFrame();
 }	
 

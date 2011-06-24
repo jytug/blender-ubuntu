@@ -1,7 +1,7 @@
 /*  font.c
  *  
  * 
- * $Id: font.c 36179 2011-04-15 03:47:54Z campbellbarton $
+ * $Id: font.c 36403 2011-05-01 06:34:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -386,7 +386,7 @@ VFont *load_vfont(const char *name)
 			vfont->data = vfd;
 
 			/* if there's a font name, use it for the ID name */
-			if (strcmp(vfd->name, "")!=0) {
+			if (vfd->name[0] != '\0') {
 				BLI_strncpy(vfont->id.name+2, vfd->name, sizeof(vfont->id.name)-2);
 			}
 			BLI_strncpy(vfont->name, name, sizeof(vfont->name));

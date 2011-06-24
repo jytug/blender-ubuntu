@@ -1,5 +1,5 @@
 /*
- * $Id: convertblender.c 36301 2011-04-23 15:27:35Z nazgul $
+ * $Id: convertblender.c 37667 2011-06-20 15:17:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -164,12 +164,14 @@ void RE_make_stars(Render *re, Scene *scenev3d, void (*initfunc)(void),
 	World *wrld= NULL;
 	HaloRen *har;
 	Scene *scene;
-	Camera *camera;
+	Object *camera;
+	Camera *cam;
 	double dblrand, hlfrand;
 	float vec[4], fx, fy, fz;
 	float fac, starmindist, clipend;
 	float mat[4][4], stargrid, maxrand, maxjit, force, alpha;
 	int x, y, z, sx, sy, sz, ex, ey, ez, done = 0;
+	unsigned int totstar= 0;
 	
 	if(initfunc) {
 		scene= scenev3d;
@@ -179,7 +181,7 @@ void RE_make_stars(Render *re, Scene *scenev3d, void (*initfunc)(void),
 		scene= re->scene;
 		wrld= &(re->wrld);
 	}
-	
+
 	stargrid = wrld->stardist;			/* distance between stars */
 	maxrand = 2.0;						/* amount a star can be shifted (in grid units) */
 	maxjit = (wrld->starcolnoise);		/* amount a color is being shifted */
@@ -204,11 +206,13 @@ void RE_make_stars(Render *re, Scene *scenev3d, void (*initfunc)(void),
 		* y = -z | +z
 		*/
 
-	if(scene->camera==NULL || scene->camera->type != OB_CAMERA)
+	camera= re ? RE_GetCamera(re) : scene->camera;
+
+	if(camera==NULL || camera->type != OB_CAMERA)
 		return;
 
-	camera = scene->camera->data;
-	clipend = camera->clipend;
+	cam = camera->data;
+	clipend = cam->clipend;
 	
 	/* convert to grid coordinates */
 	
@@ -294,6 +298,17 @@ void RE_make_stars(Render *re, Scene *scenev3d, void (*initfunc)(void),
 						}
 					}
 				}
+
+				/* break out of the loop if generating stars takes too long */
+				if(re && !(totstar % 1000000)) {
+					if(re->test_break(re->tbh)) {
+						x= ex + 1;
+						y= ey + 1;
+						z= ez + 1;
+					}
+				}
+				
+				totstar++;
 			}
 			/* do not call blender_test_break() here, since it is used in UI as well, confusing the callback system */
 			/* main cause is G.afbreek of course, a global again... (ton) */
@@ -326,7 +341,7 @@ u	|     |  F1 |  F2 |
 
 /* ------------------------------------------------------------------------- */
 
-static void split_v_renderfaces(ObjectRen *obr, int startvlak, int startvert, int usize, int vsize, int uIndex, int UNUSED(cyclu), int cyclv)
+static void split_v_renderfaces(ObjectRen *obr, int startvlak, int UNUSED(startvert), int UNUSED(usize), int vsize, int uIndex, int UNUSED(cyclu), int cyclv)
 {
 	int vLen = vsize-1+(!!cyclv);
 	int v;
@@ -378,7 +393,7 @@ static void calc_edge_stress_add(float *accum, VertRen *v1, VertRen *v2)
 	acc[1]+= 1.0f;
 }
 
-static void calc_edge_stress(Render *re, ObjectRen *obr, Mesh *me)
+static void calc_edge_stress(Render *UNUSED(re), ObjectRen *obr, Mesh *me)
 {
 	float loc[3], size[3], *accum, *acc, *accumoffs, *stress;
 	int a;
@@ -575,7 +590,7 @@ static void SetTSpace(const SMikkTSpaceContext * pContext, const float fvTangent
 	}
 }
 
-static void calc_vertexnormals(Render *re, ObjectRen *obr, int do_tangent, int do_nmap_tangent)
+static void calc_vertexnormals(Render *UNUSED(re), ObjectRen *obr, int do_tangent, int do_nmap_tangent)
 {
 	MemArena *arena= NULL;
 	VertexTangent **vtangents= NULL;
@@ -744,7 +759,7 @@ static void as_addvert(ASvert *asv, VertRen *v1, VlakRen *vlr)
 	}
 }
 
-static int as_testvertex(VlakRen *vlr, VertRen *ver, ASvert *asv, float thresh) 
+static int as_testvertex(VlakRen *vlr, VertRen *UNUSED(ver), ASvert *asv, float thresh)
 {
 	/* return 1: vertex needs a copy */
 	ASface *asf;
@@ -767,7 +782,7 @@ static int as_testvertex(VlakRen *vlr, VertRen *ver, ASvert *asv, float thresh)
 	return 0;
 }
 
-static VertRen *as_findvertex(VlakRen *vlr, VertRen *ver, ASvert *asv, float thresh) 
+static VertRen *as_findvertex(VlakRen *vlr, VertRen *UNUSED(ver), ASvert *asv, float thresh)
 {
 	/* return when new vertex already was made */
 	ASface *asf;
@@ -795,7 +810,7 @@ static VertRen *as_findvertex(VlakRen *vlr, VertRen *ver, ASvert *asv, float thr
 
 /* note; autosmooth happens in object space still, after applying autosmooth we rotate */
 /* note2; actually, when original mesh and displist are equal sized, face normals are from original mesh */
-static void autosmooth(Render *re, ObjectRen *obr, float mat[][4], int degr)
+static void autosmooth(Render *UNUSED(re), ObjectRen *obr, float mat[][4], int degr)
 {
 	ASvert *asv, *asverts;
 	ASface *asf;
@@ -1664,7 +1679,7 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 		bb.align = part->bb_align;
 		bb.anim = part->bb_anim;
 		bb.lock = part->draw & PART_DRAW_BB_LOCK;
-		bb.ob = (part->bb_ob ? part->bb_ob : re->scene->camera);
+		bb.ob = (part->bb_ob ? part->bb_ob : RE_GetCamera(re));
 		bb.offset[0] = part->bb_offset[0];
 		bb.offset[1] = part->bb_offset[1];
 		bb.split_offset = part->bb_split_offset;
@@ -2085,7 +2100,7 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 /* Halo's   																 */
 /* ------------------------------------------------------------------------- */
 
-static void make_render_halos(Render *re, ObjectRen *obr, Mesh *me, int totvert, MVert *mvert, Material *ma, float *orco)
+static void make_render_halos(Render *re, ObjectRen *obr, Mesh *UNUSED(me), int totvert, MVert *mvert, Material *ma, float *orco)
 {
 	Object *ob= obr->ob;
 	HaloRen *har;
@@ -4650,7 +4665,6 @@ void RE_Database_Free(Render *re)
 	re->totvlak=re->totvert=re->totstrand=re->totlamp=re->tothalo= 0;
 	re->i.convertdone= 0;
 
-	re->backbuf= NULL;
 	re->bakebuf= NULL;
 
 	if(re->scene)
@@ -4685,7 +4699,7 @@ static int allow_render_object(Render *re, Object *ob, int nolamps, int onlysele
 	return 1;
 }
 
-static int allow_render_dupli_instance(Render *re, DupliObject *dob, Object *obd)
+static int allow_render_dupli_instance(Render *UNUSED(re), DupliObject *dob, Object *obd)
 {
 	ParticleSystem *psys;
 	Material *ma;
@@ -4967,6 +4981,7 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 	Scene *sce;
 	float mat[4][4];
 	float amb[3];
+	Object *camera= RE_GetCamera(re);
 
 	re->main= bmain;
 	re->scene= scene;
@@ -4996,16 +5011,16 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 		scene_update_for_newframe(re->main, re->scene, lay);
 	
 	/* if no camera, viewmat should have been set! */
-	if(use_camera_view && re->scene->camera) {
+	if(use_camera_view && camera) {
 		/* called before but need to call again incase of lens animation from the
 		 * above call to scene_update_for_newframe, fixes bug. [#22702].
 		 * following calls dont depend on 'RE_SetCamera' */
-		RE_SetCamera(re, scene->camera);
+		RE_SetCamera(re, camera);
 
-		normalize_m4(re->scene->camera->obmat);
-		invert_m4_m4(mat, re->scene->camera->obmat);
+		normalize_m4(camera->obmat);
+		invert_m4_m4(mat, camera->obmat);
 		RE_SetView(re, mat);
-		re->scene->camera->recalc= OB_RECALC_OB; /* force correct matrix for scaled cameras */
+		camera->recalc= OB_RECALC_OB; /* force correct matrix for scaled cameras */
 	}
 	
 	init_render_world(re);	/* do first, because of ambient. also requires re->osa set correct */
@@ -5045,9 +5060,13 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 		
 		/* don't sort stars */
 		tothalo= re->tothalo;
-		if(!re->test_break(re->tbh))
-			if(re->wrld.mode & WO_STARS)
+		if(!re->test_break(re->tbh)) {
+			if(re->wrld.mode & WO_STARS) {
+				re->i.infostr= "Creating Starfield";
+				re->stats_draw(re->sdh, &re->i);
 				RE_make_stars(re, NULL, NULL, NULL, NULL);
+			}
+		}
 		sort_halos(re, tothalo);
 		
 		init_camera_inside_volumes(re);
@@ -5126,6 +5145,7 @@ void RE_DataBase_GetView(Render *re, float mat[][4])
 
 static void database_fromscene_vectors(Render *re, Scene *scene, unsigned int lay, int timeoffset)
 {
+	Object *camera= RE_GetCamera(re);
 	float mat[4][4];
 	
 	re->scene= scene;
@@ -5149,9 +5169,9 @@ static void database_fromscene_vectors(Render *re, Scene *scene, unsigned int la
 	scene_update_for_newframe(re->main, re->scene, lay);
 	
 	/* if no camera, viewmat should have been set! */
-	if(re->scene->camera) {
-		normalize_m4(re->scene->camera->obmat);
-		invert_m4_m4(mat, re->scene->camera->obmat);
+	if(camera) {
+		normalize_m4(camera->obmat);
+		invert_m4_m4(mat, camera->obmat);
 		RE_SetView(re, mat);
 	}
 	
@@ -5366,7 +5386,7 @@ static int load_fluidsimspeedvectors(Render *re, ObjectInstanceRen *obi, float *
 	float imat[4][4];
 	FluidsimModifierData *fluidmd = (FluidsimModifierData *)modifiers_findByType(fsob, eModifierType_Fluidsim);
 	FluidsimSettings *fss;
-	float *velarray = NULL;
+	FluidVertexVelocity *velarray = NULL;
 	
 	/* only one step needed */
 	if(step) return 1;
@@ -5380,14 +5400,14 @@ static int load_fluidsimspeedvectors(Render *re, ObjectInstanceRen *obi, float *
 	invert_m4_m4(imat, mat);
 
 	/* set first vertex OK */
-	if(!fss->meshSurfNormals) return 0;
+	if(!fss->meshVelocities) return 0;
 	
-	if( obr->totvert != GET_INT_FROM_POINTER(fss->meshSurface) ) {
+	if( obr->totvert != fss->totvert) {
 		//fprintf(stderr, "load_fluidsimspeedvectors - modified fluidsim mesh, not using speed vectors (%d,%d)...\n", obr->totvert, fsob->fluidsimSettings->meshSurface->totvert); // DEBUG
 		return 0;
 	}
 	
-	velarray = (float *)fss->meshSurfNormals;
+	velarray = fss->meshVelocities;
 
 	if(obi->flag & R_TRANSFORMED)
 		mul_m4_m4m4(winmat, obi->mat, re->winmat);
@@ -5399,7 +5419,7 @@ static int load_fluidsimspeedvectors(Render *re, ObjectInstanceRen *obi, float *
 	so that also small drops/little water volumes return a velocity != 0. 
 	But I had no luck in fixing that function - DG */
 	for(a=0; a<obr->totvert; a++) {
-		for(j=0;j<3;j++) avgvel[j] += velarray[3*a + j];
+		for(j=0;j<3;j++) avgvel[j] += velarray[a].vel[j];
 		
 	}
 	for(j=0;j<3;j++) avgvel[j] /= (float)(obr->totvert);
@@ -5414,7 +5434,7 @@ static int load_fluidsimspeedvectors(Render *re, ObjectInstanceRen *obi, float *
 		// get fluid velocity
 		fsvec[3] = 0.; 
 		//fsvec[0] = fsvec[1] = fsvec[2] = fsvec[3] = 0.; fsvec[2] = 2.; // NT fixed test
-		for(j=0;j<3;j++) fsvec[j] = velarray[3*a + j];
+		for(j=0;j<3;j++) fsvec[j] = velarray[a].vel[j];
 		
 		/* (bad) HACK insert average velocity if none is there (see previous comment) */
 		if((fsvec[0] == 0.0) && (fsvec[1] == 0.0) && (fsvec[2] == 0.0))
@@ -5638,6 +5658,7 @@ void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned
 */
 void RE_Database_Baking(Render *re, Main *bmain, Scene *scene, unsigned int lay, int type, Object *actob)
 {
+	Object *camera;
 	float mat[4][4];
 	float amb[3];
 	int onlyselected, nolamps;
@@ -5679,10 +5700,12 @@ void RE_Database_Baking(Render *re, Main *bmain, Scene *scene, unsigned int lay,
 	if(re->lay & 0xFF000000)
 		lay &= 0xFF000000;
 	
+	camera= RE_GetCamera(re);
+	
 	/* if no camera, set unit */
-	if(re->scene->camera) {
-		normalize_m4(re->scene->camera->obmat);
-		invert_m4_m4(mat, re->scene->camera->obmat);
+	if(camera) {
+		normalize_m4(camera->obmat);
+		invert_m4_m4(mat, camera->obmat);
 		RE_SetView(re, mat);
 	}
 	else {
@@ -5746,13 +5769,17 @@ void RE_make_sticky(Scene *scene, View3D *v3d)
 	Render *re;
 	float ho[4], mat[4][4];
 	int a;
-	
+	Object *camera= NULL;
+
 	if(v3d==NULL) {
 		printf("Need a 3d view to make sticky\n");
 		return;
 	}
-	
-	if(scene->camera==NULL) {
+
+	if(v3d)				camera= V3D_CAMERA_LOCAL(v3d);
+	if(camera == NULL)	camera= scene->camera;
+
+	if(camera==NULL) {
 		printf("Need camera to make sticky\n");
 		return;
 	}
@@ -5765,11 +5792,11 @@ void RE_make_sticky(Scene *scene, View3D *v3d)
 	RE_InitState(re, NULL, &scene->r, NULL, scene->r.xsch, scene->r.ysch, NULL);
 	
 	/* use renderdata and camera to set viewplane */
-	RE_SetCamera(re, scene->camera);
+	RE_SetCamera(re, camera);
 
 	/* and set view matrix */
-	normalize_m4(scene->camera->obmat);
-	invert_m4_m4(mat, scene->camera->obmat);
+	normalize_m4(camera->obmat);
+	invert_m4_m4(mat, camera->obmat);
 	RE_SetView(re, mat);
 	
 	for(base= FIRSTBASE; base; base= base->next) {

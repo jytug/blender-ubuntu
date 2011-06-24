@@ -1,5 +1,5 @@
 /*
- * $Id: mesh_ops.c 36299 2011-04-23 11:20:30Z aligorith $
+ * $Id: mesh_ops.c 36491 2011-05-04 20:42:34Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -175,7 +175,8 @@ void ED_operatormacros_mesh(void)
 	ot= WM_operatortype_append_macro("MESH_OT_loopcut_slide", "Loop Cut and Slide", OPTYPE_UNDO|OPTYPE_REGISTER);
 	ot->description = "Cut mesh loop and slide it";
 	WM_operatortype_macro_define(ot, "MESH_OT_loopcut");
-	WM_operatortype_macro_define(ot, "TRANSFORM_OT_edge_slide");
+	otmacro= WM_operatortype_macro_define(ot, "TRANSFORM_OT_edge_slide");
+	RNA_struct_idprops_unset(otmacro->ptr, "release_confirm");
 
 	ot= WM_operatortype_append_macro("MESH_OT_duplicate_move", "Add Duplicate", OPTYPE_UNDO|OPTYPE_REGISTER);
 	ot->description = "Duplicate mesh and move";

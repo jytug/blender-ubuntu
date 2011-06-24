@@ -1,5 +1,5 @@
 /*
- * $Id: wm.c 35179 2011-02-25 14:04:21Z jesterking $
+ * $Id: wm.c 36745 2011-05-18 10:56:26Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -137,9 +137,8 @@ void wm_operator_register(bContext *C, wmOperator *op)
 }
 
 
-void WM_operator_stack_clear(bContext *C)
+void WM_operator_stack_clear(wmWindowManager *wm)
 {
-	wmWindowManager *wm= CTX_wm_manager(C);
 	wmOperator *op;
 	
 	while((op= wm->operators.first)) {
@@ -147,7 +146,7 @@ void WM_operator_stack_clear(bContext *C)
 		WM_operator_free(op);
 	}
 	
-	WM_event_add_notifier(C, NC_WM|ND_HISTORY, NULL);
+	WM_main_add_notifier(NC_WM|ND_HISTORY, NULL);
 }
 
 /* ****************************************** */

@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_ID.h 34941 2011-02-17 20:48:12Z jesterking $
+ * $Id: DNA_ID.h 36725 2011-05-17 06:56:10Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -123,12 +123,14 @@ typedef struct Library {
 	struct Library *parent;	/* set for indirectly linked libs, used in the outliner and while reading */
 } Library;
 
-#define PREVIEW_MIPMAPS 2
-#define PREVIEW_MIPMAP_ZERO 0
-#define PREVIEW_MIPMAP_LARGE 1
+enum eIconSizes {
+	ICON_SIZE_ICON,
+	ICON_SIZE_PREVIEW,
+};
+#define NUM_ICON_SIZES (ICON_SIZE_PREVIEW + 1)
 
 typedef struct PreviewImage {
-	/* All values of 2 are really PREVIEW_MIPMAPS */
+	/* All values of 2 are really NUM_ICON_SIZES */
 	unsigned int w[2];
 	unsigned int h[2];
 	short changed[2];

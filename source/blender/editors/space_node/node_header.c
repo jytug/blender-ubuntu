@@ -1,5 +1,5 @@
 /*
- * $Id: node_header.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: node_header.c 36439 2011-05-02 12:31:09Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -102,6 +102,7 @@ static void do_node_add(bContext *C, void *UNUSED(arg), int event)
 	}
 		
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 }
 
 static void node_auto_add_menu(bContext *C, uiLayout *layout, void *arg_nodeclass)

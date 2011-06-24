@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_scene_types.h 35819 2011-03-27 14:52:16Z campbellbarton $ 
+ * $Id: DNA_scene_types.h 37591 2011-06-17 13:02:23Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -253,19 +253,12 @@ typedef struct RenderData {
 	 */
 	short yparts;
         
-	short winpos, planes, imtype, subimtype;
-	
-	/** Mode bits:                                                           */
-	/* 0: Enable backbuffering for images                                    */
-	short bufflag;
-	 short quality;
+	short planes, imtype, subimtype, quality;
 	
 	/**
 	 * Render to image editor, fullscreen or to new window.
 	 */
 	short displaymode;
-	
-	short rpad1, rpad2;
 
 	/**
 	 * Flags for render settings. Use bit-masking to access the settings.
@@ -322,11 +315,7 @@ typedef struct RenderData {
 	/**
 	 * Adjustment factors for the aspect ratio in the x direction, was a short in 2.45
 	 */
-	float xasp;
-	/**
-	 * Adjustment factors for the aspect ratio in the x direction, was a short in 2.45
-	 */
-	float yasp;
+	float xasp, yasp;
 
 	float frs_sec_base;
 	
@@ -349,8 +338,8 @@ typedef struct RenderData {
 	short bake_normal_space, bake_quad_split;
 	float bake_maxdist, bake_biasdist, bake_pad;
 
-	/* paths to backbufffer, output */
-	char backbuf[160], pic[160];
+	/* path to render output */
+	char pic[240];
 
 	/* stamps flags. */
 	int stamp;
@@ -497,6 +486,7 @@ typedef struct GameData {
 #define GAME_IGNORE_DEPRECATION_WARNINGS	(1 << 12)
 #define GAME_ENABLE_ANIMATION_RECORD		(1 << 13)
 #define GAME_SHOW_MOUSE						(1 << 14)
+#define GAME_GLSL_NO_COLOR_MANAGEMENT		(1 << 15)
 
 /* GameData.matmode */
 #define GAME_MAT_TEXFACE	0
@@ -1008,13 +998,14 @@ typedef struct Scene {
 #define R_JPEG2K_CINE_PRESET	256
 #define R_JPEG2K_CINE_48FPS		512
 
-
 /* bake_mode: same as RE_BAKE_xxx defines */
 /* bake_flag: */
 #define R_BAKE_CLEAR		1
 #define R_BAKE_OSA			2
 #define R_BAKE_TO_ACTIVE	4
 #define R_BAKE_NORMALIZE	8
+#define R_BAKE_MULTIRES		16
+#define R_BAKE_LORES_MESH	32
 
 /* bake_normal_space */
 #define R_BAKE_SPACE_CAMERA	 0
@@ -1053,6 +1044,9 @@ typedef struct Scene {
 #define BASACT			(scene->basact)
 #define OBACT			(BASACT? BASACT->object: NULL)
 
+#define V3D_CAMERA_LOCAL(v3d) ((!(v3d)->scenelock && (v3d)->camera) ? (v3d)->camera : NULL)
+#define V3D_CAMERA_SCENE(scene, v3d) ((!(v3d)->scenelock && (v3d)->camera) ? (v3d)->camera : (scene)->camera)
+
 #define ID_NEW(a)		if( (a) && (a)->id.newid ) (a)= (void *)(a)->id.newid
 #define ID_NEW_US(a)	if( (a)->id.newid) {(a)= (void *)(a)->id.newid; (a)->id.us++;}
 #define ID_NEW_US2(a)	if( ((ID *)a)->newid) {(a)= ((ID *)a)->newid; ((ID *)a)->us++;}
@@ -1077,6 +1071,7 @@ typedef struct Scene {
 #define SCE_SNAP_ROTATE			2
 #define SCE_SNAP_PEEL_OBJECT	4
 #define SCE_SNAP_PROJECT		8
+#define SCE_SNAP_PROJECT_NO_SELF	16
 /* toolsettings->snap_target */
 #define SCE_SNAP_TARGET_CLOSEST	0
 #define SCE_SNAP_TARGET_CENTER	1
@@ -1155,6 +1150,7 @@ typedef enum SculptFlags {
 	SCULPT_LOCK_Z = (1<<5),
 	SCULPT_SYMMETRY_FEATHER = (1<<6),
 	SCULPT_USE_OPENMP = (1<<7),
+	SCULPT_ONLY_DEFORM = (1<<8),
 } SculptFlags;
 
 /* sculpt_paint_settings */

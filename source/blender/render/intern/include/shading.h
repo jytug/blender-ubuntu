@@ -1,5 +1,5 @@
 /*
-* $Id: shading.h 35233 2011-02-27 19:31:27Z jesterking $
+* $Id: shading.h 36594 2011-05-10 13:11:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,7 +37,7 @@ struct LampRen;
 struct VlakRen;
 struct StrandSegment;
 struct StrandPoint;
-struct ObjectInstanceRen obi;
+struct ObjectInstanceRen;
 struct Isect;
 
 /* shadeinput.c */

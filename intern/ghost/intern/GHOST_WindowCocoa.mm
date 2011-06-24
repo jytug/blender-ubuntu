@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_WindowCocoa.mm 34391 2011-01-18 20:53:20Z damien78 $
+ * $Id: GHOST_WindowCocoa.mm 36840 2011-05-23 15:56:26Z blendix $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -461,9 +461,13 @@ GHOST_WindowCocoa::GHOST_WindowCocoa(
 
 GHOST_WindowCocoa::~GHOST_WindowCocoa()
 {
-	if (m_customCursor) delete m_customCursor;
-
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+	if (m_customCursor) {
+		[m_customCursor release];
+		m_customCursor = nil;
+	}
+
 	[m_openGLView release];
 	
 	if (m_window) {

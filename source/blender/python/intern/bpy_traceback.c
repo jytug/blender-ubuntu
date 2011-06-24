@@ -1,5 +1,5 @@
 /*
- * $Id: bpy_traceback.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: bpy_traceback.c 36395 2011-04-30 13:58:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -139,8 +139,6 @@ void python_script_error_jump(const char *filepath, int *lineno, int *offset)
 				*lineno= -1;
 			}
 		}
-
-		/* this avoids an abort in Python 2.3's garbage collecting */
 	}
 	else {
 		PyErr_NormalizeException(&exception, &value, (PyObject **)&tb);

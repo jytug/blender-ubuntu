@@ -1,5 +1,5 @@
 /*
- * $Id: BL_SkinDeformer.cpp 35167 2011-02-25 13:30:41Z jesterking $
+ * $Id: BL_SkinDeformer.cpp 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -37,7 +37,7 @@
 #endif //WIN32
 
 #include "BL_SkinDeformer.h"
-#include "GEN_Map.h"
+#include "CTR_Map.h"
 #include "STR_HashedString.h"
 #include "RAS_IPolygonMaterial.h"
 #include "RAS_MeshObject.h"
@@ -108,7 +108,7 @@ BL_SkinDeformer::~BL_SkinDeformer()
 		m_armobj->Release();
 }
 
-void BL_SkinDeformer::Relink(GEN_Map<class GEN_HashedPtr, void*>*map)
+void BL_SkinDeformer::Relink(CTR_Map<class CTR_HashedPtr, void*>*map)
 {
 	if (m_armobj) {
 		void **h_obj = (*map)[m_armobj];

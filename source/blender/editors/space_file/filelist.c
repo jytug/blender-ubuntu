@@ -1,5 +1,5 @@
 /*
- * $Id: filelist.c 36321 2011-04-25 09:28:52Z campbellbarton $
+ * $Id: filelist.c 37552 2011-06-16 15:01:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -59,6 +59,7 @@
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_library.h"
+#include "BKE_icons.h"
 #include "BKE_main.h"
 #include "BKE_report.h"
 #include "BLO_readfile.h"
@@ -372,7 +373,11 @@ void filelist_init_icons(void)
 	short x, y, k;
 	ImBuf *bbuf;
 	ImBuf *ibuf;
+#ifdef WITH_HEADLESS
+	bbuf = NULL;
+#else
 	bbuf = IMB_ibImageFromMemory((unsigned char*)datatoc_prvicons, datatoc_prvicons_size, IB_rect);
+#endif
 	if (bbuf) {
 		for (y=0; y<SPECIAL_IMG_ROWS; y++) {
 			for (x=0; x<SPECIAL_IMG_COLS; x++) {
@@ -433,7 +438,7 @@ void folderlist_pushdir(ListBase* folderlist, const char *dir)
 
 	// check if already exists
 	if(previous_folder && previous_folder->foldername){
-		if(! strcmp(previous_folder->foldername, dir)){
+		if(BLI_path_cmp(previous_folder->foldername, dir)==0){
 			return;
 		}
 	}
@@ -797,8 +802,6 @@ int ED_file_extension_icon(char *relname)
 		return ICON_FILE_MOVIE;
 	else if (type ==  PYSCRIPTFILE)
 		return ICON_FILE_SCRIPT;
-	else if (type ==  PYSCRIPTFILE)
-		return ICON_FILE_SCRIPT;
 	else if (type ==  SOUNDFILE) 
 		return ICON_FILE_SOUND;
 	else if (type ==  FTFONTFILE) 
@@ -912,6 +915,8 @@ void filelist_select_file(struct FileList* filelist, int index, FileSelType sele
 		int check_ok = 0; 
 		switch (check) {
 			case CHECK_DIRS:
+				check_ok = S_ISDIR(file->type);
+				break;
 			case CHECK_ALL:
 				check_ok = 1;
 				break;
@@ -1001,7 +1006,7 @@ static int groupname_to_code(char *group)
 
 	return BKE_idcode_from_name(buf);
 }
-
+ 
 void filelist_from_library(struct FileList* filelist)
 {
 	LinkNode *l, *names, *previews;
@@ -1072,9 +1077,9 @@ void filelist_from_library(struct FileList* filelist)
 			PreviewImage *img= l->link;
 			
 			if (img) {
-				unsigned int w = img->w[PREVIEW_MIPMAP_LARGE];
-				unsigned int h = img->h[PREVIEW_MIPMAP_LARGE];
-				unsigned int *rect = img->rect[PREVIEW_MIPMAP_LARGE];
+				unsigned int w = img->w[ICON_SIZE_PREVIEW];
+				unsigned int h = img->h[ICON_SIZE_PREVIEW];
+				unsigned int *rect = img->rect[ICON_SIZE_PREVIEW];
 
 				/* first allocate imbuf for copying preview into it */
 				if (w > 0 && h > 0 && rect) {
@@ -1088,7 +1093,7 @@ void filelist_from_library(struct FileList* filelist)
 	}
 
 	BLI_linklist_free(names, free);
-	if (previews) BLI_linklist_free(previews, (void(*)(void*)) MEM_freeN);
+	if (previews) BLI_linklist_free(previews, BKE_previewimg_freefunc);
 
 	filelist_sort(filelist, FILE_SORT_ALPHA);
 

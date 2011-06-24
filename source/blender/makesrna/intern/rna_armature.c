@@ -1,5 +1,5 @@
 /*
- * $Id: rna_armature.c 36095 2011-04-11 01:18:25Z campbellbarton $
+ * $Id: rna_armature.c 37031 2011-05-31 02:14:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,7 +52,7 @@
 #include "ED_armature.h"
 #include "BKE_armature.h"
 
-static void rna_Armature_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Armature_update_data(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	ID *id= ptr->id.data;
 
@@ -126,7 +126,7 @@ void rna_Armature_edit_bone_remove(bArmature *arm, ReportList *reports, EditBone
 	ED_armature_edit_bone_remove(arm, ebone);
 }
 
-static void rna_Armature_update_layers(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Armature_update_layers(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	bArmature *arm= ptr->id.data;
 	Object *ob;
@@ -140,7 +140,7 @@ static void rna_Armature_update_layers(Main *bmain, Scene *scene, PointerRNA *pt
 	WM_main_add_notifier(NC_GEOM|ND_DATA, arm);
 }
 
-static void rna_Armature_redraw_data(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Armature_redraw_data(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	ID *id= ptr->id.data;
 
@@ -149,7 +149,20 @@ static void rna_Armature_redraw_data(Main *bmain, Scene *scene, PointerRNA *ptr)
 
 static char *rna_Bone_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("bones[\"%s\"]", ((Bone*)ptr->data)->name);
+	Bone *bone = (Bone*)ptr->data;
+	
+	/* special exception for trying to get the path where ID-block is Object
+	 *	- this will be assumed to be from a Pose Bone...
+	 */
+	if (ptr->id.data) {
+		ID *id = (ID *)ptr->id.data;
+		
+		if (GS(id->name) == ID_OB)
+			return BLI_sprintfN("pose.bones[\"%s\"].bone", bone->name);
+	}
+	
+	/* from armature... */
+	return BLI_sprintfN("bones[\"%s\"]", bone->name);
 }
 
 static IDProperty *rna_Bone_idprops(PointerRNA *ptr, int create)

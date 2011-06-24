@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: cmake_consistency_check.py 34922 2011-02-17 04:35:41Z campbellbarton $
+# $Id: cmake_consistency_check.py 37443 2011-06-13 03:09:14Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -23,15 +23,16 @@
 
 # <pep8 compliant>
 
-IGNORE = \
-    "/test/",\
-    "/decimate_glut_test/",\
-    "/BSP_GhostTest/",\
-    "/release/",\
-    "/xembed/",\
-    "/decimation/intern/future/",\
-    "/TerraplayNetwork/",\
-    "/ik_glut_test/"
+IGNORE = (
+    "/test/",
+    "/decimate_glut_test/",
+    "/BSP_GhostTest/",
+    "/release/",
+    "/xembed/",
+    "/decimation/intern/future/",
+    "/TerraplayNetwork/",
+    "/ik_glut_test/",
+    )
 
 import os
 from os.path import join, dirname, normpath, abspath, splitext
@@ -104,7 +105,7 @@ def cmake_get_src(f):
                     found = True
                     break
 
-                if "list(APPEND SRC" in l:
+                if "list(APPEND SRC" in l or ('list(APPEND ' in l and l.endswith("SRC")):
                     if l.endswith(")"):
                         raise Exception("strict formatting not kept 'list(APPEND SRC...)' on 1 line %s:%d" % (f, i))
                     found = True
@@ -136,7 +137,9 @@ def cmake_get_src(f):
                     if not l:
                         pass
                     elif l.startswith("$"):
-                        print("Cant use var '%s' %s:%d" % (l, f, i))
+                        # assume if it ends with SRC we know about it
+                        if not l.split("}")[0].endswith("SRC"):
+                            print("Can't use var '%s' %s:%d" % (l, f, i))
                     elif len(l.split()) > 1:
                         raise Exception("Multi-line define '%s' %s:%d" % (l, f, i))
                     else:

@@ -1,5 +1,5 @@
 /*
- * $Id: reorganize.h 36083 2011-04-10 09:37:04Z campbellbarton $
+ * $Id: reorganize.h 36377 2011-04-29 04:43:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -133,7 +133,7 @@ void reorganize(Node *root)
 
 /*
  * Prunes useless nodes from trees:
- *  erases nodes with total ammount of primitives = 0
+ *  erases nodes with total amount of primitives = 0
  *  prunes nodes with only one child (except if that child is a primitive)
  */
 template<class Node>

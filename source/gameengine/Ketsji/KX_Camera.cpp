@@ -1,5 +1,5 @@
 /*
- * $Id: KX_Camera.cpp 36095 2011-04-11 01:18:25Z campbellbarton $
+ * $Id: KX_Camera.cpp 37584 2011-06-17 07:27:27Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -923,6 +923,8 @@ KX_PYMETHODDEF_DOC_O(KX_Camera, getScreenPosition,
 
 	if (!PyVecTo(value, vect))
 	{
+		PyErr_Clear();
+
 		if(ConvertPythonToGameObject(value, &obj, true, ""))
 		{
 			PyErr_Clear();

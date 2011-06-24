@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_WindowWin32.h 35618 2011-03-18 21:59:45Z jesterking $
+ * $Id: GHOST_WindowWin32.h 36470 2011-05-04 01:50:17Z dfelinto $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -100,6 +100,7 @@ public:
 		GHOST_TDrawingContextType type = GHOST_kDrawingContextTypeNone,
 		const bool stereoVisual = false,
 		const GHOST_TUns16 numOfAASamples = 0,
+		GHOST_TEmbedderWindowID parentWindowHwnd=0,
 		GHOST_TSuccess msEnabled = GHOST_kFailure,
 		int msPixelFormat = 0
 	);
@@ -391,6 +392,9 @@ protected:
 
 	/** The GHOST_System passes this to wm if this window is being replaced */
 	GHOST_Window *m_nextWindow;
+
+	/** Hwnd to parent window */
+	GHOST_TEmbedderWindowID m_parentWindowHwnd;
 };
 
 #endif // _GHOST_WINDOW_WIN32_H_

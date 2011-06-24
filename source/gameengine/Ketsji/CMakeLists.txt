@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 36024 2011-04-05 23:31:01Z campbellbarton $
+# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -26,11 +26,12 @@
 
 set(INC
 	.
-	../../../source/kernel/gen_system
 	../../../intern/string
 	../../../intern/guardedalloc
+	../../../intern/container
 	../../../source/gameengine/Rasterizer/RAS_OpenGLRasterizer 
 	../../../source/gameengine/Converter
+	../../../source/gameengine/BlenderRoutines
 	../../../source/blender/imbuf
 	../../../intern/moto/include
 	../../../source/gameengine/Ketsji 
@@ -52,6 +53,9 @@ set(INC
 	../../../intern/audaspace/intern
 	../../../source/blender/blenloader
 	../../../source/blender/gpu
+)
+
+set(INC_SYS
 	${GLEW_INCLUDE_PATH}
 )
 
@@ -206,7 +210,7 @@ set(SRC
 add_definitions(-DGLEW_STATIC)
 
 if(WITH_SDL)
-	set(INC ${INC} ${SDL_INCLUDE_DIR})  
+	list(APPEND INC_SYS ${SDL_INCLUDE_DIR})  
 else()
 	add_definitions(-DDISABLE_SDL)
 endif()
@@ -216,9 +220,11 @@ if(WITH_CODEC_FFMPEG)
 endif()
 
 if(WITH_BULLET)
+	list(APPEND INC
+		../../../extern/bullet2/src
+		../../../source/gameengine/Physics/Bullet
+	)
 	add_definitions(-DUSE_BULLET)
-	list(APPEND INC ../../../extern/bullet2/src)
-	list(APPEND INC ../../../source/gameengine/Physics/Bullet )
 endif()
 
-blender_add_lib(ge_logic_ketsji "${SRC}" "${INC}")
+blender_add_lib(ge_logic_ketsji "${SRC}" "${INC}" "${INC_SYS}")

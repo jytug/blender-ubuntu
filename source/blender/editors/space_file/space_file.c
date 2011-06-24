@@ -1,5 +1,5 @@
 /*
- * $Id: space_file.c 35642 2011-03-20 11:16:59Z elubie $
+ * $Id: space_file.c 36947 2011-05-27 09:57:53Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -606,7 +606,7 @@ void ED_spacetype_file(void)
 
 void ED_file_init(void)
 {
-	char *cfgdir = BLI_get_folder(BLENDER_CONFIG, NULL);
+	char *cfgdir = BLI_get_folder(BLENDER_USER_CONFIG, NULL);
 	
 	fsmenu_read_system(fsmenu_get());
 

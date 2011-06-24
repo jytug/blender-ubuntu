@@ -1,5 +1,5 @@
 /*
- * $Id: KX_GameObject.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: KX_GameObject.h 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,8 +47,8 @@
 #include "SG_Node.h"
 #include "MT_Transform.h"
 #include "MT_CmMatrix4x4.h"
-#include "GEN_Map.h"
-#include "GEN_HashedPtr.h"
+#include "CTR_Map.h"
+#include "CTR_HashedPtr.h"
 #include "KX_Scene.h"
 #include "KX_KetsjiEngine.h" /* for m_anim_framerate */
 #include "KX_IPhysicsController.h" /* for suspend/resume */
@@ -142,7 +142,7 @@ public:
 
 	virtual void	/* This function should be virtual - derived classed override it */
 	Relink(
-		GEN_Map<GEN_HashedPtr, void*> *map
+		CTR_Map<CTR_HashedPtr, void*> *map
 	);
 
 	/**

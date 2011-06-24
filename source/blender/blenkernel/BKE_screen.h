@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_screen.h 35785 2011-03-25 17:11:32Z ton $ 
+ * $Id: BKE_screen.h 36787 2011-05-20 04:14:29Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -246,6 +246,9 @@ void BKE_screen_view3d_sync(struct View3D *v3d, struct Scene *scene);
 void BKE_screen_view3d_scene_sync(struct bScreen *sc);
 void BKE_screen_view3d_main_sync(ListBase *screen_lb, struct Scene *scene);
 
+/* zoom factor conversion */
+float BKE_screen_view3d_zoom_to_fac(float camzoom);
+float BKE_screen_view3d_zoom_from_fac(float zoomfac);
 
 /* screen */
 void free_screen(struct bScreen *sc); 

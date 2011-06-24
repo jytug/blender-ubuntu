@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 36207 2011-04-18 07:11:40Z campbellbarton $
+# $Id: CMakeLists.txt 37677 2011-06-20 22:44:35Z dfelinto $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -44,6 +44,7 @@ set(INC
 	../editors/include
 	../render/extern/include
 	../../../intern/audaspace/intern
+	../../../intern/ffmpeg
 	../../../intern/bsp/extern ../blenfont
 	../../../intern/decimation/extern
 	../../../intern/elbeem/extern
@@ -53,7 +54,10 @@ set(INC
 	../../../intern/opennl/extern
 	../../../intern/smoke/extern
 	../../../intern/mikktspace
-    ../../../source/blender/windowmanager # XXX - BAD LEVEL CALL WM_api.h
+	../../../source/blender/windowmanager # XXX - BAD LEVEL CALL WM_api.h
+)
+
+set(INC_SYS
 	${GLEW_INCLUDE_PATH}
 	${ZLIB_INCLUDE_DIRS}
 )
@@ -91,7 +95,6 @@ set(SRC
 	intern/depsgraph.c
 	intern/displist.c
 	intern/effect.c
-	intern/exotic.c
 	intern/fcurve.c
 	intern/fluidsim.c
 	intern/fmodifier.c
@@ -145,7 +148,7 @@ set(SRC
 	intern/writeavi.c
 	intern/writeffmpeg.c
 	intern/writeframeserver.c
-
+	
 	BKE_DerivedMesh.h
 	BKE_action.h
 	BKE_anim.h
@@ -176,7 +179,6 @@ set(SRC
 	BKE_displist.h
 	BKE_effect.h
 	BKE_endian.h
-	BKE_exotic.h
 	BKE_fcurve.h
 	BKE_fluidsim.h
 	BKE_font.h
@@ -240,6 +242,11 @@ if(WITH_BULLET)
 	add_definitions(-DUSE_BULLET)
 endif()
 
+if(WITH_MOD_CLOTH_ELTOPO)
+	list(APPEND INC ../../../extern/eltopo)
+	add_definitions(-DWITH_ELTOPO)
+endif()
+
 if(WITH_IMAGE_OPENEXR)
 	add_definitions(-DWITH_OPENEXR)
 endif()
@@ -265,23 +272,24 @@ if(WITH_IMAGE_HDR)
 endif()
 
 if(WITH_CODEC_QUICKTIME)
-	list(APPEND INC ../quicktime ${QUICKTIME_INC})
+	list(APPEND INC ../quicktime)
+	list(APPEND INC_SYS ${QUICKTIME_INCLUDE_DIRS})
 	add_definitions(-DWITH_QUICKTIME)
 endif()
 
 if(WITH_CODEC_FFMPEG)
-	list(APPEND INC ${FFMPEG_INC})
+	list(APPEND INC_SYS ${FFMPEG_INCLUDE_DIRS})
 	add_definitions(-DWITH_FFMPEG)
 endif()
 
-if(WITH_LCMS)
-	list(APPEND INC ${LCMS_INCLUDE_DIR})
-	add_definitions(-DWITH_LCMS)
-endif()
-
 if(WITH_PYTHON)
-	list(APPEND INC ../python ${PYTHON_INCLUDE_DIRS})
+	list(APPEND INC ../python)
+	list(APPEND INC_SYS ${PYTHON_INCLUDE_DIRS})
 	add_definitions(-DWITH_PYTHON)
+
+	if(WITH_PYTHON_SECURITY)
+		add_definitions(-DWITH_PYTHON_SECURITY)
+	endif()
 endif()
 
 if(WITH_OPENMP)
@@ -297,17 +305,17 @@ if(WITH_JACK)
 endif()
 
 if(WITH_LZO)
-	list(APPEND INC ../../../extern/lzo/minilzo)
+	list(APPEND INC_SYS ../../../extern/lzo/minilzo)
 	add_definitions(-DWITH_LZO)
 endif()
 
 if(WITH_LZMA)
-	list(APPEND INC ../../../extern/lzma)
+	list(APPEND INC_SYS ../../../extern/lzma)
 	add_definitions(-DWITH_LZMA)
 endif()
 
 if(MSVC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
 endif()
 
-blender_add_lib(bf_blenkernel "${SRC}" "${INC}")
+blender_add_lib(bf_blenkernel "${SRC}" "${INC}" "${INC_SYS}")

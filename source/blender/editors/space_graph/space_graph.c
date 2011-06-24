@@ -1,5 +1,5 @@
 /*
- * $Id: space_graph.c 35590 2011-03-17 10:02:37Z aligorith $
+ * $Id: space_graph.c 36788 2011-05-20 05:27:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,17 +71,12 @@ ARegion *graph_has_buttons_region(ScrArea *sa)
 {
 	ARegion *ar, *arnew;
 	
-	for (ar= sa->regionbase.first; ar; ar= ar->next) {
-		if (ar->regiontype==RGN_TYPE_UI)
-			return ar;
-	}
-	
+	ar= BKE_area_find_region_type(sa, RGN_TYPE_UI);
+	if(ar) return ar;
+
 	/* add subdiv level; after main */
-	for (ar= sa->regionbase.first; ar; ar= ar->next) {
-		if (ar->regiontype==RGN_TYPE_WINDOW)
-			break;
-	}
-	
+	ar= BKE_area_find_region_type(sa, RGN_TYPE_WINDOW);
+
 	/* is error! */
 	if (ar==NULL) return NULL;
 	

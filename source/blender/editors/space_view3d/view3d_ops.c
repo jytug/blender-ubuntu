@@ -1,5 +1,5 @@
 /*
- * $Id: view3d_ops.c 36283 2011-04-22 15:34:07Z campbellbarton $
+ * $Id: view3d_ops.c 36818 2011-05-22 11:36:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -305,5 +305,6 @@ void view3d_keymap(wmKeyConfig *keyconf)
 	viewrotate_modal_keymap(keyconf);
 	viewmove_modal_keymap(keyconf);
 	viewzoom_modal_keymap(keyconf);
+	viewdolly_modal_keymap(keyconf);
 }
 

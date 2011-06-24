@@ -1,5 +1,5 @@
 /*
- * $Id: rna_image_api.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: rna_image_api.c 36385 2011-04-30 05:26:09Z campbellbarton $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -84,7 +84,7 @@ static void rna_Image_save_render(Image *image, bContext *C, ReportList *reports
 			const float dither_back= ibuf->dither; 
 			ibuf->depth= scene->r.planes;
 			ibuf->dither= scene->r.dither_intensity;
-			if (!BKE_write_ibuf(NULL, ibuf, path, scene->r.imtype, scene->r.subimtype, scene->r.quality)) {
+			if (!BKE_write_ibuf(ibuf, path, scene->r.imtype, scene->r.subimtype, scene->r.quality)) {
 				BKE_reportf(reports, RPT_ERROR, "Couldn't write image: %s", path);
 			}
 			ibuf->depth= imb_depth_back;

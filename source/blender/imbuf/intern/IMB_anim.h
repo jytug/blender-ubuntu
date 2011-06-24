@@ -1,7 +1,7 @@
 /*
  * allocimbuf.h
  *
- * $Id: IMB_anim.h 35239 2011-02-27 20:23:21Z jesterking $
+ * $Id: IMB_anim.h 36815 2011-05-22 04:25:31Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -107,7 +107,7 @@
 #define SWAP_S(x) (((x << 8) & 0xff00) | ((x >> 8) & 0xff))
 
 /* more endianness... should move to a separate file... */
-#if defined(__sgi) || defined (__sparc) || (__sparc__) || defined (__PPC__) || defined (__ppc__) || defined (__hppa__) || defined (__BIG_ENDIAN__)
+#if defined(__sgi) || defined (__sparc) || defined (__sparc__) || defined (__PPC__) || defined (__ppc__) || defined (__hppa__) || defined (__BIG_ENDIAN__)
 #define GET_ID GET_BIG_LONG
 #define LITTLE_LONG SWAP_LONG
 #else

@@ -1,5 +1,5 @@
 /*
- * $Id: object_lattice.c 36278 2011-04-21 17:25:58Z campbellbarton $
+ * $Id: object_lattice.c 36644 2011-05-12 16:47:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -305,7 +305,7 @@ void LATTICE_OT_make_regular(wmOperatorType *ot)
 
 static void findnearestLattvert__doClosest(void *userData, BPoint *bp, int x, int y)
 {
-	struct { BPoint *bp; short dist, select, mval[2]; } *data = userData;
+	struct { BPoint *bp; short dist, select; int mval[2]; } *data = userData;
 	float temp = abs(data->mval[0]-x) + abs(data->mval[1]-y);
 	
 	if((bp->f1 & SELECT)==data->select)
@@ -318,12 +318,12 @@ static void findnearestLattvert__doClosest(void *userData, BPoint *bp, int x, in
 	}
 }
 
-static BPoint *findnearestLattvert(ViewContext *vc, const short mval[2], int sel)
+static BPoint *findnearestLattvert(ViewContext *vc, const int mval[2], int sel)
 {
 		/* sel==1: selected gets a disadvantage */
 		/* in nurb and bezt or bp the nearest is written */
 		/* return 0 1 2: handlepunt */
-	struct { BPoint *bp; short dist, select, mval[2]; } data = {NULL};
+	struct { BPoint *bp; short dist, select; int mval[2]; } data = {NULL};
 
 	data.dist = 100;
 	data.select = sel;
@@ -336,7 +336,7 @@ static BPoint *findnearestLattvert(ViewContext *vc, const short mval[2], int sel
 	return data.bp;
 }
 
-int mouse_lattice(bContext *C, const short mval[2], int extend)
+int mouse_lattice(bContext *C, const int mval[2], int extend)
 {
 	ViewContext vc;
 	BPoint *bp= NULL;

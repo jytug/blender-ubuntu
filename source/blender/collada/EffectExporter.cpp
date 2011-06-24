@@ -1,5 +1,5 @@
 /*
- * $Id: EffectExporter.cpp 35712 2011-03-23 00:03:52Z jesterking $
+ * $Id: EffectExporter.cpp 37317 2011-06-08 13:00:25Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -273,7 +273,7 @@ void EffectsExporter::operator()(Material *ma, Object *ob)
 		std::string uvname = strlen(t->uvname) ? t->uvname : active_uv;
 
 		// color
-		if (t->mapto & MAP_COL) {
+		if (t->mapto & MAP_COL | MAP_COLSPEC) {
 			ep.setDiffuse(createTexture(ima, uvname, sampler));
 		}
 		// ambient

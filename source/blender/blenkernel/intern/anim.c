@@ -1,7 +1,7 @@
 /* anim.c
  *
  *
- * $Id: anim.c 35824 2011-03-27 17:22:04Z campbellbarton $
+ * $Id: anim.c 37671 2011-06-20 17:50:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -171,7 +171,12 @@ bMotionPath *animviz_verify_motionpaths(Scene *scene, Object *ob, bPoseChannel *
 		avs= &ob->avs;
 		dst= &ob->mpath;
 	}
-	
+
+	/* avoid 0 size allocs */
+	if(avs->path_sf >= avs->path_ef) {
+		return NULL;
+	}
+
 	/* if there is already a motionpath, just return that,
 	 * but provided it's settings are ok 
 	 */
@@ -1206,7 +1211,7 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 	float tmat[4][4], mat[4][4], pamat[4][4], vec[3], size=0.0;
 	float (*obmat)[4], (*oldobmat)[4];
 	int a, b, counter, hair = 0;
-	int totpart, totchild, totgroup=0, pa_num;
+	int totpart, totchild, totgroup=0 /*, pa_num */;
 
 	int no_draw_flag = PARS_UNEXIST;
 
@@ -1323,7 +1328,7 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 				if(pa->flag & no_draw_flag)
 					continue;
 
-				pa_num = pa->num;
+				/* pa_num = pa->num; */ /* UNUSED */
 				pa_time = pa->time;
 				size = pa->size;
 			}
@@ -1331,7 +1336,7 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 				/* handle child particle */
 				cpa = &psys->child[a - totpart];
 
-				pa_num = a;
+				/* pa_num = a; */ /* UNUSED */
 				pa_time = psys->particles[cpa->parent].time;
 				size = psys_get_child_size(psys, cpa, ctime, NULL);
 			}

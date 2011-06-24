@@ -1,5 +1,5 @@
 /*
- * $Id: object_hook.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: object_hook.c 36924 2011-05-26 13:38:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -563,7 +563,7 @@ static int object_hook_remove_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static EnumPropertyItem *hook_mod_itemf(bContext *C, PointerRNA *UNUSED(ptr), int *free)
+static EnumPropertyItem *hook_mod_itemf(bContext *C, PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), int *free)
 {	
 	Object *ob = CTX_data_edit_object(C);
 	EnumPropertyItem tmp = {0, "", 0, "", ""};

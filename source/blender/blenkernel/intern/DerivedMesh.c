@@ -1,5 +1,5 @@
 /*
- * $Id: DerivedMesh.c 36175 2011-04-15 01:43:30Z campbellbarton $
+ * $Id: DerivedMesh.c 36485 2011-05-04 13:15:42Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1772,11 +1772,20 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 			modifier_setError(md, "Modifier requires original data, bad stack position.");
 			continue;
 		}
-		if(sculpt_mode && (!has_multires || multires_applied))
-			if(mti->type != eModifierTypeType_OnlyDeform || multires_applied) {
+		if(sculpt_mode && (!has_multires || multires_applied)) {
+			int unsupported= 0;
+
+			if(scene->toolsettings->sculpt->flags & SCULPT_ONLY_DEFORM)
+				unsupported|= mti->type != eModifierTypeType_OnlyDeform;
+
+			unsupported|= md->type == eModifierType_Multires && ((MultiresModifierData*)md)->sculptlvl==0;
+			unsupported|= multires_applied;
+
+			if(unsupported) {
 				modifier_setError(md, "Not supported in sculpt mode.");
 				continue;
 			}
+		}
 		if(needMapping && !modifier_supportsMapping(md)) continue;
 		if(useDeform < 0 && mti->dependsOnTime && mti->dependsOnTime(md)) continue;
 
@@ -1815,7 +1824,7 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 			 * to avoid giving bogus normals to the next modifier see: [#23673] */
 			if(isPrevDeform &&  mti->dependsOnNormals && mti->dependsOnNormals(md)) {
 				/* XXX, this covers bug #23673, but we may need normal calc for other types */
-				if(dm->type == DM_TYPE_CDDM) {
+				if(dm && dm->type == DM_TYPE_CDDM) {
 					CDDM_apply_vert_coords(dm, deformedVerts);
 					CDDM_calc_normals(dm);
 				}
@@ -2558,7 +2567,6 @@ static void GetNormal(const SMikkTSpaceContext * pContext, float fNorm[], const 
 	else {
 		const short *no= pMesh->mvert[(&pMesh->mface[face_num].v1)[vert_index]].no;
 		normal_short_to_float_v3(fNorm, no);
-		normalize_v3(fNorm); /* XXX, is this needed */
 	}
 }
 static void SetTSpace(const SMikkTSpaceContext * pContext, const float fvTangent[], const float fSign, const int face_num, const int iVert)

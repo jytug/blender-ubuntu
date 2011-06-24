@@ -1,5 +1,5 @@
 /*
- * $Id: node.c 36306 2011-04-24 05:13:35Z lukastoenne $
+ * $Id: node.c 37634 2011-06-19 09:32:37Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,8 +32,10 @@
  */
 
 
-#ifdef WITH_PYTHON
-#include <Python.h>
+#if 0 /* pynodes commented for now */
+#  ifdef WITH_PYTHON
+#    include <Python.h>
+#  endif
 #endif
 
 #include "MEM_guardedalloc.h"
@@ -350,7 +352,7 @@ static bNodeType ntype_group;
 /* groups display their internal tree name as label */
 static const char *group_label(bNode *node)
 {
-	return node->id->name+2;
+	return (node->id)? node->id->name+2: "Missing Datablock";
 }
 
 void register_node_type_group(ListBase *lb)
@@ -1193,7 +1195,9 @@ bNodeTree *ntreeCopyTree(bNodeTree *ntree)
 		newtree= MEM_dupallocN(ntree);
 		copy_libblock_data(&newtree->id, &ntree->id, TRUE); /* copy animdata and ID props */
 	}
-	
+
+	id_us_plus((ID *)newtree->gpd);
+
 	/* in case a running nodetree is copied */
 	newtree->init &= ~(NTREE_EXEC_INIT);
 	newtree->threadstack= NULL;
@@ -1434,6 +1438,8 @@ void ntreeFreeTree(bNodeTree *ntree)
 	ntreeEndExecTree(ntree);	/* checks for if it is still initialized */
 	
 	BKE_free_animdata((ID *)ntree);
+
+	id_us_min((ID *)ntree->gpd);
 
 	BLI_freelistN(&ntree->links);	/* do first, then unlink_node goes fast */
 	
@@ -2068,11 +2074,12 @@ static int set_stack_indexes_group(bNode *node, int index)
 	bNodeTree *ngroup= (bNodeTree*)node->id;
 	bNodeSocket *sock;
 	
-	if((ngroup->init & NTREE_TYPE_INIT)==0)
+	if(ngroup && (ngroup->init & NTREE_TYPE_INIT)==0)
 		ntreeInitTypes(ngroup);
 	
 	node->stack_index = index;
-	index += ntree_begin_exec_tree(ngroup);
+	if(ngroup)
+		index += ntree_begin_exec_tree(ngroup);
 	
 	for (sock=node->inputs.first; sock; sock=sock->next) {
 		if (sock->link && sock->link->fromsock) {
@@ -2195,7 +2202,7 @@ static void composit_begin_exec(bNodeTree *ntree, bNodeStack *stack)
 			if(node->type==CMP_NODE_CURVE_RGB)
 				curvemapping_premultiply(node->storage, 0);
 		}
-		if(node->type==NODE_GROUP)
+		if(node->type==NODE_GROUP && node->id)
 			composit_begin_exec((bNodeTree *)node->id, stack + node->stack_index);
 
 	}
@@ -2221,7 +2228,7 @@ static void composit_end_exec(bNodeTree *ntree, bNodeStack *stack)
 		if(node->type==CMP_NODE_CURVE_RGB)
 			curvemapping_premultiply(node->storage, 1);
 		
-		if(node->type==NODE_GROUP)
+		if(node->type==NODE_GROUP && node->id)
 			composit_end_exec((bNodeTree *)node->id, stack + node->stack_index);
 
 		node->need_exec= 0;
@@ -2324,13 +2331,18 @@ static void tex_end_exec(bNodeTree *ntree)
 	bNodeStack *ns;
 	int th, a;
 	
-	if(ntree->threadstack)
-		for(th=0; th<BLENDER_MAX_THREADS; th++)
-			for(nts=ntree->threadstack[th].first; nts; nts=nts->next)
-				for(ns= nts->stack, a=0; a<ntree->stacksize; a++, ns++)
-					if(ns->data)
+	if(ntree->threadstack) {
+		for(th=0; th<BLENDER_MAX_THREADS; th++) {
+			for(nts=ntree->threadstack[th].first; nts; nts=nts->next) {
+				for(ns= nts->stack, a=0; a<ntree->stacksize; a++, ns++) {
+					if(ns->data) {
 						MEM_freeN(ns->data);
-						
+						ns->data= NULL;
+					}
+				}
+			}
+		}
+	}
 }
 
 void ntreeBeginExecTree(bNodeTree *ntree)

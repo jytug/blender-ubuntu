@@ -1,5 +1,5 @@
 /*
- * $Id: blf_dir.c 36031 2011-04-06 06:03:48Z campbellbarton $
+ * $Id: blf_dir.c 36594 2011-05-10 13:11:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,6 +51,7 @@
 
 #include "BLF_api.h"
 #include "blf_internal_types.h"
+#include "blf_internal.h"
 
 static ListBase global_font_dir= { NULL, NULL };
 
@@ -150,6 +151,7 @@ char *blf_dir_search(const char *file)
 	return(s);
 }
 
+#if 0 // UNUSED
 int blf_dir_split(const char *str, char *file, int *size)
 {
 	int i, len;
@@ -173,6 +175,7 @@ int blf_dir_split(const char *str, char *file, int *size)
 	}
 	return(0);
 }
+#endif
 
 /* Some font have additional file with metrics information,
  * in general, the extension of the file is: .afm or .pfm

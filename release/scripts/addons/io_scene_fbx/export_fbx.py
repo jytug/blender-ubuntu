@@ -53,7 +53,6 @@ sane_name_mapping_group = {}
 
 # Make sure reserved names are not used
 sane_name_mapping_ob['Scene'] = 'Scene_'
-sane_name_mapping_ob['blend_root'] = 'blend_root_'
 
 
 def increment_string(t):
@@ -68,7 +67,7 @@ def increment_string(t):
         return name + '_0'
 
 
-# todo - Disallow the name 'Scene' and 'blend_root' - it will bugger things up.
+# todo - Disallow the name 'Scene' - it will bugger things up.
 def sane_name(data, dct):
     #if not data: return None
 
@@ -202,7 +201,7 @@ header_comment = \
 
 # This func can be called with just the filepath
 def save_single(operator, scene, filepath="",
-        GLOBAL_MATRIX=None,
+        global_matrix=None,
         context_objects=None,
         object_types={'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH'},
         mesh_apply_modifiers=True,
@@ -215,13 +214,13 @@ def save_single(operator, scene, filepath="",
         path_mode='AUTO',
     ):
 
-    import io_utils
+    import bpy_extras.io_utils
 
     mtx_x90 = Matrix.Rotation(math.pi / 2.0, 3, 'X')
     mtx4_z90 = Matrix.Rotation(math.pi / 2.0, 4, 'Z')
 
-    if GLOBAL_MATRIX is None:
-        GLOBAL_MATRIX = Matrix()
+    if global_matrix is None:
+        global_matrix = Matrix()
 
     # Use this for working out paths relative to the export location
     base_src = os.path.dirname(bpy.data.filepath)
@@ -348,10 +347,11 @@ def save_single(operator, scene, filepath="",
             self.blenObject = ob
             self.fbxGroupNames = []
             self.fbxParent = None  # set later on IF the parent is in the selection.
+            self.fbxArm = None
             if matrixWorld:
-                self.matrixWorld = GLOBAL_MATRIX * matrixWorld
+                self.matrixWorld = global_matrix * matrixWorld
             else:
-                self.matrixWorld = GLOBAL_MATRIX * ob.matrix_world
+                self.matrixWorld = global_matrix * ob.matrix_world
 
             self.__anim_poselist = {}  # we should only access this
 
@@ -363,24 +363,23 @@ def save_single(operator, scene, filepath="",
 
         def setPoseFrame(self, f, fake=False):
             if fake:
-                # annoying, have to clear GLOBAL_MATRIX
-                self.__anim_poselist[f] = self.matrixWorld * GLOBAL_MATRIX.inverted()
+                self.__anim_poselist[f] = self.matrixWorld * global_matrix.inverted()
             else:
                 self.__anim_poselist[f] = self.blenObject.matrix_world.copy()
 
         def getAnimParRelMatrix(self, frame):
             if self.fbxParent:
-                #return (self.__anim_poselist[frame] * self.fbxParent.__anim_poselist[frame].inverted() ) * GLOBAL_MATRIX
-                return (GLOBAL_MATRIX * self.fbxParent.__anim_poselist[frame]).inverted() * (GLOBAL_MATRIX * self.__anim_poselist[frame])
+                #return (self.__anim_poselist[frame] * self.fbxParent.__anim_poselist[frame].inverted() ) * global_matrix
+                return (global_matrix * self.fbxParent.__anim_poselist[frame]).inverted() * (global_matrix * self.__anim_poselist[frame])
             else:
-                return GLOBAL_MATRIX * self.__anim_poselist[frame]
+                return global_matrix * self.__anim_poselist[frame]
 
         def getAnimParRelMatrixRot(self, frame):
             obj_type = self.blenObject.type
             if self.fbxParent:
-                matrix_rot = ((GLOBAL_MATRIX * self.fbxParent.__anim_poselist[frame]).inverted() * (GLOBAL_MATRIX * self.__anim_poselist[frame])).to_3x3()
+                matrix_rot = ((global_matrix * self.fbxParent.__anim_poselist[frame]).inverted() * (global_matrix * self.__anim_poselist[frame])).to_3x3()
             else:
-                matrix_rot = (GLOBAL_MATRIX * self.__anim_poselist[frame]).to_3x3()
+                matrix_rot = (global_matrix * self.__anim_poselist[frame]).to_3x3()
 
             # Lamps need to be rotated
             if obj_type == 'LAMP':
@@ -466,7 +465,7 @@ def save_single(operator, scene, filepath="",
             scale = tuple(scale)
         else:
             # This is bad because we need the parent relative matrix from the fbx parent (if we have one), dont use anymore
-            #if ob and not matrix: matrix = ob.matrix_world * GLOBAL_MATRIX
+            #if ob and not matrix: matrix = ob.matrix_world * global_matrix
             if ob and not matrix:
                 raise Exception("error: this should never happen!")
 
@@ -938,7 +937,7 @@ def save_single(operator, scene, filepath="",
             do_light = not (light.use_only_shadow or (not light.use_diffuse and not light.use_specular))
             do_shadow = (light.shadow_method in ('RAY_SHADOW', 'BUFFER_SHADOW'))
 
-        scale = abs(GLOBAL_MATRIX.to_scale()[0])  # scale is always uniform in this case
+        scale = abs(global_matrix.to_scale()[0])  # scale is always uniform in this case
 
         file.write('\n\t\t\tProperty: "LightType", "enum", "",%i' % light_type)
         file.write('\n\t\t\tProperty: "CastLightOnObject", "bool", "",1')
@@ -982,7 +981,7 @@ def save_single(operator, scene, filepath="",
         file.write('\n\t}')
 
     # matrixOnly is not used at the moment
-    def write_null(my_null=None, fbxName=None, matrixOnly=None):
+    def write_null(my_null=None, fbxName=None):
         # ob can be null
         if not fbxName:
             fbxName = my_null.fbxName
@@ -990,15 +989,10 @@ def save_single(operator, scene, filepath="",
         file.write('\n\tModel: "Model::%s", "Null" {' % fbxName)
         file.write('\n\t\tVersion: 232')
 
-        # only use this for the root matrix at the moment
-        if matrixOnly:
-            poseMatrix = write_object_props(None, None, matrixOnly)[3]
-
-        else:  # all other Null's
-            if my_null:
-                poseMatrix = write_object_props(my_null.blenObject, None, my_null.parRelMatrix())[3]
-            else:
-                poseMatrix = write_object_props()[3]
+        if my_null:
+            poseMatrix = write_object_props(my_null.blenObject, None, my_null.parRelMatrix())[3]
+        else:
+            poseMatrix = write_object_props()[3]
 
         pose_items.append((fbxName, poseMatrix))
 
@@ -1103,7 +1097,7 @@ def save_single(operator, scene, filepath="",
             Property: "Width", "int", "",0
             Property: "Height", "int", "",0''')
         if tex:
-            fname_rel = io_utils.path_reference(tex.filepath, base_src, base_dst, path_mode, "", copy_set)
+            fname_rel = bpy_extras.io_utils.path_reference(tex.filepath, base_src, base_dst, path_mode, "", copy_set)
             fname_strip = os.path.basename(fname_rel)
         else:
             fname_strip = fname_rel = ""
@@ -1162,7 +1156,7 @@ def save_single(operator, scene, filepath="",
         file.write('\n\t\tMedia: "Video::%s"' % texname)
 
         if tex:
-            fname_rel = io_utils.path_reference(tex.filepath, base_src, base_dst, path_mode, "", copy_set)
+            fname_rel = bpy_extras.io_utils.path_reference(tex.filepath, base_src, base_dst, path_mode, "", copy_set)
             fname_strip = os.path.basename(fname_rel)
         else:
             fname_strip = fname_rel = ""
@@ -2058,7 +2052,7 @@ def save_single(operator, scene, filepath="",
 Definitions:  {
     Version: 100
     Count: %i''' % (\
-        1 + 1 + camera_count + \
+        1 + camera_count + \
         len(ob_meshes) + \
         len(ob_lights) + \
         len(ob_cameras) + \
@@ -2067,7 +2061,7 @@ Definitions:  {
         len(ob_bones) + \
         bone_deformer_count + \
         len(materials) + \
-        (len(textures) * 2)))  # add 1 for the root model 1 for global settings
+        (len(textures) * 2)))  # add 1 for global settings
 
     del bone_deformer_count
 
@@ -2075,13 +2069,13 @@ Definitions:  {
     ObjectType: "Model" {
         Count: %i
     }''' % (\
-        1 + camera_count + \
+        camera_count + \
         len(ob_meshes) + \
         len(ob_lights) + \
         len(ob_cameras) + \
         len(ob_arms) + \
         len(ob_null) + \
-        len(ob_bones)))  # add 1 for the root model
+        len(ob_bones)))
 
     file.write('''
     ObjectType: "Geometry" {
@@ -2149,9 +2143,6 @@ Objects:  {''')
 
     # To comply with other FBX FILES
     write_camera_switch()
-
-    # Write the null object
-    write_null(None, 'blend_root')  # , GLOBAL_MATRIX)
 
     for my_null in ob_null:
         write_null(my_null)
@@ -2239,7 +2230,7 @@ Objects:  {''')
             Property: "FrontAxisSign", "int", "",1
             Property: "CoordAxis", "int", "",0
             Property: "CoordAxisSign", "int", "",1
-            Property: "UnitScaleFactor", "double", "",100
+            Property: "UnitScaleFactor", "double", "",1
         }
     }
 ''')
@@ -2251,8 +2242,6 @@ Objects:  {''')
 ;------------------------------------------------------------------
 
 Relations:  {''')
-
-    file.write('\n\tModel: "Model::blend_root", "Null" {\n\t}')
 
     for my_null in ob_null:
         file.write('\n\tModel: "Model::%s", "Null" {\n\t}' % my_null.fbxName)
@@ -2328,17 +2317,15 @@ Connections:  {''')
 
     # NOTE - The FBX SDK dosnt care about the order but some importers DO!
     # for instance, defining the material->mesh connection
-    # before the mesh->blend_root crashes cinema4d
-
-    # write the fake root node
-    file.write('\n\tConnect: "OO", "Model::blend_root", "Model::Scene"')
+    # before the mesh->parent crashes cinema4d
 
     for ob_generic in ob_all_typegroups:  # all blender 'Object's we support
         for my_ob in ob_generic:
-            if my_ob.fbxParent:
+            # for deformed meshes, don't have any parents or they can get twice transformed.
+            if my_ob.fbxParent and (not my_ob.fbxArm):
                 file.write('\n\tConnect: "OO", "Model::%s", "Model::%s"' % (my_ob.fbxName, my_ob.fbxParent.fbxName))
             else:
-                file.write('\n\tConnect: "OO", "Model::%s", "Model::blend_root"' % my_ob.fbxName)
+                file.write('\n\tConnect: "OO", "Model::%s", "Model::Scene"' % my_ob.fbxName)
 
     if materials:
         for my_mesh in ob_meshes:
@@ -2392,7 +2379,7 @@ Connections:  {''')
                     file.write('\n\tConnect: "OO", "Model::%s", "GroupSelection::%s"' % (ob_base.fbxName, fbxGroupName))
 
     for my_arm in ob_arms:
-        file.write('\n\tConnect: "OO", "Model::%s", "Model::blend_root"' % my_arm.fbxName)
+        file.write('\n\tConnect: "OO", "Model::%s", "Model::Scene"' % my_arm.fbxName)
 
     file.write('\n}')
 
@@ -2760,7 +2747,7 @@ Takes:  {''')
     file.close()
 
     # copy all collected files.
-    io_utils.path_reference_copy(copy_set)
+    bpy_extras.io_utils.path_reference_copy(copy_set)
 
     print('export finished in %.4f sec.' % (time.clock() - start_time))
     return {'FINISHED'}

@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 34861 2011-02-15 09:24:35Z jesterking $
+# $Id: CMakeLists.txt 37667 2011-06-20 15:17:02Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,8 +24,6 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-# remove warning until render branch merged.
-remove_strict_flags()
 
 set(INC 
 	intern/include
@@ -36,10 +34,13 @@ set(INC
 	../makesrna
 	../blenkernel
 	../imbuf
-	../../kernel/gen_messaging
 	../../../intern/smoke/extern
 	../../../intern/mikktspace
 	../../../intern/guardedalloc
+)
+
+set(INC_SYS
+
 )
 
 set(SRC
@@ -120,7 +121,8 @@ if(WITH_IMAGE_OPENEXR)
 endif()
 
 if(WITH_CODEC_QUICKTIME)
-	list(APPEND INC ../quicktime ${QUICKTIME_INC})
+	list(APPEND INC ../quicktime)
+	list(APPEND INC_SYS ${QUICKTIME_INCLUDE_DIRS})
 	add_definitions(-DWITH_QUICKTIME)
 endif()
 
@@ -131,4 +133,4 @@ if(APPLE)
 	endif()
 endif()
 
-blender_add_lib_nolist(bf_render "${SRC}" "${INC}")
+blender_add_lib_nolist(bf_render "${SRC}" "${INC}" "${INC_SYS}")

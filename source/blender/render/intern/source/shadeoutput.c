@@ -1,5 +1,5 @@
 /*
-* $Id: shadeoutput.c 36312 2011-04-24 10:51:45Z campbellbarton $
+* $Id: shadeoutput.c 37667 2011-06-20 15:17:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -705,7 +705,7 @@ static float WardIso_Spec( float *n, float *l, float *v, float rms, int tangent)
 }
 
 /* cartoon render diffuse */
-static float Toon_Diff( float *n, float *l, float *v, float size, float smooth )
+static float Toon_Diff( float *n, float *l, float *UNUSED(v), float size, float smooth )
 {
 	float rslt, ang;
 
@@ -806,7 +806,7 @@ static float Minnaert_Diff(float nl, float *n, float *v, float darkness)
 	return i;
 }
 
-static float Fresnel_Diff(float *vn, float *lv, float *view, float fac_i, float fac)
+static float Fresnel_Diff(float *vn, float *lv, float *UNUSED(view), float fac_i, float fac)
 {
 	return fresnel_fac(lv, vn, fac_i, fac);
 }
@@ -1523,19 +1523,19 @@ static void shade_lamp_loop_only_shadow(ShadeInput *shi, ShadeResult *shr)
 			
 			if(lar->shb || (lar->mode & LA_SHAD_RAY)) {
 				visifac= lamp_get_visibility(lar, shi->co, lv, &lampdist);
+				ir+= 1.0f;
+
 				if(visifac <= 0.0f) {
-					if (shi->mat->shadowonly_flag == MA_SO_OLD) {
-						ir+= 1.0f;
+					if (shi->mat->shadowonly_flag == MA_SO_OLD)
 						accum+= 1.0f;
-					}
+
 					continue;
 				}
 				inpr= INPR(shi->vn, lv);
 				if(inpr <= 0.0f) {
-					if (shi->mat->shadowonly_flag == MA_SO_OLD) {
-						ir+= 1.0f;
+					if (shi->mat->shadowonly_flag == MA_SO_OLD)
 						accum+= 1.0f;
-					}
+
 					continue;
 				}
 
@@ -1543,11 +1543,9 @@ static void shade_lamp_loop_only_shadow(ShadeInput *shi, ShadeResult *shr)
 
 				if (shi->mat->shadowonly_flag == MA_SO_OLD) {
 					/* Old "Shadows Only" */
-					ir+= 1.0f;
 					accum+= (1.0f-visifac) + (visifac)*rgb_to_grayscale(shadfac)*shadfac[3];
 				}
 				else {
-					ir+= lar->energy;
 					shaded += rgb_to_grayscale(shadfac)*shadfac[3] * visifac * lar->energy;
 
 					if (shi->mat->shadowonly_flag == MA_SO_SHADOW) {
@@ -1563,9 +1561,6 @@ static void shade_lamp_loop_only_shadow(ShadeInput *shi, ShadeResult *shr)
 				accum = 1.0f - accum/ir;
 			}
 			else {
-				shaded/= ir;
-				lightness/= ir;
-
 				if (shi->mat->shadowonly_flag == MA_SO_SHADOW) {
 					if (lightness > 0.0f) {
 						/* Get shadow value from between 0.0f and non-shadowed lightness */
@@ -1581,10 +1576,11 @@ static void shade_lamp_loop_only_shadow(ShadeInput *shi, ShadeResult *shr)
 			}}
 
 			shr->alpha= (shi->alpha)*(accum);
+			if (shr->alpha<0.0f) shr->alpha=0.0f;
 		}
 		else {
 			/* If "fully shaded", use full alpha even on areas that have no lights */
-			if (shi->mat->shadowonly_flag == MA_SO_SHADED) shr->alpha=1.0f;
+			if (shi->mat->shadowonly_flag == MA_SO_SHADED) shr->alpha=shi->alpha;
 			else shr->alpha= 0.f;
 		}
 	}

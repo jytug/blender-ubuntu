@@ -2,7 +2,7 @@
 /*  curve.c 
  * 
  *  
- * $Id: curve.c 36332 2011-04-26 07:17:21Z campbellbarton $
+ * $Id: curve.c 36980 2011-05-28 13:11:24Z lmg $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1859,7 +1859,7 @@ static void make_bevel_list_3D_minimum_twist(BevList *bl)
 		 * do this by calculating the tilt angle difference, then apply
 		 * the rotation gradually over the entire curve
 		 *
-		 * note that the split is between last and second last, rather then first/last as youd expect.
+		 * note that the split is between last and second last, rather than first/last as youd expect.
 		 *
 		 * real order is like this
 		 * 0,1,2,3,4 --> 1,2,3,4,0

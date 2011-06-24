@@ -1,5 +1,5 @@
 /*
- * $Id: interface_ops.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: interface_ops.c 36644 2011-05-12 16:47:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -97,7 +97,7 @@ static int eyedropper_cancel(bContext *C, wmOperator *op)
 	return OPERATOR_CANCELLED;
 }
 
-static void eyedropper_sample(bContext *C, Eyedropper *eye, short mx, short my)
+static void eyedropper_sample(bContext *C, Eyedropper *eye, int mx, int my)
 {
 	if(RNA_property_type(eye->prop) == PROP_FLOAT) {
 		const int color_manage = CTX_data_scene(C)->r.color_mgt_flag & R_COLOR_MANAGEMENT;

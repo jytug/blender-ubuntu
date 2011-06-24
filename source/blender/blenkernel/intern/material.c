@@ -2,7 +2,7 @@
 /*  material.c
  *
  * 
- * $Id: material.c 36332 2011-04-26 07:17:21Z campbellbarton $
+ * $Id: material.c 36772 2011-05-19 11:21:37Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -258,9 +258,8 @@ Material *localize_material(Material *ma)
 	
 	man->preview = NULL;
 	
-	if(ma->nodetree) {
+	if(ma->nodetree)
 		man->nodetree= ntreeLocalize(ma->nodetree);
-	}
 	
 	man->gpumaterial.first= man->gpumaterial.last= NULL;
 	
