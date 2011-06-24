@@ -1,6 +1,6 @@
 From: Kevin Roy <kiniou@gmail.com>
 Date: Thu, 14 Apr 2011 13:26:34 +0200
-Subject: [PATCH] install_in_usr_lib
+Subject: install_in_usr_lib
 
  * Arch-specific files go to /usr/lib rather than /usr/share.
  * Make blender look for systemdir into /usr/lib instead of /usr/share
@@ -26,10 +26,10 @@ index 71db005..28698b4 100644
  	return NULL;
  #endif
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index 1fd619d..0dc86cd 100644
+index 45c392a..f961c4e 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
-@@ -91,7 +91,7 @@ char *BLI_get_folder_version(const int id, const int ver, const int do_check);
+@@ -86,7 +86,7 @@ char *BLI_get_folder_version(const int id, const int ver, const int do_check);
  #define BLENDER_SYSTEM_FORMAT			"%s/Blender/%s"
  #else
  #define BLENDER_USER_FORMAT			"%s/.blender/%s"
@@ -39,10 +39,10 @@ index 1fd619d..0dc86cd 100644
  
  #ifdef WIN32
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index c44d32a..ad5cd6a 100644
+index 3bea1a5..7a28768 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -992,7 +992,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
+@@ -1005,7 +1005,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
  
  	system_base_path = (const char *)GHOST_getSystemDir();
  	if (system_base_path) {
@@ -52,15 +52,15 @@ index c44d32a..ad5cd6a 100644
  	
  	if(!system_path[0])
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 221ac6c..918541a 100644
+index 6d0ddf7..3fb634f 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -349,8 +349,8 @@ if(UNIX AND NOT APPLE)
+@@ -367,8 +367,8 @@ if(UNIX AND NOT APPLE)
  	if(WITH_PYTHON)
  		# install(CODE "message(\"copying blender scripts...\")")
  		install(
 -			DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts
--			DESTINATION ${TARGETDIR_VER}/
+-			DESTINATION ${TARGETDIR_VER}
 +			DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts/
 +			DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
  			PATTERN ".svn" EXCLUDE

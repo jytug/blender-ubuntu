@@ -1,6 +1,6 @@
 From: Kevin Roy <kiniou@gmail.com>
 Date: Tue, 28 Sep 2010 15:00:26 +0200
-Subject: [PATCH] filter_docs_to_install
+Subject: filter_docs_to_install
 
 Install relevant documentation
 ---
@@ -8,14 +8,14 @@ Install relevant documentation
  1 files changed, 1 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 918541a..26761f6 100644
+index 3fb634f..fa961b1 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -314,9 +314,8 @@ if(UNIX AND NOT APPLE)
+@@ -332,9 +332,8 @@ if(UNIX AND NOT APPLE)
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
  		)
  		install(
--			DIRECTORY ${CMAKE_SOURCE_DIR}/release/text/
+-			DIRECTORY ${CMAKE_SOURCE_DIR}/release/text
 +            FILES ${CMAKE_SOURCE_DIR}/release/text/readme.html ${CMAKE_SOURCE_DIR}/release/text/copyright.txt
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/blender
 -			PATTERN ".svn" EXCLUDE

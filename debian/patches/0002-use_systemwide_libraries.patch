@@ -1,6 +1,6 @@
 From: Kevin Roy <kiniou@gmail.com>
 Date: Thu, 14 Apr 2011 14:51:22 +0200
-Subject: [PATCH] use_systemwide_libraries
+Subject: use_systemwide_libraries
 
 Don't try and use extern/libopenjpeg nor extern/glew
 ---
@@ -8,10 +8,10 @@ Don't try and use extern/libopenjpeg nor extern/glew
  1 files changed, 6 insertions(+), 0 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 722e9e0..c680da8 100644
+index e609be1..2eaf108 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -474,6 +474,12 @@ if(UNIX AND NOT APPLE)
+@@ -468,6 +468,12 @@ if(UNIX AND NOT APPLE)
  		set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -static-intel")
  	endif()
  

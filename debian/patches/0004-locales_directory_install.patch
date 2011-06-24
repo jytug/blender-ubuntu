@@ -1,6 +1,6 @@
 From: Kevin Roy <kiniou@gmail.com>
 Date: Thu, 14 Apr 2011 14:54:04 +0200
-Subject: [PATCH] locales_directory_install
+Subject: locales_directory_install
 
 Change where locales are installed
 ---
@@ -8,15 +8,15 @@ Change where locales are installed
  1 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 26761f6..0bfe87e 100644
+index fa961b1..9197ce2 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -331,8 +331,8 @@ if(UNIX AND NOT APPLE)
+@@ -349,8 +349,8 @@ if(UNIX AND NOT APPLE)
  		)
  
  		install(
 -			DIRECTORY ${CMAKE_SOURCE_DIR}/release/bin/.blender/locale
--			DESTINATION ${TARGETDIR_VER}/datafiles/
+-			DESTINATION ${TARGETDIR_VER}/datafiles
 +			DIRECTORY ${CMAKE_SOURCE_DIR}/release/bin/.blender/locale/
 +            DESTINATION ${CMAKE_INSTALL_PREFIX}/share/locale
  			PATTERN ".svn" EXCLUDE

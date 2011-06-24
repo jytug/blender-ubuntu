@@ -1,6 +1,6 @@
 From: Kevin 'kiniou' Roy <kiniou@gmail.com>
 Date: Tue, 28 Sep 2010 15:50:17 +0200
-Subject: [PATCH] fix_FTBFS_on_KFreeBSD
+Subject: fix_FTBFS_on_KFreeBSD
 
 added __GNU__ and __GLIBC__ to conditional defined in order to compile on KFreeBSD
 ---

@@ -1,6 +1,6 @@
 From: Kevin Roy <kiniou@gmail.com>
 Date: Thu, 14 Apr 2011 14:55:23 +0200
-Subject: [PATCH] blender_thumbnailer
+Subject: blender_thumbnailer
 
 * Move thumbnailer script to an appropriate destination
 * Change to python 3.2 since lintian is messing around with that
@@ -29,10 +29,10 @@ index 8b93eeb..a056852 100755
  
  import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 0bfe87e..aa8b7de 100644
+index 9197ce2..4688fab 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -307,7 +307,7 @@ if(UNIX AND NOT APPLE)
+@@ -325,7 +325,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
