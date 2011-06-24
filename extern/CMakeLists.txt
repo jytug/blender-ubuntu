@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 36110 2011-04-12 11:09:10Z campbellbarton $
+# $Id: CMakeLists.txt 36423 2011-05-02 03:44:02Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -29,6 +29,10 @@ remove_strict_flags()
 
 if(WITH_BULLET)
 	add_subdirectory(bullet2)
+endif()
+
+if(WITH_MOD_CLOTH_ELTOPO)
+	add_subdirectory(eltopo)
 endif()
 
 if(WITH_BINRELOC)

@@ -1,5 +1,5 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 35054 2011-02-22 06:23:07Z campbellbarton $
+# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -58,6 +58,11 @@ add_custom_command(
 
 # Build bf_dna library
 set(INC
+
+)
+
+set(INC_SYS
+
 )
 
 set(SRC
@@ -66,4 +71,4 @@ set(SRC
 	${SRC_DNA_INC}
 )
 
-blender_add_lib(bf_dna "${SRC}" "${INC}")
+blender_add_lib(bf_dna "${SRC}" "${INC}" "${INC_SYS}")

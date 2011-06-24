@@ -1,5 +1,5 @@
 /*
- * $Id: DocumentImporter.h 35841 2011-03-28 09:31:44Z jesterking $
+ * $Id: DocumentImporter.h 37663 2011-06-20 10:50:17Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -72,7 +72,7 @@ public:
 	/** these should not be here */
 	Object* create_camera_object(COLLADAFW::InstanceCamera*, Scene*);
 	Object* create_lamp_object(COLLADAFW::InstanceLight*, Scene*);
-	Object* create_instance_node(Object*, COLLADAFW::Node*, COLLADAFW::Node*, Scene*, bool);
+	Object* create_instance_node(Object*, COLLADAFW::Node*, COLLADAFW::Node*, Scene*, Object*, bool);
 	void write_node(COLLADAFW::Node*, COLLADAFW::Node*, Scene*, Object*, bool);
 	MTex* create_texture(COLLADAFW::EffectCommon*, COLLADAFW::Texture&, Material*, int, TexIndexTextureArrayMap&);
 	void write_profile_COMMON(COLLADAFW::EffectCommon*, Material*);

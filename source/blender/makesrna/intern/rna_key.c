@@ -1,5 +1,5 @@
 /*
- * $Id: rna_key.c 36095 2011-04-11 01:18:25Z campbellbarton $
+ * $Id: rna_key.c 36704 2011-05-15 17:59:48Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -521,7 +521,7 @@ static void rna_def_keyblock(BlenderRNA *brna)
 	RNA_def_struct_ui_icon(srna, ICON_SHAPEKEY_DATA);
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-	RNA_def_property_ui_text(prop, "Name", "");
+	RNA_def_property_ui_text(prop, "Name", "Name of Shape Key");
 	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_ShapeKey_name_set");
 	RNA_def_struct_name_property(srna, prop);
 

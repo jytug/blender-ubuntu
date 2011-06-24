@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_SystemX11.h 35152 2011-02-25 11:28:33Z jesterking $
+ * $Id: GHOST_SystemX11.h 36457 2011-05-03 07:05:01Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -226,6 +226,11 @@ public:
 	 * @param selection	Set the selection into the clipboard, X11 only feature
 	 */
 	void putClipboard(GHOST_TInt8 *buffer, bool selection) const;
+
+	/**
+	 * @see GHOST_ISystem
+	 */
+	int toggleConsole(int action) { return 0; }
 
 	/**
 	 * Atom used for ICCCM, WM-spec and Motif.

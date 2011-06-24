@@ -1,5 +1,5 @@
 /*
-* $Id: BL_ActionActuator.cpp 35167 2011-02-25 13:30:41Z jesterking $
+* $Id: BL_ActionActuator.cpp 37512 2011-06-15 14:06:25Z campbellbarton $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -405,7 +405,7 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 			
 // 2.5x - could also do this but looks too high level, constraints use this, it works ok.
 //				Object workob; /* evaluate using workob */
-//				what_does_obaction((Scene *)obj->GetScene(), obj->GetArmatureObject(), &workob, m_pose, m_action, NULL, m_localtime);
+//				what_does_obaction(obj->GetArmatureObject(), &workob, m_pose, m_action, NULL, m_localtime);
 			}
 
 			// done getting the pose from the action

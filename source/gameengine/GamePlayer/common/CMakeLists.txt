@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 36024 2011-04-05 23:31:01Z campbellbarton $
+# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -29,11 +29,11 @@ set(INC
 	../../../../intern/string
 	../../../../intern/ghost
 	../../../../intern/guardedalloc
+	../../../../intern/container
 	../../../../intern/moto/include
 	../../../../source/gameengine/Rasterizer/RAS_OpenGLRasterizer
-	../../../../source/kernel/gen_system
-	../../../../source/kernel/gen_messaging
 	../../../../source/gameengine/Converter
+	../../../../source/gameengine/BlenderRoutines
 	../../../../source/blender/imbuf
 	../../../../source/gameengine/Ketsji
 	../../../../source/blender/blenlib
@@ -51,6 +51,9 @@ set(INC
 	../../../../source/gameengine/GamePlayer/ghost
 	../../../../source/blender/blenloader
 	../../../../source/blender/gpu
+)
+
+set(INC_SYS
 	${GLEW_INCLUDE_PATH}
 	${PYTHON_INCLUDE_DIRS}
 	${PNG_INCLUDE_DIR}
@@ -82,4 +85,4 @@ set(SRC
 
 add_definitions(-DGLEW_STATIC)
 
-blender_add_lib_nolist(ge_player_common "${SRC}" "${INC}")
+blender_add_lib_nolist(ge_player_common "${SRC}" "${INC}" "${INC_SYS}")

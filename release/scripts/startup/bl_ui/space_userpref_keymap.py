@@ -138,7 +138,7 @@ class USERPREF_MT_keyconfigs(bpy.types.Menu):
         bpy.types.Menu.draw_preset(self, context)
 
 
-class InputKeyMapPanel(bpy.types.Panel):
+class InputKeyMapPanel:
     bl_space_type = 'USER_PREFERENCES'
     bl_label = "Input"
     bl_region_type = 'WINDOW'
@@ -411,8 +411,8 @@ def export_properties(prefix, properties, lines=None):
     if lines is None:
         lines = []
 
-    for pname in properties.keys():
-        if not properties.is_property_hidden(pname):
+    for pname in properties.bl_rna.properties.keys():
+        if pname != "rna_type" and not properties.is_property_hidden(pname):
             value = getattr(properties, pname)
             if isinstance(value, bpy.types.OperatorProperties):
                 export_properties(prefix + "." + pname, value, lines)
@@ -555,13 +555,7 @@ class WM_OT_keyconfig_import(bpy.types.Operator):
 
         config_name = basename(self.filepath)
 
-        path = bpy.utils.preset_paths("keyconfig")[0]  # we need some way to tell the user and system preset path
-        print(path)
-
-        # create config folder if needed
-        if not os.path.exists(path):
-            os.mkdir(path)
-
+        path = bpy.utils.user_resource('SCRIPTS', os.path.join("presets", "keyconfig"), create=True)
         path = os.path.join(path, config_name)
 
         if self.keep_original:

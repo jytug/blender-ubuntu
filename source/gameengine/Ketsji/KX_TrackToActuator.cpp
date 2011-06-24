@@ -4,7 +4,7 @@
 //
 // Replace the mesh for this actuator's parent
 //
-// $Id: KX_TrackToActuator.cpp 35171 2011-02-25 13:35:59Z jesterking $
+// $Id: KX_TrackToActuator.cpp 36523 2011-05-06 20:18:42Z blendix $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -219,7 +219,7 @@ bool KX_TrackToActuator::UnlinkObject(SCA_IObject* clientobj)
 	return false;
 }
 
-void KX_TrackToActuator::Relink(GEN_Map<GEN_HashedPtr, void*> *obj_map)
+void KX_TrackToActuator::Relink(CTR_Map<CTR_HashedPtr, void*> *obj_map)
 {
 	void **h_obj = (*obj_map)[m_object];
 	if (h_obj) {

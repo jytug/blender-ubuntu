@@ -1,5 +1,5 @@
 /*
- * $Id: BL_MeshDeformer.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: BL_MeshDeformer.h 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,7 +51,7 @@ class BL_MeshDeformer : public RAS_Deformer
 public:
 	void VerifyStorage();
 	void RecalcNormals();
-	virtual void Relink(GEN_Map<class GEN_HashedPtr, void*>*map);
+	virtual void Relink(CTR_Map<class CTR_HashedPtr, void*>*map);
 	BL_MeshDeformer(BL_DeformableGameObject *gameobj,
 					struct Object* obj,
 					class RAS_MeshObject *meshobj ):

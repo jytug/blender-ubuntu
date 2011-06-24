@@ -1,6 +1,5 @@
-
 /*
- * $Id: bpy_operator_wrap.c 35624 2011-03-19 11:12:48Z campbellbarton $
+ * $Id: bpy_operator_wrap.c 36576 2011-05-09 14:41:44Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

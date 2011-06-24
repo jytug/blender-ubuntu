@@ -1,8 +1,8 @@
 
 set(INC
 	.
-	../../../source/kernel/gen_system
 	../../../intern/string
+	../../../intern/container
 	../../../intern/guardedalloc
 	../../../intern/audaspace/intern
 	../../../source/gameengine/Rasterizer/RAS_OpenGLRasterizer 
@@ -32,8 +32,13 @@ set(INC
 	${GLEW_INCLUDE_PATH}
 )
 
+set(INC_SYS
+
+)
+
 set(SRC
 	BL_KetsjiEmbedStart.cpp
+	BL_System.cpp
 	KX_BlenderCanvas.cpp
 	KX_BlenderGL.cpp
 	KX_BlenderInputDevice.cpp
@@ -42,6 +47,7 @@ set(SRC
 	KX_BlenderRenderTools.cpp
 	KX_BlenderSystem.cpp
 
+	BL_System.h
 	KX_BlenderCanvas.h
 	KX_BlenderGL.h
 	KX_BlenderInputDevice.h
@@ -57,4 +63,4 @@ if(WITH_CODEC_FFMPEG)
 	add_definitions(-DWITH_FFMPEG)
 endif()
 
-blender_add_lib(ge_blen_routines "${SRC}" "${INC}")
+blender_add_lib(ge_blen_routines "${SRC}" "${INC}" "${INC_SYS}")

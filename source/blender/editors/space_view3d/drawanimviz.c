@@ -1,5 +1,5 @@
 /*
- * $Id: drawanimviz.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: drawanimviz.c 37671 2011-06-20 17:50:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -117,7 +117,11 @@ void draw_motion_path_instance(Scene *scene,
 		len = mpath->length;
 		mpv_start= mpath->points;
 	}
-	
+
+	if(len <= 0) {
+		return;
+	}
+
 	/* draw curve-line of path */
 	glShadeModel(GL_SMOOTH);
 	

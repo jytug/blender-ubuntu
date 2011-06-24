@@ -1,5 +1,5 @@
 /*
- * $Id: MOD_modifiertypes.h 35014 2011-02-21 06:58:46Z jesterking $
+ * $Id: MOD_modifiertypes.h 36414 2011-05-01 15:16:59Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,6 +71,7 @@ extern ModifierTypeInfo modifierType_Smoke;
 extern ModifierTypeInfo modifierType_ShapeKey;
 extern ModifierTypeInfo modifierType_Solidify;
 extern ModifierTypeInfo modifierType_Screw;
+extern ModifierTypeInfo modifierType_Warp;
 
 /* MOD_util.c */
 void modifier_type_init(ModifierTypeInfo *types[]);

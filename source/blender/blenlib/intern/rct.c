@@ -4,7 +4,7 @@
  * 
  * april 95
  * 
- * $Id: rct.c 35553 2011-03-15 03:02:12Z campbellbarton $
+ * $Id: rct.c 36836 2011-05-23 14:51:31Z blendix $
  *
  * A minimalist lib for functions doing stuff with rectangle structs.
  *
@@ -241,7 +241,7 @@ void BLI_copy_rcti_rctf(rcti *tar, const rctf *src)
 
 void print_rctf(const char *str, rctf *rect)
 {
-	printf("%s: xmin %.3f, xmax %.3f, ymin %.3f, ymax %.3f (%.3fx%.3f)\n", str, rect->xmin, rect->xmax, rect->ymin, rect->xmax, rect->xmax - rect->xmin, rect->ymax - rect->ymin);
+	printf("%s: xmin %.3f, xmax %.3f, ymin %.3f, ymax %.3f (%.3fx%.3f)\n", str, rect->xmin, rect->xmax, rect->ymin, rect->ymax, rect->xmax - rect->xmin, rect->ymax - rect->ymin);
 }
 
 void print_rcti(const char *str, rcti *rect)

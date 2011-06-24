@@ -1,5 +1,5 @@
 /*
- * $Id: drawnode.c 36312 2011-04-24 10:51:45Z campbellbarton $
+ * $Id: drawnode.c 36976 2011-05-28 12:04:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -482,6 +482,7 @@ static void node_composit_buts_image(uiLayout *layout, bContext *C, PointerRNA *
 	bNode *node= ptr->data;
 	PointerRNA imaptr;
 	PropertyRNA *prop;
+	int source;
 	
 	uiTemplateID(layout, C, ptr, "image", NULL, "IMAGE_OT_open", NULL);
 	
@@ -495,7 +496,19 @@ static void node_composit_buts_image(uiLayout *layout, bContext *C, PointerRNA *
 	
 	uiItemR(col, &imaptr, "source", 0, NULL, ICON_NONE);
 	
-	if (ELEM(RNA_enum_get(&imaptr, "source"), IMA_SRC_SEQUENCE, IMA_SRC_MOVIE)) {
+	source= RNA_enum_get(&imaptr, "source");
+
+	if(source == IMA_SRC_SEQUENCE) {
+		/* don't use iuser->framenr directly because it may not be updated if auto-refresh is off */
+		Scene *scene= CTX_data_scene(C);
+		ImageUser *iuser= node->storage;
+		char tstr[32];
+		const int framenr= BKE_image_user_get_frame(iuser, CFRA, 0);
+		BLI_snprintf(tstr, sizeof(tstr), "Frame: %d", framenr);
+		uiItemL(layout, tstr, ICON_NONE);
+	}
+
+	if (ELEM(source, IMA_SRC_SEQUENCE, IMA_SRC_MOVIE)) {
 		col= uiLayoutColumn(layout, 1);
 		uiItemR(col, ptr, "frame_duration", 0, NULL, ICON_NONE);
 		uiItemR(col, ptr, "frame_start", 0, NULL, ICON_NONE);
@@ -849,7 +862,7 @@ static void node_composit_buts_color_spill(uiLayout *layout, bContext *UNUSED(C)
 
 	uiItemR(col, ptr, "ratio", UI_ITEM_R_SLIDER, NULL, ICON_NONE);
 	uiItemR(col, ptr, "use_unspill", 0, NULL, ICON_NONE);
-	if (RNA_enum_get(ptr, "use_unspill")== 1) {
+	if (RNA_boolean_get(ptr, "use_unspill")== 1) {
 		uiItemR(col, ptr, "unspill_red", UI_ITEM_R_SLIDER, NULL, ICON_NONE);
 		uiItemR(col, ptr, "unspill_green", UI_ITEM_R_SLIDER, NULL, ICON_NONE);
 		uiItemR(col, ptr, "unspill_blue", UI_ITEM_R_SLIDER, NULL, ICON_NONE);

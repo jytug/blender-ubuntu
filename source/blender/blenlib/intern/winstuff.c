@@ -1,5 +1,5 @@
 /*
- * $Id: winstuff.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: winstuff.c 36426 2011-05-02 08:07:24Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -64,14 +64,6 @@ int BLI_getInstallationDir( char * str ) {
 	strcpy(str,dir);
 	
 	return 1;
-}
-
-int IsConsoleEmpty(void)
-{
-	CONSOLE_SCREEN_BUFFER_INFO csbi = {{0}};
-	HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	return GetConsoleScreenBufferInfo(hStdOutput, &csbi) && csbi.dwCursorPosition.X == 0 && csbi.dwCursorPosition.Y == 0;
 }
 
 void RegisterBlendExtension_Fail(HKEY root)

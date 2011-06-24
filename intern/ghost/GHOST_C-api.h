@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_C-api.h 35792 2011-03-26 08:13:42Z campbellbarton $
+ * $Id: GHOST_C-api.h 36426 2011-05-02 08:07:24Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -844,6 +844,18 @@ extern GHOST_TUns8* GHOST_getClipboard(int selection);
  */
 extern void GHOST_putClipboard(GHOST_TInt8 *buffer, int selection);
 
+
+
+/**
+ * Toggles console
+ * @action	0 - Hides
+ *			1 - Shows
+ *			2 - Toggles
+ *			3 - Hides if it runs not from  command line
+ *			* - Does nothing
+ * @return current status (1 -visible, 0 - hidden)
+ */
+extern int GHOST_toggleConsole(int action);
 
 #ifdef __cplusplus
 }

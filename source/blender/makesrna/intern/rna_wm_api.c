@@ -1,5 +1,5 @@
 /*
- * $Id: rna_wm_api.c 35971 2011-04-03 10:04:16Z campbellbarton $
+ * $Id: rna_wm_api.c 36547 2011-05-08 10:29:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -135,7 +135,7 @@ void RNA_api_wm(StructRNA *srna)
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	RNA_def_property_range(parm, 0.0, FLT_MAX);
 	RNA_def_property_ui_text(parm, "Time Step", "Interval in seconds between timer events");
-	parm= RNA_def_pointer(func, "window", "Window", "", "Window to attach the timer to or None.");
+	RNA_def_pointer(func, "window", "Window", "", "Window to attach the timer to or None.");
 	parm= RNA_def_pointer(func, "result", "Timer", "", "");
 	RNA_def_function_return(func, parm);
 

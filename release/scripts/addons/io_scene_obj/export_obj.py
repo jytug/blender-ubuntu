@@ -24,7 +24,7 @@ import shutil
 
 import bpy
 import mathutils
-import io_utils
+import bpy_extras.io_utils
 
 
 def name_compat(name):
@@ -45,22 +45,6 @@ def write_mtl(scene, filepath, path_mode, copy_set, mtl_dict):
     source_dir = bpy.data.filepath
     dest_dir = os.path.dirname(filepath)
 
-    def copy_image(image):
-        fn = bpy.path.abspath(image.filepath)
-        fn = os.path.normpath(fn)
-        fn_strip = os.path.basename(fn)
-
-        if copy_images:
-            rel = fn_strip
-            fn_abs_dest = os.path.join(dest_dir, fn_strip)
-            if not os.path.exists(fn_abs_dest):
-                shutil.copy(fn, fn_abs_dest)
-        elif bpy.path.is_subdir(fn, dest_dir):
-            rel = os.path.relpath(fn, dest_dir)
-        else:
-            rel = fn
-        return rel
-
     file = open(filepath, "w", encoding="utf8", newline="\n")
     file.write('# Blender MTL File: %r\n' % os.path.basename(bpy.data.filepath))
     file.write('# Material Count: %i\n' % len(mtl_dict))
@@ -70,7 +54,7 @@ def write_mtl(scene, filepath, path_mode, copy_set, mtl_dict):
 
     # Write material/image combinations we have used.
     # Using mtl_dict.values() directly gives un-predictable order.
-    for mtl_mat_name, mat, img in mtl_dict_values:
+    for mtl_mat_name, mat, face_img in mtl_dict_values:
 
         # Get the Blender data for the material and the image.
         # Having an image named None will make a bug, dont do it :)
@@ -78,7 +62,14 @@ def write_mtl(scene, filepath, path_mode, copy_set, mtl_dict):
         file.write('newmtl %s\n' % mtl_mat_name)  # Define a new material: matname_imgname
 
         if mat:
-            file.write('Ns %.6f\n' % ((mat.specular_hardness - 1) * 1.9607843137254901))  # Hardness, convert blenders 1-511 to MTL's
+            # convert from blenders spec to 0 - 1000 range.
+            if mat.specular_shader == 'WARDISO':
+                tspec = (0.4 - mat.specular_slope) / 0.0004
+            else:
+                tspec = (mat.specular_hardness - 1) * 1.9607843137254901
+            file.write('Ns %.6f\n' % tspec)
+            del tspec
+
             file.write('Ka %.6f %.6f %.6f\n' % tuple(c * mat.ambient for c in worldAmb))  # Ambient, uses mirror colour,
             file.write('Kd %.6f %.6f %.6f\n' % tuple(c * mat.diffuse_intensity for c in mat.diffuse_color))  # Diffuse
             file.write('Ks %.6f %.6f %.6f\n' % tuple(c * mat.specular_intensity for c in mat.specular_color))  # Specular
@@ -106,22 +97,23 @@ def write_mtl(scene, filepath, path_mode, copy_set, mtl_dict):
             file.write('illum 2\n')  # light normaly
 
         # Write images!
-        if img:  # We have an image on the face!
+        if face_img:  # We have an image on the face!
             # write relative image path
-            rel = io_utils.path_reference(img.filepath, source_dir, dest_dir, path_mode, "", copy_set)
+            rel = bpy_extras.io_utils.path_reference(face_img.filepath, source_dir, dest_dir, path_mode, "", copy_set)
             file.write('map_Kd %s\n' % rel)  # Diffuse mapping image
 
-        elif mat:  # No face image. if we havea material search for MTex image.
+        if mat:  # No face image. if we havea material search for MTex image.
             image_map = {}
             # backwards so topmost are highest priority
             for mtex in reversed(mat.texture_slots):
                 if mtex and mtex.texture.type == 'IMAGE':
                     image = mtex.texture.image
                     if image:
+                        # texface overrides others
+                        if mtex.use_map_color_diffuse and face_img is None:
+                            image_map["map_Kd"] = image
                         if mtex.use_map_ambient:
                             image_map["map_Ka"] = image
-                        if mtex.use_map_color_diffuse:
-                            image_map["map_Kd"] = image
                         if mtex.use_map_specular:
                             image_map["map_Ks"] = image
                         if mtex.use_map_alpha:
@@ -134,7 +126,7 @@ def write_mtl(scene, filepath, path_mode, copy_set, mtl_dict):
                             image_map["map_Ns"] = image
 
             for key, image in image_map.items():
-                filepath = io_utils.path_reference(image.filepath, source_dir, dest_dir, path_mode, "", copy_set)
+                filepath = bpy_extras.io_utils.path_reference(image.filepath, source_dir, dest_dir, path_mode, "", copy_set)
                 file.write('%s %s\n' % (key, repr(filepath)[1:-1]))
 
         file.write('\n\n')
@@ -228,13 +220,13 @@ def write_file(filepath, objects, scene,
                EXPORT_UV=True,
                EXPORT_MTL=True,
                EXPORT_APPLY_MODIFIERS=True,
-               EXPORT_ROTX90=True,
                EXPORT_BLEN_OBS=True,
                EXPORT_GROUP_BY_OB=False,
                EXPORT_GROUP_BY_MAT=False,
                EXPORT_KEEP_VERT_ORDER=False,
                EXPORT_POLYGROUPS=False,
                EXPORT_CURVE_AS_NURBS=True,
+               EXPORT_GLOBAL_MATRIX=None,
                EXPORT_PATH_MODE='AUTO',
                ):
     '''
@@ -243,6 +235,9 @@ def write_file(filepath, objects, scene,
     eg.
     write( 'c:\\test\\foobar.obj', Blender.Object.GetSelected() ) # Using default options.
     '''
+
+    if EXPORT_GLOBAL_MATRIX is None:
+        EXPORT_GLOBAL_MATRIX = mathutils.Matrix()
 
     # XXX
     import math
@@ -295,9 +290,6 @@ def write_file(filepath, objects, scene,
         mtlfilepath = os.path.splitext(filepath)[0] + ".mtl"
         file.write('mtllib %s\n' % repr(os.path.basename(mtlfilepath))[1:-1])  # filepath can contain non utf8 chars, use repr
 
-    if EXPORT_ROTX90:
-        mat_xrot90 = mathutils.Matrix.Rotation(-math.pi / 2.0, 4, 'X')
-
     # Initialize totals, these are updated each object
     totverts = totuvco = totno = 1
 
@@ -308,7 +300,7 @@ def write_file(filepath, objects, scene,
     # A Dict of Materials
     # (material.name, image.name):matname_imagename # matname_imagename has gaps removed.
     mtl_dict = {}
-    
+
     copy_set = set()
 
     # Get all meshes
@@ -337,21 +329,20 @@ def write_file(filepath, objects, scene,
 
             # Nurbs curve support
             if EXPORT_CURVE_AS_NURBS and test_nurbs_compat(ob):
-                if EXPORT_ROTX90:
-                    ob_mat = ob_mat * mat_xrot90
+                ob_mat = EXPORT_GLOBAL_MATRIX * ob_mat
                 totverts += write_nurb(file, ob, ob_mat)
                 continue
             # END NURBS
 
-            if ob.type != 'MESH':
+            try:
+                me = ob.to_mesh(scene, EXPORT_APPLY_MODIFIERS, 'PREVIEW')
+            except RuntimeError:
+                me = None
+
+            if me is None:
                 continue
 
-            me = ob.to_mesh(scene, EXPORT_APPLY_MODIFIERS, 'PREVIEW')
-
-            if EXPORT_ROTX90:
-                me.transform(mat_xrot90 * ob_mat)
-            else:
-                me.transform(ob_mat)
+            me.transform(EXPORT_GLOBAL_MATRIX * ob_mat)
 
 #           # Will work for non meshes now! :)
 #           me= BPyMesh.getMeshFromObject(ob, containerMesh, EXPORT_APPLY_MODIFIERS, EXPORT_POLYGROUPS, scn)
@@ -649,7 +640,7 @@ def write_file(filepath, objects, scene,
         write_mtl(scene, mtlfilepath, EXPORT_PATH_MODE, copy_set, mtl_dict)
 
     # copy all collected files.
-    io_utils.path_reference_copy(copy_set)
+    bpy_extras.io_utils.path_reference_copy(copy_set)
 
     print("OBJ Export time: %.2f" % (time.clock() - time1))
 
@@ -662,7 +653,6 @@ def _write(context, filepath,
               EXPORT_UV,  # ok
               EXPORT_MTL,
               EXPORT_APPLY_MODIFIERS,  # ok
-              EXPORT_ROTX90,  # wrong
               EXPORT_BLEN_OBS,
               EXPORT_GROUP_BY_OB,
               EXPORT_GROUP_BY_MAT,
@@ -672,6 +662,7 @@ def _write(context, filepath,
               EXPORT_SEL_ONLY,  # ok
               EXPORT_ALL_SCENES,  # XXX not working atm
               EXPORT_ANIMATION,
+              EXPORT_GLOBAL_MATRIX,
               EXPORT_PATH_MODE,
               ):  # Not used
 
@@ -731,13 +722,13 @@ def _write(context, filepath,
                        EXPORT_UV,
                        EXPORT_MTL,
                        EXPORT_APPLY_MODIFIERS,
-                       EXPORT_ROTX90,
                        EXPORT_BLEN_OBS,
                        EXPORT_GROUP_BY_OB,
                        EXPORT_GROUP_BY_MAT,
                        EXPORT_KEEP_VERT_ORDER,
                        EXPORT_POLYGROUPS,
                        EXPORT_CURVE_AS_NURBS,
+                       EXPORT_GLOBAL_MATRIX,
                        EXPORT_PATH_MODE,
                        )
 
@@ -763,7 +754,6 @@ def save(operator, context, filepath="",
          use_uvs=True,
          use_materials=True,
          use_apply_modifiers=True,
-         use_rotate_x90=True,
          use_blen_objects=True,
          group_by_object=False,
          group_by_material=False,
@@ -773,6 +763,7 @@ def save(operator, context, filepath="",
          use_selection=True,
          use_all_scenes=False,
          use_animation=False,
+         global_matrix=None,
          path_mode='AUTO'
          ):
 
@@ -784,7 +775,6 @@ def save(operator, context, filepath="",
            EXPORT_UV=use_uvs,
            EXPORT_MTL=use_materials,
            EXPORT_APPLY_MODIFIERS=use_apply_modifiers,
-           EXPORT_ROTX90=use_rotate_x90,
            EXPORT_BLEN_OBS=use_blen_objects,
            EXPORT_GROUP_BY_OB=group_by_object,
            EXPORT_GROUP_BY_MAT=group_by_material,
@@ -794,6 +784,7 @@ def save(operator, context, filepath="",
            EXPORT_SEL_ONLY=use_selection,
            EXPORT_ALL_SCENES=use_all_scenes,
            EXPORT_ANIMATION=use_animation,
+           EXPORT_GLOBAL_MATRIX=global_matrix,
            EXPORT_PATH_MODE=path_mode,
            )
 

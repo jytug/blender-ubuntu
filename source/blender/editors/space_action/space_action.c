@@ -1,5 +1,5 @@
 /*
- * $Id: space_action.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: space_action.c 37185 2011-06-04 17:03:46Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -58,6 +58,7 @@
 #include "UI_view2d.h"
 
 #include "ED_space_api.h"
+#include "ED_screen.h"
 #include "ED_anim_api.h"
 #include "ED_markers.h"
 

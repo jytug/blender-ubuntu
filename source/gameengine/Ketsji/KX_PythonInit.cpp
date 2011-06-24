@@ -1,5 +1,5 @@
 /*
- * $Id: KX_PythonInit.cpp 36208 2011-04-18 08:27:50Z campbellbarton $
+ * $Id: KX_PythonInit.cpp 36947 2011-05-27 09:57:53Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1781,7 +1781,7 @@ PyObject* initGamePlayerPythonScripting(const STR_String& progname, TPythonSecur
 	PyImport_ExtendInittab(bge_internal_modules);
 
 	/* find local python installation */
-	PyC_SetHomePath(BLI_get_folder(BLENDER_PYTHON, NULL));
+	PyC_SetHomePath(BLI_get_folder(BLENDER_SYSTEM_PYTHON, NULL));
 
 	Py_Initialize();
 	

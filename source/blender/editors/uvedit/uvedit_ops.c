@@ -1,5 +1,5 @@
 /*
- * $Id: uvedit_ops.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: uvedit_ops.c 37246 2011-06-06 11:04:54Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -419,7 +419,7 @@ int ED_uvedit_minmax(Scene *scene, Image *ima, Object *obedit, float *min, float
 	return sel;
 }
 
-int ED_uvedit_median(Scene *scene, Image *ima, Object *obedit, float co[3])
+static int ED_uvedit_median(Scene *scene, Image *ima, Object *obedit, float co[3])
 {
 	EditMesh *em= BKE_mesh_get_editmesh((Mesh*)obedit->data);
 	EditFace *efa;
@@ -1308,59 +1308,6 @@ static void UV_OT_stitch(wmOperatorType *ot)
 
 /* ******************** (de)select all operator **************** */
 
-static int select_inverse_exec(bContext *C, wmOperator *UNUSED(op))
-{
-	Scene *scene;
-	ToolSettings *ts;
-	Object *obedit;
-	EditMesh *em;
-	EditFace *efa;
-	Image *ima;
-	MTFace *tf;
-	
-	scene= CTX_data_scene(C);
-	ts= CTX_data_tool_settings(C);
-	obedit= CTX_data_edit_object(C);
-	em= BKE_mesh_get_editmesh((Mesh*)obedit->data);
-	ima= CTX_data_edit_image(C);
-
-	if(ts->uv_flag & UV_SYNC_SELECTION) {
-		EM_select_swap(em);
-	}
-	else {
-		for(efa= em->faces.first; efa; efa= efa->next) {
-			tf = CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
-
-			if(uvedit_face_visible(scene, ima, efa, tf)) {
-				tf->flag ^= TF_SEL1;
-				tf->flag ^= TF_SEL2;
-				tf->flag ^= TF_SEL3;
-				if(efa->v4) tf->flag ^= TF_SEL4;
-			}
-		}
-	}
-
-	WM_event_add_notifier(C, NC_GEOM|ND_DATA, obedit->data);
-
-	BKE_mesh_end_editmesh(obedit->data, em);
-	return OPERATOR_FINISHED;
-}
-
-static void UV_OT_select_inverse(wmOperatorType *ot)
-{
-	/* identifiers */
-	ot->name= "Select Inverse";
-	ot->description= "Select inverse of (un)selected UV vertices";
-	ot->idname= "UV_OT_select_inverse";
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-	
-	/* api callbacks */
-	ot->exec= select_inverse_exec;
-	ot->poll= ED_operator_uvedit;
-}
-
-/* ******************** (de)select all operator **************** */
-
 static int select_all_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene;
@@ -1425,11 +1372,7 @@ static int select_all_exec(bContext *C, wmOperator *op)
 					tf->flag &= ~select_flag;
 					break;
 				case SEL_INVERT:
-					if ((tf->flag & select_flag) == select_flag) {
-						tf->flag &= ~select_flag;
-					} else {
-						tf->flag &= ~select_flag;
-					}
+					tf->flag ^= select_flag;
 					break;
 				}
 			}
@@ -1501,7 +1444,7 @@ static int mouse_select(bContext *C, float co[2], int extend, int loop)
 	 * remove doubles and could annoying if it joined points when zoomed out.
 	 * 'penalty' is in screen pixel space otherwise zooming in on a uv-vert and
 	 * shift-selecting can consider an adjacent point close enough to add to
-	 * the selection rather then de-selecting the closest. */
+	 * the selection rather than de-selecting the closest. */
 
 	uvedit_pixel_to_float(sima, limit, 0.05f);
 	uvedit_pixel_to_float(sima, penalty, 5.0f / sima->zoom);
@@ -1772,12 +1715,8 @@ static int select_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
 	ARegion *ar= CTX_wm_region(C);
 	float co[2];
-	int x, y;
 
-	x= event->x - ar->winrct.xmin;
-	y= event->y - ar->winrct.ymin;
-
-	UI_view2d_region_to_view(&ar->v2d, x, y, &co[0], &co[1]);
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1], &co[0], &co[1]);
 	RNA_float_set_array(op->ptr, "location", co);
 
 	return select_exec(C, op);
@@ -1821,12 +1760,8 @@ static int select_loop_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
 	ARegion *ar= CTX_wm_region(C);
 	float co[2];
-	int x, y;
 
-	x= event->x - ar->winrct.xmin;
-	y= event->y - ar->winrct.ymin;
-
-	UI_view2d_region_to_view(&ar->v2d, x, y, &co[0], &co[1]);
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1], &co[0], &co[1]);
 	RNA_float_set_array(op->ptr, "location", co);
 
 	return select_loop_exec(C, op);
@@ -1882,12 +1817,8 @@ static int select_linked_internal(bContext *C, wmOperator *op, wmEvent *event, i
 		if(event) {
 			/* invoke */
 			ARegion *ar= CTX_wm_region(C);
-			int x, y;
 
-			x= event->x - ar->winrct.xmin;
-			y= event->y - ar->winrct.ymin;
-
-			UI_view2d_region_to_view(&ar->v2d, x, y, &co[0], &co[1]);
+			UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1], &co[0], &co[1]);
 			RNA_float_set_array(op->ptr, "location", co);
 		}
 		else {
@@ -2290,6 +2221,7 @@ static void UV_OT_select_border(wmOperatorType *ot)
 	ot->exec= border_select_exec;
 	ot->modal= WM_border_select_modal;
 	ot->poll= ED_operator_image_active;	/* requires space image */;
+	ot->cancel= WM_border_select_cancel;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -2379,6 +2311,7 @@ static void UV_OT_circle_select(wmOperatorType *ot)
 	ot->modal= WM_gesture_circle_modal;
 	ot->exec= circle_select_exec;
 	ot->poll= ED_operator_image_active;	/* requires space image */;
+	ot->cancel= WM_gesture_circle_cancel;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -3093,12 +3026,9 @@ static int set_2d_cursor_exec(bContext *C, wmOperator *op)
 static int set_2d_cursor_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
 	ARegion *ar= CTX_wm_region(C);
-	int x, y;
 	float location[2];
 
-	x= event->x - ar->winrct.xmin;
-	y= event->y - ar->winrct.ymin;
-	UI_view2d_region_to_view(&ar->v2d, x, y, &location[0], &location[1]);
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1], &location[0], &location[1]);
 	RNA_float_set_array(op->ptr, "location", location);
 
 	return set_2d_cursor_exec(C, op);
@@ -3149,14 +3079,12 @@ static int set_tile_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	Image *ima= CTX_data_edit_image(C);
 	ARegion *ar= CTX_wm_region(C);
 	float fx, fy;
-	int x, y, tile[2];
+	int tile[2];
 
 	if(!ima || !(ima->tpageflag & IMA_TILES))
 		return OPERATOR_CANCELLED;
 
-	x= event->x - ar->winrct.xmin;
-	y= event->y - ar->winrct.ymin;
-	UI_view2d_region_to_view(&ar->v2d, x, y, &fx, &fy);
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1], &fx, &fy);
 
 	if(fx >= 0.0f && fy >= 0.0f && fx < 1.0f && fy < 1.0f) {
 		fx= fx*ima->xrep;
@@ -3196,7 +3124,6 @@ static void UV_OT_tile_set(wmOperatorType *ot)
 void ED_operatortypes_uvedit(void)
 {
 	WM_operatortype_append(UV_OT_select_all);
-	WM_operatortype_append(UV_OT_select_inverse);
 	WM_operatortype_append(UV_OT_select);
 	WM_operatortype_append(UV_OT_select_loop);
 	WM_operatortype_append(UV_OT_select_linked);
@@ -3258,7 +3185,7 @@ void ED_keymap_uvedit(wmKeyConfig *keyconf)
 
 	WM_keymap_add_item(keymap, "UV_OT_unlink_selected", LKEY, KM_PRESS, KM_ALT, 0);
 	WM_keymap_add_item(keymap, "UV_OT_select_all", AKEY, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "UV_OT_select_inverse", IKEY, KM_PRESS, KM_CTRL, 0);
+	RNA_enum_set(WM_keymap_add_item(keymap, "UV_OT_select_all", IKEY, KM_PRESS, KM_CTRL, 0)->ptr, "action", SEL_INVERT);
 	WM_keymap_add_item(keymap, "UV_OT_select_pinned", PKEY, KM_PRESS, KM_SHIFT, 0);
 
 	WM_keymap_add_menu(keymap, "IMAGE_MT_uvs_weldalign", WKEY, KM_PRESS, 0, 0);

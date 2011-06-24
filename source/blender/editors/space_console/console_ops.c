@@ -1,5 +1,5 @@
 /*
- * $Id: console_ops.c 35362 2011-03-05 10:29:10Z campbellbarton $
+ * $Id: console_ops.c 37650 2011-06-20 03:10:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -84,7 +84,7 @@ static void console_scrollback_limit(SpaceConsole *sc)
 {
 	int tot;
 	
-	if (U.scrollback < 32) U.scrollback= 128; // XXX - save in user defaults
+	if (U.scrollback < 32) U.scrollback= 256; // XXX - save in user defaults
 	
 	for(tot= BLI_countlist(&sc->scrollback); tot > U.scrollback; tot--)
 		console_scrollback_free(sc, sc->scrollback.first);

@@ -1,5 +1,5 @@
 /* 
- * $Id: mathutils.c 35823 2011-03-27 17:12:59Z campbellbarton $
+ * $Id: mathutils.c 36871 2011-05-24 16:05:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,9 +38,9 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
-static char M_Mathutils_doc[] =
+PyDoc_STRVAR(M_Mathutils_doc,
 "This module provides access to matrices, eulers, quaternions and vectors."
-;
+);
 static int mathutils_array_parse_fast(float *array, int array_min, int array_max, PyObject *value, const char *error_prefix)
 {
 	PyObject *value_fast= NULL;

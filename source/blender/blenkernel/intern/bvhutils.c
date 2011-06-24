@@ -1,6 +1,6 @@
 /*
  *
- * $Id: bvhutils.c 35836 2011-03-28 04:22:50Z campbellbarton $
+ * $Id: bvhutils.c 37410 2011-06-11 14:08:46Z lukastoenne $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -493,7 +493,7 @@ static void mesh_edges_nearest_point(void *userdata, int index, const float *co,
 	
 	// NOTE: casts to "float*" here are due to co being "const float*"
 	closest_to_line_segment_v3(nearest_tmp, (float*)co, t0, t1);
-	dist = len_v3v3(nearest_tmp, (float*)co);
+	dist = len_squared_v3v3(nearest_tmp, (float*)co);
 	
 	if(dist < nearest->dist)
 	{

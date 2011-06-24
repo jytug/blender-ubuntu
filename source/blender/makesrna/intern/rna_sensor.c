@@ -1,5 +1,5 @@
 /*
- * $Id: rna_sensor.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: rna_sensor.c 36924 2011-05-26 13:38:16Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -115,7 +115,7 @@ static void rna_Sensor_type_set(struct PointerRNA *ptr, int value)
 }
 
 /* Always keep in alphabetical order */
-EnumPropertyItem *rna_Sensor_type_itemf(bContext *C, PointerRNA *ptr, int *free)
+EnumPropertyItem *rna_Sensor_type_itemf(bContext *C, PointerRNA *ptr, PropertyRNA *UNUSED(prop), int *free)
 {
 	EnumPropertyItem *item= NULL;
 	Object *ob=NULL;

@@ -1,5 +1,5 @@
 /*
- * $Id: blf_internal_types.h 35248 2011-02-27 20:42:42Z jesterking $
+ * $Id: blf_internal_types.h 36390 2011-04-30 08:54:06Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -200,9 +200,9 @@ typedef struct FontBLF {
 	/* the same but unsigned char */
 	unsigned char *b_cbuf;
 
-	/* buffer size. */
-	unsigned int bw;
-	unsigned int bh;
+	/* buffer size, keep signed so comparisons with negative values work */
+	int bw;
+	int bh;
 
 	/* number of channels. */
 	int bch;

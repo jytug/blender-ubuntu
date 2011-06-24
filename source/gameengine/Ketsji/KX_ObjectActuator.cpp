@@ -1,7 +1,7 @@
 /*
  * Do translation/rotation actions
  *
- * $Id: KX_ObjectActuator.cpp 35323 2011-03-03 08:01:11Z campbellbarton $
+ * $Id: KX_ObjectActuator.cpp 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -299,7 +299,7 @@ bool KX_ObjectActuator::UnlinkObject(SCA_IObject* clientobj)
 	return false;
 }
 
-void KX_ObjectActuator::Relink(GEN_Map<GEN_HashedPtr, void*> *obj_map)
+void KX_ObjectActuator::Relink(CTR_Map<CTR_HashedPtr, void*> *obj_map)
 {
 	void **h_obj = (*obj_map)[m_reference];
 	if (h_obj) {

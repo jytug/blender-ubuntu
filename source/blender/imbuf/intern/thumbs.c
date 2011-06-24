@@ -1,5 +1,5 @@
 /*
- * $Id: thumbs.c 36276 2011-04-21 15:53:30Z campbellbarton $ 
+ * $Id: thumbs.c 36433 2011-05-02 10:22:49Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -273,6 +273,15 @@ ImBuf* IMB_thumb_create(const char* path, ThumbSize size, ThumbSource source, Im
 			break;
 		default:
 			return NULL; /* unknown size */
+	}
+
+	/* exception, skip images over 100mb */
+	if(source == THB_SOURCE_IMAGE) {
+		const size_t size= BLI_filepathsize(path);
+		if(size != -1 && size > THUMB_SIZE_MAX) {
+			// printf("file too big: %d, skipping %s\n", (int)size, path);
+			return NULL;
+		}
 	}
 
 	uri_from_filename(path, uri);

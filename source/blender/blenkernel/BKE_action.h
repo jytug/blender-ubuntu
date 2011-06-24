@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_action.h 35513 2011-03-13 12:22:57Z aligorith $
+ * $Id: BKE_action.h 37512 2011-06-15 14:06:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -216,7 +216,7 @@ void pose_remove_group(struct Object *ob);
 /* Assorted Evaluation ----------------- */	
 
 /* Used for the Action Constraint */
-void what_does_obaction(struct Scene *scene, struct Object *ob, struct Object *workob, struct bPose *pose, struct bAction *act, char groupname[], float cframe);
+void what_does_obaction(struct Object *ob, struct Object *workob, struct bPose *pose, struct bAction *act, char groupname[], float cframe);
 
 /* for proxy */
 void copy_pose_result(struct bPose *to, struct bPose *from);

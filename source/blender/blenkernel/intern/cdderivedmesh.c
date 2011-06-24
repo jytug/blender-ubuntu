@@ -1,5 +1,5 @@
 /*
-* $Id: cdderivedmesh.c 36312 2011-04-24 10:51:45Z campbellbarton $
+* $Id: cdderivedmesh.c 36485 2011-05-04 13:15:42Z nazgul $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -172,11 +172,7 @@ static void cdDM_getVertCos(DerivedMesh *dm, float (*cos_r)[3])
 static void cdDM_getVertNo(DerivedMesh *dm, int index, float no_r[3])
 {
 	CDDerivedMesh *cddm = (CDDerivedMesh*) dm;
-	short *no = cddm->mvert[index].no;
-
-	no_r[0] = no[0]/32767.f;
-	no_r[1] = no[1]/32767.f;
-	no_r[2] = no[2]/32767.f;
+	normal_short_to_float_v3(no_r, cddm->mvert[index].no);
 }
 
 static ListBase *cdDM_getFaceMap(Object *ob, DerivedMesh *dm)
@@ -235,19 +231,21 @@ static struct PBVH *cdDM_getPBVH(Object *ob, DerivedMesh *dm)
 	   this derivedmesh is just original mesh. it's the multires subsurf dm
 	   that this is actually for, to support a pbvh on a modified mesh */
 	if(!cddm->pbvh && ob->type == OB_MESH) {
+		SculptSession *ss= ob->sculpt;
 		Mesh *me= ob->data;
 		cddm->pbvh = BLI_pbvh_new();
 		cddm->pbvh_draw = can_pbvh_draw(ob, dm);
 		BLI_pbvh_build_mesh(cddm->pbvh, me->mface, me->mvert,
 				   me->totface, me->totvert);
 
-		if(ob->sculpt->modifiers_active) {
+		if(ss->modifiers_active && ob->derivedDeform) {
+			DerivedMesh *deformdm= ob->derivedDeform;
 			float (*vertCos)[3];
 			int totvert;
 
-			totvert= dm->getNumVerts(dm);
+			totvert= deformdm->getNumVerts(deformdm);
 			vertCos= MEM_callocN(3*totvert*sizeof(float), "cdDM_getPBVH vertCos");
-			dm->getVertCos(dm, vertCos);
+			deformdm->getVertCos(deformdm, vertCos);
 			BLI_pbvh_apply_vertCos(cddm->pbvh, vertCos);
 			MEM_freeN(vertCos);
 		}
@@ -598,26 +596,26 @@ static void cdDM_drawFacesColored(DerivedMesh *dm, int useTwoSided, unsigned cha
 				glBegin(glmode = new_glmode);
 			}
 				
-			glColor3ub(cp1[0], cp1[1], cp1[2]);
+			glColor3ubv(cp1+0);
 			glVertex3fv(mvert[mface->v1].co);
-			glColor3ub(cp1[4], cp1[5], cp1[6]);
+			glColor3ubv(cp1+4);
 			glVertex3fv(mvert[mface->v2].co);
-			glColor3ub(cp1[8], cp1[9], cp1[10]);
+			glColor3ubv(cp1+8);
 			glVertex3fv(mvert[mface->v3].co);
 			if(mface->v4) {
-				glColor3ub(cp1[12], cp1[13], cp1[14]);
+				glColor3ubv(cp1+12);
 				glVertex3fv(mvert[mface->v4].co);
 			}
 				
 			if(useTwoSided) {
-				glColor3ub(cp2[8], cp2[9], cp2[10]);
+				glColor3ubv(cp2+8);
 				glVertex3fv(mvert[mface->v3].co );
-				glColor3ub(cp2[4], cp2[5], cp2[6]);
+				glColor3ubv(cp2+4);
 				glVertex3fv(mvert[mface->v2].co );
-				glColor3ub(cp2[0], cp2[1], cp2[2]);
+				glColor3ubv(cp2+0);
 				glVertex3fv(mvert[mface->v1].co );
 				if(mface->v4) {
-					glColor3ub(cp2[12], cp2[13], cp2[14]);
+					glColor3ubv(cp2+12);
 					glVertex3fv(mvert[mface->v4].co );
 				}
 			}
@@ -774,6 +772,19 @@ static void cdDM_drawFacesTex_common(DerivedMesh *dm,
 		}
 
 		if( !GPU_buffer_legacy(dm) ) {
+			/* warning!, this logic is incorrect, see bug [#27175]
+			 * firstly, there are no checks for changes in context, such as texface image.
+			 * secondly, drawParams() sets the GL context, so checking if there is a change
+			 * from lastFlag is too late once glDrawArrays() runs, since drawing the arrays
+			 * will use the modified, OpenGL settings.
+			 * 
+			 * However its tricky to fix this without duplicating the internal logic
+			 * of drawParams(), perhaps we need an argument like...
+			 * drawParams(..., keep_gl_state_but_return_when_changed) ?.
+			 *
+			 * We could also just disable VBO's here, since texface may be deprecated - campbell.
+			 */
+			
 			glShadeModel( GL_SMOOTH );
 			lastFlag = 0;
 			for(i = 0; i < dm->drawObject->nelements/3; i++) {

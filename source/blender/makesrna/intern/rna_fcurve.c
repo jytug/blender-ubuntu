@@ -1,5 +1,5 @@
 /*
- * $Id: rna_fcurve.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: rna_fcurve.c 37031 2011-05-31 02:14:25Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -446,7 +446,7 @@ static void rna_FCurve_modifiers_remove(FCurve *fcu, ReportList *reports, FModif
 	remove_fmodifier(&fcu->modifiers, fcm);
 }
 
-static void rna_FModifier_active_set(PointerRNA *ptr, int value)
+static void rna_FModifier_active_set(PointerRNA *ptr, int UNUSED(value))
 {
 	FModifier *fm= (FModifier*)ptr->data;
 
@@ -454,7 +454,7 @@ static void rna_FModifier_active_set(PointerRNA *ptr, int value)
 	fm->flag |= FMODIFIER_FLAG_ACTIVE;
 }
 
-static void rna_FModifier_active_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_FModifier_active_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	FModifier *fm, *fmo= (FModifier*)ptr->data;
 

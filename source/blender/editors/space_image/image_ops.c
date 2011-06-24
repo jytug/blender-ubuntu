@@ -1,5 +1,5 @@
 /*
- * $Id: image_ops.c 36293 2011-04-23 08:30:28Z lukastoenne $
+ * $Id: image_ops.c 37246 2011-06-06 11:04:54Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -645,6 +645,9 @@ static const EnumPropertyItem image_file_type_items[] = {
 		{R_TARGA, "TARGA", 0, "Targa", ""},
 		{R_RAWTGA, "TARGA RAW", 0, "Targa Raw", ""},
 		{R_PNG, "PNG", 0, "PNG", ""},
+#ifdef WITH_DDS
+		{R_DDS, "DDS", 0, "DirectDraw Surface", ""},
+#endif
 		{R_BMP, "BMP", 0, "BMP", ""},
 		{R_JPEG90, "JPEG", 0, "Jpeg", ""},
 #ifdef WITH_OPENJPEG
@@ -799,6 +802,7 @@ void IMAGE_OT_open(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Open Image";
+	ot->description= "Open image";
 	ot->idname= "IMAGE_OT_open";
 	
 	/* api callbacks */
@@ -925,7 +929,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, Scene *scene, wmOpera
 			}
 			BKE_image_release_renderresult(scene, ima);
 		}
-		else if (BKE_write_ibuf(scene, ibuf, path, sima->imtypenr, scene->r.subimtype, scene->r.quality)) {
+		else if (BKE_write_ibuf(ibuf, path, sima->imtypenr, scene->r.subimtype, scene->r.quality)) {
 			ok= TRUE;
 		}
 
@@ -1342,6 +1346,7 @@ void IMAGE_OT_new(wmOperatorType *ot)
 	
 	/* identifiers */
 	ot->name= "New Image";
+	ot->description= "Create a new image";
 	ot->idname= "IMAGE_OT_new";
 	
 	/* api callbacks */
@@ -1420,6 +1425,9 @@ static int image_invert_exec(bContext *C, wmOperator *op)
 	}
 
 	ibuf->userflags |= IB_BITMAPDIRTY;
+	if(ibuf->mipmap[0])
+		ibuf->userflags |= IB_MIPMAP_INVALID;
+
 	WM_event_add_notifier(C, NC_IMAGE|NA_EDITED, ima);
 	return OPERATOR_FINISHED;
 }
@@ -1645,16 +1653,13 @@ static void sample_apply(bContext *C, wmOperator *op, wmEvent *event)
 	ImBuf *ibuf= ED_space_image_acquire_buffer(sima, &lock);
 	ImageSampleInfo *info= op->customdata;
 	float fx, fy;
-	int mx, my;
 	
 	if(ibuf == NULL) {
 		ED_space_image_release_buffer(sima, lock);
 		return;
 	}
 
-	mx= event->x - ar->winrct.xmin;
-	my= event->y - ar->winrct.ymin;
-	UI_view2d_region_to_view(&ar->v2d, mx, my, &fx, &fy);
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1], &fx, &fy);
 
 	if(fx>=0.0f && fy>=0.0f && fx<1.0f && fy<1.0f) {
 		float *fp;
@@ -1920,6 +1925,7 @@ void IMAGE_OT_sample_line(wmOperatorType *ot)
 	ot->modal= WM_gesture_straightline_modal;
 	ot->exec= sample_line_exec;
 	ot->poll= space_image_main_area_poll;
+	ot->cancel= WM_gesture_straightline_cancel;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;

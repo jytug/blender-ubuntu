@@ -1,5 +1,5 @@
 /*
- * $Id: KX_BlenderSceneConverter.cpp 36083 2011-04-10 09:37:04Z campbellbarton $
+ * $Id: KX_BlenderSceneConverter.cpp 36937 2011-05-26 22:48:06Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -50,7 +50,7 @@
 #include "KX_PolygonMaterial.h"
 
 
-#include "SYS_System.h"
+#include "BL_System.h"
 
 #include "DummyPhysicsEnvironment.h"
 
@@ -994,7 +994,7 @@ bool KX_BlenderSceneConverter::LinkBlendFile(BlendHandle *bpy_openlib, const cha
 	int i=0;
 	LinkNode *n= names;
 	while(n) {
-		BLO_library_append_named_part(C, main_tmp, &bpy_openlib, (char *)n->link, idcode, 0);
+		BLO_library_append_named_part(main_tmp, &bpy_openlib, (char *)n->link, idcode);
 		n= (LinkNode *)n->next;
 		i++;
 	}
@@ -1012,7 +1012,7 @@ bool KX_BlenderSceneConverter::LinkBlendFile(BlendHandle *bpy_openlib, const cha
 		int i=0;
 		LinkNode *n= names;
 		while(n) {
-			BLO_library_append_named_part(C, main_tmp, &bpy_openlib, (char *)n->link, ID_AC, 0);
+			BLO_library_append_named_part(main_tmp, &bpy_openlib, (char *)n->link, ID_AC);
 			n= (LinkNode *)n->next;
 			i++;
 		}
@@ -1126,7 +1126,7 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 			
 			/* incase the mesh might be refered to later */
 			{
-				GEN_Map<STR_HashedString,void*> &mapStringToMeshes = scene->GetLogicManager()->GetMeshMap();
+				CTR_Map<STR_HashedString,void*> &mapStringToMeshes = scene->GetLogicManager()->GetMeshMap();
 				
 				for(int i=0; i<mapStringToMeshes.size(); i++)
 				{
@@ -1143,7 +1143,7 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 
 			/* Now unregister actions */
 			{
-				GEN_Map<STR_HashedString,void*> &mapStringToActions = scene->GetLogicManager()->GetActionMap();
+				CTR_Map<STR_HashedString,void*> &mapStringToActions = scene->GetLogicManager()->GetActionMap();
 
 				for(int i=0; i<mapStringToActions.size(); i++)
 				{

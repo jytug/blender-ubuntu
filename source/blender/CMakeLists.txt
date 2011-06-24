@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 35054 2011-02-22 06:23:07Z campbellbarton $
+# $Id: CMakeLists.txt 36620 2011-05-11 19:29:23Z blendix $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -91,7 +91,6 @@ add_subdirectory(blenlib)
 add_subdirectory(render)
 add_subdirectory(blenfont)
 add_subdirectory(blenloader)
-add_subdirectory(readblenfile)
 add_subdirectory(blenpluginapi)
 add_subdirectory(ikplugin)
 add_subdirectory(gpu)
@@ -123,6 +122,5 @@ if(WITH_PYTHON)
 endif()
 
 if(WITH_OPENCOLLADA)
-  add_subdirectory(collada)
+	add_subdirectory(collada)
 endif()
-

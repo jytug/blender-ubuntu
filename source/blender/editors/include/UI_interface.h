@@ -1,5 +1,5 @@
 /*
- * $Id: UI_interface.h 35750 2011-03-24 12:36:12Z campbellbarton $
+ * $Id: UI_interface.h 37589 2011-06-17 12:48:33Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,6 +35,7 @@
 #define UI_INTERFACE_H
 
 #include "RNA_types.h"
+#include "DNA_userdef_types.h"
 
 /* Struct Declarations */
 
@@ -100,8 +101,8 @@ typedef struct uiLayout uiLayout;
 #define UI_BLOCK_RET_1			4		/* XXX 2.5 not implemented */
 #define UI_BLOCK_NUMSELECT		8
 /*#define UI_BLOCK_ENTER_OK		16*/ /*UNUSED*/
-/*#define UI_BLOCK_NOSHADOW		32*/ /*UNUSED*/
-/*#define UI_BLOCK_UNUSED			64*/ /*UNUSED*/
+#define UI_BLOCK_CLIPBOTTOM		32
+#define UI_BLOCK_CLIPTOP		64
 #define UI_BLOCK_MOVEMOUSE_QUIT	128
 #define UI_BLOCK_KEEP_OPEN		256
 #define UI_BLOCK_POPUP			512
@@ -159,6 +160,10 @@ typedef struct uiLayout uiLayout;
 
 #define UI_PANEL_WIDTH			340
 #define UI_COMPACT_PANEL_WIDTH	160
+
+/* scale fixed button widths by this to account for DPI
+ * 8.4852 == sqrtf(72.0f)) */
+#define UI_DPI_FAC (sqrtf((float)U.dpi) / 8.48528137423857f)
 
 /* Button types, bits stored in 1 value... and a short even!
 - bits 0-4:  bitnr (0-31)
@@ -293,10 +298,12 @@ void uiPupMenuInvoke(struct bContext *C, const char *idname); /* popup registere
  * but allow using all button types and creating an own layout. */
 
 typedef uiBlock* (*uiBlockCreateFunc)(struct bContext *C, struct ARegion *ar, void *arg1);
+typedef void (*uiBlockCancelFunc)(void *arg1);
 
 void uiPupBlock(struct bContext *C, uiBlockCreateFunc func, void *arg);
 void uiPupBlockO(struct bContext *C, uiBlockCreateFunc func, void *arg, const char *opname, int opcontext);
-void uiPupBlockOperator(struct bContext *C, uiBlockCreateFunc func, struct wmOperator *op, int opcontext);
+void uiPupBlockEx(struct bContext *C, uiBlockCreateFunc func, uiBlockCancelFunc cancel_func, void *arg);
+/* void uiPupBlockOperator(struct bContext *C, uiBlockCreateFunc func, struct wmOperator *op, int opcontext); */ /* UNUSED */
 
 void uiPupBlockClose(struct bContext *C, uiBlock *block);
 
@@ -618,8 +625,8 @@ void UI_exit(void);
 #define UI_LAYOUT_MENU			2
 #define UI_LAYOUT_TOOLBAR		3
  
-#define UI_UNIT_X				20
-#define UI_UNIT_Y				20
+#define UI_UNIT_X				U.widget_unit
+#define UI_UNIT_Y				U.widget_unit
 
 #define UI_LAYOUT_ALIGN_EXPAND	0
 #define UI_LAYOUT_ALIGN_LEFT	1
@@ -712,6 +719,7 @@ void uiTemplateImageLayers(uiLayout *layout, struct bContext *C, struct Image *i
 void uiTemplateRunningJobs(uiLayout *layout, struct bContext *C);
 void uiTemplateOperatorSearch(uiLayout *layout);
 void uiTemplateHeader3D(uiLayout *layout, struct bContext *C);
+void uiTemplateEditModeSelection(uiLayout *layout, struct bContext *C);
 void uiTemplateTextureImage(uiLayout *layout, struct bContext *C, struct Tex *tex);
 void uiTemplateReportsBanner(uiLayout *layout, struct bContext *C);
 

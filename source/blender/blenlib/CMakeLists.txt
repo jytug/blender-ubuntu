@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 35032 2011-02-21 13:13:08Z campbellbarton $
+# $Id: CMakeLists.txt 37618 2011-06-18 14:12:54Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -32,6 +32,9 @@ set(INC
 	../gpu
 	../../../intern/ghost
 	../../../intern/guardedalloc
+)
+
+set(INC_SYS
 	${ZLIB_INCLUDE_DIRS}
 	${FREETYPE_INCLUDE_DIRS}
 )
@@ -88,6 +91,7 @@ set(SRC
 	BLI_bpath.h
 	BLI_cpu.h
 	BLI_dlrbTree.h
+	BLI_dynlib.h
 	BLI_dynstr.h
 	BLI_edgehash.h
 	BLI_editVert.h
@@ -127,19 +131,18 @@ set(SRC
 	BLI_vfontdata.h
 	BLI_voxel.h
 	BLI_winstuff.h
-	PIL_dynlib.h
 	PIL_time.h
 	intern/BLI_callbacks.h
 	intern/dynamiclist.h
 )
 
 if(WITH_BINRELOC)
+	list(APPEND INC_SYS "${BINRELOC_INCLUDE_DIRS}")
 	add_definitions(-DWITH_BINRELOC)
-	list(APPEND INC "${BINRELOC_INC}")
 endif()
 
 if(WITH_OPENMP)
 	add_definitions(-DPARALLEL=1)
 endif()
 
-blender_add_lib(bf_blenlib "${SRC}" "${INC}")
+blender_add_lib(bf_blenlib "${SRC}" "${INC}" "${INC_SYS}")

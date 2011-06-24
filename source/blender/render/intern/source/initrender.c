@@ -1,5 +1,5 @@
 /*
- * $Id: initrender.c 36184 2011-04-15 12:08:17Z campbellbarton $
+ * $Id: initrender.c 36384 2011-04-30 04:29:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -446,6 +446,11 @@ void make_sample_tables(Render *re)
 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+struct Object *RE_GetCamera(Render *re)
+{
+	return re->camera_override ? re->camera_override : re->scene->camera;
+}
 
 /* call this after InitState() */
 /* per render, there's one persistant viewplane. Parts will set their own viewplanes */

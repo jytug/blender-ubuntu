@@ -1,5 +1,5 @@
 /*
- * $Id: rna_property.c 35238 2011-02-27 20:20:01Z jesterking $
+ * $Id: rna_property.c 36704 2011-05-15 17:59:48Z dingto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -101,11 +101,11 @@ void RNA_def_gameproperty(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	static EnumPropertyItem gameproperty_type_items[] ={
-		{GPROP_BOOL, "BOOL", 0, "Boolean", ""},
-		{GPROP_INT, "INT", 0, "Integer", ""},
-		{GPROP_FLOAT, "FLOAT", 0, "Float", ""},
-		{GPROP_STRING, "STRING", 0, "String", ""},
-		{GPROP_TIME, "TIMER", 0, "Timer", ""},
+		{GPROP_BOOL, "BOOL", 0, "Boolean", "Boolean Property"},
+		{GPROP_INT, "INT", 0, "Integer", "Integer Property"},
+		{GPROP_FLOAT, "FLOAT", 0, "Float", "Floating-Point Property"},
+		{GPROP_STRING, "STRING", 0, "String", "String Property"},
+		{GPROP_TIME, "TIMER", 0, "Timer", "Timer Property"},
 		{0, NULL, 0, NULL, NULL}};
 
 	/* Base Struct for GameProperty */

@@ -1,5 +1,5 @@
 /*
- * $Id: KX_GameObject.cpp 36231 2011-04-20 02:56:51Z campbellbarton $
+ * $Id: KX_GameObject.cpp 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1224,7 +1224,7 @@ CListValue* KX_GameObject::GetChildrenRecursive()
 /* ---------------------------------------------------------------------
  * Some stuff taken from the header
  * --------------------------------------------------------------------- */
-void KX_GameObject::Relink(GEN_Map<GEN_HashedPtr, void*> *map_parameter)
+void KX_GameObject::Relink(CTR_Map<CTR_HashedPtr, void*> *map_parameter)
 {
 	// we will relink the sensors and actuators that use object references
 	// if the object is part of the replicated hierarchy, use the new

@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_windowmanager_types.h 35681 2011-03-22 02:38:39Z campbellbarton $
+ * $Id: DNA_windowmanager_types.h 36628 2011-05-12 01:57:47Z nicholasbishop $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -315,11 +315,5 @@ typedef struct wmOperator {
 
 /* wmOperator flag */
 #define OP_GRAB_POINTER			1
-
-typedef enum wmRadialControlMode {
-	WM_RADIALCONTROL_SIZE,
-	WM_RADIALCONTROL_STRENGTH,
-	WM_RADIALCONTROL_ANGLE
-} wmRadialControlMode;
 
 #endif /* DNA_WINDOWMANAGER_TYPES_H */

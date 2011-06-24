@@ -1,5 +1,5 @@
 /*
- * $Id: render_types.h 35785 2011-03-25 17:11:32Z ton $
+ * $Id: render_types.h 37401 2011-06-11 08:55:29Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -182,6 +182,7 @@ struct Render
 	Scene *scene;
 	RenderData r;
 	World wrld;
+	struct Object *camera_override;
 	unsigned int lay;
 	
 	ListBase parts;
@@ -213,7 +214,7 @@ struct Render
 	ListBase instancetable;
 	int totinstance;
 
-	struct Image *backbuf, *bakebuf;
+	struct Image *bakebuf;
 	
 	struct GHash *orco_hash;
 
@@ -485,6 +486,7 @@ typedef struct VolPrecachePart
 	float bbmin[3];
 	float voxel[3];
 	int working, done;
+	struct Render *re;
 } VolPrecachePart;
 
 typedef struct VolumePrecache

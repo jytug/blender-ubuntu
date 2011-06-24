@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_SystemX11.cpp 35771 2011-03-25 05:23:58Z campbellbarton $
+ * $Id: GHOST_SystemX11.cpp 36985 2011-05-28 15:34:02Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -700,19 +700,24 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 		case EnterNotify:
 		case LeaveNotify:
 		{
-			// XCrossingEvents pointer leave enter window.
-			// also do cursor move here, MotionNotify only
-			// happens when motion starts & ends inside window
+			/* XCrossingEvents pointer leave enter window.
+			   also do cursor move here, MotionNotify only
+			   happens when motion starts & ends inside window.
+			   we only do moves when the crossing mode is 'normal'
+			   (really crossing between windows) since some windowmanagers
+			   also send grab/ungrab crossings for mousewheel events.
+			*/
 			XCrossingEvent &xce = xe->xcrossing;
-			
-			g_event = new 
-			GHOST_EventCursor(
-				getMilliSeconds(),
-				GHOST_kEventCursorMove,
-				window,
-				xce.x_root,
-				xce.y_root
-			);
+			if( xce.mode == NotifyNormal ) {
+				g_event = new 
+				GHOST_EventCursor(
+					getMilliSeconds(),
+					GHOST_kEventCursorMove,
+					window,
+					xce.x_root,
+					xce.y_root
+				);
+			}
 			break;
 		}
 		case MapNotify:
@@ -790,6 +795,7 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 		}
 		
 		default: {
+#ifdef WITH_X11_XINPUT
 			if(xe->type == window->GetXTablet().MotionEvent) 
 			{
 				XDeviceMotionEvent* data = (XDeviceMotionEvent*)xe;
@@ -813,7 +819,7 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 			}
 			else if(xe->type == window->GetXTablet().ProxOutEvent)
 				window->GetXTablet().CommonData.Active= GHOST_kTabletModeNone;
-
+#endif // WITH_X11_XINPUT
 			break;
 		}
 	}
@@ -1485,10 +1491,8 @@ void GHOST_SystemX11::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 			txt_select_buffer = (char*) malloc(strlen(buffer)+1);
 			strcpy(txt_select_buffer, buffer);
 		}
-	
+
 		if (owner != m_window)
 			fprintf(stderr, "failed to own primary\n");
 	}
 }
-
-

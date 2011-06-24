@@ -1,5 +1,5 @@
 /*
- * $Id: SHD_util.h 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: SHD_util.h 37054 2011-05-31 17:54:48Z lukastoenne $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -108,6 +108,7 @@ typedef struct ShaderCallData {
 #define MAT_IN_RAY_MIRROR	8
 #define MAT_IN_ALPHA	9
 #define MAT_IN_TRANSLUCENCY	10
+#define NUM_MAT_IN		11	/* for array size */
 
 /* output socket defines */
 #define MAT_OUT_COLOR		0

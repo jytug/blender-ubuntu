@@ -1,7 +1,7 @@
 /*
  * SCA_2DFilterActuator.h
  *
- * $Id: SCA_2DFilterActuator.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: SCA_2DFilterActuator.h 37446 2011-06-13 11:36:25Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -42,7 +42,6 @@ class SCA_2DFilterActuator : public SCA_IActuator
 
 private:
 	vector<STR_String> m_propNames;
-	void * m_gameObj;
 	RAS_2DFilterManager::RAS_2DFILTER_MODE m_type;
 	short m_disableMotionBlur;
 	float m_float_arg;

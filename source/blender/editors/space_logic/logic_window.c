@@ -1,5 +1,5 @@
 /*
- * $Id: logic_window.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: logic_window.c 37455 2011-06-13 17:08:33Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -3786,6 +3786,8 @@ static void draw_actuator_camera(uiLayout *layout, PointerRNA *ptr)
 	row = uiLayoutRow(layout, 1);
 	uiItemR(row, ptr, "min", 0, NULL, ICON_NONE);
 	uiItemR(row, ptr, "max", 0, NULL, ICON_NONE);
+
+	uiItemR(layout, ptr, "damping", 0, NULL, ICON_NONE);
 }
 
 static void draw_actuator_constraint(uiLayout *layout, PointerRNA *ptr, bContext *C)

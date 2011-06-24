@@ -1,5 +1,5 @@
 /*
- * $Id: interface_panel.c 36242 2011-04-20 11:15:58Z ton $
+ * $Id: interface_panel.c 37205 2011-06-05 12:47:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -334,10 +334,13 @@ static void uiPanelPop(uiBlock *UNUSED(block))
 void UI_DrawTriIcon(float x, float y, char dir)
 {
 	if(dir=='h') {
-		ui_draw_anti_tria( x-3,y-5, x-3,y+5, x+7,y );
+		ui_draw_anti_tria( x-3, y-5, x-3, y+5, x+7,y );
 	}
-	else {
-		ui_draw_anti_tria( x-5,y+3,  x+5,y+3, x,y-7);	
+	else if(dir=='t') {
+		ui_draw_anti_tria( x-5, y-7, x+5, y-7, x, y+3);	
+	}
+	else { /* 'v' = vertical, down */
+		ui_draw_anti_tria( x-5, y+3, x+5, y+3, x, y-7);	
 	}
 }
 
@@ -381,7 +384,7 @@ static void ui_draw_x_icon(float x, float y)
 
 }
 
-#define PNL_ICON 	20
+#define PNL_ICON 	UI_UNIT_X  /* could be UI_UNIT_Y too */
 
 static void ui_draw_panel_scalewidget(rcti *rect)
 {

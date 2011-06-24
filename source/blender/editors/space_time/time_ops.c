@@ -1,5 +1,5 @@
 /*
- * $Id: time_ops.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: time_ops.c 36380 2011-04-29 06:59:18Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,15 +49,15 @@
 #include "time_intern.h"
 
 /* ****************** Start/End Frame Operators *******************************/
-
 static int time_set_sfra_exec (bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene= CTX_data_scene(C);
-	int frame= CFRA;
-	
+	int frame;
+
 	if (scene == NULL)
 		return OPERATOR_CANCELLED;
-		
+
+	frame= CFRA;
 	/* if 'end frame' (Preview Range or Actual) is less than 'frame', 
 	 * clamp 'frame' to 'end frame'
 	 */
@@ -93,11 +93,13 @@ static void TIME_OT_start_frame_set (wmOperatorType *ot)
 static int time_set_efra_exec (bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene= CTX_data_scene(C);
-	int frame= CFRA;
-	
+	int frame;
+
 	if (scene == NULL)
 		return OPERATOR_CANCELLED;
-		
+
+	frame= CFRA;
+
 	/* if 'start frame' (Preview Range or Actual) is greater than 'frame', 
 	 * clamp 'frame' to 'end frame'
 	 */

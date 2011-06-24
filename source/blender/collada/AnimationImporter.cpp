@@ -1,5 +1,5 @@
 /*
- * $Id: AnimationImporter.cpp 35718 2011-03-23 09:18:09Z jesterking $
+ * $Id: AnimationImporter.cpp 37664 2011-06-20 12:43:10Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -53,12 +53,12 @@
 
 #include <algorithm>
 
-// use this for retrieving bone names, since these must be unique
+// first try node name, if not available (since is optional), fall back to original id
 template<class T>
 static const char *bc_get_joint_name(T *node)
 {
-	const std::string& id = node->getOriginalId();
-	return id.size() ? id.c_str() : node->getName().c_str();
+	const std::string& id = node->getName();
+	return id.size() ? id.c_str() : node->getOriginalId().c_str();
 }
 
 FCurve *AnimationImporter::create_fcurve(int array_index, const char *rna_path)
@@ -827,7 +827,8 @@ void AnimationImporter::evaluate_transform_at_frame(float mat[4][4], COLLADAFW::
 
 		unit_m4(m);
 
-		if (!evaluate_animation(tm, m, fra, node->getOriginalId().c_str())) {
+		std::string nodename = node->getName().size() ? node->getName() : node->getOriginalId();
+		if (!evaluate_animation(tm, m, fra, nodename.c_str())) {
 			switch (type) {
 			case COLLADAFW::Transformation::ROTATE:
 				dae_rotate_to_mat4(tm, m);

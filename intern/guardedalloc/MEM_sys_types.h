@@ -1,5 +1,5 @@
 /*
- * $Id: MEM_sys_types.h 35025 2011-02-21 11:38:55Z jesterking $
+ * $Id: MEM_sys_types.h 36360 2011-04-28 05:15:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -48,8 +48,8 @@
  *  \ingroup MEM
  */
 
-#ifndef BLO_SYS_TYPES_H
-#define BLO_SYS_TYPES_H
+#ifndef MEM_SYS_TYPES_H
+#define MEM_SYS_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,5 +127,5 @@ typedef unsigned long uintptr_t;
 }
 #endif
 
-#endif /* eof */
+#endif /* MEM_SYS_TYPES_H */
 

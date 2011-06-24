@@ -99,7 +99,7 @@ def validate_arguments(args, bc):
             'WITH_BF_INTERNATIONAL',
             'BF_GETTEXT', 'BF_GETTEXT_INC', 'BF_GETTEXT_LIB', 'WITH_BF_GETTEXT_STATIC', 'BF_GETTEXT_LIB_STATIC', 'BF_GETTEXT_LIBPATH',
             'WITH_BF_ICONV', 'BF_ICONV', 'BF_ICONV_INC', 'BF_ICONV_LIB', 'BF_ICONV_LIBPATH',
-            'WITH_BF_GAMEENGINE', 'WITH_BF_BULLET', 'BF_BULLET', 'BF_BULLET_INC', 'BF_BULLET_LIB',
+            'WITH_BF_GAMEENGINE', 'WITH_BF_BULLET', 'WITH_BF_ELTOPO', 'BF_BULLET', 'BF_BULLET_INC', 'BF_BULLET_LIB',
             'BF_WINTAB', 'BF_WINTAB_INC',
             'WITH_BF_FREETYPE', 'BF_FREETYPE', 'BF_FREETYPE_INC', 'BF_FREETYPE_LIB', 'BF_FREETYPE_LIBPATH', 'BF_FREETYPE_LIB_STATIC', 'WITH_BF_FREETYPE_STATIC',
             'WITH_BF_QUICKTIME', 'BF_QUICKTIME', 'BF_QUICKTIME_INC', 'BF_QUICKTIME_LIB', 'BF_QUICKTIME_LIBPATH',
@@ -125,7 +125,6 @@ def validate_arguments(args, bc):
             'BF_FANCY', 'BF_QUIET', 'BF_LINE_OVERWRITE',
             'BF_X264_CONFIG',
             'BF_XVIDCORE_CONFIG',
-            'WITH_BF_LCMS', 'BF_LCMS', 'BF_LCMS_INC', 'BF_LCMS_LIB', 'BF_LCMS_LIBPATH',
             'WITH_BF_DOCS',
             'BF_NUMJOBS',
             'BF_MSVS',
@@ -134,7 +133,9 @@ def validate_arguments(args, bc):
             'WITH_BF_RAYOPTIMIZATION',
             'BF_RAYOPTIMIZATION_SSE_FLAGS',
             'BF_NO_ELBEEM',
-            'WITH_BF_CXX_GUARDEDALLOC'
+            'WITH_BF_CXX_GUARDEDALLOC',
+            'WITH_BF_JEMALLOC', 'WITH_BF_STATICJEMALLOC', 'BF_JEMALLOC', 'BF_JEMALLOC_INC', 'BF_JEMALLOC_LIBPATH', 'BF_JEMALLOC_LIB', 'BF_JEMALLOC_LIB_STATIC',
+            'BUILDBOT_BRANCH'
             ]
     
     # Have options here that scons expects to be lists
@@ -333,12 +334,6 @@ def read_opts(env, cfg, args):
         ('BF_TIFF_LIBPATH', 'TIFF library path', ''),
         ('BF_TIFF_LIB_STATIC', 'TIFF static library', ''),
 
-        (BoolVariable('WITH_BF_LCMS', 'Enable color correction with lcms', False)),
-        ('BF_LCMS', 'LCMS base path', ''),
-        ('BF_LCMS_INC', 'LCMS include path', ''),
-        ('BF_LCMS_LIB', 'LCMS library', ''),
-        ('BF_LCMS_LIBPATH', 'LCMS library path', ''),
-
         (BoolVariable('WITH_BF_ZLIB', 'Use ZLib if true', True)),
         (BoolVariable('WITH_BF_STATICZLIB', 'Staticly link to ZLib', False)),
         ('BF_ZLIB', 'ZLib base path', ''),
@@ -365,6 +360,8 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_GAMEENGINE', 'Build with gameengine' , False)),
 
         (BoolVariable('WITH_BF_BULLET', 'Use Bullet if true', True)),
+        (BoolVariable('WITH_BF_ELTOPO', 'Use Eltopo collision library if true', False)),
+        
         ('BF_BULLET', 'Bullet base dir', ''),
         ('BF_BULLET_INC', 'Bullet include path', ''),
         ('BF_BULLET_LIB', 'Bullet library', ''),
@@ -427,6 +424,14 @@ def read_opts(env, cfg, args):
         ('BF_EXPAT_LIB', 'Expat library', ''),
         ('BF_EXPAT_LIBPATH', 'Expat library path', ''),
         
+        (BoolVariable('WITH_BF_JEMALLOC', 'Use jemalloc if true', False)),
+        (BoolVariable('WITH_BF_STATICJEMALLOC', 'Staticly link to jemalloc', False)),
+        ('BF_JEMALLOC', 'jemalloc base path', ''),
+        ('BF_JEMALLOC_INC', 'jemalloc include path', ''),
+        ('BF_JEMALLOC_LIB', 'jemalloc library', ''),
+        ('BF_JEMALLOC_LIBPATH', 'jemalloc library path', ''),
+        ('BF_JEMALLOC_LIB_STATIC', 'jemalloc static library', ''),
+
         (BoolVariable('WITH_BF_PLAYER', 'Build blenderplayer if true', False)),
         (BoolVariable('WITH_BF_NOBLENDER', 'Do not build blender if true', False)),
 
@@ -497,7 +502,9 @@ def read_opts(env, cfg, args):
         
         (BoolVariable('WITH_BF_RAYOPTIMIZATION', 'Enable raytracer SSE/SIMD optimization.', False)),
         ('BF_RAYOPTIMIZATION_SSE_FLAGS', 'SSE flags', ''),
-        (BoolVariable('WITH_BF_CXX_GUARDEDALLOC', 'Enable GuardedAlloc for C++ memory allocation tracking.', False))
+        (BoolVariable('WITH_BF_CXX_GUARDEDALLOC', 'Enable GuardedAlloc for C++ memory allocation tracking.', False)),
+
+        ('BUILDBOT_BRANCH', 'Buildbot branch name', ''),
     ) # end of opts.AddOptions()
 
     return localopts
@@ -542,7 +549,7 @@ def buildslave(target=None, source=None, env=None):
     Builder for buildbot integration. Used by buildslaves of http://builder.blender.org only.
     """
 
-    if env['OURPLATFORM'] in ('win32-vc', 'win64-vc', 'win32-mingw'):
+    if env['OURPLATFORM'] in ('win32-vc', 'win64-vc', 'win32-mingw', 'darwin'):
         extension = '.zip'
     else:
         extension = '.tar.bz2'
@@ -556,9 +563,15 @@ def buildslave(target=None, source=None, env=None):
             platform = 'linux-glibc27-x86_64'
         elif bitness == '32bit':
             platform = 'linux-glibc27-i686'
+    if platform == 'darwin':
+        platform = 'OSX-' + env['MACOSX_ARCHITECTURE']
+
+    branch = env['BUILDBOT_BRANCH']
 
     outdir = os.path.abspath(env['BF_INSTALLDIR'])
     package_name = 'blender-' + VERSION+'-'+REVISION + '-' + platform
+    if branch != '':
+        package_name = branch + '-' + package_name
     package_dir = os.path.normpath(outdir + os.sep + '..' + os.sep + package_name)
     package_archive = os.path.normpath(outdir + os.sep + '..' + os.sep + package_name + extension)
 
@@ -601,9 +614,12 @@ def NSIS_Installer(target=None, source=None, env=None):
     doneroot = False
     rootdirconts = []
     datafiles = ''
+    deldatafiles = ''
+    deldatadirs = ''
     l = len(bf_installdir)
     
     for dp,dn,df in os.walk(bf_installdir):
+        # install
         if not doneroot:
             for f in df:
                 rootdirconts.append(os.path.join(dp,f))
@@ -611,14 +627,21 @@ def NSIS_Installer(target=None, source=None, env=None):
         else:
             if len(df)>0:
                 dp_tmp = dp[l:]
-                if dp_tmp.find('python\\lib') > -1:
-                    datafiles += "\n" +r'SetOutPath $INSTDIR'+dp[l:]+"\n\n"
-                else:
-                    datafiles += "\n"+r'SetOutPath $BLENDERHOME'+dp[l:]+"\n\n"
+                datafiles += "\n" +r'SetOutPath $INSTDIR'+dp[l:]+"\n\n"
 
                 for f in df:
                     outfile = os.path.join(dp,f)
                     datafiles += '  File '+outfile + "\n"
+
+        # uninstall
+        deldir = dp[l+1:]
+
+        if len(deldir)>0:
+            deldatadirs = "RMDir $INSTDIR\\" + deldir + "\n" + deldatadirs
+            deldatadirs = "RMDir /r $INSTDIR\\" + deldir + "\\__pycache__\n" + deldatadirs
+
+            for f in df:
+                deldatafiles += 'Delete \"$INSTDIR\\' + os.path.join(deldir, f) + "\"\n"
 
     #### change to suit install dir ####
     inst_dir = install_base_dir + env['BF_INSTALLDIR']
@@ -656,6 +679,8 @@ def NSIS_Installer(target=None, source=None, env=None):
     ns_cnt = string.replace(ns_cnt, "[DELROOTDIRCONTS]", delrootstring)
 
     ns_cnt = string.replace(ns_cnt, "[DODATAFILES]", datafiles)
+    ns_cnt = string.replace(ns_cnt, "[DELDATAFILES]", deldatafiles)
+    ns_cnt = string.replace(ns_cnt, "[DELDATADIRS]", deldatadirs)
 
     tmpnsi = os.path.normpath(install_base_dir+os.sep+env['BF_BUILDDIR']+os.sep+"00.blender_tmp.nsi")
     new_nsis = open(tmpnsi, 'w')

@@ -1,5 +1,5 @@
 /*
- * $Id: text_python.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: text_python.c 36644 2011-05-12 16:47:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,7 +54,7 @@ int text_do_suggest_select(SpaceText *st, ARegion *ar)
 	TextLine *tmp;
 	int l, x, y, w, h, i;
 	int tgti, *top;
-	short mval[2] = {0, 0};
+	int mval[2] = {0, 0};
 	
 	if(!st || !st->text) return 0;
 	if(!texttool_text_is_active(st->text)) return 0;

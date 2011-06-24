@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_outputFile.c 35237 2011-02-27 20:13:22Z jesterking $
+ * $Id: CMP_outputFile.c 36385 2011-04-30 05:26:09Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -78,7 +78,7 @@ static void node_composit_exec_output_file(void *data, bNode *node, bNodeStack *
 			
 			BKE_makepicstring(string, nif->name, rd->cfra, nif->imtype, (rd->scemode & R_EXTENSION), TRUE);
 			
-			if(0 == BKE_write_ibuf((Scene *)node->id, ibuf, string, nif->imtype, nif->subimtype, nif->imtype==R_OPENEXR?nif->codec:nif->quality))
+			if(0 == BKE_write_ibuf(ibuf, string, nif->imtype, nif->subimtype, nif->imtype==R_OPENEXR?nif->codec:nif->quality))
 				printf("Cannot save Node File Output to %s\n", string);
 			else
 				printf("Saved: %s\n", string);

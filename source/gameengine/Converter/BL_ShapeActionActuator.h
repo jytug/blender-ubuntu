@@ -1,5 +1,5 @@
 /*
- * $Id: BL_ShapeActionActuator.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: BL_ShapeActionActuator.h 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,7 @@
 #ifndef BL_SHAPEACTIONACTUATOR
 #define BL_SHAPEACTIONACTUATOR
 
-#include "GEN_HashedPtr.h"
+#include "CTR_HashedPtr.h"
 #include "SCA_IActuator.h"
 #include "BL_ActionActuator.h"
 #include "MT_Point3.h"

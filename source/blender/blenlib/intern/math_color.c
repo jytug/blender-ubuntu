@@ -1,5 +1,5 @@
 /*
- * $Id: math_color.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: math_color.c 36939 2011-05-26 23:29:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -193,6 +193,10 @@ void hex_to_rgb(char *hexcol, float *r, float *g, float *b)
 		CLAMP(*r, 0.0f, 1.0f);
 		CLAMP(*g, 0.0f, 1.0f);
 		CLAMP(*b, 0.0f, 1.0f);
+	}
+	else {
+		/* avoid using un-initialized vars */
+		*r= *g= *b= 0.0f;
 	}
 }
 

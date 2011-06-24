@@ -1,5 +1,5 @@
 /*
- * $Id: BL_ArmatureObject.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: BL_ArmatureObject.h 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -60,7 +60,7 @@ public:
 	short GetActivePriority();
 	virtual void ProcessReplica();
 	virtual void ReParentLogic();
-	virtual void Relink(GEN_Map<GEN_HashedPtr, void*> *obj_map);
+	virtual void Relink(CTR_Map<CTR_HashedPtr, void*> *obj_map);
 	virtual bool UnlinkObject(SCA_IObject* clientobj);
 
 	class BL_ActionActuator * GetActiveAction();

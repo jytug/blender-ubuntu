@@ -1,5 +1,5 @@
 /*
- * $Id: sca.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: sca.c 37455 2011-06-13 17:08:33Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -430,6 +430,7 @@ void init_actuator(bActuator *act)
 		act->data= MEM_callocN(sizeof(bCameraActuator), "camact");
 		ca = act->data;
 		ca->axis = ACT_CAMERA_X;
+		ca->damping = 1.0/32.0;
 		break;
 	case ACT_EDIT_OBJECT:
 		act->data= MEM_callocN(sizeof(bEditObjectActuator), "editobact");

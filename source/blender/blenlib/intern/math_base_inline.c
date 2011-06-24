@@ -1,5 +1,5 @@
 /*
- * $Id: math_base_inline.c 35820 2011-03-27 14:59:55Z campbellbarton $
+ * $Id: math_base_inline.c 37336 2011-06-09 14:27:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -114,7 +114,7 @@ MINLINE float shell_angle_to_dist(const float angle)
 /* used for zoom values*/
 MINLINE float power_of_2(float val)
 {
-	return (float)pow(2.0, ceil(log((double)val) / log(2.0)));
+	return (float)pow(2.0, ceil(log((double)val) / M_LN2));
 }
 
 MINLINE float minf(float a, float b)

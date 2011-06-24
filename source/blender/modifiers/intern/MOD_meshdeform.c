@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_meshdeform.c 35817 2011-03-27 13:49:53Z campbellbarton $
+* $Id: MOD_meshdeform.c 37332 2011-06-09 11:19:34Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -72,6 +72,8 @@ static void freeData(ModifierData *md)
 	if(mmd->dyngrid) MEM_freeN(mmd->dyngrid);
 	if(mmd->dyninfluences) MEM_freeN(mmd->dyninfluences);
 	if(mmd->dynverts) MEM_freeN(mmd->dynverts);
+	if(mmd->bindweights) MEM_freeN(mmd->bindweights); /* deprecated */
+	if(mmd->bindcos) MEM_freeN(mmd->bindcos); /* deprecated */
 }
 
 static void copyData(ModifierData *md, ModifierData *target)

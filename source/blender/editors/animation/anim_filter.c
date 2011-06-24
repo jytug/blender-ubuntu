@@ -1,5 +1,5 @@
 /*
- * $Id: anim_filter.c 36312 2011-04-24 10:51:45Z campbellbarton $
+ * $Id: anim_filter.c 36545 2011-05-08 05:41:57Z aligorith $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1644,10 +1644,6 @@ static int animdata_filter_dopesheet_obdata (bAnimContext *ac, ListBase *anim_da
 		}
 			break;
 	}
-	
-	/* special exception for drivers instead of action */
-	if (ads->filterflag & ADS_FILTER_ONLYDRIVERS)
-		expanded= EXPANDED_DRVD(adt);
 	
 	/* include data-expand widget? */
 	if ((filter_mode & ANIMFILTER_CURVESONLY) == 0) {	

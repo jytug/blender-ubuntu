@@ -3,7 +3,7 @@
  * various string, file, list operations.
  *
  *
- * $Id: string.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: string.c 36933 2011-05-26 21:04:01Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -211,11 +211,6 @@ char *BLI_replacestr(char *str, const char *oldText, const char *newText)
 		return BLI_strdup(str);
 	}
 } 
-
-int BLI_streq(const char *a, const char *b) 
-{
-	return (strcmp(a, b)==0);
-}
 
 int BLI_strcaseeq(const char *a, const char *b) 
 {
@@ -467,5 +462,23 @@ int BLI_utf8_invalid_strip(char *str, int length)
 	}
 
 	return tot;
+}
+
+void BLI_ascii_strtolower(char *str, int len)
+{
+	int i;
+
+	for(i=0; i<len; i++)
+		if(str[i] >= 'A' && str[i] <= 'Z')
+			str[i] += 'a' - 'A';
+}
+
+void BLI_ascii_strtoupper(char *str, int len)
+{
+	int i;
+
+	for(i=0; i<len; i++)
+		if(str[i] >= 'a' && str[i] <= 'z')
+			str[i] -= 'a' - 'A';
 }
 

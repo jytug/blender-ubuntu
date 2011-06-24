@@ -1,5 +1,5 @@
 /*
- * $Id: interface_draw.c 35819 2011-03-27 14:52:16Z campbellbarton $
+ * $Id: interface_draw.c 37244 2011-06-06 09:12:03Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -471,6 +471,9 @@ void uiEmboss(float x1, float y1, float x2, float y2, int sel)
 
 void ui_draw_but_IMAGE(ARegion *UNUSED(ar), uiBut *UNUSED(but), uiWidgetColors *UNUSED(wcol), rcti *rect)
 {
+#ifdef WITH_HEADLESS
+	(void)rect;
+#else
 	extern char datatoc_splash_png[];
 	extern int datatoc_splash_png_size;
 	ImBuf *ibuf;
@@ -507,6 +510,7 @@ void ui_draw_but_IMAGE(ARegion *UNUSED(ar), uiBut *UNUSED(but), uiWidgetColors *
 	*/
 	
 	IMB_freeImBuf(ibuf);
+#endif
 }
 
 #if 0
@@ -764,8 +768,6 @@ void ui_draw_but_HISTOGRAM(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wcol)
 	float w, h;
 	//float alpha;
 	GLint scissor[4];
-	
-	if (hist==NULL) { printf("hist is null \n"); return; }
 	
 	rect.xmin = (float)recti->xmin+1;
 	rect.xmax = (float)recti->xmax-1;
@@ -1118,7 +1120,7 @@ void ui_draw_but_COLORBAND(uiBut *but, uiWidgetColors *UNUSED(wcol), rcti *rect)
 	ColorBand *coba;
 	CBData *cbd;
 	float x1, y1, sizex, sizey;
-	float dx, v3[2], v1[2], v2[2], v1a[2], v2a[2];
+	float v3[2], v1[2], v2[2], v1a[2], v2a[2];
 	int a;
 	float pos, colf[4]= {0,0,0,0}; /* initialize incase the colorband isnt valid */
 		
@@ -1129,18 +1131,17 @@ void ui_draw_but_COLORBAND(uiBut *but, uiWidgetColors *UNUSED(wcol), rcti *rect)
 	y1= rect->ymin;
 	sizex= rect->xmax-x1;
 	sizey= rect->ymax-y1;
-	
+
 	/* first background, to show tranparency */
-	dx= sizex/12.0f;
-	v1[0]= x1;
-	for(a=0; a<12; a++) {
-		if(a & 1) glColor3f(0.3, 0.3, 0.3); else glColor3f(0.8, 0.8, 0.8);
-		glRectf(v1[0], y1, v1[0]+dx, y1+0.5f*sizey);
-		if(a & 1) glColor3f(0.8, 0.8, 0.8); else glColor3f(0.3, 0.3, 0.3);
-		glRectf(v1[0], y1+0.5f*sizey, v1[0]+dx, y1+sizey);
-		v1[0]+= dx;
-	}
-	
+
+	glColor4ub(UI_TRANSP_DARK, UI_TRANSP_DARK, UI_TRANSP_DARK, 255);
+	glRectf(x1, y1, x1+sizex, y1+sizey);
+	glEnable(GL_POLYGON_STIPPLE);
+	glColor4ub(UI_TRANSP_LIGHT, UI_TRANSP_LIGHT, UI_TRANSP_LIGHT, 255);
+	glPolygonStipple(checker_stipple_sml);
+	glRectf(x1, y1, x1+sizex, y1+sizey);
+	glDisable(GL_POLYGON_STIPPLE);
+
 	glShadeModel(GL_FLAT);
 	glEnable(GL_BLEND);
 	
@@ -1580,7 +1581,7 @@ void uiDrawBoxShadow(unsigned char alpha, float minx, float miny, float maxx, fl
 }
 
 
-void ui_dropshadow(rctf *rct, float radius, float aspect, int select)
+void ui_dropshadow(rctf *rct, float radius, float aspect, int UNUSED(select))
 {
 	int i;
 	float rad;
@@ -1595,7 +1596,17 @@ void ui_dropshadow(rctf *rct, float radius, float aspect, int select)
 		rad= radius;
 
 	i= 12;
-	if(select) a= i*aspect; else a= i*aspect;
+#if 0
+	if(select) {
+		a= i*aspect; /* same as below */
+	}
+	else
+#endif
+	{
+		a= i*aspect;
+
+	}
+
 	for(; i--; a-=aspect) {
 		/* alpha ranges from 2 to 20 or so */
 		glColor4ub(0, 0, 0, alpha);

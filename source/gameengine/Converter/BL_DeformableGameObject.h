@@ -1,5 +1,5 @@
 /*
- * $Id: BL_DeformableGameObject.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: BL_DeformableGameObject.h 36523 2011-05-06 20:18:42Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -60,7 +60,7 @@ public:
 	{
 		return m_blendobj;
 	}
-	virtual void Relink(GEN_Map<GEN_HashedPtr, void*>*map)
+	virtual void Relink(CTR_Map<CTR_HashedPtr, void*>*map)
 	{
 		if (m_pDeformer)
 			m_pDeformer->Relink (map);

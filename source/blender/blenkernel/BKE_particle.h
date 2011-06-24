@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_particle.h 35867 2011-03-29 10:27:31Z jhk $
+ * $Id: BKE_particle.h 37430 2011-06-12 11:09:39Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -299,6 +299,8 @@ void psys_make_temp_pointcache(struct Object *ob, struct ParticleSystem *psys);
 void psys_get_pointcache_start_end(struct Scene *scene, ParticleSystem *psys, int *sfra, int *efra);
 
 void psys_check_boid_data(struct ParticleSystem *psys);
+
+void psys_get_birth_coordinates(struct ParticleSimulationData *sim, struct ParticleData *pa, struct ParticleKey *state, float dtime, float cfra);
 
 void particle_system_update(struct Scene *scene, struct Object *ob, struct ParticleSystem *psys);
 

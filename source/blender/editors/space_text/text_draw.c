@@ -1,5 +1,5 @@
 /*
- * $Id: text_draw.c 35890 2011-03-30 04:58:45Z campbellbarton $
+ * $Id: text_draw.c 36547 2011-05-08 10:29:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1495,6 +1495,8 @@ static void draw_cursor(SpaceText *st, ARegion *ar)
 				glRecti(x-4, y, ar->winx, y-st->lheight),  y-=st->lheight;
 
 			glRecti(x-4, y, x+toc*st->cwidth, y-st->lheight);  y-=st->lheight;
+
+			(void)y;
 		}
 	}
 	else {

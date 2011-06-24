@@ -1,5 +1,5 @@
 /*
- * $Id: idprop.c 36229 2011-04-19 23:52:14Z campbellbarton $
+ * $Id: idprop.c 36403 2011-05-01 06:34:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -426,35 +426,30 @@ static IDProperty *IDP_CopyGroup(IDProperty *prop)
  * When values name and types match, copy the values, else ignore */
 void IDP_SyncGroupValues(IDProperty *dest, IDProperty *src)
 {
-	IDProperty *loop, *prop;
+	IDProperty *other, *prop;
 	for (prop=src->data.group.first; prop; prop=prop->next) {
-		for (loop=dest->data.group.first; loop; loop=loop->next) {
-			if (strcmp(loop->name, prop->name)==0) {
-				if(prop->type==loop->type) {
+		other= BLI_findstring(&dest->data.group, prop->name, offsetof(IDProperty, name));
+		if (other && prop->type==other->type) {
+			switch (prop->type) {
+				case IDP_INT:
+				case IDP_FLOAT:
+				case IDP_DOUBLE:
+					other->data= prop->data;
+					break;
+				case IDP_GROUP:
+					IDP_SyncGroupValues(other, prop);
+					break;
+				default:
+				{
+					IDProperty *tmp= other;
+					IDProperty *copy= IDP_CopyProperty(prop);
 
-					switch (prop->type) {
-						case IDP_INT:
-						case IDP_FLOAT:
-						case IDP_DOUBLE:
-							loop->data= prop->data;
-							break;
-						case IDP_GROUP:
-							IDP_SyncGroupValues(loop, prop);
-							break;
-						default:
-						{
-							IDProperty *tmp= loop;
-							IDProperty *copy= IDP_CopyProperty(prop);
+					BLI_insertlinkafter(&dest->data.group, other, copy);
+					BLI_remlink(&dest->data.group, tmp);
 
-							BLI_insertlinkafter(&dest->data.group, loop, copy);
-							BLI_remlink(&dest->data.group, tmp);
-
-							IDP_FreeProperty(tmp);
-							MEM_freeN(tmp);
-						}
-					}
+					IDP_FreeProperty(tmp);
+					MEM_freeN(tmp);
 				}
-				break;
 			}
 		}
 	}

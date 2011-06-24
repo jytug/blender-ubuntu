@@ -20,6 +20,8 @@
 
 import bpy
 
+from bpy.props import EnumProperty
+
 
 class MeshSelectInteriorFaces(bpy.types.Operator):
     '''Select faces where all edges have more then 2 face users.'''
@@ -34,6 +36,7 @@ class MeshSelectInteriorFaces(bpy.types.Operator):
         return (ob and ob.type == 'MESH')
 
     def execute(self, context):
+        from bpy_extras import mesh_utils
         ob = context.active_object
         context.tool_settings.mesh_select_mode = False, False, True
         is_editmode = (ob.mode == 'EDIT')
@@ -45,7 +48,7 @@ class MeshSelectInteriorFaces(bpy.types.Operator):
         face_list = mesh.faces[:]
         face_edge_keys = [face.edge_keys for face in face_list]
 
-        edge_face_count = mesh.edge_face_count_dict
+        edge_face_count = mesh_utils.edge_face_count_dict(mesh)
 
         def test_interior(index):
             for key in face_edge_keys[index]:
@@ -66,9 +69,15 @@ class MeshSelectInteriorFaces(bpy.types.Operator):
 
 class MeshMirrorUV(bpy.types.Operator):
     '''Copy mirror UV coordinates on the X axis based on a mirrored mesh'''
-    bl_idname = "mesh.faces_miror_uv"
+    bl_idname = "mesh.faces_mirror_uv"
     bl_label = "Copy Mirrored UV coords"
     bl_options = {'REGISTER', 'UNDO'}
+
+    direction = EnumProperty(items=(
+                        ('POSITIVE', "Positive", ""),
+                        ('NEGATIVE', "Negative", "")),
+                name="Axis Direction",
+                description="")
 
     @classmethod
     def poll(cls, context):
@@ -76,7 +85,7 @@ class MeshMirrorUV(bpy.types.Operator):
         return (ob and ob.type == 'MESH')
 
     def execute(self, context):
-        DIR = 1  # TODO, make an option
+        DIR = (self.direction == 'NEGATIVE')
 
         from mathutils import Vector
 
@@ -143,7 +152,6 @@ class MeshMirrorUV(bpy.types.Operator):
                 if j is not None:
                     fmap[i] = j
 
-        done = [False] * len(faces)
         for i, j in fmap.items():
 
             if not fuvsel[i] or not fuvsel[j]:
@@ -161,10 +169,10 @@ class MeshMirrorUV(bpy.types.Operator):
             v1 = faces[j].vertices[:]
             v2 = [vmap[k] for k in faces[i].vertices[:]]
 
-            for k in range(len(uv1)):
-                k_map = v1.index(v2[k])
-                uv1[k].x = - (uv2[k_map].x - 0.5) + 0.5
-                uv1[k].y = uv2[k_map].y
+            if len(v1) == len(v2):
+                for k in range(len(v1)):
+                    k_map = v1.index(v2[k])
+                    uv1[k].xy = - (uv2[k_map].x - 0.5) + 0.5, uv2[k_map].y
 
         if is_editmode:
             bpy.ops.object.mode_set(mode='EDIT', toggle=False)

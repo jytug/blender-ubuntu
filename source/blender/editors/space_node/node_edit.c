@@ -1,5 +1,5 @@
 /*
- * $Id: node_edit.c 36293 2011-04-23 08:30:28Z lukastoenne $
+ * $Id: node_edit.c 37593 2011-06-17 13:57:41Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,6 +51,7 @@
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
+#include "BKE_depsgraph.h"
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_library.h"
@@ -232,6 +233,11 @@ static bNode *editnode_get_active(bNodeTree *ntree)
 		return nodeGetActive((bNodeTree *)node->id);
 	else
 		return nodeGetActive(ntree);
+}
+
+void snode_dag_update(bContext *UNUSED(C), SpaceNode *snode)
+{
+	DAG_id_tag_update(snode->id, 0);
 }
 
 void snode_notify(bContext *C, SpaceNode *snode)
@@ -498,14 +504,7 @@ void node_set_active(SpaceNode *snode, bNode *node)
 					ED_node_changed_update(snode->id, node);
 			}
 
-			// XXX
-#if 0
-			if(node->id)
-				; // XXX BIF_preview_changed(-1);	/* temp hack to force texture preview to update */
-			
-			// allqueue(REDRAWBUTSSHADING, 1);
-			// allqueue(REDRAWIPO, 0);
-#endif
+			WM_main_add_notifier(NC_MATERIAL|ND_NODES, node->id);
 		}
 		else if(snode->treetype==NTREE_COMPOSIT) {
 			Scene *scene= (Scene*)snode->id;
@@ -912,7 +911,8 @@ static int node_group_ungroup_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 
-	WM_event_add_notifier(C, NC_SCENE|ND_NODES, NULL);
+	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 
 	return OPERATOR_FINISHED;
 }
@@ -1003,7 +1003,7 @@ static bNode *visible_node(SpaceNode *snode, rctf *rct)
 /* **************************** */
 
 typedef struct NodeViewMove {
-	short mvalo[2];
+	int mvalo[2];
 	int xmin, ymin, xmax, ymax;
 } NodeViewMove;
 
@@ -1079,6 +1079,13 @@ static int snode_bg_viewmove_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	return OPERATOR_RUNNING_MODAL;
 }
 
+static int snode_bg_viewmove_cancel(bContext *UNUSED(C), wmOperator *op)
+{
+	MEM_freeN(op->customdata);
+	op->customdata= NULL;
+
+	return OPERATOR_CANCELLED;
+}
 
 void NODE_OT_backimage_move(wmOperatorType *ot)
 {
@@ -1091,6 +1098,7 @@ void NODE_OT_backimage_move(wmOperatorType *ot)
 	ot->invoke= snode_bg_viewmove_invoke;
 	ot->modal= snode_bg_viewmove_modal;
 	ot->poll= composite_node_active;
+	ot->cancel= snode_bg_viewmove_cancel;
 	
 	/* flags */
 	ot->flag= OPTYPE_BLOCKING;
@@ -1159,7 +1167,6 @@ static void sample_apply(bContext *C, wmOperator *op, wmEvent *event)
 	Image *ima;
 	ImBuf *ibuf;
 	float fx, fy, bufx, bufy;
-	int mx, my;
 	
 	ima= BKE_image_verify_viewer(IMA_TYPE_COMPOSITE, "Viewer Node");
 	ibuf= BKE_image_acquire_ibuf(ima, NULL, &lock);
@@ -1174,13 +1181,11 @@ static void sample_apply(bContext *C, wmOperator *op, wmEvent *event)
 		IMB_rect_from_float(ibuf);
 	}
 
-	mx= event->x - ar->winrct.xmin;
-	my= event->y - ar->winrct.ymin;
 	/* map the mouse coords to the backdrop image space */
 	bufx = ibuf->x * snode->zoom;
 	bufy = ibuf->y * snode->zoom;
-	fx = (bufx > 0.0f ? ((float)mx - 0.5f*ar->winx - snode->xof) / bufx + 0.5f : 0.0f);
-	fy = (bufy > 0.0f ? ((float)my - 0.5f*ar->winy - snode->yof) / bufy + 0.5f : 0.0f);
+	fx = (bufx > 0.0f ? ((float)event->mval[0] - 0.5f*ar->winx - snode->xof) / bufx + 0.5f : 0.0f);
+	fy = (bufy > 0.0f ? ((float)event->mval[1] - 0.5f*ar->winy - snode->yof) / bufy + 0.5f : 0.0f);
 
 	if(fx>=0.0f && fy>=0.0f && fx<1.0f && fy<1.0f) {
 		float *fp;
@@ -1310,7 +1315,7 @@ static int node_resize_modal(bContext *C, wmOperator *op, wmEvent *event)
 	switch (event->type) {
 		case MOUSEMOVE:
 			
-			UI_view2d_region_to_view(&ar->v2d, event->x - ar->winrct.xmin, event->y - ar->winrct.ymin, 
+			UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1],
 									 &mx, &my);
 			
 			if (node) {
@@ -1320,7 +1325,7 @@ static int node_resize_modal(bContext *C, wmOperator *op, wmEvent *event)
 				}
 				else {
 					node->width= nsw->oldwidth + mx - nsw->mxstart;
-					CLAMP(node->width, node->typeinfo->minwidth, node->typeinfo->maxwidth);
+					CLAMP(node->width, UI_DPI_FAC*node->typeinfo->minwidth, UI_DPI_FAC*node->typeinfo->maxwidth);
 				}
 			}
 				
@@ -1351,13 +1356,20 @@ static int node_resize_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		rctf totr;
 		
 		/* convert mouse coordinates to v2d space */
-		UI_view2d_region_to_view(&ar->v2d, event->x - ar->winrct.xmin, event->y - ar->winrct.ymin, 
+		UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1],
 								 &snode->mx, &snode->my);
 		
-		/* rect we're interested in is just the bottom right corner */
 		totr= node->totr;
-		totr.xmin= totr.xmax-10.0f;
-		totr.ymax= totr.ymin+10.0f;
+		
+		if(node->flag & NODE_HIDDEN) {
+			/* right part of node */
+			totr.xmin= node->totr.xmax-20.0f;
+		}
+		else {
+			/* bottom right corner */
+			totr.xmin= totr.xmax-10.0f;
+			totr.ymax= totr.ymin+10.0f;
+		}
 		
 		if(BLI_in_rctf(&totr, snode->mx, snode->my)) {
 			NodeSizeWidget *nsw= MEM_callocN(sizeof(NodeSizeWidget), "size widget op data");
@@ -1380,6 +1392,14 @@ static int node_resize_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	return OPERATOR_CANCELLED|OPERATOR_PASS_THROUGH;
 }
 
+static int node_resize_cancel(bContext *UNUSED(C), wmOperator *op)
+{
+	MEM_freeN(op->customdata);
+	op->customdata= NULL;
+
+	return OPERATOR_CANCELLED;
+}
+
 void NODE_OT_resize(wmOperatorType *ot)
 {
 	/* identifiers */
@@ -1390,6 +1410,7 @@ void NODE_OT_resize(wmOperatorType *ot)
 	ot->invoke= node_resize_invoke;
 	ot->modal= node_resize_modal;
 	ot->poll= ED_operator_node_active;
+	ot->cancel= node_resize_cancel;
 	
 	/* flags */
 	ot->flag= OPTYPE_BLOCKING;
@@ -1608,7 +1629,7 @@ static int node_mouse_groupheader(SpaceNode *snode)
 {
 	bNode *gnode;
 	float mx=0, my=0;
-// XXX	short mval[2];
+// XXX	int mval[2];
 	
 	gnode= node_tree_get_editgroup(snode->nodetree);
 	if(gnode==NULL) return 0;
@@ -2014,6 +2035,7 @@ static int node_duplicate_exec(bContext *C, wmOperator *UNUSED(op))
 	
 	node_tree_verify_groups(snode->nodetree);
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 
 	return OPERATOR_FINISHED;
 }
@@ -2086,7 +2108,7 @@ static int node_link_modal(bContext *C, wmOperator *op, wmEvent *event)
 	sock= nldrag->sock;
 	link= nldrag->link;
 	
-	UI_view2d_region_to_view(&ar->v2d, event->x - ar->winrct.xmin, event->y - ar->winrct.ymin, 
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1],
 							 &snode->mx, &snode->my);
 
 	switch (event->type) {
@@ -2169,6 +2191,7 @@ static int node_link_modal(bContext *C, wmOperator *op, wmEvent *event)
 			ntreeSolveOrder(snode->edittree);
 			node_tree_verify_groups(snode->nodetree);
 			snode_notify(C, snode);
+			snode_dag_update(C, snode);
 			
 			BLI_remlink(&snode->linkdrag, nldrag);
 			MEM_freeN(nldrag);
@@ -2235,7 +2258,7 @@ static int node_link_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	bNodeLinkDrag *nldrag= MEM_callocN(sizeof(bNodeLinkDrag), "drag link op customdata");
 	
 	
-	UI_view2d_region_to_view(&ar->v2d, event->x - ar->winrct.xmin, event->y - ar->winrct.ymin, 
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1],
 							 &snode->mx, &snode->my);
 
 	ED_preview_kill_jobs(C);
@@ -2273,6 +2296,18 @@ static int node_link_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	}
 }
 
+static int node_link_cancel(bContext *C, wmOperator *op)
+{
+	SpaceNode *snode= CTX_wm_space_node(C);
+	bNodeLinkDrag *nldrag= op->customdata;
+
+	nodeRemLink(snode->edittree, nldrag->link);
+	BLI_remlink(&snode->linkdrag, nldrag);
+	MEM_freeN(nldrag);
+
+	return OPERATOR_CANCELLED;
+}
+
 void NODE_OT_link(wmOperatorType *ot)
 {
 	/* identifiers */
@@ -2284,6 +2319,7 @@ void NODE_OT_link(wmOperatorType *ot)
 	ot->modal= node_link_modal;
 //	ot->exec= node_link_exec;
 	ot->poll= ED_operator_node_active;
+	ot->cancel= node_link_cancel;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO|OPTYPE_BLOCKING;
@@ -2303,6 +2339,7 @@ static int node_make_link_exec(bContext *C, wmOperator *op)
 
 	node_tree_verify_groups(snode->nodetree);
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 	
 	return OPERATOR_FINISHED;
 }
@@ -2377,6 +2414,7 @@ static int cut_links_exec(bContext *C, wmOperator *op)
 		ntreeSolveOrder(snode->edittree);
 		node_tree_verify_groups(snode->nodetree);
 		snode_notify(C, snode);
+		snode_dag_update(C, snode);
 		
 		return OPERATOR_FINISHED;
 	}
@@ -2394,6 +2432,7 @@ void NODE_OT_links_cut(wmOperatorType *ot)
 	ot->invoke= WM_gesture_lines_invoke;
 	ot->modal= WM_gesture_lines_modal;
 	ot->exec= cut_links_exec;
+	ot->cancel= WM_gesture_lines_cancel;
 	
 	ot->poll= ED_operator_node_active;
 	
@@ -2436,6 +2475,8 @@ static int node_read_renderlayers_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 	
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
+
 	return OPERATOR_FINISHED;
 }
 
@@ -2464,6 +2505,7 @@ static int node_read_fullsamplelayers_exec(bContext *C, wmOperator *UNUSED(op))
 
 	RE_MergeFullSample(re, bmain, curscene, snode->nodetree);
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 	
 	WM_cursor_wait(0);
 	return OPERATOR_FINISHED;
@@ -2572,6 +2614,7 @@ static int node_group_make_exec(bContext *C, wmOperator *op)
 	}
 	
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 	
 	return OPERATOR_FINISHED;
 }
@@ -2758,6 +2801,7 @@ static int node_mute_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 	
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 	
 	return OPERATOR_FINISHED;
 }
@@ -2799,6 +2843,7 @@ static int node_delete_exec(bContext *C, wmOperator *UNUSED(op))
 	node_tree_verify_groups(snode->nodetree);
 
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 	
 	return OPERATOR_FINISHED;
 }
@@ -2900,6 +2945,7 @@ static int node_add_file_exec(bContext *C, wmOperator *op)
 	node->id = (ID *)ima;
 	
 	snode_notify(C, snode);
+	snode_dag_update(C, snode);
 	
 	return OPERATOR_FINISHED;
 }
@@ -2910,7 +2956,7 @@ static int node_add_file_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	SpaceNode *snode= CTX_wm_space_node(C);
 	
 	/* convert mouse coordinates to v2d space */
-	UI_view2d_region_to_view(&ar->v2d, event->x - ar->winrct.xmin, event->y - ar->winrct.ymin, 
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1],
 							 &snode->mx, &snode->my);
 	
 	if (RNA_property_is_set(op->ptr, "filepath") || RNA_property_is_set(op->ptr, "name"))

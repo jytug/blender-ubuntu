@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_space_types.h 35644 2011-03-20 11:40:29Z elubie $ 
+ * $Id: DNA_space_types.h 37552 2011-06-16 15:01:22Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -696,18 +696,19 @@ enum FileSortTypeE {
 #define FILE_OPENFILE		0
 #define FILE_SAVE			1
 
-/* sfile->flag and simasel->flag */
-#define FILE_SHOWSHORT		1
-#define FILE_RELPATH		2 /* was FILE_STRINGCODE */
-#define FILE_LINK			4
-#define FILE_HIDE_DOT		8
-#define FILE_AUTOSELECT		16
-#define FILE_ACTIVELAY		32
-#define FILE_ATCURSOR		64
-#define FILE_SYNCPOSE		128
-#define FILE_FILTER			256
-#define FILE_BOOKMARKS		512
-#define FILE_GROUP_INSTANCE	1024
+/* sfile->params->flag and simasel->flag */
+#define FILE_SHOWSHORT		(1<<0)
+#define FILE_RELPATH		(1<<1) /* was FILE_STRINGCODE */
+#define FILE_LINK			(1<<2)
+#define FILE_HIDE_DOT		(1<<3)
+#define FILE_AUTOSELECT		(1<<4)
+#define FILE_ACTIVELAY		(1<<5)
+#define FILE_ATCURSOR		(1<<6)
+#define FILE_DIRSEL_ONLY	(1<<7)
+#define FILE_FILTER			(1<<8)
+#define FILE_BOOKMARKS		(1<<9)
+#define FILE_GROUP_INSTANCE	(1<<10)
+
 
 /* files in filesel list: file types */
 #define BLENDERFILE			(1<<2)
@@ -824,6 +825,7 @@ enum {
 #define	ST_FIND_WRAP			0x0020
 #define	ST_FIND_ALL				0x0040
 #define	ST_SHOW_MARGIN			0x0080
+#define	ST_MATCH_CASE			0x0100
 
 
 /* stext->findstr/replacestr */

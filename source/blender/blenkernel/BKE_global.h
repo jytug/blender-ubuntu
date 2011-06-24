@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_global.h 35557 2011-03-15 08:04:11Z campbellbarton $ 
+ * $Id: BKE_global.h 37098 2011-06-02 12:44:59Z elubie $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -145,6 +145,7 @@ typedef struct Global {
 #define G_FILE_IGNORE_DEPRECATION_WARNINGS	(1 << 22)	/* deprecated */
 #define G_FILE_RECOVER			 (1 << 23)
 #define G_FILE_RELATIVE_REMAP	 (1 << 24)
+#define G_FILE_HISTORY			 (1 << 25)
 
 /* G.windowstate */
 #define G_WINDOWSTATE_USERDEF		0

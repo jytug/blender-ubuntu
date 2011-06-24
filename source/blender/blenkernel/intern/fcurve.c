@@ -1,5 +1,5 @@
 /*
- * $Id: fcurve.c 35836 2011-03-28 04:22:50Z campbellbarton $
+ * $Id: fcurve.c 36779 2011-05-19 12:39:57Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2039,7 +2039,7 @@ float evaluate_fcurve (FCurve *fcu, float evaltime)
 	 * here so that the curve can be sampled correctly
 	 */
 	if (fcu->flag & FCURVE_INT_VALUES)
-		cvalue= (float)((int)cvalue);
+		cvalue= floorf(cvalue + 0.5f);
 	
 	/* return evaluated value */
 	return cvalue;

@@ -1,5 +1,5 @@
 /*
- * $Id: collada_internal.cpp 35596 2011-03-17 16:40:53Z jesterking $
+ * $Id: collada_internal.cpp 37664 2011-06-20 12:43:10Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -265,7 +265,7 @@ std::string get_light_id(Object *ob)
 
 std::string get_joint_id(Bone *bone, Object *ob_arm)
 {
-	return translate_id(id_name(ob_arm) + "_" + bone->name);
+	return translate_id(bone->name);
 }
 
 std::string get_camera_id(Object *ob)

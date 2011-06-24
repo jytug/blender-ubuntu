@@ -1,5 +1,5 @@
 /*
- * $Id: mball_edit.c 36278 2011-04-21 17:25:58Z campbellbarton $
+ * $Id: mball_edit.c 36644 2011-05-12 16:47:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -455,7 +455,7 @@ void MBALL_OT_reveal_metaelems(wmOperatorType *ot)
 
 /* Select MetaElement with mouse click (user can select radius circle or
  * stiffness circle) */
-int mouse_mball(bContext *C, const short mval[2], int extend)
+int mouse_mball(bContext *C, const int mval[2], int extend)
 {
 	static MetaElem *startelem=NULL;
 	Object *obedit= CTX_data_edit_object(C);

@@ -1,5 +1,5 @@
 /*
- * $Id: bpy_interface.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: bpy_interface.c 37614 2011-06-18 08:45:45Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,6 +43,7 @@
 #include "bpy_rna.h"
 #include "bpy_util.h"
 #include "bpy_traceback.h"
+#include "bpy_intern_string.h"
 
 #include "DNA_space_types.h"
 #include "DNA_text_types.h"
@@ -197,7 +198,7 @@ void BPY_python_start(int argc, const char **argv)
 	PyImport_ExtendInittab(bpy_internal_modules);
 
 	/* allow to use our own included python */
-	PyC_SetHomePath(BLI_get_folder(BLENDER_PYTHON, NULL));
+	PyC_SetHomePath(BLI_get_folder(BLENDER_SYSTEM_PYTHON, NULL));
 
 	/* Python 3.2 now looks for '2.57/python/include/python3.2d/pyconfig.h' to parse
 	 * from the 'sysconfig' module which is used by 'site', so for now disable site.
@@ -205,7 +206,9 @@ void BPY_python_start(int argc, const char **argv)
 	Py_NoSiteFlag= 1;
 
 	Py_Initialize();
-	
+
+	bpy_intern_string_init();
+
 	// PySys_SetArgv(argc, argv); // broken in py3, not a huge deal
 	/* sigh, why do python guys not have a char** version anymore? :( */
 	{
@@ -251,7 +254,9 @@ void BPY_python_end(void)
 	pyrna_free_types();
 
 	/* clear all python data from structs */
-	
+
+	bpy_intern_string_exit();
+
 	Py_Finalize();
 	
 #ifdef TIME_PY_RUN
@@ -370,7 +375,9 @@ static int python_script_exec(bContext *C, const char *fn, struct Text *text, st
 #endif
 		}
 		else {
-			PyErr_Format(PyExc_IOError, "Python file \"%s\" could not be opened: %s", fn, strerror(errno));
+			PyErr_Format(PyExc_IOError,
+			             "Python file \"%s\" could not be opened: %s",
+			             fn, strerror(errno));
 			py_result= NULL;
 		}
 	}

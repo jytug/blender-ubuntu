@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 36024 2011-04-05 23:31:01Z campbellbarton $
+# $Id: CMakeLists.txt 37618 2011-06-18 14:12:54Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -41,10 +41,14 @@ set(INC
 	../../../source/blender/python
 	../../../source/blender/python/generic
 	../../../source/blender/gpu
-	../../../source/kernel/gen_system
+	../../../intern/container
 	../../../intern/string
 	../../../intern/moto/include
 	../../../intern/guardedalloc
+	../../../intern/ffmpeg
+)
+
+set(INC_SYS
 	${GLEW_INCLUDE_PATH}
 )
 
@@ -86,9 +90,12 @@ set(SRC
 )
 
 if(WITH_CODEC_FFMPEG)
-	set(INC ${INC} ${FFMPEG_INC} ${PTHREADS_INC})
+	list(APPEND INC_SYS
+		${FFMPEG_INCLUDE_DIRS}
+		${PTHREADS_INCLUDE_DIRS}
+	)
 	add_definitions(-DWITH_FFMPEG)
 	add_definitions(-D__STDC_CONSTANT_MACROS)
 endif()
 
-blender_add_lib(ge_videotex "${SRC}" "${INC}")
+blender_add_lib(ge_videotex "${SRC}" "${INC}" "${INC_SYS}")

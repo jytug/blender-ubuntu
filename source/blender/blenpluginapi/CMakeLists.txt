@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 35028 2011-02-21 12:35:04Z jesterking $
+# $Id: CMakeLists.txt 37618 2011-06-18 14:12:54Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -34,6 +34,10 @@ set(INC
 	../../../intern/guardedalloc
 )
 
+set(INC_SYS
+
+)
+
 set(SRC
 	intern/pluginapi.c
 
@@ -46,8 +50,8 @@ set(SRC
 )
 
 if(WITH_CODEC_QUICKTIME)
-	list(APPEND INC ${QUICKTIME_INC})
+	list(APPEND INC_SYS ${QUICKTIME_INCLUDE_DIRS})
 	add_definitions(-DWITH_QUICKTIME)
 endif()
 
-blender_add_lib(bf_blenpluginapi "${SRC}" "${INC}")
+blender_add_lib(bf_blenpluginapi "${SRC}" "${INC}" "${INC_SYS}")

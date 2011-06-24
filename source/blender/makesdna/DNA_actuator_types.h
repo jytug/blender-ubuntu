@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_actuator_types.h 35140 2011-02-25 10:20:37Z jesterking $ 
+ * $Id: DNA_actuator_types.h 37455 2011-06-13 17:08:33Z dfelinto $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -133,7 +133,7 @@ typedef struct bIpoActuator {
 typedef struct bCameraActuator {
 	struct Object *ob;
 	float height, min, max;
-	float pad;
+	float damping;
 	short pad1, axis;
 	float pad2;
 } bCameraActuator ;

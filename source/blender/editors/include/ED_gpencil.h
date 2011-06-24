@@ -1,5 +1,5 @@
 /*
- * $Id: ED_gpencil.h 35016 2011-02-21 07:25:24Z jesterking $
+ * $Id: ED_gpencil.h 36644 2011-05-12 16:47:36Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -56,7 +56,7 @@ struct wmKeyConfig;
  * Used as part of the 'stroke cache' used during drawing of new strokes
  */
 typedef struct tGPspoint {
-	short x, y;				/* x and y coordinates of cursor (in relative to area) */
+	int x, y;				/* x and y coordinates of cursor (in relative to area) */
 	float pressure;			/* pressure of tablet at this point */
 } tGPspoint;
 

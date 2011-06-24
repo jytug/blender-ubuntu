@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 35501 2011-03-12 22:05:33Z nazgul $
+# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -27,6 +27,10 @@
 set(INC
 	.
 	src
+)
+
+set(INC_SYS
+
 )
 
 set(SRC
@@ -145,7 +149,6 @@ set(SRC
 	src/LinearMath/btGeometryUtil.cpp
 	src/LinearMath/btQuickprof.cpp
 	src/LinearMath/btSerializer.cpp
-	
 
 	src/Bullet-C-Api.h
 	src/BulletCollision/BroadphaseCollision/btAxisSweep3.h
@@ -330,4 +333,4 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
 endif()
 
-blender_add_lib(extern_bullet "${SRC}" "${INC}")
+blender_add_lib(extern_bullet "${SRC}" "${INC}" "${INC_SYS}")

@@ -1,5 +1,5 @@
 /*
- * $Id: interface_layout.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: interface_layout.c 37557 2011-06-16 15:28:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -418,6 +418,9 @@ static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, in
 				but->type= NUMSLI;
 		}
 	}
+	else if(subtype == PROP_DIRECTION) {
+		uiDefButR(block, BUT_NORMAL, 0, name, x, y, UI_UNIT_X*3, UI_UNIT_Y*3, ptr, RNA_property_identifier(prop), 0, 0, 0, -1, -1, NULL);
+	}
 	else {
 		if(ELEM(subtype, PROP_COLOR, PROP_COLOR_GAMMA) && !expand)
 			uiDefAutoButR(block, ptr, prop, -1, "", ICON_NONE, 0, 0, w, UI_UNIT_Y);
@@ -531,10 +534,10 @@ static uiBut *ui_item_with_label(uiLayout *layout, uiBlock *block, const char *n
 		uiDefAutoButR(block, ptr, prop, index, "", icon, x, y, w-UI_UNIT_X, h);
 
 		/* BUTTONS_OT_file_browse calls uiFileBrowseContextProperty */
-		but= uiDefIconButO(block, BUT, "BUTTONS_OT_file_browse", WM_OP_INVOKE_DEFAULT, ICON_FILESEL, x, y, UI_UNIT_X, h, NULL);
-	}
-	else if(subtype == PROP_DIRECTION) {
-		uiDefButR(block, BUT_NORMAL, 0, name, x, y, 100, 100, ptr, RNA_property_identifier(prop), index, 0, 0, -1, -1, NULL);
+		but= uiDefIconButO(block, BUT, subtype==PROP_DIRPATH ?
+		                       "BUTTONS_OT_directory_browse" :
+		                       "BUTTONS_OT_file_browse",
+		                   WM_OP_INVOKE_DEFAULT, ICON_FILESEL, x, y, UI_UNIT_X, h, NULL);
 	}
 	else if(flag & UI_ITEM_R_EVENT) {
 		uiDefButR(block, KEYEVT, 0, name, x, y, w, h, ptr, RNA_property_identifier(prop), index, 0, 0, -1, -1, NULL);
@@ -651,6 +654,9 @@ PointerRNA uiItemFullO(uiLayout *layout, const char *opname, const char *name, i
 	if (flag & UI_ITEM_R_NO_BG)
 		uiBlockSetEmboss(block, UI_EMBOSS);
 
+	if(layout->redalert)
+		uiButSetFlag(but, UI_BUT_REDALERT);
+
 	/* assign properties */
 	if(properties || (flag & UI_ITEM_O_RETURN_PROPS)) {
 		PointerRNA *opptr= uiButGetOperatorPtrRNA(but);
@@ -728,6 +734,9 @@ void uiItemsFullEnumO(uiLayout *layout, const char *opname, const char *propname
 
 	RNA_pointer_create(NULL, ot->srna, NULL, &ptr);
 	prop= RNA_struct_find_property(&ptr, propname);
+
+	/* don't let bad properties slip through */
+	BLI_assert((prop == NULL) || (RNA_property_type(prop) == PROP_ENUM));
 
 	if(prop && RNA_property_type(prop) == PROP_ENUM) {
 		EnumPropertyItem *item;
@@ -1496,8 +1505,10 @@ void uiItemMenuF(uiLayout *layout, const char *name, int icon, uiMenuCreateFunc 
 
 typedef struct MenuItemLevel {
 	int opcontext;
-	const char *opname;
-	const char *propname;
+	/* dont use pointers to the strings because python can dynamically
+	 * allocate strings and free before the menu draws, see [#27304] */
+	char opname[OP_MAX_TYPENAME];
+	char propname[MAX_IDPROP_NAME];
 	PointerRNA rnapoin;
 } MenuItemLevel;
 
@@ -1514,9 +1525,14 @@ void uiItemMenuEnumO(uiLayout *layout, const char *opname, const char *propname,
 	wmOperatorType *ot= WM_operatortype_find(opname, 1);
 	MenuItemLevel *lvl;
 
-	if(!ot || !ot->srna) {
+	if(!ot) {
 		ui_item_disabled(layout, opname);
-		RNA_warning("uiItemMenuEnumO: %s '%s'\n", ot ? "unknown operator" : "operator missing srna", name);
+		RNA_warning("uiItemMenuEnumO: unknown operator '%s'\n", opname);
+		return;
+	}
+	if(!ot->srna) {
+		ui_item_disabled(layout, opname);
+		RNA_warning("uiItemMenuEnumO: operator missing srna '%s'\n", opname);
 		return;
 	}
 
@@ -1526,8 +1542,8 @@ void uiItemMenuEnumO(uiLayout *layout, const char *opname, const char *propname,
 		icon= ICON_BLANK1;
 
 	lvl= MEM_callocN(sizeof(MenuItemLevel), "MenuItemLevel");
-	lvl->opname= opname;
-	lvl->propname= propname;
+	BLI_strncpy(lvl->opname, opname, sizeof(lvl->opname));
+	BLI_strncpy(lvl->propname, propname, sizeof(lvl->propname));
 	lvl->opcontext= layout->root->opcontext;
 
 	ui_item_menu(layout, name, icon, menu_item_enum_opname_menu, NULL, lvl);
@@ -1560,7 +1576,7 @@ void uiItemMenuEnumR(uiLayout *layout, struct PointerRNA *ptr, const char *propn
 
 	lvl= MEM_callocN(sizeof(MenuItemLevel), "MenuItemLevel");
 	lvl->rnapoin= *ptr;
-	lvl->propname= propname;
+	BLI_strncpy(lvl->propname, propname, sizeof(lvl->propname));
 	lvl->opcontext= layout->root->opcontext;
 
 	ui_item_menu(layout, name, icon, menu_item_enum_rna_menu, NULL, lvl);

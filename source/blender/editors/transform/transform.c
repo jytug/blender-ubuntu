@@ -1,5 +1,5 @@
 /*
- * $Id: transform.c 36278 2011-04-21 17:25:58Z campbellbarton $
+ * $Id: transform.c 37294 2011-06-07 09:35:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -120,12 +120,14 @@ void setTransformViewMatrices(TransInfo *t)
 	calculateCenter2D(t);
 }
 
-void convertViewVec(TransInfo *t, float *vec, short dx, short dy)
+void convertViewVec(TransInfo *t, float *vec, int dx, int dy)
 {
 	if (t->spacetype==SPACE_VIEW3D) {
-		if (t->ar->regiontype == RGN_TYPE_WINDOW)
-		{
-			window_to_3d_delta(t->ar, vec, dx, dy);
+		if (t->ar->regiontype == RGN_TYPE_WINDOW) {
+			float mval_f[2];
+			mval_f[0]= dx;
+			mval_f[1]= dy;
+			ED_view3d_win_to_delta(t->ar, mval_f, vec);
 		}
 	}
 	else if(t->spacetype==SPACE_IMAGE) {
@@ -192,15 +194,18 @@ void projectIntView(TransInfo *t, float *vec, int *adr)
 		UI_view2d_to_region_no_clip(t->view, v[0], v[1], adr, adr+1);
 	}
 	else if(t->spacetype == SPACE_ACTION) {
-		SpaceAction *sact = t->sa->spacedata.first;
 		int out[2] = {0, 0};
+#if 0
+		SpaceAction *sact = t->sa->spacedata.first;
 
 		if (sact->flag & SACTION_DRAWTIME) {
 			//vec[0] = vec[0]/((t->scene->r.frs_sec / t->scene->r.frs_sec_base));
-
+			/* same as below */
 			UI_view2d_to_region_no_clip((View2D *)t->view, vec[0], vec[1], out, out+1);
 		} 
-		else {
+		else
+#endif
+		{
 			UI_view2d_to_region_no_clip((View2D *)t->view, vec[0], vec[1], out, out+1);
 		}
 
@@ -564,8 +569,7 @@ int transformEvent(TransInfo *t, wmEvent *event)
 		if (t->modifiers & MOD_CONSTRAINT_SELECT)
 			t->con.mode |= CON_SELECT;
 
-		t->mval[0] = event->x - t->ar->winrct.xmin;
-		t->mval[1] = event->y - t->ar->winrct.ymin;
+		VECCOPY2D(t->mval, event->mval);
 
 		// t->redraw |= TREDRAW_SOFT; /* Use this for soft redraw. Might cause flicker in object mode */
 		t->redraw |= TREDRAW_HARD;
@@ -780,7 +784,7 @@ int transformEvent(TransInfo *t, wmEvent *event)
 		case SPACEKEY:
 			if ((t->spacetype==SPACE_VIEW3D) && event->alt) {
 #if 0 // TRANSFORM_FIX_ME
-				short mval[2];
+				int mval[2];
 
 				getmouseco_sc(mval);
 				BIF_selectOrientation();
@@ -1267,7 +1271,7 @@ static void drawHelpline(bContext *UNUSED(C), int x, int y, void *customdata)
 
 				setlinestyle(3);
 				glBegin(GL_LINE_STRIP);
-				glVertex2sv(t->mval);
+				glVertex2iv(t->mval);
 				glVertex2fv(cent);
 				glEnd();
 
@@ -1312,7 +1316,7 @@ static void drawHelpline(bContext *UNUSED(C), int x, int y, void *customdata)
 
 					setlinestyle(3);
 					glBegin(GL_LINE_STRIP);
-					glVertex2sv(t->mval);
+					glVertex2iv(t->mval);
 					glVertex2fv(cent);
 					glEnd();
 
@@ -2283,7 +2287,7 @@ int handleEventWarp(TransInfo *t, wmEvent *event)
 	return status;
 }
 
-int Warp(TransInfo *t, const short UNUSED(mval[2]))
+int Warp(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float vec[3], circumfac, dist, phi0, co, si, *curs, cursor[3], gcursor[3];
@@ -2431,7 +2435,7 @@ int handleEventShear(TransInfo *t, wmEvent *event)
 }
 
 
-int Shear(TransInfo *t, const short UNUSED(mval[2]))
+int Shear(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float vec[3];
@@ -2697,7 +2701,7 @@ static void ElementResize(TransInfo *t, TransData *td, float mat[3][3]) {
 	constraintTransLim(t, td);
 }
 
-int Resize(TransInfo *t, const short mval[2])
+int Resize(TransInfo *t, const int mval[2])
 {
 	TransData *td;
 	float size[3], mat[3][3];
@@ -2802,7 +2806,7 @@ void initToSphere(TransInfo *t)
 	t->val /= (float)t->total;
 }
 
-int ToSphere(TransInfo *t, const short UNUSED(mval[2]))
+int ToSphere(TransInfo *t, const int UNUSED(mval[2]))
 {
 	float vec[3];
 	float ratio, radius;
@@ -3149,9 +3153,9 @@ static void applyRotation(TransInfo *t, float angle, float axis[3])
 	}
 }
 
-int Rotation(TransInfo *t, const short UNUSED(mval[2]))
+int Rotation(TransInfo *t, const int UNUSED(mval[2]))
 {
-	char str[128];
+	char str[128], *spos= str;
 	
 	float final;
 
@@ -3177,18 +3181,20 @@ int Rotation(TransInfo *t, const short UNUSED(mval[2]))
 		
 		outputNumInput(&(t->num), c);
 		
-		sprintf(str, "Rot: %s %s %s", &c[0], t->con.text, t->proptext);
+		spos+= sprintf(spos, "Rot: %s %s %s", &c[0], t->con.text, t->proptext);
 
 		/* Clamp between -180 and 180 */
 		final= angle_wrap_rad(DEG2RADF(final));
 	}
 	else {
-		sprintf(str, "Rot: %.2f%s %s", RAD2DEGF(final), t->con.text, t->proptext);
+		spos += sprintf(spos, "Rot: %.2f%s %s", RAD2DEGF(final), t->con.text, t->proptext);
 	}
 	
-	if (t->flag & (T_PROP_EDIT|T_PROP_CONNECTED))
-		sprintf(str, "%s Proportional size: %.2f", str, t->prop_size);
-	
+	if (t->flag & (T_PROP_EDIT|T_PROP_CONNECTED)) {
+		spos += sprintf(spos, " Proportional size: %.2f", t->prop_size);
+	}
+	(void)spos;
+
 	t->values[0] = final;
 	
 	applyRotation(t, final, t->axis);
@@ -3255,9 +3261,9 @@ static void applyTrackball(TransInfo *t, float axis1[3], float axis2[3], float a
 	}
 }
 
-int Trackball(TransInfo *t, const short UNUSED(mval[2]))
+int Trackball(TransInfo *t, const int UNUSED(mval[2]))
 {
-	char str[128];
+	char str[128], *spos= str;
 	float axis1[3], axis2[3];
 	float mat[3][3], totmat[3][3], smat[3][3];
 	float phi[2];
@@ -3281,14 +3287,19 @@ int Trackball(TransInfo *t, const short UNUSED(mval[2]))
 
 		outputNumInput(&(t->num), c);
 
-		sprintf(str, "Trackball: %s %s %s", &c[0], &c[20], t->proptext);
+		spos += sprintf(spos, "Trackball: %s %s %s", &c[0], &c[20], t->proptext);
 
 		phi[0] = DEG2RADF(phi[0]);
 		phi[1] = DEG2RADF(phi[1]);
 	}
 	else {
-		sprintf(str, "Trackball: %.2f %.2f %s", RAD2DEGF(phi[0]), RAD2DEGF(phi[1]), t->proptext);
+		spos += sprintf(spos, "Trackball: %.2f %.2f %s", RAD2DEGF(phi[0]), RAD2DEGF(phi[1]), t->proptext);
 	}
+
+	if (t->flag & (T_PROP_EDIT|T_PROP_CONNECTED)) {
+		spos += sprintf(spos, " Proportional size: %.2f", t->prop_size);
+	}
+	(void)spos;
 
 	vec_rot_to_mat3( smat,axis1, phi[0]);
 	vec_rot_to_mat3( totmat,axis2, phi[1]);
@@ -3345,6 +3356,7 @@ void initTranslation(TransInfo *t)
 }
 
 static void headerTranslation(TransInfo *t, float vec[3], char *str) {
+	char *spos= str;
 	char tvec[60];
 	char distvec[20];
 	char autoik[20];
@@ -3395,24 +3407,26 @@ static void headerTranslation(TransInfo *t, float vec[3], char *str) {
 	if (t->con.mode & CON_APPLY) {
 		switch(t->num.idx_max) {
 		case 0:
-			sprintf(str, "D: %s (%s)%s %s  %s", &tvec[0], distvec, t->con.text, t->proptext, &autoik[0]);
+			spos += sprintf(spos, "D: %s (%s)%s %s  %s", &tvec[0], distvec, t->con.text, t->proptext, &autoik[0]);
 			break;
 		case 1:
-			sprintf(str, "D: %s   D: %s (%s)%s %s  %s", &tvec[0], &tvec[20], distvec, t->con.text, t->proptext, &autoik[0]);
+			spos += sprintf(spos, "D: %s   D: %s (%s)%s %s  %s", &tvec[0], &tvec[20], distvec, t->con.text, t->proptext, &autoik[0]);
 			break;
 		case 2:
-			sprintf(str, "D: %s   D: %s  D: %s (%s)%s %s  %s", &tvec[0], &tvec[20], &tvec[40], distvec, t->con.text, t->proptext, &autoik[0]);
+			spos += sprintf(spos, "D: %s   D: %s  D: %s (%s)%s %s  %s", &tvec[0], &tvec[20], &tvec[40], distvec, t->con.text, t->proptext, &autoik[0]);
 		}
 	}
 	else {
 		if(t->flag & T_2D_EDIT)
-			sprintf(str, "Dx: %s   Dy: %s (%s)%s %s", &tvec[0], &tvec[20], distvec, t->con.text, t->proptext);
+			spos += sprintf(spos, "Dx: %s   Dy: %s (%s)%s %s", &tvec[0], &tvec[20], distvec, t->con.text, t->proptext);
 		else
-			sprintf(str, "Dx: %s   Dy: %s  Dz: %s (%s)%s %s  %s", &tvec[0], &tvec[20], &tvec[40], distvec, t->con.text, t->proptext, &autoik[0]);
+			spos += sprintf(spos, "Dx: %s   Dy: %s  Dz: %s (%s)%s %s  %s", &tvec[0], &tvec[20], &tvec[40], distvec, t->con.text, t->proptext, &autoik[0]);
 	}
 	
-	if (t->flag & (T_PROP_EDIT|T_PROP_CONNECTED))
-		sprintf(str, "%s Proportional size: %.2f", str, t->prop_size);
+	if (t->flag & (T_PROP_EDIT|T_PROP_CONNECTED)) {
+		spos += sprintf(spos, " Proportional size: %.2f", t->prop_size);
+	}
+	(void)spos;
 }
 
 static void applyTranslation(TransInfo *t, float vec[3]) {
@@ -3477,7 +3491,7 @@ static void applyTranslation(TransInfo *t, float vec[3]) {
 }
 
 /* uses t->vec to store actual translation in */
-int Translation(TransInfo *t, const short UNUSED(mval[2]))
+int Translation(TransInfo *t, const int UNUSED(mval[2]))
 {
 	char str[250];
 
@@ -3544,7 +3558,7 @@ void initShrinkFatten(TransInfo *t)
 
 
 
-int ShrinkFatten(TransInfo *t, const short UNUSED(mval[2]))
+int ShrinkFatten(TransInfo *t, const int UNUSED(mval[2]))
 {
 	float vec[3];
 	float distance;
@@ -3619,7 +3633,7 @@ void initTilt(TransInfo *t)
 
 
 
-int Tilt(TransInfo *t, const short UNUSED(mval[2]))
+int Tilt(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	int i;
@@ -3691,7 +3705,7 @@ void initCurveShrinkFatten(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT;
 }
 
-int CurveShrinkFatten(TransInfo *t, const short UNUSED(mval[2]))
+int CurveShrinkFatten(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float ratio;
@@ -3759,7 +3773,7 @@ void initPushPull(TransInfo *t)
 }
 
 
-int PushPull(TransInfo *t, const short UNUSED(mval[2]))
+int PushPull(TransInfo *t, const int UNUSED(mval[2]))
 {
 	float vec[3], axis[3];
 	float distance;
@@ -3892,7 +3906,7 @@ int handleEventBevel(TransInfo *t, wmEvent *event)
 	return 0;
 }
 
-int Bevel(TransInfo *t, const short UNUSED(mval[2]))
+int Bevel(TransInfo *t, const int UNUSED(mval[2]))
 {
 	float distance,d;
 	int i;
@@ -3960,7 +3974,7 @@ void initBevelWeight(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT|T_NO_PROJECT;
 }
 
-int BevelWeight(TransInfo *t, const short UNUSED(mval[2]))
+int BevelWeight(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float weight;
@@ -4033,7 +4047,7 @@ void initCrease(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT|T_NO_PROJECT;
 }
 
-int Crease(TransInfo *t, const short UNUSED(mval[2]))
+int Crease(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float crease;
@@ -4152,7 +4166,7 @@ static void ElementBoneSize(TransInfo *t, TransData *td, float mat[3][3])
 	td->loc[1]= oldy;
 }
 
-int BoneSize(TransInfo *t, const short mval[2])
+int BoneSize(TransInfo *t, const int mval[2])
 {
 	TransData *td = t->data;
 	float size[3], mat[3][3];
@@ -4228,7 +4242,7 @@ void initBoneEnvelope(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT|T_NO_PROJECT;
 }
 
-int BoneEnvelope(TransInfo *t, const short UNUSED(mval[2]))
+int BoneEnvelope(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float ratio;
@@ -4305,7 +4319,7 @@ static int createSlideVerts(TransInfo *t)
 		/*ok, let's try to survive this*/
 		unit_m4(projectMat);
 	} else {
-		view3d_get_object_project_mat(v3d, t->obedit, projectMat);
+		ED_view3d_ob_project_mat_get(v3d, t->obedit, projectMat);
 	}
 	
 	numsel =0;
@@ -4598,8 +4612,8 @@ static int createSlideVerts(TransInfo *t)
 				}
 				
 				if (v3d) {
-					view3d_project_float(t->ar, tempsv->up->v1->co, co, projectMat);
-					view3d_project_float(t->ar, tempsv->up->v2->co, co2, projectMat);
+					ED_view3d_project_float(t->ar, tempsv->up->v1->co, co, projectMat);
+					ED_view3d_project_float(t->ar, tempsv->up->v2->co, co2, projectMat);
 				}
 
 				if (ev == tempsv->up->v1) {
@@ -4611,8 +4625,8 @@ static int createSlideVerts(TransInfo *t)
 				add_v3_v3(start, tvec);
 
 				if (v3d) {
-					view3d_project_float(t->ar, tempsv->down->v1->co, co, projectMat);
-					view3d_project_float(t->ar, tempsv->down->v2->co, co2, projectMat);
+					ED_view3d_project_float(t->ar, tempsv->down->v1->co, co, projectMat);
+					ED_view3d_project_float(t->ar, tempsv->down->v2->co, co2, projectMat);
 				}
 
 				if (ev == tempsv->down->v1) {
@@ -4659,10 +4673,10 @@ static int createSlideVerts(TransInfo *t)
 #undef EDGE_SLIDE_MIN
 
 
-	sld->start[0] = (short) start[0];
-	sld->start[1] = (short) start[1];
-	sld->end[0] = (short) end[0];
-	sld->end[1] = (short) end[1];
+	sld->start[0] = (int) start[0];
+	sld->start[1] = (int) start[1];
+	sld->end[0] = (int) end[0];
+	sld->end[1] = (int) end[1];
 	
 	if (uvlay_tot) { // XXX && (scene->toolsettings->uvcalc_flag & UVCALC_TRANSFORM_CORRECT)) {
 		int maxnum = 0;
@@ -4844,8 +4858,8 @@ void initEdgeSlide(TransInfo *t)
 	t->idx_max = 0;
 	t->num.idx_max = 0;
 	t->snap[0] = 0.0f;
-	t->snap[1] = (float)((5.0/180)*M_PI);
-	t->snap[2] = t->snap[1] * 0.2f;
+	t->snap[1] = 0.1f;
+	t->snap[2] = t->snap[1] * 0.1f;
 
 	t->num.increment = t->snap[1];
 
@@ -4962,7 +4976,7 @@ int doEdgeSlide(TransInfo *t, float perc)
 	return 1;
 }
 
-int EdgeSlide(TransInfo *t, const short UNUSED(mval[2]))
+int EdgeSlide(TransInfo *t, const int UNUSED(mval[2]))
 {
 	char str[50];
 	float final;
@@ -4971,6 +4985,9 @@ int EdgeSlide(TransInfo *t, const short UNUSED(mval[2]))
 
 	snapGrid(t, &final);
 
+	/* only do this so out of range values are not displayed */
+	CLAMP(final, -1.0f, 1.0f);
+
 	if (hasNumInput(&t->num)) {
 		char c[20];
 
@@ -4978,10 +4995,10 @@ int EdgeSlide(TransInfo *t, const short UNUSED(mval[2]))
 
 		outputNumInput(&(t->num), c);
 
-		sprintf(str, "Edge Slide Percent: %s", &c[0]);
+		sprintf(str, "Edge Slide: %s", &c[0]);
 	}
 	else {
-		sprintf(str, "Edge Slide Percent: %.2f", final);
+		sprintf(str, "Edge Slide: %.2f", final);
 	}
 
 	CLAMP(final, -1.0f, 1.0f);
@@ -5021,7 +5038,7 @@ void initBoneRoll(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT|T_NO_PROJECT;
 }
 
-int BoneRoll(TransInfo *t, const short UNUSED(mval[2]))
+int BoneRoll(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	int i;
@@ -5082,7 +5099,7 @@ void initBakeTime(TransInfo *t)
 	t->num.increment = t->snap[1];
 }
 
-int BakeTime(TransInfo *t, const short mval[2])
+int BakeTime(TransInfo *t, const int mval[2])
 {
 	TransData *td = t->data;
 	float time;
@@ -5157,7 +5174,7 @@ void initMirror(TransInfo *t)
 	}
 }
 
-int Mirror(TransInfo *t, const short UNUSED(mval[2]))
+int Mirror(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td;
 	float size[3], mat[3][3];
@@ -5234,7 +5251,7 @@ void initAlign(TransInfo *t)
 	initMouseInputMode(t, &t->mouse, INPUT_NONE);
 }
 
-int Align(TransInfo *t, const short UNUSED(mval[2]))
+int Align(TransInfo *t, const int UNUSED(mval[2]))
 {
 	TransData *td = t->data;
 	float center[3];
@@ -5337,7 +5354,7 @@ static void applySeqSlide(TransInfo *t, float val[2]) {
 	}
 }
 
-int SeqSlide(TransInfo *t, const short UNUSED(mval[2]))
+int SeqSlide(TransInfo *t, const int UNUSED(mval[2]))
 {
 	char str[200];
 
@@ -5627,7 +5644,7 @@ static void applyTimeTranslate(TransInfo *t, float UNUSED(sval))
 	}
 }
 
-int TimeTranslate(TransInfo *t, const short mval[2])
+int TimeTranslate(TransInfo *t, const int mval[2])
 {
 	View2D *v2d = (View2D *)t->view;
 	float cval[2], sval[2];
@@ -5757,7 +5774,7 @@ static void applyTimeSlide(TransInfo *t, float sval)
 	}
 }
 
-int TimeSlide(TransInfo *t, const short mval[2])
+int TimeSlide(TransInfo *t, const int mval[2])
 {
 	View2D *v2d = (View2D *)t->view;
 	float cval[2], sval[2];
@@ -5882,7 +5899,7 @@ static void applyTimeScale(TransInfo *t) {
 	}
 }
 
-int TimeScale(TransInfo *t, const short UNUSED(mval[2]))
+int TimeScale(TransInfo *t, const int UNUSED(mval[2]))
 {
 	char str[200];
 	
