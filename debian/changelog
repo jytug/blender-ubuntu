@@ -1,6 +1,8 @@
 blender (2.58-svn37702-1) unstable; urgency=low
 
   * "New Upstream Release"
+  * debian/rules :
+    - disable WITH_BUILTIN_GLEW to avoid static linking
 
  -- Kevin Roy <kiniou@gmail.com>  Fri, 24 Jun 2011 11:13:28 +0200
 
