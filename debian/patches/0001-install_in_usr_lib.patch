@@ -13,17 +13,17 @@ Subject: install_in_usr_lib
  4 files changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/intern/ghost/intern/GHOST_SystemPathsX11.cpp b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
-index 71db005..28698b4 100644
+index a440a1f..7d5a253 100644
 --- a/intern/ghost/intern/GHOST_SystemPathsX11.cpp
 +++ b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
-@@ -57,7 +57,7 @@ const GHOST_TUns8* GHOST_SystemPathsX11::getSystemDir() const
- {
- 	/* no prefix assumes a portable build which only uses bundled scripts */
+@@ -44,7 +44,7 @@
+ #include <cstdlib> // for exit
+ 
  #ifdef PREFIX
--	return (GHOST_TUns8*) PREFIX "/share";
-+	return (GHOST_TUns8*) PREFIX "/lib";
+-static const char *static_path= PREFIX "/share" ;
++static const char *static_path= PREFIX "/lib" ;
  #else
- 	return NULL;
+ static const char *static_path= NULL;
  #endif
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
 index 45c392a..f961c4e 100644
@@ -39,7 +39,7 @@ index 45c392a..f961c4e 100644
  
  #ifdef WIN32
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 3bea1a5..7a28768 100644
+index 6933364..2535f40 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
 @@ -1005,7 +1005,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
@@ -52,10 +52,10 @@ index 3bea1a5..7a28768 100644
  	
  	if(!system_path[0])
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 6d0ddf7..3fb634f 100644
+index 30e0dfe..b7b0a65 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -367,8 +367,8 @@ if(UNIX AND NOT APPLE)
+@@ -375,8 +375,8 @@ if(UNIX AND NOT APPLE)
  	if(WITH_PYTHON)
  		# install(CODE "message(\"copying blender scripts...\")")
  		install(

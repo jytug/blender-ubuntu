@@ -4,22 +4,20 @@ Subject: filter_docs_to_install
 
 Install relevant documentation
 ---
- source/creator/CMakeLists.txt |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+ source/creator/CMakeLists.txt |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 3fb634f..fa961b1 100644
+index b7b0a65..41db602 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -332,9 +332,8 @@ if(UNIX AND NOT APPLE)
- 			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
- 		)
- 		install(
--			DIRECTORY ${CMAKE_SOURCE_DIR}/release/text
-+            FILES ${CMAKE_SOURCE_DIR}/release/text/readme.html ${CMAKE_SOURCE_DIR}/release/text/copyright.txt
- 			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/blender
--			PATTERN ".svn" EXCLUDE
- 		)
- 	endif()
+@@ -236,8 +236,6 @@ endif()
+ # Install Targets
  
+ set(BLENDER_TEXT_FILES
+-	${CMAKE_SOURCE_DIR}/release/text/GPL-license.txt
+-	${CMAKE_SOURCE_DIR}/release/text/Python-license.txt
+ 	${CMAKE_SOURCE_DIR}/release/text/copyright.txt
+ 	${CMAKE_SOURCE_DIR}/release/text/readme.html
+ )
 -- 
