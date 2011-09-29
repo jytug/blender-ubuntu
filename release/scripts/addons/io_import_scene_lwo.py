@@ -62,8 +62,6 @@ bl_info= {
 
 
 import os
-import io
-import time
 import struct
 import chunk
 
@@ -1194,6 +1192,12 @@ def build_objects(object_layers, object_surfs, object_tags, object_name, add_sub
         layer_data.uvmaps.clear()
         layer_data.morphs.clear()
         layer_data.surf_tags.clear()
+
+        # We may have some invalid mesh data, See: [#27916]
+        # keep this last!
+        print("validating mesh: %r..." % me.name)
+        me.validate(verbose=1)
+        print("done!")
 
     # With the objects made, setup the parents and re-adjust the locations.
     for ob_key in ob_dict:

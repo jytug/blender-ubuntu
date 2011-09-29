@@ -26,8 +26,6 @@ from bpy.props import *
 #                       new mesh (as used in from_pydata).
 # name ... Name of the new mesh (& object).
 def create_mesh_object(context, verts, edges, faces, name):
-    scene = context.scene
-    obj_act = scene.objects.active
 
     # Create new mesh
     mesh = bpy.data.meshes.new(name)
@@ -305,11 +303,11 @@ def add_star(points, outer_radius, inner_radius, height):
             radius = inner_radius
 
         edgeloop_top.append(len(verts))
-        vec = Vector((radius, 0, half_height)) * quat
+        vec = quat * Vector((radius, 0, half_height))
         verts.append(vec)
 
         edgeloop_bottom.append(len(verts))
-        vec = Vector((radius, 0, -half_height)) * quat
+        vec = quat * Vector((radius, 0, -half_height))
         verts.append(vec)
 
 
@@ -343,7 +341,7 @@ def trapezohedron(s,r,h):
     # first 3 vectors, every next one is calculated from the last, and the z-value is negated
     verts = [Vector(i) for i in [(0,0,h),(0,0,-h),(r,0,e)]]
     for i in range(2*s-1):
-        verts.append(verts[-1]*quat)    # rotate further "a" radians around the z-axis
+        verts.append(quat*verts[-1])    # rotate further "a" radians around the z-axis
         verts[-1].z *= -1               # negate last z-value to account for the zigzag 
     
     faces = []

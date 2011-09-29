@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_space_types.h 37552 2011-06-16 15:01:22Z campbellbarton $ 
+ * $Id: DNA_space_types.h 39016 2011-08-04 11:27:13Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -703,7 +703,7 @@ enum FileSortTypeE {
 #define FILE_HIDE_DOT		(1<<3)
 #define FILE_AUTOSELECT		(1<<4)
 #define FILE_ACTIVELAY		(1<<5)
-#define FILE_ATCURSOR		(1<<6)
+/* #define FILE_ATCURSOR	(1<<6) */ /* deprecated */
 #define FILE_DIRSEL_ONLY	(1<<7)
 #define FILE_FILTER			(1<<8)
 #define FILE_BOOKMARKS		(1<<9)
@@ -754,7 +754,7 @@ enum FileSortTypeE {
 #define SI_EDITTILE		(1<<1)
 #define SI_CLIP_UV		(1<<2)
 #define SI_DRAWTOOL		(1<<3)
-#define SI_DEPRECATED1  (1<<4)	/* stick UVs to others in the same location */
+#define SI_NO_DRAWFACES	(1<<4)
 #define SI_DRAWSHADOW   (1<<5)
 #define SI_SELACTFACE   (1<<6)	/* deprecated */
 #define SI_DEPRECATED2	(1<<7)

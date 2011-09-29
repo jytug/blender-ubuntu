@@ -1,5 +1,5 @@
 /*
- * $Id: MeshImporter.h 35416 2011-03-09 01:13:28Z jesterking $
+ * $Id: MeshImporter.h 38169 2011-07-06 21:37:31Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -69,7 +69,7 @@ public:
 	void print();
 #endif
 
-	void getUV(int uv_index[2], float *uv);
+	void getUV(int uv_index, float *uv);
 };
 
 class MeshImporter : public MeshImporterBase

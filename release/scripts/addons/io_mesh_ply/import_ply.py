@@ -209,8 +209,8 @@ import bpy
 
 def load_ply(filepath):
     import time
-    from bpy_extras.io_utils import unpack_list, unpack_face_list
-    from bpy_extras.image_utils import load_image
+    from bpy_extras.io_utils import unpack_face_list
+    # from bpy_extras.image_utils import load_image  # UNUSED
 
     t = time.time()
     obj_spec, obj = read(filepath)
@@ -225,7 +225,7 @@ def load_ply(filepath):
 
     for el in obj_spec.specs:
         if el.name == b'vertex':
-            vindices = vindices_x, vindices_y, vindices_z = el.index(b'x'), el.index(b'y'), el.index(b'z')
+            vindices_x, vindices_y, vindices_z = el.index(b'x'), el.index(b'y'), el.index(b'z')
             # noindices = (el.index('nx'), el.index('ny'), el.index('nz'))
             # if -1 in noindices: noindices = None
             uvindices = (el.index(b's'), el.index(b't'))
@@ -234,8 +234,8 @@ def load_ply(filepath):
             colindices = el.index(b'red'), el.index(b'green'), el.index(b'blue')
             if -1 in colindices:
                 colindices = None
-            else: # if not a float assume uchar
-                colmultiply = [1.0 if el.properties[i].numeric_type in ('f', 'd') else (1.0 / 256.0) for i in colindices]
+            else:  # if not a float assume uchar
+                colmultiply = [1.0 if el.properties[i].numeric_type in {'f', 'd'} else (1.0 / 256.0) for i in colindices]
 
         elif el.name == b'face':
             findex = el.index(b'vertex_indices')

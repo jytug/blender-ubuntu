@@ -1,5 +1,5 @@
 /*
- * $Id: seqeffects.c 37336 2011-06-09 14:27:51Z campbellbarton $
+ * $Id: seqeffects.c 38751 2011-07-27 06:55:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2373,7 +2373,7 @@ static void RVBlurBitmap2_float ( float* map, int width,int height,
 	/*	Blancmange (bmange@airdmhor.gen.nz) */
 
 	k = -1.0f/(2.0f*(float)M_PI*blur*blur);
-	fval=0;
+
 	for (ix = 0;ix< halfWidth;ix++){
 		weight = (float)exp(k*(ix*ix));
 		filter[halfWidth - ix] = weight;

@@ -1,5 +1,5 @@
 /*
- * $Id: EffectExporter.cpp 37317 2011-06-08 13:00:25Z jesterking $
+ * $Id: EffectExporter.cpp 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -78,12 +78,12 @@ bool EffectsExporter::hasEffects(Scene *sce)
 	return false;
 }
 
-void EffectsExporter::exportEffects(Scene *sce)
+void EffectsExporter::exportEffects(Scene *sce, bool export_selected)
 {
 	if(hasEffects(sce)) {
 		openLibrary();
 		MaterialFunctor mf;
-		mf.forEachMaterialInScene<EffectsExporter>(sce, *this);
+		mf.forEachMaterialInScene<EffectsExporter>(sce, *this, export_selected);
 
 		closeLibrary();
 	}
@@ -273,7 +273,7 @@ void EffectsExporter::operator()(Material *ma, Object *ob)
 		std::string uvname = strlen(t->uvname) ? t->uvname : active_uv;
 
 		// color
-		if (t->mapto & MAP_COL | MAP_COLSPEC) {
+		if (t->mapto & (MAP_COL | MAP_COLSPEC)) {
 			ep.setDiffuse(createTexture(ima, uvname, sampler));
 		}
 		// ambient

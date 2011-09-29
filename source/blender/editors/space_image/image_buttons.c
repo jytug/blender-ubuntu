@@ -1,5 +1,5 @@
 /*
- * $Id: image_buttons.c 37429 2011-06-12 11:03:21Z dingto $
+ * $Id: image_buttons.c 38551 2011-07-21 00:41:00Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -792,7 +792,9 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 				uiItemR(col, userptr, "frame_offset", 0, NULL, ICON_NONE);
 
 				col= uiLayoutColumn(split, 0);
-				uiItemR(col, userptr, "fields_per_frame", 0, "Fields", ICON_NONE);
+				row= uiLayoutRow(col, 0);
+				uiLayoutSetActive(row, RNA_boolean_get(&imaptr, "use_fields"));
+				uiItemR(row, userptr, "fields_per_frame", 0, "Fields", ICON_NONE);
 				uiItemR(col, userptr, "use_auto_refresh", 0, NULL, ICON_NONE);
 				uiItemR(col, userptr, "use_cyclic", 0, NULL, ICON_NONE);
 			}
@@ -802,6 +804,7 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 				col= uiLayoutColumn(split, 1);
 				uiItemR(col, &imaptr, "generated_width", 0, "X", ICON_NONE);
 				uiItemR(col, &imaptr, "generated_height", 0, "Y", ICON_NONE);
+				uiItemR(col, &imaptr, "use_generated_float", 0, NULL, ICON_NONE);
 
 				uiItemR(split, &imaptr, "generated_type", UI_ITEM_R_EXPAND, NULL, ICON_NONE);
 			}

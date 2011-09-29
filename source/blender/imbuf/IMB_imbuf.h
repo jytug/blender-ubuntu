@@ -1,5 +1,5 @@
 /*
- * $Id: IMB_imbuf.h 37492 2011-06-15 01:56:49Z campbellbarton $ 
+ * $Id: IMB_imbuf.h 38654 2011-07-24 10:26:22Z nazgul $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -252,7 +252,7 @@ void IMB_filter(struct ImBuf *ibuf);
 void IMB_filterN(struct ImBuf *out, struct ImBuf *in);
 void IMB_mask_filter_extend(char *mask, int width, int height);
 void IMB_mask_clear(struct ImBuf *ibuf, char *mask, int val);
-void IMB_filter_extend(struct ImBuf *ibuf, char *mask);
+void IMB_filter_extend(struct ImBuf *ibuf, char *mask, int filter);
 void IMB_makemipmap(struct ImBuf *ibuf, int use_filter);
 void IMB_remakemipmap(struct ImBuf *ibuf, int use_filter);
 struct ImBuf *IMB_getmipmap(struct ImBuf *ibuf, int level);
@@ -338,6 +338,7 @@ void IMB_float_from_rect_simple(struct ImBuf *ibuf); /* no profile conversion */
 /* note, check that the conversion exists, only some are supported */
 void IMB_convert_profile(struct ImBuf *ibuf, int profile);
 float *IMB_float_profile_ensure(struct ImBuf *ibuf, int profile, int *alloc);
+void IMB_color_to_bw(struct ImBuf *ibuf);
 
 /**
  * Change the ordering of the color bytes pointed to by rect from

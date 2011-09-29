@@ -1,5 +1,5 @@
 /*
-* $Id: GPG_ghost.cpp 37532 2011-06-15 23:43:02Z moguri $
+* $Id: GPG_ghost.cpp 38185 2011-07-07 10:37:46Z moguri $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -64,6 +64,7 @@ extern "C"
 #include "BKE_node.h"	
 #include "BKE_report.h"
 #include "BKE_library.h"
+#include "BLI_threads.h"
 #include "BLI_blenlib.h"
 #include "DNA_scene_types.h"
 #include "DNA_userdef_types.h"
@@ -399,7 +400,11 @@ int main(int argc, char** argv)
 		  ::DisposeNibReference(nibRef);
     */
 #endif // __APPLE__
-
+	
+	// We don't use threads directly in the BGE, but we need to call this so things like
+	// freeing up GPU_Textures works correctly.
+	BLI_threadapi_init();
+	
 	RNA_init();
 
 	init_nodesystem();

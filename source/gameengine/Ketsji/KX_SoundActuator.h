@@ -1,5 +1,5 @@
 /*
- * $Id: KX_SoundActuator.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: KX_SoundActuator.h 37750 2011-06-23 09:27:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,10 @@
 
 #include "SCA_IActuator.h"
 
-#include "AUD_C-API.h"
+#ifdef WITH_AUDASPACE
+#  include "AUD_C-API.h"
+#endif
+
 #include "BKE_sound.h"
 
 typedef struct KX_3DSoundSettings

@@ -1,5 +1,5 @@
 /*
- * $Id: subsurf_ccg.c 36773 2011-05-19 11:24:56Z blendix $
+ * $Id: subsurf_ccg.c 38298 2011-07-11 09:05:10Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1176,7 +1176,8 @@ static void ccgDM_drawEdges(DerivedMesh *dm, int drawLooseEdges, int UNUSED(draw
 	CCGSubSurf *ss = ccgdm->ss;
 	CCGEdgeIterator *ei = ccgSubSurf_getEdgeIterator(ss);
 	CCGFaceIterator *fi = ccgSubSurf_getFaceIterator(ss);
-	int i, edgeSize = ccgSubSurf_getEdgeSize(ss);
+	int i, j, edgeSize = ccgSubSurf_getEdgeSize(ss);
+	int totedge = ccgSubSurf_getNumEdges(ss);
 	int gridSize = ccgSubSurf_getGridSize(ss);
 	int useAging;
 
@@ -1184,11 +1185,14 @@ static void ccgDM_drawEdges(DerivedMesh *dm, int drawLooseEdges, int UNUSED(draw
 
 	ccgSubSurf_getUseAgeCounts(ss, &useAging, NULL, NULL, NULL);
 
-	for (; !ccgEdgeIterator_isStopped(ei); ccgEdgeIterator_next(ei)) {
-		CCGEdge *e = ccgEdgeIterator_getCurrent(ei);
+	for (j=0; j< totedge; j++) {
+		CCGEdge *e = ccgdm->edgeMap[j].edge;
 		DMGridData *edgeData = ccgSubSurf_getEdgeDataArray(ss, e);
 
 		if (!drawLooseEdges && !ccgSubSurf_getEdgeNumFaces(e))
+			continue;
+
+		if(ccgdm->edgeFlags && !(ccgdm->edgeFlags[j] & ME_EDGEDRAW))
 			continue;
 
 		if (useAging && !(G.f&G_BACKBUFSEL)) {

@@ -1,7 +1,7 @@
 /* texture.c
  *
  *
- * $Id: texture.c 37078 2011-06-01 16:17:38Z blendix $
+ * $Id: texture.c 38285 2011-07-10 17:04:56Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1484,6 +1484,10 @@ int BKE_texture_dependsOnTime(const struct Tex *texture)
 	}
 	else if(texture->adt) {
 		// assume anything in adt means the texture is animated
+		return 1;
+	}
+	else if(texture->type == TEX_NOISE) {
+		// noise always varies with time
 		return 1;
 	}
 	return 0;

@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_WindowX11.cpp 36985 2011-05-28 15:34:02Z campbellbarton $
+ * $Id: GHOST_WindowX11.cpp 37765 2011-06-23 19:55:47Z blendix $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -164,7 +164,7 @@ GHOST_WindowX11(
 	const bool stereoVisual,
 	const GHOST_TUns16 numOfAASamples
 ) :
-	GHOST_Window(title,left,top,width,height,state,type,stereoVisual,numOfAASamples),
+	GHOST_Window(width,height,state,type,stereoVisual,numOfAASamples),
 	m_context(NULL),
 	m_display(display),
 	m_normal_state(GHOST_kWindowStateNormal),

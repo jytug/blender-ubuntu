@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_wave.c 36362 2011-04-28 05:34:11Z campbellbarton $
+* $Id: MOD_wave.c 38300 2011-07-11 09:15:20Z blendix $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -256,7 +256,7 @@ static void waveModifier_do(WaveModifierData *md,
 {
 	WaveModifierData *wmd = (WaveModifierData*) md;
 	MVert *mvert = NULL;
-	MDeformVert *dvert = NULL;
+	MDeformVert *dvert;
 	int defgrp_index;
 	float ctime = BKE_curframe(scene);
 	float minfac =
@@ -281,11 +281,7 @@ static void waveModifier_do(WaveModifierData *md,
 	}
 
 	/* get the index of the deform group */
-	defgrp_index = defgroup_name_index(ob, wmd->defgrp_name);
-
-	if(defgrp_index >= 0){
-		dvert = dm->getVertDataArray(dm, CD_MDEFORMVERT);
-	}
+	modifier_get_vgroup(ob, dm, wmd->defgrp_name, &dvert, &defgrp_index);
 
 	if(wmd->damp == 0) wmd->damp = 10.0f;
 

@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_rotate.c 36271 2011-04-21 13:11:51Z campbellbarton $
+ * $Id: CMP_rotate.c 37836 2011-06-27 03:36:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -97,6 +97,7 @@ static void node_composit_exec_rotate(void *UNUSED(data), bNode *node, bNodeStac
 						break;
 					case 2:
 						bicubic_interpolation(ibuf, obuf, u, v, xo, yo);
+						break;
 					}
 
 				}

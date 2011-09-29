@@ -1,7 +1,7 @@
 /*
  * KX_SoundActuator.cpp
  *
- * $Id: KX_SoundActuator.cpp 35171 2011-02-25 13:35:59Z jesterking $
+ * $Id: KX_SoundActuator.cpp 37750 2011-06-23 09:27:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,7 +36,11 @@
 
 
 #include "KX_SoundActuator.h"
-#include "AUD_C-API.h"
+
+#ifdef WITH_AUDASPACE
+#  include "AUD_C-API.h"
+#endif
+
 #include "KX_GameObject.h"
 #include "KX_PyMath.h" // needed for PyObjectFrom()
 #include <iostream>

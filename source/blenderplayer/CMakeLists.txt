@@ -1,5 +1,5 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 37399 2011-06-11 06:00:28Z campbellbarton $
+# $Id: CMakeLists.txt 38409 2011-07-15 04:01:47Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -121,6 +121,7 @@ endif()
 		bf_intern_guardedalloc 
 		bf_intern_memutil 
 		bf_python_ext
+		bf_python_mathutils
 		bf_blenlib 
 		bf_imbuf_cineon
 		bf_imbuf_openexr 
@@ -138,6 +139,10 @@ endif()
 		bf_blenkernel # duplicate for linking
 		bf_intern_mikktspace
 	)
+
+	if(WITH_MOD_CLOTH_ELTOPO)
+		list(APPEND BLENDER_SORTED_LIBS extern_eltopo)
+	endif()
 
 	if(WITH_BUILTIN_GLEW)
 		list(APPEND BLENDER_SORTED_LIBS extern_glew)

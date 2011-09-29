@@ -59,7 +59,7 @@ with the Escape key. (but a bug prevent the keymap to register correctly at star
 
 """
 
-import bpy, sys
+import bpy
 from console.complete_import import get_root_modules
 
 
@@ -113,7 +113,7 @@ def evaluate(module):
     #print('evaluate')
     global root_module, tree_level, root_m_path
     
-    path = bpy.context.window_manager.api_nav_props.path
+    # path = bpy.context.window_manager.api_nav_props.path
     try :
         len_name = root_module.__name__.__len__()
         root_m_path = 'root_module' + module[len_name:]
@@ -259,7 +259,7 @@ class ApiNavigator():
         else :
             too_long = False
         
-        __class__.generate_api_doc()
+        ApiNavigator.generate_api_doc()
         return {'FINISHED'}
 
     @staticmethod
@@ -483,11 +483,11 @@ class OBJECT_PT_api_navigator(ApiNavigator, bpy.types.Panel):
                 return {'FINISHED'}
             
             col = self.layout
-            filter = bpy.context.window_manager.api_nav_props.filter
+            # filter = bpy.context.window_manager.api_nav_props.filter  # UNUSED
             reduce_to = bpy.context.window_manager.api_nav_props.reduce_to * self.columns
             pages = bpy.context.window_manager.api_nav_props.pages
             page_index = reduce_to*pages
-            rank = 0
+            # rank = 0  # UNUSED
             count = 0
             i = 0
             filtered = 0
@@ -624,9 +624,7 @@ class OBJECT_PT_api_navigator(ApiNavigator, bpy.types.Panel):
         global tree_level, current_module, module_type, return_report
     
         api_update(context)
-        
-        st = bpy.context.space_data
-        
+
         ###### layout ######
         layout = self.layout
         col = layout.column()
@@ -660,15 +658,14 @@ class OBJECT_PT_api_navigator(ApiNavigator, bpy.types.Panel):
 
 
 def register_keymaps():
-    kc = bpy.context.window_manager.keyconfigs['Blender']
-    km = kc.keymaps.get("Text")
-    if km is None:
-         km = kc.keymaps.new(name="Text")
-    kmi = km.keymap_items.new('api_navigator.toggle_doc', 'ESC', 'PRESS')
+    kc = bpy.context.window_manager.keyconfigs.addon
+    km = kc.keymaps.new(name="Text", space_type='TEXT_EDITOR')
+    km.keymap_items.new('api_navigator.toggle_doc', 'ESC', 'PRESS')
 
 
 def unregister_keymaps():
-    km = bpy.data.window_managers["WinMan"].keyconfigs.default.keymaps["Text"]
+    kc = bpy.context.window_manager.keyconfigs.addon
+    km = kc.keymaps["Text"]
     kmi = km.keymap_items["api_navigator.toggle_doc"]
     km.keymap_items.remove(kmi)
 

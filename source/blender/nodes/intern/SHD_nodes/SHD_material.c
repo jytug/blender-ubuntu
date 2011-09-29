@@ -1,5 +1,5 @@
 /*
- * $Id: SHD_material.c 37627 2011-06-19 01:23:50Z campbellbarton $
+ * $Id: SHD_material.c 38268 2011-07-09 19:16:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -226,7 +226,7 @@ static int gpu_shader_material(GPUMaterial *mat, bNode *node, GPUNodeStack *in, 
 		GPUShadeInput shi;
 		GPUShadeResult shr;
 		bNodeSocket *sock;
-		char hasinput[NUM_MAT_IN];
+		char hasinput[NUM_MAT_IN]= {'\0'};
 		int i;
 		
 		/* note: cannot use the in[]->hasinput flags directly, as these are not necessarily

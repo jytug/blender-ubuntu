@@ -1,5 +1,5 @@
 /*
- * $Id: writefile.c 37098 2011-06-02 12:44:59Z elubie $
+ * $Id: writefile.c 39084 2011-08-05 20:45:26Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -717,31 +717,48 @@ static void write_renderinfo(WriteData *wd, Main *mainvar)		/* for renderdeamon 
 	}
 }
 
+static void write_keymapitem(WriteData *wd, wmKeyMapItem *kmi)
+{
+	writestruct(wd, DATA, "wmKeyMapItem", 1, kmi);
+	if(kmi->properties)
+		IDP_WriteProperty(kmi->properties, wd);
+}
+
 static void write_userdef(WriteData *wd)
 {
 	bTheme *btheme;
 	wmKeyMap *keymap;
 	wmKeyMapItem *kmi;
+	wmKeyMapDiffItem *kmdi;
 	bAddon *bext;
-
+	uiStyle *style;
+	
 	writestruct(wd, USER, "UserDef", 1, &U);
 
 	for(btheme= U.themes.first; btheme; btheme=btheme->next)
 		writestruct(wd, DATA, "bTheme", 1, btheme);
 
-	for(keymap= U.keymaps.first; keymap; keymap=keymap->next) {
+	for(keymap= U.user_keymaps.first; keymap; keymap=keymap->next) {
 		writestruct(wd, DATA, "wmKeyMap", 1, keymap);
 
-		for(kmi=keymap->items.first; kmi; kmi=kmi->next) {
-			writestruct(wd, DATA, "wmKeyMapItem", 1, kmi);
-
-			if(kmi->properties)
-				IDP_WriteProperty(kmi->properties, wd);
+		for(kmdi=keymap->diff_items.first; kmdi; kmdi=kmdi->next) {
+			writestruct(wd, DATA, "wmKeyMapDiffItem", 1, kmdi);
+			if(kmdi->remove_item)
+				write_keymapitem(wd, kmdi->remove_item);
+			if(kmdi->add_item)
+				write_keymapitem(wd, kmdi->add_item);
 		}
+
+		for(kmi=keymap->items.first; kmi; kmi=kmi->next)
+			write_keymapitem(wd, kmi);
 	}
 
 	for(bext= U.addons.first; bext; bext=bext->next)
 		writestruct(wd, DATA, "bAddon", 1, bext);
+	
+	for(style= U.uistyles.first; style; style= style->next) {
+		writestruct(wd, DATA, "uiStyle", 1, style);
+	}
 }
 
 static void write_boid_state(WriteData *wd, BoidState *state)
@@ -832,6 +849,7 @@ static void write_particlesettings(WriteData *wd, ListBase *idbase)
 {
 	ParticleSettings *part;
 	ParticleDupliWeight *dw;
+	GroupObject *go;
 	int a;
 
 	part= idbase->first;
@@ -846,8 +864,16 @@ static void write_particlesettings(WriteData *wd, ListBase *idbase)
 			writestruct(wd, DATA, "EffectorWeights", 1, part->effector_weights);
 
 			dw = part->dupliweights.first;
-			for(; dw; dw=dw->next)
+			for(; dw; dw=dw->next) {
+				/* update indices */
+				dw->index = 0;
+				go = part->dup_group->gobject.first;
+				while(go && go->ob != dw->ob) {
+					go=go->next;
+					dw->index++;
+				}
 				writestruct(wd, DATA, "ParticleDupliWeight", 1, dw);
+			}
 
 			if(part->boids && part->phystype == PART_PHYS_BOIDS) {
 				BoidState *state = part->boids->states.first;
@@ -2098,7 +2124,11 @@ static void write_screens(WriteData *wd, ListBase *scrbase)
 					writestruct(wd, DATA, "SpaceButs", 1, sl);
 				}
 				else if(sl->spacetype==SPACE_FILE) {
+					SpaceFile *sfile= (SpaceFile *)sl;
+
 					writestruct(wd, DATA, "SpaceFile", 1, sl);
+					if(sfile->params)
+						writestruct(wd, DATA, "FileSelectParams", 1, sfile->params);
 				}
 				else if(sl->spacetype==SPACE_SEQ) {
 					writestruct(wd, DATA, "SpaceSeq", 1, sl);

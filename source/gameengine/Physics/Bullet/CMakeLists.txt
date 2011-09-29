@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
+# $Id: CMakeLists.txt 38443 2011-07-17 09:11:13Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -30,19 +30,19 @@ remove_strict_flags()
 set(INC
 	.
 	../common
-	../../../../extern/bullet2/src
-	../../../../intern/moto/include
-	../../../../intern/guardedalloc
-	../../../../intern/container
-	../../../../intern/string
-	../../Rasterizer
-	../../Ketsji
 	../../Expressions
 	../../GameLogic
+	../../Ketsji
+	../../Rasterizer
 	../../SceneGraph
-	../../../../source/blender/makesdna
-	../../../../source/blender/blenlib
-	../../../../source/blender/blenkernel
+	../../../blender/blenkernel
+	../../../blender/blenlib
+	../../../blender/makesdna
+	../../../../extern/bullet2/src
+	../../../../intern/container
+	../../../../intern/guardedalloc
+	../../../../intern/moto/include
+	../../../../intern/string
 )
 
 set(INC_SYS

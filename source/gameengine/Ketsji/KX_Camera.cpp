@@ -1,5 +1,5 @@
 /*
- * $Id: KX_Camera.cpp 37584 2011-06-17 07:27:27Z campbellbarton $
+ * $Id: KX_Camera.cpp 38273 2011-07-09 19:59:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1022,10 +1022,8 @@ KX_PYMETHODDEF_DOC_VARARGS(KX_Camera, getScreenRay,
 		return NULL;
 
 	PyObject* argValue = PyTuple_New(2);
-	if (argValue) {
-		PyTuple_SET_ITEM(argValue, 0, PyFloat_FromDouble(x));
-		PyTuple_SET_ITEM(argValue, 1, PyFloat_FromDouble(y));
-	}
+	PyTuple_SET_ITEM(argValue, 0, PyFloat_FromDouble(x));
+	PyTuple_SET_ITEM(argValue, 1, PyFloat_FromDouble(y));
 
 	if(!PyVecTo(PygetScreenVect(argValue), vect))
 	{

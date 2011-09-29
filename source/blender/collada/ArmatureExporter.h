@@ -1,5 +1,5 @@
 /*
- * $Id: ArmatureExporter.h 35020 2011-02-21 08:38:53Z jesterking $
+ * $Id: ArmatureExporter.h 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -65,7 +65,7 @@ public:
 
 	void add_instance_controller(Object *ob);
 
-	void export_controllers(Scene *sce);
+	void export_controllers(Scene *sce, bool export_selected);
 
 	void operator()(Object *ob);
 

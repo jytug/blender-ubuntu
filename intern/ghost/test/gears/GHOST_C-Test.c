@@ -1,5 +1,5 @@
 /**
- * $Id: GHOST_C-Test.c 36396 2011-04-30 14:39:39Z campbellbarton $
+ * $Id: GHOST_C-Test.c 38065 2011-07-03 16:17:38Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
 
 /**
 
- * $Id: GHOST_C-Test.c 36396 2011-04-30 14:39:39Z campbellbarton $
+ * $Id: GHOST_C-Test.c 38065 2011-07-03 16:17:38Z campbellbarton $
  * Copyright (C) 2001 NaN Technologies B.V.
  *
  * Simple test file for the GHOST library.
@@ -474,6 +474,7 @@ int main(int argc, char** argv)
 			200,
 			GHOST_kWindowStateNormal,
 			GHOST_kDrawingContextTypeOpenGL,
+			FALSE,
 			FALSE);
 		if (!sMainWindow)
 		{
@@ -490,6 +491,7 @@ int main(int argc, char** argv)
 			200,
 			GHOST_kWindowStateNormal,
 			GHOST_kDrawingContextTypeOpenGL,
+			FALSE,
 			FALSE);
 		if (!sSecondaryWindow)
 		{

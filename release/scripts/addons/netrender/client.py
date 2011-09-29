@@ -17,9 +17,9 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
-import sys, os, re
-import http, http.client, http.server, urllib
-import subprocess, shutil, time, hashlib
+import os, re
+import http, http.client, http.server
+import time
 import json
 
 import netrender
@@ -96,8 +96,8 @@ def fillCommonJobSettings(job, job_name, netsettings):
     job.name = job_name
     job.category = netsettings.job_category
 
-    for slave in netrender.blacklist:
-        job.blacklist.append(slave.id)
+    for bad_slave in netrender.blacklist:
+        job.blacklist.append(bad_slave.id)
 
     job.chunks = netsettings.chunks
     job.priority = netsettings.priority
@@ -267,14 +267,18 @@ class NetworkRenderEngine(bpy.types.RenderEngine):
     bl_label = "Network Render"
     bl_use_postprocess = False
     def render(self, scene):
-        if scene.network_render.mode == "RENDER_CLIENT":
-            self.render_client(scene)
-        elif scene.network_render.mode == "RENDER_SLAVE":
-            self.render_slave(scene)
-        elif scene.network_render.mode == "RENDER_MASTER":
-            self.render_master(scene)
-        else:
-            print("UNKNOWN OPERATION MODE")
+        try:
+            if scene.network_render.mode == "RENDER_CLIENT":
+                self.render_client(scene)
+            elif scene.network_render.mode == "RENDER_SLAVE":
+                self.render_slave(scene)
+            elif scene.network_render.mode == "RENDER_MASTER":
+                self.render_master(scene)
+            else:
+                print("UNKNOWN OPERATION MODE")
+        except Exception as e:
+            self.report('ERROR', str(e))
+            raise e
 
     def render_master(self, scene):
         netsettings = scene.network_render

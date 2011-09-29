@@ -1,4 +1,3 @@
-
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 #
@@ -22,8 +21,6 @@ import bpy
 from bpy.props import *
 from io_coat3D import tex
 import os
-import linecache
-import math
 
 
 bpy.coat3D = dict()
@@ -151,7 +148,6 @@ class SCENE_PT_Settings(ObjectButtonsPanel,bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
         coat3D = bpy.context.scene.coat3D
         
         row = layout.row()
@@ -326,7 +322,7 @@ class SCENE_OT_import(bpy.types.Operator):
                         
                     bpy.ops.object.transform_apply(rotation=True)
                     proxy_mat = obj_proxy.material_slots[0].material
-                    obj_proxy.data.materials.pop(0)
+                    obj_proxy.data.materials.pop(0,1)
                     proxy_mat.user_clear()
                     bpy.data.materials.remove(proxy_mat)
                     bpy.ops.object.select_all(action='TOGGLE')
@@ -374,8 +370,7 @@ class SCENE_OT_import(bpy.types.Operator):
                                                                 
 
                 if(coat3D.importmod):
-                    mod_list = []
-                    for mod_index in objekti.modifiers:
+                    for mod_index in objekti.modifiers[:]:
                         objekti.modifiers.remove(mod_index)
                         
                 
@@ -630,7 +625,8 @@ class VIEW3D_MT_ExtraMenu(bpy.types.Menu):
 def register():
     bpy.utils.register_module(__name__)
 
-    km = bpy.context.window_manager.keyconfigs.default.keymaps['3D View']
+    wm = bpy.context.window_manager
+    km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
     kmi = km.keymap_items.new('wm.call_menu2', 'Q', 'PRESS')
     kmi.properties.name = "VIEW3D_MT_Coat_Dynamic_Menu"
 
@@ -638,7 +634,8 @@ def register():
 def unregister():
     bpy.utils.unregister_module(__name__)
 
-    km = bpy.context.window_manager.keyconfigs.default.keymaps['3D View']
+    wm = bpy.context.window_manager
+    km = wm.keyconfigs.addon.keymaps['3D View']
     for kmi in km.keymap_items:
         if kmi.idname == '':
             if kmi.properties.name == "VIEW3D_MT_Coat_Dynamic_Menu":

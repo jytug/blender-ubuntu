@@ -20,7 +20,6 @@ import bpy
 from bpy.props import *
 import os
 import random
-import mathutils
 from mathutils import *
 
 
@@ -39,10 +38,8 @@ def create_cutter(context, crack_type, scale, roughness):
                 False, False, False, False))
 
         for v in context.scene.objects.active.data.vertices:
-            v.co[0] += 1
-            v.co[0] *= scale
-            v.co[1] *= scale
-            v.co[2] *= scale
+            v.co[0] += 1.0
+            v.co *= scale
 
         bpy.ops.object.editmode_toggle()
         bpy.ops.mesh.faces_shade_smooth()
@@ -77,10 +74,8 @@ def create_cutter(context, crack_type, scale, roughness):
 
         bpy.ops.object.editmode_toggle()
         for v in context.scene.objects.active.data.vertices:
-            v.co[0] += 1
-            v.co[0] *= scale
-            v.co[1] *= scale
-            v.co[2] *= scale
+            v.co[0] += 1.0
+            v.co *= scale
 
         if crack_type == 'SPHERE_ROUGH':
             for v in context.scene.objects.active.data.vertices:
@@ -116,7 +111,6 @@ def getsizefrommesh(ob):
 
 def getIslands(shard):
     sm = shard.data
-    islands = []
     vgroups = []
     fgroups = []
 

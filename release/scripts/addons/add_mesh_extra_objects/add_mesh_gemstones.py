@@ -41,8 +41,6 @@ from bpy.props import *
 #                       new mesh (as used in from_pydata).
 # name ... Name of the new mesh (& object).
 def create_mesh_object(context, verts, edges, faces, name):
-    scene = context.scene
-    obj_act = scene.objects.active
 
     # Create new mesh
     mesh = bpy.data.meshes.new(name)
@@ -213,16 +211,16 @@ def add_diamond(segments, girdle_radius, table_radius,
     for index in range(segments):
         quat = Quaternion(z_axis, (index / segments) * PI_2)
 
-        angle = PI_2 * index / segments
+        # angle = PI_2 * index / segments  # UNUSED
 
         # Row for flat side
         verts_flat.append(len(verts))
-        vec = Vector((table_radius, 0.0, height_flat)) * quat
+        vec = quat * Vector((table_radius, 0.0, height_flat))
         verts.append(vec)
 
         # Row for the middle/girdle
         verts_girdle.append(len(verts))
-        vec = Vector((girdle_radius, 0.0, height_middle)) * quat
+        vec = quat * Vector((girdle_radius, 0.0, height_middle))
         verts.append(vec)
 
     # Flat face

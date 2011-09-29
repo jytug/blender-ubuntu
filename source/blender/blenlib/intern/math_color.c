@@ -1,5 +1,5 @@
 /*
- * $Id: math_color.c 36939 2011-05-26 23:29:40Z campbellbarton $
+ * $Id: math_color.c 37783 2011-06-24 03:49:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -486,6 +486,11 @@ int constrain_rgb(float *r, float *g, float *b)
 float rgb_to_grayscale(float rgb[3])
 {
 	return 0.3f*rgb[0] + 0.58f*rgb[1] + 0.12f*rgb[2];
+}
+
+unsigned char rgb_to_grayscale_byte(unsigned char rgb[3])
+{
+	return (76*(unsigned short)rgb[0] + 148*(unsigned short)rgb[1] + 31*(unsigned short)rgb[2]) / 255;
 }
 
 /* ********************************* lift/gamma/gain / ASC-CDL conversion ********************************* */

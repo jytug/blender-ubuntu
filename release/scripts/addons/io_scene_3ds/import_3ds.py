@@ -198,7 +198,6 @@ def read_string(file):
 
 def process_next_object_chunk(file, previous_chunk):
     new_chunk = chunk()
-    temp_chunk = chunk()
 
     while (previous_chunk.bytes_read < previous_chunk.length):
         #read the next chunk
@@ -208,14 +207,14 @@ def process_next_object_chunk(file, previous_chunk):
 def skip_to_end(file, skip_chunk):
     buffer_size = skip_chunk.length - skip_chunk.bytes_read
     binary_format = "%ic" % buffer_size
-    temp_data = file.read(struct.calcsize(binary_format))
+    file.read(struct.calcsize(binary_format))
     skip_chunk.bytes_read += buffer_size
 
 
 def add_texture_to_material(image, texture, material, mapto):
     #print('assigning %s to %s' % (texture, material))
 
-    if mapto not in ("COLOR", "SPECULARITY", "ALPHA", "NORMAL"):
+    if mapto not in {'COLOR', 'SPECULARITY', 'ALPHA', 'NORMAL'}:
         print('/tError:  Cannot map to "%s"\n\tassuming diffuse color. modify material "%s" later.' % (mapto, material.name))
         mapto = "COLOR"
 
@@ -256,14 +255,12 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
 # 	TEXMODE = Mesh.FaceModes['TEX']
 
     # Localspace variable names, faster.
-    STRUCT_SIZE_1CHAR = struct.calcsize('c')
     STRUCT_SIZE_2FLOAT = struct.calcsize('2f')
     STRUCT_SIZE_3FLOAT = struct.calcsize('3f')
     STRUCT_SIZE_4FLOAT = struct.calcsize('4f')
     STRUCT_SIZE_UNSIGNED_SHORT = struct.calcsize('H')
     STRUCT_SIZE_4UNSIGNED_SHORT = struct.calcsize('4H')
     STRUCT_SIZE_4x3MAT = struct.calcsize('ffffffffffff')
-    _STRUCT_SIZE_4x3MAT = struct.calcsize('fffffffffffff')
     # STRUCT_SIZE_4x3MAT = calcsize('ffffffffffff')
     # print STRUCT_SIZE_4x3MAT, ' STRUCT_SIZE_4x3MAT'
     # only init once
@@ -770,7 +767,7 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
         if ob.type == 'MESH':
             pivot = pivot_list[ind]
             pivot_matrix = object_matrix.get(ob, mathutils.Matrix())  # unlikely to fail
-            pivot_matrix = mathutils.Matrix.Translation(-pivot * pivot_matrix.to_3x3())
+            pivot_matrix = mathutils.Matrix.Translation(pivot_matrix.to_3x3() * -pivot)
             ob.data.transform(pivot_matrix)
 
 

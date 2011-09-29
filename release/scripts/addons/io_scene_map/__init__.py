@@ -24,10 +24,11 @@ bl_info = {
     "blender": (2, 5, 7),
     "api": 35622,
     "location": "File > Export",
-    "description": "Export MAP brushes, nurbs surfaces, lamps and empties as map nodes",
+    "description": ("Export MAP brushes, nurbs surfaces, "
+                    "lamps and empties as map nodes"),
     "warning": "",
-    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
-        "Scripts/Import-Export/Quake_MAP",
+    "wiki_url": ("http://wiki.blender.org/index.php/Extensions:2.5/Py/"
+                 "Scripts/Import-Export/Quake_MAP"),
     "tracker_url": "",
     "support": 'OFFICIAL',
     "category": "Import-Export"}
@@ -40,8 +41,8 @@ if "bpy" in locals():
 
 
 import bpy
-from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty
-from bpy_extras.io_utils import ExportHelper, axis_conversion
+from bpy.props import StringProperty, FloatProperty, BoolProperty
+from bpy_extras.io_utils import ExportHelper
 
 
 class ExportMAP(bpy.types.Operator, ExportHelper):
@@ -53,9 +54,38 @@ class ExportMAP(bpy.types.Operator, ExportHelper):
     filename_ext = ".map"
     filter_glob = StringProperty(default="*.map", options={'HIDDEN'})
 
+    face_thickness = FloatProperty(
+            name="Face Thickness",
+            description=("Thickness given to geometry which can't be "
+                         "converted into a brush"),
+            min=0.0001, max=10.0,
+            default=0.1,
+            )
+    global_scale = FloatProperty(
+            name="Scale",
+            description="Scale everything by this value",
+            min=0.01, max=1000.0,
+            default=100.0,
+            )
+    grid_snap = BoolProperty(
+            name="Grid Snap",
+            description="Round to whole numbers",
+            default=False,
+            )
+    texture_null = StringProperty(
+            name="Tex Null",
+            description="Texture used when none is assigned",
+            default="NULL",
+            )
+    texture_opts = StringProperty(
+            name="Tex Opts",
+            description="Brush texture options",
+            default='0 0 0 1 1 0 0 0',
+            )
+
     def execute(self, context):
-        import math
-        from mathutils import Matrix
+        # import math
+        # from mathutils import Matrix
         if not self.filepath:
             raise Exception("filepath not set")
 
@@ -67,12 +97,11 @@ class ExportMAP(bpy.types.Operator, ExportHelper):
         keywords = self.as_keywords(ignore=("axis_forward", "axis_up", "global_scale", "check_existing", "filter_glob"))
         keywords["global_matrix"] = global_matrix
         '''
-        
+
         keywords = self.as_keywords(ignore=("check_existing", "filter_glob"))
 
         from . import export_map
         return export_map.save(self, context, **keywords)
-        
 
 
 def menu_func(self, context):

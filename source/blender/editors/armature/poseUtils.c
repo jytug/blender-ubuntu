@@ -1,5 +1,5 @@
 /*
- * $Id: poseUtils.c 35911 2011-03-31 01:37:42Z aligorith $
+ * $Id: poseUtils.c 38257 2011-07-09 14:33:28Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -121,7 +121,7 @@ static void fcurves_to_pchan_links_get (ListBase *pfLinks, Object *ob, bAction *
 		pfl->oldangle = pchan->rotAngle;
 		
 		/* make copy of custom properties */
-		if (transFlags & ACT_TRANS_PROP)
+		if (pchan->prop && (transFlags & ACT_TRANS_PROP))
 			pfl->oldprops = IDP_CopyProperty(pchan->prop);
 	}
 } 

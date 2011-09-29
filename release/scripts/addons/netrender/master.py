@@ -17,8 +17,8 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import sys, os
-import http, http.client, http.server, urllib, socket, socketserver, threading
-import subprocess, shutil, time, hashlib
+import http, http.client, http.server, socket, socketserver
+import shutil, time, hashlib
 import pickle
 import select # for select.error
 import json
@@ -61,7 +61,11 @@ class MRenderSlave(netrender.model.RenderSlave):
         self.last_seen = time.time()
 
     def finishedFrame(self, frame_number):
-        self.job_frames.remove(frame_number)
+        try:
+            self.job_frames.remove(frame_number)
+        except ValueError as e:
+            print("Internal error: Frame %i not in job frames list" % frame_number)
+            print(self.job_frames)
         if not self.job_frames:
             self.job = None
 
@@ -197,6 +201,14 @@ pause_pattern = re.compile("/pause_([a-zA-Z0-9]+)")
 edit_pattern = re.compile("/edit_([a-zA-Z0-9]+)")
 
 class RenderHandler(http.server.BaseHTTPRequestHandler):
+    def write_file(self, file_path, mode = 'wb'):
+        length = int(self.headers['content-length'])
+        f = open(file_path, mode)
+        buf = self.rfile.read(length)
+        f.write(buf)
+        f.close()
+        del buf
+        
     def log_message(self, format, *args):
         # override because the original calls self.address_string(), which
         # is extremely slow due to some timeout..
@@ -213,7 +225,9 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
 
     def send_head(self, code = http.client.OK, headers = {}, content = "application/octet-stream"):
         self.send_response(code)
-        self.send_header("Content-type", content)
+        
+        if code != http.client.OK and content:
+            self.send_header("Content-type", content)
 
         for key, value in headers.items():
             self.send_header(key, value)
@@ -512,7 +526,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
 
             if job.testStart():
                 self.server.stats("", "New job, started")
-                self.send_head(headers=headers)
+                self.send_head(headers=headers, content = None)
             else:
                 self.server.stats("", "New job, missing files (%i total)" % len(job.files))
                 self.send_head(http.client.ACCEPTED, headers=headers)
@@ -529,7 +543,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                     info_map = self.getInfoMap()
 
                     job.edit(info_map)
-                    self.send_head()
+                    self.send_head(content = None)
                 else:
                     # no such job id
                     self.send_head(http.client.NO_CONTENT)
@@ -547,7 +561,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                 except:
                     pass # invalid type
 
-            self.send_head()
+            self.send_head(content = None)
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         elif self.path == "/balance_enable":
             info_map = self.getInfoMap()
@@ -556,7 +570,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                 if rule:
                     rule.enabled = enabled
 
-            self.send_head()
+            self.send_head(content = None)
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         elif self.path.startswith("/cancel"):
             match = cancel_pattern.match(self.path)
@@ -572,7 +586,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                 if job:
                     self.server.stats("", "Cancelling job")
                     self.server.removeJob(job, clear)
-                    self.send_head()
+                    self.send_head(content = None)
                 else:
                     # no such job id
                     self.send_head(http.client.NO_CONTENT)
@@ -594,7 +608,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                 if job:
                     self.server.stats("", "Pausing job")
                     job.pause(status)
-                    self.send_head()
+                    self.send_head(content = None)
                 else:
                     # no such job id
                     self.send_head(http.client.NO_CONTENT)
@@ -610,7 +624,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
             self.server.stats("", "Clearing jobs")
             self.server.clear(clear)
 
-            self.send_head()
+            self.send_head(content = None)
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         elif self.path.startswith("/reset"):
             match = reset_pattern.match(self.path)
@@ -629,7 +643,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                         if frame:
                             self.server.stats("", "Reset job frame")
                             frame.reset(all)
-                            self.send_head()
+                            self.send_head(content = None)
                         else:
                             # no such frame
                             self.send_head(http.client.NO_CONTENT)
@@ -637,7 +651,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                     else:
                         self.server.stats("", "Reset job")
                         job.reset(all)
-                        self.send_head()
+                        self.send_head(content = None)
 
                 else: # job not found
                     self.send_head(http.client.NO_CONTENT)
@@ -646,7 +660,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         elif self.path == "/slave":
             length = int(self.headers['content-length'])
-            job_frame_string = self.headers['job-frame']
+            # job_frame_string = self.headers['job-frame']  # UNUSED
 
             self.server.stats("", "New slave connected")
 
@@ -654,7 +668,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
 
             slave_id = self.server.addSlave(slave_info.name, self.client_address, slave_info.stats)
 
-            self.send_head(headers = {"slave-id": slave_id})
+            self.send_head(headers = {"slave-id": slave_id}, content = None)
         # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
         elif self.path == "/log":
             length = int(self.headers['content-length'])
@@ -671,7 +685,7 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                 if job:
                     self.server.stats("", "Log announcement")
                     job.addLog(log_info.frames)
-                    self.send_head(http.client.OK)
+                    self.send_head(content = None)
                 else:
                     # no such job id
                     self.send_head(http.client.NO_CONTENT)
@@ -711,20 +725,15 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                         else:
                             file_path = os.path.join(job.save_path, main_name)
 
-                        buf = self.rfile.read(length)
-
                         # add same temp file + renames as slave
                         
-                        f = open(file_path, "wb")
-                        f.write(buf)
-                        f.close()
-                        del buf
-
+                        self.write_file(file_path)
+                        
                         render_file.filepath = file_path # set the new path
 
                         if job.testStart():
                             self.server.stats("", "File upload, starting job")
-                            self.send_head(http.client.OK)
+                            self.send_head(content = None)
                         else:
                             self.server.stats("", "File upload, file missings")
                             self.send_head(http.client.ACCEPTED)
@@ -758,15 +767,12 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                     frame = job[job_frame]
 
                     if frame:
+                        self.send_head(content = None)
+
                         if job.hasRenderResult():
                             if job_result == DONE:
-                                length = int(self.headers['content-length'])
-                                buf = self.rfile.read(length)
-                                f = open(os.path.join(job.save_path, "%06d.exr" % job_frame), 'wb')
-                                f.write(buf)
-                                f.close()
+                                self.write_file(os.path.join(job.save_path, "%06d.exr" % job_frame))
 
-                                del buf
                             elif job_result == ERROR:
                                 # blacklist slave on this job on error
                                 # slaves might already be in blacklist if errors on the whole chunk
@@ -780,9 +786,6 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
 
                         job.testFinished()
 
-                        self.send_head()
-                        # need some message content here or the slave doesn't like it
-                        self.wfile.write(bytes("foo", encoding='utf8'))
                     else: # frame not found
                         self.send_head(http.client.NO_CONTENT)
                 else: # job not found
@@ -808,18 +811,11 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                     frame = job[job_frame]
 
                     if frame:
+                        self.send_head(content = None)
+                        
                         if job.hasRenderResult():
-                            length = int(self.headers['content-length'])
-                            buf = self.rfile.read(length)
-                            f = open(os.path.join(job.save_path, "%06d.jpg" % job_frame), 'wb')
-                            f.write(buf)
-                            f.close()
+                            os.path.join(os.path.join(job.save_path, "%06d.jpg" % job_frame))
 
-                            del buf
-
-                        self.send_head()
-                        # need some message content here or the slave doesn't like it
-                        self.wfile.write(bytes("foo", encoding='utf8'))
                     else: # frame not found
                         self.send_head(http.client.NO_CONTENT)
                 else: # job not found
@@ -843,17 +839,12 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
                     frame = job[job_frame]
 
                     if frame and frame.log_path:
-                        length = int(self.headers['content-length'])
-                        buf = self.rfile.read(length)
-                        f = open(frame.log_path, 'ab')
-                        f.write(buf)
-                        f.close()
+                        self.send_head(content = None)
 
-                        del buf
+                        self.write_file(frame.log_path, 'ab')
 
                         self.server.getSeenSlave(self.headers['slave-id'])
 
-                        self.send_head()
                     else: # frame not found
                         self.send_head(http.client.NO_CONTENT)
                 else: # job not found
@@ -863,7 +854,6 @@ class RenderHandler(http.server.BaseHTTPRequestHandler):
 
 class RenderMasterServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     def __init__(self, address, handler_class, path, subdir=True):
-        super().__init__(address, handler_class)
         self.jobs = []
         self.jobs_map = {}
         self.slaves = []
@@ -875,6 +865,9 @@ class RenderMasterServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         else:
             self.path = path
 
+        if not os.path.exists(self.path):
+            os.mkdir(self.path)
+
         self.slave_timeout = 5 # 5 mins: need a parameter for that
 
         self.balancer = netrender.balancing.Balancer()
@@ -885,8 +878,7 @@ class RenderMasterServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         self.balancer.addPriority(netrender.balancing.NewJobPriority())
         self.balancer.addPriority(netrender.balancing.MinimumTimeBetweenDispatchPriority(limit = 2))
 
-        if not os.path.exists(self.path):
-            os.mkdir(self.path)
+        super().__init__(address, handler_class)
 
     def restore(self, jobs, slaves, balancer = None):
         self.jobs = jobs

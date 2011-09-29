@@ -1,5 +1,5 @@
 /*
- * $Id: MaterialExporter.cpp 35262 2011-02-28 14:24:52Z jesterking $
+ * $Id: MaterialExporter.cpp 38770 2011-07-28 00:08:03Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,14 +35,38 @@
 
 MaterialsExporter::MaterialsExporter(COLLADASW::StreamWriter *sw): COLLADASW::LibraryMaterials(sw){}
 
-void MaterialsExporter::exportMaterials(Scene *sce)
+void MaterialsExporter::exportMaterials(Scene *sce, bool export_selected)
 {
-	openLibrary();
+	if(hasMaterials(sce)) {
+		openLibrary();
 
-	MaterialFunctor mf;
-	mf.forEachMaterialInScene<MaterialsExporter>(sce, *this);
+		MaterialFunctor mf;
+		mf.forEachMaterialInScene<MaterialsExporter>(sce, *this, export_selected);
 
-	closeLibrary();
+		closeLibrary();
+	}
+}
+
+
+bool MaterialsExporter::hasMaterials(Scene *sce)
+{
+	Base *base = (Base *)sce->base.first;
+	
+	while(base) {
+		Object *ob= base->object;
+		int a;
+		for(a = 0; a < ob->totcol; a++)
+		{
+			Material *ma = give_current_material(ob, a+1);
+
+			// no material, but check all of the slots
+			if (!ma) continue;
+
+			return true;
+		}
+		base= base->next;
+	}
+	return false;
 }
 
 void MaterialsExporter::operator()(Material *ma, Object *ob)

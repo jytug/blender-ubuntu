@@ -26,23 +26,23 @@
 
 set(INC
 	.
-	../nodes
-	../gpu
 	../blenfont
-	../blenlib
-	../makesdna
-	../makesrna
 	../blenkernel
-	../imbuf
+	../blenlib
 	../blenloader
 	../editors/include
+	../gpu
+	../imbuf
+	../makesdna
+	../makesrna
+	../nodes
 	../render/extern/include
-	../../../intern/guardedalloc
-	../../../intern/memutil
+	../../gameengine/BlenderRoutines
 	../../../intern/elbeem/extern
 	../../../intern/ghost
+	../../../intern/guardedalloc
+	../../../intern/memutil
 	../../../intern/opennl/extern
-	../../../source/gameengine/BlenderRoutines
 )
 
 set(INC_SYS
@@ -67,6 +67,7 @@ set(SRC
 	intern/wm_window.c
 
 	WM_api.h
+	WM_keymap.h
 	WM_types.h
 	wm.h
 	wm_cursors.h
@@ -89,18 +90,26 @@ if(WITH_OPENCOLLADA)
 endif()
 
 if(WITH_CODEC_QUICKTIME)
-	list(APPEND INC ../quicktime)
-	list(APPEND INC_SYS ${QUICKTIME_INCLUDE_DIRS})
+	list(APPEND INC
+		../quicktime
+	)
+	list(APPEND INC_SYS
+		${QUICKTIME_INCLUDE_DIRS}
+	)
 	add_definitions(-DWITH_QUICKTIME)
 endif()
 
 if(WITH_CODEC_FFMPEG)
-	list(APPEND INC_SYS ${FFMPEG_INCLUDE_DIRS})
+	list(APPEND INC_SYS
+		${FFMPEG_INCLUDE_DIRS}
+	)
 	add_definitions(-DWITH_FFMPEG)
 endif()
 
 if(WITH_PYTHON)
-	list(APPEND INC ../python)
+	list(APPEND INC
+		../python
+	)
 	add_definitions(-DWITH_PYTHON)
 
 	if(WITH_PYTHON_SECURITY)

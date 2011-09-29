@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
+# $Id: CMakeLists.txt 38443 2011-07-17 09:11:13Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -26,14 +26,14 @@
 
 set(INC
 	.
-	../../../source/blender/makesdna
-	../../../source/gameengine/SceneGraph
-	../../../source/gameengine/Ketsji
-	../../../intern/string
-	../../../intern/container
-	../../../intern/moto/include
-	../../../intern/guardedalloc
 	../Expressions
+	../Ketsji
+	../SceneGraph
+	../../blender/makesdna
+	../../../intern/container
+	../../../intern/guardedalloc
+	../../../intern/moto/include
+	../../../intern/string
 )
 
 set(INC_SYS

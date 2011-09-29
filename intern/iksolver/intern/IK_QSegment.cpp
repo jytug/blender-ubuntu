@@ -1,5 +1,5 @@
 /*
- * $Id: IK_QSegment.cpp 36637 2011-05-12 08:34:31Z blendix $
+ * $Id: IK_QSegment.cpp 37836 2011-06-27 03:36:14Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -904,9 +904,6 @@ void IK_QElbowSegment::SetLimit(int axis, MT_Scalar lmin, MT_Scalar lmax)
 	// clamp and convert to axis angle parameters
 	lmin = MT_clamp(lmin, -MT_PI, MT_PI);
 	lmax = MT_clamp(lmax, -MT_PI, MT_PI);
-
-	lmin = lmin;
-	lmax = lmax;
 
 	if (axis == 1) {
 		m_min_twist = lmin;

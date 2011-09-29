@@ -1,5 +1,5 @@
 /*
- * $Id: PyObjectPlus.h 35904 2011-03-30 16:14:54Z campbellbarton $
+ * $Id: PyObjectPlus.h 38602 2011-07-22 11:21:01Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,7 +54,8 @@
 #ifdef WITH_PYTHON
 #ifdef USE_MATHUTILS
 extern "C" {
-#include "../../blender/python/generic/mathutils.h" /* so we can have mathutils callbacks */
+#include "../../blender/python/mathutils/mathutils.h" /* so we can have mathutils callbacks */
+#include "../../blender/python/generic/py_capi_utils.h" /* for PyC_LineSpit only */
 }
 #endif
 

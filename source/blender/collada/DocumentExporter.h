@@ -1,5 +1,5 @@
 /*
- * $Id: DocumentExporter.h 35020 2011-02-21 08:38:53Z jesterking $
+ * $Id: DocumentExporter.h 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,7 +34,7 @@ struct Scene;
 class DocumentExporter
 {
  public:
-	void exportCurrentScene(Scene *sce, const char* filename);
+	void exportCurrentScene(Scene *sce, const char* filename, bool selected);
 	void exportScenes(const char* filename);
 };
 

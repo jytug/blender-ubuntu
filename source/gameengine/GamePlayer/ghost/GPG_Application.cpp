@@ -1,5 +1,5 @@
 /*
- * $Id: GPG_Application.cpp 36523 2011-05-06 20:18:42Z blendix $
+ * $Id: GPG_Application.cpp 37865 2011-06-27 14:34:58Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -448,6 +448,7 @@ bool GPG_Application::processEvent(GHOST_IEvent* event)
 
 
 		case GHOST_kEventWindowClose:
+		case GHOST_kEventQuit:
 			m_exitRequested = KX_EXIT_REQUEST_OUTSIDE;
 			break;
 

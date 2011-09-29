@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_particle.h 37430 2011-06-12 11:09:39Z jhk $
+ * $Id: BKE_particle.h 37760 2011-06-23 18:59:47Z lukastoenne $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -147,7 +147,8 @@ typedef struct ParticleBillboardData
 	struct Object *ob;
 	float vec[3], vel[3];
 	float offset[2];
-	float size, tilt, random, time;
+	float size[2];
+	float tilt, random, time;
 	int uv[3];
 	int lock, num;
 	int totnum;

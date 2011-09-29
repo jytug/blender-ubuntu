@@ -1,5 +1,5 @@
 /*
- * $Id: rna_material.c 37078 2011-06-01 16:17:38Z blendix $
+ * $Id: rna_material.c 38092 2011-07-04 19:22:37Z jbakker $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1675,7 +1675,12 @@ void RNA_def_material(BlenderRNA *brna)
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Light Group", "Limit lighting to lamps in this Group");
 	RNA_def_property_update(prop, 0, "rna_Material_update");
-	
+
+	prop= RNA_def_property(srna, "pass_index", PROP_INT, PROP_UNSIGNED);
+	RNA_def_property_int_sdna(prop, NULL, "index");
+	RNA_def_property_ui_text(prop, "Pass Index", "Index # for the IndexMA render pass");
+	RNA_def_property_update(prop, NC_OBJECT, NULL);
+
 	/* flags */
 	
 	prop= RNA_def_property(srna, "use_light_group_exclusive", PROP_BOOLEAN, PROP_NONE);

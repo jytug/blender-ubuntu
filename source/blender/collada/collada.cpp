@@ -1,5 +1,5 @@
 /*
- * $Id: collada.cpp 36326 2011-04-25 12:39:53Z campbellbarton $
+ * $Id: collada.cpp 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -51,7 +51,7 @@ extern "C"
 		return 1;
 	}
 
-	int collada_export(Scene *sce, const char *filepath)
+	int collada_export(Scene *sce, const char *filepath, int selected)
 	{
 		DocumentExporter exp;
 
@@ -64,7 +64,7 @@ extern "C"
 		}
 		/* end! */
 
-		exp.exportCurrentScene(sce, filepath);
+		exp.exportCurrentScene(sce, filepath, selected);
 
 		return 1;
 	}

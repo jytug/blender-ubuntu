@@ -1,5 +1,5 @@
 /*
- * $Id: undo.c 37473 2011-06-14 09:55:38Z ton $
+ * $Id: undo.c 38725 2011-07-26 13:05:22Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -358,18 +358,24 @@ int ED_undo_operator_repeat(bContext *C, struct wmOperator *op)
 				ret= 1;
 			}
 		}
+		else {
+			if (G.f & G_DEBUG) {
+				printf("redo_cb: WM_operator_repeat_check returned false %s\n", op->type->name);
+			}
+		}
 
 		/* set region back */
 		CTX_wm_region_set(C, ar);
 	}
 	else {
 		if (G.f & G_DEBUG) {
-			printf("redo_cb: WM_operator_repeat_check returned false %s\n", op->type->name);
+			printf("redo_cb: ED_undo_operator_repeat called with NULL 'op'\n");
 		}
 	}
 
 	return ret;
 }
+
 
 void ED_undo_operator_repeat_cb(bContext *C, void *arg_op, void *UNUSED(arg_unused))
 {

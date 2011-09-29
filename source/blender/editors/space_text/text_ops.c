@@ -1,5 +1,5 @@
 /*
- * $Id: text_ops.c 36826 2011-05-23 08:14:29Z campbellbarton $
+ * $Id: text_ops.c 38751 2011-07-27 06:55:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -36,6 +36,7 @@
 #include <string.h>
 #include <ctype.h> /* ispunct */
 #include <sys/stat.h>
+#include <errno.h>
 
 #include "MEM_guardedalloc.h"
 
@@ -449,15 +450,14 @@ static void txt_write_file(Text *text, ReportList *reports)
 	FILE *fp;
 	TextLine *tmp;
 	struct stat st;
-	int res;
-	char file[FILE_MAXDIR+FILE_MAXFILE];
+	char filepath[FILE_MAXDIR+FILE_MAXFILE];
 	
-	BLI_strncpy(file, text->name, FILE_MAXDIR+FILE_MAXFILE);
-	BLI_path_abs(file, G.main->name);
+	BLI_strncpy(filepath, text->name, FILE_MAXDIR+FILE_MAXFILE);
+	BLI_path_abs(filepath, G.main->name);
 	
-	fp= fopen(file, "w");
+	fp= fopen(filepath, "w");
 	if(fp==NULL) {
-		BKE_report(reports, RPT_ERROR, "Unable to save file.");
+		BKE_reportf(reports, RPT_ERROR, "Unable to save \"%s\": %s.", filepath, errno ? strerror(errno) : "Unknown error writing file");
 		return;
 	}
 
@@ -471,8 +471,13 @@ static void txt_write_file(Text *text, ReportList *reports)
 	
 	fclose (fp);
 
-	res= stat(file, &st);
-	text->mtime= st.st_mtime;
+	if(stat(filepath, &st) == 0) {
+		text->mtime= st.st_mtime;
+	}
+	else {
+		text->mtime= 0;
+		BKE_reportf(reports, RPT_WARNING, "Unable to stat \"%s\": %s.", filepath, errno ? strerror(errno) : "Unknown error starrng file");
+	}
 	
 	if(text->flags & TXT_ISDIRTY)
 		text->flags ^= TXT_ISDIRTY;

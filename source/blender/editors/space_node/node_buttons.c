@@ -1,5 +1,5 @@
 /*
- * $Id: node_buttons.c 35592 2011-03-17 10:31:20Z lukastoenne $
+ * $Id: node_buttons.c 38092 2011-07-04 19:22:37Z jbakker $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -118,8 +118,8 @@ static void active_node_panel(const bContext *C, Panel *pa)
 	uiItemS(layout);
 	
 	/* draw this node's settings */
-	if (node->typeinfo && node->typeinfo->uifunc)
-		node->typeinfo->uifunc(layout, (bContext *)C, &ptr);
+	if (node->typeinfo && node->typeinfo->uifuncbut)
+		node->typeinfo->uifuncbut(layout, (bContext *)C, &ptr);
 }
 
 /* ******************* node buttons registration ************** */

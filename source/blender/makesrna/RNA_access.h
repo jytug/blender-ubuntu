@@ -1,5 +1,5 @@
 /*
- * $Id: RNA_access.h 37543 2011-06-16 06:47:54Z campbellbarton $
+ * $Id: RNA_access.h 39175 2011-08-08 08:22:01Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -392,6 +392,7 @@ extern StructRNA RNA_Scene;
 extern StructRNA RNA_SceneGameData;
 extern StructRNA RNA_SceneRenderLayer;
 extern StructRNA RNA_SceneSequence;
+extern StructRNA RNA_SceneObjects;
 extern StructRNA RNA_Scopes;
 extern StructRNA RNA_Screen;
 extern StructRNA RNA_ScrewModifier;

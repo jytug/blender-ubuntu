@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_DerivedMesh.h 35646 2011-03-20 13:35:35Z blendix $
+ * $Id: BKE_DerivedMesh.h 38866 2011-07-31 02:24:06Z nicholasbishop $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

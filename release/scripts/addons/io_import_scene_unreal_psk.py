@@ -47,16 +47,11 @@ Imports a *psk file to a new mesh
 
 import bpy
 import mathutils
-import os
-import sys
-import string
 import math
-import re
 from string import *
 from struct import *
 from math import *
 from bpy.props import *
-import mathutils
 
 bpy.types.Scene.unrealbonesize = FloatProperty(
     name="Bone Length",
@@ -299,7 +294,6 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
     
     Bns = []
     bone = []
-    nobone = 0
     #================================================================================================== 
     # Bone Data 
     #==================================================================================================
@@ -369,16 +363,12 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
     #bpy.ops.object.mode_set(mode='OBJECT')
     meshname ="ArmObject"
     objectname = "armaturedata"
-    bfound = False
-    arm = None
+    # arm = None  # UNUSED
     if importbone:
-        for obj in bpy.data.objects:
-            if (obj.name == meshname):
-                bfound = True
-                arm = obj
-                break
-				
-        if bfound == False:
+        obj = bpy.data.objects.get(meshname)
+        # arm = obj  # UNUSED
+
+        if obj:
             '''
             armdata = bpy.data.armatures.new(objectname)
             ob_new = bpy.data.objects.new(meshname, armdata)
@@ -392,7 +382,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
             bpy.context.scene.objects.active = ob_new
             #set mode to able to edit the bone
             bpy.ops.object.mode_set(mode='EDIT')
-			
+
             #newbone = ob_new.data.edit_bones.new('test')
             #newbone.tail.y = 1
             print("creating bone(s)")
@@ -401,8 +391,8 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
                 bpy.ops.object.mode_set(mode='EDIT')
                 newbone = ob_new.data.edit_bones.new(bone.name)
             '''		
-		
-            
+
+
             armdata = bpy.data.armatures.new(objectname)
             ob_new = bpy.data.objects.new(meshname, armdata)
             #ob_new = bpy.data.objects.new(meshname, 'ARMATURE')
@@ -415,7 +405,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
             bpy.context.scene.objects.active = ob_new
             #set mode to able to edit the bone
             bpy.ops.object.mode_set(mode='EDIT')
-			
+
             #newbone = ob_new.data.edit_bones.new('test')
             #newbone.tail.y = 1
             print("creating bone(s)")
@@ -430,7 +420,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
                 #note bone location is set in the real space or global not local
                 bonesize = bpy.types.Scene.unrealbonesize
                 if bone.name != bone.parent:
-				
+
                     pos_x = bone.bindpos[0]
                     pos_y = bone.bindpos[1]
                     pos_z = bone.bindpos[2]
@@ -441,12 +431,12 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
                     
                     rotmatrix = bone.bindmat.to_matrix().to_4x4().to_3x3()  # XXX, redundant matrix conversion?
                     newbone.transform(bone.bindmat.to_matrix().to_4x4(),True,True)
-                    #parent_head = parentbone.head * parentbone.matrix.to_quaternion().inverse()
-                    #parent_tail = parentbone.tail * parentbone.matrix.to_quaternion().inverse()
+                    #parent_head = parentbone.matrix.to_quaternion().inverse() * parentbone.head
+                    #parent_tail = parentbone.matrix.to_quaternion().inverse() * parentbone.tail
                     #location=Vector(pos_x,pos_y,pos_z)
                     #set_position = (parent_tail - parent_head) + location
                     #print("tmp head:",set_position)
-					
+
                     #pos_x = set_position.x
                     #pos_y = set_position.y
                     #pos_z = set_position.z
@@ -472,7 +462,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
                     newbone.tail.y = bone.bindpos[1] + bonesize * rotmatrix[1][1]
                     newbone.tail.z = bone.bindpos[2] + bonesize * rotmatrix[1][2]
                     #newbone.roll = fixRoll(newbone)
-					#print("no parent")
+                    #print("no parent")
             
     bpy.context.scene.update()
     
@@ -559,13 +549,13 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
     me_ob.update_tag()
     
     """
-	Material setup coding.
-	First the mesh has to be create first to get the uv texture setup working.
-	-Create material(s) list in the psk pack data from the list.(to do list)
-	-Append the material to the from create the mesh object.
-	-Create Texture(s)
-	-fae loop for uv assign and assign material index
-	
+    Material setup coding.
+    First the mesh has to be create first to get the uv texture setup working.
+    -Create material(s) list in the psk pack data from the list.(to do list)
+    -Append the material to the from create the mesh object.
+    -Create Texture(s)
+    -fae loop for uv assign and assign material index
+    
     """
     bpy.ops.object.mode_set(mode='OBJECT')
     #===================================================================================================
@@ -576,7 +566,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
     print ("-------------------------")
     materialname = "pskmat"
     materials = []
-	
+
     for matcount in range(materialcount):
         #if texturedata != None:
         matdata = bpy.data.materials.new(materialname + str(matcount))
@@ -592,7 +582,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
         #matdata.texture_coords = 'UV'
         #matdata.active_texture = texturedata
         materials.append(matdata)
-	
+
     for material in materials:
         #add material to the mesh list of materials
         me_ob.materials.append(material)
@@ -603,7 +593,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
     print ("-- Creating UV Texture --")
     print ("-------------------------") 
     texture = []
-    texturename = "text1"
+    # texturename = "text1"  # UNUSED
     countm = 0
     #for countm in range(materialcount):
         #psktexname="psk" + str(countm)
@@ -632,7 +622,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
         for countm in range(materialcount):
             psktexname="psk" + str(countm)
             me_ob.uv_textures.new(name=psktexname)
-		    #psktexname="psk" + str(countm)
+            #psktexname="psk" + str(countm)
         #me_ob.uv_textures.new(name=psktexname)
         for countm in range(len(me_ob.uv_textures)):
                 me_ob.update()
@@ -642,7 +632,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
                 me_ob.update()
                 #print("UV TEXTURE NAME:",uvtex.name)
                 if (len(faceuv) > 0):
-                    counttex = 0
+                    # counttex = 0  # UNUSED
                     countm = 0
                     for countm in range(len(me_ob.uv_textures)):
                         me_ob.update()
@@ -682,8 +672,8 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
     
     #for face in me_ob.faces:
         #print(dir(face))
-    
-		
+
+
     '''
     matdata = bpy.data.materials.new(materialname)
     #color is 0 - 1 not in 0 - 255
@@ -727,7 +717,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
                 #print(vgp)
                 #[vertex id],weight
                 vgroup.add([vgp[0]], vgp[2], 'ADD')
-				
+
     #check if there is a material to set to
     if len(materials) > 0:
         obmesh.active_material = materials[0] #material setup tmp
@@ -754,16 +744,46 @@ class IMPORT_OT_psk(bpy.types.Operator):
     bl_label = "Import PSK"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-	
+
     # List of operator properties, the attributes will be assigned
     # to the class instance from the operator settings before calling.
-    filepath = StringProperty(name="File Path", description="Filepath used for importing the psk file", maxlen= 1024, subtype='FILE_PATH')
-    filter_glob = StringProperty(default="*.psk", options={'HIDDEN'})
-    importmesh = BoolProperty(name="Mesh", description="Import mesh only. (not yet build.)", default=True)
-    importbone = BoolProperty(name="Bones", description="Import bones only. Current not working yet.", default=True)
-    importmultiuvtextures = BoolProperty(name="Single UV Texture(s)", description="Single or Multi uv textures.", default=True)
-    bDebugLogPSK = BoolProperty(name="Debug Log.txt", description="Log the output of raw format. It will save in current file dir. Note this just for testing.", default=False)
-    unrealbonesize = FloatProperty( name="Bone Length", description="Bone Length from head to tail distance.", default=1,min=0.001,max=1000)
+    filepath = StringProperty(
+            name="File Path",
+            description="Filepath used for importing the psk file",
+            maxlen= 1024,
+            subtype='FILE_PATH',
+            )
+    filter_glob = StringProperty(
+            default="*.psk",
+            options={'HIDDEN'},
+            )
+    importmesh = BoolProperty(
+            name="Mesh",
+            description="Import mesh only. (not yet build.)",
+            default=True,
+            )
+    importbone = BoolProperty(
+            name="Bones",
+            description="Import bones only. Current not working yet.",
+            default=True,
+            )
+    importmultiuvtextures = BoolProperty(
+            name="Single UV Texture(s)",
+            description="Single or Multi uv textures.",
+            default=True,
+            )
+    bDebugLogPSK = BoolProperty(
+            name="Debug Log.txt",
+            description="Log the output of raw format. It will save in current file dir. Note this just for testing.",
+            default=False,
+            )
+    unrealbonesize = FloatProperty(
+            name="Bone Length",
+            description="Bone Length from head to tail distance.",
+            default=1,
+            min=0.001,
+            max=1000,
+            )
 
     def execute(self, context):
         bpy.types.Scene.unrealbonesize = self.unrealbonesize

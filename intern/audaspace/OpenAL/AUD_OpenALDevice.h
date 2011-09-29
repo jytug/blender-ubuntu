@@ -1,5 +1,5 @@
 /*
- * $Id: AUD_OpenALDevice.h 35141 2011-02-25 10:21:56Z jesterking $
+ * $Id: AUD_OpenALDevice.h 38631 2011-07-23 16:08:37Z nexyon $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -106,7 +106,7 @@ private:
 	/**
 	 * Starts the streaming thread.
 	 */
-	void start();
+	void start(bool join = true);
 
 	/**
 	 * Checks if a handle is valid.

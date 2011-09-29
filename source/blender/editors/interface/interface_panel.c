@@ -1,5 +1,5 @@
 /*
- * $Id: interface_panel.c 37205 2011-06-05 12:47:17Z campbellbarton $
+ * $Id: interface_panel.c 38743 2011-07-26 19:47:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -575,8 +575,8 @@ void ui_draw_aligned_panel(uiStyle *style, uiBlock *block, rcti *rect)
 		ui_draw_tria_rect(&itemrect, 'h');
 	else
 		ui_draw_tria_rect(&itemrect, 'v');
-	
-	
+
+	(void)ofsx;
 }
 
 /************************** panel alignment *************************/

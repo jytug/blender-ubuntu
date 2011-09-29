@@ -1,5 +1,5 @@
 /*
- * $Id: py_capi_utils.h 37579 2011-06-17 05:45:46Z campbellbarton $
+ * $Id: py_capi_utils.h 38265 2011-07-09 17:41:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,5 +49,7 @@ void PyC_MainModule_Backup(PyObject **main_mod);
 void PyC_MainModule_Restore(PyObject *main_mod);
 
 void PyC_SetHomePath(const char *py_path_bundle);
+
+#define PYC_INTERPRETER_ACTIVE (((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current)) != NULL)
 
 #endif // PY_CAPI_UTILS_H

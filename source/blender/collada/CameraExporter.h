@@ -1,5 +1,5 @@
 /*
- * $Id: CameraExporter.h 35020 2011-02-21 08:38:53Z jesterking $
+ * $Id: CameraExporter.h 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +40,7 @@ class CamerasExporter: COLLADASW::LibraryCameras
 {
 public:
 	CamerasExporter(COLLADASW::StreamWriter *sw);
-	void exportCameras(Scene *sce);
+	void exportCameras(Scene *sce, bool export_selected);
 	void operator()(Object *ob, Scene *sce);
 };
 

@@ -54,21 +54,13 @@ class VIEW3D_HT_header(bpy.types.Header):
                 sub.menu("VIEW3D_MT_object")
 
         row = layout.row()
+        # Contains buttons like Mode, Pivot, Manipulator, Layer, Mesh Select Mode...
         row.template_header_3D()
-
-        # do in C for now since these buttons cant be both toggle AND exclusive.
-        '''
-        if obj and obj.mode == 'EDIT' and obj.type == 'MESH':
-            row_sub = row.row(align=True)
-            row_sub.prop(toolsettings, "mesh_select_mode", text="", index=0, icon='VERTEXSEL')
-            row_sub.prop(toolsettings, "mesh_select_mode", text="", index=1, icon='EDGESEL')
-            row_sub.prop(toolsettings, "mesh_select_mode", text="", index=2, icon='FACESEL')
-        '''
 
         if obj:
             # Particle edit
             if obj.mode == 'PARTICLE_EDIT':
-                row.prop(toolsettings.particle_edit, "select_mode", text="", expand=True, toggle=True)
+                row.prop(toolsettings.particle_edit, "select_mode", text="", expand=True)
 
             # Occlude geometry
             if view.viewport_shade in {'SOLID', 'SHADED', 'TEXTURED'} and (obj.mode == 'PARTICLE_EDIT' or (obj.mode == 'EDIT' and obj.type == 'MESH')):
@@ -87,19 +79,22 @@ class VIEW3D_HT_header(bpy.types.Header):
                     row.prop(toolsettings, "proportional_edit_falloff", text="", icon_only=True)
 
         # Snap
+        snap_element = toolsettings.snap_element
         row = layout.row(align=True)
         row.prop(toolsettings, "use_snap", text="")
         row.prop(toolsettings, "snap_element", text="", icon_only=True)
-        if toolsettings.snap_element != 'INCREMENT':
+        if snap_element != 'INCREMENT':
             row.prop(toolsettings, "snap_target", text="")
-            if obj and obj.mode == 'OBJECT':
-                row.prop(toolsettings, "use_snap_align_rotation", text="")
-        if toolsettings.snap_element == 'VOLUME':
+            if obj:
+                if obj.mode == 'OBJECT':
+                    row.prop(toolsettings, "use_snap_align_rotation", text="")
+                elif obj.mode == 'EDIT':
+                    row.prop(toolsettings, "use_snap_self", text="")
+
+        if snap_element == 'VOLUME':
             row.prop(toolsettings, "use_snap_peel_object", text="")
-        elif toolsettings.snap_element == 'FACE':
+        elif snap_element == 'FACE':
             row.prop(toolsettings, "use_snap_project", text="")
-            if toolsettings.use_snap_project and obj.mode == 'EDIT':
-                row.prop(toolsettings, "use_snap_project_self", text="")
 
         # OpenGL render
         row = layout.row(align=True)
@@ -774,10 +769,16 @@ class VIEW3D_MT_object_specials(bpy.types.Menu):
         if obj.type == 'CAMERA':
             layout.operator_context = 'INVOKE_REGION_WIN'
 
-            props = layout.operator("wm.context_modal_mouse", text="Camera Lens Angle")
-            props.data_path_iter = "selected_editable_objects"
-            props.data_path_item = "data.lens"
-            props.input_scale = 0.1
+            if obj.data.type == 'PERSP':
+                props = layout.operator("wm.context_modal_mouse", text="Camera Lens Angle")
+                props.data_path_iter = "selected_editable_objects"
+                props.data_path_item = "data.lens"
+                props.input_scale = 0.1
+            else:
+                props = layout.operator("wm.context_modal_mouse", text="Camera Lens Scale")
+                props.data_path_iter = "selected_editable_objects"
+                props.data_path_item = "data.ortho_scale"
+                props.input_scale = 0.01
 
             if not obj.data.dof_object:
                 #layout.label(text="Test Has DOF obj");
@@ -1100,17 +1101,18 @@ class VIEW3D_MT_sculpt(bpy.types.Menu):
         layout.operator_menu_enum("brush.curve_preset", "shape")
         layout.separator()
 
-        sculpt_tool = brush.sculpt_tool
+        if brush is not None:  # unlikely but can happen
+            sculpt_tool = brush.sculpt_tool
 
-        if sculpt_tool != 'GRAB':
-            layout.prop_menu_enum(brush, "stroke_method")
+            if sculpt_tool != 'GRAB':
+                layout.prop_menu_enum(brush, "stroke_method")
 
-            if sculpt_tool in {'DRAW', 'PINCH', 'INFLATE', 'LAYER', 'CLAY'}:
-                layout.prop_menu_enum(brush, "direction")
+                if sculpt_tool in {'DRAW', 'PINCH', 'INFLATE', 'LAYER', 'CLAY'}:
+                    layout.prop_menu_enum(brush, "direction")
 
-            if sculpt_tool == 'LAYER':
-                layout.prop(brush, "use_persistent")
-                layout.operator("sculpt.set_persistent_base")
+                if sculpt_tool == 'LAYER':
+                    layout.prop(brush, "use_persistent")
+                    layout.operator("sculpt.set_persistent_base")
 
         layout.separator()
         layout.prop(sculpt, "use_threaded", text="Threaded Sculpt")
@@ -1245,7 +1247,7 @@ class VIEW3D_MT_pose(bpy.types.Menu):
         layout.separator()
 
         layout.menu("VIEW3D_MT_pose_showhide")
-        layout.operator_menu_enum("pose.flags_set", 'mode', text="Bone Settings")
+        layout.menu("VIEW3D_MT_bone_options_toggle", text="Bone Settings")
 
 
 class VIEW3D_MT_pose_transform(bpy.types.Menu):
@@ -1365,6 +1367,49 @@ class VIEW3D_MT_pose_apply(bpy.types.Menu):
         layout.operator("pose.armature_apply")
         layout.operator("pose.visual_transform_apply")
 
+
+class BoneOptions:
+    def draw(self, context):
+        layout = self.layout
+
+        options = [
+            "show_wire",
+            "use_deform",
+            "use_envelope_multiply",
+            "use_inherit_rotation",
+            "use_inherit_scale",
+        ]
+
+        if context.mode == 'EDIT_ARMATURE':
+            bone_props = bpy.types.EditBone.bl_rna.properties
+            data_path_iter = "selected_bones"
+            opt_suffix = ""
+            options.append("lock")
+        else:  # posemode
+            bone_props = bpy.types.Bone.bl_rna.properties
+            data_path_iter = "selected_pose_bones"
+            opt_suffix = "bone."
+
+        for opt in options:
+            props = layout.operator("wm.context_collection_boolean_set", text=bone_props[opt].name)
+            props.data_path_iter = data_path_iter
+            props.data_path_item = opt_suffix + opt
+            props.type = self.type
+
+
+class VIEW3D_MT_bone_options_toggle(bpy.types.Menu, BoneOptions):
+    bl_label = "Toggle Bone Options"
+    type = 'TOGGLE'
+
+
+class VIEW3D_MT_bone_options_enable(bpy.types.Menu, BoneOptions):
+    bl_label = "Enable Bone Options"
+    type = 'ENABLE'
+
+
+class VIEW3D_MT_bone_options_disable(bpy.types.Menu, BoneOptions):
+    bl_label = "Disable Bone Options"
+    type = 'DISABLE'
 
 # ********** Edit Menus, suffix from ob.type **********
 
@@ -1959,7 +2004,7 @@ class VIEW3D_MT_edit_armature(bpy.types.Menu):
 
         layout.separator()
 
-        layout.operator_menu_enum("armature.flags_set", "mode", text="Bone Settings")
+        layout.menu("VIEW3D_MT_bone_options_toggle", text="Bone Settings")
 
 
 class VIEW3D_MT_armature_specials(bpy.types.Menu):
@@ -2360,7 +2405,7 @@ class VIEW3D_PT_context_properties(bpy.types.Panel):
 
     def draw(self, context):
         import rna_prop_ui
-        member = __class__._active_context_member(context)
+        member = VIEW3D_PT_context_properties._active_context_member(context)
 
         if member:
             # Draw with no edit button

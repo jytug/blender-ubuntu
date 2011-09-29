@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_material_types.h 35407 2011-03-08 16:08:43Z ton $ 
+ * $Id: DNA_material_types.h 38090 2011-07-04 18:14:41Z jbakker $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -161,7 +161,7 @@ typedef struct Material {
 
 	int mapto_textured;	/* render-time cache to optimise texture lookups */
 	short shadowonly_flag;		/* "shadowsonly" type */
-	short pad;
+        short index;    /* custom index for render passes */
 
 	ListBase gpumaterial;		/* runtime */
 } Material;

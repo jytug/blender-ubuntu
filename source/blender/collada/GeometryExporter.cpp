@@ -1,5 +1,5 @@
 /*
- * $Id: GeometryExporter.cpp 35713 2011-03-23 00:19:38Z jesterking $
+ * $Id: GeometryExporter.cpp 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,13 +47,13 @@
 GeometryExporter::GeometryExporter(COLLADASW::StreamWriter *sw) : COLLADASW::LibraryGeometries(sw) {}
 
 
-void GeometryExporter::exportGeom(Scene *sce)
+void GeometryExporter::exportGeom(Scene *sce, bool export_selected)
 {
 	openLibrary();
 
 	mScene = sce;
 	GeometryFunctor gf;
-	gf.forEachMeshObjectInScene<GeometryExporter>(sce, *this);
+	gf.forEachMeshObjectInScene<GeometryExporter>(sce, *this, export_selected);
 
 	closeLibrary();
 }

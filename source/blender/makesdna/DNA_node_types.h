@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_node_types.h 35591 2011-03-17 10:11:12Z lukastoenne $ 
+ * $Id: DNA_node_types.h 38609 2011-07-22 15:28:50Z ton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -178,6 +178,10 @@ typedef struct bNodeLink {
 	int flag, pad;
 	
 } bNodeLink;
+
+
+/* link->flag */
+#define NODE_LINKFLAG_HILITE	1
 
 /* the basis for a Node tree, all links and nodes reside internal here */
 /* only re-usable node trees are in the library though, materials and textures allocate own tree struct */

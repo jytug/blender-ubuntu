@@ -1,5 +1,5 @@
 /*
- * $Id: armature_intern.h 36644 2011-05-12 16:47:36Z campbellbarton $
+ * $Id: armature_intern.h 37850 2011-06-27 07:51:52Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -79,8 +79,6 @@ void ARMATURE_OT_separate(struct wmOperatorType *ot);
 void ARMATURE_OT_autoside_names(struct wmOperatorType *ot);
 void ARMATURE_OT_flip_names(struct wmOperatorType *ot);
 
-void ARMATURE_OT_flags_set(struct wmOperatorType *ot);
-
 void ARMATURE_OT_layers_show_all(struct wmOperatorType *ot);
 void ARMATURE_OT_armature_layers(struct wmOperatorType *ot);
 void ARMATURE_OT_bone_layers(struct wmOperatorType *ot);
@@ -124,8 +122,6 @@ void POSE_OT_autoside_names(struct wmOperatorType *ot);
 void POSE_OT_flip_names(struct wmOperatorType *ot);
 
 void POSE_OT_quaternions_flip(struct wmOperatorType *ot);
-
-void POSE_OT_flags_set(struct wmOperatorType *ot);
 
 void POSE_OT_armature_layers(struct wmOperatorType *ot);
 void POSE_OT_bone_layers(struct wmOperatorType *ot);

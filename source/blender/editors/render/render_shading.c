@@ -1,5 +1,5 @@
 /*
- * $Id: render_shading.c 36774 2011-05-19 11:34:11Z blendix $
+ * $Id: render_shading.c 38596 2011-07-22 00:31:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -108,7 +108,7 @@ void OBJECT_OT_material_slot_add(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Add Material Slot";
 	ot->idname= "OBJECT_OT_material_slot_add";
-	ot->description="Add a new material slot or duplicate the selected one";
+	ot->description="Add a new material slot";
 	
 	/* api callbacks */
 	ot->exec= material_slot_add_exec;

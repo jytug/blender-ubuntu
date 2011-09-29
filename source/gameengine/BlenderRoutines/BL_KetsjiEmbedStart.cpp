@@ -1,5 +1,5 @@
 /*
- * $Id: BL_KetsjiEmbedStart.cpp 37314 2011-06-08 09:01:41Z dfelinto $
+ * $Id: BL_KetsjiEmbedStart.cpp 37750 2011-06-23 09:27:56Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -95,7 +95,9 @@ extern float BKE_screen_view3d_zoom_to_fac(float camzoom);
 #include "BKE_ipo.h"
 	/***/
 
-#include "AUD_C-API.h"
+#ifdef WITH_AUDASPACE
+#  include "AUD_C-API.h"
+#endif
 
 //XXX #include "BSE_headerbuttons.h"
 #include "BKE_context.h"

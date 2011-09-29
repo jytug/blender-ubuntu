@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 37618 2011-06-18 14:12:54Z campbellbarton $
+# $Id: CMakeLists.txt 38443 2011-07-17 09:11:13Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -26,19 +26,16 @@
 
 set(INC 
 	.
-	../quicktime
-	../makesdna
-	../makesrna
-	../blenlib
-	../blenkernel
 	../avi
+	../blenkernel
+	../blenlib
+	../blenloader
 	../imbuf
 	../imbuf/intern
-	../blenloader
+	../makesdna
+	../makesrna
 	../render/extern/include
-	../include
 	../windowmanager
-	../../../intern/audaspace/intern
 	../../../intern/guardedalloc
 )
 
@@ -65,5 +62,12 @@ else()
 endif()
 
 add_definitions(-DWITH_QUICKTIME)
+
+if(WITH_AUDASPACE)
+	list(APPEND INC
+		../../../intern/audaspace/intern
+	)
+	add_definitions(-DWITH_AUDASPACE)
+endif()
 
 blender_add_lib(bf_quicktime "${SRC}" "${INC}" "${INC_SYS}")

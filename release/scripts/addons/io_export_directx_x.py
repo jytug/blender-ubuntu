@@ -18,9 +18,9 @@
 bl_info = {
     "name": "DirectX Model Format (.x)",
     "author": "Chris Foster (Kira Vakaan)",
-    "version": (2, 1, 1),
-    "blender": (2, 5, 7),
-    "api": 36339,
+    "version": (2, 1, 2),
+    "blender": (2, 5, 8),
+    "api": 37702,
     "location": "File > Export > DirectX (.x)",
     "description": "Export DirectX Model Format (.x)",
     "warning": "",
@@ -107,11 +107,11 @@ def ExportDirectX(Config):
         print("Generating Object list for export... (Root parents only)")
     if Config.ExportMode == 1:
         Config.ExportList = [Object for Object in Config.context.scene.objects
-                             if Object.type in ("ARMATURE", "EMPTY", "MESH")
+                             if Object.type in {'ARMATURE', 'EMPTY', 'MESH'}
                              and Object.parent is None]
     else:
         ExportList = [Object for Object in Config.context.selected_objects
-                      if Object.type in ("ARMATURE", "EMPTY", "MESH")]
+                      if Object.type in {'ARMATURE', 'EMPTY', 'MESH'}]
         Config.ExportList = [Object for Object in ExportList
                              if Object.parent not in ExportList]
     if Config.Verbose:
@@ -184,7 +184,7 @@ def ExportDirectX(Config):
 
 def GetObjectChildren(Parent):
     return [Object for Object in Parent.children
-            if Object.type in ("ARMATURE", "EMPTY", "MESH")]
+            if Object.type in {'ARMATURE', 'EMPTY', 'MESH'}]
 
 #Returns the vertex count of Mesh, counting each vertex for every face.
 def GetMeshVertexCount(Mesh):
@@ -199,7 +199,7 @@ def GetMaterialTexture(Material):
         #Create a list of Textures that have type "IMAGE"
         ImageTextures = [Material.texture_slots[TextureSlot].texture for TextureSlot in Material.texture_slots.keys() if Material.texture_slots[TextureSlot].texture.type == "IMAGE"]
         #Refine a new list with only image textures that have a file source
-        ImageFiles = [os.path.basename(Texture.image.filepath) for Texture in ImageTextures if Texture.image.source == "FILE"]
+        ImageFiles = [bpy.path.basename(Texture.image.filepath) for Texture in ImageTextures if getattr(Texture.image, "source", "") == "FILE"]
         if ImageFiles:
             return ImageFiles[0]
     return None
@@ -568,10 +568,14 @@ def WriteMeshSkinWeights(Config, Object, Mesh):
         UsedBones = set()
         #Maps bones to a list of vertices they affect
         VertexGroups = {}
-        
+        ObjectVertexGroups = {i: Group.name for (i, Group) in enumerate(Object.vertex_groups)}
         for Vertex in Mesh.vertices:
             #BoneInfluences contains the bones of the armature that affect the current vertex
-            BoneInfluences = [PoseBones[Object.vertex_groups[Group.group].name] for Group in Vertex.groups if Object.vertex_groups[Group.group].name in PoseBones]
+            BoneInfluences = [PoseBone for Group in Vertex.groups
+                              for PoseBone in (PoseBones.get(ObjectVertexGroups.get(Group.group, "")), )
+                              if PoseBone is not None
+                              ]
+
             if len(BoneInfluences) > MaxInfluences:
                 MaxInfluences = len(BoneInfluences)
             for Bone in BoneInfluences:
@@ -611,10 +615,12 @@ def WriteMeshSkinWeights(Config, Object, Mesh):
                     if Vertex in VertexIndexes:
                         Config.File.write("{}{}".format("  " * Config.Whitespace, Index))
 
-                        GroupIndexes = {Object.vertex_groups[Group.group].name: Index for Index, Group in enumerate(Mesh.vertices[Vertex].groups) if Object.vertex_groups[Group.group].name in PoseBones}
+                        GroupIndexes = {ObjectVertexGroups.get(Group.group): Index
+                                        for Index, Group in enumerate(Mesh.vertices[Vertex].groups)
+                                        if ObjectVertexGroups.get(Group.group, "") in PoseBones}
 
                         WeightTotal = 0.0
-                        for Weight in [Group.weight for Group in Mesh.vertices[Vertex].groups if Object.vertex_groups[Group.group].name in PoseBones]:
+                        for Weight in (Group.weight for Group in Mesh.vertices[Vertex].groups if ObjectVertexGroups.get(Group.group, "") in PoseBones):
                             WeightTotal += Weight
 
                         if WeightTotal:
@@ -1164,20 +1170,26 @@ def CloseFile(Config):
     if Config.Verbose:
         print("Done")
 
-CoordinateSystems = []
-CoordinateSystems.append(("1", "Left-Handed", ""))
-CoordinateSystems.append(("2", "Right-Handed", ""))
 
-AnimationModes = []
-AnimationModes.append(("0", "None", ""))
-AnimationModes.append(("1", "Keyframes Only", ""))
-AnimationModes.append(("2", "Full Animation", ""))
+CoordinateSystems = (
+    ("1", "Left-Handed", ""),
+    ("2", "Right-Handed", ""),
+    )
 
-ExportModes = []
-ExportModes.append(("1", "All Objects", ""))
-ExportModes.append(("2", "Selected Objects", ""))
 
-from bpy.props import *
+AnimationModes = (
+    ("0", "None", ""),
+    ("1", "Keyframes Only", ""),
+    ("2", "Full Animation", ""),
+    )
+
+ExportModes = (
+    ("1", "All Objects", ""),
+    ("2", "Selected Objects", ""),
+    )
+
+
+from bpy.props import StringProperty, EnumProperty, BoolProperty
 
 
 class DirectXExporter(bpy.types.Operator):
@@ -1207,7 +1219,7 @@ class DirectXExporter(bpy.types.Operator):
 
     def execute(self, context):
         #Append .x
-        FilePath = os.path.splitext(self.filepath)[0] + ".x"
+        FilePath = bpy.path.ensure_ext(self.filepath, ".x")
 
         Config = DirectXExporterSettings(context,
                                          FilePath,
@@ -1221,18 +1233,20 @@ class DirectXExporter(bpy.types.Operator):
                                          ExportAnimation=self.ExportAnimation,
                                          ExportMode=self.ExportMode,
                                          Verbose=self.Verbose)
+
         ExportDirectX(Config)
         return {"FINISHED"}
 
     def invoke(self, context, event):
+        if not self.filepath:
+            self.filepath = bpy.path.ensure_ext(bpy.data.filepath, ".x")
         WindowManager = context.window_manager
         WindowManager.fileselect_add(self)
         return {"RUNNING_MODAL"}
 
 
 def menu_func(self, context):
-    default_path = os.path.splitext(bpy.data.filepath)[0] + ".x"
-    self.layout.operator(DirectXExporter.bl_idname, text="DirectX (.x)").filepath = default_path
+    self.layout.operator(DirectXExporter.bl_idname, text="DirectX (.x)")
 
 
 def register():

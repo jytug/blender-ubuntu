@@ -1,5 +1,5 @@
 /*
- * $Id: ImageExporter.cpp 35613 2011-03-18 14:06:13Z jesterking $
+ * $Id: ImageExporter.cpp 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -71,12 +71,12 @@ bool ImagesExporter::hasImages(Scene *sce)
 	return false;
 }
 
-void ImagesExporter::exportImages(Scene *sce)
+void ImagesExporter::exportImages(Scene *sce, bool export_selected)
 {
 	if(hasImages(sce)) {
 		openLibrary();
 		MaterialFunctor mf;
-		mf.forEachMaterialInScene<ImagesExporter>(sce, *this);
+		mf.forEachMaterialInScene<ImagesExporter>(sce, *this, export_selected);
 
 		closeLibrary();
 	}

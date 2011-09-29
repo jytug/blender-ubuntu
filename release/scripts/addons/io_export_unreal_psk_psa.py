@@ -80,15 +80,12 @@ Credit to:
 
 import os
 import time
-import datetime
 import bpy
 import mathutils
 import random
 import operator
-import sys
 
-
-from struct import pack, calcsize
+from struct import pack
 
 # REFERENCE MATERIAL JUST IN CASE:
 # 
@@ -500,11 +497,7 @@ class PSAFile:
         # this will take the format of key=Bone Name, value = (BoneIndex, Bone Object)
         # THIS IS NOT DUMPED
         self.BoneLookup = {} 
-        
-    def dump(self):
-        data = self.Generalheader.dump() + self.Bones.dump() + self.Animations.dump() + self.RawKeys.dump()
-        return data
-    
+
     def AddBone(self, b):
         #LOUD
         #print "AddBone: " + b.Name
@@ -720,7 +713,7 @@ def parse_meshes(blender_meshes, psk_file):
                 vect_list = []
                 
                 #get or create the current material
-                m = psk_file.GetMatByIndex(object_material_index)
+                psk_file.GetMatByIndex(object_material_index)
 
                 face_index = current_face.index
                 has_UV = False
@@ -782,7 +775,7 @@ def parse_meshes(blender_meshes, psk_file):
                     
                     # Transform position for export
                     #vpos = vert.co * object_material_index
-                    vpos = vert.co * current_obj.matrix_local
+                    vpos = current_obj.matrix_local * vert.co
                     # Create the point
                     p = VPoint()
                     p.Point.X = vpos.x
@@ -898,7 +891,7 @@ def parse_meshes(blender_meshes, psk_file):
                     vert_weight = vgroup.weight
                     if(obvgroup.index == vgroup.group):
                         p = VPoint()
-                        vpos = current_vert.co * current_obj.matrix_local
+                        vpos = current_obj.matrix_local * current_vert.co
                         p.Point.X = vpos.x
                         p.Point.Y = vpos.y 
                         p.Point.Z = vpos.z
@@ -975,14 +968,14 @@ def parse_bone(blender_bone, psk_file, psa_file, parent_id, is_root_bone, parent
         quat = make_fquat(quat_root.to_quaternion())
         #print("DIR:",dir(child_parent.matrix.to_quaternion()))
         quat_parent = child_parent.matrix.to_quaternion().inverted()
-        parent_head = child_parent.head * quat_parent
-        parent_tail = child_parent.tail * quat_parent
+        parent_head = quat_parent * child_parent.head
+        parent_tail = quat_parent * child_parent.tail
         
         set_position = (parent_tail - parent_head) + blender_bone.head
     else:
         # ROOT BONE
         #This for root 
-        set_position = blender_bone.head * parent_matrix #ARMATURE OBJECT Locction
+        set_position = parent_matrix * blender_bone.head #ARMATURE OBJECT Locction
         rot_mat = blender_bone.matrix * parent_matrix.to_3x3() #ARMATURE OBJECT Rotation
         #print(dir(rot_mat))
         
@@ -1122,6 +1115,7 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
     anim_rate = render_data.fps
     
     print("==== Blender Settings ====")
+
     print ('Scene: %s Start Frame: %i, End Frame: %i' % (blender_scene.name, blender_scene.frame_start, blender_scene.frame_end))
     print ('Frames Per Sec: %i' % anim_rate)
     print ("Default FPS: 24" )
@@ -1135,6 +1129,7 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
         
         for action in bpy.data.actions:#current number action sets
             print("+Action Name:",action.name)
+            print("Group Count:",len(action.groups))
             #print("Groups:")
             #for bone in action.groups:
                 #print("> Name: ",bone.name)
@@ -1167,25 +1162,46 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
                 if FoundAction == False:
                     print("========================================")
                     print("Skipping Action Set!",ActionNLA.name)
+                    print("Action Group Count:", len(ActionNLA.groups))
+                    print("Bone Group Count:", len(amatureobject.pose.bones))
                     print("========================================")
                     #break
             
             nobone = 0
+            nomatchbone = 0
+			
             baction = True
             #print("\nChecking actions matching groups with bone names...")
             #Check if the bone names matches the action groups names
-            for group in ActionNLA.groups:
-                for abone in bonenames:
+            print("=================================")
+            print("=================================")
+            for abone in bonenames:         
+                #print("bone name:",abone)
+                bfound = False
+                for group in ActionNLA.groups:
                     #print("name:>>",abone)
                     if abone == group.name:
                         nobone += 1
+                        bfound = True
                         break
+                if bfound == False:
+                    #print("Not Found!:",abone)
+                    nomatchbone += 1
+                #else:
+                    #print("Found!:",abone)
+            
+            print("Armature Bones Count:",nobone , " Action Groups Counts:",len(ActionNLA.groups)," Left Out Count:",nomatchbone)
+            #if the bones are less some missing bones that were added to the action group names than export this
+            if (nobone <= len(ActionNLA.groups)) and (bpy.context.scene.unrealignoreactionmatchcount == True) :
+                #print("Action Set match: Pass")
+                print("Ingore Action groups Count from Armature bones.")
+                baction = True
             #if action groups matches the bones length and names matching the gourps do something
-            if (len(ActionNLA.groups) == len(bonenames)) and (nobone == len(ActionNLA.groups)):
+            elif ((len(ActionNLA.groups) == len(bonenames)) and (nobone == len(ActionNLA.groups))):
                 #print("Action Set match: Pass")
                 baction = True
             else:
-                #print("Action Set match: Fail")
+                print("Action Set match: Fail")
                 #print("Action Name:",ActionNLA.name)
                 baction = False
             
@@ -1222,6 +1238,7 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
                     #print("------------------------------------")
                     print("[==== Action Set ====]")
                     print("Action Name:",action_name)
+
                     #look for min and max frame that current set keys
                     framemin, framemax = act.frame_range
                     #print("max frame:",framemax)
@@ -1237,7 +1254,7 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
                     anim.AnimRate = anim_rate
                     anim.FirstRawFrame = cur_frame_index
                     #===================================================
-                    count_previous_keys = len(psa_file.RawKeys.Data)
+                    # count_previous_keys = len(psa_file.RawKeys.Data)  # UNUSED
                     print("Frame Key Set Count:",frame_count, "Total Frame:",frame_count)
                     #print("init action bones...")
                     unique_bone_indexes = {}
@@ -1282,7 +1299,7 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
                             #print("[=====POSE NAME:",pose_bone.name)
                             
                             #print("LENG >>.",len(bones_lookup))
-                            blender_bone = bones_lookup[pose_bone.name]
+                            # blender_bone = bones_lookup[pose_bone.name]  # UNUSED
                             
                             #just need the total unique bones used, later for this AnimInfoBinary
                             unique_bone_indexes[bone_index] = bone_index
@@ -1344,6 +1361,8 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
             else:
                 print("[==== Action Set ====]")
                 print("Action Name:",ActionNLA.name)
+                print("Action Group Count:", len(ActionNLA.groups))
+                print("Bone Group Count:", len(amatureobject.pose.bones))
                 print("Action set Skip!")
                 print("------------------------------------\n")
         print("==== Finish Action Build(s) ====")
@@ -1395,7 +1414,7 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
                 anim.AnimRate = anim_rate
                 anim.FirstRawFrame = cur_frame_index
                 #===================================================
-                count_previous_keys = len(psa_file.RawKeys.Data)
+                # count_previous_keys = len(psa_file.RawKeys.Data)  # UNUSED
                 print("Frame Key Set Count:",frame_count, "Total Frame:",frame_count)
                 #print("init action bones...")
                 unique_bone_indexes = {}
@@ -1440,7 +1459,7 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
                         #print("[=====POSE NAME:",pose_bone.name)
                         
                         #print("LENG >>.",len(bones_lookup))
-                        blender_bone = bones_lookup[pose_bone.name]
+                        # blender_bone = bones_lookup[pose_bone.name]  # UNUSED
                         
                         #just need the total unique bones used, later for this AnimInfoBinary
                         unique_bone_indexes[bone_index] = bone_index
@@ -1775,6 +1794,11 @@ bpy.types.Scene.unrealtriangulatebool = BoolProperty(
     name="Triangulate Mesh",
     description="Convert Quad to Tri Mesh Boolean...",
     default=False)
+
+bpy.types.Scene.unrealignoreactionmatchcount = BoolProperty(
+    name="Acion Group Ignore Count",
+    description="It will ingore Action group count as long is matches the Armature bone count to match and over ride the armature animation data.",
+    default=False)
     
 bpy.types.Scene.unrealdisplayactionsets = BoolProperty(
     name="Show Action Set(s)",
@@ -1822,13 +1846,13 @@ class OBJECT_OT_add_remove_Collection_Items_UE(bpy.types.Operator):
             added.name = "Action"+ str(random.randrange(0, 101, 2))
         if self.set == "refresh":
             print("refresh")
-            ArmatureSelect = None
+            # ArmatureSelect = None  # UNUSED
             ActionNames = []
             BoneNames = []
             for obj in bpy.data.objects:
                 if obj.type == 'ARMATURE' and obj.select == True:
                     print("Armature Name:",obj.name)
-                    ArmatureSelect = obj
+                    # ArmatureSelect = obj  # UNUSED
                     for bone in obj.pose.bones:
                         BoneNames.append(bone.name)
                     break
@@ -1870,11 +1894,36 @@ class ExportUDKAnimData(bpy.types.Operator):
     # List of operator properties, the attributes will be assigned
     # to the class instance from the operator settings before calling.
 
-    filepath = StringProperty(name="File Path", description="Filepath used for exporting the PSA file", maxlen= 1024, default= "", subtype='FILE_PATH')
-    filter_glob = StringProperty(default="*.psk;*.psa", options={'HIDDEN'})
-    pskexportbool = BoolProperty(name="Export PSK", description="Export Skeletal Mesh", default= True)
-    psaexportbool = BoolProperty(name="Export PSA", description="Export Action Set (Animation Data)", default= True)
-    actionexportall = BoolProperty(name="All Actions", description="This will export all the actions that matches the current armature.", default=False)
+    filepath = StringProperty(
+            name="File Path",
+            description="Filepath used for exporting the PSA file",
+            maxlen= 1024,
+            subtype='FILE_PATH',
+            )
+    filter_glob = StringProperty(
+            default="*.psk;*.psa",
+            options={'HIDDEN'},
+            )
+    pskexportbool = BoolProperty(
+            name="Export PSK",
+            description="Export Skeletal Mesh",
+            default= True,
+            )
+    psaexportbool = BoolProperty(
+            name="Export PSA",
+            description="Export Action Set (Animation Data)",
+            default= True,
+            )
+    actionexportall = BoolProperty(
+            name="All Actions",
+            description="This will export all the actions that matches the current armature.",
+            default=False,
+            )
+    ignoreactioncountexportbool = BoolProperty(
+            name="Ignore Action Group Count",
+            description="It will ignore action group count but as long it matches the armature bone count to over ride the animation data.",
+            default= False,
+            )
 
     @classmethod
     def poll(cls, context):
@@ -1897,6 +1946,11 @@ class ExportUDKAnimData(bpy.types.Operator):
         else:
             bpy.context.scene.UEActionSetSettings = '0'#export all action sets
         
+        if(self.ignoreactioncountexportbool):
+            bpy.context.scene.unrealignoreactionmatchcount = True
+        else:
+            bpy.context.scene.unrealignoreactionmatchcount = False
+
         write_data(self.filepath, context)
         
         self.report({'WARNING', 'INFO'}, exportmessage)
@@ -1919,12 +1973,15 @@ class VIEW3D_PT_unrealtools_objectmode(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         rd = context.scene
-        layout.prop(rd, "unrealexport_settings",expand=True)        
-        layout.operator(OBJECT_OT_UnrealExport.bl_idname)
+        layout.prop(rd, "unrealexport_settings",expand=True)
+        layout.prop(rd, "UEActionSetSettings")
+        layout.prop(rd, "unrealignoreactionmatchcount")
+        
         #FPS #it use the real data from your scene
         layout.prop(rd.render, "fps")
+        layout.operator(OBJECT_OT_UnrealExport.bl_idname)
         
-        layout.prop(rd, "UEActionSetSettings")
+        
         layout.prop(rd, "unrealdisplayactionsets")
         
         ArmatureSelect = None
@@ -2156,7 +2213,6 @@ class OBJECT_OT_UTRebuildMesh(bpy.types.Operator):
                 print("creating array build mesh...")
                 uv_layer = mesh.uv_textures.active
                 for face in mesh.faces:
-                    v = []
                     smoothings.append(face.use_smooth)#smooth or flat in boolean
                     if uv_layer != None:#check if there texture data exist
                         faceUV = uv_layer.data[face.index]
@@ -2168,10 +2224,7 @@ class OBJECT_OT_UTRebuildMesh(bpy.types.Operator):
                             uvs.append((uv[0],uv[1]))
                         #print(uvs)
                         uvfaces.append(uvs)
-                    for videx in face.vertices:
-                        vert = mesh.vertices[videx]
-                        v.append(videx)
-                    faces.append(v)                    
+                    faces.append(face.vertices[:])           
                 #vertex positions
                 for vertex in mesh.vertices:
                     verts.append(vertex.co.to_tuple())				

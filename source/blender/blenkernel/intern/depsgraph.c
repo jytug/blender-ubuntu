@@ -1,5 +1,5 @@
 /*
- * $Id: depsgraph.c 37503 2011-06-15 09:45:26Z blendix $
+ * $Id: depsgraph.c 38293 2011-07-10 23:49:59Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -599,7 +599,7 @@ static void build_dag_object(DagForest *dag, DagNode *scenenode, Scene *scene, O
 			if(part->ren_as == PART_DRAW_GR && part->dup_group) {
 				for(go=part->dup_group->gobject.first; go; go=go->next) {
 					node2 = dag_get_node(dag, go->ob);
-					dag_add_relation(dag, node, node2, DAG_RL_OB_OB, "Particle Group Visualisation");
+					dag_add_relation(dag, node2, node, DAG_RL_OB_OB, "Particle Group Visualisation");
 				}
 			}
 

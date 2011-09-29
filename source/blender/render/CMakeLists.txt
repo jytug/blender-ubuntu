@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 37667 2011-06-20 15:17:02Z campbellbarton $
+# $Id: CMakeLists.txt 38443 2011-07-17 09:11:13Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -26,17 +26,17 @@
 
 
 set(INC 
-	intern/include
 	extern/include
+	intern/include
+	../blenkernel
 	../blenlib
 	../blenloader
+	../imbuf
 	../makesdna
 	../makesrna
-	../blenkernel
-	../imbuf
-	../../../intern/smoke/extern
-	../../../intern/mikktspace
 	../../../intern/guardedalloc
+	../../../intern/mikktspace
+	../../../intern/smoke/extern
 )
 
 set(INC_SYS
@@ -120,9 +120,17 @@ if(WITH_IMAGE_OPENEXR)
 	add_definitions(-DWITH_OPENEXR)
 endif()
 
+if(WITH_MOD_SMOKE)
+	add_definitions(-DWITH_SMOKE)
+endif()
+
 if(WITH_CODEC_QUICKTIME)
-	list(APPEND INC ../quicktime)
-	list(APPEND INC_SYS ${QUICKTIME_INCLUDE_DIRS})
+	list(APPEND INC
+		../quicktime
+	)
+	list(APPEND INC_SYS
+		${QUICKTIME_INCLUDE_DIRS}
+	)
 	add_definitions(-DWITH_QUICKTIME)
 endif()
 

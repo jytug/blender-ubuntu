@@ -1,6 +1,6 @@
 /*
  *
- * $Id: bvhutils.c 37410 2011-06-11 14:08:46Z lukastoenne $
+ * $Id: bvhutils.c 37787 2011-06-24 05:34:03Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -719,7 +719,7 @@ void free_bvhtree_from_mesh(struct BVHTreeFromMesh *data)
 		if(!data->cached)
 			BLI_bvhtree_free(data->tree);
 
-		memset( data, 0, sizeof(data) );
+		memset( data, 0, sizeof(*data) );
 	}
 }
 

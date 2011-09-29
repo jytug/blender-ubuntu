@@ -1,5 +1,5 @@
 /*
- * $Id: node_intern.h 37478 2011-06-14 15:55:46Z ton $
+ * $Id: node_intern.h 38344 2011-07-12 18:59:54Z jbakker $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -114,6 +114,7 @@ int node_render_changed_exec(bContext *, wmOperator *);
 
 void NODE_OT_duplicate(struct wmOperatorType *ot);
 void NODE_OT_delete(struct wmOperatorType *ot);
+void NODE_OT_delete_reconnect(struct wmOperatorType *ot);
 void NODE_OT_resize(struct wmOperatorType *ot);
 
 void NODE_OT_link(struct wmOperatorType *ot);

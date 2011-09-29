@@ -1,5 +1,5 @@
 /*
- * $Id: uvedit_draw.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: uvedit_draw.c 37891 2011-06-28 09:42:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -474,7 +474,7 @@ static void draw_uvs(SpaceImage *sima, Scene *scene, Object *obedit)
 	if(sima->flag & SI_DRAW_STRETCH) {
 		draw_uvs_stretch(sima, scene, em, activetf);
 	}
-	else if(me->drawflag & ME_DRAWFACES) {
+	else if(!(sima->flag & SI_NO_DRAWFACES)) {
 		/* draw transparent faces */
 		UI_GetThemeColor4ubv(TH_FACE, col1);
 		UI_GetThemeColor4ubv(TH_FACE_SELECT, col2);
