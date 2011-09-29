@@ -33,18 +33,17 @@ Build-Depends: debhelper (>= 7.0.50~),
  libfftw3-dev,
  libglew1.5-dev,
  liblzma-dev,
- liblzo2-dev,
+ liblzo2-dev
 Build-Conflicts: nvidia-glx
 Standards-Version: 3.9.2
-Homepage: http://blender.org/
-Vcs-Browser: http://git.debian.org/?p=collab-maint/blender.git
-Vcs-Git: git://git.debian.org/git/collab-maint/blender.git
-
+Homepage: http://blender.org
+Vcs-Git: git://anonscm.debian.org/collab-maint/blender.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/blender.git
 
 Package: blender
 Architecture: any
 Depends: ${shlibs:Depends}, python3.2, ${misc:Depends}, ttf-dejavu
-Suggests: yafray, libtiff4
+Suggests: yafaray, libtiff4
 Description: Very fast and versatile 3D modeller/renderer
  Blender is an integrated 3d suite for modelling, animation, rendering,
  post-production, interactive creation and playback (games). Blender has its
