@@ -1,5 +1,5 @@
 /*
-* $Id: KX_ConvertActuators.cpp 37455 2011-06-13 17:08:33Z dfelinto $
+* $Id: KX_ConvertActuators.cpp 37750 2011-06-23 09:27:56Z campbellbarton $
 *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,7 +43,11 @@
 
 #include "KX_BlenderSceneConverter.h"
 #include "KX_ConvertActuators.h"
-#include "AUD_C-API.h"
+
+#ifdef WITH_AUDASPACE
+#  include "AUD_C-API.h"
+#endif
+
 // Actuators
 //SCA logiclibrary native logicbricks
 #include "SCA_PropertyActuator.h"

@@ -1,5 +1,5 @@
 /*
- * $Id: particle_edit.c 37693 2011-06-21 11:15:37Z jhk $
+ * $Id: particle_edit.c 38102 2011-07-05 01:49:34Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -827,6 +827,8 @@ static void PE_mirror_particle(Object *ob, DerivedMesh *dm, ParticleSystem *psys
 
 		if(key->flag & PEK_TAG)
 			mkey->flag |= PEK_TAG;
+
+		mkey->length = key->length;
 	}
 
 	if(point->flag & PEP_TAG)

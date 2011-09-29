@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 37631 2011-06-19 07:46:24Z campbellbarton $
+# $Id: CMakeLists.txt 38443 2011-07-17 09:11:13Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -29,12 +29,12 @@ remove_strict_flags()
 
 set(INC 
 	.
-	.. 
+	..
+	../../blender/blenkernel
+	../../blender/blenloader
+	../../blender/makesdna
+	../../blender/makesrna
 	../../../intern/guardedalloc
-	../../../source/blender/makesdna
-	../../../source/blender/blenloader
-	../../../source/blender/makesrna
-	../../../source/blender/blenkernel
 )
 
 set(INC_SYS

@@ -19,15 +19,15 @@
 # <pep8 compliant>
 
 import bpy
+import os
 
 # TODO, make options
 PREF_SCALE = 100
 PREF_FACE_THICK = 0.1
 PREF_GRID_SNAP = False
 # Quake 1/2?
-# PREF_DEF_TEX_OPTS = Draw.Create(' 0 0 0 1 1\n') # not user settable yet
 # Quake 3+?
-PREF_DEF_TEX_OPTS = ' 0 0 0 1 1 0 0 0\n'  # not user settable yet
+PREF_DEF_TEX_OPTS = '0 0 0 1 1 0 0 0'  # not user settable yet
 
 PREF_NULL_TEX = 'NULL'  # not user settable yet
 PREF_INVIS_TEX = 'common/caulk'
@@ -50,7 +50,6 @@ def write_cube2brush(file, faces):
     these faces can be from 1 mesh, 1 cube within a mesh of larger cubes
     Faces could even come from different meshes or be contrived.
     '''
-    import os
     # comment only
     # file.write('// brush "%s", "%s"\n' % (ob.name, ob.data.name))
     file.write('// brush from cube\n{\n')
@@ -63,7 +62,7 @@ def write_cube2brush(file, faces):
     for f in faces:
         # from 4 verts this gets them in reversed order and only 3 of them
         # 0,1,2,3 -> 2,1,0
-        me = f.id_data  #XXX25
+        me = f.id_data  # XXX25
         for v in f.vertices[:][2::-1]:
             file.write(format_vec % me.vertices[v].co[:])
 
@@ -75,12 +74,12 @@ def write_cube2brush(file, faces):
             image = uf.image if uf else None
 
             if image:
-                file.write(os.path.splitext(os.path.basename(image.filename))[0])
+                file.write(os.path.splitext(bpy.path.basename(image.filepath))[0])
             else:
                 file.write(PREF_NULL_TEX)
 
         # Texture stuff ignored for now
-        file.write(PREF_DEF_TEX_OPTS)
+        file.write(" %s\n" % PREF_DEF_TEX_OPTS)
     file.write('}\n')
 
 
@@ -112,12 +111,12 @@ def write_face2brush(file, face):
         image = uf.image if uf else None
 
         if image:
-            image_text = os.path.splitext(os.path.basename(image.filename))[0]
+            image_text = os.path.splitext(bpy.path.basename(image.filepath))[0]
 
     # reuse face vertices
-    _v = face.id_data.vertices  #XXX25
+    _v = face.id_data.vertices  # XXX25
     f_vertices = [_v[vi] for vi in face.vertices]
-    del _v  #XXX25
+    del _v  # XXX25
 
     # original verts as tuples for writing
     orig_vco = [v.co[:] for v in f_vertices]
@@ -133,7 +132,7 @@ def write_face2brush(file, face):
         file.write(format_vec % co)
     file.write(image_text)
     # Texture stuff ignored for now
-    file.write(PREF_DEF_TEX_OPTS)
+    file.write(" %s\n" % PREF_DEF_TEX_OPTS)
 
     for co in new_vco[:3]:
         file.write(format_vec % co)
@@ -143,7 +142,7 @@ def write_face2brush(file, face):
         file.write(PREF_INVIS_TEX)
 
     # Texture stuff ignored for now
-    file.write(PREF_DEF_TEX_OPTS)
+    file.write(" %s\n" % PREF_DEF_TEX_OPTS)
 
     # sides.
     if len(orig_vco) == 3:  # Tri, it seemms tri brushes are supported.
@@ -155,7 +154,7 @@ def write_face2brush(file, face):
         for co in orig_vco[i1], orig_vco[i2], new_vco[i2]:
             file.write(format_vec % co)
         file.write(PREF_INVIS_TEX)
-        file.write(PREF_DEF_TEX_OPTS)
+        file.write(" %s\n" % PREF_DEF_TEX_OPTS)
 
     file.write('}\n')
 
@@ -211,19 +210,19 @@ def is_tricyl_facegroup(faces):
     verts = {}
     tottri = 0
     for f in faces:
-        if len(f) == 3:
+        if len(f.vertices) == 3:
             tottri += 1
 
-        for v in f:
-            verts[v.index] = 0
+        for vi in f.vertices:
+            verts[vi] = 0
 
     if len(verts) != 6 or tottri != 2:
         return False
 
     # Now check that each vert has 3 face users
     for f in faces:
-        for v in f:
-            verts[v.index] += 1
+        for vi in f.vertices:
+            verts[vi] += 1
 
     for v in verts.values():
         if v != 3:  # vert has 3 users?
@@ -283,7 +282,7 @@ def export_map(context, filepath):
         return
     """
     import time
-    from mathutils import Vector, Matrix
+    from mathutils import Matrix
     from bpy_extras import mesh_utils
 
     t = time.time()
@@ -331,7 +330,7 @@ def export_map(context, filepath):
         dummy_mesh.transform(ob.matrix_world * SCALE_MAT)
 
         if PREF_GRID_SNAP:
-            for v in dummy_mesh.verts:
+            for v in dummy_mesh.vertices:
                 v.co[:] = v.co.to_tuple(0)
 
         # High quality normals
@@ -403,10 +402,10 @@ NULL
                     # add nmapping 0 0 ?
                     if PREF_GRID_SNAP:
                         file.write(" ( %d %d %d 0 0 )" %
-                                   round_vec(p.co.xyz * mat))
+                                   round_vec(mat * p.co.xyz))
                     else:
                         file.write(' ( %.6f %.6f %.6f 0 0 )' %
-                                   (p.co.xyz * mat)[:])
+                                   (mat * p.co.xyz)[:])
 
                     # Move to next line
                     if u_iter == u:
@@ -464,8 +463,25 @@ NULL
 def save(operator,
          context,
          filepath=None,
+         global_scale=100.0,
+         face_thickness=0.1,
+         texture_null="NULL",
+         texture_opts='0 0 0 1 1 0 0 0',
+         grid_snap=False,
          ):
 
+    global PREF_SCALE
+    global PREF_FACE_THICK
+    global PREF_NULL_TEX
+    global PREF_DEF_TEX_OPTS
+    global PREF_GRID_SNAP
+
+    PREF_SCALE = global_scale
+    PREF_FACE_THICK = face_thickness
+    PREF_NULL_TEX = texture_null
+    PREF_DEF_TEX_OPTS = texture_opts
+    PREF_GRID_SNAP = grid_snap
+
     export_map(context, filepath)
-    
+
     return {'FINISHED'}

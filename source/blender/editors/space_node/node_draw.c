@@ -1,5 +1,5 @@
 /*
- * $Id: node_draw.c 37478 2011-06-14 15:55:46Z ton $
+ * $Id: node_draw.c 38751 2011-07-27 06:55:20Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -461,6 +461,7 @@ static void node_update_group(const bContext *C, bNodeTree *UNUSED(ntree), bNode
 }
 
 /* note: in cmp_util.c is similar code, for node_compo_pass_on() */
+/* note: in node_edit.c is similar code, for untangle node */
 static void node_draw_mute_line(View2D *v2d, SpaceNode *snode, bNode *node)
 {
 	bNodeSocket *valsock= NULL, *colsock= NULL, *vecsock= NULL;
@@ -780,14 +781,15 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 					 iconbutw, UI_UNIT_Y, NULL, 0.0, 0.0, 1.0, 0.5, "");
 	}
 	{	/* always hide/reveal unused sockets */ 
-		int shade;
+		// XXX re-enable
+		/* int shade;
+		if(node_has_hidden_sockets(node))
+			shade= -40;
+		else
+			shade= -90; */
 
 		iconofs-=iconbutw;
-		// XXX re-enable
-		/*if(node_has_hidden_sockets(node))
-			shade= -40;
-		else*/
-			shade= -90;
+
 		uiDefIconBut(node->block, LABEL, B_REDR, ICON_PLUS, iconofs, rct->ymax-NODE_DY,
 						  iconbutw, UI_UNIT_Y, NULL, 0.0, 0.0, 1.0, 0.5, "");
 	}

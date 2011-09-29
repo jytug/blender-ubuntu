@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_particle_types.h 35488 2011-03-12 12:38:11Z jhk $
+ * $Id: DNA_particle_types.h 38413 2011-07-15 13:32:02Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -89,7 +89,8 @@ typedef struct ParticleDupliWeight {
 	struct ParticleDupliWeight *next, *prev;
 	struct Object *ob;
 	short count;
-	short flag, rt[2];
+	short flag;
+	short index, rt; /* only updated on file save and used on file load */
 } ParticleDupliWeight;
 
 typedef struct ParticleData {
@@ -168,7 +169,7 @@ typedef struct ParticleSettings {
 
 	/* billboards */
 	short bb_align, bb_uv_split, bb_anim, bb_split_offset;
-	float bb_tilt, bb_rand_tilt, bb_offset[2];
+	float bb_tilt, bb_rand_tilt, bb_offset[2], bb_size[2], bb_vel_head, bb_vel_tail;
 
 	/* draw color */
 	float color_vec_max;

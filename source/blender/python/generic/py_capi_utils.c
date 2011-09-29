@@ -1,5 +1,5 @@
 /*
- * $Id: py_capi_utils.c 37579 2011-06-17 05:45:46Z campbellbarton $
+ * $Id: py_capi_utils.c 38265 2011-07-09 17:41:39Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,8 +35,6 @@
 #ifdef _WIN32 /* BLI_setenv */
 #include "BLI_path_util.h"
 #endif
-
-#define PYC_INTERPRETER_ACTIVE (((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current)) != NULL)
 
 /* array utility function */
 int PyC_AsArray(void *array, PyObject *value, const int length, const PyTypeObject *type, const short is_double, const char *error_prefix)

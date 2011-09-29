@@ -17,7 +17,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import sys, os, platform, shutil
-import http, http.client, http.server, urllib
+import http, http.client, http.server
 import subprocess, time
 import json
 
@@ -86,6 +86,7 @@ def testFile(conn, job_id, slave_id, rfile, JOB_PREFIX, main_path = None):
         
         if not found:
             print("Found file %s at %s but signature mismatch!" % (rfile.filepath, job_full_path))
+            os.remove(job_full_path)
             job_full_path = prefixPath(JOB_PREFIX, rfile.filepath, main_path, force = True)
 
     if not found:
@@ -120,7 +121,7 @@ def breakable_timeout(timeout):
             break
 
 def render_slave(engine, netsettings, threads):
-    timeout = 1
+    # timeout = 1  # UNUSED
     
     bisleep = BreakableIncrementedSleep(INCREMENT_TIMEOUT, 1, MAX_TIMEOUT, engine.test_break)
 
@@ -139,7 +140,7 @@ def render_slave(engine, netsettings, threads):
     conn = clientConnection(netsettings.server_address, netsettings.server_port)
     
     if not conn:
-        timeout = 1
+        # timeout = 1  # UNUSED
         print("Connection failed, will try connecting again at most %i times" % MAX_CONNECT_TRY)
         bisleep.reset()
         
@@ -258,8 +259,7 @@ def render_slave(engine, netsettings, threads):
                         if stdout:
                             # (only need to update on one frame, they are linked
                             conn.request("PUT", logURL(job.id, first_frame), stdout, headers=headers)
-                            response = conn.getresponse()
-                            response.read()
+                            responseStatus(conn)
                             
                             # Also output on console
                             if netsettings.use_slave_output_log:

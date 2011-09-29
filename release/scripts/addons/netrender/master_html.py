@@ -17,7 +17,6 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import os
-import re
 import shutil
 from netrender.utils import *
 import netrender.model
@@ -285,8 +284,9 @@ def get(handler):
                 headerTable("name", "address")
 
                 for slave_id in job.blacklist:
-                    slave = handler.server.slaves_map[slave_id]
-                    rowTable(slave.name, slave.address[0])
+                    slave = handler.server.slaves_map.get(slave_id, None)
+                    if slave:
+                        rowTable(slave.name, slave.address[0])
 
                 endTable()
 

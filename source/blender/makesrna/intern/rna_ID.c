@@ -1,5 +1,5 @@
 /*
- * $Id: rna_ID.c 37031 2011-05-31 02:14:25Z campbellbarton $
+ * $Id: rna_ID.c 38881 2011-07-31 12:43:41Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,6 +35,7 @@
 
 #include "DNA_ID.h"
 #include "DNA_vfont_types.h"
+#include "DNA_material_types.h"
 #include "DNA_object_types.h"
 
 #include "WM_types.h"
@@ -410,15 +411,16 @@ static void rna_def_ID_materials(BlenderRNA *brna)
 	RNA_def_struct_ui_text(srna, "ID Materials", "Collection of materials");
 
 	func= RNA_def_function(srna, "append", "material_append_id");
-	RNA_def_function_ui_description(func, "Add a new material to Mesh.");
+	RNA_def_function_ui_description(func, "Add a new material to the data block.");
 	parm= RNA_def_pointer(func, "material", "Material", "", "Material to add.");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	
 	func= RNA_def_function(srna, "pop", "material_pop_id");
-	RNA_def_function_ui_description(func, "Add a new material to Mesh.");
-	parm= RNA_def_int(func, "index", 0, 0, INT_MAX, "", "Frame number to set.", 0, INT_MAX);
+	RNA_def_function_ui_description(func, "Remove a material from the data block.");
+	parm= RNA_def_int(func, "index", 0, 0, MAXMAT, "", "Index of material to remove.", 0, MAXMAT);
 	RNA_def_property_flag(parm, PROP_REQUIRED);
-	parm= RNA_def_pointer(func, "material", "Material", "", "Material to add.");
+	RNA_def_boolean(func, "update_data", 0, "", "Update data by re-adjusting the material slots assigned.");
+	parm= RNA_def_pointer(func, "material", "Material", "", "Material to remove.");
 	RNA_def_function_return(func, parm);
 }
 

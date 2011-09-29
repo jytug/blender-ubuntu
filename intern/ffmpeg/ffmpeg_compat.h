@@ -2,7 +2,7 @@
 #define __ffmpeg_compat_h_included__ 1
 
 /*
- * $Id: ffmpeg_compat.h 36982 2011-05-28 14:16:56Z schlaile $
+ * $Id: ffmpeg_compat.h 38446 2011-07-17 10:28:31Z jiri $
  *
  * compatibility macros to make every ffmpeg installation appear
  * like the most current installation (wrapping some functionality sometimes)
@@ -40,7 +40,7 @@
 #define FFMPEG_HAVE_AVIO 1
 #endif
 
-#if (LIBAVCODEC_VERSION_MAJOR > 53) || ((LIBAVCODEC_VERSION_MAJOR == 53) && (LIBAVCODEC_VERSION_MINOR > 1)) || ((LIBAVCODEC_VERSION_MAJOR == 53) && (LIBAVCODEC_VERSION_MINOR == 1) && (LIBAVCODEC_VERSION_MICRO >= 1))
+#if (LIBAVCODEC_VERSION_MAJOR > 53) || ((LIBAVCODEC_VERSION_MAJOR == 53) && (LIBAVCODEC_VERSION_MINOR > 1)) || ((LIBAVCODEC_VERSION_MAJOR == 53) && (LIBAVCODEC_VERSION_MINOR == 1) && (LIBAVCODEC_VERSION_MICRO >= 1)) || ((LIBAVCODEC_VERSION_MAJOR == 52) && (LIBAVCODEC_VERSION_MINOR >= 121))
 #define FFMPEG_HAVE_DEFAULT_VAL_UNION 1
 #endif
 

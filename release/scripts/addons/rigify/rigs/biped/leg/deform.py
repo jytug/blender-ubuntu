@@ -17,10 +17,10 @@
 #======================= END GPL LICENSE BLOCK ========================
 
 import bpy
-from math import acos, degrees
+from math import acos
 from mathutils import Vector, Matrix
 from rigify.utils import MetarigError
-from rigify.utils import copy_bone, flip_bone, put_bone
+from rigify.utils import copy_bone, put_bone
 from rigify.utils import connected_children_names, has_connected_children
 from rigify.utils import strip_org, make_mechanism_name, make_deformer_name
 
@@ -48,7 +48,7 @@ def align_roll(obj, bone1, bone2):
     rot_mat = Matrix.Rotation(angle, 3, axis)
 
     # Roll factor
-    x3 = x1 * rot_mat
+    x3 = rot_mat * x1
     dot = x2 * x3
     if dot > 1.0:
         dot = 1.0
@@ -60,7 +60,7 @@ def align_roll(obj, bone1, bone2):
     bone1_e.roll = roll
 
     # Check if we rolled in the right direction
-    x3 = bone1_e.x_axis * rot_mat
+    x3 = rot_mat * bone1_e.x_axis
     check = x2 * x3
 
     # If not, reverse
@@ -231,7 +231,7 @@ class Rig:
             thigh1_p = pb[thigh1]
         if self.use_shin_twist:
             shin2_p = pb[shin2]
-        foot_p = pb[foot]
+        # foot_p = pb[foot]  # UNUSED
 
         # Thigh constraints
         if self.use_thigh_twist:

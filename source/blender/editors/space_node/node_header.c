@@ -1,5 +1,5 @@
 /*
- * $Id: node_header.c 36439 2011-05-02 12:31:09Z blendix $
+ * $Id: node_header.c 38452 2011-07-17 16:14:52Z lukastoenne $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -93,8 +93,6 @@ static void do_node_add(bContext *C, void *UNUSED(arg), int event)
 	for(node= snode->edittree->nodes.first; node; node= node->next) {
 		if(node->flag & NODE_TEST) node->flag |= NODE_SELECT;
 	}
-	
-	snode_autoconnect(snode, 1, 0);
 	
 	/* deselect after autoconnection */
 	for(node= snode->edittree->nodes.first; node; node= node->next) {

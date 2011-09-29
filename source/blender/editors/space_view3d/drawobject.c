@@ -1,5 +1,5 @@
 /*
- * $Id: drawobject.c 37577 2011-06-17 03:17:07Z campbellbarton $
+ * $Id: drawobject.c 39259 2011-08-10 15:53:46Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1335,6 +1335,11 @@ static void draw_focus_cross(float dist, float size)
 	glEnd();
 }
 
+#ifdef VIEW3D_CAMERA_BORDER_HACK
+float view3d_camera_border_hack_col[4];
+short view3d_camera_border_hack_test= FALSE;
+#endif
+
 /* flag similar to draw_object() */
 static void drawcamera(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *ob, int flag)
 {
@@ -1348,7 +1353,15 @@ static void drawcamera(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *ob
 	const float scax= 1.0f / len_v3(ob->obmat[0]);
 	const float scay= 1.0f / len_v3(ob->obmat[1]);
 	const float scaz= 1.0f / len_v3(ob->obmat[2]);
-	
+
+#ifdef VIEW3D_CAMERA_BORDER_HACK
+	if(is_view && !(G.f & G_PICKSEL)) {
+		glGetFloatv(GL_CURRENT_COLOR, view3d_camera_border_hack_col);
+		view3d_camera_border_hack_test= TRUE;
+		return;
+	}
+#endif
+
 	cam= ob->data;
 	aspx= (float) scene->r.xsch*scene->r.xasp;
 	aspy= (float) scene->r.ysch*scene->r.yasp;
@@ -3613,8 +3626,6 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 			bb.align = part->bb_align;
 			bb.anim = part->bb_anim;
 			bb.lock = part->draw & PART_DRAW_BB_LOCK;
-			bb.offset[0] = part->bb_offset[0];
-			bb.offset[1] = part->bb_offset[1];
 			break;
 		case PART_DRAW_PATH:
 			break;
@@ -3784,7 +3795,20 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 					/* create actiual particle data */
 					if(draw_as == PART_DRAW_BB) {
-						bb.size = pa_size;
+						bb.offset[0] = part->bb_offset[0];
+						bb.offset[1] = part->bb_offset[1];
+						bb.size[0] = part->bb_size[0] * pa_size;
+						if (part->bb_align==PART_BB_VEL) {
+							float pa_vel = len_v3(state.vel);
+							float head = part->bb_vel_head*pa_vel;
+							float tail = part->bb_vel_tail*pa_vel;
+							bb.size[1] = part->bb_size[1]*pa_size + head + tail;
+							/* use offset to adjust the particle center. this is relative to size, so need to divide! */
+							if (bb.size[1] > 0.0f)
+								bb.offset[1] += (head-tail) / bb.size[1];
+						}
+						else
+							bb.size[1] = part->bb_size[1] * pa_size;
 						bb.tilt = part->bb_tilt * (1.0f - part->bb_rand_tilt * r_tilt);
 						bb.time = ct;
 					}
@@ -3804,7 +3828,20 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 					/* create actiual particle data */
 					if(draw_as == PART_DRAW_BB) {
-						bb.size = pa_size;
+						bb.offset[0] = part->bb_offset[0];
+						bb.offset[1] = part->bb_offset[1];
+						bb.size[0] = part->bb_size[0] * pa_size;
+						if (part->bb_align==PART_BB_VEL) {
+							float pa_vel = len_v3(state.vel);
+							float head = part->bb_vel_head*pa_vel;
+							float tail = part->bb_vel_tail*pa_vel;
+							bb.size[1] = part->bb_size[1]*pa_size + head + tail;
+							/* use offset to adjust the particle center. this is relative to size, so need to divide! */
+							if (bb.size[1] > 0.0f)
+								bb.offset[1] += (head-tail) / bb.size[1];
+						}
+						else
+							bb.size[1] = part->bb_size[1] * pa_size;
 						bb.tilt = part->bb_tilt * (1.0f - part->bb_rand_tilt * r_tilt);
 						bb.time = pa_time;
 					}
@@ -5697,7 +5734,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, int flag)
 	/* if( ((int)ob->ctime) != F_(scene->r.cfra)) where_is_object(scene, ob); */
 	
 	/* draw motion paths (in view space) */
-	if (ob->mpath) {
+	if (ob->mpath && (v3d->flag2 & V3D_RENDER_OVERRIDE)==0) {
 		bAnimVizSettings *avs= &ob->avs;
 		
 		/* setup drawing environment for paths */

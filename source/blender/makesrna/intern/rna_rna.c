@@ -1,5 +1,5 @@
 /*
- * $Id: rna_rna.c 37295 2011-06-07 10:54:57Z campbellbarton $
+ * $Id: rna_rna.c 37811 2011-06-25 17:36:33Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1067,7 +1067,7 @@ static void rna_def_property(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "is_runtime", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_boolean_funcs(prop, "rna_Property_runtime_get", NULL);
-	RNA_def_property_ui_text(prop, "Read Only", "Property is editable through RNA");
+	RNA_def_property_ui_text(prop, "Runtime", "Property has been dynamically created at runtime");
 
 	prop= RNA_def_property(srna, "is_enum_flag", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);

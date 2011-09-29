@@ -1,4 +1,4 @@
-﻿# ##### BEGIN GPL LICENSE BLOCK #####
+# ##### BEGIN GPL LICENSE BLOCK #####
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -123,7 +123,6 @@ def findInSubDir(filename, subdirectory=""):
 def path_image(image):
     import os
     fn = bpy.path.abspath(image)
-    fn_strip = os.path.basename(fn)
     if not os.path.isfile(fn):
         fn = findInSubDir(os.path.basename(fn), os.path.dirname(bpy.data.filepath))
     fn = os.path.realpath(fn)
@@ -168,6 +167,7 @@ def safety(name, Level):
 
 def is_renderable(scene, ob):
     return (ob.is_visible(scene) and not ob.hide_render)
+
 
 def renderable_objects(scene):
     return [ob for ob in scene.objects if is_renderable(scene, ob)]
@@ -239,10 +239,10 @@ def write_pov(filename, scene=None, info_callback=None):
                               matrix[3][1], matrix[3][2]))
 
     def MatrixAsPovString(matrix):
-        sMatrix=("matrix <%.6f, %.6f, %.6f,  %.6f, %.6f, %.6f,  %.6f, %.6f, %.6f,  %.6f, %.6f, " \
-                 "%.6f>\n" % (matrix[0][0], matrix[0][1], matrix[0][2], matrix[1][0], matrix[1][1],
-                              matrix[1][2], matrix[2][0], matrix[2][1], matrix[2][2], matrix[3][0],
-                              matrix[3][1], matrix[3][2]))
+        sMatrix = ("matrix <%.6f, %.6f, %.6f,  %.6f, %.6f, %.6f,  %.6f, %.6f, %.6f,  %.6f, %.6f, " \
+                   "%.6f>\n" % (matrix[0][0], matrix[0][1], matrix[0][2], matrix[1][0], matrix[1][1],
+                                matrix[1][2], matrix[2][0], matrix[2][1], matrix[2][2], matrix[3][0],
+                                matrix[3][1], matrix[3][2]))
         return sMatrix
 
     def writeObjectMaterial(material, ob):
@@ -430,9 +430,9 @@ def write_pov(filename, scene=None, info_callback=None):
                         #Could use brilliance 2(or varying around 2 depending on ior or factor) too.
 
                     elif material.specular_shader == 'TOON':
-                        tabWrite("phong %.3g\n" % (material.specular_intensity * 2))
+                        tabWrite("phong %.3g\n" % (material.specular_intensity * 2.0))
                         # use extreme phong_size
-                        tabWrite("phong_size %.3g\n" % (0.1 + material.specular_toon_smooth / 2))
+                        tabWrite("phong_size %.3g\n" % (0.1 + material.specular_toon_smooth / 2.0))
 
                     elif material.specular_shader == 'WARDISO':
                         # find best suited default constant for brilliance Use both phong and
@@ -645,7 +645,7 @@ def write_pov(filename, scene=None, info_callback=None):
 
             # Sun shouldn't be attenuated. Hemi and area lights have no falloff attribute so they
             # are put to type 2 attenuation a little higher above.
-            if lamp.type not in ('SUN', 'AREA', 'HEMI'):
+            if lamp.type not in {'SUN', 'AREA', 'HEMI'}:
                 tabWrite("fade_distance %.6f\n" % (lamp.distance / 5.0))
                 if lamp.falloff_type == 'INVERSE_SQUARE':
                     tabWrite("fade_power %d\n" % 2)  # Use blenders lamp quad equivalent
@@ -682,7 +682,7 @@ def write_pov(filename, scene=None, info_callback=None):
             meta = ob.data
 
             # important because no elements will break parsing.
-            elements = [elem for elem in meta.elements if elem.type in ('BALL', 'ELLIPSOID')]
+            elements = [elem for elem in meta.elements if elem.type in {'BALL', 'ELLIPSOID'}]
 
             if elements:
                 tabWrite("blob {\n")
@@ -783,6 +783,7 @@ def write_pov(filename, scene=None, info_callback=None):
         #     * EXACTLY the same materials, in EXACTLY the same sockets.
         # … can share a same instance in POV export.
         obmats2data = {}
+
         def checkObjectMaterials(ob, name, dataname):
             if hasattr(ob, 'material_slots'):
                 has_local_mats = False
@@ -807,6 +808,7 @@ def write_pov(filename, scene=None, info_callback=None):
             return None
 
         data_ref = {}
+
         def store(scene, ob, name, dataname, matrix):
             # The Object needs to be written at least once but if its data is
             # already in data_ref this has already been done.
@@ -831,14 +833,13 @@ def write_pov(filename, scene=None, info_callback=None):
                 data_ref[dataname] = [(name, MatrixAsPovString(matrix))]
                 return dataname
 
-
         ob_num = 0
         for ob in sel:
             ob_num += 1
 
             # XXX I moved all those checks here, as there is no need to compute names
             #     for object we won’t export here!
-            if ob.type in ('LAMP', 'CAMERA', 'EMPTY', 'META', 'ARMATURE', 'LATTICE'):
+            if ob.type in {'LAMP', 'CAMERA', 'EMPTY', 'META', 'ARMATURE', 'LATTICE'}:
                 continue
 
             try:
@@ -1064,23 +1065,23 @@ def write_pov(filename, scene=None, info_callback=None):
                         if image_filename:
                             if t.use_map_color_diffuse:
                                 texturesDif = image_filename
-                                colvalue = t.default_value
+                                # colvalue = t.default_value  # UNUSED
                                 t_dif = t
                                 if t_dif.texture.pov.tex_gamma_enable:
                                     imgGamma = (" gamma %.3g " % t_dif.texture.pov.tex_gamma_value)
                             if t.use_map_specular or t.use_map_raymir:
                                 texturesSpec = image_filename
-                                colvalue = t.default_value
+                                # colvalue = t.default_value  # UNUSED
                                 t_spec = t
                             if t.use_map_normal:
                                 texturesNorm = image_filename
-                                colvalue = t.normal_factor * 10.0
+                                # colvalue = t.normal_factor * 10.0  # UNUSED
                                 #textNormName=t.texture.image.name + ".normal"
                                 #was the above used? --MR
                                 t_nor = t
                             if t.use_map_alpha:
                                 texturesAlpha = image_filename
-                                colvalue = t.alpha_factor * 10.0
+                                # colvalue = t.alpha_factor * 10.0  # UNUSED
                                 #textDispName=t.texture.image.name + ".displ"
                                 #was the above used? --MR
                                 t_alpha = t
@@ -1532,7 +1533,6 @@ def write_pov(filename, scene=None, info_callback=None):
                     writeObjectMaterial(material, ob)
                 except IndexError:
                     print(me)
-
 
             #Importance for radiosity sampling added here:
             tabWrite("radiosity { \n")

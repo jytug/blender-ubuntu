@@ -1,5 +1,5 @@
 /*
- * $Id: options.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: options.c 38142 2011-07-06 10:19:04Z blendix $
  *
  * This is external code. Sets some compression related options
  * (width, height quality, framerate).
@@ -39,6 +39,8 @@
 #include "AVI_avi.h"
 #include "avi_intern.h"
 #include "endian.h"
+
+#include "BLI_winstuff.h"
 
 /* avi_set_compress_options gets its own file... now don't WE feel important? */
 

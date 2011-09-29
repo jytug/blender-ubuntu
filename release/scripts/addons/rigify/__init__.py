@@ -41,7 +41,6 @@ else:
     from . import generate, ui, utils, metarig_menu
 
 import bpy
-import bpy_types
 import os
 
 
@@ -57,7 +56,7 @@ def get_rig_list(path):
 
     for f in files:
         is_dir = os.path.isdir(os.path.join(SEARCH_DIR_ABS, f))  # Whether the file is a directory
-        if f[0] in (".", "_"):
+        if f[0] in {".", "_"}:
             pass
         elif f.count(".") >= 2 or (is_dir and "." in f):
             print("Warning: %r, filename contains a '.', skipping" % os.path.join(SEARCH_DIR_ABS, f))

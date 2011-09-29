@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_modifier_types.h 36414 2011-05-01 15:16:59Z campbellbarton $ 
+ * $Id: DNA_modifier_types.h 38866 2011-07-31 02:24:06Z nicholasbishop $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -624,6 +624,7 @@ typedef struct MultiresModifierData {
 
 typedef enum {
 	eMultiresModifierFlag_ControlEdges = (1<<0),
+	eMultiresModifierFlag_PlainUv = (1<<1),
 } MultiresModifierFlag;
 
 typedef struct FluidsimModifierData {

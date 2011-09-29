@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_channelMatte.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: CMP_channelMatte.c 37836 2011-06-27 03:36:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -97,6 +97,7 @@ static void do_channel_matte(bNode *node, float *out, float *in)
 			default:
 				break;
 		}
+		break;
 	}
 	default:
 		break;

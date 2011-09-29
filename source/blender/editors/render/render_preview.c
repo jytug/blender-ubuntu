@@ -1,5 +1,5 @@
 /* 
- * $Id: render_preview.c 36775 2011-05-19 11:37:08Z blendix $
+ * $Id: render_preview.c 38375 2011-07-13 19:27:42Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -171,6 +171,7 @@ static Main *pr_main= NULL;
 
 void ED_preview_init_dbase(void)
 {
+#ifndef WITH_HEADLESS
 	BlendFileData *bfd;
 	extern int datatoc_preview_blend_size;
 	extern char datatoc_preview_blend[];
@@ -184,6 +185,7 @@ void ED_preview_init_dbase(void)
 		MEM_freeN(bfd);
 	}
 	G.fileflags= fileflags;
+#endif
 }
 
 void ED_preview_free_dbase(void)

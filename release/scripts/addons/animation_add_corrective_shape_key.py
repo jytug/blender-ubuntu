@@ -137,20 +137,16 @@ def func_add_corrective_pose_shape( source, target):
     reset_transform(target)
     
     # If target object doesn't have Basis shape key, create it.
-    try:
-        num_keys = len( mesh_1.shape_keys.key_blocks )
-    except:
+    if not mesh_1.shape_keys:
         basis = ob_1.shape_key_add()
         basis.name = "Basis"
         ob_1.data.update()
-        
-    
+
     key_index = ob_1.active_shape_key_index
     # Insert new shape key
     if key_index == 0:
         new_shapekey = ob_1.shape_key_add()
         new_shapekey.name = "Shape_" + ob_2.name
-        new_shapekey_name = new_shapekey.name
         
         key_index = len(mesh_1.shape_keys.key_blocks)-1
         ob_1.active_shape_key_index = key_index
@@ -181,15 +177,15 @@ def func_add_corrective_pose_shape( source, target):
             if epsilon < threshold:
                 epsilon = 0.0
             
-            dx[0] += [x[i] + 0.5*epsilon*mathutils.Vector([1, 0, 0])]
-            dx[1] += [x[i] + 0.5*epsilon*mathutils.Vector([-1, 0, 0])]
-            dx[2] += [x[i] + 0.5*epsilon*mathutils.Vector([0, 1, 0])]
-            dx[3] += [x[i] + 0.5*epsilon*mathutils.Vector([0, -1, 0])]
-            dx[4] += [x[i] + 0.5*epsilon*mathutils.Vector([0, 0, 1])]
-            dx[5] += [x[i] + 0.5*epsilon*mathutils.Vector([0, 0, -1])]
+            dx[0] += [x[i] + 0.5 * epsilon * mathutils.Vector((1, 0, 0))]
+            dx[1] += [x[i] + 0.5 * epsilon * mathutils.Vector((-1, 0, 0))]
+            dx[2] += [x[i] + 0.5 * epsilon * mathutils.Vector((0, 1, 0))]
+            dx[3] += [x[i] + 0.5 * epsilon * mathutils.Vector((0, -1, 0))]
+            dx[4] += [x[i] + 0.5 * epsilon * mathutils.Vector((0, 0, 1))]
+            dx[5] += [x[i] + 0.5 * epsilon * mathutils.Vector((0, 0, -1))]
     
         for j in range(0, 6):
-            applyX(ob_1, mesh_1_key_verts, dx[j] )
+            applyX(ob_1, mesh_1_key_verts, dx[j])
             dx[j] = extractMappedX(ob_1, mesh_1_key_verts)
     
         # take a step in the direction of the gradient
@@ -197,13 +193,13 @@ def func_add_corrective_pose_shape( source, target):
             epsilon = (targetx[i] - mapx[i]).length
             
             if epsilon >= threshold:
-                Gx = list((dx[0][i] - dx[1][i])/epsilon)
-                Gy = list((dx[2][i] - dx[3][i])/epsilon)
-                Gz = list((dx[4][i] - dx[5][i])/epsilon)
+                Gx = list((dx[0][i] - dx[1][i]) / epsilon)
+                Gy = list((dx[2][i] - dx[3][i]) / epsilon)
+                Gz = list((dx[4][i] - dx[5][i]) / epsilon)
                 G = mathutils.Matrix((Gx, Gy, Gz))
                 G = flip_matrix_direction(G)
     
-                x[i] += (targetx[i] - mapx[i]) * G
+                x[i] += G * (targetx[i] - mapx[i])
         
         applyX(ob_1, mesh_1_key_verts, x )
     
@@ -228,23 +224,21 @@ class add_corrective_pose_shape(bpy.types.Operator):
         return context.active_object != None
 
     def execute(self, context):
-    
-        if len(context.selected_objects) > 2:
-            print("Select source and target objects please")
-            return {'FINISHED'}
-
         selection = context.selected_objects
+        if len(selection) != 2:
+            self.report({'ERROR'}, "Select source and target objects")
+            return {'CANCELLED'}
+
         target = context.active_object
         if context.active_object == selection[0]:
             source = selection[1]
         else:
             source = selection[0]
 
-        #~ print(source)
-        #~ print(target)
         func_add_corrective_pose_shape( source, target)
 
         return {'FINISHED'}
+
 
 def func_object_duplicate_flatten_modifiers(ob, scene):
     mesh = ob.to_mesh( bpy.context.scene, True, 'PREVIEW' )
@@ -383,9 +377,7 @@ def func_add_corrective_pose_shape_fast(source, target):
     reset_transform(target)
     
     # If target object doesn't have Basis shape key, create it.
-    try:
-        num_keys = len( target.data.shape_keys.key_blocks )
-    except:
+    if not target.data.shape_keys:
         basis = target.shape_key_add()
         basis.name = "Basis"
         target.data.update()
@@ -397,7 +389,6 @@ def func_add_corrective_pose_shape_fast(source, target):
         # Insert new shape key
         new_shapekey = target.shape_key_add()
         new_shapekey.name = "Shape_" + source.name
-        new_shapekey_name = new_shapekey.name
         
         key_index = len(target.data.shape_keys.key_blocks)-1
         target.active_shape_key_index = key_index
@@ -456,20 +447,17 @@ class add_corrective_pose_shape_fast(bpy.types.Operator):
         return context.active_object != None
 
     def execute(self, context):
-    
-        if len(context.selected_objects) > 2:
-            print("Select source and target objects please")
-            return {'FINISHED'}
-
         selection = context.selected_objects
+        if len(selection) != 2:
+            self.report({'ERROR'}, "Select source and target objects")
+            return {'CANCELLED'}
+
         target = context.active_object
         if context.active_object == selection[0]:
             source = selection[1]
         else:
             source = selection[0]
 
-        print(source)
-        print(target)
         func_add_corrective_pose_shape_fast( source, target)
 
         return {'FINISHED'}
@@ -486,8 +474,7 @@ def vgroups_draw(self, context):
     layout.row().operator("object.add_corrective_pose_shape", text='Add as corrective pose-shape (slow, all modifiers)', icon='COPY_ID') # icon is not ideal
 
 def modifiers_draw(self, context):
-    layout = self.layout
-
+    pass
 
 
 def register():

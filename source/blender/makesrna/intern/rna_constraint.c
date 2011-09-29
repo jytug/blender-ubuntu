@@ -1,5 +1,5 @@
 /*
- * $Id: rna_constraint.c 37031 2011-05-31 02:14:25Z campbellbarton $
+ * $Id: rna_constraint.c 39246 2011-08-10 07:49:18Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -85,7 +85,7 @@ static EnumPropertyItem target_space_pchan_items[] = {
 static EnumPropertyItem owner_space_pchan_items[] = {
 	{0, "WORLD", 0, "World Space", "The constraint is applied relative to the world coordinate system"},
 	{2, "POSE", 0, "Pose Space", "The constraint is applied in Pose Space, the object transformation is ignored"},
-	{3, "LOCAL_WITH_PARENT", 0, "The constraint is applied relative to the local coordinate system of the object, with the parent transformation added"},
+	{3, "LOCAL_WITH_PARENT", 0, "Local With Parent", "The constraint is applied relative to the local coordinate system of the object, with the parent transformation added"},
 	{1, "LOCAL", 0, "Local Space", "The constraint is applied relative to the local coordinate sytem of the object"},
 	{0, NULL, 0, NULL, NULL}};
 
@@ -357,6 +357,7 @@ static void rna_def_constrainttarget(BlenderRNA *brna)
 
 static void rna_def_constraint_childof(BlenderRNA *brna)
 {
+	static int rna_matrix_dimsize_4x4[]= {4, 4};
 	StructRNA *srna;
 	PropertyRNA *prop;
 
@@ -419,6 +420,13 @@ static void rna_def_constraint_childof(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", CHILDOF_SIZEZ);
 	RNA_def_property_ui_text(prop, "Scale Z", "Use Z Scale of Parent");
 	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_update");
+	
+	prop= RNA_def_property(srna, "inverse_matrix", PROP_FLOAT, PROP_MATRIX);
+	RNA_def_property_float_sdna(prop, NULL, "invmat");
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+	RNA_def_property_ui_text(prop, "Inverse Matrix", "Transformation matrix to apply before");
+	
 }
 
 static void rna_def_constraint_python(BlenderRNA *brna)

@@ -1,5 +1,5 @@
 /*
- * $Id: rna_mesh.c 37330 2011-06-09 08:58:27Z campbellbarton $
+ * $Id: rna_mesh.c 37746 2011-06-23 06:13:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -305,6 +305,7 @@ static void rna_MeshFace_material_index_range(PointerRNA *ptr, int *min, int *ma
 	Mesh *me= (Mesh*)ptr->id.data;
 	*min= 0;
 	*max= me->totcol-1;
+	*max= MAX2(0, *max);
 }
 
 static CustomData *rna_mesh_fdata(Mesh *me)

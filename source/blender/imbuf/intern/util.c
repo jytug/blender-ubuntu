@@ -26,7 +26,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * util.c
  *
- * $Id: util.c 37586 2011-06-17 08:52:15Z zanqdo $
+ * $Id: util.c 38125 2011-07-05 18:54:16Z blendix $
  */
 
 /** \file blender/imbuf/intern/util.c
@@ -113,6 +113,7 @@ const char *imb_ext_movie[] = {
 	".m4v",
 	".m2v",
 	".m2t",
+	".m2ts",
 	".mts",
 	".mv",
 	".avs",

@@ -1,5 +1,5 @@
 /*
- * $Id: DerivedMesh.c 36485 2011-05-04 13:15:42Z nazgul $
+ * $Id: DerivedMesh.c 38890 2011-08-01 06:50:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -1883,7 +1883,9 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 			
 			/* set the DerivedMesh to only copy needed data */
 			mask= (CustomDataMask)GET_INT_FROM_POINTER(curr->link);
-			DM_set_only_copy(dm, mask);
+			/* needMapping check here fixes bug [#28112], otherwise its
+			 * possible that it wont be copied */
+			DM_set_only_copy(dm, mask | (needMapping ? CD_MASK_ORIGINDEX : 0));
 			
 			/* add cloth rest shape key if need */
 			if(mask & CD_MASK_CLOTH_ORCO)

@@ -1,5 +1,5 @@
 /*
- * $Id: info_stats.c 35242 2011-02-27 20:29:51Z jesterking $
+ * $Id: info_stats.c 37829 2011-06-26 17:01:10Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -357,13 +357,14 @@ static void stats_update(Scene *scene)
 	}
 
 	if(!scene->stats)
-		scene->stats= MEM_mallocN(sizeof(SceneStats), "SceneStats");
+		scene->stats= MEM_callocN(sizeof(SceneStats), "SceneStats");
 
 	*(scene->stats)= stats;
 }
 
 static void stats_string(Scene *scene)
 {
+	extern char versionstr[]; /* from blender.c */
 	SceneStats *stats= scene->stats;
 	Object *ob= (scene->basact)? scene->basact->object: NULL;
 	uintptr_t mem_in_use, mmap_in_use;
@@ -379,6 +380,8 @@ static void stats_string(Scene *scene)
 		sprintf(s, " (%.2fM)", (double)((mmap_in_use)>>10)/1024.0);
 
 	s= stats->infostr;
+	
+	s+= sprintf(s, "%s | ", versionstr);
 
 	if(scene->obedit) {
 		if(ob_get_keyblock(scene->obedit))

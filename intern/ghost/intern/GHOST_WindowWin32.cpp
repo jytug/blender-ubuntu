@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_WindowWin32.cpp 36542 2011-05-07 22:28:56Z dfelinto $
+ * $Id: GHOST_WindowWin32.cpp 37765 2011-06-23 19:55:47Z blendix $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 
 /**
 
- * $Id: GHOST_WindowWin32.cpp 36542 2011-05-07 22:28:56Z dfelinto $
+ * $Id: GHOST_WindowWin32.cpp 37765 2011-06-23 19:55:47Z blendix $
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 10, 2001
@@ -136,7 +136,7 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 	GHOST_TSuccess msEnabled,
 	int msPixelFormat)
 :
-	GHOST_Window(title, left, top, width, height, state, GHOST_kDrawingContextTypeNone,
+	GHOST_Window(width, height, state, GHOST_kDrawingContextTypeNone,
 	stereoVisual,numOfAASamples),
 	m_system(system),
 	m_hDC(0),

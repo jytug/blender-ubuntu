@@ -82,9 +82,6 @@ from math import *
 #                    new mesh (as used in from_pydata).
 # name ... Name of the new mesh (& object).
 def create_mesh_object(context, verts, edges, faces, name):
-    scene = context.scene
-    obj_act = scene.objects.active
-
     # Create new mesh
     mesh = bpy.data.meshes.new(name)
 
@@ -737,8 +734,9 @@ class landscape_add(bpy.types.Operator):
             undo = bpy.context.user_preferences.edit.use_global_undo
             bpy.context.user_preferences.edit.use_global_undo = False
 
-            # deselect all objects
-            bpy.ops.object.select_all(action='DESELECT')
+            # deselect all objects when in object mode
+            if bpy.ops.object.select_all.poll():
+                bpy.ops.object.select_all(action='DESELECT')
 
             # options
             options = [
@@ -787,7 +785,10 @@ class landscape_add(bpy.types.Operator):
 
             # Shade smooth
             if self.SmoothMesh !=0:
-                bpy.ops.object.shade_smooth()
+                if bpy.ops.object.shade_smooth.poll():
+                    bpy.ops.object.shade_smooth()
+                else: # edit mode
+                    bpy.ops.mesh.faces_shade_smooth()
 
             # restore pre operator undo state
             bpy.context.user_preferences.edit.use_global_undo = undo

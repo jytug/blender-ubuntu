@@ -1,4 +1,4 @@
-# $Id: CMakeLists.txt 37030 2011-05-31 01:15:44Z campbellbarton $
+# $Id: CMakeLists.txt 38443 2011-07-17 09:11:13Z campbellbarton $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -25,13 +25,13 @@
 # ***** END GPL LICENSE BLOCK *****
 
 set(INC
-	. 
-	../../../intern/string
+	.
+	../Expressions
+	../Rasterizer
+	../SceneGraph
 	../../../intern/container
-	../../../source/gameengine/Expressions 
-	../../../source/gameengine/SceneGraph
 	../../../intern/moto/include
-	../../../source/gameengine/Rasterizer
+	../../../intern/string
 )
 
 set(INC_SYS
@@ -39,8 +39,6 @@ set(INC_SYS
 )
 
 set(SRC
-	Joystick/SCA_Joystick.cpp
-	Joystick/SCA_JoystickEvents.cpp
 	SCA_2DFilterActuator.cpp
 	SCA_ANDController.cpp
 	SCA_ActuatorEventManager.cpp
@@ -81,10 +79,9 @@ set(SRC
 	SCA_TimeEventManager.cpp
 	SCA_XNORController.cpp
 	SCA_XORController.cpp
+	Joystick/SCA_Joystick.cpp
+	Joystick/SCA_JoystickEvents.cpp
 
-	Joystick/SCA_Joystick.h
-	Joystick/SCA_JoystickDefines.h
-	Joystick/SCA_JoystickPrivate.h
 	SCA_2DFilterActuator.h
 	SCA_ANDController.h
 	SCA_ActuatorEventManager.h
@@ -125,10 +122,15 @@ set(SRC
 	SCA_TimeEventManager.h
 	SCA_XNORController.h
 	SCA_XORController.h
+	Joystick/SCA_Joystick.h
+	Joystick/SCA_JoystickDefines.h
+	Joystick/SCA_JoystickPrivate.h
 )
 
 if(WITH_SDL)
-	list(APPEND INC_SYS ${SDL_INCLUDE_DIR})
+	list(APPEND INC_SYS
+		${SDL_INCLUDE_DIR}
+	)
 else()
 	add_definitions(-DDISABLE_SDL)
 endif()

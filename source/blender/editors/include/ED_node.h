@@ -1,5 +1,5 @@
 /*
- * $Id: ED_node.h 35016 2011-02-21 07:25:24Z jesterking $
+ * $Id: ED_node.h 38609 2011-07-22 15:28:50Z ton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,6 +39,7 @@ struct Tex;
 struct bContext;
 struct bNode;
 struct ID;
+struct ScrArea;
 
 /* drawnode.c */
 void ED_init_node_butfuncs(void);
@@ -51,6 +52,8 @@ void ED_node_generic_update(struct Main *bmain, struct bNodeTree *ntree, struct 
 void ED_node_shader_default(struct Material *ma);
 void ED_node_composit_default(struct Scene *sce);
 void ED_node_texture_default(struct Tex *tex);
+void ED_node_link_intersect_test(struct ScrArea *sa, int test);
+void ED_node_link_insert(struct ScrArea *sa);
 
 /* node ops.c */
 void ED_operatormacros_node(void);

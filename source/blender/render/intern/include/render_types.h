@@ -1,5 +1,5 @@
 /*
- * $Id: render_types.h 37401 2011-06-11 08:55:29Z campbellbarton $
+ * $Id: render_types.h 37916 2011-06-28 16:25:07Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -60,6 +60,7 @@ struct RenderBuckets;
 struct ObjectInstanceRen;
 struct RayObject;
 struct RayFace;
+struct ReportList;
 struct Main;
 
 #define TABLEINITSIZE 1024
@@ -252,10 +253,9 @@ struct Render
 	int (*test_break)(void *handle);
 	void *tbh;
 	
-	void (*error)(void *handle, const char *str);
-	void *erh;
-	
 	RenderStats i;
+
+	struct ReportList *reports;
 };
 
 /* ------------------------------------------------------------------------- */

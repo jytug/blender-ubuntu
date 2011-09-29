@@ -235,9 +235,6 @@ class _3ds_point_uv(object):
     def __init__(self, point):
         self.uv = point
 
-    def __cmp__(self, other):
-        return cmp(self.uv, other.uv)
-
     def get_size(self):
         return 2 * SZ_FLOAT
 
@@ -360,9 +357,6 @@ class _3ds_chunk(object):
         self.variables = []
         self.subchunks = []
 
-    def set_ID(id):
-        self.ID = _3ds_short(id)
-
     def add_variable(self, name, var):
         '''Add a named variable.
 
@@ -454,7 +448,8 @@ def make_material_texture_chunk(id, images):
 
     def add_image(img):
         import os
-        filename = os.path.basename(image.filepath)
+        import bpy
+        filename = bpy.path.basename(image.filepath)
         mat_sub_file = _3ds_chunk(MATMAPFILE)
         mat_sub_file.add_variable("mapfile", _3ds_string(sane_name(filename)))
         mat_sub.add_subchunk(mat_sub_file)
@@ -704,7 +699,15 @@ def make_uv_chunk(uv_array):
     return uv_chunk
 
 
-def make_mesh_chunk(mesh, materialDict):
+def make_matrix_4x3_chunk(matrix):
+    matrix_chunk = _3ds_chunk(OBJECT_TRANS_MATRIX)
+    for vec in matrix:
+        for f in vec[:3]:
+            matrix_chunk.add_variable("matrix_f", _3ds_float(f))
+    return matrix_chunk
+
+
+def make_mesh_chunk(mesh, matrix, materialDict):
     '''Make a chunk out of a Blender mesh.'''
 
     # Extract the triangles from the mesh:
@@ -744,7 +747,10 @@ def make_mesh_chunk(mesh, materialDict):
     if uv_array:
         mesh_chunk.add_subchunk(make_uv_chunk(uv_array))
 
+    mesh_chunk.add_subchunk(make_matrix_4x3_chunk(matrix))
+
     return mesh_chunk
+
 
 """ # COMMENTED OUT FOR 2.42 RELEASE!! CRASHES 3DS MAX
 def make_kfdata(start=0, stop=0, curtime=0):
@@ -933,7 +939,7 @@ def save(operator,
             continue
 
         for ob_derived, mat in derived:
-            if ob.type not in ('MESH', 'CURVE', 'SURFACE', 'FONT', 'META'):
+            if ob.type not in {'MESH', 'CURVE', 'SURFACE', 'FONT', 'META'}:
                 continue
 
             try:
@@ -942,9 +948,9 @@ def save(operator,
                 data = None
 
             if data:
-                data.transform(global_matrix * mat)
-# 				data.transform(mat, recalc_normals=False)
-                mesh_objects.append((ob_derived, data))
+                matrix = global_matrix * mat
+                data.transform(matrix)
+                mesh_objects.append((ob_derived, data, matrix))
                 mat_ls = data.materials
                 mat_ls_len = len(mat_ls)
 
@@ -998,7 +1004,7 @@ def save(operator,
 
     # Create object chunks for all meshes:
     i = 0
-    for ob, blender_mesh in mesh_objects:
+    for ob, blender_mesh, matrix in mesh_objects:
         # create a new object chunk
         object_chunk = _3ds_chunk(OBJECT)
 
@@ -1006,7 +1012,7 @@ def save(operator,
         object_chunk.add_variable("name", _3ds_string(sane_name(ob.name)))
 
         # make a mesh chunk out of the mesh:
-        object_chunk.add_subchunk(make_mesh_chunk(blender_mesh, materialDict))
+        object_chunk.add_subchunk(make_mesh_chunk(blender_mesh, matrix, materialDict))
         object_info.add_subchunk(object_chunk)
 
         ''' # COMMENTED OUT FOR 2.42 RELEASE!! CRASHES 3DS MAX

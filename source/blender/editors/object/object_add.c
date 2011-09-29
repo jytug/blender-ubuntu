@@ -1,5 +1,5 @@
 /*
- * $Id: object_add.c 37504 2011-06-15 10:17:06Z blendix $
+ * $Id: object_add.c 38727 2011-07-26 13:33:04Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -806,14 +806,14 @@ static int object_delete_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
-	int islamp= 0;
+	/* int islamp= 0; */ /* UNUSED */
 	
 	if(CTX_data_edit_object(C)) 
 		return OPERATOR_CANCELLED;
 	
 	CTX_DATA_BEGIN(C, Base*, base, selected_bases) {
 
-		if(base->object->type==OB_LAMP) islamp= 1;
+		/* if(base->object->type==OB_LAMP) islamp= 1; */
 
 		/* deselect object -- it could be used in other scenes */
 		base->object->flag &= ~SELECT;

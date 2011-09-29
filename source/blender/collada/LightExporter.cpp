@@ -1,5 +1,5 @@
 /*
- * $Id: LightExporter.cpp 37661 2011-06-20 10:22:39Z jesterking $
+ * $Id: LightExporter.cpp 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,13 +38,14 @@
 #include "collada_internal.h"
 
 template<class Functor>
-void forEachLampObjectInScene(Scene *sce, Functor &f)
+void forEachLampObjectInScene(Scene *sce, Functor &f, bool export_selected)
 {
 	Base *base= (Base*) sce->base.first;
 	while(base) {
 		Object *ob = base->object;
 			
-		if (ob->type == OB_LAMP && ob->data) {
+		if (ob->type == OB_LAMP && ob->data
+			&& !(export_selected && !(ob->flag & SELECT))) {
 			f(ob);
 		}
 		base= base->next;
@@ -53,11 +54,11 @@ void forEachLampObjectInScene(Scene *sce, Functor &f)
 
 LightsExporter::LightsExporter(COLLADASW::StreamWriter *sw): COLLADASW::LibraryLights(sw){}
 
-void LightsExporter::exportLights(Scene *sce)
+void LightsExporter::exportLights(Scene *sce, bool export_selected)
 {
 	openLibrary();
 	
-	forEachLampObjectInScene(sce, *this);
+	forEachLampObjectInScene(sce, *this, export_selected);
 	
 	closeLibrary();
 }

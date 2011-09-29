@@ -1,5 +1,5 @@
 /*
- * $Id: EffectExporter.h 35705 2011-03-22 15:28:56Z jesterking $
+ * $Id: EffectExporter.h 38079 2011-07-04 08:59:28Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,7 +47,7 @@ class EffectsExporter: COLLADASW::LibraryEffects
 {
 public:
 	EffectsExporter(COLLADASW::StreamWriter *sw);
-	void exportEffects(Scene *sce);
+	void exportEffects(Scene *sce, bool export_selected);
 
 	void operator()(Material *ma, Object *ob);
 	

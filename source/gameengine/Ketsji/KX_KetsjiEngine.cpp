@@ -1,5 +1,5 @@
 /*
- * $Id: KX_KetsjiEngine.cpp 35417 2011-03-09 01:25:59Z campbellbarton $
+ * $Id: KX_KetsjiEngine.cpp 38696 2011-07-25 15:37:55Z dfelinto $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -68,7 +68,9 @@
 #include "KX_PyConstraintBinding.h"
 #include "PHY_IPhysicsEnvironment.h"
 
-#include "AUD_C-API.h"
+#ifdef WITH_AUDASPACE
+#  include "AUD_C-API.h"
+#endif
 
 #include "NG_NetworkScene.h"
 #include "NG_NetworkDeviceInterface.h"
@@ -1218,7 +1220,7 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 			projmat.setValue(m_overrideCamProjMat.getPointer());
 			cam->SetProjectionMatrix(projmat);
 		}
-	} else if (cam->hasValidProjectionMatrix() && !cam->GetViewport() )
+	} else if (cam->hasValidProjectionMatrix())
 	{
 		m_rasterizer->SetProjectionMatrix(cam->GetProjectionMatrix());
 	} else

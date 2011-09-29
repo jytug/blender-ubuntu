@@ -1,5 +1,5 @@
 /*
- * $Id: storage.c 35336 2011-03-03 17:58:06Z campbellbarton $
+ * $Id: storage.c 38142 2011-07-06 10:19:04Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -478,7 +478,7 @@ LinkNode *BLI_read_file_as_lines(const char *name)
 	FILE *fp= fopen(name, "r");
 	LinkNode *lines= NULL;
 	char *buf;
-	int size;
+	int64_t size;
 
 	if (!fp) return NULL;
 		

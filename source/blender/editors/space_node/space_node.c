@@ -1,5 +1,5 @@
 /*
- * $Id: space_node.c 37593 2011-06-17 13:57:41Z ton $
+ * $Id: space_node.c 38442 2011-07-17 08:38:04Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -227,6 +227,13 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 				ED_area_tag_refresh(sa);
 			else if (wmn->action == NA_SELECTED)
 				ED_area_tag_redraw(sa);
+			break;
+		case NC_SCREEN:
+			switch(wmn->data) {
+				case ND_ANIMPLAY:
+					ED_area_tag_refresh(sa);
+					break;
+			}
 			break;
 
 		case NC_IMAGE:

@@ -41,7 +41,7 @@ import hashlib
 import http.client
 import xmlrpc.client
 import math
-from os.path import abspath, isabs, join, isfile
+from os.path import isabs, isfile
 
 from bpy.props import PointerProperty, StringProperty, BoolProperty, EnumProperty, IntProperty, CollectionProperty
 
@@ -317,7 +317,6 @@ class CHECK_PT_RenderfarmFi(RenderButtonsPanel, bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        ore = context.scene.ore_render
 
         if bpy.found_newer_version == True:
             layout.operator('ore.open_download_location')
@@ -443,7 +442,6 @@ def encode_multipart_data(data, files):
                 '', str(data[field_name]))
 
     def encode_file(field_name):
-        import codecs
         filename = files [field_name]
         return ('--' + boundary,
                 'Content-Disposition: form-data; name="%s"; filename="%s"' % (field_name, filename),
@@ -567,7 +565,7 @@ def checkStatus(ore):
     if ore.hash=='' and (ore.username=='' or ore.password==''):
         bpy.errors.append('missing_creds')
     
-    if '' in (ore.title, ore.longdesc, ore.shortdesc):
+    if '' in {ore.title, ore.longdesc, ore.shortdesc}:
         bpy.errors.append('missing_desc')
     
     setStatus('username', ore.hash=='' and ore.username=='')
@@ -604,9 +602,9 @@ def xmlSessionsToOreSessions(sessions, queue):
     completed = sessions[queue]
     for sid in completed:
         s = completed[sid]['title']
-        t = completed[sid]['timestamps']
+        # t = completed[sid]['timestamps']  # UNUSED
         sinfo = OreSession(sid, s) 
-        if queue in ('completed', 'active'):
+        if queue in {'completed', 'active'}:
             sinfo.frames = completed[sid]['framesRendered']
         sinfo.startframe = completed[sid]['startFrame']
         sinfo.endframe = completed[sid]['endFrame']
@@ -641,7 +639,7 @@ class ORE_CancelSession(bpy.types.Operator):
         if len(bpy.ore_sessions)>0:
             s = bpy.ore_sessions[ore.selected_session]
             try:
-                res = userproxy.user.cancelSession(ore.username, ore.hash, int(s.id))
+                userproxy.user.cancelSession(ore.username, ore.hash, int(s.id))
                 self.report(set(['INFO']), 'Session ' + s.title + ' with id ' + s.id + ' cancelled')
             except:
                 self.report(set(['ERROR']), 'Could not cancel session ' + s.title + ' with id ' + s.id)
@@ -725,8 +723,6 @@ class ORE_CheckUpdate(bpy.types.Operator):
     bl_label = 'Check for new version'
 
     def execute(self, context):
-        sce = context.scene
-        ore = sce.ore_render
         blenderproxy = xmlrpc.client.ServerProxy(r'http://xmlrpc.renderfarm.fi/blender')
         try:
             self.report(set(['INFO']), 'Checking for newer version on Renderfarm.fi')

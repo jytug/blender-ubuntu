@@ -1,5 +1,5 @@
 /*
- * $Id: MaterialExporter.h 35020 2011-02-21 08:38:53Z jesterking $
+ * $Id: MaterialExporter.h 38770 2011-07-28 00:08:03Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,8 +49,11 @@ class MaterialsExporter: COLLADASW::LibraryMaterials
 {
 public:
 	MaterialsExporter(COLLADASW::StreamWriter *sw);
-	void exportMaterials(Scene *sce);
+	void exportMaterials(Scene *sce, bool export_selected);
 	void operator()(Material *ma, Object *ob);
+
+private:
+	bool hasMaterials(Scene *sce);
 };
 
 // used in forEachMaterialInScene
@@ -86,11 +89,11 @@ struct MaterialFunctor {
 	// f should have
 	// void operator()(Material* ma)
 	template<class Functor>
-	void forEachMaterialInScene(Scene *sce, Functor &f)
+	void forEachMaterialInScene(Scene *sce, Functor &f, bool export_selected)
 	{
 		ForEachMaterialFunctor<Functor> matfunc(&f);
 		GeometryFunctor gf;
-		gf.forEachMeshObjectInScene<ForEachMaterialFunctor<Functor> >(sce, matfunc);
+		gf.forEachMeshObjectInScene<ForEachMaterialFunctor<Functor> >(sce, matfunc, export_selected);
 	}
 };
 

@@ -1,5 +1,5 @@
 /*
- * $Id: creator.c 37363 2011-06-10 10:13:50Z campbellbarton $
+ * $Id: creator.c 38804 2011-07-29 01:24:03Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -64,6 +64,7 @@
 #include "BLI_threads.h"
 #include "BLI_scanfill.h" // for BLI_setErrorCallBack, TODO, move elsewhere
 #include "BLI_utildefines.h"
+#include "BLI_callbacks.h"
 
 #include "DNA_ID.h"
 #include "DNA_scene_types.h"
@@ -433,9 +434,12 @@ static int playback_mode(int UNUSED(argc), const char **UNUSED(argv), void *UNUS
 {
 	/* not if -b was given first */
 	if (G.background == 0) {
-
-// XXX				playanim(argc, argv); /* not the same argc and argv as before */
+#if 0	/* TODO, bring player back? */
+		playanim(argc, argv); /* not the same argc and argv as before */
+#else
+		fprintf(stderr, "Playback mode not supported in blender 2.5x\n");
 		exit(0);
+#endif
 	}
 
 	return -2;
@@ -767,7 +771,9 @@ static int render_frame(int argc, const char **argv, void *data)
 
 			frame = MIN2(MAXFRAME, MAX2(MINAFRAME, frame));
 
-			RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, frame, frame, scene->r.frame_step, &reports);
+			RE_SetReports(re, &reports);
+			RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, frame, frame, scene->r.frame_step);
+			RE_SetReports(re, NULL);
 			return 1;
 		} else {
 			printf("\nError: frame number must follow '-f / --render-frame'.\n");
@@ -788,7 +794,9 @@ static int render_animation(int UNUSED(argc), const char **UNUSED(argv), void *d
 		Render *re= RE_NewRender(scene->id.name);
 		ReportList reports;
 		BKE_reports_init(&reports, RPT_PRINT);
-		RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, scene->r.sfra, scene->r.efra, scene->r.frame_step, &reports);
+		RE_SetReports(re, &reports);
+		RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
+		RE_SetReports(re, NULL);
 	} else {
 		printf("\nError: no blend loaded. cannot use '-a'.\n");
 	}
@@ -990,6 +998,7 @@ static int load_file(int UNUSED(argc), const char **argv, void *data)
 #ifdef WITH_PYTHON
 		/* run any texts that were loaded in and flagged as modules */
 		BPY_driver_reset();
+		BPY_app_handlers_reset();
 		BPY_modules_load_user(C);
 #endif
 
@@ -1128,7 +1137,8 @@ static void setupArguments(bContext *C, bArgs *ba, SYS_SystemHandle *syshandle)
 
 #ifdef WITH_PYTHON_MODULE
 /* allow python module to call main */
-#define main main_python
+#define main main_python_enter
+static void *evil_C= NULL;
 #endif
 
 int main(int argc, const char **argv)
@@ -1139,6 +1149,7 @@ int main(int argc, const char **argv)
 
 #ifdef WITH_PYTHON_MODULE
 #undef main
+	evil_C= C;
 #endif
 
 #ifdef WITH_BINRELOC
@@ -1198,6 +1209,8 @@ int main(int argc, const char **argv)
 	initglobals();	/* blender.c */
 
 	IMB_init();
+
+	BLI_cb_init();
 
 #ifdef WITH_GAMEENGINE
 	syshandle = SYS_GetSystem();
@@ -1304,6 +1317,14 @@ int main(int argc, const char **argv)
 
 	return 0;
 } /* end of int main(argc,argv)	*/
+
+#ifdef WITH_PYTHON_MODULE
+void main_python_exit(void)
+{
+	WM_exit((bContext *)evil_C);
+	evil_C= NULL;
+}
+#endif
 
 static void error_cb(const char *err)
 {

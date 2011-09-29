@@ -1,5 +1,5 @@
 /*
- * $Id: file_ops.c 37552 2011-06-16 15:01:22Z campbellbarton $
+ * $Id: file_ops.c 39046 2011-08-05 06:06:15Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -64,6 +64,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 /* for events */
 #define NOTACTIVEFILE			0
@@ -1079,8 +1080,18 @@ static void file_expand_directory(bContext *C)
 		}
 
 #ifdef WIN32
-		if (sfile->params->dir[0] == '\0')
+		if (sfile->params->dir[0] == '\0') {
 			get_default_root(sfile->params->dir);
+		}
+		/* change "C:" --> "C:\", [#28102] */
+		else if (   (isalpha(sfile->params->dir[0]) &&
+		            (sfile->params->dir[1] == ':')) &&
+		            (sfile->params->dir[2] == '\0')
+
+		) {
+			sfile->params->dir[2]= '\\';
+			sfile->params->dir[3]= '\0';
+		}
 #endif
 	}
 }
@@ -1279,7 +1290,7 @@ void FILE_OT_filenum(struct wmOperatorType *ot)
 	ot->poll= ED_operator_file_active; /* <- important, handler is on window level */
 
 	/* props */
-	RNA_def_int(ot->srna, "increment", 1, 0, 100, "Increment", "", 0,100);
+	RNA_def_int(ot->srna, "increment", 1, -100, 100, "Increment", "", -100,100);
 }
 
 static int file_rename_exec(bContext *C, wmOperator *UNUSED(op))

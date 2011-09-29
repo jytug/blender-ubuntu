@@ -394,6 +394,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, bpy.types.Panel):
         col.operator("object.multires_higher_levels_delete", text="Delete Higher")
         col.operator("object.multires_reshape", text="Reshape")
         col.operator("object.multires_base_apply", text="Apply Base")
+        col.prop(md, "use_subsurf_uv")
         col.prop(md, "show_only_control_edges")
 
         layout.separator()
@@ -485,7 +486,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, bpy.types.Panel):
 
         if md.wrap_method == 'PROJECT':
             split = layout.split(percentage=0.25)
-            
+
             col = split.column()
             col.label(text="Axis:")
             col.prop(md, "use_project_x")

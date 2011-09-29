@@ -1,5 +1,5 @@
 /*
- * $Id: bpy.c 37088 2011-06-02 08:29:16Z campbellbarton $
+ * $Id: bpy.c 38409 2011-07-15 04:01:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -55,12 +55,10 @@
 #include "MEM_guardedalloc.h"
 
  /* external util modules */
-#include "../generic/mathutils.h"
+#include "../generic/IDProp.h"
 #include "../generic/bgl.h"
 #include "../generic/blf_py_api.h"
-#include "../generic/IDProp.h"
-
-#include "AUD_PyInit.h"
+#include "../mathutils/mathutils.h"
 
 PyObject *bpy_package_py= NULL;
 

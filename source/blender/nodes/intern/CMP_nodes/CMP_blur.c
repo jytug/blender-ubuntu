@@ -1,5 +1,5 @@
 /*
- * $Id: CMP_blur.c 36276 2011-04-21 15:53:30Z campbellbarton $
+ * $Id: CMP_blur.c 38347 2011-07-12 19:21:38Z jbakker $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -387,7 +387,7 @@ static void bokeh_single_image(bNode *node, CompBuf *new, CompBuf *img, float fa
 			float dist= sqrt(fj*fj + fi*fi);
 			
 		//*dgauss= hexagon_filter(fi, fj);
-			*dgauss= RE_filter_value(nbd->filtertype, 2.0f*dist - 1.0f);
+			*dgauss= RE_filter_value(nbd->filtertype, dist);
 
 			val+= *dgauss;
 		}

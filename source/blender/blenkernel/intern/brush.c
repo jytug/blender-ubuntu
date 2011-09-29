@@ -1,5 +1,5 @@
 /*
- * $Id: brush.c 37276 2011-06-06 22:10:05Z psy-fi $
+ * $Id: brush.c 37839 2011-06-27 04:05:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -235,8 +235,6 @@ void make_local_brush(Brush *brush)
 			if(paint_brush(&scene->toolsettings->imapaint.paint)==brush) {
 				if(scene->id.lib==NULL) {
 					paint_brush_set(&scene->toolsettings->imapaint.paint, brushn);
-					brushn->id.us++;
-					brush->id.us--;
 				}
 			}
 		}
