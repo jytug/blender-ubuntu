@@ -1,8 +1,8 @@
-blender (2.59-svn40174-1) unstable; urgency=low
+blender (2.59-svn40174-1) UNRELEASED; urgency=low
 
-  * New Upstream Release
+  * New Upstream Release (Closes: #641085)
 
- -- Kevin Roy <kiniou@gmail.com>  Thu, 22 Sep 2011 13:44:07 +0200
+ -- Kevin Roy <kiniou@gmail.com>  Fri, 30 Sep 2011 13:50:07 +0200
 
 blender (2.58-svn37702-1) unstable; urgency=low
 
