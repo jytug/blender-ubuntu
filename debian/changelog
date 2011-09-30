@@ -1,6 +1,9 @@
-blender (2.59-svn40174-1) UNRELEASED; urgency=low
+blender (2.59-1) UNRELEASED; urgency=low
 
-  * New Upstream Release (Closes: #641085)
+  * New Upstream Release 2.59 (Closes: #641085)
+  * debian/control: libglew dependancy changed
+    - changed Depends libglew1.5-dev to libglew1.6-dev
+     due to transition. (Closes: #636177)
 
  -- Kevin Roy <kiniou@gmail.com>  Fri, 30 Sep 2011 13:50:07 +0200
 
