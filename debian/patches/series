@@ -5,3 +5,4 @@
 0005-blender_thumbnailer.patch
 0006-fix_FTBFS_on_KFreeBSD.patch
 0007-disable_tests.patch
+0008-update_manpages.patch
