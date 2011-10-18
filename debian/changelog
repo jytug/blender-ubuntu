@@ -1,7 +1,7 @@
 blender (2.59-1) unstable; urgency=low
 
   * New Upstream Release 2.59 (Closes: #641085)
-  * debian/control: libglew dependancy changed
+  * debian/control: libglew dependency changed
     - changed Depends libglew1.5-dev to libglew1.6-dev
      due to transition. (Closes: #636177)
 
