@@ -4,8 +4,11 @@ blender (2.59-1) unstable; urgency=low
   * debian/control: libglew dependency changed
     - changed Depends libglew1.5-dev to libglew1.6-dev
      due to transition. (Closes: #636177)
+  * update manpages
+  * change depends yafray to new yafaray packages 
+        (Thanks to Matteo F. Vescovi)
 
- -- Kevin Roy <kiniou@gmail.com>  Fri, 30 Sep 2011 13:50:07 +0200
+ -- Kevin Roy <kiniou@gmail.com>  Fri, 21 Oct 2011 14:21:47 +0200
 
 blender (2.58-svn37702-1) unstable; urgency=low
 
