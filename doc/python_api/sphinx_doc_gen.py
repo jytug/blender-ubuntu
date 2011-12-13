@@ -60,11 +60,13 @@ if __import__("sys").modules.get("bpy") is None:
 # Switch for quick testing
 if 1:
     # full build
+    EXCLUDE_INFO_DOCS = False
     EXCLUDE_MODULES = ()
     FILTER_BPY_TYPES = None
     FILTER_BPY_OPS = None
 
 else:
+    EXCLUDE_INFO_DOCS = False
     # for testing so doc-builds dont take so long.
     EXCLUDE_MODULES = (
         "bpy.context",
@@ -74,18 +76,19 @@ else:
         "bpy.props",
         "bpy.utils",
         "bpy.context",
-        "bpy.types",  # supports filtering
+        # "bpy.types",  # supports filtering
         "bpy.ops",  # supports filtering
         "bpy_extras",
-        # "bge",
+        "bge",
         "aud",
         "bgl",
         "blf",
+        "gpu",
         "mathutils",
         "mathutils.geometry",
     )
 
-    FILTER_BPY_TYPES = ("bpy_struct", "Panel", "Menu", "Operator", "RenderEngine")  # allow
+    FILTER_BPY_TYPES = ("bpy_struct", "Operator", "ID")  # allow
     FILTER_BPY_OPS = ("import.scene", )  # allow
 
     # for quick rebuilds
@@ -96,6 +99,15 @@ sphinx-build doc/python_api/sphinx-in doc/python_api/sphinx-out
 
     """
 
+# extra info, not api reference docs
+# stored in ./rst/info/
+INFO_DOCS = (
+    ("info_quickstart.rst", "Blender/Python Quickstart: new to blender/scripting and want to get you're feet wet?"),
+    ("info_overview.rst", "Blender/Python API Overview: a more complete explanation of python integration"),
+    ("info_best_practice.rst", "Best Practice: Conventions to follow for writing good scripts"),
+    ("info_tips_and_tricks.rst", "Tips and Tricks: Hints to help you while writeing scripts for blender"),
+    ("info_gotcha.rst", "Gotcha's: some of the problems you may come up against when writing scripts"),
+    )
 
 # import rpdb2; rpdb2.start_embedded_debugger('test')
 
@@ -150,7 +162,7 @@ def range_str(val):
 
 
 def example_extract_docstring(filepath):
-    file = open(filepath, 'r')
+    file = open(filepath, "r", encoding="utf-8")
     line = file.readline()
     line_no = 0
     text = []
@@ -349,7 +361,7 @@ def pymodule2sphinx(BASEPATH, module_name, module, title):
     if module_all:
         module_dir = module_all
 
-    file = open(filepath, "w")
+    file = open(filepath, "w", encoding="utf-8")
 
     fw = file.write
 
@@ -499,7 +511,7 @@ def pycontext2sphinx(BASEPATH):
     # Only use once. very irregular
 
     filepath = os.path.join(BASEPATH, "bpy.context.rst")
-    file = open(filepath, "w")
+    file = open(filepath, "w", encoding="utf-8")
     fw = file.write
     fw("Context Access (bpy.context)\n")
     fw("============================\n\n")
@@ -569,6 +581,7 @@ def pycontext2sphinx(BASEPATH):
         "sequences": ("Sequence", True),
         "smoke": ("SmokeModifier", False),
         "soft_body": ("SoftBodyModifier", False),
+        "speaker": ("Speaker", False),
         "texture": ("Texture", False),
         "texture_slot": ("MaterialTextureSlot", False),
         "vertex_paint_object": ("Object", False),
@@ -609,6 +622,30 @@ def pycontext2sphinx(BASEPATH):
     file.close()
 
 
+def pyrna_enum2sphinx(prop, use_empty_descriptions=False):
+    """ write a bullet point list of enum + descrptons
+    """
+
+    if use_empty_descriptions:
+        ok = True
+    else:
+        ok = False
+        for identifier, name, description in prop.enum_items:
+            if description:
+                ok = True
+                break
+
+    if ok:
+        return "".join(["* ``%s`` %s.\n" %
+                        (identifier,
+                         ", ".join(val for val in (name, description) if val),
+                         )
+                        for identifier, name, description in prop.enum_items
+                        ])
+    else:
+        return ""
+
+
 def pyrna2sphinx(BASEPATH):
     """ bpy.types and bpy.ops
     """
@@ -636,8 +673,22 @@ def pyrna2sphinx(BASEPATH):
         kwargs["collection_id"] = _BPY_PROP_COLLECTION_ID
 
         type_descr = prop.get_type_description(**kwargs)
-        if prop.name or prop.description:
-            fw(ident + ":%s%s: %s\n" % (id_name, identifier, ", ".join(val for val in (prop.name, prop.description) if val)))
+
+        enum_text = pyrna_enum2sphinx(prop)
+
+        if prop.name or prop.description or enum_text:
+            fw(ident + ":%s%s:\n\n" % (id_name, identifier))
+
+            if prop.name or prop.description:
+                fw(ident + "   " + ", ".join(val for val in (prop.name, prop.description) if val) + "\n\n")
+
+            # special exception, cant use genric code here for enums
+            if enum_text:
+                write_indented_lines(ident + "   ", fw, enum_text)
+                fw("\n")
+            del enum_text
+            # end enum exception
+
         fw(ident + ":%s%s: %s\n" % (id_type, identifier, type_descr))
 
     def write_struct(struct):
@@ -648,7 +699,7 @@ def pyrna2sphinx(BASEPATH):
         #    return
 
         filepath = os.path.join(BASEPATH, "bpy.types.%s.rst" % struct.identifier)
-        file = open(filepath, "w")
+        file = open(filepath, "w", encoding="utf-8")
         fw = file.write
 
         base_id = getattr(struct.base, "identifier", "")
@@ -715,6 +766,16 @@ def pyrna2sphinx(BASEPATH):
                 fw("   .. attribute:: %s\n\n" % prop.identifier)
             if prop.description:
                 fw("      %s\n\n" % prop.description)
+
+            # special exception, cant use genric code here for enums
+            if prop.type == "enum":
+                enum_text = pyrna_enum2sphinx(prop)
+                if enum_text:
+                    write_indented_lines("      ", fw, enum_text)
+                    fw("\n")
+                del enum_text
+            # end enum exception
+
             fw("      :type: %s\n\n" % type_descr)
 
         # python attributes
@@ -738,11 +799,14 @@ def pyrna2sphinx(BASEPATH):
             elif func.return_values:  # multiple return values
                 fw("      :return (%s):\n" % ", ".join(prop.identifier for prop in func.return_values))
                 for prop in func.return_values:
+                    # TODO, pyrna_enum2sphinx for multiple return values... actually dont think we even use this but still!!!
                     type_descr = prop.get_type_description(as_ret=True, class_fmt=":class:`%s`", collection_id=_BPY_PROP_COLLECTION_ID)
                     descr = prop.description
                     if not descr:
                         descr = prop.name
                     fw("         `%s`, %s, %s\n\n" % (prop.identifier, descr, type_descr))
+
+            write_example_ref("      ", fw, "bpy.types." + struct.identifier + "." + func.identifier)
 
             fw("\n")
 
@@ -849,7 +913,7 @@ def pyrna2sphinx(BASEPATH):
 
         def fake_bpy_type(class_value, class_name, descr_str, use_subclasses=True):
             filepath = os.path.join(BASEPATH, "bpy.types.%s.rst" % class_name)
-            file = open(filepath, "w")
+            file = open(filepath, "w", encoding="utf-8")
             fw = file.write
 
             write_title(fw, class_name, "=")
@@ -900,7 +964,7 @@ def pyrna2sphinx(BASEPATH):
 
         for op_module_name, ops_mod in op_modules.items():
             filepath = os.path.join(BASEPATH, "bpy.ops.%s.rst" % op_module_name)
-            file = open(filepath, "w")
+            file = open(filepath, "w", encoding="utf-8")
             fw = file.write
 
             title = "%s Operators" % op_module_name.replace("_", " ").title()
@@ -954,7 +1018,7 @@ def rna2sphinx(BASEPATH):
 
     # conf.py - empty for now
     filepath = os.path.join(BASEPATH, "conf.py")
-    file = open(filepath, "w")
+    file = open(filepath, "w", encoding="utf-8")
     fw = file.write
 
     version_string = ".".join(str(v) for v in bpy.app.version)
@@ -973,9 +1037,15 @@ def rna2sphinx(BASEPATH):
     fw("copyright = u'Blender Foundation'\n")
     fw("version = '%s - API'\n" % version_string)
     fw("release = '%s - API'\n" % version_string)
-    fw("html_theme = 'blender-org'\n")
-    fw("html_theme_path = ['../']\n")
-    fw("html_favicon = 'favicon.ico'\n")
+
+    # until we get a theme for 'Naiad'
+    if 0:
+        fw("html_theme = 'blender-org'\n")
+        fw("html_theme_path = ['../']\n")
+
+        # copied with the theme, exclude else we get an error [#28873]
+        fw("html_favicon = 'favicon.ico'\n")
+
     # not helpful since the source us generated, adds to upload size.
     fw("html_copy_source = False\n")
     fw("\n")
@@ -986,7 +1056,7 @@ def rna2sphinx(BASEPATH):
 
     # main page needed for sphinx (index.html)
     filepath = os.path.join(BASEPATH, "contents.rst")
-    file = open(filepath, "w")
+    file = open(filepath, "w", encoding="utf-8")
     fw = file.write
 
     fw("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n")
@@ -999,14 +1069,17 @@ def rna2sphinx(BASEPATH):
 
     fw("\n")
 
-    fw("============================\n")
-    fw("Blender/Python Documentation\n")
-    fw("============================\n")
-    fw("\n")
-    fw("\n")
-    fw("* `Quickstart Intro <http://wiki.blender.org/index.php/Dev:2.5/Py/API/Intro>`_ if you are new to scripting in blender and want to get you're feet wet!\n")
-    fw("* `Blender/Python Overview <http://wiki.blender.org/index.php/Dev:2.5/Py/API/Overview>`_ for a more complete explanation of python integration in blender\n")
-    fw("\n")
+    if not EXCLUDE_INFO_DOCS:
+        fw("============================\n")
+        fw("Blender/Python Documentation\n")
+        fw("============================\n")
+        fw("\n")
+        fw("\n")
+        fw(".. toctree::\n")
+        fw("   :maxdepth: 1\n\n")
+        for info, info_desc in INFO_DOCS:
+            fw("   %s <%s>\n\n" % (info_desc, info))
+        fw("\n")
 
     fw("===================\n")
     fw("Application Modules\n")
@@ -1050,6 +1123,8 @@ def rna2sphinx(BASEPATH):
         fw("   bgl.rst\n\n")
     if "blf" not in EXCLUDE_MODULES:
         fw("   blf.rst\n\n")
+    if "gpu" not in EXCLUDE_MODULES:
+        fw("   gpu.rst\n\n")
     if "aud" not in EXCLUDE_MODULES:
         fw("   aud.rst\n\n")
     if "bpy_extras" not in EXCLUDE_MODULES:
@@ -1099,7 +1174,7 @@ def rna2sphinx(BASEPATH):
     # internal modules
     if "bpy.ops" not in EXCLUDE_MODULES:
         filepath = os.path.join(BASEPATH, "bpy.ops.rst")
-        file = open(filepath, "w")
+        file = open(filepath, "w", encoding="utf-8")
         fw = file.write
         fw("Operators (bpy.ops)\n")
         fw("===================\n\n")
@@ -1111,7 +1186,7 @@ def rna2sphinx(BASEPATH):
 
     if "bpy.types" not in EXCLUDE_MODULES:
         filepath = os.path.join(BASEPATH, "bpy.types.rst")
-        file = open(filepath, "w")
+        file = open(filepath, "w", encoding="utf-8")
         fw = file.write
         fw("Types (bpy.types)\n")
         fw("=================\n\n")
@@ -1124,7 +1199,7 @@ def rna2sphinx(BASEPATH):
         # not actually a module, only write this file so we
         # can reference in the TOC
         filepath = os.path.join(BASEPATH, "bpy.data.rst")
-        file = open(filepath, "w")
+        file = open(filepath, "w", encoding="utf-8")
         fw = file.write
         fw("Data Access (bpy.data)\n")
         fw("======================\n\n")
@@ -1190,6 +1265,13 @@ def rna2sphinx(BASEPATH):
         import shutil
         shutil.copy2(os.path.join(BASEPATH, "..", "rst", "bgl.rst"), BASEPATH)
 
+    if "gpu" not in EXCLUDE_MODULES:
+        #import gpu as module
+        #pymodule2sphinx(BASEPATH, "gpu", module, "GPU Shader Module")
+        #del module
+        import shutil
+        shutil.copy2(os.path.join(BASEPATH, "..", "rst", "gpu.rst"), BASEPATH)
+
     if "aud" not in EXCLUDE_MODULES:
         import aud as module
         pymodule2sphinx(BASEPATH, "aud", module, "Audio System")
@@ -1208,9 +1290,13 @@ def rna2sphinx(BASEPATH):
 
     shutil.copy2(os.path.join(BASEPATH, "..", "rst", "change_log.rst"), BASEPATH)
 
+    if not EXCLUDE_INFO_DOCS:
+        for info, info_desc in INFO_DOCS:
+            shutil.copy2(os.path.join(BASEPATH, "..", "rst", info), BASEPATH)
+
     if 0:
         filepath = os.path.join(BASEPATH, "bpy.rst")
-        file = open(filepath, "w")
+        file = open(filepath, "w", encoding="utf-8")
         fw = file.write
 
         fw("\n")

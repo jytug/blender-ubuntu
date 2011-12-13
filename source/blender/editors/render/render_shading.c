@@ -1,5 +1,5 @@
 /*
- * $Id: render_shading.c 38596 2011-07-22 00:31:24Z campbellbarton $
+ * $Id: render_shading.c 40944 2011-10-12 00:15:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,6 +52,7 @@
 
 #include "BKE_animsys.h"
 #include "BKE_context.h"
+#include "BKE_curve.h"
 #include "BKE_depsgraph.h"
 #include "BKE_font.h"
 #include "BKE_global.h"
@@ -84,6 +85,8 @@
 #include "RNA_define.h"
 
 #include "UI_interface.h"
+
+#include "RE_pipeline.h"
 
 #include "render_intern.h"	// own include
 
@@ -127,7 +130,7 @@ static int material_slot_remove_exec(bContext *C, wmOperator *op)
 
 	/* Removing material slots in edit mode screws things up, see bug #21822.*/
 	if(ob == CTX_data_edit_object(C)) {
-		BKE_report(op->reports, RPT_ERROR, "Unable to remove material slot in edit mode.");
+		BKE_report(op->reports, RPT_ERROR, "Unable to remove material slot in edit mode");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -174,7 +177,7 @@ static int material_slot_assign_exec(bContext *C, wmOperator *UNUSED(op))
 		}
 		else if(ELEM(ob->type, OB_CURVE, OB_SURF)) {
 			Nurb *nu;
-			ListBase *nurbs= ED_curve_editnurbs((Curve*)ob->data);
+			ListBase *nurbs= curve_editnurbs((Curve*)ob->data);
 
 			if(nurbs) {
 				for(nu= nurbs->first; nu; nu= nu->next)
@@ -232,7 +235,7 @@ static int material_slot_de_select(bContext *C, int select)
 		}
 	}
 	else if ELEM(ob->type, OB_CURVE, OB_SURF) {
-		ListBase *nurbs= ED_curve_editnurbs((Curve*)ob->data);
+		ListBase *nurbs= curve_editnurbs((Curve*)ob->data);
 		Nurb *nu;
 		BPoint *bp;
 		BezTriple *bezt;
@@ -527,7 +530,7 @@ void SCENE_OT_render_layer_add(wmOperatorType *ot)
 
 static int render_layer_remove_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Scene *scene= CTX_data_scene(C);
+	Scene *scene = CTX_data_scene(C), *sce;
 	SceneRenderLayer *rl;
 	int act= scene->r.actlay;
 
@@ -539,15 +542,17 @@ static int render_layer_remove_exec(bContext *C, wmOperator *UNUSED(op))
 	MEM_freeN(rl);
 
 	scene->r.actlay= 0;
-	
-	if(scene->nodetree) {
-		bNode *node;
-		for(node= scene->nodetree->nodes.first; node; node= node->next) {
-			if(node->type==CMP_NODE_R_LAYERS && node->id==NULL) {
-				if(node->custom1==act)
-					node->custom1= 0;
-				else if(node->custom1>act)
-					node->custom1--;
+
+	for(sce = CTX_data_main(C)->scene.first; sce; sce = sce->id.next) {
+		if(sce->nodetree) {
+			bNode *node;
+			for(node = sce->nodetree->nodes.first; node; node = node->next) {
+				if(node->type==CMP_NODE_R_LAYERS && (Scene*)node->id==scene) {
+					if(node->custom1==act)
+						node->custom1= 0;
+					else if(node->custom1>act)
+						node->custom1--;
+				}
 			}
 		}
 	}
@@ -661,60 +666,21 @@ void TEXTURE_OT_slot_move(wmOperatorType *ot)
 
 /********************** environment map operators *********************/
 
-static int save_envmap(wmOperator *op, Scene *scene, EnvMap *env, char *str, int imtype)
+static int save_envmap(wmOperator *op, Scene *scene, EnvMap *env, char *path, int imtype)
 {
-	ImBuf *ibuf=NULL;
-	int dx;
-	int retval;
-	int relative= (RNA_struct_find_property(op->ptr, "relative_path") && RNA_boolean_get(op->ptr, "relative_path"));
-	
-	if(env->cube[1]==NULL) {
-		BKE_report(op->reports, RPT_ERROR, "There is no generated environment map available to save");
-		return OPERATOR_CANCELLED;
-	}
-	
-	dx= env->cube[1]->x;
-	
-	if (env->type == ENV_CUBE) {
-		ibuf = IMB_allocImBuf(3*dx, 2*dx, 24, IB_rectfloat);
+	float layout[12];
+	if ( RNA_struct_find_property(op->ptr, "layout") )
+		RNA_float_get_array(op->ptr, "layout",layout);
+	else
+		memcpy(layout, default_envmap_layout, sizeof(layout));
 
-		IMB_rectcpy(ibuf, env->cube[0], 0, 0, 0, 0, dx, dx);
-		IMB_rectcpy(ibuf, env->cube[1], dx, 0, 0, 0, dx, dx);
-		IMB_rectcpy(ibuf, env->cube[2], 2*dx, 0, 0, 0, dx, dx);
-		IMB_rectcpy(ibuf, env->cube[3], 0, dx, 0, 0, dx, dx);
-		IMB_rectcpy(ibuf, env->cube[4], dx, dx, 0, 0, dx, dx);
-		IMB_rectcpy(ibuf, env->cube[5], 2*dx, dx, 0, 0, dx, dx);
-	}
-	else if (env->type == ENV_PLANE) {
-		ibuf = IMB_allocImBuf(dx, dx, 24, IB_rectfloat);
-		IMB_rectcpy(ibuf, env->cube[1], 0, 0, 0, 0, dx, dx);		
+	if (RE_WriteEnvmapResult(op->reports, scene, env, path, imtype, layout)) {
+		return OPERATOR_FINISHED;
 	}
 	else {
-		BKE_report(op->reports, RPT_ERROR, "Invalid environment map type");
 		return OPERATOR_CANCELLED;
 	}
-	
-	if (scene->r.color_mgt_flag & R_COLOR_MANAGEMENT)
-		ibuf->profile = IB_PROFILE_LINEAR_RGB;
-	
-	/* to save, we first get absolute path */
-	BLI_path_abs(str, G.main->name);
-	
-	if (BKE_write_ibuf(ibuf, str, imtype, scene->r.subimtype, scene->r.quality)) {
-		retval = OPERATOR_FINISHED;
-	}
-	else {
-		BKE_reportf(op->reports, RPT_ERROR, "Error saving environment map to %s.", str);
-		retval = OPERATOR_CANCELLED;
-	}
-	/* in case we were saving with relative paths, change back again */
-	if(relative)
-		BLI_path_rel(str, G.main->name);
-	
-	IMB_freeImBuf(ibuf);
-	ibuf = NULL;
-	
-	return retval;
+
 }
 
 static int envmap_save_exec(bContext *C, wmOperator *op)
@@ -746,14 +712,10 @@ static int envmap_save_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event
 {
 	//Scene *scene= CTX_data_scene(C);
 	
-	if(!RNA_property_is_set(op->ptr, "relative_path"))
-		RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
-	
 	if(RNA_property_is_set(op->ptr, "filepath"))
 		return envmap_save_exec(C, op);
 
 	//RNA_enum_set(op->ptr, "file_type", scene->r.imtype);
-	
 	RNA_string_set(op->ptr, "filepath", G.main->name);
 	WM_event_add_fileselect(C, op);
 	
@@ -776,6 +738,7 @@ static int envmap_save_poll(bContext *C)
 
 void TEXTURE_OT_envmap_save(wmOperatorType *ot)
 {
+	PropertyRNA *prop;
 	/* identifiers */
 	ot->name= "Save Environment Map";
 	ot->idname= "TEXTURE_OT_envmap_save";
@@ -787,11 +750,13 @@ void TEXTURE_OT_envmap_save(wmOperatorType *ot)
 	ot->poll= envmap_save_poll;
 	
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag= OPTYPE_REGISTER; /* no undo since this doesnt modify the env-map */
 	
 	/* properties */
-	//RNA_def_enum(ot->srna, "file_type", image_file_type_items, R_PNG, "File Type", "File type to save image as.");
-	WM_operator_properties_filesel(ot, FOLDERFILE|IMAGEFILE|MOVIEFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH|WM_FILESEL_RELPATH);
+	prop= RNA_def_float_array(ot->srna, "layout", 12, default_envmap_layout, 0.0f, 0.0f, "File layout", "Flat array describing the X,Y position of each cube face in the output image, where 1 is the size of a face - order is [+Z -Z +Y -X -Y +X] (use -1 to skip a face)", 0.0f, 0.0f);
+	RNA_def_property_flag(prop, PROP_HIDDEN);
+
+	WM_operator_properties_filesel(ot, FOLDERFILE|IMAGEFILE|MOVIEFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH);
 }
 
 static int envmap_clear_exec(bContext *C, wmOperator *UNUSED(op))
@@ -875,8 +840,6 @@ static int copy_material_exec(bContext *C, wmOperator *UNUSED(op))
 
 	copy_matcopybuf(ma);
 
-	WM_event_add_notifier(C, NC_MATERIAL, ma);
-
 	return OPERATOR_FINISHED;
 }
 
@@ -891,7 +854,7 @@ void MATERIAL_OT_copy(wmOperatorType *ot)
 	ot->exec= copy_material_exec;
 
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag= OPTYPE_REGISTER; /* no undo needed since no changes are made to the material */
 }
 
 static int paste_material_exec(bContext *C, wmOperator *UNUSED(op))
@@ -1015,8 +978,6 @@ static int copy_mtex_exec(bContext *C, wmOperator *UNUSED(op))
 
 	copy_mtex_copybuf(id);
 
-	WM_event_add_notifier(C, NC_TEXTURE, NULL);
-
 	return OPERATOR_FINISHED;
 }
 
@@ -1039,7 +1000,7 @@ void TEXTURE_OT_slot_copy(wmOperatorType *ot)
 	ot->poll= copy_mtex_poll;
 	
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag= OPTYPE_REGISTER; /* no undo needed since no changes are made to the mtex */
 }
 
 static int paste_mtex_exec(bContext *C, wmOperator *UNUSED(op))

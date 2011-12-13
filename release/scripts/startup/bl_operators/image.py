@@ -19,10 +19,11 @@
 # <pep8-80 compliant>
 
 import bpy
+from bpy.types import Operator
 from bpy.props import StringProperty
 
 
-class EditExternally(bpy.types.Operator):
+class EditExternally(Operator):
     '''Edit image in an external application'''
     bl_idname = "image.external_edit"
     bl_label = "Image Edit Externally"
@@ -68,12 +69,10 @@ class EditExternally(bpy.types.Operator):
             self.report({'ERROR'}, "Image path not set")
             return {'CANCELLED'}
 
-        filepath = os.path.normpath(bpy.path.abspath(filepath))
-
         if not os.path.exists(filepath):
             self.report({'ERROR'},
                         "Image path %r not found, image may be packed or "
-                        "unsaved." % filepath)
+                        "unsaved" % filepath)
             return {'CANCELLED'}
 
         cmd = self._editor_guess(context) + [filepath]
@@ -92,21 +91,22 @@ class EditExternally(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
+        import os
         try:
-            filepath = context.space_data.image.filepath
-        except:
-            import traceback
-            traceback.print_exc()
-            self.report({'ERROR'}, "Image not found on disk")
+            image = context.space_data.image
+        except AttributeError:
+            self.report({'ERROR'}, "Context incorrect, image not found")
             return {'CANCELLED'}
 
-        self.filepath = filepath
+        filepath = bpy.path.abspath(image.filepath, library=image.library)
+
+        self.filepath = os.path.normpath(filepath)
         self.execute(context)
 
         return {'FINISHED'}
 
 
-class SaveDirty(bpy.types.Operator):
+class SaveDirty(Operator):
     """Save all modified textures"""
     bl_idname = "image.save_dirty"
     bl_label = "Save Dirty"
@@ -129,7 +129,7 @@ class SaveDirty(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ProjectEdit(bpy.types.Operator):
+class ProjectEdit(Operator):
     """Edit a snapshot of the viewport in an external image editor"""
     bl_idname = "image.project_edit"
     bl_label = "Project Edit"
@@ -196,7 +196,7 @@ class ProjectEdit(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ProjectApply(bpy.types.Operator):
+class ProjectApply(Operator):
     """Project edited image back onto the object"""
     bl_idname = "image.project_apply"
     bl_label = "Project Apply"

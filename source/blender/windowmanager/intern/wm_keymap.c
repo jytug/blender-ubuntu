@@ -1,5 +1,5 @@
 /*
- * $Id: wm_keymap.c 39302 2011-08-11 11:56:02Z blendix $
+ * $Id: wm_keymap.c 40043 2011-09-08 13:22:26Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -47,6 +47,7 @@
 #include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_idprop.h"
+#include "BKE_global.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_screen.h"
@@ -104,6 +105,9 @@ static int wm_keymap_item_equals_result(wmKeyMapItem *a, wmKeyMapItem *b)
 	
 	if(!((a->ptr==NULL && b->ptr==NULL) ||
 	     (a->ptr && b->ptr && IDP_EqualsProperties(a->ptr->data, b->ptr->data))))
+		return 0;
+	
+	if((a->flag & KMI_INACTIVE) != (b->flag & KMI_INACTIVE))
 		return 0;
 	
 	return (a->propvalue == b->propvalue);
@@ -222,7 +226,7 @@ static wmKeyConfig *wm_keyconfig_list_find(ListBase *lb, char *idname)
 	return NULL;
 }
 
-wmKeyConfig *WM_keyconfig_active(wmWindowManager *wm)
+static wmKeyConfig *WM_keyconfig_active(wmWindowManager *wm)
 {
 	wmKeyConfig *keyconf;
 
@@ -677,6 +681,17 @@ wmKeyMap *WM_modalkeymap_add(wmKeyConfig *keyconf, const char *idname, EnumPrope
 	wmKeyMap *km= WM_keymap_find(keyconf, idname, 0, 0);
 	km->flag |= KEYMAP_MODAL;
 	km->modal_items= items;
+
+	if(!items) {
+		/* init modal items from default config */
+		wmWindowManager *wm = G.main->wm.first;
+		wmKeyMap *defaultkm= WM_keymap_list_find(&wm->defaultconf->keymaps, km->idname, 0, 0);
+
+		if(defaultkm) {
+			km->modal_items = defaultkm->modal_items;
+			km->poll = defaultkm->poll;
+		}
+	}
 	
 	return km;
 }

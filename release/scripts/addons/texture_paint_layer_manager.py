@@ -124,10 +124,9 @@ class OBJECT_PT_LoadBrushes(bpy.types.Panel):
     
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.operator('texture.load_brushes')
-        row = layout.row()
-        row.operator('texture.load_single_brush')
+
+        layout.operator('texture.load_brushes')
+        layout.operator('texture.load_single_brush')
 
 
 #======================================================================
@@ -269,11 +268,8 @@ class OBJECT_PT_Texture_paint_add(bpy.types.Panel):
         if ob:
             mat = ob.active_material
             
-            if mat:
-                
-                #row = layout.row()   
+            if mat:  
                 col = layout.column(align =True)
-        
         
                 col.operator('object.add_paint_layer',
                     text = "Add Color").ttype = 'COLOR' 
@@ -309,8 +305,7 @@ class OBJECT_PT_Texture_paint_add(bpy.types.Panel):
                     text = "Add Ambient").ttype = 'AMBIENT' 
                                         
             else:
-                row = layout.row() 
-                row.label(' Add a Material first!', icon = 'ERROR')
+                layout.label(' Add a Material first!', icon = 'ERROR')
         
         
 
@@ -356,14 +351,12 @@ def main(context,tn):
             if f.material_index == m_id:
                 uvtex[f.index].select_uv
                 uvtex[f.index].image = img
-                uvtex[f.index].use_image = True
             
 
     else:
         for f in me.faces:  
             if f.material_index == m_id:
-                uvtex[f.index].image = img
-                #uvtex[f.index].use_image = False
+                uvtex[f.index].image = None
     me.update()
 
 
@@ -542,7 +535,7 @@ class add_paint_layer(bpy.types.Operator):
     def execute(self, context):
         ttype = self.ttype
         add_paint(context,typ= ttype)
-        return 'FINISHED'
+        return {'FINISHED'}
         
 
 
@@ -590,14 +583,14 @@ def save_active_paint():
     for m in ob.material_slots:
         for ts in m.material.texture_slots:
             save_painted(ts)
-    return('FINISHED')                          
+    return {'FINISHED'}                          
 
 def save_all_paint():
     #for all materials
     for m in bpy.data.materials:
         for ts in m.texture_slots:
             save_painted(ts)      
-    return('FINISHED')   
+    return {'FINISHED'}   
             
             
 class save_all_generated(bpy.types.Operator):
@@ -629,9 +622,7 @@ class OBJECT_PT_SavePainted(bpy.types.Panel):
         return (context.image_paint_object)
     
     def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        row.operator('paint.save_all_generated')        
+        self.layout.operator('paint.save_all_generated')        
         
 def register():
     bpy.utils.register_module(__name__)

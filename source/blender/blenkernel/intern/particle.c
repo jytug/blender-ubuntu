@@ -1,7 +1,5 @@
-/* particle.c
- *
- *
- * $Id: particle.c 39244 2011-08-10 07:36:57Z jesterking $
+/*
+ * $Id: particle.c 41060 2011-10-16 16:14:36Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -2090,10 +2088,10 @@ void precalc_guides(ParticleSimulationData *sim, ListBase *effectors)
 			data = eff->guide_data + p;
 
 			VECSUB(efd.vec_to_point, state.co, eff->guide_loc);
-			VECCOPY(efd.nor, eff->guide_dir);
+			copy_v3_v3(efd.nor, eff->guide_dir);
 			efd.distance = len_v3(efd.vec_to_point);
 
-			VECCOPY(data->vec_to_point, efd.vec_to_point);
+			copy_v3_v3(data->vec_to_point, efd.vec_to_point);
 			data->strength = effector_falloff(eff, &efd, &point, weights);
 		}
 	}
@@ -2542,7 +2540,7 @@ static void psys_thread_create_path(ParticleThread *thread, struct ChildParticle
 						normalize_v3(v1);
 						normalize_v3(v2);
 
-						d = saacos(dot_v3v3(v1, v2)) * 180.0f/(float)M_PI;
+						d = RAD2DEGF(saacos(dot_v3v3(v1, v2)));
 					}
 
 					if(p_max > p_min)
@@ -3161,7 +3159,7 @@ void psys_cache_edit_paths(Scene *scene, Object *ob, PTCacheEdit *edit, float cf
 			}
 			else {
 				ca->vel[0] = ca->vel[1] = 0.0f;
-				ca->vel[1] = 1.0f;
+				ca->vel[2] = 1.0f;
 			}
 
 			/* selection coloring in edit mode */
@@ -3488,6 +3486,7 @@ static void default_particle_settings(ParticleSettings *part)
 	part->totpart= 1000;
 	part->grid_res= 10;
 	part->timetweak= 1.0;
+	part->courant_target = 0.2;
 	
 	part->integrator= PART_INT_MIDPOINT;
 	part->phystype= PART_PHYS_NEWTON;
@@ -4385,33 +4384,50 @@ void psys_get_dupli_path_transform(ParticleSimulationData *sim, ParticleData *pa
 		psys_particle_on_emitter(psmd,sim->psys->part->from,pa->num,pa->num_dmcache,pa->fuv,pa->foffset,loc,nor,0,0,0,0);
 	else
 		psys_particle_on_emitter(psmd,PART_FROM_FACE,cpa->num,DMCACHE_ISCHILD,cpa->fuv,cpa->foffset,loc,nor,0,0,0,0);
-		
-	copy_m3_m4(nmat, ob->imat);
-	transpose_m3(nmat);
-	mul_m3_v3(nmat, nor);
-	normalize_v3(nor);
 
-	/* make sure that we get a proper side vector */
-	if(fabs(dot_v3v3(nor,vec))>0.999999) {
-		if(fabs(dot_v3v3(nor,xvec))>0.999999) {
-			nor[0] = 0.0f;
-			nor[1] = 1.0f;
-			nor[2] = 0.0f;
+	if(psys->part->rotmode == PART_ROT_VEL) {
+		copy_m3_m4(nmat, ob->imat);
+		transpose_m3(nmat);
+		mul_m3_v3(nmat, nor);
+		normalize_v3(nor);
+
+		/* make sure that we get a proper side vector */
+		if(fabs(dot_v3v3(nor,vec))>0.999999) {
+			if(fabs(dot_v3v3(nor,xvec))>0.999999) {
+				nor[0] = 0.0f;
+				nor[1] = 1.0f;
+				nor[2] = 0.0f;
+			}
+			else {
+				nor[0] = 1.0f;
+				nor[1] = 0.0f;
+				nor[2] = 0.0f;
+			}
 		}
-		else {
-			nor[0] = 1.0f;
-			nor[1] = 0.0f;
-			nor[2] = 0.0f;
+		cross_v3_v3v3(side, nor, vec);
+		normalize_v3(side);
+
+		/* rotate side vector around vec */
+		if(psys->part->phasefac != 0) {
+			float q_phase[4];
+			float phasefac = psys->part->phasefac;
+			if(psys->part->randphasefac != 0.0f)
+				phasefac += psys->part->randphasefac * PSYS_FRAND((pa-psys->particles) + 20);
+			axis_angle_to_quat( q_phase, vec, phasefac*(float)M_PI);
+
+			mul_qt_v3(q_phase, side);
 		}
+
+		cross_v3_v3v3(nor, vec, side);
+
+		unit_m4(mat);
+		VECCOPY(mat[0], vec);
+		VECCOPY(mat[1], side);
+		VECCOPY(mat[2], nor);
 	}
-	cross_v3_v3v3(side, nor, vec);
-	normalize_v3(side);
-	cross_v3_v3v3(nor, vec, side);
-
-	unit_m4(mat);
-	VECCOPY(mat[0], vec);
-	VECCOPY(mat[1], side);
-	VECCOPY(mat[2], nor);
+	else {
+		quat_to_mat4(mat, pa->state.rot);
+	}
 
 	*scale= len;
 }

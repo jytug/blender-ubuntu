@@ -63,7 +63,7 @@ def _test_import(module_name, loaded_modules):
         return None
     if "." in module_name:
         print("Ignoring '%s', can't import files containing "
-              "multiple periods." % module_name)
+              "multiple periods" % module_name)
         return None
 
     if use_time:
@@ -142,9 +142,9 @@ def load_scripts(reload_scripts=False, refresh_scripts=False):
     if reload_scripts:
         _bpy_types.TypeMap.clear()
 
-        # just unload, dont change user defaults, this means we can sync
+        # just unload, don't change user defaults, this means we can sync
         # to reload. note that they will only actually reload of the
-        # modification time changes. This `wont` work for packages so...
+        # modification time changes. This `won't` work for packages so...
         # its not perfect.
         for module_name in [ext.module for ext in prefs.addons]:
             _addon_utils.disable(module_name, default_set=False)
@@ -159,7 +159,7 @@ def load_scripts(reload_scripts=False, refresh_scripts=False):
                 traceback.print_exc()
         else:
             print("\nWarning! '%s' has no register function, "
-                  "this is now a requirement for registerable scripts." %
+                  "this is now a requirement for registerable scripts" %
                   mod.__file__)
 
     def unregister_module_call(mod):
@@ -220,7 +220,7 @@ def load_scripts(reload_scripts=False, refresh_scripts=False):
             if _os.path.isdir(path):
                 _sys_path_ensure(path)
 
-                # only add this to sys.modules, dont run
+                # only add this to sys.modules, don't run
                 if path_subdir == "modules":
                     continue
 
@@ -374,7 +374,7 @@ def smpte_from_seconds(time, fps=None):
     if time >= 3600.0:  # hours
         hours = int(time / 3600.0)
         time = time % 3600.0
-    if time >= 60.0:  # mins
+    if time >= 60.0:  # minutes
         minutes = int(time / 60.0)
         time = time % 60.0
 

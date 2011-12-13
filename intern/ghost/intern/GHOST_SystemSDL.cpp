@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_SystemSDL.cpp 39203 2011-08-09 07:09:49Z campbellbarton $
+ * $Id: GHOST_SystemSDL.cpp 39444 2011-08-16 13:07:46Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -385,8 +385,26 @@ GHOST_SystemSDL::processEvent(SDL_Event *sdl_event)
 
 			GHOST_TKey gkey= convertSDLKey(sdl_sub_evt.keysym.scancode);
 			/* note, the sdl_sub_evt.keysym.sym is truncated, for unicode support ghost has to be modified */
+			/* printf("%d\n", sym); */
 			if(sym > 127) {
-				sym= 0;
+				switch(sym) {
+					case SDLK_KP_DIVIDE: sym= '/'; break;
+				    case SDLK_KP_MULTIPLY: sym= '*'; break;
+				    case SDLK_KP_MINUS: sym= '-'; break;
+				    case SDLK_KP_PLUS: sym= '+'; break;
+				    case SDLK_KP_1: sym= '1'; break;
+				    case SDLK_KP_2: sym= '2'; break;
+				    case SDLK_KP_3: sym= '3'; break;
+				    case SDLK_KP_4: sym= '4'; break;
+				    case SDLK_KP_5: sym= '5'; break;
+				    case SDLK_KP_6: sym= '6'; break;
+				    case SDLK_KP_7: sym= '7'; break;
+				    case SDLK_KP_8: sym= '8'; break;
+				    case SDLK_KP_9: sym= '9'; break;
+				    case SDLK_KP_0: sym= '0'; break;
+				    case SDLK_KP_PERIOD: sym= '.'; break;
+					default: sym= 0; break;
+				}
 			}
 			else {
 				if(sdl_sub_evt.keysym.mod & (KMOD_LSHIFT|KMOD_RSHIFT)) {

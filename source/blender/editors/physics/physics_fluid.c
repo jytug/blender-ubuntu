@@ -1,7 +1,7 @@
 /*
  * fluidsim.c
  * 
- * $Id: physics_fluid.c 38408 2011-07-15 00:39:49Z jhk $
+ * $Id: physics_fluid.c 40647 2011-09-28 08:31:02Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,12 +40,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-
-#ifdef WIN32	/* Windos */
-#ifndef snprintf
-#define snprintf _snprintf
-#endif
-#endif
 
 #include "MEM_guardedalloc.h"
 
@@ -155,8 +149,8 @@ static int fluid_is_animated_mesh(FluidsimSettings *fss)
 #if 0
 /* helper function */
 void fluidsimGetGeometryObjFilename(Object *ob, char *dst) { //, char *srcname) {
-	//snprintf(dst,FILE_MAXFILE, "%s_cfgdata_%s.bobj.gz", srcname, ob->id.name);
-	snprintf(dst,FILE_MAXFILE, "fluidcfgdata_%s.bobj.gz", ob->id.name);
+	//BLI_snprintf(dst,FILE_MAXFILE, "%s_cfgdata_%s.bobj.gz", srcname, ob->id.name);
+	BLI_snprintf(dst,FILE_MAXFILE, "fluidcfgdata_%s.bobj.gz", ob->id.name);
 }
 #endif
 
@@ -600,7 +594,7 @@ static int fluid_validate_scene(ReportList *reports, Scene *scene, Object *fsDom
 			}
 			/* if there's more than one domain, cancel */
 			else if (fsDomain && ob != fsDomain) {
-				BKE_report(reports, RPT_ERROR, "There should be only one domain object.");
+				BKE_report(reports, RPT_ERROR, "There should be only one domain object");
 				return 0;
 			}
 		}
@@ -618,17 +612,17 @@ static int fluid_validate_scene(ReportList *reports, Scene *scene, Object *fsDom
 		fsDomain = newdomain;
 	
 	if (!fsDomain) {
-		BKE_report(reports, RPT_ERROR, "No domain object found.");
+		BKE_report(reports, RPT_ERROR, "No domain object found");
 		return 0;
 	}
 	
 	if (channelObjCount>=255) {
-		BKE_report(reports, RPT_ERROR, "Cannot bake with more then 256 objects.");
+		BKE_report(reports, RPT_ERROR, "Cannot bake with more then 256 objects");
 		return 0;
 	}
 	
 	if (fluidInputCount == 0) {
-		BKE_report(reports, RPT_ERROR, "No fluid input objects in the scene.");
+		BKE_report(reports, RPT_ERROR, "No fluid input objects in the scene");
 		return 0;
 	}
 	
@@ -850,7 +844,7 @@ static void fluidsim_delete_until_lastframe(FluidsimSettings *fss)
 	return;
 }
 
-static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain)
+static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain, short do_job)
 {
 	Scene *scene= CTX_data_scene(C);
 	int i;
@@ -877,25 +871,23 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain)
 	ListBase *fobjects = MEM_callocN(sizeof(ListBase), "fluid objects");
 	FluidsimModifierData *fluidmd = NULL;
 	Mesh *mesh = NULL;
-	
-	wmJob *steve;
+
 	FluidBakeJob *fb;
 	elbeemSimulationSettings *fsset= MEM_callocN(sizeof(elbeemSimulationSettings), "Fluid sim settings");
-	
-	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), scene, "Fluid Simulation", WM_JOB_PROGRESS);
+
 	fb= MEM_callocN(sizeof(FluidBakeJob), "fluid bake job");
 	
 	if(getenv(strEnvName)) {
 		int dlevel = atoi(getenv(strEnvName));
 		elbeemSetDebugLevel(dlevel);
-		snprintf(debugStrBuffer,256,"fluidsimBake::msg: Debug messages activated due to envvar '%s'\n",strEnvName); 
+		BLI_snprintf(debugStrBuffer,256,"fluidsimBake::msg: Debug messages activated due to envvar '%s'\n",strEnvName); 
 		elbeemDebugOut(debugStrBuffer);
 	}
 	
 	/* make sure it corresponds to startFrame setting (old: noFrames = scene->r.efra - scene->r.sfra +1) */;
 	noFrames = scene->r.efra - 0;
 	if(noFrames<=0) {
-		BKE_report(reports, RPT_ERROR, "No frames to export - check your animation range settings.");
+		BKE_report(reports, RPT_ERROR, "No frames to export - check your animation range settings");
 		fluidbake_free_data(channels, fobjects, fsset, fb);
 		return 0;
 	}
@@ -925,7 +917,7 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain)
 	
 	/* rough check of settings... */
 	if(domainSettings->previewresxyz > domainSettings->resolutionxyz) {
-		snprintf(debugStrBuffer,256,"fluidsimBake::warning - Preview (%d) >= Resolution (%d)... setting equal.\n", domainSettings->previewresxyz ,  domainSettings->resolutionxyz); 
+		BLI_snprintf(debugStrBuffer,256,"fluidsimBake::warning - Preview (%d) >= Resolution (%d)... setting equal.\n", domainSettings->previewresxyz ,  domainSettings->resolutionxyz); 
 		elbeemDebugOut(debugStrBuffer);
 		domainSettings->previewresxyz = domainSettings->resolutionxyz;
 	}
@@ -945,7 +937,7 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain)
 	} else {
 		gridlevels = domainSettings->maxRefine;
 	}
-	snprintf(debugStrBuffer,256,"fluidsimBake::msg: Baking %s, refine: %d\n", fsDomain->id.name , gridlevels ); 
+	BLI_snprintf(debugStrBuffer,256,"fluidsimBake::msg: Baking %s, refine: %d\n", fsDomain->id.name , gridlevels ); 
 	elbeemDebugOut(debugStrBuffer);
 	
 	
@@ -997,9 +989,9 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain)
 	/* ******** init domain object's matrix ******** */
 	copy_m4_m4(domainMat, fsDomain->obmat);
 	if(!invert_m4_m4(invDomMat, domainMat)) {
-		snprintf(debugStrBuffer,256,"fluidsimBake::error - Invalid obj matrix?\n"); 
+		BLI_snprintf(debugStrBuffer,256,"fluidsimBake::error - Invalid obj matrix?\n"); 
 		elbeemDebugOut(debugStrBuffer);
-		BKE_report(reports, RPT_ERROR, "Invalid object matrix."); 
+		BKE_report(reports, RPT_ERROR, "Invalid object matrix"); 
 
 		fluidbake_free_data(channels, fobjects, fsset, fb);
 		return 0;
@@ -1089,12 +1081,25 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain)
 	/* custom data for fluid bake job */
 	fb->settings = fsset;
 	
-	/* setup job */
-	WM_jobs_customdata(steve, fb, fluidbake_free);
-	WM_jobs_timer(steve, 0.1, NC_SCENE|ND_FRAME, NC_SCENE|ND_FRAME);
-	WM_jobs_callbacks(steve, fluidbake_startjob, NULL, NULL, fluidbake_endjob);
-	
-	WM_jobs_start(CTX_wm_manager(C), steve);
+	if(do_job) {
+		wmJob *steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), scene, "Fluid Simulation", WM_JOB_PROGRESS);
+
+		/* setup job */
+		WM_jobs_customdata(steve, fb, fluidbake_free);
+		WM_jobs_timer(steve, 0.1, NC_SCENE|ND_FRAME, NC_SCENE|ND_FRAME);
+		WM_jobs_callbacks(steve, fluidbake_startjob, NULL, NULL, fluidbake_endjob);
+
+		WM_jobs_start(CTX_wm_manager(C), steve);
+	}
+	else {
+		short dummy_stop, dummy_do_update;
+		float dummy_progress;
+
+		/* blocking, use with exec() */
+		fluidbake_startjob((void *)fb, &dummy_stop, &dummy_do_update, &dummy_progress);
+		fluidbake_endjob((void *)fb);
+		fluidbake_free((void *)fb);
+	}
 
 	/* ******** free stored animation data ******** */
 	fluidbake_free_data(channels, fobjects, NULL, NULL);
@@ -1127,7 +1132,7 @@ FluidsimSettings* fluidsimSettingsCopy(FluidsimSettings *UNUSED(fss))
 }
 
 /* only compile dummy functions */
-static int fluidsimBake(bContext *UNUSED(C), ReportList *UNUSED(reports), Object *UNUSED(ob))
+static int fluidsimBake(bContext *UNUSED(C), ReportList *UNUSED(reports), Object *UNUSED(ob), short UNUSED(do_job))
 {
 	return 0;
 }
@@ -1136,13 +1141,21 @@ static int fluidsimBake(bContext *UNUSED(C), ReportList *UNUSED(reports), Object
 
 /***************************** Operators ******************************/
 
-static int fluid_bake_exec(bContext *C, wmOperator *op)
+static int fluid_bake_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 {
 	/* only one bake job at a time */
 	if(WM_jobs_test(CTX_wm_manager(C), CTX_data_scene(C)))
-		return 0;
+		return OPERATOR_CANCELLED;
 
-	if(!fluidsimBake(C, op->reports, CTX_data_active_object(C)))
+	if(!fluidsimBake(C, op->reports, CTX_data_active_object(C), TRUE))
+		return OPERATOR_CANCELLED;
+
+	return OPERATOR_FINISHED;
+}
+
+static int fluid_bake_exec(bContext *C, wmOperator *op)
+{
+	if(!fluidsimBake(C, op->reports, CTX_data_active_object(C), FALSE))
 		return OPERATOR_CANCELLED;
 
 	return OPERATOR_FINISHED;
@@ -1156,6 +1169,7 @@ void FLUID_OT_bake(wmOperatorType *ot)
 	ot->idname= "FLUID_OT_bake";
 	
 	/* api callbacks */
+	ot->invoke= fluid_bake_invoke;
 	ot->exec= fluid_bake_exec;
 	ot->poll= ED_operator_object_active_editable;
 }

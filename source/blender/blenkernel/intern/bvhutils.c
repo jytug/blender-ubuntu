@@ -1,6 +1,5 @@
 /*
- *
- * $Id: bvhutils.c 37787 2011-06-24 05:34:03Z campbellbarton $
+ * $Id: bvhutils.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

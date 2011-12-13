@@ -1,5 +1,5 @@
 /*
- * $Id: object_intern.h 36458 2011-05-03 07:09:02Z campbellbarton $
+ * $Id: object_intern.h 40595 2011-09-27 09:09:52Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -116,6 +116,7 @@ void OBJECT_OT_armature_add(struct wmOperatorType *ot);
 void OBJECT_OT_lamp_add(struct wmOperatorType *ot);
 void OBJECT_OT_effector_add(struct wmOperatorType *ot);
 void OBJECT_OT_camera_add(struct wmOperatorType *ot);
+void OBJECT_OT_speaker_add(struct wmOperatorType *ot);
 void OBJECT_OT_group_instance_add(struct wmOperatorType *ot);
 
 void OBJECT_OT_duplicates_make_real(struct wmOperatorType *ot);
@@ -199,6 +200,8 @@ void OBJECT_OT_vertex_group_copy(struct wmOperatorType *ot);
 void OBJECT_OT_vertex_group_normalize(struct wmOperatorType *ot);
 void OBJECT_OT_vertex_group_normalize_all(struct wmOperatorType *ot);
 void OBJECT_OT_vertex_group_levels(struct wmOperatorType *ot);
+void OBJECT_OT_vertex_group_lock(struct wmOperatorType *ot);
+void OBJECT_OT_vertex_group_fix(struct wmOperatorType *ot);
 void OBJECT_OT_vertex_group_invert(struct wmOperatorType *ot);
 void OBJECT_OT_vertex_group_blend(struct wmOperatorType *ot);
 void OBJECT_OT_vertex_group_clean(struct wmOperatorType *ot);

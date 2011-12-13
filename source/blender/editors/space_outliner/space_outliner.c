@@ -1,6 +1,4 @@
 /*
- * $Id: space_outliner.c 39291 2011-08-11 05:46:18Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -183,6 +181,10 @@ static void outliner_main_area_listener(ARegion *ar, wmNotifier *wmn)
 			switch(wmn->data) {
 				case ND_NLA_ACTCHANGE:
 					ED_region_tag_redraw(ar);
+					break;
+				case ND_ANIMCHAN:
+					if(wmn->action==NA_SELECTED)
+						ED_region_tag_redraw(ar);
 					break;
 			}
 			break;

@@ -78,6 +78,7 @@ set(DEFSRC
 	rna_smoke.c
 	rna_sound.c
 	rna_space.c
+	rna_speaker.c
 	rna_test.c
 	rna_text.c
 	rna_texture.c
@@ -94,12 +95,14 @@ set(APISRC
 	rna_actuator_api.c
 	rna_animation_api.c
 	rna_armature_api.c
+	rna_camera_api.c
 	rna_controller_api.c
 	rna_fcurve_api.c
 	rna_image_api.c
 	rna_main_api.c
 	rna_material_api.c
 	rna_mesh_api.c
+	rna_texture_api.c
 	rna_object_api.c
 	rna_pose_api.c
 	rna_scene_api.c
@@ -198,7 +201,7 @@ if(NOT WITH_MOD_FLUID)
 endif()
 
 if(WITH_FFTW3)
-	add_definitions(-DFFTW3=1)
+	add_definitions(-DWITH_FFTW3)
 endif()
 
 if(WITH_SDL)
@@ -215,6 +218,10 @@ endif()
 
 if(WITH_OPENCOLLADA)
 	add_definitions(-DWITH_COLLADA)
+endif()
+
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
 endif()
 
 # Build makesrna executable
@@ -243,6 +250,7 @@ blender_include_dirs_sys(
 
 add_executable(makesrna ${SRC} ${SRC_RNA_INC} ${SRC_DNA_INC})
 target_link_libraries(makesrna bf_dna)
+target_link_libraries(makesrna bf_dna_blenlib)
 
 # Output rna_*_gen.c
 # note (linux only): with crashes try add this after COMMAND: valgrind --leak-check=full --track-origins=yes

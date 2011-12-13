@@ -1,9 +1,5 @@
-
-/*  mesh.c
- *
- *  
- * 
- * $Id: mesh.c 38879 2011-07-31 11:12:38Z dfelinto $
+/*
+ * $Id: mesh.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -917,7 +913,7 @@ int nurbs_to_mdata_customdb(Object *ob, ListBase *dispbase, MVert **allvert, int
 				mface->v2= startvert+index[2];
 				mface->v3= startvert+index[1];
 				mface->v4= 0;
-				mface->mat_nr= (unsigned char)dl->col;
+				mface->mat_nr= dl->col;
 				test_index_face(mface, NULL, 0, 3);
 
 				if(smooth) mface->flag |= ME_SMOOTH;
@@ -966,7 +962,7 @@ int nurbs_to_mdata_customdb(Object *ob, ListBase *dispbase, MVert **allvert, int
 					mface->v2= p3;
 					mface->v3= p4;
 					mface->v4= p2;
-					mface->mat_nr= (unsigned char)dl->col;
+					mface->mat_nr= dl->col;
 					test_index_face(mface, NULL, 0, 4);
 
 					if(smooth) mface->flag |= ME_SMOOTH;
@@ -1252,7 +1248,7 @@ void mesh_to_curve(Scene *scene, Object *ob)
 	}
 }
 
-void mesh_delete_material_index(Mesh *me, int index)
+void mesh_delete_material_index(Mesh *me, short index)
 {
 	MFace *mf;
 	int i;
@@ -1604,5 +1600,21 @@ void mesh_translate(Mesh *me, float offset[3], int do_keys)
 				add_v3_v3(fp, offset);
 			}
 		}
+	}
+}
+
+
+void BKE_mesh_ensure_navmesh(Mesh *me)
+{
+	if (!CustomData_has_layer(&me->fdata, CD_RECAST)) {
+		int i;
+		int numFaces = me->totface;
+		int* recastData;
+		CustomData_add_layer_named(&me->fdata, CD_RECAST, CD_CALLOC, NULL, numFaces, "recastData");
+		recastData = (int*)CustomData_get_layer(&me->fdata, CD_RECAST);
+		for (i=0; i<numFaces; i++) {
+			recastData[i] = i+1;
+		}
+		CustomData_add_layer_named(&me->fdata, CD_RECAST, CD_REFERENCE, recastData, numFaces, "recastData");
 	}
 }

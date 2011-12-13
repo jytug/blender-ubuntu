@@ -1,5 +1,5 @@
 /*
- * $Id: cloth.c 36419 2011-05-01 21:39:13Z joeedh $
+ * $Id: cloth.c 41078 2011-10-17 06:39:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -741,7 +741,7 @@ static void cloth_apply_vgroup ( ClothModifierData *clmd, DerivedMesh *dm )
 	MDeformVert *dvert = NULL;
 	Cloth *clothObj = NULL;
 	int numverts;
-	float goalfac = 0;
+	/* float goalfac = 0; */ /* UNUSED */
 	ClothVertex *verts = NULL;
 
 	if (!clmd || !dm) return;
@@ -764,7 +764,7 @@ static void cloth_apply_vgroup ( ClothModifierData *clmd, DerivedMesh *dm )
 					if (( dvert->dw[j].def_nr == (clmd->sim_parms->vgroup_mass-1)) && (clmd->sim_parms->flags & CLOTH_SIMSETTINGS_FLAG_GOAL ))
 					{
 						verts->goal = dvert->dw [j].weight;
-						goalfac= 1.0f;
+						/* goalfac= 1.0f; */ /* UNUSED */
 						
 						/*
 						// Kicking goal factor to simplify things...who uses that anyway?
@@ -923,7 +923,7 @@ static int cloth_from_object(Object *ob, ClothModifierData *clmd, DerivedMesh *d
 	
 	for(i = 0; i < dm->getNumVerts(dm); i++)
 	{
-		maxdist = MAX2(maxdist, clmd->coll_parms->selfepsilon* ( cloth->verts[i].avg_spring_len*2.0));
+		maxdist = MAX2(maxdist, clmd->coll_parms->selfepsilon* ( cloth->verts[i].avg_spring_len*2.0f));
 	}
 	
 	clmd->clothObject->bvhselftree = bvhselftree_build_from_cloth ( clmd, maxdist );
@@ -974,7 +974,7 @@ static void cloth_from_mesh ( ClothModifierData *clmd, DerivedMesh *dm )
 * SPRING NETWORK BUILDING IMPLEMENTATION BEGIN
 ***************************************************************************************/
 
-// be carefull: implicit solver has to be resettet when using this one!
+// be careful: implicit solver has to be resettet when using this one!
 // --> only for implicit handling of this spring!
 int cloth_add_spring ( ClothModifierData *clmd, unsigned int indexA, unsigned int indexB, float restlength, int spring_type)
 {

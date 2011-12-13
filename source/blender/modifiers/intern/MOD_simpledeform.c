@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_simpledeform.c 38300 2011-07-11 09:15:20Z blendix $
+* $Id: MOD_simpledeform.c 41078 2011-10-17 06:39:13Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -326,7 +326,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 	DerivedMesh *dm = derivedData;
 	CustomDataMask dataMask = requiredDataMask(ob, md);
 
-	/* we implement requiredDataMask but thats not really usefull since
+	/* we implement requiredDataMask but thats not really useful since
 	   mesh_calc_modifiers pass a NULL derivedData */
 	if(dataMask)
 		dm= get_dm(ob, NULL, dm, NULL, 0);
@@ -346,7 +346,7 @@ static void deformVertsEM(ModifierData *md, Object *ob,
 	DerivedMesh *dm = derivedData;
 	CustomDataMask dataMask = requiredDataMask(ob, md);
 
-	/* we implement requiredDataMask but thats not really usefull since
+	/* we implement requiredDataMask but thats not really useful since
 	   mesh_calc_modifiers pass a NULL derivedData */
 	if(dataMask)
 		dm= get_dm(ob, editData, dm, NULL, 0);
@@ -385,4 +385,5 @@ ModifierTypeInfo modifierType_SimpleDeform = {
 	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     NULL,
+	/* foreachTexLink */    NULL,
 };

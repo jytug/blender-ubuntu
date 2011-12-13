@@ -1,5 +1,5 @@
 /*
- * $Id: superlu_sys_types.h 36360 2011-04-28 05:15:47Z campbellbarton $
+ * $Id: superlu_sys_types.h 40419 2011-09-21 08:40:30Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file superlu_sys_types.h
+ *  \ingroup opennl
+ *
  * A platform-independent definition of [u]intXX_t
  * Plus the accompanying header include for htonl/ntohl
  *
@@ -35,10 +40,6 @@
  *   so we have to flip the signs.
  * For these rogue platforms, we make the typedefs ourselves.
  *
- */
-
-/** \file superlu_sys_types.h
- *  \ingroup opennl
  */
 
 
@@ -89,7 +90,7 @@ typedef unsigned long uintptr_t;
 #define _UINTPTR_T_DEFINED
 #endif
 
-#elif defined(__linux__) || defined(__NetBSD__)
+#elif defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__)
 
 	/* Linux-i386, Linux-Alpha, Linux-ppc */
 #include <stdint.h>
@@ -99,29 +100,32 @@ typedef unsigned long uintptr_t;
 #include <inttypes.h>
 
 #elif defined(FREE_WINDOWS)
-
+/* define htoln here, there must be a syntax error in winsock2.h in MinGW */
+unsigned long __attribute__((__stdcall__)) htonl(unsigned long);
 #include <stdint.h>
 
 #else
 
-	/* FreeBSD, Irix, Solaris */
+	/* FreeBSD, Solaris */
 #include <sys/types.h>
 
 #endif /* ifdef platform for types */
 
 
 #ifdef _WIN32
+#ifndef FREE_WINDOWS
 #ifndef htonl
 #define htonl(x) correctByteOrder(x)
 #endif
 #ifndef ntohl
 #define ntohl(x) correctByteOrder(x)
 #endif
+#endif
 #elif defined (__FreeBSD__) || defined (__OpenBSD__) 
 #include <sys/param.h>
 #elif defined (__APPLE__)
 #include <sys/types.h>
-#else  /* irix sun linux */
+#else  /* sun linux */
 #include <netinet/in.h>
 #endif /* ifdef platform for htonl/ntohl */
 

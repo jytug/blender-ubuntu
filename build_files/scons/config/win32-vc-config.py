@@ -6,8 +6,8 @@ WITH_BF_FFMPEG = True  # -DWITH_FFMPEG
 BF_FFMPEG = LIBDIR +'/ffmpeg'
 BF_FFMPEG_INC = '${BF_FFMPEG}/include ${BF_FFMPEG}/include/msvc'
 BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
-BF_FFMPEG_LIB = 'avformat-52.lib avcodec-52.lib avdevice-52.lib avutil-50.lib swscale-0.lib'
-BF_FFMPEG_DLL = '${BF_FFMPEG_LIBPATH}/avformat-52.dll ${BF_FFMPEG_LIBPATH}/avcodec-52.dll ${BF_FFMPEG_LIBPATH}/avdevice-52.dll ${BF_FFMPEG_LIBPATH}/avutil-50.dll ${BF_FFMPEG_LIBPATH}/swscale-0.dll'
+BF_FFMPEG_LIB = 'avformat-53.lib avcodec-53.lib avdevice-53.lib avutil-51.lib swscale-2.lib'
+BF_FFMPEG_DLL = '${BF_FFMPEG_LIBPATH}/avformat-53.dll ${BF_FFMPEG_LIBPATH}/avcodec-53.dll ${BF_FFMPEG_LIBPATH}/avdevice-53.dll ${BF_FFMPEG_LIBPATH}/avutil-51.dll ${BF_FFMPEG_LIBPATH}/swscale-2.dll'
 
 BF_PYTHON = LIBDIR + '/python'
 BF_PYTHON_VERSION = '3.2'
@@ -29,18 +29,13 @@ BF_ICONV_INC = '${BF_ICONV}/include'
 BF_ICONV_LIB = 'iconv'
 BF_ICONV_LIBPATH = '${BF_ICONV}/lib'
 
-BF_LIBSAMPLERATE = LIBDIR + '/samplerate'
-BF_LIBSAMPLERATE_INC = '${BF_LIBSAMPLERATE}/include'
-BF_LIBSAMPLERATE_LIB = 'libsamplerate'
-BF_LIBSAMPLERATE_LIBPATH = '${BF_LIBSAMPLERATE}/lib'
-
 WITH_BF_JACK = False
 BF_JACK = LIBDIR + '/jack'
 BF_JACK_INC = '${BF_JACK}/include ${BF_FFMPEG}/include/msvc'
 BF_JACK_LIB = 'libjack'
 BF_JACK_LIBPATH = '${BF_JACK}/lib'
 
-WITH_BF_SNDFILE = False
+WITH_BF_SNDFILE = True
 BF_SNDFILE = LIBDIR + '/sndfile'
 BF_SNDFILE_INC = '${BF_SNDFILE}/include'
 BF_SNDFILE_LIB = 'libsndfile-1'
@@ -151,6 +146,8 @@ BF_OPENCOLLADA_LIB = 'OpenCOLLADAStreamWriter OpenCOLLADASaxFrameworkLoader Open
 BF_OPENCOLLADA_LIBPATH = '${BF_OPENCOLLADA}/lib'
 
 WITH_BF_3DMOUSE = True
+
+WITH_BF_OPENMP = True
 
 #Ray trace optimization
 WITH_BF_RAYOPTIMIZATION = True

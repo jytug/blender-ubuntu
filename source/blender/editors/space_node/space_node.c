@@ -1,5 +1,5 @@
 /*
- * $Id: space_node.c 38442 2011-07-17 08:38:04Z nazgul $
+ * $Id: space_node.c 41220 2011-10-23 12:33:11Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -178,6 +178,9 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 				case ND_FRAME:
 					ED_area_tag_refresh(sa);
 					break;
+				case ND_COMPO_RESULT:
+					ED_area_tag_redraw(sa);
+					break;
 				case ND_TRANSFORM_DONE:
 					if(type==NTREE_COMPOSIT) {
 						if(snode->flag & SNODE_AUTO_RENDER) {
@@ -208,6 +211,12 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 		case NC_TEXTURE:
 			if(type==NTREE_SHADER || type==NTREE_TEXTURE) {
 				if(wmn->data==ND_NODES)
+					ED_area_tag_refresh(sa);
+			}
+			break;
+		case NC_OBJECT:
+			if(type==NTREE_SHADER) {
+				if(wmn->data==ND_OB_SHADING)
 					ED_area_tag_refresh(sa);
 			}
 			break;
@@ -439,12 +448,28 @@ static int node_context(const bContext *C, const char *member, bContextDataResul
 	else if(CTX_data_equals(member, "selected_nodes")) {
 		bNode *node;
 		
-		for(next_node(snode->edittree); (node=next_node(NULL));) {
-			if(node->flag & NODE_SELECT) {
-				CTX_data_list_add(result, &snode->edittree->id, &RNA_Node, node);
+		if(snode->edittree) {
+			for(node=snode->edittree->nodes.last; node; node=node->prev) {
+				if(node->flag & NODE_SELECT) {
+					CTX_data_list_add(result, &snode->edittree->id, &RNA_Node, node);
+				}
 			}
 		}
 		CTX_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
+		return 1;
+	}
+	else if(CTX_data_equals(member, "active_node")) {
+		bNode *node;
+		
+		if(snode->edittree) {
+			for(node=snode->edittree->nodes.last; node; node=node->prev) {
+				if(node->flag & NODE_ACTIVE) {
+					CTX_data_pointer_set(result, &snode->edittree->id, &RNA_Node, node);
+					break;
+				}
+			}
+		}
+		CTX_data_type_set(result, CTX_DATA_TYPE_POINTER);
 		return 1;
 	}
 	

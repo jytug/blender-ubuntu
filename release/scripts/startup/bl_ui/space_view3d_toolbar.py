@@ -18,6 +18,7 @@
 
 # <pep8 compliant>
 import bpy
+from bpy.types import Menu, Panel
 
 
 class View3DPanel():
@@ -53,15 +54,18 @@ def draw_gpencil_tools(context, layout):
     row = col.row()
     row.operator("gpencil.draw", text="Draw").mode = 'DRAW'
     row.operator("gpencil.draw", text="Line").mode = 'DRAW_STRAIGHT'
+
+    row = col.row()
+    row.operator("gpencil.draw", text="Poly").mode = 'DRAW_POLY'
     row.operator("gpencil.draw", text="Erase").mode = 'ERASER'
 
     row = col.row()
     row.prop(context.tool_settings, "use_grease_pencil_sessions")
 
 
-# ********** default tools for objectmode ****************
+# ********** default tools for object-mode ****************
 
-class VIEW3D_PT_tools_objectmode(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_objectmode(View3DPanel, Panel):
     bl_context = "objectmode"
     bl_label = "Object Tools"
 
@@ -106,7 +110,7 @@ class VIEW3D_PT_tools_objectmode(View3DPanel, bpy.types.Panel):
 # ********** default tools for editmode_mesh ****************
 
 
-class VIEW3D_PT_tools_meshedit(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_meshedit(View3DPanel, Panel):
     bl_context = "mesh_edit"
     bl_label = "Mesh Tools"
 
@@ -165,7 +169,7 @@ class VIEW3D_PT_tools_meshedit(View3DPanel, bpy.types.Panel):
         draw_gpencil_tools(context, layout)
 
 
-class VIEW3D_PT_tools_meshedit_options(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_meshedit_options(View3DPanel, Panel):
     bl_context = "mesh_edit"
     bl_label = "Mesh Options"
 
@@ -191,7 +195,7 @@ class VIEW3D_PT_tools_meshedit_options(View3DPanel, bpy.types.Panel):
 # ********** default tools for editmode_curve ****************
 
 
-class VIEW3D_PT_tools_curveedit(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_curveedit(View3DPanel, Panel):
     bl_context = "curve_edit"
     bl_label = "Curve Tools"
 
@@ -237,7 +241,7 @@ class VIEW3D_PT_tools_curveedit(View3DPanel, bpy.types.Panel):
 # ********** default tools for editmode_surface ****************
 
 
-class VIEW3D_PT_tools_surfaceedit(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_surfaceedit(View3DPanel, Panel):
     bl_context = "surface_edit"
     bl_label = "Surface Tools"
 
@@ -269,7 +273,7 @@ class VIEW3D_PT_tools_surfaceedit(View3DPanel, bpy.types.Panel):
 # ********** default tools for editmode_text ****************
 
 
-class VIEW3D_PT_tools_textedit(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_textedit(View3DPanel, Panel):
     bl_context = "text_edit"
     bl_label = "Text Tools"
 
@@ -299,7 +303,7 @@ class VIEW3D_PT_tools_textedit(View3DPanel, bpy.types.Panel):
 # ********** default tools for editmode_armature ****************
 
 
-class VIEW3D_PT_tools_armatureedit(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_armatureedit(View3DPanel, Panel):
     bl_context = "armature_edit"
     bl_label = "Armature Tools"
 
@@ -328,7 +332,7 @@ class VIEW3D_PT_tools_armatureedit(View3DPanel, bpy.types.Panel):
         draw_gpencil_tools(context, layout)
 
 
-class VIEW3D_PT_tools_armatureedit_options(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_armatureedit_options(View3DPanel, Panel):
     bl_context = "armature_edit"
     bl_label = "Armature Options"
 
@@ -340,7 +344,7 @@ class VIEW3D_PT_tools_armatureedit_options(View3DPanel, bpy.types.Panel):
 # ********** default tools for editmode_mball ****************
 
 
-class VIEW3D_PT_tools_mballedit(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_mballedit(View3DPanel, Panel):
     bl_context = "mball_edit"
     bl_label = "Meta Tools"
 
@@ -360,7 +364,7 @@ class VIEW3D_PT_tools_mballedit(View3DPanel, bpy.types.Panel):
 # ********** default tools for editmode_lattice ****************
 
 
-class VIEW3D_PT_tools_latticeedit(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_latticeedit(View3DPanel, Panel):
     bl_context = "lattice_edit"
     bl_label = "Lattice Tools"
 
@@ -381,10 +385,10 @@ class VIEW3D_PT_tools_latticeedit(View3DPanel, bpy.types.Panel):
         draw_gpencil_tools(context, layout)
 
 
-# ********** default tools for posemode ****************
+# ********** default tools for pose-mode ****************
 
 
-class VIEW3D_PT_tools_posemode(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_posemode(View3DPanel, Panel):
     bl_context = "posemode"
     bl_label = "Pose Tools"
 
@@ -425,7 +429,7 @@ class VIEW3D_PT_tools_posemode(View3DPanel, bpy.types.Panel):
         draw_gpencil_tools(context, layout)
 
 
-class VIEW3D_PT_tools_posemode_options(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_posemode_options(View3DPanel, Panel):
     bl_context = "posemode"
     bl_label = "Pose Options"
 
@@ -459,7 +463,7 @@ class PaintPanel():
         return None
 
 
-class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_brush(PaintPanel, Panel):
     bl_label = "Brush"
 
     @classmethod
@@ -480,16 +484,18 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
 
         # XXX This needs a check if psys is editable.
         if context.particle_edit_object:
+            tool = settings.tool
+
             # XXX Select Particle System
             layout.column().prop(settings, "tool", expand=True)
 
-            if settings.tool != 'NONE':
+            if tool != 'NONE':
                 col = layout.column()
                 col.prop(brush, "size", slider=True)
-                if settings.tool != 'ADD':
+                if tool != 'ADD':
                     col.prop(brush, "strength", slider=True)
 
-            if settings.tool == 'ADD':
+            if tool == 'ADD':
                 col.prop(brush, "count")
                 col = layout.column()
                 col.prop(settings, "use_default_interpolate")
@@ -497,15 +503,16 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
                 sub.active = settings.use_default_interpolate
                 sub.prop(brush, "steps", slider=True)
                 sub.prop(settings, "default_key_count", slider=True)
-            elif settings.tool == 'LENGTH':
+            elif tool == 'LENGTH':
                 layout.prop(brush, "length_mode", expand=True)
-            elif settings.tool == 'PUFF':
+            elif tool == 'PUFF':
                 layout.prop(brush, "puff_mode", expand=True)
                 layout.prop(brush, "use_puff_volume")
 
         # Sculpt Mode #
 
         elif context.sculpt_object and brush:
+            tool = brush.sculpt_tool
 
             col = layout.column()
 
@@ -522,12 +529,12 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
 
             row.prop(brush, "use_pressure_size", toggle=True, text="")
 
-            if brush.sculpt_tool not in {'SNAKE_HOOK', 'GRAB', 'ROTATE'}:
+            if tool not in {'SNAKE_HOOK', 'GRAB', 'ROTATE'}:
                 col.separator()
 
                 row = col.row(align=True)
 
-                if brush.use_space and brush.sculpt_tool not in {'SMOOTH'}:
+                if brush.use_space and tool != 'SMOOTH':
                     if brush.use_space_atten:
                         row.prop(brush, "use_space_atten", toggle=True, text="", icon='LOCKED')
                     else:
@@ -536,26 +543,26 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
                 row.prop(brush, "strength", text="Strength", slider=True)
                 row.prop(brush, "use_pressure_strength", text="")
 
-            if brush.sculpt_tool not in {'SMOOTH'}:
+            if tool != 'SMOOTH':
                 col.separator()
 
                 row = col.row(align=True)
                 row.prop(brush, "auto_smooth_factor", slider=True)
                 row.prop(brush, "use_inverse_smooth_pressure", toggle=True, text="")
 
-            if brush.sculpt_tool in {'GRAB', 'SNAKE_HOOK'}:
+            if tool in {'GRAB', 'SNAKE_HOOK'}:
                 col.separator()
 
                 row = col.row(align=True)
                 row.prop(brush, "normal_weight", slider=True)
 
-            if brush.sculpt_tool in {'CREASE', 'BLOB'}:
+            if tool in {'CREASE', 'BLOB'}:
                 col.separator()
 
                 row = col.row(align=True)
                 row.prop(brush, "crease_pinch_factor", slider=True, text="Pinch")
 
-            if brush.sculpt_tool not in {'PINCH', 'INFLATE', 'SMOOTH'}:
+            if tool not in {'PINCH', 'INFLATE', 'SMOOTH'}:
                 row = col.row(align=True)
 
                 col.separator()
@@ -567,8 +574,8 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
 
                 row.prop(brush, "sculpt_plane", text="")
 
-            #if brush.sculpt_tool in {'CLAY', 'CLAY_TUBES', 'FLATTEN', 'FILL', 'SCRAPE'}:
-            if brush.sculpt_tool in {'CLAY', 'FLATTEN', 'FILL', 'SCRAPE'}:
+            #if tool in {'CLAY', 'CLAY_TUBES', 'FLATTEN', 'FILL', 'SCRAPE'}:
+            if tool in {'CLAY', 'FLATTEN', 'FILL', 'SCRAPE'}:
                 row = col.row(align=True)
                 row.prop(brush, "plane_offset", slider=True)
                 row.prop(brush, "use_offset_pressure", text="")
@@ -581,7 +588,7 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
                 row.active = brush.use_plane_trim
                 row.prop(brush, "plane_trim", slider=True, text="Distance")
 
-            if brush.sculpt_tool == 'LAYER':
+            if tool == 'LAYER':
                 row = col.row()
                 row.prop(brush, "height", slider=True, text="Height")
 
@@ -593,12 +600,12 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
             col.separator()
             col.row().prop(brush, "direction", expand=True)
 
-            if brush.sculpt_tool in {'DRAW', 'CREASE', 'BLOB', 'INFLATE', 'LAYER', 'CLAY'}:
+            if tool in {'DRAW', 'CREASE', 'BLOB', 'INFLATE', 'LAYER', 'CLAY'}:
                 col.separator()
 
                 col.prop(brush, "use_accumulate")
 
-            if brush.sculpt_tool == 'LAYER':
+            if tool == 'LAYER':
                 col.separator()
 
                 ob = context.sculpt_object
@@ -642,6 +649,7 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
         elif context.weight_paint_object and brush:
             layout.prop(context.tool_settings, "vertex_group_weight", text="Weight", slider=True)
             layout.prop(context.tool_settings, "use_auto_normalize", text="Auto Normalize")
+            layout.prop(context.tool_settings, "use_multipaint", text="Multi-Paint")
 
             col = layout.column()
 
@@ -677,7 +685,7 @@ class VIEW3D_PT_tools_brush(PaintPanel, bpy.types.Panel):
             #row.prop(brush, "use_pressure_jitter", toggle=True, text="")
 
 
-class VIEW3D_PT_tools_brush_texture(PaintPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_brush_texture(PaintPanel, Panel):
     bl_label = "Texture"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -764,9 +772,9 @@ class VIEW3D_PT_tools_brush_texture(PaintPanel, bpy.types.Panel):
             col = row.column()
 
             if brush.use_texture_overlay:
-                col.prop(brush, "use_texture_overlay", toggle=True, text="", icon='MUTE_IPO_OFF')
+                col.prop(brush, "use_texture_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
             else:
-                col.prop(brush, "use_texture_overlay", toggle=True, text="", icon='MUTE_IPO_ON')
+                col.prop(brush, "use_texture_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
 
             col.active = tex_slot.map_mode in {'FIXED', 'TILED'}
 
@@ -775,7 +783,7 @@ class VIEW3D_PT_tools_brush_texture(PaintPanel, bpy.types.Panel):
             col.active = tex_slot.map_mode in {'FIXED', 'TILED'} and brush.use_texture_overlay
 
 
-class VIEW3D_PT_tools_brush_tool(PaintPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_brush_tool(PaintPanel, Panel):
     bl_label = "Tool"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -809,7 +817,7 @@ class VIEW3D_PT_tools_brush_tool(PaintPanel, bpy.types.Panel):
         row.prop(brush, "use_paint_image", text="", icon='TPAINT_HLT')
 
 
-class VIEW3D_PT_tools_brush_stroke(PaintPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_brush_stroke(PaintPanel, Panel):
     bl_label = "Stroke"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -907,7 +915,7 @@ class VIEW3D_PT_tools_brush_stroke(PaintPanel, bpy.types.Panel):
             #    row.prop(brush, "use_pressure_spacing", toggle=True, text="")
 
 
-class VIEW3D_PT_tools_brush_curve(PaintPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_brush_curve(PaintPanel, Panel):
     bl_label = "Curve"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -934,7 +942,7 @@ class VIEW3D_PT_tools_brush_curve(PaintPanel, bpy.types.Panel):
         row.operator("brush.curve_preset", icon="NOCURVE", text="").shape = 'MAX'
 
 
-class VIEW3D_PT_sculpt_options(PaintPanel, bpy.types.Panel):
+class VIEW3D_PT_sculpt_options(PaintPanel, Panel):
     bl_label = "Options"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -964,7 +972,7 @@ class VIEW3D_PT_sculpt_options(PaintPanel, bpy.types.Panel):
         layout.prop(tool_settings, "sculpt_paint_use_unified_strength", text="Strength")
 
 
-class VIEW3D_PT_sculpt_symmetry(PaintPanel, bpy.types.Panel):
+class VIEW3D_PT_sculpt_symmetry(PaintPanel, Panel):
     bl_label = "Symmetry"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -992,7 +1000,7 @@ class VIEW3D_PT_sculpt_symmetry(PaintPanel, bpy.types.Panel):
         layout.prop(sculpt, "use_symmetry_feather", text="Feather")
 
 
-class VIEW3D_PT_tools_brush_appearance(PaintPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_brush_appearance(PaintPanel, Panel):
     bl_label = "Appearance"
     bl_options = {'DEFAULT_CLOSED'}
 
@@ -1035,10 +1043,10 @@ class VIEW3D_PT_tools_brush_appearance(PaintPanel, bpy.types.Panel):
             row = col.row(align=True)
             row.prop(brush, "icon_filepath", text="")
 
-# ********** default tools for weightpaint ****************
+# ********** default tools for weight-paint ****************
 
 
-class VIEW3D_PT_tools_weightpaint(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_weightpaint(View3DPanel, Panel):
     bl_context = "weightpaint"
     bl_label = "Weight Tools"
 
@@ -1048,15 +1056,16 @@ class VIEW3D_PT_tools_weightpaint(View3DPanel, bpy.types.Panel):
         ob = context.active_object
 
         col = layout.column()
-        col.active = ob.vertex_groups.active != None
+        col.active = ob.vertex_groups.active is not None
         col.operator("object.vertex_group_normalize_all", text="Normalize All")
         col.operator("object.vertex_group_normalize", text="Normalize")
         col.operator("object.vertex_group_invert", text="Invert")
         col.operator("object.vertex_group_clean", text="Clean")
         col.operator("object.vertex_group_levels", text="Levels")
+        col.operator("object.vertex_group_fix", text="Fix Deforms")
 
 
-class VIEW3D_PT_tools_weightpaint_options(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_weightpaint_options(View3DPanel, Panel):
     bl_context = "weightpaint"
     bl_label = "Options"
 
@@ -1088,12 +1097,12 @@ class VIEW3D_PT_tools_weightpaint_options(View3DPanel, bpy.types.Panel):
 #		col.prop(wpaint, "mul", text="")
 
 # Also missing now:
-# Soft, Vgroup, X-Mirror and "Clear" Operator.
+# Soft, Vertex-Group, X-Mirror and "Clear" Operator.
 
-# ********** default tools for vertexpaint ****************
+# ********** default tools for vertex-paint ****************
 
 
-class VIEW3D_PT_tools_vertexpaint(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_vertexpaint(View3DPanel, Panel):
     bl_context = "vertexpaint"
     bl_label = "Options"
 
@@ -1119,10 +1128,10 @@ class VIEW3D_PT_tools_vertexpaint(View3DPanel, bpy.types.Panel):
 #		col.label(text="Multiply:")
 #		col.prop(vpaint, "mul", text="")
 
-# ********** default tools for texturepaint ****************
+# ********** default tools for texture-paint ****************
 
 
-class VIEW3D_PT_tools_projectpaint(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_projectpaint(View3DPanel, Panel):
     bl_context = "imagepaint"
     bl_label = "Project Paint"
 
@@ -1214,7 +1223,7 @@ class VIEW3D_PT_imagepaint_options(PaintPanel):
         col.prop(tool_settings, "sculpt_paint_use_unified_strength", text="Strength")
 
 
-class VIEW3D_MT_tools_projectpaint_clone(bpy.types.Menu):
+class VIEW3D_MT_tools_projectpaint_clone(Menu):
     bl_label = "Clone Layer"
 
     def draw(self, context):
@@ -1225,7 +1234,7 @@ class VIEW3D_MT_tools_projectpaint_clone(bpy.types.Menu):
             prop.value = i
 
 
-class VIEW3D_MT_tools_projectpaint_stencil(bpy.types.Menu):
+class VIEW3D_MT_tools_projectpaint_stencil(Menu):
     bl_label = "Mask Layer"
 
     def draw(self, context):
@@ -1236,7 +1245,7 @@ class VIEW3D_MT_tools_projectpaint_stencil(bpy.types.Menu):
             prop.value = i
 
 
-class VIEW3D_PT_tools_particlemode(View3DPanel, bpy.types.Panel):
+class VIEW3D_PT_tools_particlemode(View3DPanel, Panel):
     '''default tools for particle mode'''
     bl_context = "particlemode"
     bl_label = "Options"

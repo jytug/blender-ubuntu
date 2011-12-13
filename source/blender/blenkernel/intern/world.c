@@ -1,8 +1,5 @@
-
-/*  world.c
- * 
- * 
- * $Id: world.c 36777 2011-05-19 11:54:03Z blendix $
+/*
+ * $Id: world.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

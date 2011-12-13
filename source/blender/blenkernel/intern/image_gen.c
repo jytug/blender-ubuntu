@@ -1,6 +1,5 @@
-/*  image_gen.c	
- * 
- * $Id: image_gen.c 36271 2011-04-21 13:11:51Z campbellbarton $
+/*
+ * $Id: image_gen.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

@@ -1,5 +1,5 @@
 /*
- * $Id: space_logic.c 36788 2011-05-20 05:27:31Z campbellbarton $
+ * $Id: space_logic.c 40906 2011-10-10 10:35:18Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

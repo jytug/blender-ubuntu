@@ -1,5 +1,5 @@
 /*
- * $Id: BL_ArmatureObject.cpp 36523 2011-05-06 20:18:42Z blendix $
+ * $Id: BL_ArmatureObject.cpp 41078 2011-10-17 06:39:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -110,7 +110,6 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 	for (pchan=(bPoseChannel*)out->chanbase.first; pchan; pchan=(bPoseChannel*)pchan->next) {
 		pchan->parent= (bPoseChannel*)BLI_ghash_lookup(ghash, pchan->parent);
 		pchan->child= (bPoseChannel*)BLI_ghash_lookup(ghash, pchan->child);
-		pchan->path= NULL;
 
 		if (copy_constraint) {
 			ListBase listb;
@@ -218,7 +217,8 @@ BL_ArmatureObject::BL_ArmatureObject(
 				void* sgReplicationInfo, 
 				SG_Callbacks callbacks, 
 				Object *armature,
-				Scene *scene)
+				Scene *scene,
+				int vert_deform_type)
 
 :	KX_GameObject(sgReplicationInfo,callbacks),
 	m_controlledConstraints(),
@@ -230,6 +230,7 @@ BL_ArmatureObject::BL_ArmatureObject(
 	m_timestep(0.040),
 	m_activeAct(NULL),
 	m_activePriority(999),
+	m_vert_deform_type(vert_deform_type),
 	m_constraintNumber(0),
 	m_channelNumber(0),
 	m_lastapplyframe(0.0)
@@ -298,6 +299,7 @@ void BL_ArmatureObject::LoadConstraints(KX_BlenderSceneConverter* converter)
 			case CONSTRAINT_TYPE_CLAMPTO:
 			case CONSTRAINT_TYPE_TRANSFORM:
 			case CONSTRAINT_TYPE_DISTLIMIT:
+			case CONSTRAINT_TYPE_TRANSLIKE:
 				cti = constraint_get_typeinfo(pcon);
 				gametarget = gamesubtarget = NULL;
 				if (cti && cti->get_constraint_targets) {
@@ -661,7 +663,7 @@ KX_PYMETHODDEF_DOC_NOARGS(BL_ArmatureObject, update,
 						  "update()\n"
 						  "Make sure that the armature will be updated on next graphic frame.\n"
 						  "This is automatically done if a KX_ArmatureActuator with mode run is active\n"
-						  "or if an action is playing. This function is usefull in other cases.\n")
+						  "or if an action is playing. This function is useful in other cases.\n")
 {
 	SetActiveAction(NULL, 0, KX_GetActiveEngine()->GetFrameTime());
 	Py_RETURN_NONE;

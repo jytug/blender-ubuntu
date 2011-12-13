@@ -21,10 +21,10 @@ bl_info = {
     "name": "Regular Solids",
     "author": "DreamPainter",
     "version": (2, 0),
-    "blender": (2, 5, 7),
-    "api": 36336,
+    "blender": (2, 5, 9),
+    "api": 39685,
     "location": "View3D > Add > Mesh > Solids",
-    "description": "Add a Regular Solid mesh.",
+    "description": "Add a regular solid",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Add_Mesh/Add_Solid",

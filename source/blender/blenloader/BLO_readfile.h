@@ -1,5 +1,5 @@
 /*
- * $Id: BLO_readfile.h 39044 2011-08-05 05:26:19Z campbellbarton $
+ * $Id: BLO_readfile.h 41022 2011-10-15 05:01:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -204,7 +204,7 @@ BLO_blendhandle_close(
 
 #define GROUP_MAX 32
 
-int BLO_has_bfile_extension(char *str);
+int BLO_has_bfile_extension(const char *str);
 
 /* return ok when a blenderfile, in dir is the filename,
  * in group the type of libdata

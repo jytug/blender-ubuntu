@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_NDOFManagerCocoa.h 39153 2011-08-07 16:44:10Z merwin $
+ * $Id: GHOST_NDOFManagerCocoa.h 39495 2011-08-17 15:01:26Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,6 +43,7 @@ public:
 	// whether multi-axis functionality is available (via the OS or driver)
 	// does not imply that a device is plugged in or being used
 	bool available();
+	bool oldDRV();
 
 private:
 	unsigned short m_clientID;

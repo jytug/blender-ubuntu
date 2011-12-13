@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_space_types.h 39016 2011-08-04 11:27:13Z campbellbarton $ 
+ * $Id: DNA_space_types.h 40066 2011-09-09 12:46:07Z aligorith $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -267,7 +267,7 @@ typedef struct SpaceImage {
 	float centx, centy;				/* storage for offset while render drawing */
 
 	short curtile; /* the currently active tile of the image when tile is enabled, is kept in sync with the active faces tile */
-	short imtypenr;
+	short pad;
 	short lock;
 	short pin;
 	char dt_uv; /* UV draw type */
@@ -861,6 +861,7 @@ enum {
 /* outliner search flags (SpaceOops->search_flags) */
 #define SO_FIND_CASE_SENSITIVE		(1<<0)
 #define SO_FIND_COMPLETE			(1<<1)
+#define SO_SEARCH_RECURSIVE		(1<<2)
 
 /* headerbuttons: 450-499 */
 
@@ -930,6 +931,7 @@ enum {
 #define SEQ_PROXY_RENDER_SIZE_25        25
 #define SEQ_PROXY_RENDER_SIZE_50        50
 #define SEQ_PROXY_RENDER_SIZE_75        75
+#define SEQ_PROXY_RENDER_SIZE_100       99
 #define SEQ_PROXY_RENDER_SIZE_FULL      100
 
 

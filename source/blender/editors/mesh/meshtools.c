@@ -1,5 +1,5 @@
 /*
- * $Id: meshtools.c 36332 2011-04-26 07:17:21Z campbellbarton $
+ * $Id: meshtools.c 41078 2011-10-17 06:39:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -217,7 +217,7 @@ int join_mesh_exec(bContext *C, wmOperator *op)
 			
 			if(me->totvert) {
 				/* Add this object's materials to the base one's if they don't exist already (but only if limits not exceeded yet) */
-				if(totcol < MAXMAT-1) {
+				if(totcol < MAXMAT) {
 					for(a=1; a<=base->object->totcol; a++) {
 						ma= give_current_material(base->object, a);
 
@@ -231,7 +231,7 @@ int join_mesh_exec(bContext *C, wmOperator *op)
 							}
 							totcol++;
 						}
-						if(totcol>=MAXMAT-1) 
+						if(totcol >= MAXMAT)
 							break;
 					}
 				}
@@ -574,9 +574,9 @@ int join_mesh_shapes_exec(bContext *C, wmOperator *op)
 	
 	if (!ok) {
 		if (nonequal_verts)
-			BKE_report(op->reports, RPT_WARNING, "Selected meshes must have equal numbers of vertices.");
+			BKE_report(op->reports, RPT_WARNING, "Selected meshes must have equal numbers of vertices");
 		else
-			BKE_report(op->reports, RPT_WARNING, "No additional selected meshes with equal vertex count to join.");
+			BKE_report(op->reports, RPT_WARNING, "No additional selected meshes with equal vertex count to join");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -957,7 +957,7 @@ long mesh_mirrtopo_table(Object *ob, char mode)
 				}
 			} else {
 				for(a=0, medge=me->medge; a<me->totedge; a++, medge++) {
-					/* This can make realy big numbers, wrapping around here is fine */
+					/* This can make really big numbers, wrapping around here is fine */
 					MirrTopoHash[medge->v1] += MirrTopoHash_Prev[medge->v2];
 					MirrTopoHash[medge->v2] += MirrTopoHash_Prev[medge->v1];
 				}

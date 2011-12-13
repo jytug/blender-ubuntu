@@ -1,8 +1,5 @@
-
-/*  key.c      
- *  
- * 
- * $Id: key.c 38887 2011-08-01 02:58:44Z campbellbarton $
+/*
+ * $Id: key.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -807,7 +804,7 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 	int a, ofs[32], *ofsp;
 	int flagdo= 15, flagflo=0, elemsize, poinsize=0;
 	char *k1, *k2, *k3, *k4, *freek1, *freek2, *freek3, *freek4;
-	char *cp, elemstr[8];;
+	char *cp, elemstr[8];
 
 	/* currently always 0, in future key_pointer_size may assign */
 	ofs[1]= 0;
@@ -1400,7 +1397,7 @@ float *do_ob_key(Scene *scene, Object *ob)
 		/* do shapekey local drivers */
 		float ctime= (float)scene->r.cfra; // XXX this needs to be checked
 		
-		BKE_animsys_evaluate_animdata(&key->id, key->adt, ctime, ADT_RECALC_DRIVERS);
+		BKE_animsys_evaluate_animdata(scene, &key->id, key->adt, ctime, ADT_RECALC_DRIVERS);
 		
 		if(ob->type==OB_MESH) do_mesh_key(scene, ob, key, out, tot);
 		else if(ob->type==OB_LATTICE) do_latt_key(scene, ob, key, out, tot);
@@ -1445,10 +1442,10 @@ KeyBlock *add_keyblock(Key *key, const char *name)
 	
 	tot= BLI_countlist(&key->block);
 	if(name) {
-		strncpy(kb->name, name, sizeof(kb->name));
+		BLI_strncpy(kb->name, name, sizeof(kb->name));
 	} else {
-		if(tot==1) strcpy(kb->name, "Basis");
-		else sprintf(kb->name, "Key %d", tot-1);
+		if(tot==1) BLI_strncpy(kb->name, "Basis", sizeof(kb->name));
+		else BLI_snprintf(kb->name, sizeof(kb->name), "Key %d", tot-1);
 	}
 
 	BLI_uniquename(&key->block, kb, "Key", '.', offsetof(KeyBlock, name), sizeof(kb->name));

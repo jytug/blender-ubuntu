@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_uvproject.c 38888 2011-08-01 05:25:30Z campbellbarton $
+* $Id: MOD_uvproject.c 40372 2011-09-19 19:55:59Z dfelinto $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -369,7 +369,6 @@ static DerivedMesh *uvprojectModifier_do(UVProjectModifierData *umd,
 		}
 
 		if(override_image) {
-			tface->mode = TF_TEX;
 			tface->tpage = image;
 		}
 	}
@@ -434,4 +433,5 @@ ModifierTypeInfo modifierType_UVProject = {
 	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     foreachIDLink,
+	/* foreachTexLink */    NULL,
 };

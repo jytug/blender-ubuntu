@@ -1,7 +1,5 @@
 /*
- * smoke.c
- *
- * $Id: smoke.c 38372 2011-07-13 18:40:21Z campbellbarton $
+ * $Id: smoke.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

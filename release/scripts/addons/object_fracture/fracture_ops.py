@@ -224,7 +224,7 @@ def boolop(ob, cutter, op):
 
          # This checks whether returned shards are non-manifold.
          # Problem is, if org mesh is non-manifold, it will always fail (e.g. with Suzanne).
-         # And disabling it does not seem to cause any problem…
+         # And disabling it does not seem to cause any problem...
 #        elif min(mesh_utils.edge_face_count(nmesh)) < 2:    # Manifold check
 #            fault = 1
 
@@ -359,12 +359,12 @@ class FractureSimple(bpy.types.Operator):
         default=False)
 
     hierarchy = BoolProperty(name="Generate hierarchy",
-        description="Hierarchy is usefull for simulation of objects" \
-            " breaking in motion.",
+        description="Hierarchy is useful for simulation of objects" \
+                    " breaking in motion",
         default=False)
 
     nshards = IntProperty(name="Number of shards",
-        description="Number of shards the object should be split into.",
+        description="Number of shards the object should be split into",
         min=2,
         default=5)
 

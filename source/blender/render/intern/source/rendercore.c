@@ -1,5 +1,5 @@
 /*
- * $Id: rendercore.c 38964 2011-08-03 05:32:07Z campbellbarton $
+ * $Id: rendercore.c 40519 2011-09-24 14:34:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -128,7 +128,7 @@ void calc_view_vector(float *view, float x, float y)
 	}
 }
 
-void calc_renderco_ortho(float *co, float x, float y, int z)
+void calc_renderco_ortho(float co[3], float x, float y, int z)
 {
 	/* x and y 3d coordinate can be derived from pixel coord and winmat */
 	float fx= 2.0f/(R.winx*R.winmat[0][0]);
@@ -142,7 +142,7 @@ void calc_renderco_ortho(float *co, float x, float y, int z)
 	co[2]= R.winmat[3][2]/( R.winmat[2][3]*zco - R.winmat[2][2] );
 }
 
-void calc_renderco_zbuf(float *co, float *view, int z)
+void calc_renderco_zbuf(float co[3], const float view[3], int z)
 {
 	float fac, zco;
 	
@@ -758,7 +758,7 @@ static void atm_tile(RenderPart *pa, RenderLayer *rl)
 					if(lar->type==LA_SUN &&	lar->sunsky) {
 						
 						/* if it's sky continue and don't apply atmosphere effect on it */
-						if(*zrect >= 9.9e10 || rgbrect[3]==0.0f) {
+						if(*zrect >= 9.9e10f || rgbrect[3]==0.0f) {
 							continue;
 						}
 												
@@ -992,7 +992,7 @@ static void convert_to_key_alpha(RenderPart *pa, RenderLayer *rl)
 }
 
 /* adds only alpha values */
-void edge_enhance_tile(RenderPart *pa, float *rectf, int *rectz)
+static void edge_enhance_tile(RenderPart *pa, float *rectf, int *rectz)
 {
 	/* use zbuffer to define edges, add it to the image */
 	int y, x, col, *rz, *rz1, *rz2, *rz3;
@@ -1098,7 +1098,7 @@ static unsigned short *make_solid_mask(RenderPart *pa)
 static void addAlphaOverFloatMask(float *dest, float *source, unsigned short dmask, unsigned short smask)
 {
 	unsigned short shared= dmask & smask;
-	float mul= 1.0 - source[3];
+	float mul= 1.0f - source[3];
 	
 	if(shared) {	/* overlapping masks */
 		
@@ -1133,7 +1133,7 @@ typedef struct ZbufSolidData {
 	float *edgerect;
 } ZbufSolidData;
 
-void make_pixelstructs(RenderPart *pa, ZSpan *zspan, int sample, void *data)
+static void make_pixelstructs(RenderPart *pa, ZSpan *zspan, int sample, void *data)
 {
 	ZbufSolidData *sdata= (ZbufSolidData*)data;
 	ListBase *lb= sdata->psmlist;
@@ -1515,7 +1515,7 @@ static void shade_sample_sss(ShadeSample *ssamp, Material *mat, ObjectInstanceRe
 {
 	ShadeInput *shi= ssamp->shi;
 	ShadeResult shr;
-	float texfac, orthoarea, nor[3], alpha, sx, sy;
+	float /* texfac,*/ /* UNUSED */ orthoarea, nor[3], alpha, sx, sy;
 
 	/* cache for shadow */
 	shi->samplenr= R.shadowsamplenr[shi->thread]++;
@@ -1578,7 +1578,7 @@ static void shade_sample_sss(ShadeSample *ssamp, Material *mat, ObjectInstanceRe
 	VECCOPY(color, shr.combined);
 
 	/* texture blending */
-	texfac= shi->mat->sss_texfac;
+	/* texfac= shi->mat->sss_texfac; */ /* UNUSED */
 
 	alpha= shr.combined[3];
 	*area *= alpha;
@@ -1892,13 +1892,13 @@ static void renderflare(RenderResult *rr, float *rectf, HaloRen *har)
 		fla.r= fabs(rc[0]);
 		fla.g= fabs(rc[1]);
 		fla.b= fabs(rc[2]);
-		fla.alfa= ma->flareboost*fabs(alfa*visifac*rc[3]);
-		fla.hard= 20.0f + fabs(70*rc[7]);
+		fla.alfa= ma->flareboost*fabsf(alfa*visifac*rc[3]);
+		fla.hard= 20.0f + fabsf(70.0f*rc[7]);
 		fla.tex= 0;
 		
-		type= (int)(fabs(3.9*rc[6]));
+		type= (int)(fabs(3.9f*rc[6]));
 
-		fla.rad= ma->subsize*sqrt(fabs(2.0f*har->rad*rc[4]));
+		fla.rad= ma->subsize*sqrtf(fabs(2.0f*har->rad*rc[4]));
 		
 		if(type==3) {
 			fla.rad*= 3.0f;
@@ -1907,22 +1907,22 @@ static void renderflare(RenderResult *rr, float *rectf, HaloRen *har)
 		
 		fla.radsq= fla.rad*fla.rad;
 		
-		vec[0]= 1.4*rc[5]*(har->xs-R.winx/2);
-		vec[1]= 1.4*rc[5]*(har->ys-R.winy/2);
-		vec[2]= 32.0f*sqrt(vec[0]*vec[0] + vec[1]*vec[1] + 1.0f);
+		vec[0]= 1.4f*rc[5]*(har->xs-R.winx/2);
+		vec[1]= 1.4f*rc[5]*(har->ys-R.winy/2);
+		vec[2]= 32.0f*sqrtf(vec[0]*vec[0] + vec[1]*vec[1] + 1.0f);
 		
-		fla.xs= R.winx/2 + vec[0] + (1.2+rc[8])*R.rectx*vec[0]/vec[2];
-		fla.ys= R.winy/2 + vec[1] + (1.2+rc[8])*R.rectx*vec[1]/vec[2];
+		fla.xs= R.winx/2 + vec[0] + (1.2f+rc[8])*R.rectx*vec[0]/vec[2];
+		fla.ys= R.winy/2 + vec[1] + (1.2f+rc[8])*R.rectx*vec[1]/vec[2];
 
 		if(R.flag & R_SEC_FIELD) {
-			if(R.r.mode & R_ODDFIELD) fla.ys += 0.5;
-			else fla.ys -= 0.5;
+			if(R.r.mode & R_ODDFIELD) fla.ys += 0.5f;
+			else fla.ys -= 0.5f;
 		}
 		if(type & 1) fla.type= HA_FLARECIRC;
 		else fla.type= 0;
 		renderhalo_post(rr, rectf, &fla);
 
-		fla.alfa*= 0.5;
+		fla.alfa*= 0.5f;
 		if(type & 2) fla.type= HA_FLARECIRC;
 		else fla.type= 0;
 		renderhalo_post(rr, rectf, &fla);
@@ -2205,7 +2205,7 @@ static void bake_displacement(void *handle, ShadeInput *UNUSED(shi), float dist,
 	if(R.r.bake_flag & R_BAKE_NORMALIZE && R.r.bake_maxdist) {
 		disp = (dist+R.r.bake_maxdist) / (R.r.bake_maxdist*2); /* alter the range from [-bake_maxdist, bake_maxdist] to [0, 1]*/
 	} else {
-		disp = 0.5 + dist; /* alter the range from [-0.5,0.5] to [0,1]*/
+		disp = 0.5f + dist; /* alter the range from [-0.5,0.5] to [0,1]*/
 	}
 	
 	if(bs->rect_float) {
@@ -2234,21 +2234,17 @@ static int bake_intersect_tree(RayObject* raytree, Isect* isect, float *start, f
 		maxdist= R.r.bake_maxdist;
 	else
 		maxdist= RE_RAYTRACE_MAXDIST + R.r.bake_biasdist;
-	
-	/* 'dir' is always normalized */
-	VECADDFAC(isect->start, start, dir, -R.r.bake_biasdist);					
 
-	isect->dir[0] = dir[0]*sign;
-	isect->dir[1] = dir[1]*sign;
-	isect->dir[2] = dir[2]*sign;
+	/* 'dir' is always normalized */
+	madd_v3_v3v3fl(isect->start, start, dir, -R.r.bake_biasdist);
+
+	mul_v3_v3fl(isect->dir, dir, sign);
 
 	isect->dist = maxdist;
 
 	hit = RE_rayobject_raycast(raytree, isect);
 	if(hit) {
-		hitco[0] = isect->start[0] + isect->dist*isect->dir[0];
-		hitco[1] = isect->start[1] + isect->dist*isect->dir[1];
-		hitco[2] = isect->start[2] + isect->dist*isect->dir[2];
+		madd_v3_v3v3fl(hitco, isect->start, isect->dir, isect->dist);
 
 		*dist= isect->dist;
 	}
@@ -2277,7 +2273,7 @@ static void bake_set_vlr_dxyco(BakeShade *bs, float *uv1, float *uv2, float *uv3
 	 * then taking u and v partial derivatives to get dxco and dyco */
 	A= (uv2[0] - uv1[0])*(uv3[1] - uv1[1]) - (uv3[0] - uv1[0])*(uv2[1] - uv1[1]);
 
-	if(fabs(A) > FLT_EPSILON) {
+	if(fabsf(A) > FLT_EPSILON) {
 		A= 0.5f/A;
 
 		d1= uv2[1] - uv3[1];
@@ -2532,8 +2528,8 @@ static void shade_tface(BakeShade *bs)
 		 * where a pixel gets in between 2 faces or the middle of a quad,
 		 * camera aligned quads also have this problem but they are less common.
 		 * Add a small offset to the UVs, fixes bug #18685 - Campbell */
-		vec[a][0]= tface->uv[a][0]*(float)bs->rectx - (0.5f + 0.001);
-		vec[a][1]= tface->uv[a][1]*(float)bs->recty - (0.5f + 0.002);
+		vec[a][0]= tface->uv[a][0]*(float)bs->rectx - (0.5f + 0.001f);
+		vec[a][1]= tface->uv[a][1]*(float)bs->recty - (0.5f + 0.002f);
 	}
 	
 	/* UV indices have to be corrected for possible quad->tria splits */

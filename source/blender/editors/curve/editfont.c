@@ -1,5 +1,5 @@
 /*
- * $Id: editfont.c 39062 2011-08-05 09:04:11Z campbellbarton $
+ * $Id: editfont.c 40944 2011-10-12 00:15:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -259,17 +259,25 @@ static int insert_into_textbuf(Object *obedit, uintptr_t c)
 
 static void text_update_edited(bContext *C, Scene *scene, Object *obedit, int recalc, int mode)
 {
+	struct Main *bmain= CTX_data_main(C);
 	Curve *cu= obedit->data;
 	EditFont *ef= cu->editfont;
 	cu->curinfo = ef->textbufinfo[cu->pos?cu->pos-1:0];
 	
-	if(obedit->totcol>0)
+	if(obedit->totcol > 0) {
 		obedit->actcol= ef->textbufinfo[cu->pos?cu->pos-1:0].mat_nr;
+
+		/* since this array is calloc'd, it can be 0 even though we try ensure
+		 * (mat_nr > 0) almost everywhere */
+		if (obedit->actcol < 1) {
+			obedit->actcol= 1;
+		}
+	}
 
 	if(mode == FO_EDIT)
 		update_string(cu);
 
-	BKE_text_to_curve(scene, obedit, mode);
+	BKE_text_to_curve(bmain, scene, obedit, mode);
 
 	if(recalc)
 		DAG_id_tag_update(obedit->data, 0);
@@ -346,7 +354,7 @@ static int paste_file(bContext *C, ReportList *reports, const char *filename)
 
 	if(!fp) {
 		if(reports)
-			BKE_reportf(reports, RPT_ERROR, "Failed to open file %s.", filename);
+			BKE_reportf(reports, RPT_ERROR, "Failed to open file %s", filename);
 		return OPERATOR_CANCELLED;
 	}
 
@@ -662,8 +670,8 @@ void FONT_OT_style_set(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "style", style_items, CU_CHINFO_BOLD, "Style", "Style to set selection to.");
-	RNA_def_boolean(ot->srna, "clear", 0, "Clear", "Clear style rather than setting it.");
+	RNA_def_enum(ot->srna, "style", style_items, CU_CHINFO_BOLD, "Style", "Style to set selection to");
+	RNA_def_boolean(ot->srna, "clear", 0, "Clear", "Clear style rather than setting it");
 }
 
 /******************* toggle style operator ********************/
@@ -700,7 +708,7 @@ void FONT_OT_style_toggle(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "style", style_items, CU_CHINFO_BOLD, "Style", "Style to set selection to.");
+	RNA_def_enum(ot->srna, "style", style_items, CU_CHINFO_BOLD, "Style", "Style to set selection to");
 }
 
 /******************* copy text operator ********************/
@@ -799,7 +807,7 @@ static int paste_selection(Object *obedit, ReportList *reports)
 		}
 	}
 	else
-		BKE_report(reports, RPT_WARNING, "Text too long.");
+		BKE_report(reports, RPT_WARNING, "Text too long");
 	
 	return 0;
 }
@@ -928,9 +936,10 @@ static int move_cursor(bContext *C, int type, int select)
 
 	if(select == 0) {
 		if(cu->selstart) {
+			struct Main *bmain= CTX_data_main(C);
 			cu->selstart = cu->selend = 0;
 			update_string(cu);
-			BKE_text_to_curve(scene, obedit, FO_SELCHANGE);
+			BKE_text_to_curve(bmain, scene, obedit, FO_SELCHANGE);
 		}
 	}
 
@@ -968,7 +977,7 @@ void FONT_OT_move(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "type", move_type_items, LINE_BEGIN, "Type", "Where to move cursor to.");
+	RNA_def_enum(ot->srna, "type", move_type_items, LINE_BEGIN, "Type", "Where to move cursor to");
 }
 
 /******************* move select operator ********************/
@@ -995,7 +1004,7 @@ void FONT_OT_move_select(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "type", move_type_items, LINE_BEGIN, "Type", "Where to move cursor to, to make a selection.");
+	RNA_def_enum(ot->srna, "type", move_type_items, LINE_BEGIN, "Type", "Where to move cursor to, to make a selection");
 }
 
 /************************* change spacing **********************/
@@ -1037,7 +1046,7 @@ void FONT_OT_change_spacing(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_int(ot->srna, "delta", 1, -20, 20, "Delta", "Amount to decrease or increasing character spacing with.", -20, 20);
+	RNA_def_int(ot->srna, "delta", 1, -20, 20, "Delta", "Amount to decrease or increasing character spacing with", -20, 20);
 }
 
 /************************* change character **********************/
@@ -1082,7 +1091,7 @@ void FONT_OT_change_character(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_int(ot->srna, "delta", 1, -255, 255, "Delta", "Number to increase or decrease character code with.", -255, 255);
+	RNA_def_int(ot->srna, "delta", 1, -255, 255, "Delta", "Number to increase or decrease character code with", -255, 255);
 }
 
 /******************* line break operator ********************/
@@ -1215,7 +1224,7 @@ void FONT_OT_delete(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "type", delete_type_items, DEL_ALL, "Type", "Which part of the text to delete.");
+	RNA_def_enum(ot->srna, "type", delete_type_items, DEL_ALL, "Type", "Which part of the text to delete");
 }
 
 /*********************** insert text operator *************************/
@@ -1365,8 +1374,8 @@ void FONT_OT_text_insert(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_string(ot->srna, "text", "", 0, "Text", "Text to insert at the cursor position.");
-	RNA_def_boolean(ot->srna, "accent", 0, "Accent mode", "Next typed character will strike through previous, for special character input.");
+	RNA_def_string(ot->srna, "text", "", 0, "Text", "Text to insert at the cursor position");
+	RNA_def_boolean(ot->srna, "accent", 0, "Accent mode", "Next typed character will strike through previous, for special character input");
 }
 
 
@@ -1445,9 +1454,7 @@ void FONT_OT_textbox_remove(wmOperatorType *ot)
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
-	RNA_def_int(ot->srna, "index", 0, 0, INT_MAX, "Index", "The current text box.", 0, INT_MAX);
-	
-	
+	RNA_def_int(ot->srna, "index", 0, 0, INT_MAX, "Index", "The current text box", 0, INT_MAX);
 }
 
 
@@ -1584,7 +1591,7 @@ void FONT_OT_case_set(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "case", case_items, CASE_LOWER, "Case", "Lower or upper case.");
+	RNA_def_enum(ot->srna, "case", case_items, CASE_LOWER, "Case", "Lower or upper case");
 }
 
 /********************** toggle case operator *********************/
@@ -1646,13 +1653,14 @@ static int open_cancel(bContext *UNUSED(C), wmOperator *op)
 
 static int open_exec(bContext *C, wmOperator *op)
 {
+	struct Main *bmain= CTX_data_main(C);
 	VFont *font;
 	PropertyPointerRNA *pprop;
 	PointerRNA idptr;
 	char filepath[FILE_MAX];
 	RNA_string_get(op->ptr, "filepath", filepath);
 
-	font= load_vfont(filepath);
+	font= load_vfont(bmain, filepath);
 
 	if(!font) {
 		if(op->customdata) MEM_freeN(op->customdata);
@@ -1699,10 +1707,7 @@ static int open_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 	}
 
 	path = (font && strcmp(font->name, FO_BUILTIN_NAME) != 0)? font->name: U.fontdir;
-	
-	if(!RNA_property_is_set(op->ptr, "relative_path"))
-		RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
-		
+
 	if(RNA_property_is_set(op->ptr, "filepath"))
 		return open_exec(C, op);
 

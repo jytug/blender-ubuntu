@@ -20,11 +20,6 @@
 
 # Script copyright (C) Campbell Barton
 
-"""
-This script is an exporter to the FBX file format.
-
-http://wiki.blender.org/index.php/Scripts/Manual/Export/autodesk_fbx
-"""
 
 import os
 import time
@@ -134,6 +129,26 @@ def sane_groupname(data):
 
 def mat4x4str(mat):
     return '%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f' % tuple([f for v in mat for f in v])
+
+
+def action_bone_names(obj, action):
+    from bpy.types import PoseBone
+
+    names = set()
+    path_resolve = obj.path_resolve
+
+    for fcu in action.fcurves:
+        try:
+            prop = path_resolve(fcu.data_path, False)
+        except:
+            prop = None
+
+        if prop is not None:
+            data = prop.data
+            if isinstance(data, PoseBone):
+                names.add(data.name)
+
+    return names
 
 
 # ob must be OB_MESH
@@ -249,13 +264,13 @@ def save_single(operator, scene, filepath="",
 
             self.blenName = blenBone.name
             self.blenBone = blenBone
-            self.blenMeshes = {}					# fbxMeshObName : mesh
+            self.blenMeshes = {}  # fbxMeshObName : mesh
             self.fbxArm = fbxArm
             self.restMatrix = blenBone.matrix_local
 
             # not used yet
-            # self.restMatrixInv =	self.restMatrix.inverted()
-            # self.restMatrixLocal =	None # set later, need parent matrix
+            #~ self.restMatrixInv = self.restMatrix.inverted()
+            #~ self.restMatrixLocal = None # set later, need parent matrix
 
             self.parent = None
 
@@ -263,7 +278,7 @@ def save_single(operator, scene, filepath="",
             pose = fbxArm.blenObject.pose
             self.__pose_bone = pose.bones[self.blenName]
 
-            # store a list if matricies here, (poseMatrix, head, tail)
+            # store a list if matrices here, (poseMatrix, head, tail)
             # {frame:posematrix, frame:posematrix, ...}
             self.__anim_poselist = {}
 
@@ -436,12 +451,12 @@ def save_single(operator, scene, filepath="",
     fw('\nCreationTime: "%.4i-%.2i-%.2i %.2i:%.2i:%.2i:000"' % curtime)
     fw('\nCreator: "Blender version %s"' % bpy.app.version_string)
 
-    pose_items = []  # list of (fbxName, matrix) to write pose data for, easier to collect allong the way
+    pose_items = []  # list of (fbxName, matrix) to write pose data for, easier to collect along the way
 
     # --------------- funcs for exporting
     def object_tx(ob, loc, matrix, matrix_mod=None):
         '''
-        Matrix mod is so armature objects can modify their bone matricies
+        Matrix mod is so armature objects can modify their bone matrices
         '''
         if isinstance(ob, bpy.types.Bone):
 
@@ -461,11 +476,11 @@ def save_single(operator, scene, filepath="",
             loc = tuple(loc)
             rot = tuple(rot.to_euler())  # quat -> euler
             scale = tuple(scale)
-                
+
             # Essential for XNA to use the original matrix not rotated nor scaled (JCB)
             if use_rotate_workaround:
                 matrix = ob.matrix_local
-            
+
         else:
             # This is bad because we need the parent relative matrix from the fbx parent (if we have one), dont use anymore
             #if ob and not matrix: matrix = ob.matrix_world * global_matrix
@@ -541,7 +556,7 @@ def save_single(operator, scene, filepath="",
                     constraint_values["sca_max"] = constraint.max_x, constraint.max_y, constraint.max_z
                     constraint_values["sca_limit"] = constraint.use_min_x, constraint.use_min_y, constraint.use_min_z, constraint.use_max_x, constraint.use_max_y, constraint.use_max_z
 
-        # incase bad values are assigned.
+        # in case bad values are assigned.
         assert(len(constraint_values) == 9)
 
         return constraint_values
@@ -660,8 +675,8 @@ def save_single(operator, scene, filepath="",
         fw('\n\tModel: "Model::%s", "Limb" {' % my_bone.fbxName)
         fw('\n\t\tVersion: 232')
 
-        #poseMatrix = write_object_props(my_bone.blenBone, None, None, my_bone.fbxArm.parRelMatrix())[3]
-        poseMatrix = write_object_props(my_bone.blenBone, pose_bone=my_bone.getPoseBone())[3]  # dont apply bone matricies anymore
+        #~ poseMatrix = write_object_props(my_bone.blenBone, None, None, my_bone.fbxArm.parRelMatrix())[3]
+        poseMatrix = write_object_props(my_bone.blenBone, pose_bone=my_bone.getPoseBone())[3]  # dont apply bone matrices anymore
         pose_items.append((my_bone.fbxName, poseMatrix))
 
         # fw('\n\t\t\tProperty: "Size", "double", "",%.6f' % ((my_bone.blenData.head['ARMATURESPACE'] - my_bone.blenData.tail['ARMATURESPACE']) * my_bone.fbxArm.parRelMatrix()).length)
@@ -1042,7 +1057,7 @@ def save_single(operator, scene, filepath="",
             poseMatrix = write_object_props()[3]
 
         pose_items.append((fbxName, poseMatrix))
-        
+
         fw('\n\t\t}'
            '\n\t\tMultiLayer: 0'
            '\n\t\tMultiTake: 1'
@@ -1145,7 +1160,7 @@ def save_single(operator, scene, filepath="",
 			Property: "Width", "int", "",0
 			Property: "Height", "int", "",0''')
         if tex:
-            fname_rel = bpy_extras.io_utils.path_reference(tex.filepath, base_src, base_dst, path_mode, "", copy_set)
+            fname_rel = bpy_extras.io_utils.path_reference(tex.filepath, base_src, base_dst, path_mode, "", copy_set, tex.library)
             fname_strip = bpy.path.basename(fname_rel)
         else:
             fname_strip = fname_rel = ""
@@ -1204,8 +1219,8 @@ def save_single(operator, scene, filepath="",
         fw('\n\t\tMedia: "Video::%s"' % texname)
 
         if tex:
-            fname_rel = bpy_extras.io_utils.path_reference(tex.filepath, base_src, base_dst, path_mode, "", copy_set)
-            fname_strip = bpy.path.basename(bpy.path.abspath(fname_rel))
+            fname_rel = bpy_extras.io_utils.path_reference(tex.filepath, base_src, base_dst, path_mode, "", copy_set, tex.library)
+            fname_strip = bpy.path.basename(fname_rel)
         else:
             fname_strip = fname_rel = ""
 
@@ -1237,7 +1252,7 @@ def save_single(operator, scene, filepath="",
     def write_sub_deformer_skin(my_mesh, my_bone, weights):
 
         '''
-        Each subdeformer is spesific to a mesh, but the bone it links to can be used by many sub-deformers
+        Each subdeformer is specific to a mesh, but the bone it links to can be used by many sub-deformers
         So the SubDeformer needs the mesh-object name as a prefix to make it unique
 
         Its possible that there is no matching vgroup in this mesh, in that case no verts are in the subdeformer,
@@ -1325,6 +1340,9 @@ def save_single(operator, scene, filepath="",
         do_materials = bool(my_mesh.blenMaterials)
         do_textures = bool(my_mesh.blenTextures)
         do_uvs = bool(me.uv_textures)
+        do_shapekeys = (my_mesh.blenObject.type == 'MESH' and
+                        my_mesh.blenObject.data.shape_keys and
+                        len(my_mesh.blenObject.data.vertices) == len(me.vertices))
 
         fw('\n\tModel: "Model::%s", "Mesh" {' % my_mesh.fbxName)
         fw('\n\t\tVersion: 232')  # newline is added in write_object_props
@@ -1336,6 +1354,10 @@ def save_single(operator, scene, filepath="",
 
         poseMatrix = write_object_props(my_mesh.blenObject, None, my_mesh.parRelMatrix())[3]
         pose_items.append((my_mesh.fbxName, poseMatrix))
+
+        if do_shapekeys:
+            for kb in my_mesh.blenObject.data.shape_keys.key_blocks[1:]:
+                fw('\n\t\t\tProperty: "%s", "Number", "AN",0' % kb.name)
 
         fw('\n\t\t}')
 
@@ -1779,6 +1801,67 @@ def save_single(operator, scene, filepath="",
                 fw('\n\t\t\t\tTypedIndex: %i' % i)
                 fw('\n\t\t\t}')
                 fw('\n\t\t}')
+
+        if do_shapekeys:
+            key_blocks = my_mesh.blenObject.data.shape_keys.key_blocks[:]
+            for kb in key_blocks[1:]:
+
+                fw('\n\t\tShape: "%s" {' % kb.name)
+                fw('\n\t\t\tIndexes: ')
+
+                basis_verts = key_blocks[0].data
+                range_verts = []
+                delta_verts = []
+                i = -1
+                for j, kv in enumerate(kb.data):
+                    delta = kv.co - basis_verts[j].co
+                    if delta.length > 0.000001:
+                        if i == -1:
+                            fw('%d' % j)
+                        else:
+                            if i == 7:
+                                fw('\n\t\t\t')
+                                i = 0
+                            fw(',%d' % j)
+                        delta_verts.append(delta[:])
+                        i += 1
+
+                fw('\n\t\t\tVertices: ')
+                i = -1
+                for dv in delta_verts:
+                    if i == -1:
+                        fw("%.6f,%.6f,%.6f" % dv)
+                    else:
+                        if i == 4:
+                            fw('\n\t\t\t')
+                            i = 0
+                        fw(",%.6f,%.6f,%.6f" % dv)
+                    i += 1
+
+                # all zero, why? - campbell
+                fw('\n\t\t\tNormals: ')
+                for j in range(len(delta_verts)):
+                    if i == -1:
+                        fw("0,0,0")
+                    else:
+                        if i == 4:
+                            fw('\n\t\t\t')
+                            i = 0
+                        fw(",0,0,0")
+                    i += 1
+                fw('\n\t\t}')
+
+        for v in me_vertices:
+            if i == -1:
+                fw('%.6f,%.6f,%.6f' % v.co[:])
+                i = 0
+            else:
+                if i == 7:
+                    fw('\n\t\t')
+                    i = 0
+                fw(',%.6f,%.6f,%.6f' % v.co[:])
+            i += 1
+        
         fw('\n\t}')
 
     def write_group(name):
@@ -1813,7 +1896,7 @@ def save_single(operator, scene, filepath="",
     materials = {}  # (mat, image) keys, should be a set()
     textures = {}  # should be a set()
 
-    tmp_ob_type = None  # incase no objects are exported, so as not to raise an error
+    tmp_ob_type = None  # in case no objects are exported, so as not to raise an error
 
 ## XXX
 
@@ -1941,7 +2024,9 @@ def save_single(operator, scene, filepath="",
 
                         # Warning for scaled, mesh objects with armatures
                         if abs(ob.scale[0] - 1.0) > 0.05 or abs(ob.scale[1] - 1.0) > 0.05 or abs(ob.scale[1] - 1.0) > 0.05:
-                            operator.report('WARNING', "Object '%s' has a scale of (%.3f, %.3f, %.3f), Armature deformation will not work as expected!, Apply Scale to fix." % ((ob.name,) + tuple(ob.scale)))
+                            operator.report({'WARNING'}, "Object '%s' has a scale of (%.3f, %.3f, %.3f), " \
+                                                         "Armature deformation will not work as expected " \
+                                                         "(apply Scale to fix)" % ((ob.name,) + tuple(ob.scale)))
 
                     else:
                         blenParentBoneName = armob = None
@@ -2080,7 +2165,7 @@ def save_single(operator, scene, filepath="",
 
     del tmp_obmapping
     # Finished finding groups we use
-    
+
     # == WRITE OBJECTS TO THE FILE ==
     # == From now on we are building the FBX file from the information collected above (JCB)
 
@@ -2446,7 +2531,6 @@ Connections:  {''')
                 for fbxGroupName in ob_base.fbxGroupNames:
                     fw('\n\tConnect: "OO", "Model::%s", "GroupSelection::%s"' % (ob_base.fbxName, fbxGroupName))
 
-
     # I think the following always duplicates the armature connection because it is also in ob_all_typegroups above! (JCB)
     # for my_arm in ob_arms:
     #     fw('\n\tConnect: "OO", "Model::%s", "Model::Scene"' % my_arm.fbxName)
@@ -2512,14 +2596,12 @@ Connections:  {''')
 
                 for action in tmp_actions:
 
-                    action_chan_names = arm_bone_names.intersection(set([g.name for g in action.groups]))
-
-                    if action_chan_names:  # at least one channel matches.
+                    if arm_bone_names.intersection(action_bone_names(my_arm.blenObject, action)):  # at least one channel matches.
                         my_arm.blenActionList.append(action)
                         tagged_actions.append(action.name)
                         tmp_act_count += 1
 
-                        # incase there are no actions applied to armatures
+                        # in case there are no actions applied to armatures
                         # for example, when a user deletes the current action.
                         action_lastcompat = action
 
@@ -2585,7 +2667,7 @@ Takes:  {''')
 		;----------------------------------------------------''')
 
             # set pose data for all bones
-            # do this here incase the action changes
+            # do this here in case the action changes
             '''
             for my_bone in ob_bones:
                 my_bone.flushAnimData()
@@ -2735,7 +2817,7 @@ Takes:  {''')
             fw('\n\t}')
 
             # end action loop. set original actions
-            # do this after every loop incase actions effect eachother.
+            # do this after every loop in case actions effect eachother.
             for my_arm in ob_arms:
                 if my_arm.blenObject.animation_data:
                     my_arm.blenObject.animation_data.action = my_arm.blenAction
@@ -2951,7 +3033,7 @@ def save(operator, context,
 # Typical settings for XNA export
 #   No Cameras, No Lamps, No Edges, No face smoothing, No Default_Take, Armature as bone, Disable rotation
 
-# NOTE TO Campbell - 
+# NOTE TO Campbell -
 #   Can any or all of the following notes be removed because some have been here for a long time? (JCB 27 July 2011)
 # NOTES (all line numbers correspond to original export_fbx.py (under release/scripts)
 # - get rid of bpy.path.clean_name somehow

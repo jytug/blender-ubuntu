@@ -1,5 +1,5 @@
 /*
- * $Id: writefile.c 39084 2011-08-05 20:45:26Z blendix $
+ * $Id: writefile.c 41021 2011-10-15 03:56:05Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -123,6 +123,7 @@ Any case: direct data is ALWAYS after the lib block
 #include "DNA_smoke_types.h"
 #include "DNA_space_types.h"
 #include "DNA_screen_types.h"
+#include "DNA_speaker_types.h"
 #include "DNA_sound_types.h"
 #include "DNA_text_types.h"
 #include "DNA_view3d_types.h"
@@ -134,6 +135,7 @@ Any case: direct data is ALWAYS after the lib block
 #include "BLI_blenlib.h"
 #include "BLI_linklist.h"
 #include "BLI_bpath.h"
+#include "BLI_math.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_action.h"
@@ -641,6 +643,46 @@ static void write_curvemapping(WriteData *wd, CurveMapping *cumap)
 		writestruct(wd, DATA, "CurveMapPoint", cumap->cm[a].totpoint, cumap->cm[a].curve);
 }
 
+static void write_node_socket(WriteData *wd, bNodeSocket *sock)
+{
+	bNodeSocketType *stype= ntreeGetSocketType(sock->type);
+
+	/* forward compatibility code, so older blenders still open */
+	sock->stack_type = 1;
+
+	if(sock->default_value) {
+		bNodeSocketValueFloat *valfloat;
+		bNodeSocketValueVector *valvector;
+		bNodeSocketValueRGBA *valrgba;
+		
+		switch (sock->type) {
+		case SOCK_FLOAT:
+			valfloat = sock->default_value;
+			sock->ns.vec[0] = valfloat->value;
+			sock->ns.min = valfloat->min;
+			sock->ns.max = valfloat->max;
+			break;
+		case SOCK_VECTOR:
+			valvector = sock->default_value;
+			copy_v3_v3(sock->ns.vec, valvector->value);
+			sock->ns.min = valvector->min;
+			sock->ns.max = valvector->max;
+			break;
+		case SOCK_RGBA:
+			valrgba = sock->default_value;
+			copy_v4_v4(sock->ns.vec, valrgba->value);
+			sock->ns.min = 0.0f;
+			sock->ns.max = 1.0f;
+			break;
+		}
+	}
+
+	/* actual socket writing */
+	writestruct(wd, DATA, "bNodeSocket", 1, sock);
+	if (sock->default_value)
+		writestruct(wd, DATA, stype->value_structname, 1, sock->default_value);
+}
+
 /* this is only direct data, tree itself should have been written */
 static void write_nodetree(WriteData *wd, bNodeTree *ntree)
 {
@@ -656,6 +698,12 @@ static void write_nodetree(WriteData *wd, bNodeTree *ntree)
 		writestruct(wd, DATA, "bNode", 1, node);
 
 	for(node= ntree->nodes.first; node; node= node->next) {
+		for(sock= node->inputs.first; sock; sock= sock->next)
+			write_node_socket(wd, sock);
+		for(sock= node->outputs.first; sock; sock= sock->next)
+			write_node_socket(wd, sock);
+
+		
 		if(node->storage && node->type!=NODE_DYNAMIC) {
 			/* could be handlerized at some point, now only 1 exception still */
 			if(ntree->type==NTREE_SHADER && (node->type==SH_NODE_CURVE_VEC || node->type==SH_NODE_CURVE_RGB))
@@ -664,13 +712,9 @@ static void write_nodetree(WriteData *wd, bNodeTree *ntree)
 				write_curvemapping(wd, node->storage);
 			else if(ntree->type==NTREE_TEXTURE && (node->type==TEX_NODE_CURVE_RGB || node->type==TEX_NODE_CURVE_TIME) )
 				write_curvemapping(wd, node->storage);
-			else 
+			else
 				writestruct(wd, DATA, node->typeinfo->storagename, 1, node->storage);
 		}
-		for(sock= node->inputs.first; sock; sock= sock->next)
-			writestruct(wd, DATA, "bNodeSocket", 1, sock);
-		for(sock= node->outputs.first; sock; sock= sock->next)
-			writestruct(wd, DATA, "bNodeSocket", 1, sock);
 	}
 	
 	for(link= ntree->links.first; link; link= link->next)
@@ -678,9 +722,9 @@ static void write_nodetree(WriteData *wd, bNodeTree *ntree)
 	
 	/* external sockets */
 	for(sock= ntree->inputs.first; sock; sock= sock->next)
-		writestruct(wd, DATA, "bNodeSocket", 1, sock);
+		write_node_socket(wd, sock);
 	for(sock= ntree->outputs.first; sock; sock= sock->next)
-		writestruct(wd, DATA, "bNodeSocket", 1, sock);
+		write_node_socket(wd, sock);
 }
 
 static void current_screen_compat(Main *mainvar, bScreen **screen)
@@ -867,10 +911,12 @@ static void write_particlesettings(WriteData *wd, ListBase *idbase)
 			for(; dw; dw=dw->next) {
 				/* update indices */
 				dw->index = 0;
-				go = part->dup_group->gobject.first;
-				while(go && go->ob != dw->ob) {
-					go=go->next;
-					dw->index++;
+				if(part->dup_group) { /* can be NULL if lining fails or set to None */
+					go = part->dup_group->gobject.first;
+					while(go && go->ob != dw->ob) {
+						go=go->next;
+						dw->index++;
+					}
 				}
 				writestruct(wd, DATA, "ParticleDupliWeight", 1, dw);
 			}
@@ -930,7 +976,7 @@ static void write_particlesystems(WriteData *wd, ListBase *particles)
 			writestruct(wd, DATA, "ClothSimSettings", 1, psys->clmd->sim_parms);
 			writestruct(wd, DATA, "ClothCollSettings", 1, psys->clmd->coll_parms);
 		}
-		
+
 		write_pointcaches(wd, &psys->ptcaches);
 	}
 }
@@ -1099,6 +1145,9 @@ static void write_actuators(WriteData *wd, ListBase *lb)
 			break;
 		case ACT_ARMATURE:
 			writestruct(wd, DATA, "bArmatureActuator", 1, act->data);
+			break;
+		case ACT_STEERING:
+			writestruct(wd, DATA, "bSteeringActuator", 1, act->data);
 			break;
 		default:
 			; /* error: don't know how to write this file */
@@ -1305,6 +1354,12 @@ static void write_modifiers(WriteData *wd, ListBase *modbase)
 			if(tmd->curfalloff) {
 				write_curvemapping(wd, tmd->curfalloff);
 			}
+		}
+		else if (md->type==eModifierType_WeightVGEdit) {
+			WeightVGEditModifierData *wmd = (WeightVGEditModifierData*) md;
+
+			if (wmd->cmap_curve)
+				write_curvemapping(wd, wmd->cmap_curve);
 		}
 	}
 }
@@ -1732,7 +1787,7 @@ static void write_textures(WriteData *wd, ListBase *idbase)
 				if(tex->pd->coba) writestruct(wd, DATA, "ColorBand", 1, tex->pd->coba);
 				if(tex->pd->falloff_curve) write_curvemapping(wd, tex->pd->falloff_curve);
 			}
-			if(tex->type == TEX_VOXELDATA && tex->vd) writestruct(wd, DATA, "VoxelData", 1, tex->vd);
+			if(tex->type == TEX_VOXELDATA) writestruct(wd, DATA, "VoxelData", 1, tex->vd);
 			
 			/* nodetree is integral part of texture, no libdata */
 			if(tex->nodetree) {
@@ -2340,6 +2395,23 @@ static void write_texts(WriteData *wd, ListBase *idbase)
 	mywrite(wd, MYWRITE_FLUSH, 0);
 }
 
+static void write_speakers(WriteData *wd, ListBase *idbase)
+{
+	Speaker *spk;
+
+	spk= idbase->first;
+	while(spk) {
+		if(spk->id.us>0 || wd->current) {
+			/* write LibData */
+			writestruct(wd, ID_SPK, "Speaker", 1, spk);
+			if (spk->id.properties) IDP_WriteProperty(spk->id.properties, wd);
+
+			if (spk->adt) write_animdata(wd, spk->adt);
+		}
+		spk= spk->id.next;
+	}
+}
+
 static void write_sounds(WriteData *wd, ListBase *idbase)
 {
 	bSound *sound;
@@ -2461,7 +2533,7 @@ static void write_global(WriteData *wd, int fileflags, Main *mainvar)
 	fg.subversion= BLENDER_SUBVERSION;
 	fg.minversion= BLENDER_MINVERSION;
 	fg.minsubversion= BLENDER_MINSUBVERSION;
-#ifdef NAN_BUILDINFO
+#ifdef WITH_BUILDINFO
 	{
 		extern char build_rev[];
 		fg.revision= atoi(build_rev);
@@ -2518,6 +2590,7 @@ static int write_file_handle(Main *mainvar, int handle, MemFile *compare, MemFil
 	write_keys     (wd, &mainvar->key);
 	write_worlds   (wd, &mainvar->world);
 	write_texts    (wd, &mainvar->text);
+	write_speakers (wd, &mainvar->speaker);
 	write_sounds   (wd, &mainvar->sound);
 	write_groups   (wd, &mainvar->group);
 	write_armatures(wd, &mainvar->armature);
@@ -2605,8 +2678,8 @@ int BLO_write_file(Main *mainvar, const char *filepath, int write_flags, ReportL
 	if(write_flags & G_FILE_RELATIVE_REMAP) {
 		char dir1[FILE_MAXDIR+FILE_MAXFILE];
 		char dir2[FILE_MAXDIR+FILE_MAXFILE];
-		BLI_split_dirfile(filepath, dir1, NULL);
-		BLI_split_dirfile(mainvar->name, dir2, NULL);
+		BLI_split_dirfile(filepath, dir1, NULL, sizeof(dir1), 0);
+		BLI_split_dirfile(mainvar->name, dir2, NULL, sizeof(dir2), 0);
 
 		/* just incase there is some subtle difference */
 		BLI_cleanup_dir(mainvar->name, dir1);

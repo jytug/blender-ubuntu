@@ -52,6 +52,7 @@ class ImportPLY(bpy.types.Operator, ImportHelper):
     '''Load a PLY geometry file'''
     bl_idname = "import_mesh.ply"
     bl_label = "Import PLY"
+    bl_options = {'UNDO'}
 
     files = CollectionProperty(name="File Path",
                           description="File path used for importing "
@@ -79,7 +80,7 @@ class ImportPLY(bpy.types.Operator, ImportHelper):
 
 class ExportPLY(bpy.types.Operator, ExportHelper):
     '''Export a single object as a stanford PLY with normals, ''' \
-    '''colours and texture coordinates.'''
+    '''colours and texture coordinates'''
     bl_idname = "export_mesh.ply"
     bl_label = "Export PLY"
 

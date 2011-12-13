@@ -22,6 +22,7 @@
 # http://mediawiki.blender.org/index.php/Scripts/Manual/UV_Calculate/Follow_active_quads
 
 import bpy
+from bpy.types import Operator
 
 
 def extend(obj, operator, EXTEND_MODE):
@@ -103,13 +104,13 @@ def extend(obj, operator, EXTEND_MODE):
         uvs_vhash_target[edgepair_inner_target[1]][:] = uvs_vhash_source[edgepair_inner_source[iB]]
 
         # Set the 2 UV's on the target face that are not touching
-        # for this we need to do basic expaning on the source faces UV's
+        # for this we need to do basic expanding on the source faces UV's
         if EXTEND_MODE == 'LENGTH':
 
             try:  # divide by zero is possible
                 '''
                 measure the length of each face from the middle of each edge to the opposite
-                allong the axis we are copying, use this
+                along the axis we are copying, use this
                 '''
                 i1a = edgepair_outer_target[iB]
                 i2a = edgepair_inner_target[iA]
@@ -139,7 +140,7 @@ def extend(obj, operator, EXTEND_MODE):
 
     face_act = me.faces.active
     if face_act == -1:
-        operator.report({'ERROR'}, "No active face.")
+        operator.report({'ERROR'}, "No active face")
         return
 
     face_sel = [f for f in me.faces if len(f.vertices) == 4 and f.select]
@@ -151,17 +152,17 @@ def extend(obj, operator, EXTEND_MODE):
             break
 
     if face_act_local_index == -1:
-        operator.report({'ERROR'}, "Active face not selected.")
+        operator.report({'ERROR'}, "Active face not selected")
         return
 
     # Modes
     # 0 unsearched
     # 1:mapped, use search from this face. - removed!!
-    # 2:all siblings have been searched. dont search again.
+    # 2:all siblings have been searched. don't search again.
     face_modes = [0] * len(face_sel)
     face_modes[face_act_local_index] = 1  # extend UV's from this face.
 
-    # Edge connectivty
+    # Edge connectivity
     edge_faces = {}
     for i, f in enumerate(face_sel):
         for edkey in f.edge_keys:
@@ -180,7 +181,7 @@ def extend(obj, operator, EXTEND_MODE):
                 looplen[0] += (me_verts[ed[0]].co - me_verts[ed[1]].co).length
             looplen[0] = looplen[0] / len(loop)
 
-    # remove seams, so we dont map accross seams.
+    # remove seams, so we don't map across seams.
     for ed in me.edges:
         if ed.use_seam:
             # remove the edge pair if we can
@@ -212,7 +213,7 @@ def extend(obj, operator, EXTEND_MODE):
                         face_modes[i] = 1  # we can map from this one now.
                         ok = True  # keep searching
 
-                face_modes[i] = 2  # dont search again
+                face_modes[i] = 2  # don't search again
 
     if is_editmode:
         bpy.ops.object.mode_set(mode='EDIT')
@@ -226,7 +227,7 @@ def main(context, operator):
     extend(obj, operator, operator.properties.mode)
 
 
-class FollowActiveQuads(bpy.types.Operator):
+class FollowActiveQuads(Operator):
     '''Follow UVs from active quads along continuous face loops'''
     bl_idname = "uv.follow_active_quads"
     bl_label = "Follow Active Quads"

@@ -1,5 +1,5 @@
 /*
- * $Id: bpy_app.c 37795 2011-06-24 16:54:30Z campbellbarton $
+ * $Id: bpy_app.c 40976 2011-10-13 01:29:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -168,13 +168,13 @@ static int bpy_app_debug_set(PyObject *UNUSED(self), PyObject *value, void *UNUS
 {
 	int param= PyObject_IsTrue(value);
 
-	if(param < 0) {
+	if (param < 0) {
 		PyErr_SetString(PyExc_TypeError, "bpy.app.debug can only be True/False");
 		return -1;
 	}
 	
-	if(param)	G.f |=  G_DEBUG;
-	else		G.f &= ~G_DEBUG;
+	if (param)  G.f |=  G_DEBUG;
+	else        G.f &= ~G_DEBUG;
 	
 	return 0;
 }
@@ -230,7 +230,7 @@ static void py_struct_seq_getset_init(void)
 	/* tricky dynamic members, not to py-spec! */
 	PyGetSetDef *getset;
 
-	for(getset= bpy_app_getsets; getset->name; getset++) {
+	for (getset= bpy_app_getsets; getset->name; getset++) {
 		PyDict_SetItemString(BlenderAppType.tp_dict, getset->name, PyDescr_NewGetSet(&BlenderAppType, getset));
 	}
 }

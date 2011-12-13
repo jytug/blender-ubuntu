@@ -1,12 +1,5 @@
-/* mball.c
- *  
- * MetaBalls are created from a single Object (with a name without number in it),
- * here the DispList and BoundBox also is located.
- * All objects with the same name (but with a number in it) are added to this.
- *  
- * texture coordinates are patched within the displist
- * 
- * $Id: mball.c 36332 2011-04-26 07:17:21Z campbellbarton $
+/*
+ * $Id: mball.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,12 +23,17 @@
  * Contributor(s): Jiri Hnidek <jiri.hnidek@vslib.cz>.
  *
  * ***** END GPL LICENSE BLOCK *****
+ *
+ * MetaBalls are created from a single Object (with a name without number in it),
+ * here the DispList and BoundBox also is located.
+ * All objects with the same name (but with a number in it) are added to this.
+ *
+ * texture coordinates are patched within the displist
  */
 
 /** \file blender/blenkernel/intern/mball.c
  *  \ingroup bke
  */
-
 
 #include <stdio.h>
 #include <string.h>

@@ -27,10 +27,10 @@ bl_info = {
     "location": "Image-Window > UVs > Export UV Layout",
     "description": "Export the UV layout as a 2D graphic",
     "warning": "",
-    "wiki_url": ("http://wiki.blender.org/index.php/Extensions:2.5/Py/"
-                 "Scripts/Import-Export/UV_Layout"),
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"
+                "Scripts/Import-Export/UV_Layout",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"
-        "func=detail&aid=22837",
+                   "func=detail&aid=22837",
     "support": 'OFFICIAL',
     "category": "Import-Export"}
 
@@ -125,7 +125,7 @@ class ExportUVLayout(bpy.types.Operator):
             image = space_data.image
             if image:
                 width, height = tuple(context.space_data.image.size)
-                # incase no data is found.
+                # in case no data is found.
                 if width and height:
                     image_width, image_height = width, height
 

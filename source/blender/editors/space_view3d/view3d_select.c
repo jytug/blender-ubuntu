@@ -1,5 +1,5 @@
 /*
- * $Id: view3d_select.c 38887 2011-08-01 02:58:44Z campbellbarton $
+ * $Id: view3d_select.c 40874 2011-10-09 08:39:38Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -53,6 +53,11 @@
 #include "BLI_rand.h"
 #include "BLI_linklist.h"
 #include "BLI_utildefines.h"
+
+/* vertex box select */
+#include "IMB_imbuf_types.h"
+#include "IMB_imbuf.h"
+#include "BKE_global.h"
 
 #include "BKE_context.h"
 #include "BKE_paint.h"
@@ -198,6 +203,24 @@ static void EM_backbuf_checkAndSelectFaces(EditMesh *em, int select)
 	}
 }
 
+
+/* object mode, EM_ prefix is confusing here, rename? */
+static void EM_backbuf_checkAndSelectVerts_obmode(Mesh *me, int select)
+{
+	MVert *mv = me->mvert;
+	int a;
+
+	if (mv) {
+		for(a=1; a<=me->totvert; a++, mv++) {
+			if(EM_check_backbuf(a)) {
+				if(!(mv->flag & ME_HIDE)) {
+					mv->flag = select?(mv->flag|SELECT):(mv->flag&~SELECT);
+				}
+			}
+		}
+	}
+}
+/* object mode, EM_ prefix is confusing here, rename? */
 static void EM_backbuf_checkAndSelectTFaces(Mesh *me, int select)
 {
 	MFace *mface = me->mface;
@@ -231,7 +254,7 @@ static int view3d_selectable_data(bContext *C)
 			if (ob->mode & OB_MODE_SCULPT) {
 				return 0;
 			}
-			if (ob->mode & (OB_MODE_VERTEX_PAINT|OB_MODE_WEIGHT_PAINT|OB_MODE_TEXTURE_PAINT) && !paint_facesel_test(ob)) {
+			if (ob->mode & (OB_MODE_VERTEX_PAINT|OB_MODE_WEIGHT_PAINT|OB_MODE_TEXTURE_PAINT) && !paint_facesel_test(ob) && !paint_vertsel_test(ob)) {
 				return 0;
 			}
 		}
@@ -727,6 +750,88 @@ static void do_lasso_select_meta(ViewContext *vc, int mcords[][2], short moves, 
 	}
 }
 
+int do_paintvert_box_select(ViewContext *vc, rcti *rect, int select, int extend)
+{
+	Mesh *me;
+	MVert *mvert;
+	struct ImBuf *ibuf;
+	unsigned int *rt;
+	int a, index;
+	char *selar;
+	int sx= rect->xmax-rect->xmin+1;
+	int sy= rect->ymax-rect->ymin+1;
+
+	me= vc->obact->data;
+
+	if(me==NULL || me->totvert==0 || sx*sy <= 0)
+		return OPERATOR_CANCELLED;
+
+	selar= MEM_callocN(me->totvert+1, "selar");
+
+	if (extend == 0 && select)
+		paintvert_deselect_all_visible(vc->obact, SEL_DESELECT, FALSE);
+
+	view3d_validate_backbuf(vc);
+
+	ibuf = IMB_allocImBuf(sx,sy,32,IB_rect);
+	rt = ibuf->rect;
+	glReadPixels(rect->xmin+vc->ar->winrct.xmin,  rect->ymin+vc->ar->winrct.ymin, sx, sy, GL_RGBA, GL_UNSIGNED_BYTE,  ibuf->rect);
+	if(ENDIAN_ORDER==B_ENDIAN) IMB_convert_rgba_to_abgr(ibuf);
+
+	a= sx*sy;
+	while(a--) {
+		if(*rt) {
+			index= WM_framebuffer_to_index(*rt);
+			if(index<=me->totvert) selar[index]= 1;
+		}
+		rt++;
+	}
+
+	mvert= me->mvert;
+	for(a=1; a<=me->totvert; a++, mvert++) {
+		if(selar[a]) {
+			if(mvert->flag & ME_HIDE);
+			else {
+				if(select) mvert->flag |= SELECT;
+				else mvert->flag &= ~SELECT;
+			}
+		}
+	}
+
+	IMB_freeImBuf(ibuf);
+	MEM_freeN(selar);
+
+#ifdef __APPLE__	
+	glReadBuffer(GL_BACK);
+#endif
+
+	paintvert_flush_flags(vc->obact);
+
+	return OPERATOR_FINISHED;
+}
+
+static void do_lasso_select_paintvert(ViewContext *vc, int mcords[][2], short moves, short extend, short select)
+{
+	Object *ob= vc->obact;
+	Mesh *me= ob?ob->data:NULL;
+	rcti rect;
+
+	if(me==NULL || me->totvert==0)
+		return;
+
+	if(extend==0 && select)
+		paintvert_deselect_all_visible(ob, SEL_DESELECT, FALSE); /* flush selection at the end */
+	em_vertoffs= me->totvert+1;	/* max index array */
+
+	lasso_select_boundbox(&rect, mcords, moves);
+	EM_mask_init_backbuf_border(vc, mcords, moves, rect.xmin, rect.ymin, rect.xmax, rect.ymax);
+
+	EM_backbuf_checkAndSelectVerts_obmode(me, select);
+
+	EM_free_backbuf();
+
+	paintvert_flush_flags(ob);
+}
 static void do_lasso_select_paintface(ViewContext *vc, int mcords[][2], short moves, short extend, short select)
 {
 	Object *ob= vc->obact;
@@ -789,6 +894,8 @@ static void view3d_lasso_select(bContext *C, ViewContext *vc, int mcords[][2], s
 	if(vc->obedit==NULL) { /* Object Mode */
 		if(paint_facesel_test(ob))
 			do_lasso_select_paintface(vc, mcords, moves, extend, select);
+		else if(paint_vertsel_test(ob))
+			do_lasso_select_paintvert(vc, mcords, moves, extend, select);
 		else if(ob && ob->mode & (OB_MODE_VERTEX_PAINT|OB_MODE_WEIGHT_PAINT|OB_MODE_TEXTURE_PAINT))
 			;
 		else if(ob && ob->mode & OB_MODE_PARTICLE_EDIT)
@@ -876,8 +983,8 @@ void VIEW3D_OT_select_lasso(wmOperatorType *ot)
 	ot->flag= OPTYPE_UNDO;
 	
 	RNA_def_collection_runtime(ot->srna, "path", &RNA_OperatorMousePath, "Path", "");
-	RNA_def_boolean(ot->srna, "deselect", 0, "Deselect", "Deselect rather than select items.");
-	RNA_def_boolean(ot->srna, "extend", 1, "Extend", "Extend selection instead of deselecting everything first.");
+	RNA_def_boolean(ot->srna, "deselect", 0, "Deselect", "Deselect rather than select items");
+	RNA_def_boolean(ot->srna, "extend", 1, "Extend", "Extend selection instead of deselecting everything first");
 }
 
 
@@ -1231,8 +1338,8 @@ static int mouse_select(bContext *C, const int mval[2], short extend, short obce
 	if(BASACT && BASACT->next) startbase= BASACT->next;
 	
 	/* This block uses the control key to make the object selected by its center point rather than its contents */
-	/* XXX later on, in editmode do not activate */
-	if(vc.obedit==NULL && obcenter) {
+	/* in editmode do not activate */
+	if(obcenter) {
 		
 		/* note; shift+alt goes to group-flush-selecting */
 		if(enumerate) {
@@ -1335,9 +1442,9 @@ static int mouse_select(bContext *C, const int mval[2], short extend, short obce
 			if(oldbasact != basact) {
 				ED_base_object_activate(C, basact); /* adds notifier */
 			}
-
-			WM_event_add_notifier(C, NC_SCENE|ND_OB_SELECT, scene);
 		}
+
+		WM_event_add_notifier(C, NC_SCENE|ND_OB_SELECT, scene);
 	}
 
 	return retval;
@@ -1765,9 +1872,15 @@ static int view3d_borderselect_exec(bContext *C, wmOperator *op)
 		case OB_CURVE:
 		case OB_SURF:
 			ret= do_nurbs_box_select(&vc, &rect, select, extend);
+			if(ret & OPERATOR_FINISHED) {
+				WM_event_add_notifier(C, NC_GEOM|ND_SELECT, vc.obedit->data);
+			}
 			break;
 		case OB_MBALL:
 			ret= do_meta_box_select(&vc, &rect, select, extend);
+			if(ret & OPERATOR_FINISHED) {
+				WM_event_add_notifier(C, NC_GEOM|ND_SELECT, vc.obedit->data);
+			}
 			break;
 		case OB_ARMATURE:
 			ret= do_armature_box_select(&vc, &rect, select, extend);
@@ -1791,6 +1904,9 @@ static int view3d_borderselect_exec(bContext *C, wmOperator *op)
 		}
 		else if(vc.obact && paint_facesel_test(vc.obact)) {
 			ret= do_paintface_box_select(&vc, &rect, select, extend);
+		}
+		else if(vc.obact && paint_vertsel_test(vc.obact)) {
+			ret= do_paintvert_box_select(&vc, &rect, select, extend);
 		}
 		else if(vc.obact && vc.obact->mode & OB_MODE_PARTICLE_EDIT) {
 			ret= PE_border_select(C, &rect, select, extend);
@@ -1828,6 +1944,59 @@ void VIEW3D_OT_select_border(wmOperatorType *ot)
 	WM_operator_properties_gesture_border(ot, TRUE);
 }
 
+/* much like facesel_face_pick()*/
+/* returns 0 if not found, otherwise 1 */
+static int vertsel_vert_pick(struct bContext *C, Mesh *me, const int mval[2], unsigned int *index, int size)
+{
+	ViewContext vc;
+	view3d_set_viewcontext(C, &vc);
+
+	if (!me || me->totvert==0)
+		return 0;
+
+	if (size > 0) {
+		/* sample rect to increase changes of selecting, so that when clicking
+		   on an face in the backbuf, we can still select a vert */
+
+		int dist;
+		*index = view3d_sample_backbuf_rect(&vc, mval, size, 1, me->totvert+1, &dist,0,NULL, NULL);
+	}
+	else {
+		/* sample only on the exact position */
+		*index = view3d_sample_backbuf(&vc, mval[0], mval[1]);
+	}
+
+	if ((*index)<=0 || (*index)>(unsigned int)me->totvert)
+		return 0;
+
+	(*index)--;
+	
+	return 1;
+}
+
+/* mouse selection in weight paint */
+/* gets called via generic mouse select operator */
+static int mouse_weight_paint_vertex_select(bContext *C, const int mval[2], short extend, Object *obact)
+{
+	Mesh* me= obact->data; /* already checked for NULL */
+	unsigned int index = 0;
+	MVert *mv;
+
+	if(vertsel_vert_pick(C, me, mval, &index, 50)) {
+		mv = me->mvert+index;
+		if(extend) {
+			mv->flag ^= SELECT;
+		} else {
+			paintvert_deselect_all_visible(obact, SEL_DESELECT, FALSE);
+			mv->flag |= SELECT;
+		}
+		paintvert_flush_flags(obact);
+		WM_event_add_notifier(C, NC_GEOM|ND_SELECT, obact->data);
+		return 1;
+	}
+	return 0;
+}
+
 /* ****** Mouse Select ****** */
 
 
@@ -1838,11 +2007,22 @@ static int view3d_select_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	short extend= RNA_boolean_get(op->ptr, "extend");
 	short center= RNA_boolean_get(op->ptr, "center");
 	short enumerate= RNA_boolean_get(op->ptr, "enumerate");
+	short object= RNA_boolean_get(op->ptr, "object");
 	int	retval = 0;
 
 	view3d_operator_needs_opengl(C);
-	
-	if(obedit) {
+
+	if(object) {
+		obedit= NULL;
+		obact= NULL;
+
+		/* ack, this is incorrect but to do this correctly we would need an
+		 * alternative editmode/objectmode keymap, this copies the functionality
+		 * from 2.4x where Ctrl+Select in editmode does object select only */
+		center= FALSE;
+	}
+
+	if(obedit && object==FALSE) {
 		if(obedit->type==OB_MESH)
 			retval = mouse_mesh(C, event->mval, extend);
 		else if(obedit->type==OB_ARMATURE)
@@ -1861,6 +2041,8 @@ static int view3d_select_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		return PE_mouse_particles(C, event->mval, extend);
 	else if(obact && paint_facesel_test(obact))
 		retval = paintface_mouse_select(C, obact, event->mval, extend);
+	else if (paint_vertsel_test(obact))
+		retval = mouse_weight_paint_vertex_select(C, event->mval, extend, obact);
 	else
 		retval = mouse_select(C, event->mval, extend, center, enumerate);
 
@@ -1888,9 +2070,10 @@ void VIEW3D_OT_select(wmOperatorType *ot)
 	ot->flag= OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", 0, "Extend", "Extend selection instead of deselecting everything first.");
-	RNA_def_boolean(ot->srna, "center", 0, "Center", "Use the object center when selecting (object mode only).");
-	RNA_def_boolean(ot->srna, "enumerate", 0, "Enumerate", "List objects under the mouse (object mode only).");
+	RNA_def_boolean(ot->srna, "extend", 0, "Extend", "Extend selection instead of deselecting everything first");
+	RNA_def_boolean(ot->srna, "center", 0, "Center", "Use the object center when selecting, in editmode used to extend object selection");
+	RNA_def_boolean(ot->srna, "enumerate", 0, "Enumerate", "List objects under the mouse (object mode only)");
+	RNA_def_boolean(ot->srna, "object", 0, "Object", "Use object selection (editmode only)");
 }
 
 
@@ -1974,14 +2157,32 @@ static void paint_facesel_circle_select(ViewContext *vc, int select, const int m
 {
 	Object *ob= vc->obact;
 	Mesh *me = ob?ob->data:NULL;
-	int bbsel;
+	/* int bbsel; */ /* UNUSED */
 
 	if (me) {
 		em_vertoffs= me->totface+1;	/* max index array */
 
-		bbsel= EM_init_backbuf_circle(vc, mval[0], mval[1], (short)(rad+1.0f));
+		/* bbsel= */ /* UNUSED */ EM_init_backbuf_circle(vc, mval[0], mval[1], (short)(rad+1.0f));
 		EM_backbuf_checkAndSelectTFaces(me, select==LEFTMOUSE);
 		EM_free_backbuf();
+	}
+}
+
+
+static void paint_vertsel_circle_select(ViewContext *vc, int select, const int mval[2], float rad)
+{
+	Object *ob= vc->obact;
+	Mesh *me = ob?ob->data:NULL;
+	/* int bbsel; */ /* UNUSED */
+	/* struct {ViewContext *vc; short select; int mval[2]; float radius; } data = {NULL}; */ /* UNUSED */
+	if (me) {
+		em_vertoffs= me->totvert+1;	/* max index array */
+
+		/* bbsel= */ /* UNUSED */ EM_init_backbuf_circle(vc, mval[0], mval[1], (short)(rad+1.0f));
+		EM_backbuf_checkAndSelectVerts_obmode(me, select==LEFTMOUSE);
+		EM_free_backbuf();
+
+		paintvert_flush_flags(ob);
 	}
 }
 
@@ -2240,7 +2441,7 @@ static int view3d_circle_select_exec(bContext *C, wmOperator *op)
 	
 	select= (gesture_mode==GESTURE_MODAL_SELECT);
 
-	if( CTX_data_edit_object(C) || paint_facesel_test(obact) ||
+	if( CTX_data_edit_object(C) || paint_facesel_test(obact) || paint_vertsel_test(obact) ||
 		(obact && (obact->mode & (OB_MODE_PARTICLE_EDIT|OB_MODE_POSE))) )
 	{
 		ViewContext vc;
@@ -2258,6 +2459,10 @@ static int view3d_circle_select_exec(bContext *C, wmOperator *op)
 		}
 		else if(paint_facesel_test(obact)) {
 			paint_facesel_circle_select(&vc, select, mval, (float)radius);
+			WM_event_add_notifier(C, NC_GEOM|ND_SELECT, obact->data);
+		}
+		else if(paint_vertsel_test(obact)) {
+			paint_vertsel_circle_select(&vc, select, mval, (float)radius);
 			WM_event_add_notifier(C, NC_GEOM|ND_SELECT, obact->data);
 		}
 		else if(obact->mode & OB_MODE_POSE)

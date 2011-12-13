@@ -21,10 +21,14 @@
     geometry_utils.py
 
     3d geometry calculations
+    
+    
+
 '''
 
 
-from mathutils import geometry, Vector
+from mathutils import Vector, Matrix
+from mathutils import geometry
 
 
 # 3D Geometry
@@ -121,6 +125,7 @@ class G3:
         except(RuntimeError, TypeError):
             return None
 
+    # Poor mans approach of finding center of circle
     @classmethod
     def circumCenter(cls, fv):
         fm = G3.medianTriangle(fv)
@@ -140,11 +145,12 @@ class G3:
             return None
         return G3.closestP2L(p, c, c+n)
 
+    # Poor mans approach of finding center of sphere
     @classmethod
     def centerOfSphere(cls, fv):
         try:
             if len(fv)==3:
-                return G3.circumCenter(fv)
+                return G3.circumCenter(fv) # Equator
             if len(fv)==4:
                 fv3 = [fv[0],fv[1],fv[2]]
                 c1 = G3.circumCenter(fv)
@@ -206,3 +212,6 @@ class G3:
         #else:
             #pc.normalize()
         #return c + (pc * G3.distanceP2P(c, fv[0]))
+
+
+

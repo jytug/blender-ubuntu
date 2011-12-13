@@ -1,8 +1,5 @@
-
-/*  property.c   june 2000
- * 
- *  ton roosendaal
- * $Id: property.c 35247 2011-02-27 20:40:57Z jesterking $
+/*
+ * $Id: property.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,7 +22,7 @@
  *
  * The Original Code is: all of this file.
  *
- * Contributor(s): none yet.
+ * Contributor(s): ton roosendaal
  *
  * ***** END GPL LICENSE BLOCK *****
  */

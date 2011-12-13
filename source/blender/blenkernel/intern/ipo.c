@@ -1,6 +1,5 @@
-/* ipo.c
- * 
- * $Id: ipo.c 38830 2011-07-29 20:59:46Z dingto $
+/*
+ * $Id: ipo.c 41007 2011-10-14 11:24:20Z nazgul $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -320,7 +319,7 @@ static const char *constraint_adrcodes_to_paths (int adrcode, int *array_index)
 
 /* ShapeKey types 
  * NOTE: as we don't have access to the keyblock where the data comes from (for now), 
- *	 	we'll just use numerical indices for now... 
+ *       we'll just use numerical indices for now...
  */
 static char *shapekey_adrcodes_to_paths (int adrcode, int *UNUSED(array_index))
 {
@@ -945,7 +944,7 @@ static char *get_rna_access (int blocktype, int adrcode, char actname[], char co
 		sprintf(buf, "sequence_editor.sequences_all[\"%s\"]", seq->name+2);
 	}
 	else
-		strcpy(buf, ""); /* empty string */
+		buf[0]= '\0'; /* empty string */
 	BLI_dynstr_append(path, buf);
 	
 	/* need to add dot before property if there was anything precceding this */
@@ -1035,12 +1034,14 @@ static ChannelDriver *idriver_to_cdriver (IpoDriver *idriver)
 					/* first bone target */
 				dtar= &dvar->targets[0];
 				dtar->id= (ID *)idriver->ob;
+				dtar->idtype= ID_OB;
 				if (idriver->name[0])
 					BLI_strncpy(dtar->pchan_name, idriver->name, sizeof(dtar->pchan_name));
 				
 					/* second bone target (name was stored in same var as the first one) */
 				dtar= &dvar->targets[1];
 				dtar->id= (ID *)idriver->ob;
+				dtar->idtype= ID_OB;
 				if (idriver->name[0]) // xxx... for safety
 					BLI_strncpy(dtar->pchan_name, idriver->name+DRIVER_NAME_OFFS, sizeof(dtar->pchan_name));
 			}
@@ -1052,6 +1053,7 @@ static ChannelDriver *idriver_to_cdriver (IpoDriver *idriver)
 				/* only requires a single target */
 				dtar= &dvar->targets[0];
 				dtar->id= (ID *)idriver->ob;
+				dtar->idtype= ID_OB;
 				if (idriver->name[0])
 					BLI_strncpy(dtar->pchan_name, idriver->name, sizeof(dtar->pchan_name));
 				dtar->transChan= adrcode_to_dtar_transchan(idriver->adrcode);
@@ -1066,6 +1068,7 @@ static ChannelDriver *idriver_to_cdriver (IpoDriver *idriver)
 				/* only requires single target */
 			dtar= &dvar->targets[0];
 			dtar->id= (ID *)idriver->ob;
+			dtar->idtype= ID_OB;
 			dtar->transChan= adrcode_to_dtar_transchan(idriver->adrcode);
 		}
 	}
@@ -1106,7 +1109,7 @@ static void fcurve_add_to_list (ListBase *groups, ListBase *list, FCurve *fcu, c
 				agrp->flag = AGRP_SELECTED;
 				if (muteipo) agrp->flag |= AGRP_MUTED;
 				
-				strncpy(agrp->name, grpname, sizeof(agrp->name));
+				BLI_strncpy(agrp->name, grpname, sizeof(agrp->name));
 				
 				BLI_addtail(&tmp_act.groups, agrp);
 				BLI_uniquename(&tmp_act.groups, agrp, "Group", '.', offsetof(bActionGroup, name), sizeof(agrp->name));
@@ -1157,7 +1160,6 @@ static void icu_to_fcurves (ID *id, ListBase *groups, ListBase *list, IpoCurve *
 	if (icu->flag & IPO_ACTIVE) fcu->flag |= FCURVE_ACTIVE;
 	if (icu->flag & IPO_MUTE) fcu->flag |= FCURVE_MUTED;
 	if (icu->flag & IPO_PROTECT) fcu->flag |= FCURVE_PROTECTED;
-	if (icu->flag & IPO_AUTO_HORIZ) fcu->flag |= FCURVE_AUTO_HANDLES;
 	
 	/* set extrapolation */
 	switch (icu->extrap) {
@@ -1242,6 +1244,12 @@ static void icu_to_fcurves (ID *id, ListBase *groups, ListBase *list, IpoCurve *
 					/* 'hide' flag is now used for keytype - only 'keyframes' existed before */
 					dst->hide= BEZT_KEYTYPE_KEYFRAME;
 					
+					/* auto-handles - per curve to per handle */
+					if (icu->flag & IPO_AUTO_HORIZ) {
+						if (dst->h1 == HD_AUTO) dst->h1 = HD_AUTO_ANIM;
+						if (dst->h2 == HD_AUTO) dst->h2 = HD_AUTO_ANIM;
+					}
+					
 					/* correct values, by checking if the flag of interest is set */
 					if ( ((int)(dst->vec[1][1])) & (abp->bit) )
 						dst->vec[0][1]= dst->vec[1][1]= dst->vec[2][1] = 1.0f;
@@ -1292,6 +1300,12 @@ static void icu_to_fcurves (ID *id, ListBase *groups, ListBase *list, IpoCurve *
 					
 				/* 'hide' flag is now used for keytype - only 'keyframes' existed before */
 				dst->hide= BEZT_KEYTYPE_KEYFRAME;
+				
+				/* auto-handles - per curve to per handle */
+				if (icu->flag & IPO_AUTO_HORIZ) {
+					if (dst->h1 == HD_AUTO) dst->h1 = HD_AUTO_ANIM;
+					if (dst->h2 == HD_AUTO) dst->h2 = HD_AUTO_ANIM;
+				}
 					
 				/* correct values for euler rotation curves 
 				 *	- they were degrees/10 

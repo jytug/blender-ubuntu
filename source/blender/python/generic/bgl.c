@@ -1,5 +1,5 @@
 /* 
- * $Id: bgl.c 38472 2011-07-18 09:49:26Z campbellbarton $
+ * $Id: bgl.c 40976 2011-10-13 01:29:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,20 +52,18 @@ static int Buffer_len(Buffer *self);
 static PyObject *Buffer_item(Buffer *self, int i);
 static PyObject *Buffer_slice(Buffer *self, int begin, int end);
 static int Buffer_ass_item(Buffer *self, int i, PyObject *v);
-static int Buffer_ass_slice(Buffer *self, int begin, int end,
-                            PyObject *seq);
+static int Buffer_ass_slice(Buffer *self, int begin, int end, PyObject *seq);
 static PyObject *Buffer_subscript(Buffer *self, PyObject *item);
-static int Buffer_ass_subscript(Buffer *self, PyObject *item,
-                                PyObject *value);
+static int Buffer_ass_subscript(Buffer *self, PyObject *item, PyObject *value);
 
 static PySequenceMethods Buffer_SeqMethods = {
 	(lenfunc) Buffer_len,						/*sq_length */
 	(binaryfunc) NULL,							/*sq_concat */
 	(ssizeargfunc) NULL,						/*sq_repeat */
 	(ssizeargfunc) Buffer_item,					/*sq_item */
-	(ssizessizeargfunc) Buffer_slice,			/*sq_slice, deprecated TODO, replace */
+	(ssizessizeargfunc) NULL,					/*sq_slice, deprecated, handled in Buffer_item */
 	(ssizeobjargproc) Buffer_ass_item,			/*sq_ass_item */
-	(ssizessizeobjargproc) Buffer_ass_slice,	/*sq_ass_slice, deprecated TODO, replace */
+	(ssizessizeobjargproc) NULL,				/*sq_ass_slice, deprecated handled in Buffer_ass_item */
 	(objobjproc) NULL,							/* sq_contains */
 	(binaryfunc) NULL,							/* sq_inplace_concat */
 	(ssizeargfunc) NULL,						/* sq_inplace_repeat */
@@ -97,7 +95,7 @@ static PyObject *Buffer_to_list_recursive(Buffer *self)
 {
 	PyObject *list;
 
-	if(self->ndimensions > 1) {
+	if (self->ndimensions > 1) {
 		int i, len= self->dimensions[0];
 		list= PyList_New(len);
 
@@ -112,13 +110,6 @@ static PyObject *Buffer_to_list_recursive(Buffer *self)
 	}
 
 	return list;
-}
-
-/* *DEPRECATED* 2011/7/17 bgl.Buffer.list */
-static PyObject *Buffer_list(Buffer *self, void *UNUSED(arg))
-{
-	fprintf(stderr, "Warning: 'Buffer.list' deprecated, use '[:]' instead\n");
-	return Buffer_to_list(self);
 }
 
 static PyObject *Buffer_dimensions(Buffer *self, void *UNUSED(arg))
@@ -140,7 +131,6 @@ static PyMethodDef Buffer_methods[] = {
 };
 
 static PyGetSetDef Buffer_getseters[] = {
-	{(char *)"list", (getter)Buffer_list, NULL, NULL, NULL},
 	{(char *)"dimensions", (getter)Buffer_dimensions, NULL, NULL, NULL},
 	 {NULL, NULL, NULL, NULL, NULL}
 };
@@ -223,7 +213,7 @@ PyTypeObject BGL_bufferType = {
 static PyObject *Method_##funcname (PyObject *UNUSED(self), PyObject *args) {\
 	arg_def##nargs arg_list; \
 	ret_def_##ret; \
-	if(!PyArg_ParseTuple(args, arg_str##nargs arg_list, arg_ref##nargs arg_list)) return NULL;\
+	if (!PyArg_ParseTuple(args, arg_str##nargs arg_list, arg_ref##nargs arg_list)) return NULL;\
 	ret_set_##ret gl##funcname (arg_var##nargs arg_list);\
 	ret_ret_##ret; \
 }
@@ -232,7 +222,7 @@ static PyObject *Method_##funcname (PyObject *UNUSED(self), PyObject *args) {\
 static PyObject *Method_##funcname (PyObject *UNUSED(self), PyObject *args) {\
 	arg_def##nargs arg_list; \
 	ret_def_##ret; \
-	if(!PyArg_ParseTuple(args, arg_str##nargs arg_list, arg_ref##nargs arg_list)) return NULL;\
+	if (!PyArg_ParseTuple(args, arg_str##nargs arg_list, arg_ref##nargs arg_list)) return NULL;\
 	ret_set_##ret glu##funcname (arg_var##nargs arg_list);\
 	ret_ret_##ret; \
 }
@@ -296,10 +286,10 @@ static PyObject *Buffer_new(PyTypeObject *UNUSED(type), PyObject *args, PyObject
 	Buffer *buffer;
 	int dimensions[MAX_DIMENSIONS];
 	
-	int i, type;
-	int ndimensions = 0;
+	int type;
+	Py_ssize_t i, ndimensions = 0;
 
-	if(kwds && PyDict_Size(kwds)) {
+	if (kwds && PyDict_Size(kwds)) {
 		PyErr_SetString(PyExc_TypeError,
 		                "bgl.Buffer(): takes no keyword args");
 		return NULL;
@@ -317,7 +307,7 @@ static PyObject *Buffer_new(PyTypeObject *UNUSED(type), PyObject *args, PyObject
 
 	if (PyLong_Check(length_ob)) {
 		ndimensions= 1;
-		if(((dimensions[0]= PyLong_AsLong(length_ob)) < 1)) {
+		if (((dimensions[0]= PyLong_AsLong(length_ob)) < 1)) {
 			PyErr_SetString(PyExc_AttributeError,
 			                "dimensions must be between 1 and "STRINGIFY(MAX_DIMENSIONS));
 			return NULL;
@@ -342,7 +332,7 @@ static PyObject *Buffer_new(PyTypeObject *UNUSED(type), PyObject *args, PyObject
 			else dimensions[i]= PyLong_AsLong(ob);
 			Py_DECREF(ob);
 
-			if(dimensions[i] < 1) {
+			if (dimensions[i] < 1) {
 				PyErr_SetString(PyExc_AttributeError,
 				                "dimensions must be between 1 and "STRINGIFY(MAX_DIMENSIONS));
 				return NULL;
@@ -500,7 +490,7 @@ static int Buffer_ass_slice(Buffer *self, int begin, int end, PyObject *seq)
 	
 	for (count= begin; count < end; count++) {
 		item= PySequence_GetItem(seq, count - begin);
-		if(item) {
+		if (item) {
 			err= Buffer_ass_item(self, count, item);
 			Py_DECREF(item);
 		}
@@ -1303,7 +1293,7 @@ PyObject *BPyInit_bgl(void)
 	submodule= PyModule_Create(&BGL_module_def);
 	dict= PyModule_GetDict(submodule);
 	
-	if(PyType_Ready(&BGL_bufferType) < 0)
+	if (PyType_Ready(&BGL_bufferType) < 0)
 		return NULL; /* should never happen */
 
 

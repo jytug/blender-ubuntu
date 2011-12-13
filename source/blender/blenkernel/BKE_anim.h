@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_anim.h 34962 2011-02-18 13:05:18Z jesterking $ 
+ * $Id: BKE_anim.h 40904 2011-10-10 09:44:14Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

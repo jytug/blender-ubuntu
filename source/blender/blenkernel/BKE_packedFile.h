@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_packedFile.h 34962 2011-02-18 13:05:18Z jesterking $ 
+ * $Id: BKE_packedFile.h 40853 2011-10-08 11:02:58Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -45,7 +45,7 @@ struct ReportList;
 struct VFont;
 
 /* pack */
-struct PackedFile *newPackedFile(struct ReportList *reports, const char *filename);
+struct PackedFile *newPackedFile(struct ReportList *reports, const char *filename, const char *relabase);
 struct PackedFile *newPackedFileMemory(void *mem, int memlen);
 
 void packAll(struct Main *bmain, struct ReportList *reports);

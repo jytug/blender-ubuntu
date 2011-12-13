@@ -1,5 +1,5 @@
 /*
- * $Id: idcode.c 35493 2011-03-12 14:38:00Z campbellbarton $
+ * $Id: idcode.c 40641 2011-09-28 05:53:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -73,7 +73,8 @@ static IDType idtypes[]= {
 	{ ID_SCE,		"Scene",	"scenes",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_SCR,		"Screen",	"screens",		0}, 
 	{ ID_SEQ,		"Sequence",	"sequences",	0}, /* not actually ID data */
-	{ ID_SO,		"Sound",	"sounds",		IDTYPE_FLAGS_ISLINKABLE}, 
+	{ ID_SPK,		"Speaker",	"speakers",		IDTYPE_FLAGS_ISLINKABLE},
+	{ ID_SO,		"Sound",	"sounds",		IDTYPE_FLAGS_ISLINKABLE},
 	{ ID_TE,		"Texture",	"textures",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_TXT,		"Text",		"texts",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_VF,		"VFont",	"fonts",		IDTYPE_FLAGS_ISLINKABLE}, 
@@ -108,7 +109,8 @@ int BKE_idcode_is_valid(int code)
 	return idtype_from_code(code)?1:0;
 }
 
-int BKE_idcode_is_linkable(int code) {
+int BKE_idcode_is_linkable(int code)
+{
 	IDType *idt= idtype_from_code(code);
 	return idt?(idt->flags&IDTYPE_FLAGS_ISLINKABLE):0;
 }

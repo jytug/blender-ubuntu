@@ -1,5 +1,5 @@
 /*
- * $Id: KX_VertexProxy.cpp 35171 2011-02-25 13:35:59Z jesterking $
+ * $Id: KX_VertexProxy.cpp 40833 2011-10-06 16:07:05Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -436,10 +436,14 @@ KX_VertexProxy::KX_VertexProxy(KX_MeshProxy*mesh, RAS_TexVert* vertex)
 :	m_vertex(vertex),
 	m_mesh(mesh)
 {
+	/* see bug [#27071] */
+	Py_INCREF(m_mesh->GetProxy());
 }
 
 KX_VertexProxy::~KX_VertexProxy()
 {
+	/* see bug [#27071] */
+	Py_DECREF(m_mesh->GetProxy());
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * $Id: BlenderWorldInfo.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: BlenderWorldInfo.h 40838 2011-10-06 22:04:01Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,22 +54,22 @@ public:
 	~BlenderWorldInfo();
 
 	bool	hasWorld();
-    bool	hasMist();
-    float	getBackColorRed();
-    float	getBackColorGreen();
-    float	getBackColorBlue();
+	bool	hasMist();
+	float	getBackColorRed();
+	float	getBackColorGreen();
+	float	getBackColorBlue();
 	
 	float	getAmbientColorRed();
 	float	getAmbientColorGreen();
 	float	getAmbientColorBlue();
 
-    float	getMistStart();
-    float	getMistDistance();
-    float	getMistColorRed();
-    float	getMistColorGreen();
-    float	getMistColorBlue();     
+	float	getMistStart();
+	float	getMistDistance();
+	float	getMistColorRed();
+	float	getMistColorGreen();
+	float	getMistColorBlue();
 
-		void
+	void
 	setBackColor(
 		float r,
 		float g,

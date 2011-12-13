@@ -24,11 +24,11 @@ bl_info = {
     "blender": (2, 5, 8),
     "api": 35622,
     "location": "File > Import-Export",
-    "description": ("Import-Export OBJ, Import OBJ mesh, UV's, "
-                    "materials and textures"),
+    "description": "Import-Export OBJ, Import OBJ mesh, UV's, "
+                   "materials and textures",
     "warning": "",
-    "wiki_url": ("http://wiki.blender.org/index.php/Extensions:2.5/Py/"
-                 "Scripts/Import-Export/Wavefront_OBJ"),
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"
+                "Scripts/Import-Export/Wavefront_OBJ",
     "tracker_url": "",
     "support": 'OFFICIAL',
     "category": "Import-Export"}
@@ -58,7 +58,7 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
     '''Load a Wavefront OBJ File'''
     bl_idname = "import_scene.obj"
     bl_label = "Import OBJ"
-    bl_options = {'PRESET'}
+    bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = ".obj"
     filter_glob = StringProperty(
@@ -95,14 +95,14 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
 
     use_groups_as_vgroups = BoolProperty(
             name="Poly Groups",
-            description="Import OBJ groups as vertex groups.",
+            description="Import OBJ groups as vertex groups",
             default=False,
             )
 
     use_image_search = BoolProperty(
             name="Image Search",
-            description=("Search subdirs for any assosiated images "
-                         "(Warning, may be slow)"),
+            description="Search subdirs for any assosiated images " \
+                        "(Warning, may be slow)",
             default=True,
             )
 
@@ -215,14 +215,9 @@ class ExportOBJ(bpy.types.Operator, ExportHelper):
             description="Export selected objects only",
             default=False,
             )
-    use_all_scenes = BoolProperty(
-            name="All Scenes",
-            description="",
-            default=False,
-            )
     use_animation = BoolProperty(
             name="Animation",
-            description="",
+            description="Write out an OBJ for each frame",
             default=False,
             )
 
@@ -235,42 +230,38 @@ class ExportOBJ(bpy.types.Operator, ExportHelper):
 
     # extra data group
     use_edges = BoolProperty(
-            name="Edges",
+            name="Include Edges",
             description="",
             default=True,
             )
     use_normals = BoolProperty(
-            name="Normals",
+            name="Include Normals",
             description="",
             default=False,
             )
-    use_hq_normals = BoolProperty(
-            name="High Quality Normals",
-            description="",
-            default=True,
-            )
     use_uvs = BoolProperty(
-            name="UVs",
-            description="",
+            name="Include UVs",
+            description="Write out the active UV coordinates",
             default=True,
             )
     use_materials = BoolProperty(
-            name="Materials",
-            description="",
+            name="Write Materials",
+            description="Write out the MTL file",
             default=True,
             )
     use_triangles = BoolProperty(
-            name="Triangulate",
-            description="",
+            name="Triangulate Faces",
+            description="Convert all faces to triangles",
+            default=False,
+            )
+    use_nurbs = BoolProperty(
+            name="Write Nurbs",
+            description="Write nurbs curves as OBJ nurbs rather then "
+                        "converting to geometry",
             default=False,
             )
     use_vertex_groups = BoolProperty(
             name="Polygroups",
-            description="",
-            default=False,
-            )
-    use_nurbs = BoolProperty(
-            name="Nurbs",
             description="",
             default=False,
             )

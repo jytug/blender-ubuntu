@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_cast.c 38300 2011-07-11 09:15:20Z blendix $
+* $Id: MOD_cast.c 40581 2011-09-26 18:51:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -40,6 +40,7 @@
 
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 
 #include "BKE_deform.h"
@@ -77,7 +78,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tcmd->flag = cmd->flag;
 	tcmd->type = cmd->type;
 	tcmd->object = cmd->object;
-	strncpy(tcmd->defgrp_name, cmd->defgrp_name, 32);
+	BLI_strncpy(tcmd->defgrp_name, cmd->defgrp_name, 32);
 }
 
 static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
@@ -632,4 +633,5 @@ ModifierTypeInfo modifierType_Cast = {
 	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     NULL,
+	/* foreachTexLink */    NULL,
 };

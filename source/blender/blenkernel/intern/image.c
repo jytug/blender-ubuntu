@@ -1,6 +1,5 @@
-/*  image.c
- * 
- * $Id: image.c 38551 2011-07-21 00:41:00Z campbellbarton $
+/*
+ * $Id: image.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -592,7 +591,7 @@ void BKE_image_print_memlist(void)
 	for(ima= G.main->image.first; ima; ima= ima->id.next)
 		totsize += image_mem_size(ima);
 
-	printf("\ntotal image memory len: %.3lf MB\n", (double)totsize/(double)(1024*1024));
+	printf("\ntotal image memory len: %.3f MB\n", (double)totsize/(double)(1024*1024));
 
 	for(ima= G.main->image.first; ima; ima= ima->id.next) {
 		size= image_mem_size(ima);
@@ -1371,15 +1370,15 @@ void BKE_makepicstring(char *string, const char *base, int frame, int imtype, co
 }
 
 /* used by sequencer too */
-struct anim *openanim(char *name, int flags)
+struct anim *openanim(char *name, int flags, int streamindex)
 {
 	struct anim *anim;
 	struct ImBuf *ibuf;
 	
-	anim = IMB_open_anim(name, flags);
+	anim = IMB_open_anim(name, flags, streamindex);
 	if (anim == NULL) return NULL;
 
-	ibuf = IMB_anim_absolute(anim, 0);
+	ibuf = IMB_anim_absolute(anim, 0, IMB_TC_NONE, IMB_PROXY_NONE);
 	if (ibuf == NULL) {
 		if(BLI_exists(name))
 			printf("not an anim: %s\n", name);
@@ -1480,7 +1479,7 @@ void BKE_image_signal(Image *ima, ImageUser *iuser, int signal)
 		/* try to repack file */
 		if(ima->packedfile) {
 			PackedFile *pf;
-			pf = newPackedFile(NULL, ima->name);
+			pf = newPackedFile(NULL, ima->name, ID_BLEND_PATH(G.main, &ima->id));
 			if (pf) {
 				freePackedFile(ima->packedfile);
 				ima->packedfile = pf;
@@ -1653,10 +1652,7 @@ static ImBuf *image_load_sequence_file(Image *ima, ImageUser *iuser, int frame)
 	BLI_stringdec(name, head, tail, &numlen);
 	BLI_stringenc(name, head, tail, numlen, frame);
 
-	if(ima->id.lib)
-		BLI_path_abs(name, ima->id.lib->filepath);
-	else
-		BLI_path_abs(name, G.main->name);
+	BLI_path_abs(name, ID_BLEND_PATH(G.main, &ima->id));
 	
 	flag= IB_rect|IB_multilayer;
 	if(ima->flag & IMA_DO_PREMUL)
@@ -1768,25 +1764,28 @@ static ImBuf *image_load_movie_file(Image *ima, ImageUser *iuser, int frame)
 		char str[FILE_MAX];
 		
 		BLI_strncpy(str, ima->name, FILE_MAX);
-		if(ima->id.lib)
-			BLI_path_abs(str, ima->id.lib->filepath);
-		else
-			BLI_path_abs(str, G.main->name);
-		
-		ima->anim = openanim(str, IB_rect);
+		BLI_path_abs(str, ID_BLEND_PATH(G.main, &ima->id));
+
+		/* FIXME: make several stream accessible in image editor, too*/
+		ima->anim = openanim(str, IB_rect, 0);
 		
 		/* let's initialize this user */
 		if(ima->anim && iuser && iuser->frames==0)
-			iuser->frames= IMB_anim_get_duration(ima->anim);
+			iuser->frames= IMB_anim_get_duration(ima->anim,
+							     IMB_TC_RECORD_RUN);
 	}
 	
 	if(ima->anim) {
-		int dur = IMB_anim_get_duration(ima->anim);
+		int dur = IMB_anim_get_duration(ima->anim,
+						IMB_TC_RECORD_RUN);
 		int fra= frame-1;
 		
 		if(fra<0) fra = 0;
 		if(fra>(dur-1)) fra= dur-1;
-		ibuf = IMB_anim_absolute(ima->anim, fra);
+		ibuf = IMB_makeSingleUser(
+			IMB_anim_absolute(ima->anim, fra,
+					  IMB_TC_RECORD_RUN,
+					  IMB_PROXY_NONE));
 		
 		if(ibuf) {
 			image_initialize_after_load(ima, ibuf);
@@ -1828,10 +1827,7 @@ static ImBuf *image_load_image_file(Image *ima, ImageUser *iuser, int cfra)
 			
 		/* get the right string */
 		BLI_strncpy(str, ima->name, sizeof(str));
-		if(ima->id.lib)
-			BLI_path_abs(str, ima->id.lib->filepath);
-		else
-			BLI_path_abs(str, G.main->name);
+		BLI_path_abs(str, ID_BLEND_PATH(G.main, &ima->id));
 		
 		/* read ibuf */
 		ibuf = IMB_loadiffname(str, flag);
@@ -1854,7 +1850,7 @@ static ImBuf *image_load_image_file(Image *ima, ImageUser *iuser, int cfra)
 			
 			/* make packed file for autopack */
 			if ((ima->packedfile == NULL) && (G.fileflags & G_AUTOPACK))
-				ima->packedfile = newPackedFile(NULL, str);
+				ima->packedfile = newPackedFile(NULL, str, ID_BLEND_PATH(G.main, &ima->id));
 		}
 	}
 	else
@@ -2284,3 +2280,20 @@ void BKE_image_user_calc_frame(ImageUser *iuser, int cfra, int fieldnr)
 	iuser->framenr= framenr;
 	if(iuser->ok==0) iuser->ok= 1;
 }
+
+int BKE_image_has_alpha(struct Image *image)
+{
+	ImBuf *ibuf;
+	void *lock;
+	int depth;
+	
+	ibuf= BKE_image_acquire_ibuf(image, NULL, &lock);
+	depth = (ibuf?ibuf->depth:0);
+	BKE_image_release_ibuf(image, lock);
+
+	if (depth == 32)
+		return 1;
+	else
+		return 0;
+}
+

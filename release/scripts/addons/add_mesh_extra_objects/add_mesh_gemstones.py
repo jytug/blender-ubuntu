@@ -15,7 +15,7 @@
 #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ##### END GPL LICENSE BLOCK #####
-"""
+'''
 bl_info = {
     "name": "Gemstones",
     "author": "Pontiac, Fourmadmen, Dreampainter",
@@ -30,7 +30,7 @@ bl_info = {
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
         "func=detail&aid=21432",
     "category": "Add Mesh"}
-"""
+'''
 import bpy
 from mathutils import *
 from math import *
@@ -286,7 +286,7 @@ class AddGem(bpy.types.Operator):
     """Add a diamond gem"""
     bl_idname = "mesh.primitive_gem_add"
     bl_label = "Add Gem"
-    bl_description = "Create an offset faceted gem."
+    bl_description = "Create an offset faceted gem"
     bl_options = {'REGISTER', 'UNDO'}
 
     segments = IntProperty(name="Segments",
@@ -300,17 +300,17 @@ class AddGem(bpy.types.Operator):
        max=9999.0,
        default=1.0)
     crown_radius = FloatProperty(name="Table Radius",
-       description="Radius of the table(top).",
+       description="Radius of the table(top)",
        min=0.01,
        max=9999.0,
        default=0.6)
     crown_height = FloatProperty(name="Table height",
-       description="Height of the top half.",
+       description="Height of the top half",
        min=0.01,
        max=9999.0,
        default=0.35)
     pavilion_height = FloatProperty(name="Pavilion height",
-       description="Height of bottom half.",
+       description="Height of bottom half",
        min=0.01,
        max=9999.0,
        default=0.8)
@@ -328,4 +328,3 @@ class AddGem(bpy.types.Operator):
         obj = create_mesh_object(context, verts, [], faces, "Gem")
 
         return {'FINISHED'}
-

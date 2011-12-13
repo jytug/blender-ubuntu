@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_solidify.c 38300 2011-07-11 09:15:20Z blendix $
+* $Id: MOD_solidify.c 40467 2011-09-22 16:57:16Z nazgul $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -232,8 +232,10 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 	float (*vert_nors)[3]= NULL;
 
-	float const ofs_orig=				- (((-smd->offset_fac + 1.0f) * 0.5f) * smd->offset);
-	float const ofs_new= smd->offset	- (((-smd->offset_fac + 1.0f) * 0.5f) * smd->offset);
+	const float ofs_orig=				- (((-smd->offset_fac + 1.0f) * 0.5f) * smd->offset);
+	const float ofs_new= smd->offset	- (((-smd->offset_fac + 1.0f) * 0.5f) * smd->offset);
+	const float offset_fac_vg= smd->offset_fac_vg;
+	const float offset_fac_vg_inv= 1.0f - smd->offset_fac_vg;
 
 	/* weights */
 	MDeformVert *dvert, *dv= NULL;
@@ -391,8 +393,9 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 			dv= dvert;
 			for(i=0; i<numVerts; i++, mv++) {
 				if(dv) {
-					if(defgrp_invert)	scalar_short_vgroup = scalar_short * (1.0f - defvert_find_weight(dv, defgrp_index));
-					else				scalar_short_vgroup = scalar_short * defvert_find_weight(dv, defgrp_index);
+					if(defgrp_invert)	scalar_short_vgroup = 1.0f - defvert_find_weight(dv, defgrp_index);
+					else				scalar_short_vgroup = defvert_find_weight(dv, defgrp_index);
+					scalar_short_vgroup= (offset_fac_vg + (scalar_short_vgroup * offset_fac_vg_inv)) * scalar_short;
 					dv++;
 				}
 				VECADDFAC(mv->co, mv->co, mv->no, scalar_short_vgroup);
@@ -405,8 +408,9 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 			dv= dvert;
 			for(i=0; i<numVerts; i++, mv++) {
 				if(dv) {
-					if(defgrp_invert)	scalar_short_vgroup = scalar_short * (1.0f - defvert_find_weight(dv, defgrp_index));
-					else				scalar_short_vgroup = scalar_short * defvert_find_weight(dv, defgrp_index);
+					if(defgrp_invert)	scalar_short_vgroup = 1.0f - defvert_find_weight(dv, defgrp_index);
+					else				scalar_short_vgroup = defvert_find_weight(dv, defgrp_index);
+					scalar_short_vgroup= (offset_fac_vg + (scalar_short_vgroup * offset_fac_vg_inv)) * scalar_short;
 					dv++;
 				}
 				VECADDFAC(mv->co, mv->co, mv->no, scalar_short_vgroup);
@@ -466,15 +470,21 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 		/* vertex group support */
 		if(dvert) {
+			float scalar;
+
 			dv= dvert;
 			if(defgrp_invert) {
 				for(i=0; i<numVerts; i++, dv++) {
-					vert_angles[i] *= (1.0f - defvert_find_weight(dv, defgrp_index));
+					scalar= 1.0f - defvert_find_weight(dv, defgrp_index);
+					scalar= offset_fac_vg + (scalar * offset_fac_vg_inv);
+					vert_angles[i] *= scalar;
 				}
 			}
 			else {
 				for(i=0; i<numVerts; i++, dv++) {
-					vert_angles[i] *= defvert_find_weight(dv, defgrp_index);
+					scalar= defvert_find_weight(dv, defgrp_index);
+					scalar= offset_fac_vg + (scalar * offset_fac_vg_inv);
+					vert_angles[i] *= scalar;
 				}
 			}
 		}
@@ -514,7 +524,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	}
 
 	if(smd->flag & MOD_SOLIDIFY_RIM) {
-
+		int *origindex;
 		
 		/* bugger, need to re-calculate the normals for the new edge faces.
 		 * This could be done in many ways, but probably the quickest way is to calculate the average normals for side faces only.
@@ -541,11 +551,14 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 				{0, 3, 3, 0}};
 
 		/* add faces & edges */
+		origindex= result->getEdgeDataArray(result, CD_ORIGINDEX);
 		ed= medge + (numEdges * 2);
 		for(i=0; i<newEdges; i++, ed++) {
 			ed->v1= new_vert_arr[i];
 			ed->v2= new_vert_arr[i] + numVerts;
 			ed->flag |= ME_EDGEDRAW;
+
+			origindex[numEdges * 2 + i]= ORIGINDEX_NONE;
 
 			if(crease_rim)
 				ed->crease= crease_rim;
@@ -553,6 +566,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 		/* faces */
 		mf= mface + (numFaces * 2);
+		origindex= result->getFaceDataArray(result, CD_ORIGINDEX);
 		for(i=0; i<newFaces; i++, mf++) {
 			int eidx= new_edge_arr[i];
 			int fidx= edge_users[eidx];
@@ -613,6 +627,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 			add_v3_v3(edge_vert_nos[ed->v1], nor);
 			add_v3_v3(edge_vert_nos[ed->v2], nor);
 #endif
+			origindex[numFaces * 2 + i]= ORIGINDEX_NONE;
 		}
 		
 #ifdef SOLIDIFY_SIDE_NORMALS
@@ -689,5 +704,6 @@ ModifierTypeInfo modifierType_Solidify = {
 	/* dependsOnTime */     NULL,
 	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ NULL,
-	/* foreachIDLink */     NULL
+	/* foreachIDLink */     NULL,
+	/* foreachTexLink */    NULL,
 };

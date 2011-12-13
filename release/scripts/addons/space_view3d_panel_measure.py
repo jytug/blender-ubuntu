@@ -15,16 +15,23 @@
 #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ##### END GPL LICENSE BLOCK #####
+#
+# Uses volume calculation and manifold check code (GPL2+) from:
+# http://www.shapeways.com/forum/index.php?t=msg&goto=3639
+# Shapeways Volume Calculator by Benjamin Lauritzen (Loonsbury)
+#
+# #################################
 
 bl_info = {
     "name": "Measure Panel",
-    "author": "Buerbaum Martin (Pontiac)",
-    "version": (0, 7, 13),
+    "author": "Buerbaum Martin (Pontiac), TNae (Normal patch)," \
+        " Benjamin Lauritzen (Loonsbury; Volume code)",
+    "version": (0, 8, 1),
     "blender": (2, 5, 7),
-    "api": 35864,
+    "api": 40847,
     "location": "View3D > Properties > Measure Panel",
     "description": "Measure distances between objects",
-    "warning": "",
+    "warning": "Script needs repairs",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/" \
         "Scripts/3D_interaction/Panel_Measure",
     "tracker_url": "https://projects.blender.org/tracker/index.php?" \
@@ -42,6 +49,8 @@ This script displays in OBJECT MODE:
 * The distance between 2 object centers
   (if exactly TWO objects are selected).
 * The surface area of any selected mesh object.
+* The average normal of the mesh surface of any selected mesh object.
+* The volume of any selected mesh object.
 
 Display in EDIT MODE (Local and Global space supported):
 * The distance of the 3D cursor to the origin
@@ -56,135 +65,6 @@ This functionality can be accessed via the
 
 It's very helpful to use one or two "Empty" objects with
 "Snap during transform" enabled for fast measurement.
-
-Version history:
-v0.7.13 - Moved property definitions to registration function.
-    Changed automatic callback adding to manual,
-    the current API doesn't seem to allow this top be automatically yet.
-    Various API fixes.
-v0.7.12 - Moved setting of properties to callback function
-    (it is bad practise to set it in the draw code).
-    Fixed distance calculation of parented objects.
-    API change: add_modal_handler -> modal_handler_add
-    Regression: Had to disable area display for selection with
-    more than 2 meshes.
-    Fixed Local/Global vert-loc calculations in EditMode.
-v0.7.11 - Applied patch by Filiciss Muhgue that fixes the text in quad view.
-v0.7.10 - Applied patch by Filiciss Muhgue that (mostly) fixes the quad view.
-    Patch link: https://projects.blender.org/tracker/?func=
-    detail&atid=127&aid=24932&group_id=9
-    Thanks for that!
-    Removed (now) unneeded "attr" setting for properties.
-v0.7.9 - Updated scene properties for changes in property API.
-    See http://lists.blender.org/pipermail/bf-committers/
-        2010-September/028654.html
-    Synced API changes in/from local copy.
-v0.7.8 - Various Py API changes by Campbell ...
-    bl_default_closed -> bl_options = {'DEFAULT_CLOSED'}
-    x.verts -> x.vertices
-    @classmethod    def poll(cls, context)
-    No "location" in bl_info->name
-    bl_info->api
-v0.7.7 - One more change to the callback registration code.
-    Now it should finally work as intended.
-v0.7.6 - API changes (r885, r886) - register & unregister function
-v0.7.5.3 - Small fix for bug in v0.7.5.1
-    (location was off when object was moved)
-v0.7.5.2 - Changed callback registration back to original code &
-    fixed bug in there (use bl_idname instead of bl_label)
-v0.7.5.1 - Global mode is now taking rotation into account properly.
-v0.7.5 - Fixed lagging and drawing issues.
-v0.7.4 - Fixed the modal_handler_add and callback_add code.
-    Thanks to jesterKing for pointing that out :-)
-v0.7.3.1 - Fixed bug that made all lines in Blender stippled :-)
-v0.7.3 - Added display of delta x/y/z value in 3d view.
-    * Inspired by warpi's patch here:
-    http://blenderartists.org/forum/showpost.php?p=1671033&postcount=47
-    * Also added display of dx,dy,dz lines
-    * Changed the "dist" colors to something not already used
-    by x/y/z axes.
-v0.7.2 - Merged changes from trunk (scripts_addons r847):
-    * obj.matrix -> obj.matrix_world
-    * vert.selected -> vert.select
-    * face.selected -> face.select
-    * bl_info: warning, wiki_url, tracker_url
-    * removed __bpydoc__
-    * Use fontid=0 for blf functions. 0 is the default font.
-v0.7.1 - Merged changes by Campbell:
-    * Fix for API change: Collections like context.selected_objects
-    no longer return None for empty lists.
-    * Update for mathutils, also stripped some redundant
-    conversions (Mostly "Vector()" stuff)
-v0.7 - Initial support for drawing lines.
-    (Thanks to Algorith for applying my perspective_matrix patch.)
-    The distance value (in BUs) is also drawn in the 3D view now.
-    Also fixed some wrong calculations of global/local distances.
-    Now it's really "what you see is what is calculated".
-    Use bl_info for Add-On information.
-    Use "3D View" in category & name
-    Renamed reenter_editmode to view3d.reenter_editmode.
-    Renamed panel_measure.py into space_view3d_panel_measure.py
-    Active object is only used for edit-mode now. Measurement
-    with exactly one sel. (but not necessarily active) object
-    now gets the obj via the sel-object array.
-    API change Mathutils -> mathutils (r557)
-    Deselecting 1 of 2 objects now works correctly (active object is ignored).
-    Force a redraw of the area so disabling the "measure_panel_draw"
-    checkbox will clear the line/text.
-    Only calculate area (CPU heavy) if a "area" checkbox is enabled.
-v0.6.4 - Fixed unneeded meshdata duplication (sometimes crashes Blender).
-    The script now correctly calculated the surface area (faceAreaGlobal)
-    of scaled meshes.
-    http://projects.blender.org/tracker/
-    ?func=detail&atid=453&aid=21913&group_id=153
-v0.6.3 - Added register & unregister functions.
-v0.6.2 - Fixed precision of second area property.
-    Reduced display precision to 5 (instead of 6).
-    Added (commented out code) for shortcut [F5] for
-    updating EditMode selection & calculation.
-    Changed the script so it can be managed from the "Add-Ons" tab
-    in the user preferences.
-    Corrected FSF address.
-v0.6.1 - Updated reenter_editmode operator description.
-    Fixed search for selected mesh objects.
-    Added "BU^2" after values that are not yet translated via "unit".
-v0.6
-    *) Fix:  Removed EditMode/ObjectMode toggle stuff. This causes all the
-       crashes and is generally not stable.
-       Instead I've added a manual "refresh" button.
-       I registered a new operator OBJECT_OT_reenter_editmode for this.
-    *) Use "unit" settings (i.e. none/metric/imperial)
-    *) Fix: Only display surface area (>=3 objects) if return value is >=0.
-    *) Minor: Renamed objectFaceArea to objectSurfaceArea
-    *) Updated Vector() and tuple() usage.
-    *) Fixed some comments.
-v0.5 - Global surface area (object mode) is now calculated as well.
-    Support area calculation for face selection.
-    Also made measurement panel closed by default. (Area calculation
-    may use up a lot of CPU/RAM in extreme cases)
-v0.4.1 - Various cleanups.
-    Using the shorter "scene" instead of "context.scene"
-    New functions measureGlobal() and measureLocal() for
-    user-friendly access to the "space" setting.
-v0.4 - Calculate & display the surface area of mesh
-    objects (local space only right now).
-    Expanded global/local switch.
-    Made "local" option for 3Dcursor-only in edit mode actually work.
-    Fixed local/global calculation for 3Dcursor<->vertex in edit mode.
-v0.3.2 - Fixed calculation & display of local/global coordinates.
-    The user can now select via dropdown which space is wanted/needed
-    Basically this is a bugfix and new feature at the same time :-)
-v0.3.1 - Fixed bug where "measure_panel_dist" wasn't defined
-    before it was used.
-    Also added the distance calculation "origin -> 3D cursor" for edit mode.
-v0.3 - Support for mesh edit mode (1 or 2 selected vertices)
-v0.2.1 - Small fix (selecting nothing didn't calculate the distance
-    of the cursor from the origin anymore)
-v0.2 - Distance value is now displayed via a FloatProperty widget (and
-    therefore saved to file too right now [according to ideasman42].
-    The value is save inside the scene right now.)
-    Thanks goes to ideasman42 (Campbell Barton) for helping me out on this.
-v0.1 - Initial revision. Seems to work fine for most purposes.
 
 More links:
 http://gitorious.org/blender-scripts/blender-measure-panel-script
@@ -392,7 +272,7 @@ def faceAreaGlobal(face, obj):
 
         area = n.length / 2.0
 
-    return area
+    return area, n
 
 
 # Calculate the surface area of a mesh object.
@@ -405,6 +285,7 @@ def faceAreaGlobal(face, obj):
 def objectSurfaceArea(obj, selectedOnly, globalSpace):
     if (obj and obj.type == 'MESH' and obj.data):
         areaTotal = 0
+        normTotal = Vector((0.0, 0.0, 0.0))
 
         mesh = obj.data
 
@@ -412,14 +293,136 @@ def objectSurfaceArea(obj, selectedOnly, globalSpace):
         for face in mesh.faces:
             if not selectedOnly or face.select:
                 if globalSpace:
-                    areaTotal += faceAreaGlobal(face, obj)
+                    a, n = faceAreaGlobal(face, obj)
+                    areaTotal += a
+                    normTotal += n
                 else:
                     areaTotal += face.area
+                    normTotal += face.normal
 
-        return areaTotal
+        return areaTotal, normTotal
 
     # We can not calculate an area for this object.
-    return -1
+    return -1, Vector((0.0, 0.0, 0.0))
+
+
+# Calculate the volume of a mesh object.
+# Copyright Loonsbury (loonsbury@yahoo.com)
+def objectVolume(obj, globalSpace):
+    if (obj and obj.type == 'MESH' and obj.data):
+
+        # Check if mesh is non-manifold
+        if not checkManifold(obj):
+            return -1
+
+        mesh = obj.data
+
+        volTot = 0
+
+        for face in mesh.faces:
+            fzn = face.normal.z
+
+            if len(face.vertices) == 4:
+                v1, v2, v3, v4 = face.vertices
+            else:
+                v1, v2, v3 = face.vertices
+
+            v1 = obj.data.vertices[v1]
+            v2 = obj.data.vertices[v2]
+            v3 = obj.data.vertices[v3]
+
+            # Scaled vert coordinates with object XYZ offsets for
+            # selection extremes/sizing.
+            if globalSpace:
+                x1 = v1.co[0] * obj.scale[0] + obj.location[0]
+                y1 = v1.co[1] * obj.scale[1] + obj.location[1]
+                z1 = v1.co[2] * obj.scale[2] + obj.location[2]
+
+                x2 = v2.co[0] * obj.scale[0] + obj.location[0]
+                y2 = v2.co[1] * obj.scale[1] + obj.location[1]
+                z2 = v2.co[2] * obj.scale[2] + obj.location[2]
+
+                x3 = v3.co[0] * obj.scale[0] + obj.location[0]
+                y3 = v3.co[1] * obj.scale[1] + obj.location[1]
+                z3 = v3.co[2] * obj.scale[2] + obj.location[2]
+
+            else:
+                x1, y1, z1 = v1.co
+                x2, y2, z2 = v2.co
+                x3, y3, z3 = v3.co
+
+            pa = 0.5 * abs(
+                (x1 * (y3 - y2))
+                + (x2 * (y1 - y3))
+                + (x3 * (y2 - y1)))
+            volume = ((z1 + z2 + z3) / 3.0) * pa
+
+            # Allowing for quads
+            if len(face.vertices) == 4:
+                # Get vertex data
+                v4 = obj.data.vertices[v4]
+
+                if globalSpace:
+                    x4 = v4.co[0] * obj.scale[0] + obj.location[0]
+                    y4 = v4.co[1] * obj.scale[1] + obj.location[1]
+                    z4 = v4.co[2] * obj.scale[2] + obj.location[2]
+
+                else:
+                    x4, y4, z4 = v4.co
+
+                pa = 0.5 * abs(
+                    (x1 * (y4 - y3))
+                    + (x3 * (y1 - y4))
+                    + (x4 * (y3 - y1)))
+
+                volume += ((z1 + z3 + z4) / 3.0) * pa
+
+            if fzn < 0:
+                fzn = -1
+
+            elif fzn > 0:
+                fzn = 1
+
+            else:
+                fzn = 0
+
+            volTot += fzn * volume
+
+        return volTot
+
+#    else:
+#        print obj.name, ': Object must be a mesh!'        # TODO
+
+    return -2
+
+
+# Manifold Checks
+# Copyright Loonsbury (loonsbury@yahoo.com)
+def checkManifold(obj):
+    if (obj and obj.type == 'MESH' and obj.data):
+        mesh = obj.data
+
+        mc = dict([(ed.key, 0) for ed in mesh.edges])     # TODO
+
+        for f in mesh.faces:
+            for ek in f.edge_keys:
+                mc[ek] += 1
+                if mc[ek] > 2:
+                    return 0
+
+        mt = [e[1] for e in mc.items()]
+        mt.sort()
+
+        if mt[0] < 2:
+            return 0
+
+        if mt[len(mt) - 1] > 2:
+            return 0
+
+        return 1
+
+    else:
+        return -1
 
 
 # User friendly access to the "space" setting.
@@ -622,10 +625,11 @@ def draw_measurements_callback(self, context):
                         if f.select == 1]
 
                     if len(faces_selected) > 0:
-                        area = objectSurfaceArea(obj, True,
+                        area, normal = objectSurfaceArea(obj, True,
                             measureGlobal(sce))
                         if (area >= 0):
                             sce.measure_panel_area1 = area
+                            sce.measure_panel_normal1 = normal
 
         elif (context.mode == 'OBJECT'):
             # We are working in object mode.
@@ -655,25 +659,60 @@ def draw_measurements_callback(self, context):
                 obj1, obj2 = context.selected_objects
 
                 # Calculate surface area of the objects.
-                area1 = objectSurfaceArea(obj1, False, measureGlobal(sce))
-                area2 = objectSurfaceArea(obj2, False, measureGlobal(sce))
+                area1, normal1 = objectSurfaceArea(obj1, False,
+                    measureGlobal(sce))
+                area2, normal2 = objectSurfaceArea(obj2, False,
+                    measureGlobal(sce))
                 sce.measure_panel_area1 = area1
                 sce.measure_panel_area2 = area2
+                sce.measure_panel_normal1 = normal1
+                sce.measure_panel_normal2 = normal2
 
             elif (obj):
                 # One object selected.
 
                 # Calculate surface area of the object.
-                area = objectSurfaceArea(obj, False, measureGlobal(sce))
-                if (area >= 0):
-                    sce.measure_panel_area1 = area
+                area, normal = objectSurfaceArea(obj, False,
+                    measureGlobal(sce))
+
+                sce.measure_panel_area1 = area
+                sce.measure_panel_normal1 = normal
+
+    if (sce.measure_panel_calc_volume):
+        obj = getSingleObject(context)
+
+        if (context.mode == 'OBJECT'):
+            # We are working in object mode.
+
+            #if len(context.selected_objects) > 2:       # TODO
+
+            #el
+            if len(context.selected_objects) == 2:
+                # 2 objects selected.
+
+                obj1, obj2 = context.selected_objects
+
+                # Calculate surface area of the objects.
+                volume1 = objectVolume(obj1, measureGlobal(sce))
+                volume2 = objectVolume(obj2, measureGlobal(sce))
+
+                sce.measure_panel_volume1 = volume1
+                sce.measure_panel_volume2 = volume2
+
+            elif (obj):
+                # One object selected.
+
+                # Calculate surface area of the object.
+                volume1 = objectVolume(obj, measureGlobal(sce))
+
+                sce.measure_panel_volume1 = volume1
 
 
 class VIEW3D_OT_display_measurements(bpy.types.Operator):
     '''Display the measurements made in the 'Measure' panel'''
     bl_idname = "view3d.display_measurements"
     bl_label = "Display the measurements made in the" \
-        " 'Measure' panel in the 3D View."
+        " 'Measure' panel in the 3D View"
     bl_options = {'REGISTER'}
 
     def modal(self, context, event):
@@ -708,7 +747,7 @@ class VIEW3D_OT_display_measurements(bpy.types.Operator):
 class VIEW3D_OT_activate_measure_panel(bpy.types.Operator):
     bl_label = "Activate"
     bl_idname = "view3d.activate_measure_panel"
-    bl_description = "Activate the callback needed to draw the lines."
+    bl_description = "Activate the callback needed to draw the lines"
     bl_options = {'REGISTER'}
 
     def invoke(self, context, event):
@@ -722,8 +761,8 @@ class VIEW3D_OT_activate_measure_panel(bpy.types.Operator):
 class VIEW3D_OT_reenter_editmode(bpy.types.Operator):
     bl_label = "Re-enter EditMode"
     bl_idname = "view3d.reenter_editmode"
-    bl_description = "Update mesh data of an active mesh object." \
-        " This is done by exiting and re-entering mesh edit mode."
+    bl_description = "Update mesh data of an active mesh object " \
+        "(this is done by exiting and re-entering mesh edit mode)"
     bl_options = {'REGISTER'}
 
     def invoke(self, context, event):
@@ -771,17 +810,18 @@ class VIEW3D_PT_measure(bpy.types.Panel):
             in [op.bl_idname for op in mgr_ops]):
             layout.operator("view3d.activate_measure_panel",
                         text="Activate")
-        else:
-            layout.prop(sce, "measure_panel_draw")
 
         context.area.tag_redraw()
 
     def draw(self, context):
         layout = self.layout
         sce = context.scene
+        layout.label(text="Distance")
 
         # Get a single selected object (or nothing).
         obj = getSingleObject(context)
+
+        drawTansformButtons = 1
 
         if (context.mode == 'EDIT_MESH'):
             obj = context.active_object
@@ -815,10 +855,11 @@ class VIEW3D_PT_measure(bpy.types.Panel):
                     # local  ... the object center to the 3D cursor.
                     # global ... the origin to the 3D cursor.
 
-                    row = layout.row()
+                    box = layout.box()
+                    row = box.row()
                     row.prop(sce, "measure_panel_dist")
 
-                    row = layout.row()
+                    row = box.row()
                     row.label(text="", icon='CURSOR')
                     row.label(text="", icon='ARROW_LEFTRIGHT')
                     if measureLocal(sce):
@@ -834,22 +875,20 @@ class VIEW3D_PT_measure(bpy.types.Panel):
 #                            " not be updated in mesh edit mode" \
 #                            " automatically. Press this button" \
 #                            " to do this manually, after you changed" \
-#                            " the selection.")
+#                            " the selection")
 
-                    row = layout.row()
-                    row.prop(sce,
-                        "measure_panel_transform",
-                        expand=True)
+                    layout.prop(sce, "measure_panel_draw")
 
                 elif len(verts_selected) == 1:
                     # One vertex selected.
                     # We measure the distance from the
                     # selected vertex object to the 3D cursor.
 
-                    row = layout.row()
+                    box = layout.box()
+                    row = box.row()
                     row.prop(sce, "measure_panel_dist")
 
-                    row = layout.row()
+                    row = box.row()
                     row.label(text="", icon='CURSOR')
                     row.label(text="", icon='ARROW_LEFTRIGHT')
                     row.label(text="", icon='VERTEXSEL')
@@ -858,20 +897,18 @@ class VIEW3D_PT_measure(bpy.types.Panel):
                     row.operator("view3d.reenter_editmode",
                         text="Update selection & distance")
 
-                    row = layout.row()
-                    row.prop(sce,
-                        "measure_panel_transform",
-                        expand=True)
+                    layout.prop(sce, "measure_panel_draw")
 
                 elif len(verts_selected) == 2:
                     # Two vertices selected.
                     # We measure the distance between the
                     # two selected vertices.
 
-                    row = layout.row()
+                    box = layout.box()
+                    row = box.row()
                     row.prop(sce, "measure_panel_dist")
 
-                    row = layout.row()
+                    row = box.row()
                     row.label(text="", icon='VERTEXSEL')
                     row.label(text="", icon='ARROW_LEFTRIGHT')
                     row.label(text="", icon='VERTEXSEL')
@@ -880,10 +917,7 @@ class VIEW3D_PT_measure(bpy.types.Panel):
                     row.operator("view3d.reenter_editmode",
                         text="Update selection & distance")
 
-                    row = layout.row()
-                    row.prop(sce,
-                        "measure_panel_transform",
-                        expand=True)
+                    layout.prop(sce, "measure_panel_draw")
 
                 else:
                     row = layout.row()
@@ -898,24 +932,28 @@ class VIEW3D_PT_measure(bpy.types.Panel):
 
                         if len(faces_selected) > 0:
                             if (sce.measure_panel_area1 >= 0):
-                                row = layout.row()
+                                box = layout.box()
+                                row = box.row()
                                 row.label(
                                     text=str(len(faces_selected)),
                                     icon='FACESEL')
+
+                                row = box.row()
+                                row.label(text="Area")
                                 row.prop(sce, "measure_panel_area1")
+
+                                row = box.row()
+                                row.label(text="Normal")
+                                row = box.row()
+                                row.prop(sce, "measure_panel_normal1")
 
                                 row = layout.row()
                                 row.operator("view3d.reenter_editmode",
                                     text="Update selection & area")
 
-                                row = layout.row()
-                                row.prop(sce,
-                                    "measure_panel_transform",
-                                    expand=True)
-
                         else:
                             row = layout.row()
-                            row.label(text="Selection not supported.",
+                            row.label(text="Selection not supported",
                                 icon='INFO')
 
                             row = layout.row()
@@ -964,21 +1002,17 @@ class VIEW3D_PT_measure(bpy.types.Panel):
 #                                row.label(text=str(round(area, PRECISION))
 #                                    + " BU^2")
 
-                        row = layout.row()
-                        row.prop(sce,
-                            "measure_panel_transform",
-                            expand=True)
-
             elif len(context.selected_objects) == 2:
                 # 2 objects selected.
                 # We measure the distance between the 2 selected objects.
 
                 obj1, obj2 = context.selected_objects
 
-                row = layout.row()
+                box = layout.box()
+                row = box.row()
                 row.prop(sce, "measure_panel_dist")
 
-                row = layout.row()
+                row = box.row()
                 row.label(text="", icon='OBJECT_DATA')
                 row.prop(obj1, "name", text="")
 
@@ -987,37 +1021,87 @@ class VIEW3D_PT_measure(bpy.types.Panel):
                 row.label(text="", icon='OBJECT_DATA')
                 row.prop(obj2, "name", text="")
 
+                layout.prop(sce, "measure_panel_draw")
+
                 row = layout.row()
                 row.prop(sce, "measure_panel_calc_area",
-                    text="Surface area:")
+                    text="Surface area")
 
                 if (sce.measure_panel_calc_area):
                     # Display surface area of the objects.
                     if (sce.measure_panel_area1 >= 0
                     or sce.measure_panel_area2 >= 0):
                         if (sce.measure_panel_area1 >= 0):
-                            row = layout.row()
+                            box = layout.box()
+                            row = box.row()
                             row.label(text=obj1.name, icon='OBJECT_DATA')
+
+                            row = box.row()
+                            row.label(text="Area")
                             row.prop(sce, "measure_panel_area1")
 
+                            row = box.row()
+                            row.label(text="Normal")
+                            row = box.row()
+                            row.prop(sce, "measure_panel_normal1")
+
                         if (sce.measure_panel_area2 >= 0):
-                            row = layout.row()
+                            box = layout.box()
+                            row = box.row()
                             row.label(text=obj2.name, icon='OBJECT_DATA')
+
+                            row = box.row()
+                            row.label(text="Area")
                             row.prop(sce, "measure_panel_area2")
 
-                        row = layout.row()
-                        row.prop(sce,
-                            "measure_panel_transform",
-                            expand=True)
+                            row = box.row()
+                            row.label(text="Normal")
+                            row = box.row()
+                            row.prop(sce, "measure_panel_normal2")
+
+                row = layout.row()
+                row.prop(sce, "measure_panel_calc_volume",
+                    text="Volume")
+
+                if (sce.measure_panel_calc_volume):
+                    # Display volume of the objects.
+                    if (sce.measure_panel_volume1 >= -1):
+                        box = layout.box()
+                        row = box.row()
+                        row.label(text=obj1.name, icon='OBJECT_DATA')
+
+                        if (sce.measure_panel_volume1 >= 0):
+                            row = box.row()
+                            row.label(text="Volume")
+                            row.prop(sce, "measure_panel_volume1")
+                        else:  # -1
+                            row = box.row()
+                            row.label(text="Mesh is non-manifold!",
+                                icon='INFO')
+
+                    if (sce.measure_panel_volume2 >= -1):
+                        box = layout.box()
+                        row = box.row()
+                        row.label(text=obj2.name, icon='OBJECT_DATA')
+
+                        if (sce.measure_panel_volume2 >= 0):
+                            row = box.row()
+                            row.label(text="Volume")
+                            row.prop(sce, "measure_panel_volume2")
+                        else:  # -1
+                            row = box.row()
+                            row.label(text="Mesh is non-manifold!",
+                                icon='INFO')
 
             elif (obj):
                 # One object selected.
                 # We measure the distance from the object to the 3D cursor.
 
-                row = layout.row()
+                box = layout.box()
+                row = box.row()
                 row.prop(sce, "measure_panel_dist")
 
-                row = layout.row()
+                row = box.row()
                 row.label(text="", icon='CURSOR')
 
                 row.label(text="", icon='ARROW_LEFTRIGHT')
@@ -1025,39 +1109,74 @@ class VIEW3D_PT_measure(bpy.types.Panel):
                 row.label(text="", icon='OBJECT_DATA')
                 row.prop(obj, "name", text="")
 
+                layout.prop(sce, "measure_panel_draw")
+
                 row = layout.row()
                 row.prop(sce, "measure_panel_calc_area",
-                    text="Surface area:")
+                    text="Surface area")
 
                 if (sce.measure_panel_calc_area):
                     # Display surface area of the object.
 
                     if (sce.measure_panel_area1 >= 0):
-                        row = layout.row()
+                        box = layout.box()
+                        row = box.row()
                         row.label(text=obj.name, icon='OBJECT_DATA')
+
+                        row = box.row()
+                        row.label(text="Area")
                         row.prop(sce, "measure_panel_area1")
 
-                        row = layout.row()
-                        row.prop(sce,
-                            "measure_panel_transform",
-                            expand=True)
+                        row = box.row()
+                        row.label(text="Normal")
+                        row = box.row()
+                        row.prop(sce, "measure_panel_normal1")
+
+                row = layout.row()
+                row.prop(sce, "measure_panel_calc_volume",
+                    text="Volume:")
+
+                if (sce.measure_panel_calc_volume):
+                    # Display volume of the objects.
+                    if (sce.measure_panel_volume1 >= -1):
+                        box = layout.box()
+                        row = box.row()
+                        row.label(text=obj.name, icon='OBJECT_DATA')
+
+                        if (sce.measure_panel_volume1 >= 0):
+                            row = box.row()
+                            row.label(text="Volume")
+                            row.prop(sce, "measure_panel_volume1")
+                        else:  # -1
+                            row = box.row()
+                            row.label(text="Mesh is non-manifold!",
+                                icon='INFO')
 
             elif not context.selected_objects:
                 # Nothing selected.
                 # We measure the distance from the origin to the 3D cursor.
 
-                row = layout.row()
+                box = layout.box()
+                row = box.row()
                 row.prop(sce, "measure_panel_dist")
 
-                row = layout.row()
+                row = box.row()
                 row.label(text="", icon='CURSOR')
                 row.label(text="", icon='ARROW_LEFTRIGHT')
                 row.label(text="Origin [0,0,0]")
 
+                layout.prop(sce, "measure_panel_draw")
+
             else:
                 row = layout.row()
-                row.label(text="Selection not supported.",
+                row.label(text="Selection not supported",
                     icon='INFO')
+
+            if drawTansformButtons:
+                row = layout.row()
+                row.prop(sce,
+                    "measure_panel_transform",
+                    expand=True)
 
 
 def register():
@@ -1074,22 +1193,35 @@ def register():
     bpy.types.Scene.measure_panel_area2 = bpy.props.FloatProperty(
         precision=PRECISION,
         unit="AREA")
+    bpy.types.Scene.measure_panel_normal1 = bpy.props.FloatVectorProperty(
+        precision=PRECISION,
+        subtype="XYZ")
+    bpy.types.Scene.measure_panel_normal2 = bpy.props.FloatVectorProperty(
+        precision=PRECISION,
+        subtype="XYZ")
+    bpy.types.Scene.measure_panel_volume1 = bpy.props.FloatProperty(
+        precision=PRECISION,
+        unit="VOLUME")
+    bpy.types.Scene.measure_panel_volume2 = bpy.props.FloatProperty(
+        precision=PRECISION,
+        unit="VOLUME")
 
     TRANSFORM = [
         ("measure_global", "Global",
-            "Calculate values in global space."),
+         "Calculate values in global space"),
         ("measure_local", "Local",
-            "Calculate values inside the local object space.")]
+         "Calculate values inside the local object space")]
 
     # Define dropdown for the global/local setting
     bpy.types.Scene.measure_panel_transform = bpy.props.EnumProperty(
         name="Space",
-        description="Choose in which space you want to measure.",
+        description="Choose in which space you want to measure",
         items=TRANSFORM,
         default='measure_global')
 
     # Define property for the draw setting.
     bpy.types.Scene.measure_panel_draw = bpy.props.BoolProperty(
+        name="Draw distance",
         description="Draw distances in 3D View",
         default=1)
 
@@ -1097,6 +1229,12 @@ def register():
     # @todo prevent double calculations for each refresh automatically?
     bpy.types.Scene.measure_panel_calc_area = bpy.props.BoolProperty(
         description="Calculate mesh surface area (heavy CPU" \
+            " usage on bigger meshes)",
+        default=0)
+
+    # Define property for the calc-volume setting.
+    bpy.types.Scene.measure_panel_calc_volume = bpy.props.BoolProperty(
+        description="Calculate mesh volume (heavy CPU" \
             " usage on bigger meshes)",
         default=0)
 
