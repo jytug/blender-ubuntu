@@ -1,5 +1,5 @@
 /*
- * $Id: wm_operators.c 39293 2011-08-11 06:06:17Z campbellbarton $
+ * $Id: wm_operators.c 41078 2011-10-17 06:39:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,7 +49,7 @@
 #include "DNA_userdef_types.h"
 #include "DNA_windowmanager_types.h"
 
-#include "BLF_api.h"
+#include "BLF_translation.h"
 
 #include "PIL_time.h"
 
@@ -78,8 +78,10 @@
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h" /* for paint cursor */
+#include "BLF_api.h"
 
 #include "IMB_imbuf_types.h"
+#include "IMB_imbuf.h"
 
 #include "ED_screen.h"
 #include "ED_util.h"
@@ -108,21 +110,28 @@ static GHash *global_ops_hash= NULL;
 
 wmOperatorType *WM_operatortype_find(const char *idname, int quiet)
 {
-	wmOperatorType *ot;
-	
-	char idname_bl[OP_MAX_TYPENAME]; // XXX, needed to support python style names without the _OT_ syntax
-	WM_operator_bl_idname(idname_bl, idname);
+	if(idname[0]) {
+		wmOperatorType *ot;
 
-	if (idname_bl[0]) {
+		/* needed to support python style names without the _OT_ syntax */
+		char idname_bl[OP_MAX_TYPENAME];
+		WM_operator_bl_idname(idname_bl, idname);
+
 		ot= BLI_ghash_lookup(global_ops_hash, idname_bl);
 		if(ot) {
 			return ot;
 		}
+
+		if(!quiet) {
+			printf("search for unknown operator '%s', '%s'\n", idname_bl, idname);
+		}
 	}
-	
-	if(!quiet)
-		printf("search for unknown operator %s, %s\n", idname_bl, idname);
-	
+	else {
+		if(!quiet) {
+			printf("search for empty operator\n");
+		}
+	}
+
 	return NULL;
 }
 
@@ -142,12 +151,11 @@ void WM_operatortype_append(void (*opfunc)(wmOperatorType*))
 	opfunc(ot);
 
 	if(ot->name==NULL) {
-		static char dummy_name[] = "Dummy Name";
 		fprintf(stderr, "ERROR: Operator %s has no name property!\n", ot->idname);
-		ot->name= dummy_name;
+		ot->name= UI_translate_do_iface(N_("Dummy Name"));
 	}
 
-	RNA_def_struct_ui_text(ot->srna, ot->name, ot->description ? ot->description:"(undocumented operator)"); // XXX All ops should have a description but for now allow them not to.
+	RNA_def_struct_ui_text(ot->srna, ot->name, ot->description ? ot->description:UI_translate_do_iface(N_("(undocumented operator)"))); // XXX All ops should have a description but for now allow them not to.
 	RNA_def_struct_identifier(ot->srna, ot->idname);
 
 	BLI_ghash_insert(global_ops_hash, (void *)ot->idname, ot);
@@ -160,7 +168,7 @@ void WM_operatortype_append_ptr(void (*opfunc)(wmOperatorType*, void*), void *us
 	ot= MEM_callocN(sizeof(wmOperatorType), "operatortype");
 	ot->srna= RNA_def_struct(&BLENDER_RNA, "", "OperatorProperties");
 	opfunc(ot, userdata);
-	RNA_def_struct_ui_text(ot->srna, ot->name, ot->description ? ot->description:"(undocumented operator)");
+	RNA_def_struct_ui_text(ot->srna, ot->name, ot->description ? ot->description:UI_translate_do_iface(N_("(undocumented operator)")));
 	RNA_def_struct_identifier(ot->srna, ot->idname);
 
 	BLI_ghash_insert(global_ops_hash, (void *)ot->idname, ot);
@@ -213,6 +221,7 @@ static int wm_macro_exec(bContext *C, wmOperator *op)
 		
 		if(opm->type->exec) {
 			retval= opm->type->exec(C, opm);
+			OPERATOR_RETVAL_CHECK(retval);
 		
 			if (retval & OPERATOR_FINISHED) {
 				MacroData *md = op->customdata;
@@ -236,6 +245,8 @@ static int wm_macro_invoke_internal(bContext *C, wmOperator *op, wmEvent *event,
 			retval= opm->type->invoke(C, opm, event);
 		else if(opm->type->exec)
 			retval= opm->type->exec(C, opm);
+
+		OPERATOR_RETVAL_CHECK(retval);
 
 		BLI_movelisttolist(&op->reports->list, &opm->reports->list);
 		
@@ -265,6 +276,7 @@ static int wm_macro_modal(bContext *C, wmOperator *op, wmEvent *event)
 		printf("macro error, calling NULL modal()\n");
 	else {
 		retval = opm->type->modal(C, opm, event);
+		OPERATOR_RETVAL_CHECK(retval);
 
 		/* if this one is done but it's not the last operator in the macro */
 		if ((retval & OPERATOR_FINISHED) && opm->next) {
@@ -350,7 +362,7 @@ wmOperatorType *WM_operatortype_append_macro(const char *idname, const char *nam
 	ot->poll= NULL;
 
 	if(!ot->description)
-		ot->description= "(undocumented operator)";
+		ot->description= UI_translate_do_iface(N_("(undocumented operator)"));
 	
 	RNA_def_struct_ui_text(ot->srna, ot->name, ot->description); // XXX All ops should have a description but for now allow them not to.
 	RNA_def_struct_identifier(ot->srna, ot->idname);
@@ -375,7 +387,7 @@ void WM_operatortype_append_macro_ptr(void (*opfunc)(wmOperatorType*, void*), vo
 	ot->poll= NULL;
 
 	if(!ot->description)
-		ot->description= "(undocumented operator)";
+		ot->description= UI_translate_do_iface(N_("(undocumented operator)"));
 
 	opfunc(ot, userdata);
 
@@ -655,7 +667,9 @@ int WM_menu_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 		printf("WM_menu_invoke: %s \"%s\" is not an enum property\n", op->type->idname, RNA_property_identifier(prop));
 	}
 	else if (RNA_property_is_set(op->ptr, RNA_property_identifier(prop))) {
-		return op->type->exec(C, op);
+		const int retval= op->type->exec(C, op);
+		OPERATOR_RETVAL_CHECK(retval);
+		return retval;
 	}
 	else {
 		pup= uiPupMenuBegin(C, op->type->name, ICON_NONE);
@@ -770,7 +784,7 @@ int WM_operator_confirm_message(bContext *C, wmOperator *op, const char *message
 	else
 		properties= NULL;
 
-	pup= uiPupMenuBegin(C, "OK?", ICON_QUESTION);
+	pup= uiPupMenuBegin(C, UI_translate_do_iface(N_("OK?")), ICON_QUESTION);
 	layout= uiPupMenuLayout(pup);
 	uiItemFullO(layout, op->type->idname, message, ICON_NONE, properties, WM_OP_EXEC_REGION_WIN, 0);
 	uiPupMenuEnd(C, pup);
@@ -811,6 +825,9 @@ void WM_operator_properties_filesel(wmOperatorType *ot, int filter, short type, 
 	if(flag & WM_FILESEL_FILENAME)
 		RNA_def_string_file_name(ot->srna, "filename", "", FILE_MAX, "File Name", "Name of the file");
 
+	if(flag & WM_FILESEL_FILES)
+		RNA_def_collection_runtime(ot->srna, "files", &RNA_OperatorFileListElement, "Files", "");
+
 	if (action == FILE_SAVE) {
 		prop= RNA_def_boolean(ot->srna, "check_existing", 1, "Check Existing", "Check and warn on overwriting existing files");
 		RNA_def_property_flag(prop, PROP_HIDDEN);
@@ -843,15 +860,16 @@ void WM_operator_properties_filesel(wmOperatorType *ot, int filter, short type, 
 	RNA_def_property_flag(prop, PROP_HIDDEN);
 
 	if(flag & WM_FILESEL_RELPATH)
-		RNA_def_boolean(ot->srna, "relative_path", (U.flag & USER_RELPATHS) ? 1:0, "Relative Path", "Select the file relative to the blend file");
+		RNA_def_boolean(ot->srna, "relative_path", TRUE, "Relative Path", "Select the file relative to the blend file");
 }
 
-void WM_operator_properties_select_all(wmOperatorType *ot) {
+void WM_operator_properties_select_all(wmOperatorType *ot)
+{
 	static EnumPropertyItem select_all_actions[] = {
-			{SEL_TOGGLE, "TOGGLE", 0, "Toggle", "Toggle selection for all elements"},
-			{SEL_SELECT, "SELECT", 0, "Select", "Select all elements"},
-			{SEL_DESELECT, "DESELECT", 0, "Deselect", "Deselect all elements"},
-			{SEL_INVERT, "INVERT", 0, "Invert", "Invert selection of all elements"},
+			{SEL_TOGGLE, "TOGGLE", 0, N_("Toggle"), "Toggle selection for all elements"},
+			{SEL_SELECT, "SELECT", 0, N_("Select"), "Select all elements"},
+			{SEL_DESELECT, "DESELECT", 0, N_("Deselect"), "Deselect all elements"},
+			{SEL_INVERT, "INVERT", 0, N_("Invert"), "Invert selection of all elements"},
 			{0, NULL, 0, NULL, NULL}
 	};
 
@@ -860,25 +878,25 @@ void WM_operator_properties_select_all(wmOperatorType *ot) {
 
 void WM_operator_properties_gesture_border(wmOperatorType *ot, int extend)
 {
-	RNA_def_int(ot->srna, "gesture_mode", 0, INT_MIN, INT_MAX, "Gesture Mode", "", INT_MIN, INT_MAX);
-	RNA_def_int(ot->srna, "xmin", 0, INT_MIN, INT_MAX, "X Min", "", INT_MIN, INT_MAX);
-	RNA_def_int(ot->srna, "xmax", 0, INT_MIN, INT_MAX, "X Max", "", INT_MIN, INT_MAX);
-	RNA_def_int(ot->srna, "ymin", 0, INT_MIN, INT_MAX, "Y Min", "", INT_MIN, INT_MAX);
-	RNA_def_int(ot->srna, "ymax", 0, INT_MIN, INT_MAX, "Y Max", "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "gesture_mode", 0, INT_MIN, INT_MAX, N_("Gesture Mode"), "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "xmin", 0, INT_MIN, INT_MAX, N_("X Min"), "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "xmax", 0, INT_MIN, INT_MAX, N_("X Max"), "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "ymin", 0, INT_MIN, INT_MAX, N_("Y Min"), "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "ymax", 0, INT_MIN, INT_MAX, N_("Y Max"), "", INT_MIN, INT_MAX);
 
 	if(extend)
-		RNA_def_boolean(ot->srna, "extend", 1, "Extend", "Extend selection instead of deselecting everything first");
+		RNA_def_boolean(ot->srna, "extend", 1, _("Extend"), _("Extend selection instead of deselecting everything first"));
 }
 
 void WM_operator_properties_gesture_straightline(wmOperatorType *ot, int cursor)
 {
-	RNA_def_int(ot->srna, "xstart", 0, INT_MIN, INT_MAX, "X Start", "", INT_MIN, INT_MAX);
-	RNA_def_int(ot->srna, "xend", 0, INT_MIN, INT_MAX, "X End", "", INT_MIN, INT_MAX);
-	RNA_def_int(ot->srna, "ystart", 0, INT_MIN, INT_MAX, "Y Start", "", INT_MIN, INT_MAX);
-	RNA_def_int(ot->srna, "yend", 0, INT_MIN, INT_MAX, "Y End", "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "xstart", 0, INT_MIN, INT_MAX, N_("X Start"), "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "xend", 0, INT_MIN, INT_MAX, N_("X End"), "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "ystart", 0, INT_MIN, INT_MAX, N_("Y Start"), "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "yend", 0, INT_MIN, INT_MAX, N_("Y End"), "", INT_MIN, INT_MAX);
 	
 	if(cursor)
-		RNA_def_int(ot->srna, "cursor", cursor, 0, INT_MAX, "Cursor", "Mouse cursor style to use during the modal operator", 0, INT_MAX);
+		RNA_def_int(ot->srna, "cursor", cursor, 0, INT_MAX, N_("Cursor"), N_("Mouse cursor style to use during the modal operator"), 0, INT_MAX);
 }
 
 
@@ -907,7 +925,7 @@ static uiBlock *wm_block_create_redo(bContext *C, ARegion *ar, void *arg_op)
 	wmOperator *op= arg_op;
 	uiBlock *block;
 	uiLayout *layout;
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 	int width= 300;
 	
 
@@ -985,7 +1003,7 @@ static uiBlock *wm_block_dialog_create(bContext *C, ARegion *ar, void *userData)
 	wmOperator *op= data->op;
 	uiBlock *block;
 	uiLayout *layout;
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 
 	block = uiBeginBlock(C, ar, "operator dialog", UI_EMBOSS);
 	uiBlockClearFlag(block, UI_BLOCK_LOOP);
@@ -1009,7 +1027,7 @@ static uiBlock *wm_block_dialog_create(bContext *C, ARegion *ar, void *userData)
 		col= uiLayoutColumn(layout, FALSE);
 		col_block= uiLayoutGetBlock(col);
 		/* Create OK button, the callback of which will execute op */
-		btn= uiDefBut(col_block, BUT, 0, "OK", 0, -30, 0, UI_UNIT_Y, NULL, 0, 0, 0, 0, "");
+		btn= uiDefBut(col_block, BUT, 0, UI_translate_do_iface(N_("OK")), 0, -30, 0, UI_UNIT_Y, NULL, 0, 0, 0, 0, "");
 		uiButSetFunc(btn, dialog_exec_cb, data, col_block);
 	}
 
@@ -1026,7 +1044,7 @@ static uiBlock *wm_operator_ui_create(bContext *C, ARegion *ar, void *userData)
 	wmOperator *op= data->op;
 	uiBlock *block;
 	uiLayout *layout;
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 
 	block= uiBeginBlock(C, ar, "opui_popup", UI_EMBOSS);
 	uiBlockClearFlag(block, UI_BLOCK_LOOP);
@@ -1193,13 +1211,23 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	uiBlock *block;
 	uiBut *but;
 	uiLayout *layout, *split, *col;
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 	struct RecentFile *recent;
 	int i;
 	MenuType *mt= WM_menutype_find("USERPREF_MT_splash", TRUE);
 	char url[96];
-	
-#ifdef NAN_BUILDINFO
+
+#ifndef WITH_HEADLESS
+	extern char datatoc_splash_png[];
+	extern int datatoc_splash_png_size;
+
+	ImBuf *ibuf= IMB_ibImageFromMemory((unsigned char*)datatoc_splash_png, datatoc_splash_png_size, IB_rect);
+#else
+	ImBuf *ibuf= NULL;
+#endif
+
+
+#ifdef WITH_BUILDINFO
 	int ver_width, rev_width;
 	char *version_str = NULL;
 	char *revision_str = NULL;
@@ -1216,19 +1244,19 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	BLF_size(style->widgetlabel.uifont_id, style->widgetlabel.points, U.dpi);
 	ver_width = (int)BLF_width(style->widgetlabel.uifont_id, version_str) + 5;
 	rev_width = (int)BLF_width(style->widgetlabel.uifont_id, revision_str) + 5;
-#endif //NAN_BUILDINFO
+#endif //WITH_BUILDINFO
 
 	block= uiBeginBlock(C, ar, "_popup", UI_EMBOSS);
 	uiBlockSetFlag(block, UI_BLOCK_KEEP_OPEN);
 	
-	but= uiDefBut(block, BUT_IMAGE, 0, "", 0, 10, 501, 282, NULL, 0.0, 0.0, 0, 0, "");
+	but= uiDefBut(block, BUT_IMAGE, 0, "", 0, 10, 501, 282, ibuf, 0.0, 0.0, 0, 0, ""); /* button owns the imbuf now */
 	uiButSetFunc(but, wm_block_splash_close, block, NULL);
 	uiBlockSetFunc(block, wm_block_splash_refreshmenu, block, NULL);
 	
-#ifdef NAN_BUILDINFO	
+#ifdef WITH_BUILDINFO	
 	uiDefBut(block, LABEL, 0, version_str, 494-ver_width, 282-24, ver_width, UI_UNIT_Y, NULL, 0, 0, 0, 0, NULL);
 	uiDefBut(block, LABEL, 0, revision_str, 494-rev_width, 282-36, rev_width, UI_UNIT_Y, NULL, 0, 0, 0, 0, NULL);
-#endif //NAN_BUILDINFO
+#endif //WITH_BUILDINFO
 	
 	layout= uiBlockLayout(block, UI_LAYOUT_VERTICAL, UI_LAYOUT_PANEL, 10, 2, 480, 110, style);
 	
@@ -1250,18 +1278,19 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	split = uiLayoutSplit(layout, 0, 0);
 	col = uiLayoutColumn(split, 0);
 	uiItemL(col, "Links", ICON_NONE);
-	uiItemStringO(col, "Donations", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/blenderorg/blender-foundation/donation-payment/");
-	uiItemStringO(col, "Release Log", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/development/release-logs/blender-259/");
-	uiItemStringO(col, "Manual", ICON_URL, "WM_OT_url_open", "url", "http://wiki.blender.org/index.php/Doc:2.5/Manual");
-	uiItemStringO(col, "Blender Website", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/");
-	uiItemStringO(col, "User Community", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/community/user-community/"); // 
+	uiItemStringO(col, UI_translate_do_iface(N_("Donations")), ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/blenderorg/blender-foundation/donation-payment");
+	uiItemStringO(col, UI_translate_do_iface(N_("Credits")), ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/development/credits");
+	uiItemStringO(col, UI_translate_do_iface(N_("Release Log")), ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/development/release-logs/blender-260");
+	uiItemStringO(col, UI_translate_do_iface(N_("Manual")), ICON_URL, "WM_OT_url_open", "url", "http://wiki.blender.org/index.php/Doc:2.5/Manual");
+	uiItemStringO(col, UI_translate_do_iface(N_("Blender Website")), ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org");
+	uiItemStringO(col, UI_translate_do_iface(N_("User Community")), ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/community/user-community");
 	if(strcmp(STRINGIFY(BLENDER_VERSION_CYCLE), "release")==0) {
 		BLI_snprintf(url, sizeof(url), "http://www.blender.org/documentation/blender_python_api_%d_%d" STRINGIFY(BLENDER_VERSION_CHAR) "_release", BLENDER_VERSION/100, BLENDER_VERSION%100);
 	}
 	else {
 		BLI_snprintf(url, sizeof(url), "http://www.blender.org/documentation/blender_python_api_%d_%d_%d", BLENDER_VERSION/100, BLENDER_VERSION%100, BLENDER_SUBVERSION);
 	}
-	uiItemStringO(col, "Python API Reference", ICON_URL, "WM_OT_url_open", "url", url);
+	uiItemStringO(col, UI_translate_do_iface(N_("Python API Reference")), ICON_URL, "WM_OT_url_open", "url", url);
 	uiItemL(col, "", ICON_NONE);
 
 	col = uiLayoutColumn(split, 0);
@@ -1271,7 +1300,7 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 		uiItemS(col);
 	}
 
-	uiItemL(col, "Recent", ICON_NONE);
+	uiItemL(col, UI_translate_do_iface(N_("Recent")), ICON_NONE);
 	for(recent = G.recent_files.first, i=0; (i<5) && (recent); recent = recent->next, i++) {
 		uiItemStringO(col, BLI_path_basename(recent->filepath), ICON_FILE_BLEND, "WM_OT_open_mainfile", "filepath", recent->filepath);
 	}
@@ -1589,15 +1618,20 @@ static void WM_OT_open_mainfile(wmOperatorType *ot)
 
 static int wm_link_append_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 {
-	if(!RNA_property_is_set(op->ptr, "relative_path"))
-		RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
-
 	if(RNA_property_is_set(op->ptr, "filepath")) {
 		return WM_operator_call(C, op);
 	} 
 	else {
 		/* XXX TODO solve where to get last linked library from */
-		RNA_string_set(op->ptr, "filepath", G.lib);
+		if(G.lib[0] != '\0') {
+			RNA_string_set(op->ptr, "filepath", G.lib);
+		}
+		else if(G.relbase_valid) {
+			char path[FILE_MAX];
+			BLI_strncpy(path, G.main->name, sizeof(G.main->name));
+			BLI_parent_dir(path);
+			RNA_string_set(op->ptr, "filepath", path);
+		}
 		WM_event_add_fileselect(C, op);
 		return OPERATOR_RUNNING_MODAL;
 	}
@@ -1748,14 +1782,12 @@ static void WM_OT_link_append(wmOperatorType *ot)
 	
 	ot->flag |= OPTYPE_UNDO;
 
-	WM_operator_properties_filesel(ot, FOLDERFILE|BLENDERFILE, FILE_LOADLIB, FILE_OPENFILE, WM_FILESEL_FILEPATH|WM_FILESEL_DIRECTORY|WM_FILESEL_FILENAME| WM_FILESEL_RELPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|BLENDERFILE, FILE_LOADLIB, FILE_OPENFILE, WM_FILESEL_FILEPATH|WM_FILESEL_DIRECTORY|WM_FILESEL_FILENAME| WM_FILESEL_RELPATH|WM_FILESEL_FILES);
 	
 	RNA_def_boolean(ot->srna, "link", 1, "Link", "Link the objects or datablocks rather than appending");
 	RNA_def_boolean(ot->srna, "autoselect", 1, "Select", "Select the linked objects");
 	RNA_def_boolean(ot->srna, "active_layer", 1, "Active Layer", "Put the linked objects on the active layer");
 	RNA_def_boolean(ot->srna, "instance_groups", 1, "Instance Groups", "Create instances for each group as a DupliGroup");
-
-	RNA_def_collection_runtime(ot->srna, "files", &RNA_OperatorFileListElement, "Files", "");
 }	
 
 /* *************** recover last session **************** */
@@ -1941,7 +1973,7 @@ static void WM_OT_save_as_mainfile(wmOperatorType *ot)
 	WM_operator_properties_filesel(ot, FOLDERFILE|BLENDERFILE, FILE_BLENDER, FILE_SAVE, WM_FILESEL_FILEPATH);
 	RNA_def_boolean(ot->srna, "compress", 0, "Compress", "Write compressed .blend file");
 	RNA_def_boolean(ot->srna, "relative_remap", 1, "Remap Relative", "Remap relative paths when saving in a different directory");
-	RNA_def_boolean(ot->srna, "copy", 0, "Save Copy", "Save a copy of the actual working state but does not make saved file active.");
+	RNA_def_boolean(ot->srna, "copy", 0, "Save Copy", "Save a copy of the actual working state but does not make saved file active");
 }
 
 /* *************** save file directly ******** */
@@ -2009,8 +2041,6 @@ static void WM_OT_save_mainfile(wmOperatorType *ot)
 
 static int wm_collada_export_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 {	
-	int selected = 0;
-
 	if(!RNA_property_is_set(op->ptr, "filepath")) {
 		char filepath[FILE_MAX];
 		BLI_strncpy(filepath, G.main->name, sizeof(filepath));
@@ -2069,7 +2099,9 @@ static int wm_collada_import_exec(bContext *C, wmOperator *op)
 	}
 
 	RNA_string_get(op->ptr, "filepath", filename);
-	collada_import(C, filename);
+	if(collada_import(C, filename)) return OPERATOR_FINISHED;
+	
+	BKE_report(op->reports, RPT_ERROR, "Errors found during parsing COLLADA document. Please see console for error log.");
 	
 	return OPERATOR_FINISHED;
 }
@@ -2346,7 +2378,6 @@ static void gesture_circle_apply(bContext *C, wmOperator *op)
 	
 	if(op->type->exec)
 		op->type->exec(C, op);
-
 #ifdef GESTURE_MEMORY
 	circle_select_size= rect->xmax;
 #endif
@@ -2567,7 +2598,6 @@ static void gesture_lasso_apply(bContext *C, wmOperator *op)
 		
 	if(op->type->exec)
 		op->type->exec(C, op);
-	
 }
 
 int WM_gesture_lasso_modal(bContext *C, wmOperator *op, wmEvent *event)
@@ -2927,7 +2957,7 @@ static void radial_control_paint_cursor(bContext *C, int x, int y, void *customd
 	case PROP_FACTOR:
 		r1= (1 - rc->current_value) * WM_RADIAL_CONTROL_DISPLAY_SIZE;
 		r2= tex_radius= WM_RADIAL_CONTROL_DISPLAY_SIZE;
-		alpha = rc->current_value / 2 + 0.5;
+		alpha = rc->current_value / 2.0f + 0.5f;
 		break;
 	case PROP_ANGLE:
 		r1= r2= tex_radius= WM_RADIAL_CONTROL_DISPLAY_SIZE;
@@ -3260,12 +3290,12 @@ static void WM_OT_radial_control(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO|OPTYPE_BLOCKING;
 
 	/* all paths relative to the context */
-	RNA_def_string(ot->srna, "data_path", "", 0, "Data Path", "Path of property to be set by the radial control.");
-	RNA_def_string(ot->srna, "rotation_path", "", 0, "Rotation Path", "Path of property used to rotate the texture display.");
-	RNA_def_string(ot->srna, "color_path", "", 0, "Color Path", "Path of property used to set the color of the control.");
-	RNA_def_string(ot->srna, "fill_color_path", "", 0, "Fill Color Path", "Path of property used to set the fill color of the control.");
-	RNA_def_string(ot->srna, "zoom_path", "", 0, "Zoom Path", "Path of property used to set the zoom level for the control.");
-	RNA_def_string(ot->srna, "image_id", "", 0, "Image ID", "Path of ID that is used to generate an image for the control.");
+	RNA_def_string(ot->srna, "data_path", "", 0, "Data Path", "Path of property to be set by the radial control");
+	RNA_def_string(ot->srna, "rotation_path", "", 0, "Rotation Path", "Path of property used to rotate the texture display");
+	RNA_def_string(ot->srna, "color_path", "", 0, "Color Path", "Path of property used to set the color of the control");
+	RNA_def_string(ot->srna, "fill_color_path", "", 0, "Fill Color Path", "Path of property used to set the fill color of the control");
+	RNA_def_string(ot->srna, "zoom_path", "", 0, "Zoom Path", "Path of property used to set the zoom level for the control");
+	RNA_def_string(ot->srna, "image_id", "", 0, "Image ID", "Path of ID that is used to generate an image for the control");
 }
 
 /* ************************** timer for testing ***************** */
@@ -3285,13 +3315,13 @@ static void redraw_timer_window_swap(bContext *C)
 }
 
 static EnumPropertyItem redraw_timer_type_items[] = {
-	{0, "DRAW", 0, "Draw Region", "Draw Region"},
-	{1, "DRAW_SWAP", 0, "Draw Region + Swap", "Draw Region and Swap"},
-	{2, "DRAW_WIN", 0, "Draw Window", "Draw Window"},
-	{3, "DRAW_WIN_SWAP", 0, "Draw Window + Swap", "Draw Window and Swap"},
-	{4, "ANIM_STEP", 0, "Anim Step", "Animation Steps"},
-	{5, "ANIM_PLAY", 0, "Anim Play", "Animation Playback"},
-	{6, "UNDO", 0, "Undo/Redo", "Undo/Redo"},
+	{0, "DRAW", 0, N_("Draw Region"), N_("Draw Region")},
+	{1, "DRAW_SWAP", 0, N_("Draw Region + Swap"), N_("Draw Region and Swap")},
+	{2, "DRAW_WIN", 0, N_("Draw Window"), N_("Draw Window")},
+	{3, "DRAW_WIN_SWAP", 0, N_("Draw Window + Swap"), N_("Draw Window and Swap")},
+	{4, "ANIM_STEP", 0, N_("Anim Step"), N_("Animation Steps")},
+	{5, "ANIM_PLAY", 0, N_("Anim Play"), N_("Animation Playback")},
+	{6, "UNDO", 0, N_("Undo/Redo"), N_("Undo/Redo")},
 	{0, NULL, 0, NULL, NULL}};
 
 static int redraw_timer_exec(bContext *C, wmOperator *op)
@@ -3524,14 +3554,14 @@ void wm_operatortype_init(void)
 static void gesture_circle_modal_keymap(wmKeyConfig *keyconf)
 {
 	static EnumPropertyItem modal_items[] = {
-	{GESTURE_MODAL_CANCEL,	"CANCEL", 0, "Cancel", ""},
-	{GESTURE_MODAL_CONFIRM,	"CONFIRM", 0, "Confirm", ""},
-	{GESTURE_MODAL_CIRCLE_ADD, "ADD", 0, "Add", ""},
-	{GESTURE_MODAL_CIRCLE_SUB, "SUBTRACT", 0, "Subtract", ""},
+	{GESTURE_MODAL_CANCEL,	"CANCEL", 0, N_("Cancel"), ""},
+	{GESTURE_MODAL_CONFIRM,	"CONFIRM", 0, N_("Confirm"), ""},
+	{GESTURE_MODAL_CIRCLE_ADD, "ADD", 0, N_("Add"), ""},
+	{GESTURE_MODAL_CIRCLE_SUB, "SUBTRACT", 0, N_("Subtract"), ""},
 
-	{GESTURE_MODAL_SELECT,	"SELECT", 0, "Select", ""},
-	{GESTURE_MODAL_DESELECT,"DESELECT", 0, "DeSelect", ""},
-	{GESTURE_MODAL_NOP,"NOP", 0, "No Operation", ""},
+	{GESTURE_MODAL_SELECT,	"SELECT", 0, N_("Select"), ""},
+	{GESTURE_MODAL_DESELECT,"DESELECT", 0, N_("DeSelect"), ""},
+	{GESTURE_MODAL_NOP,"NOP", 0, N_("No Operation"), ""},
 
 
 	{0, NULL, 0, NULL, NULL}};
@@ -3556,8 +3586,8 @@ static void gesture_circle_modal_keymap(wmKeyConfig *keyconf)
 	WM_modalkeymap_add_item(keymap, LEFTMOUSE, KM_PRESS, KM_SHIFT, 0, GESTURE_MODAL_DESELECT);
 	WM_modalkeymap_add_item(keymap, LEFTMOUSE, KM_RELEASE, KM_SHIFT, 0, GESTURE_MODAL_NOP);
 #else
-	WM_modalkeymap_add_item(keymap, MIDDLEMOUSE, KM_PRESS, 0, 0, GESTURE_MODAL_DESELECT); //  defailt 2.4x
-	WM_modalkeymap_add_item(keymap, MIDDLEMOUSE, KM_RELEASE, 0, 0, GESTURE_MODAL_NOP); //  defailt 2.4x
+	WM_modalkeymap_add_item(keymap, MIDDLEMOUSE, KM_PRESS, 0, 0, GESTURE_MODAL_DESELECT); //  default 2.4x
+	WM_modalkeymap_add_item(keymap, MIDDLEMOUSE, KM_RELEASE, 0, 0, GESTURE_MODAL_NOP); //  default 2.4x
 #endif
 
 	WM_modalkeymap_add_item(keymap, LEFTMOUSE, KM_RELEASE, 0, 0, GESTURE_MODAL_NOP);
@@ -3577,9 +3607,9 @@ static void gesture_circle_modal_keymap(wmKeyConfig *keyconf)
 static void gesture_straightline_modal_keymap(wmKeyConfig *keyconf)
 {
 	static EnumPropertyItem modal_items[] = {
-		{GESTURE_MODAL_CANCEL,	"CANCEL", 0, "Cancel", ""},
-		{GESTURE_MODAL_SELECT,	"SELECT", 0, "Select", ""},
-		{GESTURE_MODAL_BEGIN,	"BEGIN", 0, "Begin", ""},
+		{GESTURE_MODAL_CANCEL,	"CANCEL", 0, N_("Cancel"), ""},
+		{GESTURE_MODAL_SELECT,	"SELECT", 0, N_("Select"), ""},
+		{GESTURE_MODAL_BEGIN,	"BEGIN", 0, N_("Begin"), ""},
 		{0, NULL, 0, NULL, NULL}};
 	
 	wmKeyMap *keymap= WM_modalkeymap_get(keyconf, "Gesture Straight Line");
@@ -3605,10 +3635,10 @@ static void gesture_straightline_modal_keymap(wmKeyConfig *keyconf)
 static void gesture_border_modal_keymap(wmKeyConfig *keyconf)
 {
 	static EnumPropertyItem modal_items[] = {
-	{GESTURE_MODAL_CANCEL,	"CANCEL", 0, "Cancel", ""},
-	{GESTURE_MODAL_SELECT,	"SELECT", 0, "Select", ""},
-	{GESTURE_MODAL_DESELECT,"DESELECT", 0, "DeSelect", ""},
-	{GESTURE_MODAL_BEGIN,	"BEGIN", 0, "Begin", ""},
+	{GESTURE_MODAL_CANCEL,	"CANCEL", 0, N_("Cancel"), ""},
+	{GESTURE_MODAL_SELECT,	"SELECT", 0, N_("Select"), ""},
+	{GESTURE_MODAL_DESELECT,"DESELECT", 0, N_("DeSelect"), ""},
+	{GESTURE_MODAL_BEGIN,	"BEGIN", 0, N_("Begin"), ""},
 	{0, NULL, 0, NULL, NULL}};
 
 	wmKeyMap *keymap= WM_modalkeymap_get(keyconf, "Gesture Border");
@@ -3660,10 +3690,10 @@ static void gesture_border_modal_keymap(wmKeyConfig *keyconf)
 static void gesture_zoom_border_modal_keymap(wmKeyConfig *keyconf)
 {
 	static EnumPropertyItem modal_items[] = {
-	{GESTURE_MODAL_CANCEL, "CANCEL", 0, "Cancel", ""},
-	{GESTURE_MODAL_IN,	"IN", 0, "In", ""},
-	{GESTURE_MODAL_OUT, "OUT", 0, "Out", ""},
-	{GESTURE_MODAL_BEGIN, "BEGIN", 0, "Begin", ""},
+	{GESTURE_MODAL_CANCEL, "CANCEL", 0, N_("Cancel"), ""},
+	{GESTURE_MODAL_IN,	"IN", 0, N_("In"), ""},
+	{GESTURE_MODAL_OUT, "OUT", 0, N_("Out"), ""},
+	{GESTURE_MODAL_BEGIN, "BEGIN", 0, N_("Begin"), ""},
 	{0, NULL, 0, NULL, NULL}};
 
 	wmKeyMap *keymap= WM_modalkeymap_get(keyconf, "Gesture Zoom Border");

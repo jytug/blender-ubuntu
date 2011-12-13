@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_constraint_types.h 34941 2011-02-17 20:48:12Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -230,7 +228,7 @@ typedef struct bMinMaxConstraint {
 	int			minmaxflag;
 	float		offset;
 	int			flag;
-	short		sticky, stuck, pad1, pad2; /* for backward compatability */
+	short		sticky, stuck, pad1, pad2; /* for backward compatibility */
 	float		cache[3];
 	char		subtarget[32];
 } bMinMaxConstraint;
@@ -346,7 +344,7 @@ typedef struct bPivotConstraint {
 	 *	Either target object + offset, or just offset is used
 	 */
 	struct Object 		*tar;			/* target object (optional) */
-	char	 	subtarget[32];		/* subtarget name (optional) */
+	char		subtarget[32];		/* subtarget name (optional) */
 	float 		offset[3];		/* offset from the target to use, regardless of whether it exists */
 	
 	/* Rotation-driven activation:
@@ -677,7 +675,10 @@ typedef enum eRotLimit_Flags {
 /* distance limit constraint */
 	/* bDistLimitConstraint->flag */
 typedef enum eDistLimit_Flag {
-	LIMITDIST_USESOFT	= (1<<0)
+	/* "soft" cushion effect when reaching the limit sphere */ // NOT IMPLEMENTED!
+	LIMITDIST_USESOFT	= (1<<0),
+	/* as for all Limit constraints - allow to be used during transform? */
+	LIMITDIST_TRANSFORM = (1<<1)
 } eDistLimit_Flag;
 
 	/* bDistLimitConstraint->mode */

@@ -1,7 +1,5 @@
-/* anim.c
- *
- *
- * $Id: anim.c 38141 2011-07-06 10:05:27Z blendix $
+/*
+ * $Id: anim.c 41060 2011-10-16 16:14:36Z jhk $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -173,7 +171,7 @@ bMotionPath *animviz_verify_motionpaths(Scene *scene, Object *ob, bPoseChannel *
 	}
 
 	/* avoid 0 size allocs */
-	if(avs->path_sf >= avs->path_ef) {
+	if (avs->path_sf >= avs->path_ef) {
 		return NULL;
 	}
 
@@ -231,6 +229,7 @@ typedef struct MPathTarget {
 /* get list of motion paths to be baked for the given object
  * 	- assumes the given list is ready to be used
  */
+// TODO: it would be nice in future to be able to update objects dependant on these bones too?
 void animviz_get_object_motionpaths(Object *ob, ListBase *targets)
 {
 	MPathTarget *mpt;
@@ -795,7 +794,7 @@ static void frames_duplilist(ListBase *lb, Scene *scene, Object *ob, int level, 
 			 * and/or other objects which may affect this object's transforms are not updated either.
 			 * However, this has always been the way that this worked (i.e. pre 2.5), so I guess that it'll be fine!
 			 */
-			BKE_animsys_evaluate_animdata(&ob->id, ob->adt, (float)scene->r.cfra, ADT_RECALC_ANIM); /* ob-eval will do drivers, so we don't need to do them */
+			BKE_animsys_evaluate_animdata(scene, &ob->id, ob->adt, (float)scene->r.cfra, ADT_RECALC_ANIM); /* ob-eval will do drivers, so we don't need to do them */
 			where_is_object_time(scene, ob, (float)scene->r.cfra);
 			
 			dob= new_dupli_object(lb, ob, ob->obmat, ob->lay, scene->r.cfra, OB_DUPLIFRAMES, animated);
@@ -810,7 +809,7 @@ static void frames_duplilist(ListBase *lb, Scene *scene, Object *ob, int level, 
 	 */
 	scene->r.cfra= cfrao;
 	
-	BKE_animsys_evaluate_animdata(&ob->id, ob->adt, (float)scene->r.cfra, ADT_RECALC_ANIM); /* ob-eval will do drivers, so we don't need to do them */
+	BKE_animsys_evaluate_animdata(scene, &ob->id, ob->adt, (float)scene->r.cfra, ADT_RECALC_ANIM); /* ob-eval will do drivers, so we don't need to do them */
 	where_is_object_time(scene, ob, (float)scene->r.cfra);
 	
 	/* but, to make sure unkeyed object transforms are still sane, 
@@ -1146,11 +1145,11 @@ static void face_duplilist(ListBase *lb, ID *id, Scene *scene, Object *par, floa
 							w= (mv4)? 0.25f: 1.0f/3.0f;
 
 							if(orco) {
-								VECADDFAC(dob->orco, dob->orco, orco[mv1], w);
-								VECADDFAC(dob->orco, dob->orco, orco[mv2], w);
-								VECADDFAC(dob->orco, dob->orco, orco[mv3], w);
+								madd_v3_v3v3fl(dob->orco, dob->orco, orco[mv1], w);
+								madd_v3_v3v3fl(dob->orco, dob->orco, orco[mv2], w);
+								madd_v3_v3v3fl(dob->orco, dob->orco, orco[mv3], w);
 								if(mv4)
-									VECADDFAC(dob->orco, dob->orco, orco[mv4], w);
+									madd_v3_v3v3fl(dob->orco, dob->orco, orco[mv4], w);
 							}
 
 							if(mtface) {
@@ -1245,6 +1244,8 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 		sim.ob= par;
 		sim.psys= psys;
 		sim.psmd= psys_get_modifier(par, psys);
+		/* make sure emitter imat is in global coordinates instead of render view coordinates */
+		invert_m4_m4(par->imat, par->obmat);
 
 		/* first check for loops (particle system object used as dupli object) */
 		if(part->ren_as == PART_DRAW_OB) {
@@ -1349,6 +1350,10 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 				continue;
 
 			if(part->ren_as==PART_DRAW_GR) {
+				/* prevent divide by zero below [#28336] */
+				if(totgroup == 0)
+					continue;
+
 				/* for groups, pick the object based on settings */
 				if(part->draw&PART_DRAW_RAND_GR)
 					b= BLI_rand() % totgroup;
@@ -1425,6 +1430,16 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 
 				VECCOPY(vec, obmat[3]);
 				obmat[3][0] = obmat[3][1] = obmat[3][2] = 0.0f;
+
+				/* particle rotation uses x-axis as the aligned axis, so pre-rotate the object accordingly */
+				if((part->draw & PART_DRAW_ROTATE_OB) == 0) {
+					float xvec[3], q[4];
+					xvec[0] = -1.f;
+					xvec[1] = xvec[2] = 0;
+					vec_to_quat(q, xvec, ob->trackflag, ob->upflag);
+					quat_to_mat4(obmat, q);
+					obmat[3][3]= 1.0f;
+				}
 				
 				/* Normal particles and cached hair live in global space so we need to
 				 * remove the real emitter's transformation before 2nd order duplication.
@@ -1443,7 +1458,7 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 					copy_m4_m4(mat, tmat);
 
 				if(part->draw & PART_DRAW_GLOBAL_OB)
-					VECADD(mat[3], mat[3], vec);
+					add_v3_v3v3(mat[3], mat[3], vec);
 
 				dob= new_dupli_object(lb, ob, mat, ob->lay, counter, GS(id->name) == ID_GR ? OB_DUPLIGROUP : OB_DUPLIPARTS, animated);
 				copy_m4_m4(dob->omat, oldobmat);
@@ -1511,7 +1526,7 @@ static void font_duplilist(ListBase *lb, Scene *scene, Object *par, int level, i
 	
 	/* in par the family name is stored, use this to find the other objects */
 	
-	chartransdata= BKE_text_to_curve(scene, par, FO_DUPLI);
+	chartransdata= BKE_text_to_curve(G.main, scene, par, FO_DUPLI);
 	if(chartransdata==NULL) return;
 
 	cu= par->data;

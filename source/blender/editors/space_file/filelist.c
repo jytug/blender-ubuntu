@@ -1,5 +1,5 @@
 /*
- * $Id: filelist.c 37552 2011-06-16 15:01:22Z campbellbarton $
+ * $Id: filelist.c 41022 2011-10-15 05:01:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -244,7 +244,8 @@ static int compare_size(const void *a1, const void *a2)
 	else return BLI_natstrcmp(entry1->relname,entry2->relname);
 }
 
-static int compare_extension(const void *a1, const void *a2) {
+static int compare_extension(const void *a1, const void *a2)
+{
 	const struct direntry *entry1=a1, *entry2=a2;
 	const char *sufix1, *sufix2;
 	const char *nil="";
@@ -602,28 +603,6 @@ short filelist_changed(struct FileList* filelist)
 	return filelist->changed;
 }
 
-static struct ImBuf * filelist_loadimage(struct FileList* filelist, int index)
-{
-	ImBuf *imb = NULL;
-	int fidx = 0;
-	
-	if ( (index < 0) || (index >= filelist->numfiltered) ) {
-		return NULL;
-	}
-	fidx = filelist->fidx[index];
-	imb = filelist->filelist[fidx].image;
-	if (!imb)
-	{
-		if ( (filelist->filelist[fidx].flags & IMAGEFILE) || (filelist->filelist[fidx].flags & MOVIEFILE) ) {
-			imb = IMB_thumb_read(filelist->filelist[fidx].path, THB_NORMAL);
-		} 
-		if (imb) {
-			filelist->filelist[fidx].image = imb;
-		} 
-	}
-	return imb;
-}
-
 struct ImBuf * filelist_getimage(struct FileList* filelist, int index)
 {
 	ImBuf* ibuf = NULL;
@@ -757,7 +736,7 @@ static int file_is_blend_backup(const char *str)
 }
 
 
-static int file_extension_type(char *relname)
+static int file_extension_type(const char *relname)
 {
 	if(BLO_has_bfile_extension(relname)) {
 		return BLENDERFILE;
@@ -790,7 +769,7 @@ static int file_extension_type(char *relname)
 	return 0;
 }
 
-int ED_file_extension_icon(char *relname)
+int ED_file_extension_icon(const char *relname)
 {
 	int type= file_extension_type(relname);
 	
@@ -1127,7 +1106,7 @@ void filelist_from_main(struct FileList *filelist)
 	if( filelist->dir[0]==0) {
 		
 		/* make directories */
-		filelist->numfiles= 23;
+		filelist->numfiles= 24;
 		filelist->filelist= (struct direntry *)malloc(filelist->numfiles * sizeof(struct direntry));
 		
 		for(a=0; a<filelist->numfiles; a++) {
@@ -1157,6 +1136,7 @@ void filelist_from_main(struct FileList *filelist)
 		filelist->filelist[20].relname= BLI_strdup("Armature");
 		filelist->filelist[21].relname= BLI_strdup("Action");
 		filelist->filelist[22].relname= BLI_strdup("NodeTree");
+		filelist->filelist[23].relname= BLI_strdup("Speaker");
 		filelist_sort(filelist, FILE_SORT_ALPHA);
 	}
 	else {
@@ -1179,8 +1159,8 @@ void filelist_from_main(struct FileList *filelist)
 		
 		/* XXXXX TODO: if databrowse F4 or append/link filelist->hide_parent has to be set */
 		if (!filelist->hide_parent) filelist->numfiles+= 1;
-		filelist->filelist= (struct direntry *)malloc(filelist->numfiles * sizeof(struct direntry));
-		
+		filelist->filelist= filelist->numfiles > 0 ? (struct direntry *)malloc(filelist->numfiles * sizeof(struct direntry)) : NULL;
+
 		files = filelist->filelist;
 		
 		if (!filelist->hide_parent) {

@@ -19,6 +19,7 @@
 # <pep8 compliant>
 
 import bpy
+from bpy.types import Panel
 
 
 class PhysicButtonsPanel():
@@ -44,7 +45,7 @@ def physics_add(self, layout, md, name, type, typeicon, toggles):
         sub.operator("object.modifier_add", text=name, icon=typeicon).type = type
 
 
-class PHYSICS_PT_add(PhysicButtonsPanel, bpy.types.Panel):
+class PHYSICS_PT_add(PhysicButtonsPanel, Panel):
     bl_label = ""
     bl_options = {'HIDE_HEADER'}
 
@@ -75,7 +76,7 @@ class PHYSICS_PT_add(PhysicButtonsPanel, bpy.types.Panel):
             physics_add(self, col, context.smoke, "Smoke", 'SMOKE', 'MOD_SMOKE', True)
 
 
-#cachetype can be 'PSYS' 'HAIR' 'SMOKE' etc
+# cache-type can be 'PSYS' 'HAIR' 'SMOKE' etc
 
 def point_cache_ui(self, context, cache, enabled, cachetype):
     layout = self.layout

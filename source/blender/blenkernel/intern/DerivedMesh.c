@@ -1,5 +1,5 @@
 /*
- * $Id: DerivedMesh.c 38890 2011-08-01 06:50:24Z campbellbarton $
+ * $Id: DerivedMesh.c 40920 2011-10-11 04:09:11Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,6 +40,7 @@
 #include "DNA_cloth_types.h"
 #include "DNA_key_types.h"
 #include "DNA_meshdata_types.h"
+#include "DNA_armature_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h" // N_T
 
@@ -59,19 +60,23 @@
 #include "BKE_paint.h"
 #include "BKE_texture.h"
 #include "BKE_multires.h"
+#include "BKE_armature.h"
 
+#ifdef WITH_GAMEENGINE
+#include "BKE_navmesh_conversion.h"
+static DerivedMesh *navmesh_dm_createNavMeshForVisualization(DerivedMesh *dm);
+#endif
 
 #include "BLO_sys_types.h" // for intptr_t support
 
-#include "BIF_gl.h"
-#include "BIF_glutil.h"
+#include "GL/glew.h"
 
 #include "GPU_buffers.h"
 #include "GPU_draw.h"
 #include "GPU_extensions.h"
 #include "GPU_material.h"
 
-#include "ED_sculpt.h" /* for ED_sculpt_modifiers_changed */
+extern GLubyte stipple_quarttone[128]; /* glutil.c, bad level data */
 
 ///////////////////////////////////
 ///////////////////////////////////
@@ -637,15 +642,28 @@ static void emDM_foreachMappedFaceCenter(DerivedMesh *dm, void (*func)(void *use
 }
 
 /* note, material function is ignored for now. */
-static void emDM_drawMappedFaces(DerivedMesh *dm, int (*setDrawOptions)(void *userData, int index, int *drawSmooth_r), void *userData, int UNUSED(useColors), int (*setMaterial)(int, void *attribs))
+static void emDM_drawMappedFaces(DerivedMesh *dm, int (*setDrawOptions)(void *userData, int index, int *drawSmooth_r), void *userData, int UNUSED(useColors), int (*setMaterial)(int, void *attribs),
+			int (*compareDrawOptions)(void *userData, int cur_index, int next_index))
 {
 	EditMeshDerivedMesh *emdm= (EditMeshDerivedMesh*) dm;
 	EditFace *efa;
 	int i, draw;
-	
+	const int skip_normals= !glIsEnabled(GL_LIGHTING); /* could be passed as an arg */
+
+	/* GL_ZERO is used to detect if drawing has started or not */
+	GLenum poly_prev= GL_ZERO;
+	GLenum shade_prev= GL_ZERO;
+
 	(void)setMaterial; /* unused */
 
+	/* currently unused -- each original face is handled separately */
+	(void)compareDrawOptions;
+
 	if (emdm->vertexCos) {
+		/* add direct access */
+		float (*vertexCos)[3]= emdm->vertexCos;
+		float (*vertexNos)[3]= emdm->vertexNos;
+		float (*faceNos)[3]=   emdm->faceNos;
 		EditVert *eve;
 
 		for (i=0,eve=emdm->em->verts.first; eve; eve= eve->next)
@@ -655,79 +673,142 @@ static void emDM_drawMappedFaces(DerivedMesh *dm, int (*setDrawOptions)(void *us
 			int drawSmooth = (efa->flag & ME_SMOOTH);
 			draw = setDrawOptions==NULL ? 1 : setDrawOptions(userData, i, &drawSmooth);
 			if(draw) {
+				const GLenum poly_type= efa->v4 ? GL_QUADS:GL_TRIANGLES;
 				if (draw==2) { /* enabled with stipple */
-					  glEnable(GL_POLYGON_STIPPLE);
-					  glPolygonStipple(stipple_quarttone);
+
+					if(poly_prev != GL_ZERO) glEnd();
+					poly_prev= GL_ZERO; /* force glBegin */
+
+					glEnable(GL_POLYGON_STIPPLE);
+					glPolygonStipple(stipple_quarttone);
 				}
 				
-				glShadeModel(drawSmooth?GL_SMOOTH:GL_FLAT);
+				if(skip_normals) {
+					if(poly_type != poly_prev) {
+						if(poly_prev != GL_ZERO) glEnd();
+						glBegin((poly_prev= poly_type));
+					}
+					glVertex3fv(vertexCos[(int) efa->v1->tmp.l]);
+					glVertex3fv(vertexCos[(int) efa->v2->tmp.l]);
+					glVertex3fv(vertexCos[(int) efa->v3->tmp.l]);
+					if(poly_type == GL_QUADS) glVertex3fv(vertexCos[(int) efa->v4->tmp.l]);
+				}
+				else {
+					const GLenum shade_type= drawSmooth ? GL_SMOOTH : GL_FLAT;
+					if (shade_type != shade_prev) {
+						if(poly_prev != GL_ZERO) glEnd();
+						glShadeModel((shade_prev= shade_type)); /* same as below but switch shading */
+						glBegin((poly_prev= poly_type));
+					}
+					else if(poly_type != poly_prev) {
+						if(poly_prev != GL_ZERO) glEnd();
+						glBegin((poly_prev= poly_type));
+					}
 
-				glBegin(efa->v4?GL_QUADS:GL_TRIANGLES);
-				if (!drawSmooth) {
-					glNormal3fv(emdm->faceNos[i]);
-					glVertex3fv(emdm->vertexCos[(int) efa->v1->tmp.l]);
-					glVertex3fv(emdm->vertexCos[(int) efa->v2->tmp.l]);
-					glVertex3fv(emdm->vertexCos[(int) efa->v3->tmp.l]);
-					if(efa->v4) glVertex3fv(emdm->vertexCos[(int) efa->v4->tmp.l]);
-				} else {
-					glNormal3fv(emdm->vertexNos[(int) efa->v1->tmp.l]);
-					glVertex3fv(emdm->vertexCos[(int) efa->v1->tmp.l]);
-					glNormal3fv(emdm->vertexNos[(int) efa->v2->tmp.l]);
-					glVertex3fv(emdm->vertexCos[(int) efa->v2->tmp.l]);
-					glNormal3fv(emdm->vertexNos[(int) efa->v3->tmp.l]);
-					glVertex3fv(emdm->vertexCos[(int) efa->v3->tmp.l]);
-					if(efa->v4) {
-						glNormal3fv(emdm->vertexNos[(int) efa->v4->tmp.l]);
-						glVertex3fv(emdm->vertexCos[(int) efa->v4->tmp.l]);
+					if (!drawSmooth) {
+						glNormal3fv(faceNos[i]);
+						glVertex3fv(vertexCos[(int) efa->v1->tmp.l]);
+						glVertex3fv(vertexCos[(int) efa->v2->tmp.l]);
+						glVertex3fv(vertexCos[(int) efa->v3->tmp.l]);
+						if(poly_type == GL_QUADS) glVertex3fv(vertexCos[(int) efa->v4->tmp.l]);
+					} else {
+						glNormal3fv(vertexNos[(int) efa->v1->tmp.l]);
+						glVertex3fv(vertexCos[(int) efa->v1->tmp.l]);
+						glNormal3fv(vertexNos[(int) efa->v2->tmp.l]);
+						glVertex3fv(vertexCos[(int) efa->v2->tmp.l]);
+						glNormal3fv(vertexNos[(int) efa->v3->tmp.l]);
+						glVertex3fv(vertexCos[(int) efa->v3->tmp.l]);
+						if(poly_type == GL_QUADS) {
+							glNormal3fv(vertexNos[(int) efa->v4->tmp.l]);
+							glVertex3fv(vertexCos[(int) efa->v4->tmp.l]);
+						}
 					}
 				}
-				glEnd();
+
 				
-				if (draw==2)
+				if (draw==2) {
+					glEnd();
+					poly_prev= GL_ZERO; /* force glBegin */
+
 					glDisable(GL_POLYGON_STIPPLE);
+				}
 			}
 		}
-	} else {
+	}
+	else {
 		for (i=0,efa= emdm->em->faces.first; efa; i++,efa= efa->next) {
 			int drawSmooth = (efa->flag & ME_SMOOTH);
 			draw = setDrawOptions==NULL ? 1 : setDrawOptions(userData, i, &drawSmooth);
 			if(draw) {
+				const GLenum poly_type= efa->v4 ? GL_QUADS:GL_TRIANGLES;
 				if (draw==2) { /* enabled with stipple */
+
+					if(poly_prev != GL_ZERO) glEnd();
+					poly_prev= GL_ZERO; /* force glBegin */
+
 					glEnable(GL_POLYGON_STIPPLE);
 					glPolygonStipple(stipple_quarttone);
 				}
-				glShadeModel(drawSmooth?GL_SMOOTH:GL_FLAT);
 
-				glBegin(efa->v4?GL_QUADS:GL_TRIANGLES);
-				if (!drawSmooth) {
-					glNormal3fv(efa->n);
+				if(skip_normals) {
+					if(poly_type != poly_prev) {
+						if(poly_prev != GL_ZERO) glEnd();
+						glBegin((poly_prev= poly_type));
+					}
 					glVertex3fv(efa->v1->co);
 					glVertex3fv(efa->v2->co);
 					glVertex3fv(efa->v3->co);
-					if(efa->v4) glVertex3fv(efa->v4->co);
-				} else {
-					glNormal3fv(efa->v1->no);
-					glVertex3fv(efa->v1->co);
-					glNormal3fv(efa->v2->no);
-					glVertex3fv(efa->v2->co);
-					glNormal3fv(efa->v3->no);
-					glVertex3fv(efa->v3->co);
-					if(efa->v4) {
-						glNormal3fv(efa->v4->no);
-						glVertex3fv(efa->v4->co);
+					if(poly_type == GL_QUADS) glVertex3fv(efa->v4->co);
+				}
+				else {
+					const GLenum shade_type= drawSmooth ? GL_SMOOTH : GL_FLAT;
+					if (shade_type != shade_prev) {
+						if(poly_prev != GL_ZERO) glEnd();
+						glShadeModel((shade_prev= shade_type)); /* same as below but switch shading */
+						glBegin((poly_prev= poly_type));
+					}
+					else if(poly_type != poly_prev) {
+						if(poly_prev != GL_ZERO) glEnd();
+						glBegin((poly_prev= poly_type));
+					}
+
+					if (!drawSmooth) {
+						glNormal3fv(efa->n);
+						glVertex3fv(efa->v1->co);
+						glVertex3fv(efa->v2->co);
+						glVertex3fv(efa->v3->co);
+						if(poly_type == GL_QUADS) glVertex3fv(efa->v4->co);
+					} else {
+						glNormal3fv(efa->v1->no);
+						glVertex3fv(efa->v1->co);
+						glNormal3fv(efa->v2->no);
+						glVertex3fv(efa->v2->co);
+						glNormal3fv(efa->v3->no);
+						glVertex3fv(efa->v3->co);
+						if(poly_type == GL_QUADS) {
+							glNormal3fv(efa->v4->no);
+							glVertex3fv(efa->v4->co);
+						}
 					}
 				}
-				glEnd();
+
 				
-				if (draw==2)
+				if (draw==2) {
+					glEnd();
+					poly_prev= GL_ZERO;
+
 					glDisable(GL_POLYGON_STIPPLE);
+				}
 			}
 		}
 	}
+
+	/* if non zero we know a face was rendered */
+	if(poly_prev != GL_ZERO) glEnd();
 }
 
 static void emDM_drawFacesTex_common(DerivedMesh *dm,
-			   int (*drawParams)(MTFace *tface, MCol *mcol, int matnr),
+			   int (*drawParams)(MTFace *tface, int has_mcol, int matnr),
 			   int (*drawParamsMapped)(void *userData, int index),
 			   void *userData) 
 {
@@ -755,7 +836,7 @@ static void emDM_drawFacesTex_common(DerivedMesh *dm,
 			int flag;
 
 			if(drawParams)
-				flag= drawParams(tf, mcol, efa->mat_nr);
+				flag= drawParams(tf, (mcol != NULL), efa->mat_nr);
 			else if(drawParamsMapped)
 				flag= drawParamsMapped(userData, i);
 			else
@@ -828,7 +909,7 @@ static void emDM_drawFacesTex_common(DerivedMesh *dm,
 			int flag;
 
 			if(drawParams)
-				flag= drawParams(tf, mcol, efa->mat_nr);
+				flag= drawParams(tf, (mcol != NULL), efa->mat_nr);
 			else if(drawParamsMapped)
 				flag= drawParamsMapped(userData, i);
 			else
@@ -894,7 +975,7 @@ static void emDM_drawFacesTex_common(DerivedMesh *dm,
 	}
 }
 
-static void emDM_drawFacesTex(DerivedMesh *dm, int (*setDrawOptions)(MTFace *tface, MCol *mcol, int matnr))
+static void emDM_drawFacesTex(DerivedMesh *dm, int (*setDrawOptions)(MTFace *tface, int has_mcol, int matnr))
 {
 	emDM_drawFacesTex_common(dm, setDrawOptions, NULL, NULL);
 }
@@ -916,17 +997,14 @@ static void emDM_drawMappedFacesGLSL(DerivedMesh *dm,
 	EditFace *efa;
 	DMVertexAttribs attribs= {{{0}}};
 	GPUVertexAttribs gattribs;
-	MTFace *tf;
-	int transp, new_transp, orig_transp, tfoffset;
-	int i, b, matnr, new_matnr, dodraw, layer;
+	/* int tfoffset; */ /* UNUSED */
+	int i, b, matnr, new_matnr, dodraw /* , layer */ /* UNUSED */;
 
 	dodraw = 0;
 	matnr = -1;
 
-	transp = GPU_get_material_blend_mode();
-	orig_transp = transp;
-	layer = CustomData_get_layer_index(&em->fdata, CD_MTFACE);
-	tfoffset = (layer == -1)? -1: em->fdata.layers[layer].offset;
+	/* layer = CustomData_get_layer_index(&em->fdata, CD_MTFACE); */ /* UNUSED */
+	/* tfoffset = (layer == -1)? -1: em->fdata.layers[layer].offset; */ /* UNUSED */
 
 	/* always use smooth shading even for flat faces, else vertex colors wont interpolate */
 	glShadeModel(GL_SMOOTH);
@@ -966,19 +1044,6 @@ static void emDM_drawMappedFacesGLSL(DerivedMesh *dm,
 			dodraw = setMaterial(matnr = new_matnr, &gattribs);
 			if(dodraw)
 				DM_vertex_attributes_from_gpu(dm, &gattribs, &attribs);
-		}
-
-		if(tfoffset != -1) {
-			tf = (MTFace*)((char*)efa->data)+tfoffset;
-			new_transp = tf->transp;
-
-			if(new_transp != transp) {
-				if(new_transp == GPU_BLEND_SOLID && orig_transp != GPU_BLEND_SOLID)
-					GPU_set_material_blend_mode(orig_transp);
-				else
-					GPU_set_material_blend_mode(new_transp);
-				transp = new_transp;
-			}
 		}
 
 		if(dodraw) {
@@ -1050,6 +1115,7 @@ static void emDM_drawMappedFacesGLSL(DerivedMesh *dm,
 			glEnd();
 		}
 	}
+#undef PASSATTRIB
 }
 
 static void emDM_drawFacesGLSL(DerivedMesh *dm,
@@ -1602,20 +1668,64 @@ void weight_to_rgb(float input, float *fr, float *fg, float *fb)
 	}
 }
 
-static void calc_weightpaint_vert_color(Object *ob, ColorBand *coba, int vert, unsigned char *col)
+/* draw_flag's for calc_weightpaint_vert_color */
+enum {
+	CALC_WP_MULTIPAINT= (1<<0),
+	CALC_WP_AUTO_NORMALIZE= (1<<1),
+};
+
+static void calc_weightpaint_vert_color(Object *ob, ColorBand *coba, int vert, unsigned char *col, char *dg_flags, int selected, int UNUSED(unselected), const int draw_flag)
 {
 	Mesh *me = ob->data;
 	float colf[4], input = 0.0f;
 	int i;
 
+	
+	int make_black= FALSE;
+
 	if (me->dvert) {
-		for (i=0; i<me->dvert[vert].totweight; i++)
-			if (me->dvert[vert].dw[i].def_nr==ob->actdef-1)
-				input+=me->dvert[vert].dw[i].weight;		
+		if ((selected > 1) && (draw_flag & CALC_WP_MULTIPAINT)) {
+			
+			int was_a_nonzero= FALSE;
+			for (i=0; i<me->dvert[vert].totweight; i++) {
+				/* in multipaint, get the average if auto normalize is inactive
+				 * get the sum if it is active */
+				if(dg_flags[me->dvert[vert].dw[i].def_nr]) {
+					if(me->dvert[vert].dw[i].weight) {
+						input+= me->dvert[vert].dw[i].weight;
+						was_a_nonzero= TRUE;
+					}
+				}
+			}
+
+			/* make it black if the selected groups have no weight on a vertex */
+			if(was_a_nonzero == FALSE) {
+				make_black = TRUE;
+			}
+			else if ((draw_flag & CALC_WP_AUTO_NORMALIZE) == FALSE) {
+				input /= selected; /* get the average */
+			}
+		}
+		else {
+			/* default, non tricky behavior */
+			for (i=0; i<me->dvert[vert].totweight; i++) {
+				if (me->dvert[vert].dw[i].def_nr==ob->actdef-1) {
+					input+=me->dvert[vert].dw[i].weight;
+				}
+			}
+		}
+	}
+	
+	if (make_black) {
+		col[3] = 0;
+		col[2] = 0;
+		col[1] = 0;
+		col[0] = 255;
+		return;
 	}
 
-	CLAMP(input, 0.0f, 1.0f);
-	
+	CLAMP(input, 0.0f, 1.0f);	
+
 	if(coba)
 		do_colorband(coba, input, colf);
 	else
@@ -1634,7 +1744,7 @@ void vDM_ColorBand_store(ColorBand *coba)
 	stored_cb= coba;
 }
 
-static void add_weight_mcol_dm(Object *ob, DerivedMesh *dm)
+static void add_weight_mcol_dm(Object *ob, DerivedMesh *dm, int const draw_flag)
 {
 	Mesh *me = ob->data;
 	MFace *mf = me->mface;
@@ -1642,17 +1752,24 @@ static void add_weight_mcol_dm(Object *ob, DerivedMesh *dm)
 	unsigned char *wtcol;
 	int i;
 	
+	int defbase_len = BLI_countlist(&ob->defbase);
+	char *defbase_sel = MEM_mallocN(defbase_len * sizeof(char), __func__);
+	int selected = get_selected_defgroups(ob, defbase_sel, defbase_len);
+	int unselected = defbase_len - selected;
+
 	wtcol = MEM_callocN (sizeof (unsigned char) * me->totface*4*4, "weightmap");
 	
 	memset(wtcol, 0x55, sizeof (unsigned char) * me->totface*4*4);
 	for (i=0; i<me->totface; i++, mf++) {
-		calc_weightpaint_vert_color(ob, coba, mf->v1, &wtcol[(i*4 + 0)*4]); 
-		calc_weightpaint_vert_color(ob, coba, mf->v2, &wtcol[(i*4 + 1)*4]); 
-		calc_weightpaint_vert_color(ob, coba, mf->v3, &wtcol[(i*4 + 2)*4]); 
+		calc_weightpaint_vert_color(ob, coba, mf->v1, &wtcol[(i*4 + 0)*4], defbase_sel, selected, unselected, draw_flag);
+		calc_weightpaint_vert_color(ob, coba, mf->v2, &wtcol[(i*4 + 1)*4], defbase_sel, selected, unselected, draw_flag);
+		calc_weightpaint_vert_color(ob, coba, mf->v3, &wtcol[(i*4 + 2)*4], defbase_sel, selected, unselected, draw_flag);
 		if (mf->v4)
-			calc_weightpaint_vert_color(ob, coba, mf->v4, &wtcol[(i*4 + 3)*4]); 
+			calc_weightpaint_vert_color(ob, coba, mf->v4, &wtcol[(i*4 + 3)*4], defbase_sel, selected, unselected, draw_flag);
 	}
 	
+	MEM_freeN(defbase_sel);
+
 	CustomData_add_layer(&dm->faceData, CD_WEIGHT_MCOL, CD_ASSIGN, wtcol, dm->numFaceData);
 }
 
@@ -1679,6 +1796,9 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 	MultiresModifierData *mmd= get_multires_modifier(scene, ob, 0);
 	int has_multires = mmd != NULL, multires_applied = 0;
 	int sculpt_mode = ob->mode & OB_MODE_SCULPT && ob->sculpt;
+
+	int draw_flag= ((scene->toolsettings->multipaint ? CALC_WP_MULTIPAINT : 0) |
+	                (scene->toolsettings->auto_normalize ? CALC_WP_AUTO_NORMALIZE : 0));
 
 	if(mmd && !mmd->sculptlvl)
 		has_multires = 0;
@@ -1859,7 +1979,7 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 				}
 
 				if((dataMask & CD_MASK_WEIGHT_MCOL) && (ob->mode & OB_MODE_WEIGHT_PAINT))
-					add_weight_mcol_dm(ob, dm);
+					add_weight_mcol_dm(ob, dm, draw_flag); 
 
 				/* Constructive modifiers need to have an origindex
 				 * otherwise they wont have anywhere to copy the data from.
@@ -1971,7 +2091,7 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 		CDDM_calc_normals(finaldm);
 
 		if((dataMask & CD_MASK_WEIGHT_MCOL) && (ob->mode & OB_MODE_WEIGHT_PAINT))
-			add_weight_mcol_dm(ob, finaldm);
+			add_weight_mcol_dm(ob, finaldm, draw_flag);
 	} else if(dm) {
 		finaldm = dm;
 	} else {
@@ -1983,7 +2103,7 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 		}
 
 		if((dataMask & CD_MASK_WEIGHT_MCOL) && (ob->mode & OB_MODE_WEIGHT_PAINT))
-			add_weight_mcol_dm(ob, finaldm);
+			add_weight_mcol_dm(ob, finaldm, draw_flag);
 	}
 
 	/* add an orco layer if needed */
@@ -1993,6 +2113,18 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 		if(deform_r && *deform_r)
 			add_orco_dm(ob, NULL, *deform_r, NULL, CD_ORCO);
 	}
+
+#ifdef WITH_GAMEENGINE
+	/* NavMesh - this is a hack but saves having a NavMesh modifier */
+	if ((ob->gameflag & OB_NAVMESH) && (finaldm->type == DM_TYPE_CDDM)) {
+		DerivedMesh *tdm;
+		tdm= navmesh_dm_createNavMeshForVisualization(finaldm);
+		if (finaldm != tdm) {
+			finaldm->release(finaldm);
+			finaldm= tdm;
+		}
+	}
+#endif /* WITH_GAMEENGINE */
 
 	*final_r = finaldm;
 
@@ -2249,14 +2381,14 @@ static void clear_mesh_caches(Object *ob)
 	}
 
 	if(ob->sculpt) {
-		ED_sculpt_modifiers_changed(ob);
+		object_sculpt_modifiers_changed(ob);
 	}
 }
 
 static void mesh_build_data(Scene *scene, Object *ob, CustomDataMask dataMask)
 {
 	Object *obact = scene->basact?scene->basact->object:NULL;
-	int editing = paint_facesel_test(ob);
+	int editing = paint_facesel_test(ob) || paint_vertsel_test(ob);/* paint_vertsel_test */
 	/* weight paint and face select need original indices because of selection buffer drawing */
 	int needMapping = (ob==obact) && (editing || (ob->mode & (OB_MODE_WEIGHT_PAINT|OB_MODE_VERTEX_PAINT)));
 
@@ -2444,13 +2576,13 @@ static void make_vertexcosnos__mapFunc(void *userData, int index, float *co, flo
 	/* check if we've been here before (normal should not be 0) */
 	if(vec[3] || vec[4] || vec[5]) return;
 
-	VECCOPY(vec, co);
+	copy_v3_v3(vec, co);
 	vec+= 3;
 	if(no_f) {
-		VECCOPY(vec, no_f);
+		copy_v3_v3(vec, no_f);
 	}
 	else {
-		VECCOPY(vec, no_s);
+		normal_short_to_float_v3(vec, no_s);
 	}
 }
 
@@ -2767,6 +2899,7 @@ void DM_vertex_attributes_from_gpu(DerivedMesh *dm, GPUVertexAttribs *gattribs, 
 				attribs->tface[a].array = tfdata->layers[layer].data;
 				attribs->tface[a].emOffset = tfdata->layers[layer].offset;
 				attribs->tface[a].glIndex = gattribs->layer[b].glindex;
+				attribs->tface[a].glTexco = gattribs->layer[b].gltexco;
 			}
 		}
 		else if(gattribs->layer[b].type == CD_MCOL) {
@@ -2807,6 +2940,7 @@ void DM_vertex_attributes_from_gpu(DerivedMesh *dm, GPUVertexAttribs *gattribs, 
 				attribs->orco.array = vdata->layers[layer].data;
 				attribs->orco.emOffset = vdata->layers[layer].offset;
 				attribs->orco.glIndex = gattribs->layer[b].glindex;
+				attribs->orco.glTexco = gattribs->layer[b].gltexco;
 			}
 		}
 	}
@@ -2822,7 +2956,174 @@ void DM_set_object_boundbox(Object *ob, DerivedMesh *dm)
 	dm->getMinMax(dm, min, max);
 
 	if(!ob->bb)
-		ob->bb= MEM_callocN(sizeof(BoundBox), "bb");
+		ob->bb= MEM_callocN(sizeof(BoundBox), "DM-BoundBox");
 
 	boundbox_set_from_min_max(ob->bb, min, max);
 }
+
+/* --- NAVMESH (begin) --- */
+#ifdef WITH_GAMEENGINE
+
+BM_INLINE int navmesh_bit(int a, int b)
+{
+	return (a & (1 << b)) >> b;
+}
+
+BM_INLINE void navmesh_intToCol(int i, float col[3])
+{
+	int	r = navmesh_bit(i, 0) + navmesh_bit(i, 3) * 2 + 1;
+	int	g = navmesh_bit(i, 1) + navmesh_bit(i, 4) * 2 + 1;
+	int	b = navmesh_bit(i, 2) + navmesh_bit(i, 5) * 2 + 1;
+	col[0] = 1 - r*63.0f/255.0f;
+	col[1] = 1 - g*63.0f/255.0f;
+	col[2] = 1 - b*63.0f/255.0f;
+}
+
+static void navmesh_drawColored(DerivedMesh *dm)
+{
+	int a, glmode;
+	MVert *mvert = (MVert *)CustomData_get_layer(&dm->vertData, CD_MVERT);
+	MFace *mface = (MFace *)CustomData_get_layer(&dm->faceData, CD_MFACE);
+	int *polygonIdx = (int *)CustomData_get_layer(&dm->faceData, CD_RECAST);
+	float col[3];
+
+	if (!polygonIdx)
+		return;
+
+	/*
+	//UI_ThemeColor(TH_WIRE);
+	glDisable(GL_LIGHTING);
+	glLineWidth(2.0);
+	dm->drawEdges(dm, 0, 1);
+	glLineWidth(1.0);
+	glEnable(GL_LIGHTING);*/
+
+	glDisable(GL_LIGHTING);
+	/*  if(GPU_buffer_legacy(dm) ) */ { /* TODO - VBO draw code, not high priority - campbell */
+		DEBUG_VBO( "Using legacy code. drawNavMeshColored\n" );
+		//glShadeModel(GL_SMOOTH);
+		glBegin(glmode = GL_QUADS);
+		for(a = 0; a < dm->numFaceData; a++, mface++) {
+			int new_glmode = mface->v4?GL_QUADS:GL_TRIANGLES;
+			int pi = polygonIdx[a];
+			if (pi <= 0) {
+				zero_v3(col);
+			}
+			else {
+				navmesh_intToCol(pi, col);
+			}
+
+			if(new_glmode != glmode) {
+				glEnd();
+				glBegin(glmode = new_glmode);
+			}
+			glColor3fv(col);
+			glVertex3fv(mvert[mface->v1].co);
+			glVertex3fv(mvert[mface->v2].co);
+			glVertex3fv(mvert[mface->v3].co);
+			if(mface->v4) {
+				glVertex3fv(mvert[mface->v4].co);
+			}
+		}
+		glEnd();
+	}
+	glEnable(GL_LIGHTING);
+}
+
+static void navmesh_DM_drawFacesTex(DerivedMesh *dm, int (*setDrawOptions)(MTFace *tface, int has_mcol, int matnr))
+{
+	(void) setDrawOptions;
+
+	navmesh_drawColored(dm);
+}
+
+static void navmesh_DM_drawFacesSolid(DerivedMesh *dm,
+                                      float (*partial_redraw_planes)[4],
+                                      int UNUSED(fast), int (*setMaterial)(int, void *attribs))
+{
+	(void) partial_redraw_planes;
+	(void) setMaterial;
+
+	//drawFacesSolid_original(dm, partial_redraw_planes, fast, setMaterial);
+	navmesh_drawColored(dm);
+}
+
+static DerivedMesh *navmesh_dm_createNavMeshForVisualization(DerivedMesh *dm)
+{
+	DerivedMesh *result;
+	int maxFaces = dm->getNumFaces(dm);
+	int *recastData;
+	int vertsPerPoly=0, nverts=0, ndtris=0, npolys=0;
+	float* verts=NULL;
+	unsigned short *dtris=NULL, *dmeshes=NULL, *polys=NULL;
+	int *dtrisToPolysMap=NULL, *dtrisToTrisMap=NULL, *trisToFacesMap=NULL;
+	int res;
+
+	result = CDDM_copy(dm);
+	if (!CustomData_has_layer(&result->faceData, CD_RECAST)) {
+		int *sourceRecastData = (int*)CustomData_get_layer(&dm->faceData, CD_RECAST);
+		if (sourceRecastData) {
+			CustomData_add_layer_named(&result->faceData, CD_RECAST, CD_DUPLICATE,
+			                           sourceRecastData, maxFaces, "recastData");
+		}
+	}
+	recastData = (int*)CustomData_get_layer(&result->faceData, CD_RECAST);
+
+	/* note: This is not good design! - really should not be doing this */
+	result->drawFacesTex =  navmesh_DM_drawFacesTex;
+	result->drawFacesSolid = navmesh_DM_drawFacesSolid;
+
+
+	/* process mesh */
+	res  = buildNavMeshDataByDerivedMesh(dm, &vertsPerPoly, &nverts, &verts, &ndtris, &dtris,
+	                                     &npolys, &dmeshes, &polys, &dtrisToPolysMap, &dtrisToTrisMap,
+	                                     &trisToFacesMap);
+	if (res) {
+		size_t polyIdx;
+
+		/* invalidate concave polygon */
+		for (polyIdx=0; polyIdx<(size_t)npolys; polyIdx++) {
+			unsigned short* poly = &polys[polyIdx*2*vertsPerPoly];
+			if (!polyIsConvex(poly, vertsPerPoly, verts)) {
+				/* set negative polygon idx to all faces */
+				unsigned short *dmesh = &dmeshes[4*polyIdx];
+				unsigned short tbase = dmesh[2];
+				unsigned short tnum = dmesh[3];
+				unsigned short ti;
+
+				for (ti=0; ti<tnum; ti++) {
+					unsigned short triidx = dtrisToTrisMap[tbase+ti];
+					unsigned short faceidx = trisToFacesMap[triidx];
+					if (recastData[faceidx] > 0) {
+						recastData[faceidx] = -recastData[faceidx];
+					}
+				}
+			}
+		}
+	}
+	else {
+		printf("Error during creation polygon infos\n");
+	}
+
+	/* clean up */
+	if (verts!=NULL)
+		MEM_freeN(verts);
+	if (dtris!=NULL)
+		MEM_freeN(dtris);
+	if (dmeshes!=NULL)
+		MEM_freeN(dmeshes);
+	if (polys!=NULL)
+		MEM_freeN(polys);
+	if (dtrisToPolysMap!=NULL)
+		MEM_freeN(dtrisToPolysMap);
+	if (dtrisToTrisMap!=NULL)
+		MEM_freeN(dtrisToTrisMap);
+	if (trisToFacesMap!=NULL)
+		MEM_freeN(trisToFacesMap);
+
+	return result;
+}
+
+#endif /* WITH_GAMEENGINE */
+
+/* --- NAVMESH (end) --- */

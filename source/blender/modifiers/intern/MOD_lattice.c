@@ -1,5 +1,5 @@
 /*
-* $Id: MOD_lattice.c 35362 2011-03-05 10:29:10Z campbellbarton $
+* $Id: MOD_lattice.c 40581 2011-09-26 18:51:10Z campbellbarton $
 *
 * ***** BEGIN GPL LICENSE BLOCK *****
 *
@@ -40,6 +40,7 @@
 #include "DNA_object_types.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 
 #include "BKE_cdderivedmesh.h"
@@ -57,7 +58,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	LatticeModifierData *tlmd = (LatticeModifierData*) target;
 
 	tlmd->object = lmd->object;
-	strncpy(tlmd->name, lmd->name, 32);
+	BLI_strncpy(tlmd->name, lmd->name, 32);
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
@@ -156,4 +157,5 @@ ModifierTypeInfo modifierType_Lattice = {
 	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     NULL,
+	/* foreachTexLink */    NULL,
 };

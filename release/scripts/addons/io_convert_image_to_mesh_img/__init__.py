@@ -57,6 +57,7 @@ class ImportHiRISEIMGDTM(bpy.types.Operator, ImportHelper):
     '''Import a HiRISE DTM formatted as a PDS IMG file'''
     bl_idname = "import_shape.img"
     bl_label  = "Import HiRISE DTM from PDS IMG"
+    bl_options = {'UNDO'}
 
     filename_ext = ".IMG"
     filter_glob = StringProperty(default="*.IMG", options={'HIDDEN'})
@@ -78,7 +79,7 @@ class ImportHiRISEIMGDTM(bpy.types.Operator, ImportHelper):
                                    ('BIN12-FAST', "12x12 Fast", "use one sample per 12x12 region"),
                                   ),
                             name="Binning",
-                            description="Import Binning.",
+                            description="Import Binning",
                             default='BIN12-FAST'
                             )
 

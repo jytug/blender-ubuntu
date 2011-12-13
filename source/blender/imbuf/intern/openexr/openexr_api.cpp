@@ -98,7 +98,7 @@ class Mem_IStream: public IStream
 public:
 	
 	Mem_IStream (unsigned char *exrbuf, size_t exrsize):
-    IStream("dummy"), _exrpos (0), _exrsize(exrsize)  { _exrbuf = exrbuf; }
+	    IStream("dummy"), _exrpos (0), _exrsize(exrsize)  { _exrbuf = exrbuf; }
 	
 	virtual bool	read (char c[], int n);
 	virtual Int64	tellg ();
@@ -107,8 +107,8 @@ public:
 	//virtual ~Mem_IStream() {}; // unused
 	
 private:
-		
-		Int64 _exrpos;
+
+	Int64 _exrpos;
 	Int64 _exrsize;
 	unsigned char *_exrbuf;
 };
@@ -116,11 +116,11 @@ private:
 bool Mem_IStream::read (char c[], int n)
 {
 	if (n + _exrpos <= _exrsize)
-    {
+	{
 		memcpy(c, (void *)(&_exrbuf[_exrpos]), n);
 		_exrpos += n;
 		return true;
-    }
+	}
 	else
 		return false;
 }
@@ -308,7 +308,7 @@ static int imb_save_openexr_half(struct ImBuf *ibuf, const char *name, int flags
 		delete [] pixels;
 	}
 	catch (const std::exception &exc)
-	{      
+	{
 		printf("OpenEXR-save: ERROR: %s\n", exc.what());
 		if (ibuf) IMB_freeImBuf(ibuf);
 		
@@ -365,7 +365,7 @@ static int imb_save_openexr_float(struct ImBuf *ibuf, const char *name, int flag
 		delete file;
 	}
 	catch (const std::exception &exc)
-	{      
+	{
 		printf("OpenEXR-save: ERROR: %s\n", exc.what());
 		if (ibuf) IMB_freeImBuf(ibuf);
 		
@@ -487,7 +487,7 @@ void IMB_exr_add_channel(void *handle, const char *layname, const char *passname
 }
 
 /* only used for writing temp. render results (not image files) */
-void IMB_exr_begin_write(void *handle, const char *filename, int width, int height, int compress)
+int IMB_exr_begin_write(void *handle, const char *filename, int width, int height, int compress)
 {
 	ExrHandle *data= (ExrHandle *)handle;
 	Header header (width, height);
@@ -504,8 +504,17 @@ void IMB_exr_begin_write(void *handle, const char *filename, int width, int heig
 	/* header.lineOrder() = DECREASING_Y; this crashes in windows for file read! */
 	
 	header.insert ("BlenderMultiChannel", StringAttribute ("Blender V2.55.1 and newer"));
-	
-	data->ofile = new OutputFile(filename, header);
+
+	/* avoid crash/abort when we dont have permission to write here */
+	try {
+		data->ofile = new OutputFile(filename, header);
+	}
+	catch (const std::exception &exc) {
+		std::cerr << "IMB_exr_begin_write: ERROR: " << exc.what() << std::endl;
+		data->ofile = NULL;
+	}
+
+	return (data->ofile != NULL);
 }
 
 void IMB_exrtile_begin_write(void *handle, const char *filename, int mipmap, int width, int height, int tilex, int tiley)

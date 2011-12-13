@@ -21,6 +21,7 @@
 # Originally written by Matt Ebb
 
 import bpy
+from bpy.types import Operator
 import os
 
 
@@ -64,8 +65,8 @@ def guess_player_path(preset):
     return player_path
 
 
-class PlayRenderedAnim(bpy.types.Operator):
-    '''Plays back rendered frames/movies using an external player.'''
+class PlayRenderedAnim(Operator):
+    '''Plays back rendered frames/movies using an external player'''
     bl_idname = "render.play_rendered_anim"
     bl_label = "Play Rendered Animation"
     bl_options = {'REGISTER'}
@@ -135,7 +136,8 @@ class PlayRenderedAnim(bpy.types.Operator):
             del process
             # -----------------------------------------------------------------
 
-            opts = ["-a", "-f", str(rd.fps), str(rd.fps_base), file]
+            opts = ["-a", "-f", str(rd.fps), str(rd.fps_base),
+                    "-j", str(scene.frame_step), file]
             cmd.extend(opts)
         elif preset == 'DJV':
             opts = [file, "-playback_speed", "%d" % int(rd.fps / rd.fps_base)]
@@ -165,9 +167,8 @@ class PlayRenderedAnim(bpy.types.Operator):
         print("Executing command:\n  %r" % " ".join(cmd))
 
         try:
-            process = subprocess.Popen(cmd)
+            subprocess.Popen(cmd)
         except Exception as e:
-            import traceback
             self.report({'ERROR'},
                         "Couldn't run external animation player with command "
                         "%r\n%s" % (" ".join(cmd), str(e)))

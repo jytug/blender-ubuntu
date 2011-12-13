@@ -383,13 +383,13 @@ void make_voxeldata(struct Render *re)
 	
 }
 
-int voxeldatatex(struct Tex *tex, float *texvec, struct TexResult *texres)
+int voxeldatatex(struct Tex *tex, const float texvec[3], struct TexResult *texres)
 {	 
 	int retval = TEX_INT;
 	VoxelData *vd = tex->vd;	
 	float co[3], offset[3] = {0.5, 0.5, 0.5};
 
-	if ((!vd) || (vd->dataset==NULL)) {
+	if (vd->dataset==NULL) {
 		texres->tin = 0.0f;
 		return 0;
 	}
@@ -413,9 +413,9 @@ int voxeldatatex(struct Tex *tex, float *texvec, struct TexResult *texres)
 		}
 		case TEX_REPEAT:
 		{
-			co[0] = co[0] - floor(co[0]);
-			co[1] = co[1] - floor(co[1]);
-			co[2] = co[2] - floor(co[2]);
+			co[0] = co[0] - floorf(co[0]);
+			co[1] = co[1] - floorf(co[1]);
+			co[2] = co[2] - floorf(co[2]);
 			break;
 		}
 		case TEX_EXTEND:

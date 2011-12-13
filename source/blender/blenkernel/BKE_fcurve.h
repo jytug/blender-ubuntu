@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_fcurve.h 35590 2011-03-17 10:02:37Z aligorith $
+ * $Id: BKE_fcurve.h 40678 2011-09-29 05:03:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -199,7 +199,7 @@ struct FCurve *list_find_fcurve(ListBase *list, const char rna_path[], const int
 struct FCurve *iter_step_fcurve (struct FCurve *fcu_iter, const char rna_path[]);
 
 /* high level function to get an fcurve from C without having the rna */
-struct FCurve *id_data_find_fcurve(ID *id, void *data, struct StructRNA *type, const char *prop_name, int index);
+struct FCurve *id_data_find_fcurve(ID *id, void *data, struct StructRNA *type, const char *prop_name, int index, char *driven);
 
 /* Get list of LinkData's containing pointers to the F-Curves which control the types of data indicated 
  *	e.g.  numMatches = list_find_data_fcurves(matches, &act->curves, "pose.bones[", "MyFancyBone");
@@ -231,7 +231,7 @@ short fcurve_is_keyframable(struct FCurve *fcu);
 /* -------- Curve Sanity --------  */
 
 void calchandles_fcurve(struct FCurve *fcu);
-void testhandles_fcurve(struct FCurve *fcu);
+void testhandles_fcurve(struct FCurve *fcu, const short use_handle);
 void sort_time_fcurve(struct FCurve *fcu);
 short test_time_fcurve(struct FCurve *fcu);
 

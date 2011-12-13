@@ -1,5 +1,5 @@
 /*
- * $Id: seqeffects.c 38751 2011-07-27 06:55:20Z campbellbarton $
+ * $Id: seqeffects.c 41078 2011-10-17 06:39:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,6 +41,7 @@
 
 #include "BLI_math.h" /* windows needs for M_PI */
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 #include "DNA_scene_types.h"
 #include "DNA_sequence_types.h"
@@ -177,7 +178,7 @@ static void open_plugin_seq(PluginSeq *pis, const char *seqname)
 				MEM_freeN(info);
 
 				cp= BLI_dynlib_find_symbol(pis->handle, "seqname");
-				if(cp) strncpy(cp, seqname, 21);
+				if(cp) BLI_strncpy(cp, seqname, 21);
 			} else {
 				printf ("Plugin returned unrecognized version number\n");
 				return;
@@ -203,7 +204,7 @@ static PluginSeq *add_plugin_seq(const char *str, const char *seqname)
 
 	pis= MEM_callocN(sizeof(PluginSeq), "PluginSeq");
 
-	strncpy(pis->name, str, FILE_MAXDIR+FILE_MAXFILE);
+	BLI_strncpy(pis->name, str, FILE_MAX);
 	open_plugin_seq(pis, seqname);
 
 	if(pis->doit==NULL) {
@@ -826,7 +827,7 @@ static void do_cross_effect_float(float facf0, float facf1, int x, int y,
 	}
 }
 
-/* carefull: also used by speed effect! */
+/* careful: also used by speed effect! */
 
 static struct ImBuf* do_cross_effect(
 	SeqRenderData context, Sequence *UNUSED(seq), float UNUSED(cfra),
@@ -1638,8 +1639,6 @@ float hyp3,hyp4,b4,b5
 	if(wipezone->flip) x = xo - x;
 	angle = wipezone->angle;
 
-	posy = facf0 * yo;
-
 	if(wipe->forward){
 		posx = facf0 * xo;
 		posy = facf0 * yo;
@@ -2029,16 +2028,11 @@ static void init_transform_effect(Sequence *seq)
 
 	transform->ScalexIni = 1.0f;
 	transform->ScaleyIni = 1.0f;
-	transform->ScalexFin = 1.0f;
-	transform->ScalexFin = 1.0f;
 
 	transform->xIni=0.0f;
-	transform->xFin=0.0f;
 	transform->yIni=0.0f;
-	transform->yFin=0.0f;
 
 	transform->rotIni=0.0f;
-	transform->rotFin=0.0f;
 	
 	transform->interpolation=1;
 	transform->percent=1;
@@ -2137,7 +2131,7 @@ static void do_transform(Scene *scene, Sequence *seq, float UNUSED(facf0), int x
 	}
 	
 	// Rotate
-	rotate_radians = ((float)M_PI*transform->rotIni)/180.0f;
+	rotate_radians = DEG2RADF(transform->rotIni);
 
 	transform_image(x,y, ibuf1, out, scale_x, scale_y, translate_x, translate_y, rotate_radians, transform->interpolation);
 }
@@ -2324,7 +2318,7 @@ static void RVBlurBitmap2_byte ( unsigned char* map, int width,int height,
 
 
 	/*	Swap buffers */
-	swap=temp;temp=map;map=swap;
+	swap=temp;temp=map; /* map=swap; */ /* UNUSED */
 
 	/*	Tidy up	 */
 	MEM_freeN (filter);
@@ -2494,7 +2488,7 @@ static void RVBlurBitmap2_float ( float* map, int width,int height,
 
 
 	/*	Swap buffers */
-	swap=temp;temp=map;map=swap;
+	swap=temp;temp=map; /* map=swap; */ /* UNUSED */
 
 	/*	Tidy up	 */
 	MEM_freeN (filter);
@@ -2878,7 +2872,7 @@ static struct ImBuf * do_adjustment_impl(SeqRenderData context, Sequence * seq,
 {
 	Editing * ed;
 	ListBase * seqbasep;
-	struct ImBuf * i = 0;
+	struct ImBuf * i= NULL;
 
 	ed = context.scene->ed;
 
@@ -2913,7 +2907,7 @@ static struct ImBuf * do_adjustment(
 	struct ImBuf *UNUSED(ibuf1), struct ImBuf *UNUSED(ibuf2), 
 	struct ImBuf *UNUSED(ibuf3))
 {
-	struct ImBuf * i = 0;
+	struct ImBuf * i = NULL;
 	struct ImBuf * out;
 	Editing * ed;
 
@@ -3036,7 +3030,7 @@ void sequence_effect_speed_rebuild_map(Scene *scene, Sequence * seq, int force)
 
 	/* XXX - new in 2.5x. should we use the animation system this way?
 	 * The fcurve is needed because many frames need evaluating at once - campbell */
-	fcu= id_data_find_fcurve(&scene->id, seq, &RNA_Sequence, "speed_factor", 0);
+	fcu= id_data_find_fcurve(&scene->id, seq, &RNA_Sequence, "speed_factor", 0, NULL);
 
 
 	if (!v->frameMap || v->length != seq->len) {

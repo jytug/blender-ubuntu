@@ -1,5 +1,5 @@
 /*
- * $Id: object_edit.c 39090 2011-08-06 04:19:30Z campbellbarton $
+ * $Id: object_edit.c 40853 2011-10-08 11:02:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -222,7 +222,7 @@ void OBJECT_OT_hide_view_set(wmOperatorType *ot)
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
-	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected objects.");
+	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected objects");
 	
 }
 
@@ -297,7 +297,7 @@ void OBJECT_OT_hide_render_set(wmOperatorType *ot)
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
-	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected objects.");
+	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected objects");
 }
 
 /* ******************* toggle editmode operator  ***************** */
@@ -721,7 +721,7 @@ static void spot_interactive(Object *ob, int mode)
 }
 #endif
 
-static void special_editmenu(Scene *scene, View3D *v3d)
+static void UNUSED_FUNCTION(special_editmenu)(Scene *scene, View3D *v3d)
 {
 // XXX	static short numcuts= 2;
 	Object *ob= OBACT;
@@ -798,7 +798,7 @@ static void special_editmenu(Scene *scene, View3D *v3d)
 			Object *par= modifiers_isDeformedByArmature(ob);
 
 			if(par && (par->mode & OB_MODE_POSE)) {
-				nr= pupmenu("Specials%t|Apply Bone Envelopes to Vertex Groups %x1|Apply Bone Heat Weights to Vertex Groups %x2");
+// XXX				nr= pupmenu("Specials%t|Apply Bone Envelopes to Vertex Groups %x1|Apply Bone Heat Weights to Vertex Groups %x2");
 
 // XXX				if(nr==1 || nr==2)
 // XXX					pose_adds_vgroups(ob, (nr == 2));
@@ -1221,7 +1221,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 						cu1->vfontbi= cu->vfontbi;
 						id_us_plus((ID *)cu1->vfontbi);						
 
-						BKE_text_to_curve(scene, base->object, 0);		/* needed? */
+						BKE_text_to_curve(bmain, scene, base->object, 0); /* needed? */
 
 						
 						BLI_strncpy(cu1->family, cu->family, sizeof(cu1->family));
@@ -1343,7 +1343,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 	DAG_ids_flush_update(bmain, 0);
 }
 
-static void copy_attr_menu(Main *bmain, Scene *scene, View3D *v3d)
+static void UNUSED_FUNCTION(copy_attr_menu)(Main *bmain, Scene *scene, View3D *v3d)
 {
 	Object *ob;
 	short event;
@@ -1368,7 +1368,7 @@ static void copy_attr_menu(Main *bmain, Scene *scene, View3D *v3d)
 	strcat (str, "|Object Constraints%x22");
 	strcat (str, "|NLA Strips%x26");
 	
-// XXX	if (OB_SUPPORT_MATERIAL(ob)) {
+// XXX	if (OB_TYPE_SUPPORT_MATERIAL(ob->type)) {
 //		strcat(str, "|Texture Space%x17");
 //	}	
 	
@@ -1411,6 +1411,8 @@ static int forcefield_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 	else
 		ob->pd->forcefield = 0;
 	
+	WM_event_add_notifier(C, NC_OBJECT|ND_DRAW, NULL);
+
 	return OPERATOR_FINISHED;
 }
 
@@ -1616,7 +1618,7 @@ void OBJECT_OT_shade_smooth(wmOperatorType *ot)
 
 /* ********************** */
 
-static void image_aspect(Scene *scene, View3D *v3d)
+static void UNUSED_FUNCTION(image_aspect)(Scene *scene, View3D *v3d)
 {
 	/* all selected objects with an image map: scale in image aspect */
 	Base *base;
@@ -1691,7 +1693,7 @@ static int vergbaseco(const void *a1, const void *a2)
 }
 
 
-static void auto_timeoffs(Scene *scene, View3D *v3d)
+static void UNUSED_FUNCTION(auto_timeoffs)(Scene *scene, View3D *v3d)
 {
 	Base *base, **basesort, **bs;
 	float start, delta;
@@ -1732,7 +1734,7 @@ static void auto_timeoffs(Scene *scene, View3D *v3d)
 
 }
 
-static void ofs_timeoffs(Scene *scene, View3D *v3d)
+static void UNUSED_FUNCTION(ofs_timeoffs)(Scene *scene, View3D *v3d)
 {
 	float offset=0.0f;
 
@@ -1751,7 +1753,7 @@ static void ofs_timeoffs(Scene *scene, View3D *v3d)
 }
 
 
-static void rand_timeoffs(Scene *scene, View3D *v3d)
+static void UNUSED_FUNCTION(rand_timeoffs)(Scene *scene, View3D *v3d)
 {
 	Base *base;
 	float rand_ofs=0.0f;
@@ -2175,7 +2177,7 @@ void OBJECT_OT_logic_bricks_copy(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name= "Copy Logic Bricks to Selected";
-	ot->description = "Copy logic bricks to other selected objects.";
+	ot->description = "Copy logic bricks to other selected objects";
 	ot->idname= "OBJECT_OT_logic_bricks_copy";
 
 	/* api callbacks */

@@ -1,5 +1,5 @@
 /*
- * $Id: sequencer_intern.h 36644 2011-05-12 16:47:36Z campbellbarton $
+ * $Id: sequencer_intern.h 40658 2011-09-28 14:12:27Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -70,6 +70,8 @@ int seq_effect_find_selected(struct Scene *scene, struct Sequence *activeseq, in
 
 /* operator helpers */
 int sequencer_edit_poll(struct bContext *C);
+int sequencer_strip_poll(struct bContext *C);
+int sequencer_strip_has_path_poll(struct bContext *C);
 int sequencer_view_poll(struct bContext *C);
 
 /* externs */
@@ -91,6 +93,7 @@ void SEQUENCER_OT_reassign_inputs(struct wmOperatorType *ot);
 void SEQUENCER_OT_swap_inputs(struct wmOperatorType *ot);
 void SEQUENCER_OT_duplicate(struct wmOperatorType *ot);
 void SEQUENCER_OT_delete(struct wmOperatorType *ot);
+void SEQUENCER_OT_offset_clear(struct wmOperatorType *ot);
 void SEQUENCER_OT_images_separate(struct wmOperatorType *ot);
 void SEQUENCER_OT_meta_toggle(struct wmOperatorType *ot);
 void SEQUENCER_OT_meta_make(struct wmOperatorType *ot);
@@ -108,8 +111,14 @@ void SEQUENCER_OT_view_selected(struct wmOperatorType *ot);
 void SEQUENCER_OT_view_zoom_ratio(struct wmOperatorType *ot);
 void SEQUENCER_OT_view_ghost_border(struct wmOperatorType *ot);
 
+void SEQUENCER_OT_change_effect_input(struct wmOperatorType *ot);
+void SEQUENCER_OT_change_effect_type(struct wmOperatorType *ot);
+void SEQUENCER_OT_change_path(struct wmOperatorType *ot);
+
 void SEQUENCER_OT_copy(struct wmOperatorType *ot);
 void SEQUENCER_OT_paste(struct wmOperatorType *ot);
+
+void SEQUENCER_OT_rebuild_proxy(struct wmOperatorType *ot);
 
 /* preview specific operators */
 void SEQUENCER_OT_view_all_preview(struct wmOperatorType *ot);
@@ -125,7 +134,7 @@ void SEQUENCER_OT_select_handles(struct wmOperatorType *ot);
 void SEQUENCER_OT_select_active_side(struct wmOperatorType *ot);
 void SEQUENCER_OT_select_border(struct wmOperatorType *ot);
 void SEQUENCER_OT_select_inverse(struct wmOperatorType *ot);
-
+void SEQUENCER_OT_select_grouped(struct wmOperatorType *ot);
 
 /* sequencer_select.c */
 void SEQUENCER_OT_scene_strip_add(struct wmOperatorType *ot);

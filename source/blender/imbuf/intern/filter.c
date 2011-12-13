@@ -1,5 +1,7 @@
 /*
  *
+ * $Id: filter.c 40252 2011-09-16 06:47:01Z campbellbarton $
+ *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +28,7 @@
  * ***** END GPL LICENSE BLOCK *****
  * filter.c
  *
- * $Id: filter.c 38654 2011-07-24 10:26:22Z nazgul $
+ * $Id: filter.c 40252 2011-09-16 06:47:01Z campbellbarton $
  */
 
 /** \file blender/imbuf/intern/filter.c
@@ -371,11 +373,15 @@ void IMB_filter_extend(struct ImBuf *ibuf, char *mask, int filter)
 	float weight[25];
 
 	/* build a weights buffer */
-	n= 2;
-	k= 0;
+	n= 1;
+	/*k= 0;
 	for(i = -n; i <= n; i++)
 		for(j = -n; j <= n; j++)
 			weight[k++] = sqrt((float) i * i + j * j);
+			*/
+	weight[0]=1; weight[1]=2; weight[2]=1;
+	weight[3]=2; weight[4]=0; weight[5]=2;
+	weight[6]=1; weight[7]=2; weight[8]=1;
 
 	/* run passes */
 	for(r = 0; cannot_early_out == 1 && r < filter; r++) {
@@ -512,7 +518,7 @@ void IMB_makemipmap(ImBuf *ibuf, int use_filter)
 		hbuf= ibuf->mipmap[curmap];
 		hbuf->miplevel= curmap+1;
 
-		if(!hbuf || (hbuf->x <= 2 && hbuf->y <= 2))
+		if(hbuf->x <= 2 && hbuf->y <= 2)
 			break;
 
 		curmap++;

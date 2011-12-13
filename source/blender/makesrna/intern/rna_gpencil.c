@@ -1,6 +1,4 @@
 /*
- * $Id: rna_gpencil.c 36223 2011-04-19 13:02:49Z aligorith $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,6 +39,8 @@
 #include "WM_types.h"
 
 #ifdef RNA_RUNTIME
+
+#include "BLI_path_util.h"
 
 static int rna_GPencilLayer_active_frame_editable(PointerRNA *ptr)
 {
@@ -90,6 +90,17 @@ static void rna_GPencil_active_layer_set(PointerRNA *ptr, PointerRNA value)
 			}
 		}
 	}
+}
+
+void rna_GPencilLayer_info_set(PointerRNA *ptr, const char *value)
+{
+	bGPdata *gpd= ptr->id.data;
+	bGPDlayer *gpl= ptr->data;
+
+	/* copy the new name into the name slot */
+	BLI_strncpy_utf8(gpl->info, value, sizeof(gpl->info));
+
+	BLI_uniquename(&gpd->layers, gpl, "GP_Layer", '.', offsetof(bGPDlayer, info), sizeof(gpl->info));
 }
 
 #else
@@ -178,6 +189,7 @@ static void rna_def_gpencil_layer(BlenderRNA *brna)
 	/* Name */
 	prop= RNA_def_property(srna, "info", PROP_STRING, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Info", "Layer name");
+	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_GPencilLayer_info_set");
 	RNA_def_struct_name_property(srna, prop);
 	
 	/* Frames */
@@ -282,16 +294,16 @@ static void rna_def_gpencil_layers(BlenderRNA *brna, PropertyRNA *cprop)
 
 #if 0
 	func= RNA_def_function(srna, "new", "rna_GPencil_layer_new");
-	RNA_def_function_ui_description(func, "Add a new spline to the curve.");
-	parm= RNA_def_enum(func, "type", curve_type_items, CU_POLY, "", "type for the new spline.");
+	RNA_def_function_ui_description(func, "Add a new spline to the curve");
+	parm= RNA_def_enum(func, "type", curve_type_items, CU_POLY, "", "type for the new spline");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
-	parm= RNA_def_pointer(func, "spline", "Spline", "", "The newly created spline.");
+	parm= RNA_def_pointer(func, "spline", "Spline", "", "The newly created spline");
 	RNA_def_function_return(func, parm);
 
 	func= RNA_def_function(srna, "remove", "rna_GPencil_layer_remove");
-	RNA_def_function_ui_description(func, "Remove a spline from a curve.");
+	RNA_def_function_ui_description(func, "Remove a spline from a curve");
 	RNA_def_function_flag(func, FUNC_USE_REPORTS);
-	parm= RNA_def_pointer(func, "spline", "Spline", "", "The spline to remove.");
+	parm= RNA_def_pointer(func, "spline", "Spline", "", "The spline to remove");
 	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_NEVER_NULL);
 #endif
 

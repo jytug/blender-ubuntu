@@ -18,7 +18,7 @@
 
 # <pep8 compliant>
 import bpy
-
+from bpy.types import Panel
 
 from bl_ui.properties_physics_common import (
     basic_force_field_settings_ui,
@@ -37,7 +37,7 @@ class PhysicButtonsPanel():
         return (context.object) and (not rd.use_game_engine)
 
 
-class PHYSICS_PT_field(PhysicButtonsPanel, bpy.types.Panel):
+class PHYSICS_PT_field(PhysicButtonsPanel, Panel):
     bl_label = "Force Fields"
 
     @classmethod
@@ -164,7 +164,7 @@ class PHYSICS_PT_field(PhysicButtonsPanel, bpy.types.Panel):
                 sub.prop(field, "radial_max", text="Distance")
 
 
-class PHYSICS_PT_collision(PhysicButtonsPanel, bpy.types.Panel):
+class PHYSICS_PT_collision(PhysicButtonsPanel, Panel):
     bl_label = "Collision"
     #bl_options = {'DEFAULT_CLOSED'}
 

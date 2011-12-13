@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_Types.h 38908 2011-08-02 04:28:05Z merwin $
+ * $Id: GHOST_Types.h 40837 2011-10-06 22:02:50Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -96,14 +96,14 @@ typedef enum {
 } GHOST_TFireTimeConstant;
 
 typedef enum {
-    GHOST_kModifierKeyLeftShift = 0,
-    GHOST_kModifierKeyRightShift,
-    GHOST_kModifierKeyLeftAlt,
-    GHOST_kModifierKeyRightAlt,
-    GHOST_kModifierKeyLeftControl,
-    GHOST_kModifierKeyRightControl,
-    GHOST_kModifierKeyOS,
-    GHOST_kModifierKeyNumMasks
+	GHOST_kModifierKeyLeftShift = 0,
+	GHOST_kModifierKeyRightShift,
+	GHOST_kModifierKeyLeftAlt,
+	GHOST_kModifierKeyRightAlt,
+	GHOST_kModifierKeyLeftControl,
+	GHOST_kModifierKeyRightControl,
+	GHOST_kModifierKeyOS,
+	GHOST_kModifierKeyNumMasks
 } GHOST_TModifierKeyMask;
 
 

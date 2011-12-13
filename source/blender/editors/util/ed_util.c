@@ -1,5 +1,5 @@
 /*
- * $Id: ed_util.c 37448 2011-06-13 12:03:13Z blendix $
+ * $Id: ed_util.c 40872 2011-10-09 06:03:38Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -171,7 +171,7 @@ void unpack_menu(bContext *C, const char *opname, const char *id_name, const cha
 	pup= uiPupMenuBegin(C, "Unpack file", ICON_NONE);
 	layout= uiPupMenuLayout(pup);
 
-	sprintf(line, "Remove Pack");
+	strcpy(line, "Remove Pack");
 	props_ptr= uiItemFullO(layout, opname, line, ICON_NONE, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
 	RNA_enum_set(&props_ptr, "method", PF_REMOVE);
 	RNA_string_set(&props_ptr, "id", id_name);

@@ -1,5 +1,5 @@
 /*
-* $Id: seqcache.c 36197 2011-04-17 10:05:27Z schlaile $
+ * $Id: seqcache.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

@@ -1,5 +1,5 @@
-/*	
- * $Id: BKE_suggestions.h 34962 2011-02-18 13:05:18Z jesterking $ 
+/*
+ * $Id: BKE_suggestions.h 40903 2011-10-10 09:38:02Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

@@ -1,5 +1,5 @@
 /*
- *  $Id: path_util.c 38523 2011-07-20 06:05:47Z campbellbarton $
+ *  $Id: path_util.c 41078 2011-10-17 06:39:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -785,7 +785,8 @@ void BLI_getlastdir(const char* dir, char *last, const size_t maxlen)
 /* This is now only used to really get the user's default document folder */
 /* On Windows I chose the 'Users/<MyUserName>/Documents' since it's used
    as default location to save documents */
-const char *BLI_getDefaultDocumentFolder(void) {
+const char *BLI_getDefaultDocumentFolder(void)
+{
 	#if !defined(WIN32)
 		return getenv("HOME");
 
@@ -893,7 +894,7 @@ static int get_path_local(char *targetpath, const char *folder_name, const char 
 	}
 	
 	/* use argv[0] (bprogname) to get the path to the executable */
-	BLI_split_dirfile(bprogname, bprogdir, NULL);
+	BLI_split_dirfile(bprogname, bprogdir, NULL, sizeof(bprogdir), 0);
 	
 	/* try EXECUTABLE_DIR/2.5x/folder_name - new default directory for local blender installed files */
 	if(test_path(targetpath, bprogdir, blender_version_decimal(ver), relfolder))
@@ -965,7 +966,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
 	char bprogdir[FILE_MAX];
 
 	/* use argv[0] (bprogname) to get the path to the executable */
-	BLI_split_dirfile(bprogname, bprogdir, NULL);
+	BLI_split_dirfile(bprogname, bprogdir, NULL, sizeof(bprogdir), 0);
 
 	if(folder_name) {
 		if (subfolder_name) {
@@ -1155,8 +1156,8 @@ char *BLI_get_folder_version(const int id, const int ver, const int do_check)
 
 void BLI_setenv(const char *env, const char*val)
 {
-	/* SGI or free windows */
-#if (defined(__sgi) || ((defined(WIN32) || defined(WIN64)) && defined(FREE_WINDOWS)))
+	/* free windows */
+#if (defined(WIN32) || defined(WIN64)) && defined(FREE_WINDOWS)
 	char *envstr= MEM_mallocN(sizeof(char) * (strlen(env) + strlen(val) + 2), "envstr"); /* one for = another for \0 */
 
 	sprintf(envstr, "%s=%s", env, val);
@@ -1206,7 +1207,8 @@ void BLI_char_switch(char *string, char from, char to)
 	}
 }
 
-void BLI_make_exist(char *dir) {
+void BLI_make_exist(char *dir)
+{
 	int a;
 
 	BLI_char_switch(dir, ALTSEP, SEP);
@@ -1409,40 +1411,60 @@ int BLI_replace_extension(char *path, size_t maxlen, const char *ext)
  * - dosnt use CWD, or deal with relative paths.
  * - Only fill's in *dir and *file when they are non NULL
  * */
-void BLI_split_dirfile(const char *string, char *dir, char *file)
+void BLI_split_dirfile(const char *string, char *dir, char *file, const size_t dirlen, const size_t filelen)
 {
 	char *lslash_str = BLI_last_slash(string);
-	int lslash= lslash_str ? (int)(lslash_str - string) + 1 : 0;
+	size_t lslash= lslash_str ? (size_t)(lslash_str - string) + 1 : 0;
 
 	if (dir) {
 		if (lslash) {
-			BLI_strncpy( dir, string, lslash + 1); /* +1 to include the slash and the last char */
-		} else {
+			BLI_strncpy( dir, string, MIN2(dirlen, lslash + 1)); /* +1 to include the slash and the last char */
+		}
+		else {
 			dir[0] = '\0';
 		}
 	}
 	
 	if (file) {
-		strcpy( file, string+lslash);
+		BLI_strncpy(file, string+lslash, filelen);
 	}
 }
 
 /* simple appending of filename to dir, does not check for valid path! */
-void BLI_join_dirfile(char *string, const size_t maxlen, const char *dir, const char *file)
+void BLI_join_dirfile(char *dst, const size_t maxlen, const char *dir, const char *file)
 {
-	int sl_dir;
-	
-	if(string != dir) /* compare pointers */
-		BLI_strncpy(string, dir, maxlen);
+	size_t dirlen= BLI_strnlen(dir, maxlen);
 
-	if (!file)
-		return;
-	
-	sl_dir= BLI_add_slash(string);
-	
-	if (sl_dir <FILE_MAX) {
-		BLI_strncpy(string + sl_dir, file, maxlen - sl_dir);
+	if (dst != dir) {
+		if(dirlen  == maxlen) {
+			memcpy(dst, dir, dirlen);
+			dst[dirlen - 1]= '\0';
+			return; /* dir fills the path */
+		}
+		else {
+			memcpy(dst, dir, dirlen + 1);
+		}
 	}
+
+	if (dirlen + 1 >= maxlen) {
+		return; /* fills the path */
+	}
+
+	/* inline BLI_add_slash */
+	if (dst[dirlen - 1] != SEP) {
+		dst[dirlen++]= SEP;
+		dst[dirlen  ]= '\0';
+	}
+
+	if (dirlen >= maxlen) {
+		return; /* fills the path */
+	}
+
+	if (file == NULL) {
+		return;
+	}
+
+	BLI_strncpy(dst + dirlen, file, maxlen - dirlen);
 }
 
 /* like pythons os.path.basename( ) */
@@ -1494,7 +1516,7 @@ int BKE_rebase_path(char *abs, size_t abs_len, char *rel, size_t rel_len, const 
 	if (rel)
 		rel[0]= 0;
 
-	BLI_split_dirfile(base_dir, blend_dir, NULL);
+	BLI_split_dirfile(base_dir, blend_dir, NULL, sizeof(blend_dir), 0);
 
 	if (src_dir[0]=='\0')
 		return 0;
@@ -1505,7 +1527,7 @@ int BKE_rebase_path(char *abs, size_t abs_len, char *rel, size_t rel_len, const 
 	BLI_path_abs(path, base_dir);
 
 	/* get the directory part */
-	BLI_split_dirfile(path, dir, base);
+	BLI_split_dirfile(path, dir, base, sizeof(dir), sizeof(base));
 
 	len= strlen(blend_dir);
 
@@ -1550,7 +1572,8 @@ int BKE_rebase_path(char *abs, size_t abs_len, char *rel, size_t rel_len, const 
 	return 1;
 }
 
-char *BLI_first_slash(char *string) {
+char *BLI_first_slash(char *string)
+{
 	char *ffslash, *fbslash;
 	
 	ffslash= strchr(string, '/');	
@@ -1563,7 +1586,8 @@ char *BLI_first_slash(char *string) {
 	else return fbslash;
 }
 
-char *BLI_last_slash(const char *string) {
+char *BLI_last_slash(const char *string)
+{
 	char *lfslash, *lbslash;
 	
 	lfslash= strrchr(string, '/');	
@@ -1577,33 +1601,23 @@ char *BLI_last_slash(const char *string) {
 }
 
 /* adds a slash if there isnt one there already */
-int BLI_add_slash(char *string) {
+int BLI_add_slash(char *string)
+{
 	int len = strlen(string);
-#ifdef WIN32
-	if (len==0 || string[len-1]!='\\') {
-		string[len] = '\\';
+	if (len==0 || string[len-1] != SEP) {
+		string[len] = SEP;
 		string[len+1] = '\0';
 		return len+1;
 	}
-#else
-	if (len==0 || string[len-1]!='/') {
-		string[len] = '/';
-		string[len+1] = '\0';
-		return len+1;
-	}
-#endif
 	return len;
 }
 
 /* removes a slash if there is one */
-void BLI_del_slash(char *string) {
+void BLI_del_slash(char *string)
+{
 	int len = strlen(string);
 	while (len) {
-#ifdef WIN32
-		if (string[len-1]=='\\') {
-#else
-		if (string[len-1]=='/') {
-#endif
+		if (string[len-1] == SEP) {
 			string[len-1] = '\0';
 			len--;
 		} else {
@@ -1667,7 +1681,7 @@ void BLI_where_am_i(char *fullname, const size_t maxlen, const char *name)
 
 	
 #ifdef WITH_BINRELOC
-	/* linux uses binreloc since argv[0] is not relyable, call br_init( NULL ) first */
+	/* linux uses binreloc since argv[0] is not reliable, call br_init( NULL ) first */
 	path = br_find_exe( NULL );
 	if (path) {
 		BLI_strncpy(fullname, path, maxlen);

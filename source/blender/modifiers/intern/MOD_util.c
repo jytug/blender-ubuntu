@@ -1,5 +1,5 @@
 /*
- * $Id: MOD_util.c 38866 2011-07-31 02:24:06Z nicholasbishop $
+ * $Id: MOD_util.c 40880 2011-10-09 21:11:51Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -295,5 +295,8 @@ void modifier_type_init(ModifierTypeInfo *types[])
 	INIT_TYPE(Solidify);
 	INIT_TYPE(Screw);
 	INIT_TYPE(Warp);
+	INIT_TYPE(WeightVGEdit);
+	INIT_TYPE(WeightVGMix);
+	INIT_TYPE(WeightVGProximity);
 #undef INIT_TYPE
 }

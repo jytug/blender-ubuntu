@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_string.h 36933 2011-05-26 21:04:01Z campbellbarton $
+ * $Id: BLI_string.h 41049 2011-10-16 12:25:42Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -26,7 +26,7 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  *
- * $Id: BLI_string.h 36933 2011-05-26 21:04:01Z campbellbarton $ 
+ * $Id: BLI_string.h 41049 2011-10-16 12:25:42Z campbellbarton $ 
 */
 
 #ifndef BLI_STRING_H
@@ -122,6 +122,8 @@ __attribute__ ((format (printf, 1, 2)))
 #endif
 ;
 
+size_t BLI_strescape(char *dst, const char *src, const size_t maxlen);
+
 	/**
 	 * Compare two strings without regard to case.
 	 * 
@@ -137,11 +139,18 @@ size_t BLI_strnlen(const char *str, size_t maxlen);
 
 void BLI_timestr(double _time, char *str); /* time var is global */
 
-int BLI_utf8_invalid_byte(const char *str, int length);
-int BLI_utf8_invalid_strip(char *str, int length);
-
 void BLI_ascii_strtolower(char *str, int len);
 void BLI_ascii_strtoupper(char *str, int len);
+
+
+/* string_utf8.c - may move these into their own header some day - campbell */
+char *BLI_strncpy_utf8(char *dst, const char *src, size_t maxncpy);
+int BLI_utf8_invalid_byte(const char *str, int length);
+int BLI_utf8_invalid_strip(char *str, int length);
+      /* copied from glib */
+char *BLI_str_find_prev_char_utf8(const char *str, const char *p);
+char *BLI_str_find_next_char_utf8(const char *p, const char *end);
+char *BLI_str_prev_char_utf8(const char *p);
 
 #ifdef __cplusplus
 }

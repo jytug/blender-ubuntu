@@ -20,8 +20,8 @@ bl_info = {
     "name": "Import Unreal Skeleton Mesh (.psk)",
     "author": "Darknet",
     "version": (2, 0),
-    "blender": (2, 5, 3),
-    "api": 36079,
+    "blender": (2, 5, 9),
+    "api": 41077,
     "location": "File > Import > Skeleton Mesh (.psk)",
     "description": "Import Skeleleton Mesh",
     "warning": "",
@@ -55,7 +55,7 @@ from bpy.props import *
 
 bpy.types.Scene.unrealbonesize = FloatProperty(
     name="Bone Length",
-    description="Bone Length from head to tail distance.",
+    description="Bone Length from head to tail distance",
     default=1,min=0.001,max=1000)
 
 #output log in to txt file
@@ -368,7 +368,7 @@ def pskimport(infile,importmesh,importbone,bDebugLogPSK,importmultiuvtextures):
         obj = bpy.data.objects.get(meshname)
         # arm = obj  # UNUSED
 
-        if obj:
+        if not obj:
             '''
             armdata = bpy.data.armatures.new(objectname)
             ob_new = bpy.data.objects.new(meshname, armdata)
@@ -744,6 +744,7 @@ class IMPORT_OT_psk(bpy.types.Operator):
     bl_label = "Import PSK"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
+    bl_options = {'UNDO'}
 
     # List of operator properties, the attributes will be assigned
     # to the class instance from the operator settings before calling.
@@ -764,22 +765,23 @@ class IMPORT_OT_psk(bpy.types.Operator):
             )
     importbone = BoolProperty(
             name="Bones",
-            description="Import bones only. Current not working yet.",
+            description="Import bones only. Current not working yet",
             default=True,
             )
     importmultiuvtextures = BoolProperty(
             name="Single UV Texture(s)",
-            description="Single or Multi uv textures.",
+            description="Single or Multi uv textures",
             default=True,
             )
     bDebugLogPSK = BoolProperty(
             name="Debug Log.txt",
-            description="Log the output of raw format. It will save in current file dir. Note this just for testing.",
+            description="Log the output of raw format. It will save in " \
+                        "current file dir. Note this just for testing",
             default=False,
             )
     unrealbonesize = FloatProperty(
             name="Bone Length",
-            description="Bone Length from head to tail distance.",
+            description="Bone Length from head to tail distance",
             default=1,
             min=0.001,
             max=1000,

@@ -26,23 +26,18 @@ bl_info = {
     "location": "File > Import-Export",
     "description": "Import-Export X3D, Import VRML",
     "warning": "",
-    "wiki_url": ("http://wiki.blender.org/index.php/Extensions:2.5/Py/"
-                 "Scripts/Import-Export/Web3D"),
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"
+                "Scripts/Import-Export/Web3D",
     "tracker_url": "",
     "support": 'OFFICIAL',
     "category": "Import-Export"}
 
 if "bpy" in locals():
     import imp
+    if "import_x3d" in locals():
+        imp.reload(import_x3d)
     if "export_x3d" in locals():
         imp.reload(export_x3d)
-
-# Benoit's patch!
-try:
-    import gpu
-except:
-    gpu = None
-
 
 import bpy
 from bpy.props import StringProperty, BoolProperty, EnumProperty
@@ -57,7 +52,7 @@ class ImportX3D(bpy.types.Operator, ImportHelper):
     '''Import and X3D or VRML file'''
     bl_idname = "import_scene.x3d"
     bl_label = "Import X3D/VRML"
-    bl_options = {'PRESET'}
+    bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = ".x3d"
     filter_glob = StringProperty(default="*.x3d;*.wrl", options={'HIDDEN'})
@@ -140,12 +135,11 @@ class ExportX3D(bpy.types.Operator, ExportHelper):
             description="Export parent child relationships",
             default=True,
             )
-    if gpu is not None:
-        use_h3d = BoolProperty(
-                name="H3D Extensions",
-                description="Export shaders for H3D",
-                default=False,
-                )
+    use_h3d = BoolProperty(
+            name="H3D Extensions",
+            description="Export shaders for H3D",
+            default=False,
+            )
     axis_forward = EnumProperty(
             name="Forward",
             items=(('X', "X Forward", ""),

@@ -1,8 +1,5 @@
 /*
- * lattice.c
- *
- *
- * $Id: lattice.c 36980 2011-05-28 13:11:24Z lmg $
+ * $Id: lattice.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

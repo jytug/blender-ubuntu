@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_ID.h 36725 2011-05-17 06:56:10Z campbellbarton $
+ * $Id: DNA_ID.h 40853 2011-10-08 11:02:58Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -125,7 +125,7 @@ typedef struct Library {
 
 enum eIconSizes {
 	ICON_SIZE_ICON,
-	ICON_SIZE_PREVIEW,
+	ICON_SIZE_PREVIEW
 };
 #define NUM_ICON_SIZES (ICON_SIZE_PREVIEW + 1)
 
@@ -146,16 +146,16 @@ typedef struct PreviewImage {
  *
  **/
 
-#if defined(__sgi) || defined(__sparc) || defined(__sparc__) || defined (__PPC__) || defined (__ppc__)  || defined (__hppa__) || defined (__BIG_ENDIAN__)
-/* big endian */
-#define MAKE_ID2(c, d)		( (c)<<8 | (d) )
-#define MOST_SIG_BYTE				0
-#define BBIG_ENDIAN
+#ifdef __BIG_ENDIAN__
+   /* big endian */
+#  define MAKE_ID2(c, d)		( (c)<<8 | (d) )
+#  define MOST_SIG_BYTE			0
+#  define BBIG_ENDIAN
 #else
-/* little endian  */
-#define MAKE_ID2(c, d)		( (d)<<8 | (c) )
-#define MOST_SIG_BYTE				1
-#define BLITTLE_ENDIAN
+   /* little endian  */
+#  define MAKE_ID2(c, d)		( (d)<<8 | (c) )
+#  define MOST_SIG_BYTE			1
+#  define BLITTLE_ENDIAN
 #endif
 
 /* ID from database */
@@ -178,6 +178,7 @@ typedef struct PreviewImage {
 #define ID_SCRN		MAKE_ID2('S', 'N') /* (depreciated?) */
 #define ID_VF		MAKE_ID2('V', 'F') /* VectorFont */
 #define ID_TXT		MAKE_ID2('T', 'X') /* Text */
+#define ID_SPK		MAKE_ID2('S', 'K') /* Speaker */
 #define ID_SO		MAKE_ID2('S', 'O') /* Sound */
 #define ID_GR		MAKE_ID2('G', 'R') /* Group */
 #define ID_ID		MAKE_ID2('I', 'D') /* (internal use only) */
@@ -202,6 +203,10 @@ typedef struct PreviewImage {
 #define ID_FLUIDSIM	MAKE_ID2('F', 'S')
 
 #define ID_REAL_USERS(id) (((ID *)id)->us - ((((ID *)id)->flag & LIB_FAKEUSER) ? 1:0))
+
+#define ID_CHECK_UNDO(id) ((GS((id)->name) != ID_SCR) && (GS((id)->name) != ID_WM))
+
+#define ID_BLEND_PATH(_bmain, _id) ((_id)->lib ? (_id)->lib->filepath : (_bmain)->name)
 
 #ifdef GS
 #undef GS

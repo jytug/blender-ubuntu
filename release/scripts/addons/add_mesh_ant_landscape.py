@@ -20,10 +20,10 @@ bl_info = {
     "name": "ANT Landscape",
     "author": "Jimmy Hazevoet",
     "version": (0,1,1),
-    "blender": (2, 5, 7),
-    "api": 35853,
+    "blender": (2, 5, 9),
+    "api": 39685,
     "location": "View3D > Add > Mesh",
-    "description": "Adds a Landscape Primitive",
+    "description": "Add a landscape primitive",
     "warning": "", # used for warning icon and text in addons panel
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
         "Scripts/Add_Mesh/ANT_Landscape",
@@ -534,31 +534,31 @@ class landscape_add(bpy.types.Operator):
                 min=1,
                 max=16,
                 default=6,
-                description="Noise Depth - number of frequencies in the fBm.")
+                description="Noise Depth - number of frequencies in the fBm")
 
     mDimension = FloatProperty(name="Dimension",
                 min=0.01,
                 max=2.0,
                 default=1.0,
-                description="H - fractal dimension of the roughest areas.")
+                description="H - fractal dimension of the roughest areas")
 
     mLacunarity = FloatProperty(name="Lacunarity",
                 min=0.01,
                 max=6.0,
                 default=2.0,
-                description="Lacunarity - gap between successive frequencies.")
+                description="Lacunarity - gap between successive frequencies")
 
     mOffset = FloatProperty(name="Offset",
                 min=0.01,
                 max=6.0,
                 default=1.0,
-                description="Offset - raises the terrain from sea level.")
+                description="Offset - raises the terrain from sea level")
 
     mGain = FloatProperty(name="Gain",
                 min=0.01,
                 max=6.0,
                 default=1.0,
-                description="Gain - scale factor.")
+                description="Gain - scale factor")
 
     BiasTypes = [
                 ("0","Sin","Sin"),
@@ -664,47 +664,47 @@ class landscape_add(bpy.types.Operator):
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'mDimension')
             box.prop(self, 'mLacunarity')
-        if self.NoiseType == '1':
+        elif self.NoiseType == '1':
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'mDimension')
             box.prop(self, 'mLacunarity')
             box.prop(self, 'mOffset')
             box.prop(self, 'mGain')
-        if self.NoiseType == '2':
+        elif self.NoiseType == '2':
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'mDimension')
             box.prop(self, 'mLacunarity')
             box.prop(self, 'mOffset')
             box.prop(self, 'mGain')
-        if self.NoiseType == '3':
+        elif self.NoiseType == '3':
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'mDimension')
             box.prop(self, 'mLacunarity')
             box.prop(self, 'mOffset')
-        if self.NoiseType == '4':
+        elif self.NoiseType == '4':
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'mDimension')
             box.prop(self, 'mLacunarity')
-        if self.NoiseType == '5':
+        elif self.NoiseType == '5':
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'HardNoise')
-        if self.NoiseType == '6':
+        elif self.NoiseType == '6':
             box.prop(self, 'VLBasisType')
             box.prop(self, 'Distortion')
-        if self.NoiseType == '7':
+        elif self.NoiseType == '7':
             box.prop(self, 'MarbleShape')
             box.prop(self, 'MarbleBias')
             box.prop(self, 'MarbleSharp')
             box.prop(self, 'Distortion')
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'HardNoise')
-        if self.NoiseType == '8':
+        elif self.NoiseType == '8':
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'mDimension')
             box.prop(self, 'mLacunarity')
             box.prop(self, 'mOffset')
             box.prop(self, 'Distortion')
-        if self.NoiseType == '9':
+        elif self.NoiseType == '9':
             box.prop(self, 'NoiseDepth')
             box.prop(self, 'mDimension')
             box.prop(self, 'mLacunarity')

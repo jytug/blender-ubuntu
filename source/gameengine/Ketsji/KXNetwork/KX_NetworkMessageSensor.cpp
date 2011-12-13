@@ -1,5 +1,5 @@
 /*
- * $Id: KX_NetworkMessageSensor.cpp 35171 2011-02-25 13:35:59Z jesterking $
+ * $Id: KX_NetworkMessageSensor.cpp 41078 2011-10-17 06:39:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -50,11 +50,11 @@
 #endif
 
 KX_NetworkMessageSensor::KX_NetworkMessageSensor(
-	class KX_NetworkEventManager* eventmgr,	// our eventmanager
-	class NG_NetworkScene *NetworkScene,	// our scene
-	SCA_IObject* gameobj,					// the sensor controlling object
-	const STR_String &subject
-) :
+        class KX_NetworkEventManager* eventmgr,	// our eventmanager
+        class NG_NetworkScene *NetworkScene,	// our scene
+        SCA_IObject* gameobj,					// the sensor controlling object
+        const STR_String &subject
+        ) :
     SCA_ISensor(gameobj,eventmgr),
     m_NetworkScene(NetworkScene),
     m_subject(subject),
@@ -67,7 +67,7 @@ KX_NetworkMessageSensor::KX_NetworkMessageSensor(
 
 void KX_NetworkMessageSensor::Init()
 {
-    m_IsUp = false;
+	m_IsUp = false;
 }
 
 KX_NetworkMessageSensor::~KX_NetworkMessageSensor()
@@ -146,7 +146,7 @@ bool KX_NetworkMessageSensor::Evaluate()
 	// Return always true if a message was received otherwise we can loose messages
 	if (m_IsUp)
 		return true;
-	// Is it usefull to return also true when the first frame without a message?? 
+	// Is it useful to return also true when the first frame without a message??
 	// This will cause a fast on/off cycle that seems useless!
 	return result;
 }

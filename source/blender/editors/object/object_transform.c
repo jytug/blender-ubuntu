@@ -1,5 +1,5 @@
 /*
- * $Id: object_transform.c 36595 2011-05-10 14:38:55Z nazgul $
+ * $Id: object_transform.c 40907 2011-10-10 12:56:21Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -230,23 +230,11 @@ static int object_clear_transform_generic_exec(bContext *C, wmOperator *op,
 		if (!(ob->mode & OB_MODE_WEIGHT_PAINT)) {
 			/* run provided clearing function */
 			clear_func(ob);
-			
-			/* auto keyframing */
-			if (autokeyframe_cfra_can_key(scene, &ob->id)) {
-				ListBase dsources = {NULL, NULL};
-				
-				/* now insert the keyframe(s) using the Keying Set
-				 *	1) add datasource override for the Object
-				 *	2) insert keyframes
-				 *	3) free the extra info 
-				 */
-				ANIM_relative_keyingset_add_source(&dsources, &ob->id, NULL, NULL); 
-				ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
-				BLI_freelistN(&dsources);
-			}
-			
+
+			ED_autokeyframe_object(C, scene, ob, ks);
+
 			/* tag for updates */
-			ob->recalc |= OB_RECALC_OB;
+			DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 		}
 	}
 	CTX_DATA_END;
@@ -341,7 +329,8 @@ static int object_origin_clear_exec(bContext *C, wmOperator *UNUSED(op))
 			negate_v3_v3(v3, v1);
 			mul_m3_v3(mat, v3);
 		}
-		ob->recalc |= OB_RECALC_OB;
+
+		DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 	}
 	CTX_DATA_END;
 
@@ -398,13 +387,13 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 
 		if(ob->type==OB_MESH) {
 			if(ID_REAL_USERS(ob->data) > 1) {
-				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user mesh, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user mesh, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 		}
 		else if(ob->type==OB_ARMATURE) {
 			if(ID_REAL_USERS(ob->data) > 1) {
-				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user armature, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user armature, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 		}
@@ -412,18 +401,18 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 			Curve *cu;
 
 			if(ID_REAL_USERS(ob->data) > 1) {
-				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user curve, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user curve, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 
 			cu= ob->data;
 
 			if(!(cu->flag & CU_3D) && (apply_rot || apply_loc)) {
-				BKE_report(reports, RPT_ERROR, "Neither rotation nor location could be applied to a 2d curve, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Neither rotation nor location could be applied to a 2d curve, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 			if(cu->key) {
-				BKE_report(reports, RPT_ERROR, "Can't apply to a curve with vertex keys, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Can't apply to a curve with vertex keys, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 		}
@@ -871,7 +860,7 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 								(ob->dup_group==ob_other->dup_group && (ob->transflag|ob_other->transflag) & OB_DUPLIGROUP) )
 					) {
 						ob_other->flag |= OB_DONE;
-						ob_other->recalc= OB_RECALC_OB|OB_RECALC_DATA;
+						DAG_id_tag_update(&ob_other->id, OB_RECALC_OB|OB_RECALC_DATA);
 
 						copy_v3_v3(centn, cent);
 						mul_mat3_m4_v3(ob_other->obmat, centn); /* ommit translation part */
@@ -890,11 +879,9 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 	}
 	CTX_DATA_END;
 
-	for (tob= bmain->object.first; tob; tob= tob->id.next) {
-		if(tob->data && (((ID *)tob->data)->flag & LIB_DOIT)) {
-			tob->recalc= OB_RECALC_OB|OB_RECALC_DATA;
-		}
-	}
+	for (tob= bmain->object.first; tob; tob= tob->id.next)
+		if(tob->data && (((ID *)tob->data)->flag & LIB_DOIT))
+			DAG_id_tag_update(&tob->id, OB_RECALC_OB|OB_RECALC_DATA);
 
 	if (tot_change) {
 		DAG_ids_flush_update(bmain, 0);

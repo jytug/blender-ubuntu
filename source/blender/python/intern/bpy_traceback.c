@@ -1,5 +1,5 @@
 /*
- * $Id: bpy_traceback.c 36395 2011-04-30 13:58:31Z campbellbarton $
+ * $Id: bpy_traceback.c 40976 2011-10-13 01:29:08Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -30,9 +30,9 @@
 
 #include "bpy_traceback.h"
 
-static const char *traceback_filepath(PyTracebackObject *tb)
+static const char *traceback_filepath(PyTracebackObject *tb, PyObject **coerce)
 {
-	return _PyUnicode_AsString(tb->tb_frame->f_code->co_filename);
+	return PyBytes_AS_STRING((*coerce= PyUnicode_EncodeFSDefault(tb->tb_frame->f_code->co_filename)));
 }
 
 /* copied from pythonrun.c, 3.2.0 */
@@ -114,19 +114,19 @@ void python_script_error_jump(const char *filepath, int *lineno, int *offset)
 
 	PyErr_Fetch(&exception, &value, (PyObject **)&tb);
 
-	if(exception && PyErr_GivenExceptionMatches(exception, PyExc_SyntaxError)) {
+	if (exception && PyErr_GivenExceptionMatches(exception, PyExc_SyntaxError)) {
 		/* no traceback available when SyntaxError.
 		 * python has no api's to this. reference parse_syntax_error() from pythonrun.c */
 		PyErr_NormalizeException(&exception, &value, (PyObject **)&tb);
 		PyErr_Restore(exception, value, (PyObject *)tb);	/* takes away reference! */
 
-		if(value) { /* should always be true */
+		if (value) { /* should always be true */
 			PyObject *message;
 			const char *filename, *text;
 
-			if(parse_syntax_error(value, &message, &filename, lineno, offset, &text)) {
+			if (parse_syntax_error(value, &message, &filename, lineno, offset, &text)) {
 				/* python adds a '/', prefix, so check for both */
-				if(	(strcmp(filename, filepath) == 0) || 
+				if ((strcmp(filename, filepath) == 0) ||
 					((filename[0] == '\\' || filename[0] == '/') && strcmp(filename + 1, filepath) == 0)
 				) {
 					/* good */
@@ -145,8 +145,13 @@ void python_script_error_jump(const char *filepath, int *lineno, int *offset)
 		PyErr_Restore(exception, value, (PyObject *)tb);	/* takes away reference! */
 		PyErr_Print();
 
-		for(tb= (PyTracebackObject *)PySys_GetObject("last_traceback"); tb && (PyObject *)tb != Py_None; tb= tb->tb_next) {
-			if(strcmp(traceback_filepath(tb), filepath) != 0) {
+		for (tb= (PyTracebackObject *)PySys_GetObject("last_traceback"); tb && (PyObject *)tb != Py_None; tb= tb->tb_next) {
+			PyObject *coerce;
+			const char *tb_filepath= traceback_filepath(tb, &coerce);
+			const int match= strcmp(tb_filepath, filepath) != 0;
+			Py_DECREF(coerce);
+
+			if (match) {
 				*lineno= tb->tb_lineno;
 				break;
 			}

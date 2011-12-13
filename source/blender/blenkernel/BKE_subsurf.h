@@ -1,4 +1,5 @@
-/* $Id: BKE_subsurf.h 36773 2011-05-19 11:24:56Z blendix $ 
+/*
+ * $Id: BKE_subsurf.h 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *

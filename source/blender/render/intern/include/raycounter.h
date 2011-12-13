@@ -1,5 +1,5 @@
 /*
- * $Id: raycounter.h 35233 2011-02-27 19:31:27Z jesterking $
+ * $Id: raycounter.h 41078 2011-10-17 06:39:13Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,7 +35,7 @@
 #ifndef RE_RAYCOUNTER_H
 #define RE_RAYCOUNTER_H
 
-//#define RE_RAYCOUNTER			/* enable counters per ray, usefull for measuring raytrace structures performance */
+//#define RE_RAYCOUNTER			/* enable counters per ray, useful for measuring raytrace structures performance */
 
 #ifdef __cplusplus
 extern "C" {

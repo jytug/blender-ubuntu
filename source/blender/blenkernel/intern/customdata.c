@@ -1,36 +1,36 @@
 /*
-* $Id: customdata.c 38866 2011-07-31 02:24:06Z nicholasbishop $
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2006 Blender Foundation.
-* All rights reserved.
-*
-* The Original Code is: all of this file.
-*
-* Contributor(s): Ben Batt <benbatt@gmail.com>
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-* Implementation of CustomData.
-*
-* BKE_customdata.h contains the function prototypes for this file.
-*
-*/
+ * $Id: customdata.c 40903 2011-10-10 09:38:02Z campbellbarton $
+ *
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2006 Blender Foundation.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): Ben Batt <benbatt@gmail.com>
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ * Implementation of CustomData.
+ *
+ * BKE_customdata.h contains the function prototypes for this file.
+ *
+ */
 
 /** \file blender/blenkernel/intern/customdata.c
  *  \ingroup bke
@@ -326,7 +326,7 @@ static void layerSwap_tface(void *data, const int *corner_indices)
 static void layerDefault_tface(void *data, int count)
 {
 	static MTFace default_tf = {{{0, 0}, {1, 0}, {1, 1}, {0, 1}}, NULL,
-							   0, 0, TF_DYNAMIC, 0, 0};
+							   0, 0, TF_DYNAMIC|TF_CONVERTED, 0, 0};
 	MTFace *tf = (MTFace*)data;
 	int i;
 
@@ -808,42 +808,68 @@ static void layerDefault_mcol(void *data, int count)
 
 
 static const LayerTypeInfo LAYERTYPEINFO[CD_NUMTYPES] = {
+	/* 0: CD_MVERT */
 	{sizeof(MVert), "MVert", 1, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 1: CD_MSTICKY */
 	{sizeof(MSticky), "MSticky", 1, NULL, NULL, NULL, layerInterp_msticky, NULL,
 	 NULL},
+	/* 2: CD_MDEFORMVERT */
 	{sizeof(MDeformVert), "MDeformVert", 1, NULL, layerCopy_mdeformvert,
 	 layerFree_mdeformvert, layerInterp_mdeformvert, NULL, NULL},
+	/* 3: CD_MEDGE */
 	{sizeof(MEdge), "MEdge", 1, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 4: CD_MFACE */
 	{sizeof(MFace), "MFace", 1, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 5: CD_MTFACE */
 	{sizeof(MTFace), "MTFace", 1, "UVTex", layerCopy_tface, NULL,
 	 layerInterp_tface, layerSwap_tface, layerDefault_tface},
+	/* 6: CD_MCOL */
 	/* 4 MCol structs per face */
 	{sizeof(MCol)*4, "MCol", 4, "Col", NULL, NULL, layerInterp_mcol,
 	 layerSwap_mcol, layerDefault_mcol},
+	/* 7: CD_ORIGINDEX */
 	{sizeof(int), "", 0, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 8: CD_NORMAL */
 	/* 3 floats per normal vector */
 	{sizeof(float)*3, "", 0, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 9: CD_FLAGS */
 	{sizeof(int), "", 0, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 10: CD_PROP_FLT */
 	{sizeof(MFloatProperty), "MFloatProperty",1,"Float",NULL,NULL,NULL,NULL},
+	/* 11: CD_PROP_INT */
 	{sizeof(MIntProperty), "MIntProperty",1,"Int",NULL,NULL,NULL,NULL},
+	/* 12: CD_PROP_STR */
 	{sizeof(MStringProperty), "MStringProperty",1,"String",NULL,NULL,NULL,NULL},
+	/* 13: CD_ORIGSPACE */
 	{sizeof(OrigSpaceFace), "OrigSpaceFace", 1, "UVTex", layerCopy_origspace_face, NULL,
 	 layerInterp_origspace_face, layerSwap_origspace_face, layerDefault_origspace_face},
+	/* 14: CD_ORCO */
 	{sizeof(float)*3, "", 0, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 15: CD_MTEXPOLY */
 	{sizeof(MTexPoly), "MTexPoly", 1, "Face Texture", NULL, NULL, NULL, NULL, NULL},
+	/* 16: CD_MLOOPUV */
 	{sizeof(MLoopUV), "MLoopUV", 1, "UV coord", NULL, NULL, layerInterp_mloopuv, NULL, NULL},
+	/* 17: CD_MLOOPCOL */
 	{sizeof(MLoopCol), "MLoopCol", 1, "Col", NULL, NULL, layerInterp_mloopcol, NULL, layerDefault_mloopcol},
+	/* 18: CD_TANGENT */
 	{sizeof(float)*4*4, "", 0, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 19: CD_MDISPS */
 	{sizeof(MDisps), "MDisps", 1, NULL, layerCopy_mdisps,
 	 layerFree_mdisps, layerInterp_mdisps, layerSwap_mdisps, NULL, layerRead_mdisps, layerWrite_mdisps,
 	 layerFilesize_mdisps, layerValidate_mdisps},
+	/* 20: CD_WEIGHT_MCOL */
 	{sizeof(MCol)*4, "MCol", 4, "WeightCol", NULL, NULL, layerInterp_mcol,
 	 layerSwap_mcol, layerDefault_mcol},
-	 {sizeof(MCol)*4, "MCol", 4, "IDCol", NULL, NULL, layerInterp_mcol,
+	/* 21: CD_ID_MCOL */
+	{sizeof(MCol)*4, "MCol", 4, "IDCol", NULL, NULL, layerInterp_mcol,
 	 layerSwap_mcol, layerDefault_mcol},
-	 {sizeof(MCol)*4, "MCol", 4, "TexturedCol", NULL, NULL, layerInterp_mcol,
+	/* 22: CD_TEXTURE_MCOL */
+	{sizeof(MCol)*4, "MCol", 4, "TexturedCol", NULL, NULL, layerInterp_mcol,
 	 layerSwap_mcol, layerDefault_mcol},
-	{sizeof(float)*3, "", 0, NULL, NULL, NULL, NULL, NULL, NULL}
+	/* 23: CD_CLOTH_ORCO */
+	{sizeof(float)*3, "", 0, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 24: CD_RECAST */
+	{sizeof(MRecast), "MRecast", 1,"Recast",NULL,NULL,NULL,NULL}
 };
 
 static const char *LAYERTYPENAMES[CD_NUMTYPES] = {
@@ -851,7 +877,7 @@ static const char *LAYERTYPENAMES[CD_NUMTYPES] = {
 	/*   5-9 */ "CDMTFace", "CDMCol", "CDOrigIndex", "CDNormal", "CDFlags",
 	/* 10-14 */ "CDMFloatProperty", "CDMIntProperty","CDMStringProperty", "CDOrigSpace", "CDOrco",
 	/* 15-19 */ "CDMTexPoly", "CDMLoopUV", "CDMloopCol", "CDTangent", "CDMDisps",
-	/* 20-23 */"CDWeightMCol", "CDIDMCol", "CDTextureMCol", "CDClothOrco"
+	/* 20-24 */"CDWeightMCol", "CDIDMCol", "CDTextureMCol", "CDClothOrco", "CDMRecast"
 };
 
 const CustomDataMask CD_MASK_BAREMESH =
@@ -859,14 +885,14 @@ const CustomDataMask CD_MASK_BAREMESH =
 const CustomDataMask CD_MASK_MESH =
 	CD_MASK_MVERT | CD_MASK_MEDGE | CD_MASK_MFACE |
 	CD_MASK_MSTICKY | CD_MASK_MDEFORMVERT | CD_MASK_MTFACE | CD_MASK_MCOL |
-	CD_MASK_PROP_FLT | CD_MASK_PROP_INT | CD_MASK_PROP_STR | CD_MASK_MDISPS;
+	CD_MASK_PROP_FLT | CD_MASK_PROP_INT | CD_MASK_PROP_STR | CD_MASK_MDISPS | CD_MASK_RECAST;
 const CustomDataMask CD_MASK_EDITMESH =
 	CD_MASK_MSTICKY | CD_MASK_MDEFORMVERT | CD_MASK_MTFACE |
-	CD_MASK_MCOL|CD_MASK_PROP_FLT | CD_MASK_PROP_INT | CD_MASK_PROP_STR | CD_MASK_MDISPS;
+	CD_MASK_MCOL|CD_MASK_PROP_FLT | CD_MASK_PROP_INT | CD_MASK_PROP_STR | CD_MASK_MDISPS | CD_MASK_RECAST;
 const CustomDataMask CD_MASK_DERIVEDMESH =
 	CD_MASK_MSTICKY | CD_MASK_MDEFORMVERT | CD_MASK_MTFACE |
 	CD_MASK_MCOL | CD_MASK_ORIGINDEX | CD_MASK_PROP_FLT | CD_MASK_PROP_INT | CD_MASK_CLOTH_ORCO |
-	CD_MASK_PROP_STR | CD_MASK_ORIGSPACE | CD_MASK_ORCO | CD_MASK_TANGENT | CD_MASK_WEIGHT_MCOL;
+	CD_MASK_PROP_STR | CD_MASK_ORIGSPACE | CD_MASK_ORCO | CD_MASK_TANGENT | CD_MASK_WEIGHT_MCOL | CD_MASK_RECAST;
 const CustomDataMask CD_MASK_BMESH = 
 	CD_MASK_MSTICKY | CD_MASK_MDEFORMVERT | CD_MASK_PROP_FLT | CD_MASK_PROP_INT | CD_MASK_PROP_STR;
 const CustomDataMask CD_MASK_FACECORNERS =
@@ -2357,10 +2383,8 @@ int CustomData_verify_versions(struct CustomData *data, int index)
 
 static void customdata_external_filename(char filename[FILE_MAX], ID *id, CustomDataExternal *external)
 {
-	char *path = (id->lib)? id->lib->filepath: G.main->name;
-
 	BLI_strncpy(filename, external->filename, FILE_MAX);
-	BLI_path_abs(filename, path);
+	BLI_path_abs(filename, ID_BLEND_PATH(G.main, id));
 }
 
 void CustomData_external_reload(CustomData *data, ID *UNUSED(id), CustomDataMask mask, int totelem)

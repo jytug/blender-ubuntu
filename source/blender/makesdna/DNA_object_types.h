@@ -1,5 +1,5 @@
 /*
- * $Id: DNA_object_types.h 37505 2011-06-15 10:19:35Z blendix $ 
+ * $Id: DNA_object_types.h 40994 2011-10-13 22:14:41Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -62,8 +62,13 @@ struct bGPdata;
 typedef struct bDeformGroup {
 	struct bDeformGroup *next, *prev;
 	char name[32];
+	/* need this flag for locking weights */
+	char flag, pad[7];
 } bDeformGroup;
 #define MAX_VGROUP_NAME 32
+
+/* bDeformGroup->flag */
+#define DG_LOCK_WEIGHT 1
 
 /**
  * The following illustrates the orientation of the 
@@ -189,6 +194,8 @@ typedef struct Object {
 	float max_vel; /* clamp the maximum velocity 0.0 is disabled */
 	float min_vel; /* clamp the maximum velocity 0.0 is disabled */
 	float m_contactProcessingThreshold;
+	float obstacleRad;
+	char pad0[4];
 	
 	short rotmode;		/* rotation mode - uses defines set out in DNA_action_types.h for PoseChannel rotations... */
 	
@@ -306,11 +313,16 @@ typedef struct DupliObject {
 #define OB_LAMP			10
 #define OB_CAMERA		11
 
+#define OB_SPEAKER		12
+
 // #define OB_WAVE			21
 #define OB_LATTICE		22
 
 /* 23 and 24 are for life and sector (old file compat.) */
 #define	OB_ARMATURE		25
+
+/* check if the object type supports materials */
+#define OB_TYPE_SUPPORT_MATERIAL(_type) ((_type)  >= OB_MESH && (_type) <= OB_MBALL)
 
 /* partype: first 4 bits: type */
 #define PARTYPE			15
@@ -400,14 +412,14 @@ typedef struct DupliObject {
 #define OB_EMPTY_IMAGE	8
 
 /* boundtype */
-#define OB_BOUND_BOX		0
-#define OB_BOUND_SPHERE		1
-#define OB_BOUND_CYLINDER	2
-#define OB_BOUND_CONE		3
-#define OB_BOUND_POLYH		4
-#define OB_BOUND_POLYT		5
+#define OB_BOUND_BOX           0
+#define OB_BOUND_SPHERE        1
+#define OB_BOUND_CYLINDER      2
+#define OB_BOUND_CONE          3
+#define OB_BOUND_TRIANGLE_MESH 4
+#define OB_BOUND_CONVEX_HULL   5
 /* #define OB_BOUND_DYN_MESH   6 */ /*UNUSED*/
-#define OB_BOUND_CAPSULE	7
+#define OB_BOUND_CAPSULE       7
 
 
 /* **************** BASE ********************* */
@@ -471,6 +483,8 @@ typedef struct DupliObject {
 #define OB_SOFT_BODY	0x20000
 #define OB_OCCLUDER		0x40000
 #define OB_SENSOR		0x80000
+#define OB_NAVMESH		0x100000
+#define OB_HASOBSTACLE	0x200000
 
 /* ob->gameflag2 */
 #define OB_NEVER_DO_ACTIVITY_CULLING	1
@@ -491,6 +505,7 @@ typedef struct DupliObject {
 #define OB_BODY_TYPE_SOFT			4
 #define OB_BODY_TYPE_OCCLUDER		5
 #define OB_BODY_TYPE_SENSOR			6
+#define OB_BODY_TYPE_NAVMESH		7
 
 /* ob->scavisflag */
 #define OB_VIS_SENS		1

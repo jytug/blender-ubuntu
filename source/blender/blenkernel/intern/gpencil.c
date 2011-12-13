@@ -1,5 +1,5 @@
 /*
- * $Id: gpencil.c 35247 2011-02-27 20:40:57Z jesterking $
+ * $Id: gpencil.c 40979 2011-10-13 04:06:32Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -184,8 +184,8 @@ bGPDlayer *gpencil_layer_addnew (bGPdata *gpd)
 	gpl->thickness = 3;
 	
 	/* auto-name */
-	sprintf(gpl->info, "GP_Layer");
-	BLI_uniquename(&gpd->layers, gpl, "GP_Layer", '.', offsetof(bGPDlayer, info[0]), sizeof(gpl->info));
+	strcpy(gpl->info, "GP_Layer");
+	BLI_uniquename(&gpd->layers, gpl, "GP_Layer", '.', offsetof(bGPDlayer, info), sizeof(gpl->info));
 	
 	/* make this one the active one */
 	gpencil_layer_setactive(gpd, gpl);

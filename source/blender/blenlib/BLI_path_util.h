@@ -1,5 +1,5 @@
 /*
- * $Id: BLI_path_util.h 36947 2011-05-27 09:57:53Z blendix $
+ * $Id: BLI_path_util.h 41021 2011-10-15 03:56:05Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -103,7 +103,7 @@ void BLI_setenv_if_new(const char *env, const char* val);
 void BLI_make_file_string(const char *relabase, char *string,  const char *dir, const char *file);
 void BLI_make_exist(char *dir);
 void BLI_make_existing_file(const char *name);
-void BLI_split_dirfile(const char *string, char *dir, char *file);
+void BLI_split_dirfile(const char *string, char *dir, char *file, const size_t dirlen, const size_t filelen);
 void BLI_join_dirfile(char *string, const size_t maxlen, const char *dir, const char *file);
 char *BLI_path_basename(char *path);
 int BKE_rebase_path(char *abs, size_t abs_len, char *rel, size_t rel_len, const char *base_dir, const char *src_dir, const char *dest_dir);

@@ -1,5 +1,5 @@
 /*
- * $Id: BKE_font.h 36179 2011-04-15 03:47:54Z campbellbarton $ 
+ * $Id: BKE_font.h 40853 2011-10-08 11:02:58Z campbellbarton $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -46,6 +46,7 @@ struct Curve;
 struct objfnt;
 struct TmpFont;
 struct CharInfo;
+struct Main;
 
 struct chartrans {
 	float xof, yof;
@@ -77,10 +78,10 @@ void BKE_font_register_builtin(void *mem, int size);
 void free_vfont(struct VFont *sc); 
 void free_ttfont(void);
 struct VFont *get_builtin_font(void);
-struct VFont *load_vfont(const char *name);
+struct VFont *load_vfont(struct Main *bmain, const char *name);
 struct TmpFont *vfont_find_tmpfont(struct VFont *vfont);
 
-struct chartrans *BKE_text_to_curve(struct Scene *scene, struct Object *ob, int mode);
+struct chartrans *BKE_text_to_curve(struct Main *bmain, struct Scene *scene, struct Object *ob, int mode);
 
 int BKE_font_getselection(struct Object *ob, int *start, int *end);
 

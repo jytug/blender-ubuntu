@@ -1,5 +1,5 @@
 /*
- * $Id: KX_OrientationInterpolator.h 35063 2011-02-22 10:33:14Z jesterking $
+ * $Id: KX_OrientationInterpolator.h 40838 2011-10-06 22:04:01Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,12 +41,12 @@ class KX_IScalarInterpolator;
 
 class KX_OrientationInterpolator : public KX_IInterpolator {
 public:
-	KX_OrientationInterpolator(MT_Matrix3x3& target, 
-							   KX_IScalarInterpolator **ipos)
-		: m_target(target) 
-    {
-		m_ipos[0] = ipos[0]; 
-		m_ipos[1] = ipos[1]; 
+	KX_OrientationInterpolator(MT_Matrix3x3& target,
+	                           KX_IScalarInterpolator **ipos)
+	    : m_target(target)
+	{
+		m_ipos[0] = ipos[0];
+		m_ipos[1] = ipos[1];
 		m_ipos[2] = ipos[2];
 	}
 	

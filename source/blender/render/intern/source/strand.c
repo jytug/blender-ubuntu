@@ -1,5 +1,5 @@
 /*
- * $Id: strand.c 37667 2011-06-20 15:17:02Z campbellbarton $
+ * $Id: strand.c 40519 2011-09-24 14:34:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -78,9 +78,9 @@ static float strand_eval_width(Material *ma, float strandco)
 
 	if(ma->strand_ease!=0.0f) {
 		if(ma->strand_ease<0.0f)
-			fac= pow(strandco, 1.0+ma->strand_ease);
+			fac= pow(strandco, 1.0f+ma->strand_ease);
 		else
-			fac= pow(strandco, 1.0/(1.0f-ma->strand_ease));
+			fac= pow(strandco, 1.0f/(1.0f-ma->strand_ease));
 	}
 	else fac= strandco;
 	
@@ -92,7 +92,7 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 	Material *ma;
 	StrandBuffer *strandbuf;
 	float *simplify;
-	float p[4][3], data[4], cross[3], crosslen, w, dx, dy, t;
+	float p[4][3], data[4], cross[3], w, dx, dy, t;
 	int type;
 
 	strandbuf= sseg->buffer;
@@ -164,7 +164,7 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 
 	if(w > 0.0f) {
 		if(strandbuf->flag & R_STRAND_B_UNITS) {
-			crosslen= len_v3(cross);
+			const float crosslen= len_v3(cross);
 			w= 2.0f*crosslen*strandbuf->minwidth/w;
 
 			if(spoint->width < w) {
@@ -816,8 +816,8 @@ int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBa
 	zbuf_alloc_span(&zspan, pa->rectx, pa->recty, clipcrop);
 
 	/* needed for transform from hoco to zbuffer co */
-	zspan.zmulx= ((float)winx)/2.0;
-	zspan.zmuly= ((float)winy)/2.0;
+	zspan.zmulx= ((float)winx)/2.0f;
+	zspan.zmuly= ((float)winy)/2.0f;
 	
 	zspan.zofsx= -pa->disprect.xmin;
 	zspan.zofsy= -pa->disprect.ymin;

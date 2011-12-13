@@ -1,7 +1,5 @@
-/*  displist.c
- * 
- * 
- * $Id: displist.c 37504 2011-06-15 10:17:06Z blendix $
+/*
+ * $Id: displist.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,8 +64,6 @@
 #include "BKE_modifier.h"
 
 #include "BLO_sys_types.h" // for intptr_t support
-
-#include "ED_curve.h" /* for BKE_curve_nurbs */
 
 extern Material defmaterial;	/* material.c */
 
@@ -1102,7 +1098,7 @@ void makeDispListSurf(Scene *scene, Object *ob, ListBase *dispbase,
 	float (*deformedVerts)[3];
 
 	if(!forRender && cu->editnurb)
-		nubase= ED_curve_editnurbs(cu);
+		nubase= curve_editnurbs(cu);
 	else
 		nubase= &cu->nurb;
 
@@ -1209,7 +1205,7 @@ static void do_makeDispListCurveTypes(Scene *scene, Object *ob, ListBase *dispba
 		if(cu->path) free_path(cu->path);
 		cu->path= NULL;
 
-		if(ob->type==OB_FONT) BKE_text_to_curve(scene, ob, 0);
+		if(ob->type==OB_FONT) BKE_text_to_curve(G.main, scene, ob, 0);
 
 		if(!forOrco) curve_calc_modifiers_pre(scene, ob, forRender, &originalVerts, &deformedVerts, &numVerts);
 
@@ -1369,6 +1365,11 @@ void makeDispListCurveTypes(Scene *scene, Object *ob, int forOrco)
 	Curve *cu= ob->data;
 	ListBase *dispbase;
 
+	/* The same check for duplis as in do_makeDispListCurveTypes.
+	   Happens when curve used for constraint/bevel was converted to mesh.
+	   check there is still needed for render displist and orco displists. */
+	if(!ELEM3(ob->type, OB_SURF, OB_CURVE, OB_FONT)) return;
+
 	freedisplist(&(ob->disp));
 	dispbase= &(ob->disp);
 	freedisplist(dispbase);
@@ -1403,7 +1404,8 @@ void makeDispListCurveTypes_forOrco(struct Scene *scene, struct Object *ob, stru
 }
 
 /* add Orco layer to the displist object which has got derived mesh and return orco */
-float *makeOrcoDispList(Scene *scene, Object *ob, DerivedMesh *derivedFinal, int forRender) {
+float *makeOrcoDispList(Scene *scene, Object *ob, DerivedMesh *derivedFinal, int forRender)
+{
 	float *orco;
 
 	if (derivedFinal == NULL)

@@ -1,7 +1,5 @@
-/* texture.c
- *
- *
- * $Id: texture.c 38285 2011-07-10 17:04:56Z jhk $
+/*
+ * $Id: texture.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -640,7 +638,11 @@ void default_mtex(MTex *mtex)
 	mtex->size[1]= 1.0;
 	mtex->size[2]= 1.0;
 	mtex->tex= NULL;
-	mtex->texflag= MTEX_3TAP_BUMP | MTEX_BUMP_OBJECTSPACE;
+
+	/* MTEX_BUMP_FLIPPED is temporary before 2.61 release to prevent flipping normals
+	   when creating file in 2.60, opening it in 2.59, saving and opening in 2.60 again */
+	mtex->texflag= MTEX_3TAP_BUMP | MTEX_BUMP_OBJECTSPACE | MTEX_BUMP_FLIPPED;
+
 	mtex->colormodel= 0;
 	mtex->r= 1.0;
 	mtex->g= 0.0;
@@ -766,7 +768,9 @@ Tex *copy_texture(Tex *tex)
 	if(tex->preview) texn->preview = BKE_previewimg_copy(tex->preview);
 
 	if(tex->nodetree) {
-		ntreeEndExecTree(tex->nodetree);
+		if (tex->nodetree->execdata) {
+			ntreeTexEndExecTree(tex->nodetree->execdata, 1);
+		}
 		texn->nodetree= ntreeCopyTree(tex->nodetree); 
 	}
 	
@@ -1005,7 +1009,7 @@ void autotexname(Tex *tex)
 
 Tex *give_current_object_texture(Object *ob)
 {
-	Material *ma;
+	Material *ma, *node_ma;
 	Tex *tex= NULL;
 	
 	if(ob==NULL) return NULL;
@@ -1015,6 +1019,10 @@ Tex *give_current_object_texture(Object *ob)
 		tex= give_current_lamp_texture(ob->data);
 	} else {
 		ma= give_current_material(ob, ob->actcol);
+
+		if((node_ma=give_node_material(ma)))
+			ma= node_ma;
+
 		tex= give_current_material_texture(ma);
 	}
 	
@@ -1080,17 +1088,6 @@ Tex *give_current_material_texture(Material *ma)
 			tex= (Tex *)node->id;
 			ma= NULL;
 		}
-		else {
-			node= nodeGetActiveID(ma->nodetree, ID_MA);
-			if(node) {
-				ma= (Material*)node->id;
-				if(ma) {
-					mtex= ma->mtex[(int)(ma->texact)];
-					if(mtex) tex= mtex->tex;
-				}
-			}
-		}
-		return tex;
 	}
 
 	if(ma) {
@@ -1165,11 +1162,6 @@ void set_current_material_texture(Material *ma, Tex *newtex)
 			id_us_plus(&newtex->id);
 			ma= NULL;
 		}
-		else {
-			node= nodeGetActiveID(ma->nodetree, ID_MA);
-			if(node)
-				ma= (Material*)node->id;
-		}
 	}
 	if(ma) {
 		int act= (int)ma->texact;
@@ -1198,16 +1190,8 @@ int has_current_material_texture(Material *ma)
 	if(ma && ma->use_nodes && ma->nodetree) {
 		node= nodeGetActiveID(ma->nodetree, ID_TE);
 
-		if(node) {
+		if(node)
 			return 1;
-		}
-		else {
-			node= nodeGetActiveID(ma->nodetree, ID_MA);
-			if(node)
-				ma= (Material*)node->id;
-			else
-				ma= NULL;
-		}
 	}
 
 	return (ma != NULL);

@@ -1,7 +1,5 @@
-/* object.c
- *
- * 
- * $Id: object.c 37503 2011-06-15 09:45:26Z blendix $
+/*
+ * $Id: object.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -54,6 +52,7 @@
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_sequence_types.h"
+#include "DNA_sound_types.h"
 #include "DNA_space_types.h"
 #include "DNA_view3d_types.h"
 #include "DNA_world_types.h"
@@ -96,6 +95,7 @@
 #include "BKE_sca.h"
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
+#include "BKE_speaker.h"
 #include "BKE_softbody.h"
 #include "BKE_material.h"
 
@@ -233,6 +233,17 @@ void object_free_display(Object *ob)
 	freedisplist(&ob->disp);
 }
 
+void free_sculptsession_deformMats(SculptSession *ss)
+{
+	if(ss->orig_cos) MEM_freeN(ss->orig_cos);
+	if(ss->deform_cos) MEM_freeN(ss->deform_cos);
+	if(ss->deform_imats) MEM_freeN(ss->deform_imats);
+
+	ss->orig_cos = NULL;
+	ss->deform_cos = NULL;
+	ss->deform_imats = NULL;
+}
+
 void free_sculptsession(Object *ob)
 {
 	if(ob && ob->sculpt) {
@@ -262,6 +273,7 @@ void free_sculptsession(Object *ob)
 		ob->sculpt = NULL;
 	}
 }
+
 
 /* do not free object itself */
 void free_object(Object *ob)
@@ -404,7 +416,7 @@ void unlink_object(Object *ob)
 						for (ct= targets.first; ct; ct= ct->next) {
 							if (ct->tar == ob) {
 								ct->tar = NULL;
-								strcpy(ct->subtarget, "");
+								ct->subtarget[0]= '\0';
 								obt->recalc |= OB_RECALC_DATA;
 							}
 						}
@@ -434,7 +446,7 @@ void unlink_object(Object *ob)
 				for (ct= targets.first; ct; ct= ct->next) {
 					if (ct->tar == ob) {
 						ct->tar = NULL;
-						strcpy(ct->subtarget, "");
+						ct->subtarget[0]= '\0';
 						obt->recalc |= OB_RECALC_DATA;
 					}
 				}
@@ -989,6 +1001,7 @@ static void *add_obdata_from_type(int type)
 	case OB_LAMP: return add_lamp("Lamp");
 	case OB_LATTICE: return add_lattice("Lattice");
 	case OB_ARMATURE: return add_armature("Armature");
+	case OB_SPEAKER: return add_speaker("Speaker");
 	case OB_EMPTY: return NULL;
 	default:
 		printf("add_obdata_from_type: Internal error, bad type: %d\n", type);
@@ -1008,6 +1021,7 @@ static const char *get_obdata_defname(int type)
 	case OB_LAMP: return "Lamp";
 	case OB_LATTICE: return "Lattice";
 	case OB_ARMATURE: return "Armature";
+	case OB_SPEAKER: return "Speaker";
 	case OB_EMPTY: return "Empty";
 	default:
 		printf("get_obdata_defname: Internal error, bad type: %d\n", type);
@@ -1051,7 +1065,7 @@ Object *add_only_object(int type, const char *name)
 	ob->empty_drawtype= OB_PLAINAXES;
 	ob->empty_drawsize= 1.0;
 
-	if(type==OB_CAMERA || type==OB_LAMP) {
+	if(type==OB_CAMERA || type==OB_LAMP || type==OB_SPEAKER) {
 		ob->trackflag= OB_NEGZ;
 		ob->upflag= OB_POSY;
 	}
@@ -1078,6 +1092,7 @@ Object *add_only_object(int type, const char *name)
 	ob->state=1;
 	/* ob->pad3 == Contact Processing Threshold */
 	ob->m_contactProcessingThreshold = 1.;
+	ob->obstacleRad = 1.;
 	
 	/* NT fluid sim defaults */
 	ob->fluidsimFlag = 0;
@@ -1291,6 +1306,37 @@ static void copy_object_pose(Object *obn, Object *ob)
 			}
 		}
 	}
+}
+
+static int object_pose_context(Object *ob)
+{
+	if(	(ob) &&
+		(ob->type == OB_ARMATURE) &&
+		(ob->pose) &&
+		(ob->mode & OB_MODE_POSE)
+	) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+//Object *object_pose_armature_get(Object *ob)
+Object *object_pose_armature_get(struct Object *ob)
+{
+	if(ob==NULL)
+		return NULL;
+
+	if(object_pose_context(ob))
+		return ob;
+
+	ob= modifiers_isDeformedByArmature(ob);
+
+	if(object_pose_context(ob))
+		return ob;
+
+	return NULL;
 }
 
 static void copy_object_transform(Object *ob_tar, Object *ob_src)
@@ -1601,7 +1647,7 @@ void object_make_proxy(Object *ob, Object *target, Object *gob)
 	if(ob->matbits) MEM_freeN(ob->matbits);
 	ob->mat = NULL;
 	ob->matbits= NULL;
-	if ((target->totcol) && (target->mat) && ELEM5(ob->type, OB_MESH, OB_CURVE, OB_SURF, OB_FONT, OB_MBALL)) { //XXX OB_SUPPORT_MATERIAL
+	if ((target->totcol) && (target->mat) && OB_TYPE_SUPPORT_MATERIAL(ob->type)) {
 		int i;
 		ob->colbits = target->colbits;
 		
@@ -2084,7 +2130,7 @@ void where_is_object_time(Scene *scene, Object *ob, float ctime)
 	if(ob==NULL) return;
 	
 	/* execute drivers only, as animation has already been done */
-	BKE_animsys_evaluate_animdata(&ob->id, ob->adt, ctime, ADT_RECALC_DRIVERS);
+	BKE_animsys_evaluate_animdata(scene, &ob->id, ob->adt, ctime, ADT_RECALC_DRIVERS);
 	
 	if(ob->parent) {
 		Object *par= ob->parent;
@@ -2302,7 +2348,7 @@ BoundBox *unit_boundbox(void)
 	BoundBox *bb;
 	float min[3] = {-1.0f,-1.0f,-1.0f}, max[3] = {-1.0f,-1.0f,-1.0f};
 
-	bb= MEM_callocN(sizeof(BoundBox), "bb");
+	bb= MEM_callocN(sizeof(BoundBox), "OB-BoundBox");
 	boundbox_set_from_min_max(bb, min, max);
 	
 	return bb;
@@ -2623,7 +2669,7 @@ void object_handle_update(Scene *scene, Object *ob)
 			if(adt) {
 				/* evaluate drivers */
 				// XXX: for mesh types, should we push this to derivedmesh instead?
-				BKE_animsys_evaluate_animdata(data_id, adt, ctime, ADT_RECALC_DRIVERS);
+				BKE_animsys_evaluate_animdata(scene, data_id, adt, ctime, ADT_RECALC_DRIVERS);
 			}
 
 			/* includes all keys and modifiers */
@@ -2754,7 +2800,35 @@ void object_handle_update(Scene *scene, Object *ob)
 	}
 }
 
-float give_timeoffset(Object *ob) {
+void object_sculpt_modifiers_changed(Object *ob)
+{
+	SculptSession *ss= ob->sculpt;
+
+	if(!ss->cache) {
+		/* we free pbvh on changes, except during sculpt since it can't deal with
+		   changing PVBH node organization, we hope topology does not change in
+		   the meantime .. weak */
+		if(ss->pbvh) {
+				BLI_pbvh_free(ss->pbvh);
+				ss->pbvh= NULL;
+		}
+
+		free_sculptsession_deformMats(ob->sculpt);
+	} else {
+		PBVHNode **nodes;
+		int n, totnode;
+
+		BLI_pbvh_search_gather(ss->pbvh, NULL, NULL, &nodes, &totnode);
+
+		for(n = 0; n < totnode; n++)
+			BLI_pbvh_node_mark_update(nodes[n]);
+
+		MEM_freeN(nodes);
+	}
+}
+
+float give_timeoffset(Object *ob)
+{
 	if ((ob->ipoflag & OB_OFFS_PARENTADD) && ob->parent) {
 		return ob->sf + give_timeoffset(ob->parent);
 	} else {
@@ -2762,7 +2836,8 @@ float give_timeoffset(Object *ob) {
 	}
 }
 
-int give_obdata_texspace(Object *ob, short **texflag, float **loc, float **size, float **rot) {
+int give_obdata_texspace(Object *ob, short **texflag, float **loc, float **size, float **rot)
+{
 	
 	if (ob->data==NULL)
 		return 0;
@@ -2980,6 +3055,79 @@ void object_camera_matrix(
 
 }
 
+void camera_view_frame_ex(Scene *scene, Camera *camera, float drawsize, const short do_clip, const float scale[3],
+                          float r_asp[2], float r_shift[2], float *r_drawsize, float r_vec[4][3])
+{
+	float facx, facy;
+	float depth;
+
+	/* aspect correcton */
+	if (scene) {
+		float aspx= (float) scene->r.xsch*scene->r.xasp;
+		float aspy= (float) scene->r.ysch*scene->r.yasp;
+
+		if(aspx < aspy) {
+			r_asp[0]= aspx / aspy;
+			r_asp[1]= 1.0;
+		}
+		else {
+			r_asp[0]= 1.0;
+			r_asp[1]= aspy / aspx;
+		}
+	}
+	else {
+		r_asp[0]= 1.0f;
+		r_asp[1]= 1.0f;
+	}
+
+	if(camera->type==CAM_ORTHO) {
+		facx= 0.5f * camera->ortho_scale * r_asp[0] * scale[0];
+		facy= 0.5f * camera->ortho_scale * r_asp[1] * scale[1];
+		r_shift[0]= camera->shiftx * camera->ortho_scale * scale[0];
+		r_shift[1]= camera->shifty * camera->ortho_scale * scale[1];
+		depth= do_clip ? -((camera->clipsta * scale[2]) + 0.1f) : - drawsize * camera->ortho_scale * scale[2];
+
+		*r_drawsize= 0.5f * camera->ortho_scale;
+	}
+	else {
+		/* that way it's always visible - clipsta+0.1 */
+		float fac;
+		*r_drawsize= drawsize / ((scale[0] + scale[1] + scale[2]) / 3.0f);
+
+		if(do_clip) {
+			/* fixed depth, variable size (avoids exceeding clipping range) */
+			depth = -(camera->clipsta + 0.1f);
+			fac = depth / (camera->lens/-16.0f * scale[2]);
+		}
+		else {
+			/* fixed size, variable depth (stays a reasonable size in the 3D view) */
+			depth= *r_drawsize * camera->lens/-16.0f * scale[2];
+			fac= *r_drawsize;
+		}
+
+		facx= fac * r_asp[0] * scale[0];
+		facy= fac * r_asp[1] * scale[1];
+		r_shift[0]= camera->shiftx*fac*2 * scale[0];
+		r_shift[1]= camera->shifty*fac*2 * scale[1];
+	}
+
+	r_vec[0][0]= r_shift[0] + facx; r_vec[0][1]= r_shift[1] + facy; r_vec[0][2]= depth;
+	r_vec[1][0]= r_shift[0] + facx; r_vec[1][1]= r_shift[1] - facy; r_vec[1][2]= depth;
+	r_vec[2][0]= r_shift[0] - facx; r_vec[2][1]= r_shift[1] - facy; r_vec[2][2]= depth;
+	r_vec[3][0]= r_shift[0] - facx; r_vec[3][1]= r_shift[1] + facy; r_vec[3][2]= depth;
+}
+
+void camera_view_frame(Scene *scene, Camera *camera, float r_vec[4][3])
+{
+	float dummy_asp[2];
+	float dummy_shift[2];
+	float dummy_drawsize;
+	const float dummy_scale[3]= {1.0f, 1.0f, 1.0f};
+
+	camera_view_frame_ex(scene, camera, FALSE, 1.0, dummy_scale,
+	                     dummy_asp, dummy_shift, &dummy_drawsize, r_vec);
+}
+
 #if 0
 static int pc_findindex(ListBase *listbase, int index)
 {
@@ -3134,7 +3282,7 @@ int object_is_modified(Scene *scene, Object *ob)
 	int flag= 0;
 
 	if(ob_get_key(ob)) {
-		flag |= eModifierMode_Render | eModifierMode_Render;
+		flag |= eModifierMode_Render;
 	}
 	else {
 		ModifierData *md;

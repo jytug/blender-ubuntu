@@ -1,5 +1,5 @@
 /*
- * $Id: rna_internal.h 39084 2011-08-05 20:45:26Z blendix $
+ * $Id: rna_internal.h 40738 2011-10-01 21:09:42Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -168,6 +168,7 @@ void RNA_def_sensor(struct BlenderRNA *brna);
 void RNA_def_sequencer(struct BlenderRNA *brna);
 void RNA_def_smoke(struct BlenderRNA *brna);
 void RNA_def_space(struct BlenderRNA *brna);
+void RNA_def_speaker(struct BlenderRNA *brna);
 void RNA_def_test(struct BlenderRNA *brna);
 void RNA_def_text(struct BlenderRNA *brna);
 void RNA_def_texture(struct BlenderRNA *brna);
@@ -233,6 +234,7 @@ char *rna_TextureSlot_path(struct PointerRNA *ptr);
 void RNA_api_action(StructRNA *srna);
 void RNA_api_armature_edit_bone(StructRNA *srna);
 void RNA_api_bone(StructRNA *srna);
+void RNA_api_camera(StructRNA *srna);
 void RNA_api_drivers(StructRNA *srna);
 void RNA_api_image(struct StructRNA *srna);
 void RNA_api_operator(struct StructRNA *srna);
@@ -260,6 +262,8 @@ void RNA_api_wm(struct StructRNA *srna);
 void RNA_api_sensor(struct StructRNA *srna);
 void RNA_api_controller(struct StructRNA *srna);
 void RNA_api_actuator(struct StructRNA *srna);
+void RNA_api_texture(struct StructRNA *srna);
+void RNA_api_environment_map(struct StructRNA *srna);
 
 /* main collection functions */
 void RNA_def_main_cameras(BlenderRNA *brna, PropertyRNA *cprop);
@@ -282,6 +286,7 @@ void RNA_def_main_brushes(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_worlds(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_groups(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_texts(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_speakers(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_sounds(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_armatures(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_actions(BlenderRNA *brna, PropertyRNA *cprop);
@@ -376,6 +381,9 @@ int rna_parameter_size_alloc(struct PropertyRNA *parm);
 struct MTex *rna_mtex_texture_slots_add(struct ID *self, struct bContext *C, struct ReportList *reports);
 struct MTex *rna_mtex_texture_slots_create(struct ID *self, struct bContext *C, struct ReportList *reports, int index);
 void rna_mtex_texture_slots_clear(struct ID *self, struct bContext *C, struct ReportList *reports, int index);
+
+
+int rna_IDMaterials_assign_int(struct PointerRNA *ptr, int key, const struct PointerRNA *assign_ptr);
 
 #endif /* RNA_INTERNAL_H */
 

@@ -1,4 +1,4 @@
-# ##### BEGIN GPL LICENSE BLOCK #####
+#  ##### BEGIN GPL LICENSE BLOCK #####
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -105,38 +105,15 @@ def imgMapBG(wts):
     return image_mapBG
 
 
-def findInSubDir(filename, subdirectory=""):
-    pahFile = ""
-    if subdirectory:
-        path = subdirectory
-    else:
-        path = os.getcwd()
-    try:
-        for root, dirs, names in os.walk(path):
-            if filename in names:
-                pahFile = os.path.join(root, filename)
-        return pahFile
-    except OSError:
-        return ""
-
-
 def path_image(image):
-    import os
-    fn = bpy.path.abspath(image)
-    if not os.path.isfile(fn):
-        fn = findInSubDir(os.path.basename(fn), os.path.dirname(bpy.data.filepath))
-    fn = os.path.realpath(fn)
-    return fn
+    return bpy.path.abspath(image.filepath, library=image.library)
 
-##############end find image texture
+# end find image texture
+# -----------------------------------------------------------------------------
 
 
-def splitHyphen(name):
-    hyphidx = name.find("-")
-    if hyphidx == -1:
-        return name
-    else:
-        return name[:].replace("-", "")
+def string_strip_hyphen(name):
+    return name.replace("-", "")
 
 
 def safety(name, Level):
@@ -153,7 +130,7 @@ def safety(name, Level):
     except:
         prefix = ""
     prefix = "shader_"
-    name = splitHyphen(name)
+    name = string_strip_hyphen(name)
     if Level == 2:
         return prefix + name
     elif Level == 1:
@@ -221,7 +198,7 @@ def write_pov(filename, scene=None, info_callback=None):
     def uniqueName(name, nameSeq):
 
         if name not in nameSeq:
-            name = splitHyphen(name)
+            name = string_strip_hyphen(name)
             return name
 
         name_orig = name
@@ -229,7 +206,7 @@ def write_pov(filename, scene=None, info_callback=None):
         while name in nameSeq:
             name = "%s_%.3d" % (name_orig, i)
             i += 1
-        name = splitHyphen(name)
+        name = string_strip_hyphen(name)
         return name
 
     def writeMatrix(matrix):
@@ -616,7 +593,8 @@ def write_pov(filename, scene=None, info_callback=None):
                 tabWrite("point_at  <0, 0, -1>\n")  # *must* be after 'parallel'
 
             elif lamp.type == 'AREA':
-                tabWrite("fade_distance %.6f\n" % (lamp.distance / 5.0))
+                tabWrite("area_illumination\n")
+                tabWrite("fade_distance %.6f\n" % (lamp.distance / 2.0))
                 # Area lights have no falloff type, so always use blenders lamp quad equivalent
                 # for those?
                 tabWrite("fade_power %d\n" % 2)
@@ -629,10 +607,10 @@ def write_pov(filename, scene=None, info_callback=None):
                     size_y = lamp.size_y
                     samples_y = lamp.shadow_ray_samples_y
 
-                tabWrite("area_light <%d,0,0>,<0,0,%d> %d, %d\n" % \
+                tabWrite("area_light <%.6f,0,0>,<0,%.6f,0> %d, %d\n" % \
                          (size_x, size_y, samples_x, samples_y))
                 if lamp.shadow_ray_sample_method == 'CONSTANT_JITTERED':
-                    if lamp.jitter:
+                    if lamp.use_jitter:
                         tabWrite("jitter\n")
                 else:
                     tabWrite("adaptive 1\n")
@@ -646,12 +624,12 @@ def write_pov(filename, scene=None, info_callback=None):
             # Sun shouldn't be attenuated. Hemi and area lights have no falloff attribute so they
             # are put to type 2 attenuation a little higher above.
             if lamp.type not in {'SUN', 'AREA', 'HEMI'}:
-                tabWrite("fade_distance %.6f\n" % (lamp.distance / 5.0))
+                tabWrite("fade_distance %.6f\n" % (lamp.distance / 2.0))
                 if lamp.falloff_type == 'INVERSE_SQUARE':
                     tabWrite("fade_power %d\n" % 2)  # Use blenders lamp quad equivalent
                 elif lamp.falloff_type == 'INVERSE_LINEAR':
                     tabWrite("fade_power %d\n" % 1)  # Use blenders lamp linear
-                # upposing using no fade power keyword would default to constant, no attenuation.
+                # supposing using no fade power keyword would default to constant, no attenuation.
                 elif lamp.falloff_type == 'CONSTANT':
                     pass
                 # Using Custom curve for fade power 3 for now.
@@ -777,11 +755,11 @@ def write_pov(filename, scene=None, info_callback=None):
 #                        return True
 #            return False
         # For objects using local material(s) only!
-        # This is a mapping between a tuple (dataname, materialnames, …), and the POV dataname.
+        # This is a mapping between a tuple (dataname, materialnames, ...), and the POV dataname.
         # As only objects using:
         #     * The same data.
         #     * EXACTLY the same materials, in EXACTLY the same sockets.
-        # … can share a same instance in POV export.
+        # ... can share a same instance in POV export.
         obmats2data = {}
 
         def checkObjectMaterials(ob, name, dataname):
@@ -794,14 +772,14 @@ def write_pov(filename, scene=None, info_callback=None):
                         if ms.link == 'OBJECT' and not has_local_mats:
                             has_local_mats = True
                     else:
-                        # Even if the slot is empty, it is important to grab it…
+                        # Even if the slot is empty, it is important to grab it...
                         key.append("")
                 if has_local_mats:
                     # If this object uses local material(s), lets find if another object
                     # using the same data and exactly the same list of materials
-                    # (in the same slots) has already been processed…
+                    # (in the same slots) has already been processed...
                     # Note that here also, we use object name as new, unique dataname for Pov.
-                    key = tuple(key)  # Lists are not hashable…
+                    key = tuple(key)  # Lists are not hashable...
                     if key not in obmats2data:
                         obmats2data[key] = name
                     return obmats2data[key]
@@ -866,8 +844,8 @@ def write_pov(filename, scene=None, info_callback=None):
             else:
                 name_orig = DEF_OBJ_NAME
                 dataname_orig = DEF_OBJ_NAME
-            name = splitHyphen(bpy.path.clean_name(name_orig))
-            dataname = splitHyphen(bpy.path.clean_name(dataname_orig))
+            name = string_strip_hyphen(bpy.path.clean_name(name_orig))
+            dataname = string_strip_hyphen(bpy.path.clean_name(dataname_orig))
 ##            for slot in ob.material_slots:
 ##                if slot.material != None and slot.link == 'OBJECT':
 ##                    obmaterial = slot.material
@@ -997,8 +975,12 @@ def write_pov(filename, scene=None, info_callback=None):
             if me.vertex_colors:
 
                 for fi, f in enumerate(me_faces):
+                    # annoying, index may be invalid
                     material_index = f.material_index
-                    material = me_materials[material_index]
+                    try:
+                        material = me_materials[material_index]
+                    except:
+                        material = None
 
                     if material and material.use_vertex_color_paint:
 
@@ -1060,7 +1042,7 @@ def write_pov(filename, scene=None, info_callback=None):
                 texturesAlpha = ""
                 for t in material.texture_slots:
                     if t and t.texture.type == 'IMAGE' and t.use and t.texture.image:
-                        image_filename = path_image(t.texture.image.filepath)
+                        image_filename = path_image(t.texture.image)
                         imgGamma = ""
                         if image_filename:
                             if t.use_map_color_diffuse:
@@ -1582,7 +1564,7 @@ def write_pov(filename, scene=None, info_callback=None):
                 # XXX No enable checkbox for world textures yet (report it?)
                 #if t and t.texture.type == 'IMAGE' and t.use:
                 if t and t.texture.type == 'IMAGE':
-                    image_filename = path_image(t.texture.image.filepath)
+                    image_filename = path_image(t.texture.image)
                     if t.texture.image.filepath != image_filename:
                         t.texture.image.filepath = image_filename
                     if image_filename != "" and t.use_map_blend:
@@ -2089,7 +2071,7 @@ class PovrayRender(bpy.types.RenderEngine):
             # check paths
             povPath = bpy.path.abspath(scene.pov.scene_path).replace('\\', '/')
             if povPath == "":
-                if bpy.path.abspath("//") != "":
+                if bpy.data.is_saved:
                     povPath = bpy.path.abspath("//")
                 else:
                     povPath = tempfile.gettempdir()
@@ -2116,7 +2098,7 @@ class PovrayRender(bpy.types.RenderEngine):
             # Bug in POV-Ray RC3
             renderImagePath = bpy.path.abspath(scene.pov.renderimage_path).replace('\\','/')
             if renderImagePath == "":
-                if bpy.path.abspath("//") != "":
+                if bpy.data.is_saved:
                     renderImagePath = bpy.path.abspath("//")
                 else:
                     renderImagePath = tempfile.gettempdir()

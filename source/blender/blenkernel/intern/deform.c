@@ -1,10 +1,5 @@
-/*  deform.c   June 2001
- *  
- *  support for deformation groups
- * 
- *	Reevan McKay
- *
- * $Id: deform.c 37239 2011-06-06 06:40:09Z campbellbarton $
+/*
+ * $Id: deform.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,7 +22,7 @@
  *
  * The Original Code is: all of this file.
  *
- * Contributor(s): none yet.
+ * Contributor(s): Reevan McKay
  *
  * ***** END GPL LICENSE BLOCK *****
  */

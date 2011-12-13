@@ -1,38 +1,38 @@
 /*
-* $Id: modifier.c 35247 2011-02-27 20:40:57Z jesterking $
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-* Modifier stack implementation.
-*
-* BKE_modifier.h contains the function prototypes for this file.
-*
-*/
+ * $Id: modifier.c 40903 2011-10-10 09:38:02Z campbellbarton $
+ *
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ * Modifier stack implementation.
+ *
+ * BKE_modifier.h contains the function prototypes for this file.
+ *
+ */
 
 /** \file blender/blenkernel/intern/modifier.c
  *  \ingroup bke
@@ -192,6 +192,18 @@ void modifiers_foreachIDLink(Object *ob, IDWalkFunc walk, void *userData)
 			ObjectWalkFunc fp = (ObjectWalkFunc)walk;
 			mti->foreachObjectLink(md, ob, fp, userData);
 		}
+	}
+}
+
+void modifiers_foreachTexLink(Object *ob, TexWalkFunc walk, void *userData)
+{
+	ModifierData *md = ob->modifiers.first;
+
+	for (; md; md=md->next) {
+		ModifierTypeInfo *mti = modifierType_getInfo(md->type);
+
+		if(mti->foreachTexLink)
+			mti->foreachTexLink(md, ob, walk, userData);
 	}
 }
 

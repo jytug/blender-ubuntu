@@ -1,5 +1,5 @@
 /*
- * $Id: object_modifier.c 38115 2011-07-05 10:35:48Z blendix $
+ * $Id: object_modifier.c 40944 2011-10-12 00:15:19Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -97,7 +97,7 @@ ModifierData *ED_object_modifier_add(ReportList *reports, Main *bmain, Scene *sc
 	
 	if(mti->flags&eModifierTypeFlag_Single) {
 		if(modifiers_findByType(ob, type)) {
-			BKE_report(reports, RPT_WARNING, "Only one modifier of this type allowed.");
+			BKE_report(reports, RPT_WARNING, "Only one modifier of this type allowed");
 			return NULL;
 		}
 	}
@@ -169,7 +169,7 @@ int ED_object_modifier_remove(ReportList *reports, Main *bmain, Scene *scene, Ob
 			break;
 	
 	if(!obmd) {
-		BKE_reportf(reports, RPT_ERROR, "Modifier '%s' not in object '%s'.", ob->id.name, md->name);
+		BKE_reportf(reports, RPT_ERROR, "Modifier '%s' not in object '%s'", ob->id.name, md->name);
 		return 0;
 	}
 
@@ -255,7 +255,7 @@ int ED_object_modifier_move_up(ReportList *reports, Object *ob, ModifierData *md
 			ModifierTypeInfo *nmti = modifierType_getInfo(md->prev->type);
 
 			if(nmti->flags&eModifierTypeFlag_RequiresOriginalData) {
-				BKE_report(reports, RPT_WARNING, "Cannot move above a modifier requiring original data.");
+				BKE_report(reports, RPT_WARNING, "Cannot move above a modifier requiring original data");
 				return 0;
 			}
 		}
@@ -276,7 +276,7 @@ int ED_object_modifier_move_down(ReportList *reports, Object *ob, ModifierData *
 			ModifierTypeInfo *nmti = modifierType_getInfo(md->next->type);
 
 			if(nmti->type!=eModifierTypeType_OnlyDeform) {
-				BKE_report(reports, RPT_WARNING, "Cannot move beyond a non-deforming modifier.");
+				BKE_report(reports, RPT_WARNING, "Cannot move beyond a non-deforming modifier");
 				return 0;
 			}
 		}
@@ -552,7 +552,7 @@ int ED_object_modifier_apply(ReportList *reports, Scene *scene, Object *ob, Modi
 	}
 
 	if (md!=ob->modifiers.first)
-		BKE_report(reports, RPT_INFO, "Applied modifier was not first, result may not be as expected.");
+		BKE_report(reports, RPT_INFO, "Applied modifier was not first, result may not be as expected");
 
 	/* allow apply of a not-realtime modifier, by first re-enabling realtime. */
 	prev_mode= md->mode;
@@ -724,7 +724,7 @@ static int modifier_remove_exec(bContext *C, wmOperator *op)
 	Scene *scene= CTX_data_scene(C);
 	Object *ob = ED_object_active_context(C);
 	ModifierData *md = edit_modifier_property_get(op, ob, 0);
-	int mode_orig = ob->mode;
+	int mode_orig = ob ? ob->mode : 0;
 	
 	if(!ob || !md || !ED_object_modifier_remove(op->reports, bmain, scene, ob, md))
 		return OPERATOR_CANCELLED;
@@ -1066,7 +1066,12 @@ static int multires_reshape_exec(bContext *C, wmOperator *op)
 
 	if (!mmd)
 		return OPERATOR_CANCELLED;
-	
+
+	if(mmd->lvl==0) {
+		BKE_report(op->reports, RPT_ERROR, "Reshape can work only with higher levels of subdivisions");
+		return OPERATOR_CANCELLED;
+	}
+
 	CTX_DATA_BEGIN(C, Object*, selob, selected_editable_objects) {
 		if(selob->type == OB_MESH && selob != ob) {
 			secondob= selob;
@@ -1076,12 +1081,12 @@ static int multires_reshape_exec(bContext *C, wmOperator *op)
 	CTX_DATA_END;
 
 	if(!secondob) {
-		BKE_report(op->reports, RPT_ERROR, "Second selected mesh object require to copy shape from.");
+		BKE_report(op->reports, RPT_ERROR, "Second selected mesh object require to copy shape from");
 		return OPERATOR_CANCELLED;
 	}
 
 	if(!multiresModifier_reshape(scene, mmd, ob, secondob)) {
-		BKE_report(op->reports, RPT_ERROR, "Objects do not have the same number of vertices.");
+		BKE_report(op->reports, RPT_ERROR, "Objects do not have the same number of vertices");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -1157,9 +1162,6 @@ static int multires_external_save_invoke(bContext *C, wmOperator *op, wmEvent *U
 	
 	if(CustomData_external_test(&me->fdata, CD_MDISPS))
 		return OPERATOR_CANCELLED;
-
-	if(!RNA_property_is_set(op->ptr, "relative_path"))
-		RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
 
 	if(RNA_property_is_set(op->ptr, "filepath"))
 		return multires_external_save_exec(C, op);
@@ -1280,7 +1282,7 @@ static int meshdeform_bind_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 
 	if(mmd->bindcagecos) {
-		if(mmd->bindcagecos) MEM_freeN(mmd->bindcagecos);
+		MEM_freeN(mmd->bindcagecos);
 		if(mmd->dyngrid) MEM_freeN(mmd->dyngrid);
 		if(mmd->dyninfluences) MEM_freeN(mmd->dyninfluences);
 		if(mmd->bindinfluences) MEM_freeN(mmd->bindinfluences);

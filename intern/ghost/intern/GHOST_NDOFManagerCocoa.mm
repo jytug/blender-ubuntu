@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_NDOFManagerCocoa.mm 39307 2011-08-11 15:59:19Z nazgul $
+ * $Id: GHOST_NDOFManagerCocoa.mm 39495 2011-08-17 15:01:26Z blendix $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -143,7 +143,7 @@ GHOST_NDOFManagerCocoa::GHOST_NDOFManagerCocoa(GHOST_System& sys)
 
 		// printf("ndof: client id = %d\n", m_clientID);
 
-		if (SetConnexionClientButtonMask != NULL) {
+		if (oldDRV()) {
 			has_old_driver = false;
 			SetConnexionClientButtonMask(m_clientID, kConnexionMaskAllButtons);
 		}
@@ -175,6 +175,15 @@ extern "C" {
 		// http://developer.apple.com/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/WeakLinking.html
 		return InstallConnexionHandlers != NULL;
 		// this means that the driver is installed and dynamically linked to blender
+	}
+
+	bool GHOST_NDOFManagerCocoa::oldDRV()
+	{
+		extern OSErr SetConnexionClientButtonMask() __attribute__((weak_import));
+		// Make the linker happy for the framework check (see link below for more info)
+		// http://developer.apple.com/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/WeakLinking.html
+		return SetConnexionClientButtonMask != NULL;
+		// this means that the driver has this symbol
 	}
 }
 #endif // WITH_INPUT_NDOF

@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_ipo_types.h 34941 2011-02-17 20:48:12Z jesterking $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,7 +30,7 @@
  *  \deprecated
  *   The contents of this file are now officially depreceated. They were used for the 'old' animation system,
  *   which has (as of 2.50) been replaced with a completely new system by Joshua Leung (aligorith). All defines, 
- *   etc. are only still maintained to provide backwards compatability for old files.
+ *   etc. are only still maintained to provide backwards compatibility for old files.
  */
  
 #ifndef DNA_IPO_TYPES_H
@@ -58,7 +56,7 @@ typedef struct IpoDriver {
 	short blocktype, adrcode;	/* sub-channel to use */
 	
 	short type, flag;			/* driver settings */
-	char name[128];	 			/* bone, or python expression here */
+	char name[128];				/* bone, or python expression here */
 } IpoDriver;
 
 /* --- IPO Curve --- */

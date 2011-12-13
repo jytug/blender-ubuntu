@@ -1,5 +1,5 @@
 /*
- * $Id: GHOST_WindowSDL.h 38349 2011-07-13 00:49:22Z gsrb3d $
+ * $Id: GHOST_WindowSDL.h 41078 2011-10-17 06:39:13Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -70,7 +70,7 @@ public:
 
 	~GHOST_WindowSDL();
 
-	/* SDL spesific */
+	/* SDL specific */
 	SDL_Window *
 	getSDLWindow()
 	{

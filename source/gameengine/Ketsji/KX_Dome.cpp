@@ -1,7 +1,7 @@
 /** \file gameengine/Ketsji/KX_Dome.cpp
  *  \ingroup ketsji
  */
-/* $Id: KX_Dome.cpp 35171 2011-02-25 13:35:59Z jesterking $
+/* $Id: KX_Dome.cpp 40766 2011-10-03 03:32:59Z dfelinto $
 -----------------------------------------------------------------------------
 
 This program is free software; you can redistribute it and/or modify it under
@@ -42,34 +42,34 @@ Developed as part of a Research and Development project for SAT - La Société d
 
 // constructor
 KX_Dome::KX_Dome (
-	RAS_ICanvas* canvas,
-    /// rasterizer
-    RAS_IRasterizer* rasterizer,
-    /// render tools
-    RAS_IRenderTools* rendertools,
-    /// engine
-    KX_KetsjiEngine* engine,
+        RAS_ICanvas* canvas,
+        /// rasterizer
+        RAS_IRasterizer* rasterizer,
+        /// render tools
+        RAS_IRenderTools* rendertools,
+        /// engine
+        KX_KetsjiEngine* engine,
 
-	short res,		//resolution of the mesh
-	short mode,		//mode - fisheye, truncated, warped, panoramic, ...
-	short angle,
-	float resbuf,	//size adjustment of the buffer
-	short tilt,
-	struct Text* warptext
+        short res,		//resolution of the mesh
+        short mode,		//mode - fisheye, truncated, warped, panoramic, ...
+        short angle,
+        float resbuf,	//size adjustment of the buffer
+        short tilt,
+        struct Text* warptext
 
-):
-	dlistSupported(false),
-	canvaswidth(-1), canvasheight(-1),
-	m_drawingmode(engine->GetDrawType()),
-	m_resolution(res),
-	m_mode(mode),
-	m_angle(angle),
-	m_resbuffer(resbuf),
-	m_tilt(tilt),
-	m_canvas(canvas),
-	m_rasterizer(rasterizer),
-	m_rendertools(rendertools),
-	m_engine(engine)
+        ):
+    dlistSupported(false),
+    canvaswidth(-1), canvasheight(-1),
+    m_drawingmode(engine->GetDrawType()),
+    m_resolution(res),
+    m_mode(mode),
+    m_angle(angle),
+    m_resbuffer(resbuf),
+    m_tilt(tilt),
+    m_canvas(canvas),
+    m_rasterizer(rasterizer),
+    m_rendertools(rendertools),
+    m_engine(engine)
 {
 	warp.usemesh = false;
 	fboSupported = false;
@@ -231,26 +231,12 @@ void KX_Dome::CalculateImageSize(void)
 - reduce the buffer for better performace
 - create a power of 2 texture bigger than the buffer
 */
-/*
-Blender handles Canvas size differently when in fullscreen mode.
-We are manually checking for that. Although it's a hack, it works.
-
-Bug reported here: #18655 - Inconsistency of pixels in canvas dimensions when in maximized mode (affecting BGE Dome)
-http://projects.blender.org/tracker/?func=detail&aid=18655&group_id=9&atid=125
-*/
-
 	canvaswidth = m_canvas->GetWidth();
 	canvasheight = m_canvas->GetHeight();
-
-	bool fullscreen(false); //XXX HACK
-	fullscreen = (canvaswidth != m_viewport.GetWidth());
 
 	m_buffersize = (canvaswidth > canvasheight?canvasheight:canvaswidth);
 	m_buffersize = (int)(m_buffersize*m_resbuffer); //reduce buffer size for better performance
 	
-	if (fullscreen) //XXX HACK
-		m_buffersize --;
-
 	int i = 0;
 	while ((1 << i) <= m_buffersize)
 		i++;
@@ -266,10 +252,6 @@ http://projects.blender.org/tracker/?func=detail&aid=18655&group_id=9&atid=125
 		warp.bufferwidth  = canvaswidth;
 		warp.bufferheight = canvasheight;
 	}
-
-	//XXX HACK
-	canvaswidth  = m_viewport.GetWidth();
-	canvasheight = m_viewport.GetHeight();
 }
 
 bool KX_Dome::CreateDL(){
@@ -561,7 +543,7 @@ void KX_Dome::CreateMeshDome180(void)
 	int i,j;
 	float uv_ratio = (float)(m_buffersize-1) / m_imagesize;
 
-	m_radangle = m_angle * M_PI/180.0;//calculates the radians angle, used for flattening
+	m_radangle = DEG2RADF(m_angle); //calculates the radians angle, used for flattening
 
 	//creating faces for the env mapcube 180deg Dome
 	// Top Face - just a triangle
@@ -1984,9 +1966,9 @@ void KX_Dome::DrawDomeWarped(void)
 	int can_width = m_viewport.GetRight();
 	int can_height = m_viewport.GetTop();
 
-	double screen_ratio = can_width/ (double) can_height;	
+	double screen_ratio = can_width/ (double) can_height;
 
-    glOrtho(-screen_ratio,screen_ratio,-1.0,1.0,-20.0,10.0);
+	glOrtho(-screen_ratio,screen_ratio,-1.0,1.0,-20.0,10.0);
 
 
 	glMatrixMode(GL_TEXTURE);

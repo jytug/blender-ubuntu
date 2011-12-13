@@ -44,15 +44,19 @@ from . import utils, path, ops
 ops = ops.ops_fake_module
 
 
-def _main():
-    import sys as _sys
+def main():
+    import sys
 
     # Possibly temp. addons path
     from os.path import join, dirname, normpath
-    _sys.path.append(normpath(join(dirname(__file__),
+    sys.path.append(normpath(join(dirname(__file__),
                                    "..", "..", "addons", "modules")))
 
-    # if "-d" in sys.argv: # Enable this to measure startup speed
+    # fake module to allow:
+    #   from bpy.types import Panel
+    sys.modules["bpy.types"] = types
+
+    #~ if "-d" in sys.argv: # Enable this to measure start up speed
     if 0:
         import cProfile
         cProfile.run('import bpy; bpy.utils.load_scripts()', 'blender.prof')
@@ -65,6 +69,6 @@ def _main():
         utils.load_scripts()
 
 
-_main()
+main()
 
-del _main
+del main

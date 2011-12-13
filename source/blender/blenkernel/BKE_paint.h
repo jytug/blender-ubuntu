@@ -1,4 +1,6 @@
 /*
+ * $Id: BKE_paint.h 41074 2011-10-17 02:20:53Z campbellbarton $
+ *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -59,6 +61,7 @@ void paint_brush_set(struct Paint *paint, struct Brush *br);
  * Texture paint could be removed since selected faces are not used
  * however hiding faces is useful */
 int paint_facesel_test(struct Object *ob);
+int paint_vertsel_test(struct Object *ob);
 
 /* Session data (mode-specific) */
 
@@ -81,7 +84,7 @@ typedef struct SculptSession {
 	int modifiers_active; /* object is deformed with some modifiers */
 	float (*orig_cos)[3]; /* coords of undeformed mesh */
 	float (*deform_cos)[3]; /* coords of deformed mesh but without stroke displacement */
-	float (*deform_imats)[3][3]; /* crazyspace deformation matricies */
+	float (*deform_imats)[3][3]; /* crazyspace deformation matrices */
 
 	/* Partial redraw */
 	int partial_redraw;
@@ -97,5 +100,6 @@ typedef struct SculptSession {
 } SculptSession;
 
 void free_sculptsession(struct Object *ob);
+void free_sculptsession_deformMats(struct SculptSession *ss);
 
 #endif
