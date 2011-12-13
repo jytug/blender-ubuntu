@@ -1,3 +1,9 @@
+blender (2.60a-1) UNRELEASED; urgency=low
+
+  * [637002b] Imported Upstream version 2.60a
+
+ -- Matteo F. Vescovi <m.vescovi@revese.it>  Tue, 13 Dec 2011 16:04:43 +0100
+
 blender (2.59-1) unstable; urgency=low
 
   * New Upstream Release 2.59 (Closes: #641085)
