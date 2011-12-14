@@ -26,7 +26,7 @@ index a440a1f..7d5a253 100644
  static const char *static_path= NULL;
  #endif
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index 45c392a..f961c4e 100644
+index 071408d..e11d62d 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
 @@ -86,7 +86,7 @@ char *BLI_get_folder_version(const int id, const int ver, const int do_check);
@@ -39,10 +39,10 @@ index 45c392a..f961c4e 100644
  
  #ifdef WIN32
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 6933364..2535f40 100644
+index e672dd6..2b93f66 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -1005,7 +1005,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
+@@ -1006,7 +1006,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
  
  	system_base_path = (const char *)GHOST_getSystemDir();
  	if (system_base_path) {
@@ -52,10 +52,10 @@ index 6933364..2535f40 100644
  	
  	if(!system_path[0])
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 30e0dfe..b7b0a65 100644
+index 7582aa1..9e83195 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -375,8 +375,8 @@ if(UNIX AND NOT APPLE)
+@@ -370,8 +370,8 @@ if(UNIX AND NOT APPLE)
  	if(WITH_PYTHON)
  		# install(CODE "message(\"copying blender scripts...\")")
  		install(

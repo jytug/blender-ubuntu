@@ -1,33 +1,20 @@
-From: Kevin Roy <kiniou@gmail.com>
-Date: Mon, 17 Oct 2011 00:19:45 +0200
-Subject: update_manpages
+From: "Matteo F. Vescovi" <m.vescovi@revese.it>
+Date: Wed, 14 Dec 2011 09:22:02 +0100
+Subject: update manpages
 
- Update blender manpage with current version
- Add blenderplayer manpage
 ---
- doc/manpage/blender.1         |    2 +-
  doc/manpage/blenderplayer.1   |  131 +++++++++++++++++++++++++++++++++++++++++
- source/creator/CMakeLists.txt |    4 +-
- 3 files changed, 135 insertions(+), 2 deletions(-)
+ source/creator/CMakeLists.txt |    5 +-
+ 2 files changed, 135 insertions(+), 1 deletions(-)
  create mode 100644 doc/manpage/blenderplayer.1
 
-diff --git a/doc/manpage/blender.1 b/doc/manpage/blender.1
-index ddf3a79..320b26a 100644
---- a/doc/manpage/blender.1
-+++ b/doc/manpage/blender.1
-@@ -1,4 +1,4 @@
--.TH "BLENDER" "1" "June 03, 2011" "Blender Blender 2\&.57 (sub 1)"
-+.TH "BLENDER" "1" "October 2011" "Blender Blender 2\&.59 (sub 0)"
- 
- .SH NAME
- blender \- a 3D modelling and rendering package
 diff --git a/doc/manpage/blenderplayer.1 b/doc/manpage/blenderplayer.1
 new file mode 100644
-index 0000000..1a93bd9
+index 0000000..54b680e
 --- /dev/null
 +++ b/doc/manpage/blenderplayer.1
 @@ -0,0 +1,131 @@
-+.TH BLENDERPLAYER "1" "October 2011" "Blender 2\&.59 (sub 0)"
++.TH "BLENDERPLAYER" "1" "October 17, 2011" "Blender 2\&.60 (sub 0)"
 +.SH "NAME"
 +blenderplayer \- the blender game engine runner
 +.SH "SYNOPSIS"
@@ -157,19 +144,27 @@ index 0000000..1a93bd9
 +
 +.br
 +.SH AUTHORS
-+This manpage was written for a Debian Gnu/Linux by Kevin Roy <kiniou@gmail.com>.
++This manpage was written for a Debian GNU/Linux by Kevin Roy <kiniou@gmail.com>.
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 5c9df9a..b6317a5 100644
+index 1975013..4cf347b 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -335,7 +335,9 @@ if(UNIX AND NOT APPLE)
+@@ -270,6 +270,7 @@ if(UNIX AND NOT APPLE)
+ 				${CMAKE_SOURCE_DIR}/release/freedesktop/blender.desktop
+ 				${CMAKE_SOURCE_DIR}/release/freedesktop/icons/scalable/apps/blender.svg
+ 				${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
++				${CMAKE_SOURCE_DIR}/doc/manpage/blenderplayer.1
+ 			DESTINATION ${TARGETDIR}
+ 		)
+ 
+@@ -333,7 +334,9 @@ if(UNIX AND NOT APPLE)
              DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
  		)
  		install(
 -			FILES ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
-+			FILES 
++			FILES
 +                ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
-+                ${CMAKE_SOURCE_DIR}/doc/manpage/blenderplayer.1
++				${CMAKE_SOURCE_DIR}/doc/manpage/blenderplayer.1
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
  		)
  		install(
