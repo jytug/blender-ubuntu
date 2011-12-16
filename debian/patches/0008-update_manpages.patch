@@ -10,7 +10,7 @@ Subject: update_manpages
 
 diff --git a/doc/manpage/blenderplayer.1 b/doc/manpage/blenderplayer.1
 new file mode 100644
-index 0000000..54b680e
+index 0000000..d15b0c9
 --- /dev/null
 +++ b/doc/manpage/blenderplayer.1
 @@ -0,0 +1,131 @@
@@ -73,7 +73,7 @@ index 0000000..54b680e
 +    Optional parameters:
 +.PP
 +        angle = field of view in degrees
-+.PP 
++.PP
 +        tilt  = tilt angle in degrees
 +.PP
 +        warpdata = a file to use for warping the image (absolute path)
@@ -125,17 +125,17 @@ index 0000000..54b680e
 +1         Ignore deprecation warnings
 +.RE
 +.PP
-+.B - 
++.B -
 +: all arguments after this are ignored, allowing python to access them from sys.argv
 +.SH "EXAMPLES"
 +.TP
 +.B blenderplayer -w 320 200 10 10 -g noaudio //home//user//filename.blend
-+Launch blenderplayer in window mode with size 320x200 at 10 pixels from left and 10 pixels 
++Launch blenderplayer in window mode with size 320x200 at 10 pixels from left and 10 pixels
 +from top of the screen without audio.
-+.TP 
++.TP
 +.B blenderplayer -g show_framerate = 0 //home//user//filename.blend
 +Disable framerate reports.
-+.TP 
++.TP
 +.B blenderplayer -i 232421 -m 16 //home//user//filename.blend
 +Launch blenderplayer embedded in an existing window and set antialiasing to 16.
 +
