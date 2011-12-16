@@ -1,6 +1,6 @@
 From: "Matteo F. Vescovi" <m.vescovi@revese.it>
 Date: Wed, 14 Dec 2011 09:22:02 +0100
-Subject: update manpages
+Subject: update_manpages
 
 ---
  doc/manpage/blenderplayer.1   |  131 +++++++++++++++++++++++++++++++++++++++++

@@ -1,6 +1,6 @@
 From: "Matteo F. Vescovi" <m.vescovi@revese.it>
 Date: Wed, 14 Dec 2011 09:11:51 +0100
-Subject: locales directory install
+Subject: locales_directory_install
 
 ---
  source/creator/CMakeLists.txt |   12 ++++++------
