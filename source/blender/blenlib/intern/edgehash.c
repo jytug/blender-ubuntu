@@ -1,6 +1,4 @@
 /*
- * $Id: edgehash.c 36826 2011-05-23 08:14:29Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -87,7 +85,7 @@ void BLI_edgehash_insert(EdgeHash *eh, int v0, int v1, void *val) {
 		v1 ^= v0;
 		v0 ^= v1;
 	}
-	 hash = EDGEHASH(v0,v1)%eh->nbuckets;
+	hash = EDGEHASH(v0,v1)%eh->nbuckets;
 
 	e->v0 = v0;
 	e->v1 = v1;

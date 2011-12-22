@@ -1,7 +1,6 @@
 /*
  * Actuator sensor
  *
- * $Id: SCA_ActuatorSensor.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -41,7 +40,7 @@
 
 class SCA_ActuatorSensor : public SCA_ISensor
 {
-	Py_Header;
+	Py_Header
 	STR_String		m_checkactname;
 	bool			m_lastresult;
 	bool			m_midresult;

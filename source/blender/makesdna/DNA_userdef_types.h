@@ -1,6 +1,4 @@
 /*
- *	$Id: DNA_userdef_types.h 40395 2011-09-20 13:41:43Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +23,7 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 #ifndef DNA_USERDEF_TYPES_H
 #define DNA_USERDEF_TYPES_H
@@ -116,7 +114,7 @@ typedef struct uiStyle {
 	short panelspace;
 	short panelouter;
 
-	short pad[1];
+	short pad;
 } uiStyle;
 
 typedef struct uiWidgetColors {
@@ -141,6 +139,12 @@ typedef struct uiWidgetStateColors {
 	float blend, pad;
 } uiWidgetStateColors;
 
+typedef struct uiPanelColors {
+	char header[4];
+	short show_header;
+	short pad;
+} uiPanelColors;
+
 typedef struct ThemeUI {
 	
 	/* Interface Elements (buttons, menus, icons) */
@@ -151,9 +155,13 @@ typedef struct ThemeUI {
 	uiWidgetColors wcol_box, wcol_scroll, wcol_progress, wcol_list_item;
 	
 	uiWidgetStateColors wcol_state;
-	
+
+	uiPanelColors panel;
+
 	char iconfile[80];	// FILE_MAXFILE length
-	
+	float icon_alpha;
+
+	float pad;
 } ThemeUI;
 
 /* try to put them all in one, if needed a special struct can be created as well
@@ -236,6 +244,11 @@ typedef struct ThemeSpace {
 	char handle_vertex_select[4];
 	
 	char handle_vertex_size;
+	
+	char marker_outline[4], marker[4], act_marker[4], sel_marker[4], dis_marker[4], lock_marker[4];
+	char bundle_solid[4];
+	char path_before[4], path_after[4];
+	char camera_path[4];
 	char hpad[7];
 	
 	char preview_back[4];
@@ -269,13 +282,11 @@ typedef struct bTheme {
 	ThemeSpace tv3d;
 	ThemeSpace tfile;
 	ThemeSpace tipo;
-	ThemeSpace tinfo;	
-	ThemeSpace tsnd;
+	ThemeSpace tinfo;
 	ThemeSpace tact;
 	ThemeSpace tnla;
 	ThemeSpace tseq;
 	ThemeSpace tima;
-	ThemeSpace timasel;
 	ThemeSpace text;
 	ThemeSpace toops;
 	ThemeSpace ttime;
@@ -283,6 +294,7 @@ typedef struct bTheme {
 	ThemeSpace tlogic;
 	ThemeSpace tuserpref;	
 	ThemeSpace tconsole;
+	ThemeSpace tclip;
 	
 	/* 20 sets of bone colors for this theme */
 	ThemeWireColor tarm[20];
@@ -344,7 +356,7 @@ typedef struct UserDef {
 	struct ListBase themes;
 	struct ListBase uifonts;
 	struct ListBase uistyles;
-	struct ListBase keymaps;		/* deprecated in favor of user_keymaps */
+	struct ListBase keymaps  DNA_DEPRECATED; /* deprecated in favor of user_keymaps */
 	struct ListBase user_keymaps;
 	struct ListBase addons;
 	char keyconfigstr[64];
@@ -396,7 +408,9 @@ typedef struct UserDef {
 	struct ColorBand coba_weight;	/* from texture.h */
 
 	float sculpt_paint_overlay_col[3];
-	int pad3;
+
+	short tweak_threshold;
+	short pad3;
 
 	char author[80];	/* author name for file formats supporting it */
 } UserDef;
@@ -444,10 +458,10 @@ extern UserDef U; /* from blenkernel blender.c */
 #define USER_TOOLTIPS_PYTHON    (1 << 26)
 
 /* helper macro for checking frame clamping */
-#define FRAMENUMBER_MIN_CLAMP(cfra) \
-	{ \
-		if ((U.flag & USER_NONEGFRAMES) && (cfra < 0)) \
-			cfra = 0; \
+#define FRAMENUMBER_MIN_CLAMP(cfra)                                           \
+	{                                                                         \
+		if ((U.flag & USER_NONEGFRAMES) && (cfra < 0))                        \
+			cfra = 0;                                                         \
 	}
 
 /* viewzom */
@@ -603,7 +617,6 @@ extern UserDef U; /* from blenkernel blender.c */
 */
 /* actually... users probably don't care about what the mode
    is called, just that it feels right */
-#define NDOF_ORBIT_INVERT_AXES (1 << 6)
 /* zoom is up/down if this flag is set (otherwise forward/backward) */
 #define NDOF_ZOOM_UPDOWN (1 << 7)
 #define NDOF_ZOOM_INVERT (1 << 8)

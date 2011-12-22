@@ -1,6 +1,4 @@
 /*
- * $Id: blender.c 40903 2011-10-10 09:38:02Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -59,11 +57,11 @@
 #include "BLI_blenlib.h"
 #include "BLI_bpath.h"
 #include "BLI_dynstr.h"
-#include "BLI_path_util.h"
 #include "BLI_utildefines.h"
 #include "BLI_callbacks.h"
 
 #include "IMB_imbuf.h"
+#include "IMB_moviecache.h"
 
 #include "BKE_blender.h"
 #include "BKE_context.h"
@@ -114,6 +112,7 @@ void free_blender(void)
 	BLI_cb_finalize();
 
 	seq_stripelem_cache_destruct();
+	IMB_moviecache_destruct();
 	
 	free_nodesystem();	
 }
@@ -161,22 +160,19 @@ static void clear_global(void)
 	G.main= NULL;
 }
 
+static int clean_paths_visit_cb(void *UNUSED(userdata), char *path_dst, const char *path_src)
+{
+	strcpy(path_dst, path_src);
+	BLI_clean(path_dst);
+	return (strcmp(path_dst, path_src) == 0) ? FALSE : TRUE;
+}
+
 /* make sure path names are correct for OS */
 static void clean_paths(Main *main)
 {
-	struct BPathIterator *bpi;
-	char filepath_expanded[1024];
 	Scene *scene;
 
-	for(BLI_bpathIterator_init(&bpi, main, main->name, BPATH_USE_PACKED); !BLI_bpathIterator_isDone(bpi); BLI_bpathIterator_step(bpi)) {
-		BLI_bpathIterator_getPath(bpi, filepath_expanded);
-
-		BLI_clean(filepath_expanded);
-
-		BLI_bpathIterator_setPath(bpi, filepath_expanded);
-	}
-
-	BLI_bpathIterator_free(bpi);
+	bpath_traverse_main(main, clean_paths_visit_cb, BPATH_TRAVERSE_SKIP_MULTIFILE, NULL);
 
 	for(scene= main->scene.first; scene; scene= scene->id.next) {
 		BLI_clean(scene->r.pic);
@@ -455,7 +451,7 @@ int blender_test_break(void)
 #define MAXUNDONAME	64
 typedef struct UndoElem {
 	struct UndoElem *next, *prev;
-	char str[FILE_MAXDIR+FILE_MAXFILE];
+	char str[FILE_MAX];
 	char name[MAXUNDONAME];
 	MemFile memfile;
 	uintptr_t undosize;
@@ -540,7 +536,7 @@ void BKE_write_undo(bContext *C, const char *name)
 	/* disk save version */
 	if(UNDO_DISK) {
 		static int counter= 0;
-		char filepath[FILE_MAXDIR+FILE_MAXFILE];
+		char filepath[FILE_MAX];
 		char numstr[32];
 		int fileflags = G.fileflags & ~(G_FILE_HISTORY); /* don't do file history on undo */
 
@@ -549,7 +545,7 @@ void BKE_write_undo(bContext *C, const char *name)
 		counter= counter % U.undosteps;	
 	
 		BLI_snprintf(numstr, sizeof(numstr), "%d.blend", counter);
-		BLI_make_file_string("/", filepath, btempdir, numstr);
+		BLI_make_file_string("/", filepath, BLI_temporary_dir(), numstr);
 	
 		/* success= */ /* UNUSED */ BLO_write_file(CTX_data_main(C), filepath, fileflags, NULL, NULL);
 		
@@ -667,7 +663,7 @@ int BKE_undo_valid(const char *name)
 
 /* get name of undo item, return null if no item with this index */
 /* if active pointer, set it to 1 if true */
-char *BKE_undo_get_name(int nr, int *active)
+const char *BKE_undo_get_name(int nr, int *active)
 {
 	UndoElem *uel= BLI_findlink(&undobase, nr);
 	
@@ -706,7 +702,7 @@ void BKE_undo_save_quit(void)
 	UndoElem *uel;
 	MemFileChunk *chunk;
 	int file;
-	char str[FILE_MAXDIR+FILE_MAXFILE];
+	char str[FILE_MAX];
 	
 	if( (U.uiflag & USER_GLOBALUNDO)==0) return;
 	
@@ -719,7 +715,7 @@ void BKE_undo_save_quit(void)
 	/* no undo state to save */
 	if(undobase.first==undobase.last) return;
 		
-	BLI_make_file_string("/", str, btempdir, "quit.blend");
+	BLI_make_file_string("/", str, BLI_temporary_dir(), "quit.blend");
 
 	file = open(str,O_BINARY+O_WRONLY+O_CREAT+O_TRUNC, 0666);
 	if(file == -1) {

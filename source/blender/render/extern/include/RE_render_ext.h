@@ -1,6 +1,4 @@
 /*
- * $Id: RE_render_ext.h 40162 2011-09-12 13:00:24Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -50,6 +48,7 @@ struct RNode;
 struct Render;
 struct MTex;
 struct ImBuf;
+struct DerivedMesh;
 
 // RADIO REMOVED, Maybe this will be useful later
 //void    RE_zbufferall_radio(struct RadView *vw, struct RNode **rg_elem, int rg_totelem, struct Render *re);
@@ -64,6 +63,12 @@ float texture_value_blend(float tex, float out, float fact, float facg, int blen
 /* node_composite.c */
 void ibuf_sample(struct ImBuf *ibuf, float fx, float fy, float dx, float dy, float *result);
 void antialias_tagbuf(int xsize, int ysize, char *rectmove);
+
+/* dynamicpaint.c */
+struct Material *RE_init_sample_material(struct Material *orig_mat, struct Scene *scene);
+void RE_free_sample_material(struct Material *mat);
+void RE_sample_material_color(struct Material *mat, float color[3], float *alpha, const float volume_co[3], const float surface_co[3],
+						   int face_index, short hit_quad, struct DerivedMesh *orcoDm, struct Object *ob);
 
 #endif /* RE_RENDER_EXT_H */
 

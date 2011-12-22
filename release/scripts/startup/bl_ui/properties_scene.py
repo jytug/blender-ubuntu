@@ -42,6 +42,7 @@ class SCENE_PT_scene(SceneButtonsPanel, Panel):
 
         layout.prop(scene, "camera")
         layout.prop(scene, "background_set", text="Background")
+        layout.prop(scene, "active_clip", text="Active Clip")
 
 
 class SCENE_PT_audio(SceneButtonsPanel, Panel):
@@ -115,8 +116,7 @@ class SCENE_PT_keying_sets(SceneButtonsPanel, Panel):
 
             subcol = col.column()
             subcol.operator_context = 'INVOKE_DEFAULT'
-            op = subcol.operator("anim.keying_set_export", text="Export to File")
-            op.filepath = "keyingset.py"
+            subcol.operator("anim.keying_set_export", text="Export to File").filepath = "keyingset.py"
 
             col = row.column()
             col.label(text="Keyframing Settings:")
@@ -195,14 +195,13 @@ class SCENE_PT_simplify(SceneButtonsPanel, Panel):
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 
     def draw_header(self, context):
-        scene = context.scene
-        rd = scene.render
+        rd = context.scene.render
         self.layout.prop(rd, "use_simplify", text="")
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        rd = scene.render
+
+        rd = context.scene.render
 
         layout.active = rd.use_simplify
 

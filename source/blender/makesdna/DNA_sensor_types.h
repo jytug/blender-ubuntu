@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_sensor_types.h 34941 2011-02-17 20:48:12Z jesterking $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -105,7 +103,7 @@ typedef struct bCollisionSensor {
 	// struct Material *ma; // XXX remove materialName
 	short damptimer, damp;
 	short mode;             /* flag to choose material or property */
-	 short pad2;
+	short pad2;
 } bCollisionSensor;
 
 typedef struct bRadarSensor {

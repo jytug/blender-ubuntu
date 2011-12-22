@@ -1,6 +1,4 @@
 /*
- * $Id: ipo.c 41007 2011-10-14 11:24:20Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -45,7 +43,8 @@
 #include <string.h>
 #include <stddef.h>
 
-#include "MEM_guardedalloc.h"
+/* since we have versioning code here */
+#define DNA_DEPRECATED_ALLOW
 
 #include "DNA_anim_types.h"
 #include "DNA_constraint_types.h"
@@ -75,6 +74,7 @@
 #include "BKE_nla.h"
 #include "BKE_sequencer.h"
 
+#include "MEM_guardedalloc.h"
 
 /* *************************************************** */
 /* Old-Data Freeing Tools */
@@ -705,14 +705,7 @@ static const char *world_adrcodes_to_paths (int adrcode, int *array_index)
 			return "mist.start";
 		case WO_MISTHI:
 			return "mist.height";
-		
-	/*	Star Color is unused -- recommend removal */
-	/*	case WO_STAR_R:
-			*array_index= 0; return "stars.color";
-		case WO_STAR_G:
-			*array_index= 1; return "stars.color";
-		case WO_STAR_B:
-			*array_index= 2; return "stars.color"; */
+
 		case WO_STAR_R:
 		case WO_STAR_G:
 		case WO_STAR_B:

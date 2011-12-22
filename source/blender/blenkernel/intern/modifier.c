@@ -1,6 +1,4 @@
 /*
- * $Id: modifier.c 40903 2011-10-10 09:38:02Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -52,11 +50,20 @@
 #include "DNA_meshdata_types.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_path_util.h"
+#include "BLI_listbase.h"
+#include "BLI_linklist.h"
+#include "BLI_string.h"
 
 #include "BKE_bmesh.h"
 #include "BKE_cloth.h"
 #include "BKE_key.h"
 #include "BKE_multires.h"
+
+/* may move these, only for modifier_path_relbase */
+#include "BKE_global.h" /* ugh, G.main->name only */
+#include "BKE_main.h"
+/* end */
 
 #include "MOD_modifiertypes.h"
 
@@ -86,8 +93,8 @@ ModifierData *modifier_new(int type)
 	ModifierTypeInfo *mti = modifierType_getInfo(type);
 	ModifierData *md = MEM_callocN(mti->structSize, mti->structName);
 	
-	// FIXME: we need to make the name always be unique somehow...
-	strcpy(md->name, mti->name);
+	/* note, this name must be made unique later */
+	BLI_strncpy(md->name, mti->name, sizeof(md->name));
 
 	md->type = type;
 	md->mode = eModifierMode_Realtime
@@ -570,4 +577,37 @@ void test_object_modifiers(Object *ob)
 			multiresModifier_set_levels_from_disps(mmd, ob);
 		}
 	}
+}
+
+/* where should this go?, it doesnt fit well anywhere :S - campbell */
+
+/* elubie: changed this to default to the same dir as the render output
+ * to prevent saving to C:\ on Windows */
+
+/* campbell: logic behind this...
+ *
+ * - if the ID is from a library, return library path
+ * - else if the file has been saved return the blend file path.
+ * - else if the file isn't saved and the ID isnt from a library, return the temp dir.
+ */
+const char *modifier_path_relbase(Object *ob)
+{
+	if (G.relbase_valid || ob->id.lib) {
+		return ID_BLEND_PATH(G.main, &ob->id);
+	}
+	else {
+		/* last resort, better then using "" which resolves to the current
+		 * working directory */
+		return BLI_temporary_dir();
+	}
+}
+
+/* initializes the path with either */
+void modifier_path_init(char *path, int path_maxlen, const char *name)
+{
+	/* elubie: changed this to default to the same dir as the render output
+	 * to prevent saving to C:\ on Windows */
+	BLI_join_dirfile(path, path_maxlen,
+	                 G.relbase_valid ? "//" : BLI_temporary_dir(),
+	                 name);
 }

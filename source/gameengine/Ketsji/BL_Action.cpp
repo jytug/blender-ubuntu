@@ -1,6 +1,4 @@
-/**
- * $Id: BL_Action.cpp 41220 2011-10-23 12:33:11Z campbellbarton $
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -281,7 +279,7 @@ void BL_Action::SetLocalTime(float curtime)
 
 void BL_Action::ResetStartTime(float curtime)
 {
-	float dt = m_localtime - m_startframe;
+	float dt = (m_localtime > m_startframe) ? m_localtime - m_startframe : m_startframe - m_localtime;
 
 	m_starttime = curtime - dt / (KX_KetsjiEngine::GetAnimFrameRate()*m_speed);
 	SetLocalTime(curtime);
@@ -311,8 +309,9 @@ void BL_Action::BlendShape(Key* key, float srcweight, std::vector<float>& blends
 	dstweight = 1.0F - srcweight;
 	//printf("Dst: %f\tSrc: %f\n", srcweight, dstweight);
 	for (it=blendshape.begin(), kb = (KeyBlock*)key->block.first; 
-		 kb && it != blendshape.end(); 
-		 kb = (KeyBlock*)kb->next, it++) {
+	     kb && it != blendshape.end();
+	     kb = (KeyBlock*)kb->next, it++)
+	{
 		//printf("OirgKeys: %f\t%f\n", kb->curval, (*it));
 		kb->curval = kb->curval * dstweight + (*it) * srcweight;
 		//printf("NewKey: %f\n", kb->curval);

@@ -161,7 +161,7 @@ void ED_armature_edit_bone_remove(bArmature *arm, EditBone *exBone)
 EditBone *ED_armature_bone_get_mirrored(ListBase *edbo, EditBone *ebo)
 {
 	EditBone *eboflip= NULL;
-	char name[32];
+	char name[MAXBONENAME];
 	
 	if (ebo == NULL)
 		return NULL;
@@ -824,7 +824,7 @@ static void joined_armature_fix_links(Object *tarArm, Object *srcArm, bPoseChann
 								}
 								else if (strcmp(ct->subtarget, pchan->name)==0) {
 									ct->tar = tarArm;
-									strcpy(ct->subtarget, curbone->name);
+									BLI_strncpy(ct->subtarget, curbone->name, sizeof(ct->subtarget));
 								}
 							}
 						}
@@ -871,7 +871,7 @@ static void joined_armature_fix_links(Object *tarArm, Object *srcArm, bPoseChann
 							}
 							else if (strcmp(ct->subtarget, pchan->name)==0) {
 								ct->tar = tarArm;
-								strcpy(ct->subtarget, curbone->name);
+								BLI_strncpy(ct->subtarget, curbone->name, sizeof(ct->subtarget));
 							}
 						}
 					}
@@ -2503,7 +2503,7 @@ void updateDuplicateSubtargetObjects(EditBone *dupBone, ListBase *editbones, Obj
 								 */
 								if (oldtarget->temp) {
 									newtarget = (EditBone *) oldtarget->temp;
-									strcpy(ct->subtarget, newtarget->name);
+									BLI_strncpy(ct->subtarget, newtarget->name, sizeof(ct->subtarget));
 								}
 							}
 						}
@@ -2523,7 +2523,7 @@ void updateDuplicateSubtarget(EditBone *dupBone, ListBase *editbones, Object *ob
 }
 
 
-EditBone *duplicateEditBoneObjects(EditBone *curBone, char *name, ListBase *editbones, Object *src_ob, Object *dst_ob)
+EditBone *duplicateEditBoneObjects(EditBone *curBone, const char *name, ListBase *editbones, Object *src_ob, Object *dst_ob)
 {
 	EditBone *eBone = MEM_mallocN(sizeof(EditBone), "addup_editbone");
 	
@@ -2567,7 +2567,7 @@ EditBone *duplicateEditBoneObjects(EditBone *curBone, char *name, ListBase *edit
 	return eBone;
 }
 
-EditBone *duplicateEditBone(EditBone *curBone, char *name, ListBase *editbones, Object *ob)
+EditBone *duplicateEditBone(EditBone *curBone, const char *name, ListBase *editbones, Object *ob)
 {
 	return duplicateEditBoneObjects(curBone, name, editbones, ob, ob);
 }
@@ -4108,7 +4108,7 @@ void ARMATURE_OT_select_hierarchy(wmOperatorType *ot)
 
 	/* props */
 	RNA_def_enum(ot->srna, "direction", direction_items,
-			 BONE_SELECT_PARENT, "Direction", "");
+	             BONE_SELECT_PARENT, "Direction", "");
 	RNA_def_boolean(ot->srna, "extend", 0, "Add to Selection", "");
 }
 
@@ -4663,7 +4663,7 @@ static void add_verts_to_dgroups(ReportList *reports, Scene *scene, Object *ob, 
 		
 		/* find flipped group */
 		if (dgroup && mirror) {
-			char name[32];
+			char name[MAXBONENAME];
 
 			// 0 = don't strip off number extensions
 			flip_side_name(name, dgroup->name, FALSE);
@@ -4948,7 +4948,7 @@ static int pose_clear_transform_generic_exec(bContext *C, wmOperator *op,
 
 static int pose_clear_scale_exec(bContext *C, wmOperator *op) 
 {
-	return pose_clear_transform_generic_exec(C, op, pchan_clear_scale, "Scaling");
+	return pose_clear_transform_generic_exec(C, op, pchan_clear_scale, ANIM_KS_SCALING_ID);
 }
 
 void POSE_OT_scale_clear(wmOperatorType *ot)
@@ -4969,7 +4969,7 @@ void POSE_OT_scale_clear(wmOperatorType *ot)
 
 static int pose_clear_rot_exec(bContext *C, wmOperator *op) 
 {
-	return pose_clear_transform_generic_exec(C, op, pchan_clear_rot, "Rotation");
+	return pose_clear_transform_generic_exec(C, op, pchan_clear_rot, ANIM_KS_ROTATION_ID);
 }
 
 void POSE_OT_rot_clear(wmOperatorType *ot)
@@ -4990,7 +4990,7 @@ void POSE_OT_rot_clear(wmOperatorType *ot)
 
 static int pose_clear_loc_exec(bContext *C, wmOperator *op) 
 {
-	return pose_clear_transform_generic_exec(C, op, pchan_clear_loc, "Location");
+	return pose_clear_transform_generic_exec(C, op, pchan_clear_loc, ANIM_KS_LOCATION_ID);
 }
 
 void POSE_OT_loc_clear(wmOperatorType *ot)
@@ -5011,7 +5011,7 @@ void POSE_OT_loc_clear(wmOperatorType *ot)
 
 static int pose_clear_transforms_exec(bContext *C, wmOperator *op) 
 {
-	return pose_clear_transform_generic_exec(C, op, pchan_clear_transforms, "LocRotScale");
+	return pose_clear_transform_generic_exec(C, op, pchan_clear_transforms, ANIM_KS_LOC_ROT_SCALE_ID);
 }
 
 void POSE_OT_transforms_clear(wmOperatorType *ot)
@@ -5207,9 +5207,9 @@ static int pose_hide_exec(bContext *C, wmOperator *op)
 	bArmature *arm= ob->data;
 
 	if(RNA_boolean_get(op->ptr, "unselected"))
-	   bone_looper(ob, arm->bonebase.first, NULL, hide_unselected_pose_bone_cb);
+		bone_looper(ob, arm->bonebase.first, NULL, hide_unselected_pose_bone_cb);
 	else
-	   bone_looper(ob, arm->bonebase.first, NULL, hide_selected_pose_bone_cb);
+		bone_looper(ob, arm->bonebase.first, NULL, hide_selected_pose_bone_cb);
 	
 	/* note, notifier might evolve */
 	WM_event_add_notifier(C, NC_OBJECT|ND_BONE_SELECT, ob);
@@ -5319,7 +5319,7 @@ static void constraint_bone_name_fix(Object *ob, ListBase *conlist, char *oldnam
 /* called by UI for renaming a bone */
 /* warning: make sure the original bone was not renamed yet! */
 /* seems messy, but thats what you get with not using pointers but channel names :) */
-void ED_armature_bone_rename(bArmature *arm, char *oldnamep, char *newnamep)
+void ED_armature_bone_rename(bArmature *arm, const char *oldnamep, const char *newnamep)
 {
 	Object *ob;
 	char newname[MAXBONENAME];
@@ -5456,7 +5456,7 @@ static int armature_flip_names_exec (bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob= CTX_data_edit_object(C);
 	bArmature *arm;
-	char newname[32];
+	char newname[MAXBONENAME];
 	
 	/* paranoia checks */
 	if (ELEM(NULL, ob, ob->pose)) 

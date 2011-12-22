@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_curve.h 40193 2011-09-14 00:37:27Z campbellbarton $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -67,6 +65,7 @@ void make_local_curve( struct Curve *cu);
 struct ListBase *curve_editnurbs(struct Curve *cu);
 short curve_type( struct Curve *cu);
 void test_curve_type( struct Object *ob);
+void update_curve_dimension( struct Curve *cu );
 void tex_space_curve( struct Curve *cu);
 int count_curveverts( struct ListBase *nurb);
 int count_curveverts_without_handles( struct ListBase *nurb);

@@ -1,6 +1,4 @@
 /*
- * $Id: image_draw.c 36715 2011-05-16 13:34:42Z blendix $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -65,6 +63,7 @@
 
 #include "ED_gpencil.h"
 #include "ED_image.h"
+#include "ED_screen.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
@@ -101,35 +100,17 @@ static void image_verify_buffer_float(Image *ima, ImBuf *ibuf, int color_manage)
 static void draw_render_info(Scene *scene, Image *ima, ARegion *ar)
 {
 	RenderResult *rr;
-	rcti rect;
-	float colf[3];
 	
 	rr= BKE_image_acquire_renderresult(scene, ima);
 
 	if(rr && rr->text) {
-		rect= ar->winrct;
-		rect.xmin= 0;
-		rect.ymin= ar->winrct.ymax - ar->winrct.ymin - HEADER_HEIGHT;
-		rect.xmax= ar->winrct.xmax - ar->winrct.xmin;
-		rect.ymax= ar->winrct.ymax - ar->winrct.ymin;
-		
-		/* clear header rect */
-		UI_GetThemeColor3fv(TH_BACK, colf);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glColor4f(colf[0]+0.1f, colf[1]+0.1f, colf[2]+0.1f, 0.5f);
-		glRecti(rect.xmin, rect.ymin, rect.xmax, rect.ymax+1);
-		glDisable(GL_BLEND);
-		
-		UI_ThemeColor(TH_TEXT_HI);
-
-		UI_DrawString(12, rect.ymin + 5, rr->text);
+		ED_region_info_draw(ar, rr->text, 1, 0.25);
 	}
 
 	BKE_image_release_renderresult(scene, ima);
 }
 
-void draw_image_info(ARegion *ar, int color_manage, int channels, int x, int y, char *cp, float *fp, int *zp, float *zpf)
+void draw_image_info(ARegion *ar, int color_manage, int channels, int x, int y, const char cp[4], const float fp[4], int *zp, float *zpf)
 {
 	char str[256];
 	float dx= 6;

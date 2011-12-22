@@ -1,6 +1,4 @@
 /*
- * $Id: node_select.c 40390 2011-09-20 08:48:48Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -166,6 +164,7 @@ static int node_borderselect_exec(bContext *C, wmOperator *op)
 	rcti rect;
 	rctf rectf;
 	int gesture_mode= RNA_int_get(op->ptr, "gesture_mode");
+	int extend= RNA_boolean_get(op->ptr, "extend");
 	
 	rect.xmin= RNA_int_get(op->ptr, "xmin");
 	rect.ymin= RNA_int_get(op->ptr, "ymin");
@@ -181,6 +180,9 @@ static int node_borderselect_exec(bContext *C, wmOperator *op)
 				node->flag |= SELECT;
 			else
 				node->flag &= ~SELECT;
+		}
+		else if(!extend) {
+			node->flag &= ~SELECT;
 		}
 	}
 	
@@ -230,7 +232,7 @@ void NODE_OT_select_border(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* rna */
-	WM_operator_properties_gesture_border(ot, FALSE);
+	WM_operator_properties_gesture_border(ot, TRUE);
 	RNA_def_boolean(ot->srna, "tweak", 0, "Tweak", "Only activate when mouse is not over a node - useful for tweak gesture");
 }
 

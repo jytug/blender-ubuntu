@@ -1,6 +1,4 @@
 /*
- * $Id: blf_py_api.c 40434 2011-09-21 16:06:47Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,8 +22,9 @@
 
 /** \file blender/python/generic/blf_py_api.c
  *  \ingroup pygen
+ *
+ * This file defines the 'bgl' module, used for drawing text in OpenGL.
  */
-
 
 #include <Python.h>
 #include "blf_py_api.h"

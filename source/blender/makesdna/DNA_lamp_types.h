@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_lamp_types.h 34941 2011-02-17 20:48:12Z jesterking $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,16 +31,18 @@
  *  \ingroup DNA
  */
 
+#include "DNA_defs.h"
 #include "DNA_ID.h"
 
 #ifndef MAX_MTEX
 #define MAX_MTEX	18
 #endif
 
-struct MTex;
-struct CurveMapping;
 struct AnimData;
+struct bNodeTree;
+struct CurveMapping;
 struct Ipo;
+struct MTex;
 
 typedef struct Lamp {
 	ID id;
@@ -98,13 +98,16 @@ typedef struct Lamp {
 	short sky_colorspace;
 	char pad4[6];
 
-	struct Ipo *ipo;				// XXX depreceated... old animation system
+	struct Ipo *ipo  DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
 	struct MTex *mtex[18];			/* MAX_MTEX */
-	short pr_texture;
-	char pad6[6];
+	short pr_texture, use_nodes;
+	char pad6[4];
 
 	/* preview */
 	struct PreviewImage *preview;
+
+	/* nodes */
+	struct bNodeTree *nodetree;	
 } Lamp;
 
 /* **************** LAMP ********************* */

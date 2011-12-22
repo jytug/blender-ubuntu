@@ -310,11 +310,15 @@ static void namebutton_cb(bContext *C, void *tsep, char *oldname)
 			}					
 			/* Check the library target exists */
 			if (te->idcode == ID_LI) {
-				char expanded[FILE_MAXDIR + FILE_MAXFILE];
-				BLI_strncpy(expanded, ((Library *)tselem->id)->name, FILE_MAXDIR + FILE_MAXFILE);
+				Library *lib= (Library *)tselem->id;
+				char expanded[FILE_MAX];
+
+				BKE_library_filepath_set(lib, lib->name);
+
+				BLI_strncpy(expanded, lib->name, sizeof(expanded));
 				BLI_path_abs(expanded, G.main->name);
 				if (!BLI_exists(expanded)) {
-					BKE_report(CTX_wm_reports(C), RPT_ERROR, "This path does not exist, correct this before saving");
+					BKE_reportf(CTX_wm_reports(C), RPT_ERROR, "Library path '%s' does not exist, correct this before saving", expanded);
 				}
 			}
 		}
@@ -889,9 +893,11 @@ struct DrawIconArg {
 static void tselem_draw_icon_uibut(struct DrawIconArg *arg, int icon)
 {
 	/* restrict collumn clip... it has been coded by simply overdrawing, doesnt work for buttons */
-	if(arg->x >= arg->xmax) 
-		UI_icon_draw(arg->x, arg->y, icon);
-	else {
+	if(arg->x >= arg->xmax) {
+		glEnable(GL_BLEND);
+		UI_icon_draw_aspect(arg->x, arg->y, icon, 1.0f, arg->alpha);
+		glDisable(GL_BLEND);
+	} else {
 		/* XXX investigate: button placement of icons is way different than UI_icon_draw? */
 		float ufac= UI_UNIT_X/20.0f;
 		uiBut *but= uiDefIconBut(arg->block, LABEL, 0, icon, arg->x-3.0f*ufac, arg->y, UI_UNIT_X-4.0f*ufac, UI_UNIT_Y-4.0f*ufac, NULL, 0.0, 0.0, 1.0, arg->alpha, (arg->id && arg->id->lib) ? arg->id->lib->name : "");
@@ -1012,6 +1018,8 @@ static void tselem_draw_icon(uiBlock *block, int xmax, float x, float y, TreeSto
 					case eModifierType_WeightVGMix:
 					case eModifierType_WeightVGProximity:
 						UI_icon_draw(x, y, ICON_MOD_VERTEX_WEIGHT); break;
+					case eModifierType_DynamicPaint:
+						UI_icon_draw(x, y, ICON_MOD_DYNAMICPAINT); break;
 					default:
 						UI_icon_draw(x, y, ICON_DOT); break;
 				}

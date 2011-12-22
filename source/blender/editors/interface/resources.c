@@ -1,15 +1,10 @@
 /*
- * $Id: resources.c 40109 2011-09-11 04:31:09Z campbellbarton $
- *
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -131,17 +126,11 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 			case SPACE_IMAGE:
 				ts= &btheme->tima;
 				break;
-			case SPACE_IMASEL:
-				ts= &btheme->timasel;
-				break;
 			case SPACE_TEXT:
 				ts= &btheme->text;
 				break;
 			case SPACE_OUTLINER:
 				ts= &btheme->toops;
-				break;
-			case SPACE_SOUND:
-				ts= &btheme->tsnd;
 				break;
 			case SPACE_INFO:
 				ts= &btheme->tinfo;
@@ -160,6 +149,9 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 				break;
 			case SPACE_LOGIC:
 				ts= &btheme->tlogic;
+				break;
+			case SPACE_CLIP:
+				ts= &btheme->tclip;
 				break;
 			default:
 				ts= &btheme->tv3d;
@@ -417,6 +409,27 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 			case TH_PREVIEW_BACK:
 				cp= ts->preview_back;
 				break;	
+
+			case TH_MARKER_OUTLINE:
+				cp= ts->marker_outline; break;
+			case TH_MARKER:
+				cp= ts->marker; break;
+			case TH_ACT_MARKER:
+				cp= ts->act_marker; break;
+			case TH_SEL_MARKER:
+				cp= ts->sel_marker; break;
+			case TH_BUNDLE_SOLID:
+				cp= ts->bundle_solid; break;
+			case TH_DIS_MARKER:
+				cp= ts->dis_marker; break;
+			case TH_PATH_BEFORE:
+				cp= ts->path_before; break;
+			case TH_PATH_AFTER:
+				cp= ts->path_after; break;
+			case TH_CAMERA_PATH:
+				cp= ts->camera_path; break;
+			case TH_LOCK_MARKER:
+				cp= ts->lock_marker; break;
 			}
 		}
 	}
@@ -530,12 +543,10 @@ static void ui_theme_init_new(bTheme *btheme)
 	ui_theme_init_new_do(&btheme->tfile);
 	ui_theme_init_new_do(&btheme->tipo);
 	ui_theme_init_new_do(&btheme->tinfo);
-	ui_theme_init_new_do(&btheme->tsnd);
 	ui_theme_init_new_do(&btheme->tact);
 	ui_theme_init_new_do(&btheme->tnla);
 	ui_theme_init_new_do(&btheme->tseq);
 	ui_theme_init_new_do(&btheme->tima);
-	ui_theme_init_new_do(&btheme->timasel);
 	ui_theme_init_new_do(&btheme->text);
 	ui_theme_init_new_do(&btheme->toops);
 	ui_theme_init_new_do(&btheme->ttime);
@@ -543,6 +554,7 @@ static void ui_theme_init_new(bTheme *btheme)
 	ui_theme_init_new_do(&btheme->tlogic);
 	ui_theme_init_new_do(&btheme->tuserpref);
 	ui_theme_init_new_do(&btheme->tconsole);
+	ui_theme_init_new_do(&btheme->tclip);
 	
 }
 
@@ -649,7 +661,9 @@ void ui_theme_init_default(void)
 
 	SETCOL(btheme->tv3d.bone_solid, 200, 200, 200, 255);
 	SETCOL(btheme->tv3d.bone_pose, 80, 200, 255, 80);               // alpha 80 is not meant editable, used for wire+action draw
-	
+
+	SETCOL(btheme->tv3d.bundle_solid, 200, 200, 200, 255);
+	SETCOL(btheme->tv3d.camera_path, 0x00, 0x00, 0x00, 255);
 	
 	/* space buttons */
 	/* to have something initialized */
@@ -733,18 +747,6 @@ void ui_theme_init_default(void)
 	SETCOL(btheme->tima.editmesh_active, 255, 255, 255, 128);
 	SETCOLF(btheme->tima.preview_back, 	0.45, 0.45, 0.45, 1.0);
 
-	/* space imageselect */
-	btheme->timasel= btheme->tv3d;
-	SETCOL(btheme->timasel.active, 	195, 195, 195, 255); /* active tile */
-	SETCOL(btheme->timasel.grid,  94, 94, 94, 255); /* active file text */
-	SETCOL(btheme->timasel.back, 	110, 110, 110, 255);
-	SETCOL(btheme->timasel.shade1,  94, 94, 94, 255);	/* bar */
-	SETCOL(btheme->timasel.shade2,  172, 172, 172, 255); /* sliders */
-	SETCOL(btheme->timasel.hilite,  17, 27, 60, 100);	/* selected tile */
-	SETCOL(btheme->timasel.text, 	0, 0, 0, 255);
-	SETCOL(btheme->timasel.text_hi, 255, 255, 255, 255);
-	SETCOL(btheme->timasel.panel, 	132, 132, 132, 255);
-
 	/* space text */
 	btheme->text= btheme->tv3d;
 	SETCOL(btheme->text.back, 	153, 153, 153, 255);
@@ -780,15 +782,11 @@ void ui_theme_init_default(void)
 	SETCOL(btheme->tconsole.console_error, 220, 96, 96, 255);
 	SETCOL(btheme->tconsole.console_cursor, 220, 96, 96, 255);
 	
-
-	/* space sound */
-	btheme->tsnd= btheme->tv3d;
-	SETCOLF(btheme->tsnd.back, 	0.45, 0.45, 0.45, 1.0);
-	SETCOLF(btheme->tsnd.grid, 	0.36, 0.36, 0.36, 1.0);
-	SETCOL(btheme->tsnd.shade1,  173, 173, 173, 255);		// sliders
-	
 	/* space time */
-	btheme->ttime= btheme->tsnd;	// same as sound space
+	btheme->ttime= btheme->tv3d;
+	SETCOLF(btheme->ttime.back, 	0.45, 0.45, 0.45, 1.0);
+	SETCOLF(btheme->ttime.grid, 	0.36, 0.36, 0.36, 1.0);
+	SETCOL(btheme->ttime.shade1,  173, 173, 173, 255);		// sliders
 	
 	/* space node, re-uses syntax color storage */
 	btheme->tnode= btheme->tv3d;
@@ -804,6 +802,22 @@ void ui_theme_init_default(void)
 	btheme->tlogic= btheme->tv3d;
 	SETCOL(btheme->tlogic.back, 100, 100, 100, 255);
 	
+	/* space clip */
+	btheme->tclip= btheme->tv3d;
+
+	SETCOL(btheme->tclip.marker_outline, 0x00, 0x00, 0x00, 255);
+	SETCOL(btheme->tclip.marker, 0x7f, 0x7f, 0x00, 255);
+	SETCOL(btheme->tclip.act_marker, 0xff, 0xff, 0xff, 255);
+	SETCOL(btheme->tclip.sel_marker, 0xff, 0xff, 0x00, 255);
+	SETCOL(btheme->tclip.dis_marker, 0x7f, 0x00, 0x00, 255);
+	SETCOL(btheme->tclip.lock_marker, 0x7f, 0x7f, 0x7f, 255);
+	SETCOL(btheme->tclip.path_before, 0xff, 0x00, 0x00, 255);
+	SETCOL(btheme->tclip.path_after, 0x00, 0x00, 0xff, 255);
+	SETCOL(btheme->tclip.grid, 0x5e, 0x5e, 0x5e, 255);
+	SETCOL(btheme->tclip.cframe, 0x60, 0xc0, 0x40, 255);
+	SETCOL(btheme->tclip.handle_vertex, 0x00, 0x00, 0x00, 0xff);
+	SETCOL(btheme->tclip.handle_vertex_select, 0xff, 0xff, 0, 0xff);
+	btheme->tclip.handle_vertex_size= 4;
 }
 
 
@@ -820,6 +834,11 @@ void UI_SetTheme(int spacetype, int regionid)
 		theme_spacetype= spacetype;
 		theme_regionid= regionid;
 	}
+}
+
+bTheme *UI_GetTheme()
+{
+	return U.themes.first;
 }
 
 // for space windows only
@@ -1127,7 +1146,7 @@ void init_userdef_do_versions(void)
 	}
 	if(U.mixbufsize==0) U.mixbufsize= 2048;
 	if (strcmp(U.tempdir, "/") == 0) {
-		BLI_where_is_temp(U.tempdir, sizeof(U.tempdir), FALSE);
+		BLI_system_temporary_dir(U.tempdir);
 	}
 	if (U.autokey_mode == 0) {
 		/* 'add/replace' but not on */
@@ -1151,7 +1170,7 @@ void init_userdef_do_versions(void)
 	vDM_ColorBand_store((U.flag & USER_CUSTOM_RANGE) ? (&U.coba_weight):NULL);
 
 	if (bmain->versionfile <= 191) {
-		strcpy(U.plugtexdir, U.textudir);
+		BLI_strncpy(U.plugtexdir, U.textudir, sizeof(U.plugtexdir));
 		strcpy(U.sounddir, "/");
 	}
 	
@@ -1195,7 +1214,11 @@ void init_userdef_do_versions(void)
 		for(btheme= U.themes.first; btheme; btheme= btheme->next) {
 			/* check for alpha==0 is safe, then color was never set */
 			if(btheme->ttime.back[3]==0) {
-				btheme->ttime = btheme->tsnd;	// copy from sound
+				// copied from ui_theme_init_default
+				btheme->ttime= btheme->tv3d;
+				SETCOLF(btheme->ttime.back, 	0.45, 0.45, 0.45, 1.0);
+				SETCOLF(btheme->ttime.grid, 	0.36, 0.36, 0.36, 1.0);
+				SETCOL(btheme->ttime.shade1,  173, 173, 173, 255);		// sliders
 			}
 			if(btheme->text.syntaxn[3]==0) {
 				SETCOL(btheme->text.syntaxn,	0, 0, 200, 255);	/* Numbers  Blue*/
@@ -1322,7 +1345,7 @@ void init_userdef_do_versions(void)
 			SETCOL(btheme->tact.cframe, 0x60, 0xc0, 0x40, 255);
 			SETCOL(btheme->tnla.cframe, 0x60, 0xc0, 0x40, 255);
 			SETCOL(btheme->tseq.cframe, 0x60, 0xc0, 0x40, 255);
-			SETCOL(btheme->tsnd.cframe, 0x60, 0xc0, 0x40, 255);
+			//SETCOL(btheme->tsnd.cframe, 0x60, 0xc0, 0x40, 255); Not needed anymore
 			SETCOL(btheme->ttime.cframe, 0x60, 0xc0, 0x40, 255);
 		}
 	}
@@ -1590,26 +1613,69 @@ void init_userdef_do_versions(void)
 		}
 	}
 
-	if (bmain->versionfile < 258 || (bmain->versionfile == 258 && bmain->subversionfile < 1)) {
+	if (bmain->versionfile < 259 || (bmain->versionfile == 259 && bmain->subversionfile < 1)) {
 		bTheme *btheme;
 		
-		/* if new keyframes handle default is stuff "auto", make it "auto-clamped" instead */
-		if (U.keyhandles_new == HD_AUTO) 
-			U.keyhandles_new = HD_AUTO_ANIM;
-			
-		/* theme color additions */
-		for (btheme= U.themes.first; btheme; btheme= btheme->next) {
-			/* auto-clamped handles -> based on auto */
-			SETCOL(btheme->tipo.handle_auto_clamped, 0x99, 0x40, 0x30, 255);
-			SETCOL(btheme->tipo.handle_sel_auto_clamped, 0xf0, 0xaf, 0x90, 255);
+		for(btheme= U.themes.first; btheme; btheme= btheme->next) {
+			btheme->tv3d.speaker[3] = 255;
 		}
 	}
-	
-	if (bmain->versionfile < 259 || (bmain->versionfile == 259 && bmain->subversionfile < 1)) {
+
+	if (bmain->versionfile < 260 || (bmain->versionfile == 260 && bmain->subversionfile < 3)) {
+		bTheme *btheme;
+		
+		/* if new keyframes handle default is stuff "auto", make it "auto-clamped" instead 
+		 * was changed in 260 as part of GSoC11, but version patch was wrong
+		 */
+		if (U.keyhandles_new == HD_AUTO) 
+			U.keyhandles_new = HD_AUTO_ANIM;
+		
+		for(btheme= U.themes.first; btheme; btheme= btheme->next) {		
+			if(btheme->tv3d.bundle_solid[3] == 0)
+				SETCOL(btheme->tv3d.bundle_solid, 200, 200, 200, 255);
+			
+			if(btheme->tv3d.camera_path[3] == 0)
+				SETCOL(btheme->tv3d.camera_path, 0x00, 0x00, 0x00, 255);
+				
+			if((btheme->tclip.back[3]) == 0) {
+				btheme->tclip= btheme->tv3d;
+				
+				SETCOL(btheme->tclip.marker_outline, 0x00, 0x00, 0x00, 255);
+				SETCOL(btheme->tclip.marker, 0x7f, 0x7f, 0x00, 255);
+				SETCOL(btheme->tclip.act_marker, 0xff, 0xff, 0xff, 255);
+				SETCOL(btheme->tclip.sel_marker, 0xff, 0xff, 0x00, 255);
+				SETCOL(btheme->tclip.dis_marker, 0x7f, 0x00, 0x00, 255);
+				SETCOL(btheme->tclip.lock_marker, 0x7f, 0x7f, 0x7f, 255);
+				SETCOL(btheme->tclip.path_before, 0xff, 0x00, 0x00, 255);
+				SETCOL(btheme->tclip.path_after, 0x00, 0x00, 0xff, 255);
+				SETCOL(btheme->tclip.grid, 0x5e, 0x5e, 0x5e, 255);
+				SETCOL(btheme->tclip.cframe, 0x60, 0xc0, 0x40, 255);
+				SETCOL(btheme->tclip.handle_vertex, 0x00, 0x00, 0x00, 0xff);
+				SETCOL(btheme->tclip.handle_vertex_select, 0xff, 0xff, 0, 0xff);
+				btheme->tclip.handle_vertex_size= 4;
+			}
+			
+			/* auto-clamped handles -> based on auto */
+			if(btheme->tipo.handle_auto_clamped[3] == 0)
+				SETCOL(btheme->tipo.handle_auto_clamped, 0x99, 0x40, 0x30, 255);
+			if(btheme->tipo.handle_sel_auto_clamped[3] == 0)
+				SETCOL(btheme->tipo.handle_sel_auto_clamped, 0xf0, 0xaf, 0x90, 255);
+		}
+		
+		/* enable (Cycles) addon by default */
+		if(!BLI_findstring(&U.addons, "cycles", offsetof(bAddon, module))) {
+			bAddon *baddon= MEM_callocN(sizeof(bAddon), "bAddon");
+			BLI_strncpy(baddon->module, "cycles", sizeof(baddon->module));
+			BLI_addtail(&U.addons, baddon);
+		}
+	}
+
+	if (bmain->versionfile < 260 || (bmain->versionfile == 260 && bmain->subversionfile < 5)) {
 		bTheme *btheme;
 
 		for(btheme= U.themes.first; btheme; btheme= btheme->next) {
-			btheme->tv3d.speaker[3] = 255;
+			SETCOL(btheme->tui.panel.header, 0, 0, 0, 25);
+			btheme->tui.icon_alpha= 1.0;
 		}
 	}
 
@@ -1649,6 +1715,8 @@ void init_userdef_do_versions(void)
 		U.ndof_flag = NDOF_LOCK_HORIZON |
 			NDOF_SHOULD_PAN | NDOF_SHOULD_ZOOM | NDOF_SHOULD_ROTATE;
 	}
+	if (U.tweak_threshold == 0 )
+		U.tweak_threshold= 10;
 
 	/* funny name, but it is GE stuff, moves userdef stuff to engine */
 // XXX	space_set_commmandline_options();

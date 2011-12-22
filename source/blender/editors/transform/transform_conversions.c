@@ -1,6 +1,4 @@
 /*
- * $Id: transform_conversions.c 41220 2011-10-23 12:33:11Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -53,6 +51,7 @@
 #include "DNA_scene_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_gpencil_types.h"
+#include "DNA_movieclip_types.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -76,6 +75,9 @@
 #include "BKE_bmesh.h"
 #include "BKE_scene.h"
 #include "BKE_report.h"
+#include "BKE_tracking.h"
+#include "BKE_movieclip.h"
+#include "BKE_node.h"
 
 
 #include "ED_anim_api.h"
@@ -90,7 +92,11 @@
 #include "ED_node.h"
 #include "ED_types.h"
 #include "ED_uvedit.h"
+#include "ED_clip.h"
 #include "ED_util.h"  /* for crazyspace correction */
+
+#include "WM_api.h"		/* for WM_event_add_notifier to deal with stabilization nodes */
+#include "WM_types.h"
 
 #include "UI_view2d.h"
 
@@ -288,7 +294,8 @@ static void createTransTexspace(TransInfo *t)
 
 /* ********************* edge (for crease) ***** */
 
-static void createTransEdge(TransInfo *t) {
+static void createTransEdge(TransInfo *t)
+{
 	EditMesh *em = ((Mesh *)t->obedit->data)->edit_mesh;
 	TransData *td = NULL;
 	EditEdge *eed;
@@ -557,7 +564,7 @@ static void add_pose_transdata(TransInfo *t, bPoseChannel *pchan, Object *ob, Tr
 		td->ext->rotAngle= NULL;
 		td->ext->quat= pchan->quat;
 		
-		QUATCOPY(td->ext->iquat, pchan->quat);
+		copy_qt_qt(td->ext->iquat, pchan->quat);
 	}
 	td->ext->rotOrder= pchan->rotmode;
 	
@@ -1250,7 +1257,7 @@ static void createTransArmatureVerts(TransInfo *t)
 static void createTransMBallVerts(TransInfo *t)
 {
 	MetaBall *mb = (MetaBall*)t->obedit->data;
-	 MetaElem *ml;
+	MetaElem *ml;
 	TransData *td;
 	TransDataExtension *tx;
 	float mtx[3][3], smtx[3][3];
@@ -1307,7 +1314,7 @@ static void createTransMBallVerts(TransInfo *t)
 
 			/* quat is used for rotation of MetaElem */
 			tx->quat = ml->quat;
-			QUATCOPY(tx->iquat, ml->quat);
+			copy_qt_qt(tx->iquat, ml->quat);
 
 			tx->rot = NULL;
 
@@ -1913,8 +1920,8 @@ static void get_face_center(float *cent, EditMesh *em, EditVert *eve)
 	}
 }
 
-//way to overwrite what data is edited with transform
-//static void VertsToTransData(TransData *td, EditVert *eve, BakeKey *key)
+/* way to overwrite what data is edited with transform
+ * static void VertsToTransData(TransData *td, EditVert *eve, BakeKey *key) */
 static void VertsToTransData(TransInfo *t, TransData *td, EditMesh *em, EditVert *eve)
 {
 	td->flag = 0;
@@ -1945,33 +1952,6 @@ static void VertsToTransData(TransInfo *t, TransData *td, EditMesh *em, EditVert
 		td->ival = eve->bweight;
 	}
 }
-
-#if 0
-static void createTransBMeshVerts(TransInfo *t, BME_Mesh *bm, BME_TransData_Head *td) {
-	BME_Vert *v;
-	BME_TransData *vtd;
-	TransData *tob;
-	int i;
-
-	tob = t->data = MEM_callocN(td->len*sizeof(TransData), "TransObData(Bevel tool)");
-
-	for (i=0,v=bm->verts.first;v;v=v->next) {
-		if ( (vtd = BME_get_transdata(td,v)) ) {
-			tob->loc = vtd->loc;
-			tob->val = &vtd->factor;
-			copy_v3_v3(tob->iloc,vtd->co);
-			copy_v3_v3(tob->center,vtd->org);
-			copy_v3_v3(tob->axismtx[0],vtd->vec);
-			tob->axismtx[1][0] = vtd->max ? *vtd->max : 0;
-			tob++;
-			i++;
-		}
-	}
-	/* since td is a memarena, it can hold more transdata than actual elements
-	 * (i.e. we can't depend on td->len to determine the number of actual elements) */
-	t->total = i;
-}
-#endif
 
 static void createTransEditVerts(bContext *C, TransInfo *t)
 {
@@ -2962,8 +2942,8 @@ static TransData *ActionFCurveToTransData(TransData *td, TransData2D **td2dv, FC
 				td2d->h1 = bezt->vec[0];
 				td2d->h2 = bezt->vec[2];
 				
-				VECCOPY2D(td2d->ih1, td2d->h1);
-				VECCOPY2D(td2d->ih2, td2d->h2);
+				copy_v2_v2(td2d->ih1, td2d->h1);
+				copy_v2_v2(td2d->ih2, td2d->h2);
 				
 				td++;
 				td2d++;
@@ -3219,14 +3199,14 @@ static void bezt_to_transdata (TransData *td, TransData2D *td2d, AnimData *adt, 
 
 	if (td->flag & TD_MOVEHANDLE1) {
 		td2d->h1 = bezt->vec[0];
-		VECCOPY2D(td2d->ih1, td2d->h1);
+		copy_v2_v2(td2d->ih1, td2d->h1);
 	} 
 	else 	
 		td2d->h1 = NULL;
 
 	if (td->flag & TD_MOVEHANDLE2) {
 		td2d->h2 = bezt->vec[2];
-		VECCOPY2D(td2d->ih2, td2d->h2);
+		copy_v2_v2(td2d->ih2, td2d->h2);
 	} 
 	else 
 		td2d->h2 = NULL;
@@ -4301,14 +4281,14 @@ static void ObjectToTransData(TransInfo *t, TransData *td, Object *ob)
 		td->ext->rotAngle= NULL;
 		td->ext->quat= ob->quat;
 		
-		QUATCOPY(td->ext->iquat, ob->quat);
-		QUATCOPY(td->ext->dquat, ob->dquat);
+		copy_qt_qt(td->ext->iquat, ob->quat);
+		copy_qt_qt(td->ext->dquat, ob->dquat);
 	}
 	td->ext->rotOrder=ob->rotmode;
 
 	td->ext->size = ob->size;
 	copy_v3_v3(td->ext->isize, ob->size);
-	copy_v3_v3(td->ext->dsize, ob->dsize);
+	copy_v3_v3(td->ext->dscale, ob->dscale);
 
 	copy_v3_v3(td->center, ob->obmat[3]);
 
@@ -4582,21 +4562,21 @@ void autokeyframe_ob_cb_func(bContext *C, Scene *scene, View3D *v3d, Object *ob,
 			
 			/* insert keyframes for the affected sets of channels using the builtin KeyingSets found */
 			if (doLoc) {
-				KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "Location");
+				KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_LOCATION_ID);
 				ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
 			}
 			if (doRot) {
-				KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "Rotation");
+				KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_ROTATION_ID);
 				ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
 			}
 			if (doScale) {
-				KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "Scaling");
+				KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_SCALING_ID);
 				ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
 			}
 		}
 		/* insert keyframe in all (transform) channels */
 		else {
-			KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "LocRotScale");
+			KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_LOC_ROT_SCALE_ID);
 			ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
 		}
 		
@@ -4697,21 +4677,21 @@ void autokeyframe_pose_cb_func(bContext *C, Scene *scene, View3D *v3d, Object *o
 					}
 					
 					if (doLoc) {
-						KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "Location");
+						KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_LOCATION_ID);
 						ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
 					}
 					if (doRot) {
-						KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "Rotation");
+						KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_ROTATION_ID);
 						ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
 					}
 					if (doScale) {
-						KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "Scaling");
+						KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_SCALING_ID);
 						ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
 					}
 				}
 				/* insert keyframe in all (transform) channels */
 				else {
-					KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "LocRotScale");
+					KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_LOC_ROT_SCALE_ID);
 					ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
 				}
 				
@@ -4797,6 +4777,17 @@ void special_aftertrans_update(bContext *C, TransInfo *t)
 		
 		/* clear link line */
 		ED_node_link_intersect_test(t->sa, 0);
+	}
+	else if (t->spacetype == SPACE_CLIP) {
+		SpaceClip *sc= t->sa->spacedata.first;
+		MovieClip *clip= ED_space_clip(sc);
+
+		if(t->scene->nodetree) {
+			/* tracks can be used for stabilization nodes,
+			   flush update for such nodes */
+			nodeUpdateID(t->scene->nodetree, &clip->id);
+			WM_event_add_notifier(C, NC_SCENE|ND_NODES, NULL);
+		}
 	}
 	else if (t->spacetype == SPACE_ACTION) {
 		SpaceAction *saction= (SpaceAction *)t->sa->spacedata.first;
@@ -5266,6 +5257,229 @@ static void createTransNodeData(bContext *C, TransInfo *t)
 	CTX_DATA_END
 }
 
+/* *** CLIP EDITOR *** */
+
+typedef struct TransDataTracking {
+	int area;
+	float *relative, *loc;
+	float soffset[2], srelative[2];
+	float offset[2];
+
+	float (*smarkers)[2];
+	int markersnr;
+	MovieTrackingMarker *markers;
+} TransDataTracking;
+
+static void markerToTransDataInit(TransData *td, TransData2D *td2d,
+			TransDataTracking *tdt, MovieTrackingTrack *track, int area, float *loc, float *rel, float *off)
+{
+	int anchor = area==TRACK_AREA_POINT && off;
+
+	if(anchor) {
+		td2d->loc[0] = rel[0]; /* hold original location */
+		td2d->loc[1] = rel[1];
+
+		tdt->loc= loc;
+		td2d->loc2d = loc; /* current location */
+	} else {
+		td2d->loc[0] = loc[0]; /* hold original location */
+		td2d->loc[1] = loc[1];
+
+		td2d->loc2d = loc; /* current location */
+	}
+	td2d->loc[2] = 0.0f;
+
+	tdt->relative= rel;
+	tdt->area= area;
+
+	tdt->markersnr= track->markersnr;
+	tdt->markers= track->markers;
+
+	if(rel) {
+		if(!anchor) {
+			td2d->loc[0]+= rel[0];
+			td2d->loc[1]+= rel[1];
+		}
+
+		copy_v2_v2(tdt->srelative, rel);
+	}
+
+	if(off)
+		copy_v2_v2(tdt->soffset, off);
+
+	td->flag = 0;
+	td->loc = td2d->loc;
+	VECCOPY(td->center, td->loc);
+	VECCOPY(td->iloc, td->loc);
+
+	memset(td->axismtx, 0, sizeof(td->axismtx));
+	td->axismtx[2][2] = 1.0f;
+
+	td->ext= NULL; td->val= NULL;
+
+	td->flag |= TD_SELECTED;
+	td->dist= 0.0;
+
+	unit_m3(td->mtx);
+	unit_m3(td->smtx);
+}
+
+static void trackToTransData(SpaceClip *sc, TransData *td, TransData2D *td2d,
+			TransDataTracking *tdt, MovieTrackingTrack *track)
+{
+	MovieTrackingMarker *marker= BKE_tracking_ensure_marker(track, sc->user.framenr);
+
+	track->transflag= marker->flag;
+
+	marker->flag&= ~(MARKER_DISABLED|MARKER_TRACKED);
+
+	markerToTransDataInit(td++, td2d++, tdt++, track, TRACK_AREA_POINT, track->offset, marker->pos, track->offset);
+
+	if(track->flag&SELECT)
+		markerToTransDataInit(td++, td2d++, tdt++, track, TRACK_AREA_POINT, marker->pos, NULL, NULL);
+
+	if(track->pat_flag&SELECT) {
+		markerToTransDataInit(td++, td2d++, tdt++, track, TRACK_AREA_PAT, track->pat_min, marker->pos, NULL);
+		markerToTransDataInit(td++, td2d++, tdt++, track, TRACK_AREA_PAT, track->pat_max, marker->pos, NULL);
+	}
+
+	if(track->search_flag&SELECT) {
+		markerToTransDataInit(td++, td2d++, tdt++, track, TRACK_AREA_SEARCH, track->search_min, marker->pos, NULL);
+		markerToTransDataInit(td++, td2d++, tdt++, track, TRACK_AREA_SEARCH, track->search_max, marker->pos, NULL);
+	}
+}
+
+static void transDataTrackingFree(TransInfo *t)
+{
+	TransDataTracking *tdt= t->customData;
+
+	if(tdt) {
+		if(tdt->smarkers) MEM_freeN(tdt->smarkers);
+		MEM_freeN(tdt);
+	}
+}
+
+static void createTransTrackingData(bContext *C, TransInfo *t)
+{
+	TransData *td;
+	TransData2D *td2d;
+	SpaceClip *sc = CTX_wm_space_clip(C);
+	MovieClip *clip = ED_space_clip(sc);
+	MovieTrackingTrack *track;
+	MovieTrackingMarker *marker;
+	TransDataTracking *tdt;
+	int framenr = sc->user.framenr;
+
+	if(!clip || !BKE_movieclip_has_frame(clip, &sc->user)) {
+		t->total = 0;
+		return;
+	}
+
+	/* count */
+	t->total = 0;
+
+	track = clip->tracking.tracks.first;
+	while(track) {
+		if(TRACK_VIEW_SELECTED(sc, track) && (track->flag&TRACK_LOCKED)==0) {
+			marker= BKE_tracking_get_marker(track, framenr);
+
+			if(marker) {
+				t->total++;	/* offset */
+
+				if(track->flag&SELECT) t->total++;
+				if(track->pat_flag&SELECT) t->total+= 2;
+				if(track->search_flag&SELECT) t->total+= 2;
+			}
+		}
+
+		track = track->next;
+	}
+
+	if(t->total==0)
+		return;
+
+	td = t->data = MEM_callocN(t->total*sizeof(TransData), "TransTracking TransData");
+	td2d = t->data2d = MEM_callocN(t->total*sizeof(TransData2D), "TransTracking TransData2D");
+	tdt = t->customData = MEM_callocN(t->total*sizeof(TransDataTracking), "TransTracking TransDataTracking");
+
+	t->customFree= transDataTrackingFree;
+
+	/* create actual data */
+	track = clip->tracking.tracks.first;
+	while(track) {
+		if(TRACK_VIEW_SELECTED(sc, track) && (track->flag&TRACK_LOCKED)==0) {
+			marker= BKE_tracking_get_marker(track, framenr);
+
+			trackToTransData(sc, td, td2d, tdt, track);
+
+			/* offset */
+			td++;
+			td2d++;
+			tdt++;
+
+			if((marker->flag&MARKER_DISABLED)==0) {
+				if(track->flag&SELECT) {td++; td2d++; tdt++;}
+				if(track->pat_flag&SELECT) {td+= 2; td2d+= 2;tdt+=2;}
+			}
+
+			if(track->search_flag&SELECT) {
+				td+= 2;
+				td2d+= 2;
+				tdt+= 2;
+
+				if(marker->flag&MARKER_DISABLED) {
+					td+= 3;
+					td2d+= 3;
+					tdt+= 3;
+				};
+			}
+		}
+
+		track = track->next;
+	}
+}
+
+void flushTransTracking(TransInfo *t)
+{
+	TransData *td;
+	TransData2D *td2d;
+	TransDataTracking *tdt;
+	int a;
+
+	/* flush to 2d vector from internally used 3d vector */
+	for(a=0, td= t->data, td2d= t->data2d, tdt= t->customData; a<t->total; a++, td2d++, td++, tdt++) {
+		if(t->flag&T_ALT_TRANSFORM) {
+			if(tdt->area==TRACK_AREA_POINT && tdt->relative) {
+				float d[2], d2[2];
+
+				if(!tdt->smarkers) {
+					tdt->smarkers= MEM_callocN(sizeof(*tdt->smarkers)*tdt->markersnr, "flushTransTracking markers");
+					for(a= 0; a<tdt->markersnr; a++)
+						copy_v2_v2(tdt->smarkers[a], tdt->markers[a].pos);
+				}
+
+				sub_v2_v2v2(d, td2d->loc, tdt->soffset);
+				sub_v2_v2(d, tdt->srelative);
+
+				sub_v2_v2v2(d2, td2d->loc, tdt->srelative);
+
+				for(a= 0; a<tdt->markersnr; a++)
+					add_v2_v2v2(tdt->markers[a].pos, tdt->smarkers[a], d2);
+
+				negate_v2_v2(td2d->loc2d, d);
+			}
+		}
+
+		if(tdt->area!=TRACK_AREA_POINT || tdt->relative==0) {
+			td2d->loc2d[0] = td2d->loc[0];
+			td2d->loc2d[1] = td2d->loc[1];
+
+			if(tdt->relative)
+				sub_v2_v2(td2d->loc2d, tdt->relative);
+		}
+	}
+}
+
 void createTransData(bContext *C, TransInfo *t)
 {
 	Scene *scene = t->scene;
@@ -5330,6 +5544,10 @@ void createTransData(bContext *C, TransInfo *t)
 			set_prop_dist(t, 1);
 			sort_trans_data_dist(t);
 		}
+	}
+	else if (t->spacetype == SPACE_CLIP) {
+		t->flag |= T_POINTS|T_2D_EDIT;
+		createTransTrackingData(C, t);
 	}
 	else if (t->obedit) {
 		t->ext = NULL;

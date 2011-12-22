@@ -1,6 +1,4 @@
-/**
- * $Id: node_socket.c 41009 2011-10-14 12:20:58Z blendix $
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -307,6 +305,7 @@ struct bNodeSocket *node_add_input_from_template(struct bNodeTree *ntree, struct
 	default:
 		sock = nodeAddSocket(ntree, node, SOCK_IN, stemp->name, stemp->type);
 	}
+	sock->flag |= stemp->flag;
 	return sock;
 }
 
@@ -353,6 +352,7 @@ static bNodeSocket *verify_socket_template(bNodeTree *ntree, bNode *node, int in
 		sock->type= stemp->type;		/* in future, read this from tydefs! */
 		if(stemp->limit==0) sock->limit= 0xFFF;
 		else sock->limit= stemp->limit;
+		sock->flag |= stemp->flag;
 		
 		/* Copy the property range and subtype parameters in case the template changed.
 		 * NOT copying the actual value here, only button behavior changes!
@@ -405,15 +405,15 @@ static bNodeSocket *verify_socket_template(bNodeTree *ntree, bNode *node, int in
 
 static void verify_socket_template_list(bNodeTree *ntree, bNode *node, int in_out, ListBase *socklist, bNodeSocketTemplate *stemp_first)
 {
-	bNodeSocket *sock;
+	bNodeSocket *sock, *nextsock;
 	bNodeSocketTemplate *stemp;
 	
 	/* no inputs anymore? */
 	if(stemp_first==NULL) {
-		while(socklist->first) {
-			sock = (bNodeSocket*)socklist->first;
+		for (sock = (bNodeSocket*)socklist->first; sock; sock=nextsock) {
+			nextsock = sock->next;
 			if (!(sock->flag & SOCK_DYNAMIC))
-				nodeRemoveSocket(ntree, node, socklist->first);
+				nodeRemoveSocket(ntree, node, sock);
 		}
 	}
 	else {
@@ -424,10 +424,10 @@ static void verify_socket_template_list(bNodeTree *ntree, bNode *node, int in_ou
 			stemp++;
 		}
 		/* leftovers are removed */
-		while(socklist->first) {
-			sock = (bNodeSocket*)socklist->first;
+		for (sock = (bNodeSocket*)socklist->first; sock; sock=nextsock) {
+			nextsock = sock->next;
 			if (!(sock->flag & SOCK_DYNAMIC))
-				nodeRemoveSocket(ntree, node, socklist->first);
+				nodeRemoveSocket(ntree, node, sock);
 		}
 		
 		/* and we put back the verified sockets */

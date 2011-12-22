@@ -1,6 +1,4 @@
 /*
- * $Id: meshtools.c 41078 2011-10-17 06:39:13Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -499,7 +497,6 @@ int join_mesh_exec(bContext *C, wmOperator *op)
 		MEM_freeN(matar);
 	
 	ob->totcol= me->totcol= totcol;
-	ob->colbits= 0;
 
 	if (matmap) MEM_freeN(matmap);
 	

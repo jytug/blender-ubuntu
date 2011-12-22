@@ -1,6 +1,4 @@
 /*
- * $Id: meshlaplacian.c 40368 2011-09-19 16:13:34Z jason_hays22 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -1243,8 +1241,8 @@ static MDefBoundIsect *meshdeform_ray_tree_intersect(MeshDeformBind *mdb, float 
 	memset(&isec, 0, sizeof(isec));
 	isec.labda= 1e10f;
 
-	VECADD(isec.start, co1, epsilon);
-	VECADD(end, co2, epsilon);
+	add_v3_v3v3(isec.start, co1, epsilon);
+	add_v3_v3v3(end, co2, epsilon);
 	sub_v3_v3v3(isec.vec, end, isec.start);
 
 	if(meshdeform_intersect(mdb, &isec)) {
@@ -1610,7 +1608,7 @@ static void meshdeform_matrix_add_exterior_phi(MeshDeformBind *mdb, int x, int y
 		mdb->phi[acenter]= phi/totweight;
 }
 
-static void meshdeform_matrix_solve(MeshDeformBind *mdb)
+static void meshdeform_matrix_solve(MeshDeformModifierData *mmd, MeshDeformBind *mdb)
 {
 	NLContext *context;
 	float vec[3], gridvec[3];
@@ -1712,7 +1710,8 @@ static void meshdeform_matrix_solve(MeshDeformBind *mdb)
 			}
 		}
 		else {
-			error("Mesh Deform: failed to find solution");
+			modifier_setError(&mmd->modifier, "Failed to find bind solution (increase precision?).");
+			error("Mesh Deform: failed to find bind solution.");
 			break;
 		}
 
@@ -1821,7 +1820,7 @@ static void harmonic_coordinates_bind(Scene *UNUSED(scene), MeshDeformModifierDa
 				meshdeform_check_semibound(mdb, x, y, z);
 
 	/* solve */
-	meshdeform_matrix_solve(mdb);
+	meshdeform_matrix_solve(mmd, mdb);
 
 	/* assign results */
 	if(mmd->flag & MOD_MDEF_DYNAMIC_BIND) {

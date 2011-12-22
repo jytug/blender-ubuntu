@@ -1,5 +1,4 @@
 /*
- * $Id: GHOST_Buttons.h 40837 2011-10-06 22:02:50Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -53,15 +52,15 @@ struct GHOST_Buttons {
 
 	/**
 	 * Returns the state of a single button.
-	 * @param mask. Key button to return.
+	 * @param mask Key button to return.
 	 * @return The state of the button (pressed == true).
 	 */
 	virtual bool get(GHOST_TButtonMask mask) const;
 
 	/**
 	 * Updates the state of a single button.
-	 * @param mask. Button state to update.
-	 * @param down. The new state of the button.
+	 * @param mask Button state to update.
+	 * @param down The new state of the button.
 	 */
 	virtual void set(GHOST_TButtonMask mask, bool down);
 

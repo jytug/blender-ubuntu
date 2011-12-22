@@ -1,6 +1,4 @@
 /*
- * $Id: anim.c 41060 2011-10-16 16:14:36Z jhk $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -69,6 +67,7 @@
 #include "BKE_utildefines.h"
 #include "BKE_depsgraph.h"
 #include "BKE_anim.h"
+#include "BKE_report.h"
 
 
 // XXX bad level call...
@@ -149,7 +148,7 @@ void animviz_free_motionpath(bMotionPath *mpath)
  *	- ob: object to add paths for (must be provided)
  *	- pchan: posechannel to add paths for (optional; if not provided, object-paths are assumed)
  */
-bMotionPath *animviz_verify_motionpaths(Scene *scene, Object *ob, bPoseChannel *pchan)
+bMotionPath *animviz_verify_motionpaths(ReportList *reports, Scene *scene, Object *ob, bPoseChannel *pchan)
 {
 	bAnimVizSettings *avs;
 	bMotionPath *mpath, **dst;
@@ -172,6 +171,11 @@ bMotionPath *animviz_verify_motionpaths(Scene *scene, Object *ob, bPoseChannel *
 
 	/* avoid 0 size allocs */
 	if (avs->path_sf >= avs->path_ef) {
+		BKE_reportf(reports, RPT_ERROR,
+					"Motion Path frame extents invalid for %s (%d to %d).%s\n",
+					(pchan)? pchan->name : ob->id.name,
+					avs->path_sf, avs->path_ef,
+					(avs->path_sf == avs->path_ef)? " Cannot have single-frame paths." : "");
 		return NULL;
 	}
 
@@ -365,10 +369,10 @@ static void motionpaths_calc_bake_targets(Scene *scene, ListBase *targets)
 		if (mpt->pchan) {
 			/* heads or tails */
 			if (mpath->flag & MOTIONPATH_FLAG_BHEAD) {
-				VECCOPY(mpv->co, mpt->pchan->pose_head);
+				copy_v3_v3(mpv->co, mpt->pchan->pose_head);
 			}
 			else {
-				VECCOPY(mpv->co, mpt->pchan->pose_tail);
+				copy_v3_v3(mpv->co, mpt->pchan->pose_tail);
 			}
 			
 			/* result must be in worldspace */
@@ -376,7 +380,7 @@ static void motionpaths_calc_bake_targets(Scene *scene, ListBase *targets)
 		}
 		else {
 			/* worldspace object location */
-			VECCOPY(mpv->co, mpt->ob->obmat[3]);
+			copy_v3_v3(mpv->co, mpt->ob->obmat[3]);
 		}
 	}
 }
@@ -656,15 +660,15 @@ int where_on_path(Object *ob, float ctime, float *vec, float *dir, float *quat, 
 
 		totfac= data[0]+data[3];
 		if(totfac>FLT_EPSILON)	interp_qt_qtqt(q1, p0->quat, p3->quat, data[3] / totfac);
-		else					QUATCOPY(q1, p1->quat);
+		else					copy_qt_qt(q1, p1->quat);
 
 		totfac= data[1]+data[2];
 		if(totfac>FLT_EPSILON)	interp_qt_qtqt(q2, p1->quat, p2->quat, data[2] / totfac);
-		else					QUATCOPY(q2, p3->quat);
+		else					copy_qt_qt(q2, p3->quat);
 
 		totfac = data[0]+data[1]+data[2]+data[3];
 		if(totfac>FLT_EPSILON)	interp_qt_qtqt(quat, q1, q2, (data[1]+data[2]) / totfac);
-		else					QUATCOPY(quat, q2);
+		else					copy_qt_qt(quat, q2);
 	}
 
 	if(radius)
@@ -753,8 +757,9 @@ static void group_duplilist(ListBase *lb, Scene *scene, Object *ob, int level, i
 static void frames_duplilist(ListBase *lb, Scene *scene, Object *ob, int level, int animated)
 {
 	extern int enable_cu_speed;	/* object.c */
-	Object copyob = {{NULL}};
+	Object copyob;
 	int cfrao = scene->r.cfra;
+	int dupend = ob->dupend;
 	
 	/* simple prevention of too deep nested groups */
 	if (level > MAX_DUPLI_RECUR) return;
@@ -775,7 +780,7 @@ static void frames_duplilist(ListBase *lb, Scene *scene, Object *ob, int level, 
 	/* duplicate over the required range */
 	if (ob->transflag & OB_DUPLINOSPEED) enable_cu_speed= 0;
 	
-	for (scene->r.cfra= ob->dupsta; scene->r.cfra<=ob->dupend; scene->r.cfra++) {
+	for (scene->r.cfra= ob->dupsta; scene->r.cfra<=dupend; scene->r.cfra++) {
 		short ok= 1;
 		
 		/* - dupoff = how often a frames within the range shouldn't be made into duplis
@@ -844,7 +849,7 @@ static void vertex_dupli__mapFunc(void *userData, int index, float *co, float *n
 	add_v3_v3(vec, vdd->obmat[3]);
 	
 	copy_m4_m4(obmat, vdd->obmat);
-	VECCOPY(obmat[3], vec);
+	copy_v3_v3(obmat[3], vec);
 	
 	if(vdd->par->transflag & OB_DUPLIROT) {
 		if(no_f) {
@@ -869,7 +874,7 @@ static void vertex_dupli__mapFunc(void *userData, int index, float *co, float *n
 	vdd->ob->lay = origlay;
 
 	if(vdd->orco)
-		VECCOPY(dob->orco, vdd->orco[index]);
+		copy_v3_v3(dob->orco, vdd->orco[index]);
 	
 	if(vdd->ob->transflag & OB_DUPLI) {
 		float tmpmat[4][4];
@@ -1025,26 +1030,16 @@ static void face_duplilist(ListBase *lb, ID *id, Scene *scene, Object *par, floa
 	
 	em = BKE_mesh_get_editmesh(me);
 	if(em) {
-		int totvert;
-		
 		dm= editmesh_get_derived_cage(scene, par, em, CD_MASK_BAREMESH);
-		
-		totface= dm->getNumFaces(dm);
-		mface= MEM_mallocN(sizeof(MFace)*totface, "mface temp");
-		dm->copyFaceArray(dm, mface);
-		totvert= dm->getNumVerts(dm);
-		mvert= MEM_mallocN(sizeof(MVert)*totvert, "mvert temp");
-		dm->copyVertArray(dm, mvert);
-
 		BKE_mesh_end_editmesh(me, em);
 	}
 	else {
 		dm = mesh_get_derived_deform(scene, par, CD_MASK_BAREMESH);
-		
-		totface= dm->getNumFaces(dm);
-		mface= dm->getFaceArray(dm);
-		mvert= dm->getVertArray(dm);
 	}
+
+	totface= dm->getNumFaces(dm);
+	mface= dm->getFaceArray(dm);
+	mvert= dm->getVertArray(dm);
 
 	if(G.rendering) {
 
@@ -1121,7 +1116,7 @@ static void face_duplilist(ListBase *lb, ID *id, Scene *scene, Object *par, floa
 						
 						copy_m4_m4(obmat, ob__obmat);
 						
-						VECCOPY(obmat[3], cent);
+						copy_v3_v3(obmat[3], cent);
 						
 						/* rotation */
 						tri_to_quat( quat,v1, v2, v3);
@@ -1184,11 +1179,6 @@ static void face_duplilist(ListBase *lb, ID *id, Scene *scene, Object *par, floa
 		if (sce)	base= base->next;	/* scene loop */
 		else		go= go->next;		/* group loop */
 	}
-	
-	if(em) {
-		MEM_freeN(mface);
-		MEM_freeN(mvert);
-	}
 
 	if(orco)
 		MEM_freeN(orco);
@@ -1231,7 +1221,7 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 	if(G.rendering == 0)
 		no_draw_flag |= PARS_NO_DISP;
 	
-	ctime = bsystem_time(scene, par, (float)scene->r.cfra, 0.0);
+	ctime = BKE_curframe(scene); /* NOTE: in old animsys, used parent object's timeoffset... */
 
 	totpart = psys->totpart;
 	totchild = psys->totchild;
@@ -1380,7 +1370,7 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 					psys_get_dupli_path_transform(&sim, NULL, cpa, cache, pamat, &scale);
 				}
 
-				VECCOPY(pamat[3], cache->co);
+				copy_v3_v3(pamat[3], cache->co);
 				pamat[3][3]= 1.0f;
 				
 			}
@@ -1428,7 +1418,7 @@ static void new_particle_duplilist(ListBase *lb, ID *id, Scene *scene, Object *p
 				/* to give ipos in object correct offset */
 				where_is_object_time(scene, ob, ctime-pa_time);
 
-				VECCOPY(vec, obmat[3]);
+				copy_v3_v3(vec, obmat[3]);
 				obmat[3][0] = obmat[3][1] = obmat[3][2] = 0.0f;
 
 				/* particle rotation uses x-axis as the aligned axis, so pre-rotate the object accordingly */
@@ -1548,7 +1538,7 @@ static void font_duplilist(ListBase *lb, Scene *scene, Object *par, int level, i
 			mul_m4_v3(pmat, vec);
 			
 			copy_m4_m4(obmat, par->obmat);
-			VECCOPY(obmat[3], vec);
+			copy_v3_v3(obmat[3], vec);
 			
 			new_dupli_object(lb, ob, obmat, par->lay, a, OB_DUPLIVERTS, animated);
 		}

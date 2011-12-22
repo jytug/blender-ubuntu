@@ -1,6 +1,4 @@
 /*
- * $Id: AnimationImporter.cpp 41000 2011-10-14 02:31:04Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -691,7 +689,7 @@ void AnimationImporter::apply_matrix_curves( Object * ob, std::vector<FCurve*>& 
 		if (is_joint)
 			BLI_snprintf(rna_path, sizeof(rna_path), "%s.%s", joint_path, tm_str);
 		else
-			strcpy(rna_path, tm_str);
+			BLI_strncpy(rna_path, tm_str, sizeof(rna_path));
 		newcu[i] = create_fcurve(axis, rna_path);
 		newcu[i]->totvert = frames.size();
 	}
@@ -1246,7 +1244,7 @@ Object *AnimationImporter::translate_animation_OLD(COLLADAFW::Node *node,
 		if (is_joint)
 			BLI_snprintf(rna_path, sizeof(rna_path), "%s.%s", joint_path, tm_str);
 		else
-			strcpy(rna_path, tm_str);
+			BLI_strncpy(rna_path, tm_str, sizeof(rna_path));
 		newcu[i] = create_fcurve(axis, rna_path);
 
 #ifdef ARMATURE_TEST

@@ -1,6 +1,4 @@
 /*
- * $Id: KX_PolyProxy.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,7 +38,7 @@
 
 class KX_PolyProxy	: public CValue
 {
-	Py_Header;
+	Py_Header
 protected:
 	class RAS_Polygon*		m_polygon;
 	class RAS_MeshObject*	m_mesh;

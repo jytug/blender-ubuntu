@@ -1,6 +1,4 @@
 /*
- * $Id: view3d_toolbar.c 40395 2011-09-20 13:41:43Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -82,7 +80,7 @@ static void view3d_panel_operator_redo_header(const bContext *C, Panel *pa)
 	wmOperator *op= WM_operator_last_redo(C);
 
 	if(op) BLI_strncpy(pa->drawname, op->type->name, sizeof(pa->drawname));
-	else BLI_strncpy(pa->drawname, N_("Operator"), sizeof(pa->drawname));
+	else BLI_strncpy(pa->drawname, IFACE_("Operator"), sizeof(pa->drawname));
 }
 
 static void view3d_panel_operator_redo_operator(const bContext *C, Panel *pa, wmOperator *op)
@@ -98,6 +96,7 @@ static void view3d_panel_operator_redo_operator(const bContext *C, Panel *pa, wm
 	}
 }
 
+/* TODO de-duplicate redo panel functions - campbell */
 static void view3d_panel_operator_redo(const bContext *C, Panel *pa)
 {
 	wmOperator *op= WM_operator_last_redo(C);
@@ -110,7 +109,7 @@ static void view3d_panel_operator_redo(const bContext *C, Panel *pa)
 	
 	block= uiLayoutGetBlock(pa->layout);
 	
-	if(ED_undo_valid(C, op->type->name)==0)
+	if (!WM_operator_check_ui_enabled(C, op->type->name))
 		uiLayoutSetEnabled(pa->layout, 0);
 
 	/* note, blockfunc is a default but->func, use Handle func to allow button callbacks too */

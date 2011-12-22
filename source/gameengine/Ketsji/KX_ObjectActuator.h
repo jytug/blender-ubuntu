@@ -1,6 +1,4 @@
 /*
- * $Id: KX_ObjectActuator.h 40538 2011-09-25 12:31:21Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -82,7 +80,7 @@ struct KX_LocalFlags {
 
 class KX_ObjectActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 	MT_Vector3		m_force;
 	MT_Vector3		m_torque;

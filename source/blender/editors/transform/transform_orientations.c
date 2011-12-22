@@ -1,6 +1,4 @@
 /*
- * $Id: transform_orientations.c 40395 2011-09-20 13:41:43Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -410,18 +408,15 @@ EnumPropertyItem *BIF_enumTransformOrientation(bContext *C)
 }
 
 const char * BIF_menustringTransformOrientation(const bContext *C, const char *title) {
-	const char* menu = N_("%t|Global%x0|Local%x1|Gimbal%x4|Normal%x2|View%x3");
+	const char* menu = IFACE_("%t|Global%x0|Local%x1|Gimbal%x4|Normal%x2|View%x3");
 	ListBase *transform_spaces = &CTX_data_scene(C)->transform_spaces;
 	TransformOrientation *ts;
 	int i = V3D_MANIP_CUSTOM;
 	char *str_menu, *p;
 
-	if(UI_translate_iface()) {
-		title= BLF_gettext(title);
-		menu= BLF_gettext(menu);
-	}
-	
-	str_menu = MEM_callocN(strlen(menu) + strlen(title) + 1 + 40 * BIF_countTransformOrientation(C), UI_translate_do_tooltip(N_("UserTransSpace from matrix")));
+	title = IFACE_(title);
+
+	str_menu = MEM_callocN(strlen(menu) + strlen(title) + 1 + 40 * BIF_countTransformOrientation(C), TIP_("UserTransSpace from matrix"));
 	p = str_menu;
 	
 	p += sprintf(str_menu, "%s", title);
@@ -611,9 +606,9 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 					{
 						if(efa->f & SELECT)
 						{
-							VECADD(normal, normal, efa->n);
+							add_v3_v3(normal, efa->n);
 							sub_v3_v3v3(vec, efa->v2->co, efa->v1->co);
-							VECADD(plane, plane, vec);
+							add_v3_v3(plane, vec);
 						}
 					}
 					
@@ -667,7 +662,7 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 						if(eed->f & SELECT) {
 							/* use average vert normals as plane and edge vector as normal */
 							copy_v3_v3(plane, eed->v1->no);
-							VECADD(plane, plane, eed->v2->no);
+							add_v3_v3(plane, eed->v2->no);
 							sub_v3_v3v3(normal, eed->v2->co, eed->v1->co);
 							break;
 						}
@@ -688,7 +683,7 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 								v2 = eve;
 								
 								copy_v3_v3(plane, v1->no);
-								VECADD(plane, plane, v2->no);
+								add_v3_v3(plane, v2->no);
 								sub_v3_v3v3(normal, v2->co, v1->co);
 								break; 
 							}
@@ -797,7 +792,7 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 				float mat[4][4];
 
 				/* Rotation of MetaElem is stored in quat */
-				 quat_to_mat4( mat,ml_sel->quat);
+				quat_to_mat4( mat,ml_sel->quat);
 
 				copy_v3_v3(normal, mat[2]);
 

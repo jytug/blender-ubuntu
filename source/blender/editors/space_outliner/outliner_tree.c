@@ -109,7 +109,7 @@
 #define TS_CHUNK	128
 
 /* ********************************************************* */
-/* Persistant Data */
+/* Persistent Data */
 
 static void outliner_storage_cleanup(SpaceOops *soops)
 {
@@ -156,7 +156,7 @@ static void outliner_storage_cleanup(SpaceOops *soops)
 	}
 }
 
-static void check_persistant(SpaceOops *soops, TreeElement *te, ID *id, short type, short nr)
+static void check_persistent(SpaceOops *soops, TreeElement *te, ID *id, short type, short nr)
 {
 	TreeStore *ts;
 	TreeStoreElem *tselem;
@@ -818,7 +818,7 @@ static TreeElement *outliner_add_element(SpaceOops *soops, ListBase *lb, void *i
 	/* add to the visual tree */
 	BLI_addtail(lb, te);
 	/* add to the storage */
-	check_persistant(soops, te, id, type, index);
+	check_persistent(soops, te, id, type, index);
 	tselem= TREESTORE(te);	
 	
 	/* if we are searching for something expand to see child elements */
@@ -972,12 +972,12 @@ static TreeElement *outliner_add_element(SpaceOops *soops, ListBase *lb, void *i
 		}
 		else if(type == TSE_RNA_STRUCT) {
 			/* struct */
-			te->name= RNA_struct_name_get_alloc(ptr, NULL, 0);
+			te->name= RNA_struct_name_get_alloc(ptr, NULL, 0, NULL);
 
 			if(te->name)
 				te->flag |= TE_FREE_NAME;
 			else
-				te->name= (char*)RNA_struct_ui_name(ptr->type);
+				te->name= RNA_struct_ui_name(ptr->type);
 
 			/* If searching don't expand RNA entries */
 			if(SEARCHING_OUTLINER(soops) && BLI_strcasecmp("RNA",te->name)==0) tselem->flag &= ~TSE_CHILDSEARCH;
@@ -1007,7 +1007,7 @@ static TreeElement *outliner_add_element(SpaceOops *soops, ListBase *lb, void *i
 			prop= propptr.data;
 			proptype= RNA_property_type(prop);
 
-			te->name= (char*)RNA_property_ui_name(prop);
+			te->name= RNA_property_ui_name(prop);
 			te->directdata= prop;
 			te->rnaptr= *ptr;
 

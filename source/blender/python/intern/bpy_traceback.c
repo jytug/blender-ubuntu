@@ -1,6 +1,4 @@
 /*
- * $Id: bpy_traceback.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +20,9 @@
 
 /** \file blender/python/intern/bpy_traceback.c
  *  \ingroup pythonintern
+ *
+ * This file contains utility functions for getting data from a python stack
+ * trace.
  */
 
 
@@ -145,7 +146,10 @@ void python_script_error_jump(const char *filepath, int *lineno, int *offset)
 		PyErr_Restore(exception, value, (PyObject *)tb);	/* takes away reference! */
 		PyErr_Print();
 
-		for (tb= (PyTracebackObject *)PySys_GetObject("last_traceback"); tb && (PyObject *)tb != Py_None; tb= tb->tb_next) {
+		for (tb= (PyTracebackObject *)PySys_GetObject("last_traceback");
+		     tb && (PyObject *)tb != Py_None;
+		     tb= tb->tb_next)
+		{
 			PyObject *coerce;
 			const char *tb_filepath= traceback_filepath(tb, &coerce);
 			const int match= strcmp(tb_filepath, filepath) != 0;

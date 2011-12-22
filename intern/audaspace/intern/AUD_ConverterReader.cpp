@@ -1,6 +1,4 @@
 /*
- * $Id: AUD_ConverterReader.cpp 40341 2011-09-19 08:02:17Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -75,5 +73,5 @@ void AUD_ConverterReader::read(int& length, bool& eos, sample_t* buffer)
 	m_reader->read(length, eos, m_buffer.getBuffer());
 
 	m_convert((data_t*)buffer, (data_t*)m_buffer.getBuffer(),
-			  length * specs.channels);
+	          length * specs.channels);
 }

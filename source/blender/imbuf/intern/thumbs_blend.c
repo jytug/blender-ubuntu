@@ -1,6 +1,4 @@
 /*
- * $Id: thumbs_blend.c 35239 2011-02-27 20:23:21Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -66,7 +64,7 @@ static ImBuf *loadblend_thumb(gzFile gzfile)
 	else
 		return NULL;
 
-	 sizeof_bhead = 16 + pointer_size;
+	sizeof_bhead = 16 + pointer_size;
 
 	if(buf[8]=='V')
 		endian= B_ENDIAN; /* big: PPC */

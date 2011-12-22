@@ -158,18 +158,8 @@ class SEQUENCER_MT_marker(Menu):
     def draw(self, context):
         layout = self.layout
 
-        #layout.operator_context = 'EXEC_REGION_WIN'
-
-        layout.operator("marker.add", "Add Marker")
-        layout.operator("marker.duplicate", text="Duplicate Marker")
-        layout.operator("marker.delete", text="Delete Marker")
-
-        layout.separator()
-
-        layout.operator("marker.rename", text="Rename Marker")
-        layout.operator("marker.move", text="Grab/Move Marker")
-
-        #layout.operator("sequencer.sound_strip_add", text="Transform Markers") # toggle, will be rna - (sseq->flag & SEQ_MARKER_TRANS)
+        from .space_time import marker_menu_generic
+        marker_menu_generic(layout)
 
 
 class SEQUENCER_MT_change(Menu):
@@ -466,7 +456,7 @@ class SEQUENCER_PT_effect(SequencerButtonsPanel, Panel):
         elif strip.type == 'TRANSFORM':
             self.draw_panel_transform(strip)
 
-        elif strip.type == "MULTICAM":
+        elif strip.type == 'MULTICAM':
             layout.prop(strip, "multicam_source")
 
             row = layout.row(align=True)
@@ -483,9 +473,9 @@ class SEQUENCER_PT_effect(SequencerButtonsPanel, Panel):
         if strip.type == 'SPEED':
             col.prop(strip, "multiply_speed")
         elif strip.type in {'CROSS', 'GAMMA_CROSS', 'PLUGIN', 'WIPE'}:
-                col.prop(strip, "use_default_fade", "Default fade")
-                if not strip.use_default_fade:
-                    col.prop(strip, "effect_fader", text="Effect fader")
+            col.prop(strip, "use_default_fade", "Default fade")
+            if not strip.use_default_fade:
+                col.prop(strip, "effect_fader", text="Effect fader")
 
         layout.prop(strip, "use_translation", text="Image Offset:")
         if strip.use_translation:

@@ -1,6 +1,4 @@
 /*
- * $Id: creator.c 40581 2011-09-26 18:51:10Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -62,6 +60,7 @@
 
 #include "DNA_ID.h"
 #include "DNA_scene_types.h"
+#include "DNA_userdef_types.h"
 
 #include "BLI_blenlib.h"
 
@@ -78,6 +77,7 @@
 #include "BKE_node.h"
 #include "BKE_report.h"
 #include "BKE_sound.h"
+#include "BKE_image.h"
 
 #include "IMB_imbuf.h"	// for IMB_init
 
@@ -85,6 +85,7 @@
 #include "BPY_extern.h"
 #endif
 
+#include "RE_engine.h"
 #include "RE_pipeline.h"
 
 //XXX #include "playanim_ext.h"
@@ -120,6 +121,10 @@
 #include "binreloc.h"
 #endif
 
+#ifdef WITH_LIBMV
+#include "libmv-capi.h"
+#endif
+
 // from buildinfo.c
 #ifdef BUILD_DATE
 extern char build_date[];
@@ -141,10 +146,9 @@ static int print_version(int argc, const char **argv, void *data);
 
 extern int pluginapi_force_ref(void);  /* from blenpluginapi:pluginapi.c */
 
-char bprogname[FILE_MAX]; /* from blenpluginapi:pluginapi.c */
-char btempdir[FILE_MAX];
-
-#define BLEND_VERSION_STRING_FMT "Blender %d.%02d (sub %d)\n", BLENDER_VERSION/100, BLENDER_VERSION%100, BLENDER_SUBVERSION
+#define BLEND_VERSION_STRING_FMT                                              \
+	"Blender %d.%02d (sub %d)\n",                                             \
+	BLENDER_VERSION/100, BLENDER_VERSION%100, BLENDER_SUBVERSION              \
 
 /* Initialize callbacks for the modules that need them */
 static void setCallbacks(void); 
@@ -297,7 +301,7 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	printf ("  $BLENDER_USER_CONFIG      Directory for user configuration files.\n");
 	printf ("  $BLENDER_USER_SCRIPTS     Directory for user scripts.\n");
 	printf ("  $BLENDER_SYSTEM_SCRIPTS   Directory for system wide scripts.\n");
-	printf ("  $BLENDER_USER_DATAFILES   Directory for user data files (icons, translations, ..).\n");
+	printf ("  $BLENDER_USER_DAT`AFILES   Directory for user data files (icons, translations, ..).\n");
 	printf ("  $BLENDER_SYSTEM_DATAFILES Directory for system wide data files.\n");
 	printf ("  $BLENDER_SYSTEM_PYTHON    Directory for system python libraries.\n");
 #ifdef WIN32
@@ -305,7 +309,7 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 #else
 	printf ("  $TMP or $TMPDIR           Store temporary files here.\n");
 #endif
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	printf ("  $SDL_AUDIODRIVER          LibSDL audio driver - alsa, esd, dma.\n");
 #endif
 	printf ("  $PYTHONHOME               Path to the python directory, eg. /usr/lib/python.\n\n");
@@ -352,6 +356,10 @@ static int debug_mode(int UNUSED(argc), const char **UNUSED(argv), void *data)
 #ifdef WITH_BUILDINFO
 	printf("Build: %s %s %s %s\n", build_date, build_time, build_platform, build_type);
 #endif // WITH_BUILDINFO
+
+#ifdef WITH_LIBMV
+	libmv_startDebugLogging();
+#endif
 
 	BLI_argsPrint(data);
 	return 0;
@@ -430,7 +438,7 @@ static int prefsize(int argc, const char **argv, void *UNUSED(data))
 	int stax, stay, sizx, sizy;
 
 	if (argc < 5) {
-		printf ("-p requires four arguments\n");
+		fprintf (stderr, "-p requires four arguments\n");
 		exit(1);
 	}
 
@@ -508,7 +516,7 @@ static int no_audio(int UNUSED(argc), const char **UNUSED(argv), void *UNUSED(da
 static int set_audio(int argc, const char **argv, void *UNUSED(data))
 {
 	if (argc < 1) {
-		printf("-setaudio require one argument\n");
+		fprintf(stderr, "-setaudio require one argument\n");
 		exit(1);
 	}
 
@@ -575,40 +583,14 @@ static int set_image_type(int argc, const char **argv, void *data)
 		const char *imtype = argv[1];
 		Scene *scene= CTX_data_scene(C);
 		if (scene) {
-			if      (!strcmp(imtype,"TGA")) scene->r.imtype = R_TARGA;
-			else if (!strcmp(imtype,"IRIS")) scene->r.imtype = R_IRIS;
-#ifdef WITH_DDS
-			else if (!strcmp(imtype,"DDS")) scene->r.imtype = R_DDS;
-#endif
-			else if (!strcmp(imtype,"JPEG")) scene->r.imtype = R_JPEG90;
-			else if (!strcmp(imtype,"IRIZ")) scene->r.imtype = R_IRIZ;
-			else if (!strcmp(imtype,"RAWTGA")) scene->r.imtype = R_RAWTGA;
-			else if (!strcmp(imtype,"AVIRAW")) scene->r.imtype = R_AVIRAW;
-			else if (!strcmp(imtype,"AVIJPEG")) scene->r.imtype = R_AVIJPEG;
-			else if (!strcmp(imtype,"PNG")) scene->r.imtype = R_PNG;
-			else if (!strcmp(imtype,"AVICODEC")) scene->r.imtype = R_AVICODEC;
-			else if (!strcmp(imtype,"QUICKTIME")) scene->r.imtype = R_QUICKTIME;
-			else if (!strcmp(imtype,"BMP")) scene->r.imtype = R_BMP;
-#ifdef WITH_HDR
-			else if (!strcmp(imtype,"HDR")) scene->r.imtype = R_RADHDR;
-#endif
-#ifdef WITH_TIFF
-			else if (!strcmp(imtype,"TIFF")) scene->r.imtype = R_TIFF;
-#endif
-#ifdef WITH_OPENEXR
-			else if (!strcmp(imtype,"EXR")) scene->r.imtype = R_OPENEXR;
-			else if (!strcmp(imtype,"MULTILAYER")) scene->r.imtype = R_MULTILAYER;
-#endif
-			else if (!strcmp(imtype,"MPEG")) scene->r.imtype = R_FFMPEG;
-			else if (!strcmp(imtype,"FRAMESERVER")) scene->r.imtype = R_FRAMESERVER;
-#ifdef WITH_CINEON
-			else if (!strcmp(imtype,"CINEON")) scene->r.imtype = R_CINEON;
-			else if (!strcmp(imtype,"DPX")) scene->r.imtype = R_DPX;
-#endif
-#ifdef WITH_OPENJPEG
-			else if (!strcmp(imtype,"JP2")) scene->r.imtype = R_JP2;
-#endif
-			else printf("\nError: Format from '-F / --render-format' not known or not compiled in this release.\n");
+			const char imtype_new= BKE_imtype_from_arg(imtype);
+
+			if (imtype_new == R_IMF_IMTYPE_INVALID) {
+				printf("\nError: Format from '-F / --render-format' not known or not compiled in this release.\n");
+			}
+			else {
+				scene->r.im_format.imtype= imtype_new;
+			}
 		}
 		else {
 			printf("\nError: no blend loaded. order the arguments so '-F  / --render-format' is after the blend is loaded.\n");
@@ -853,22 +835,23 @@ static int set_skip_frame(int argc, const char **argv, void *data)
 
 /* macro for ugly context setup/reset */
 #ifdef WITH_PYTHON
-#define BPY_CTX_SETUP(_cmd) \
-{ \
-	wmWindowManager *wm= CTX_wm_manager(C); \
-	wmWindow *prevwin= CTX_wm_window(C); \
-	Scene *prevscene= CTX_data_scene(C); \
-	if(wm->windows.first) { \
-		CTX_wm_window_set(C, wm->windows.first); \
-		_cmd; \
-		CTX_wm_window_set(C, prevwin); \
-	} \
-	else { \
-		fprintf(stderr, "Python script \"%s\" running with missing context data.\n", argv[1]); \
-		_cmd; \
-	} \
-	CTX_data_scene_set(C, prevscene); \
-} \
+#define BPY_CTX_SETUP(_cmd)                                                   \
+{                                                                             \
+	wmWindowManager *wm= CTX_wm_manager(C);                                   \
+	wmWindow *prevwin= CTX_wm_window(C);                                      \
+	Scene *prevscene= CTX_data_scene(C);                                      \
+	if(wm->windows.first) {                                                   \
+		CTX_wm_window_set(C, wm->windows.first);                              \
+		_cmd;                                                                 \
+		CTX_wm_window_set(C, prevwin);                                        \
+	}                                                                         \
+	else {                                                                    \
+		fprintf(stderr, "Python script \"%s\" "                               \
+		                "running with missing context data.\n", argv[1]);     \
+		_cmd;                                                                 \
+	}                                                                         \
+	CTX_data_scene_set(C, prevscene);                                         \
+}                                                                             \
 
 #endif /* WITH_PYTHON */
 
@@ -880,7 +863,7 @@ static int run_python(int argc, const char **argv, void *data)
 	/* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
 	if (argc > 1) {
 		/* Make the path absolute because its needed for relative linked blends to be found */
-		char filename[FILE_MAXDIR + FILE_MAXFILE];
+		char filename[FILE_MAX];
 		BLI_strncpy(filename, argv[1], sizeof(filename));
 		BLI_path_cwd(filename);
 
@@ -941,7 +924,7 @@ static int load_file(int UNUSED(argc), const char **argv, void *data)
 	bContext *C = data;
 
 	/* Make the path absolute because its needed for relative linked blends to be found */
-	char filename[FILE_MAXDIR + FILE_MAXFILE];
+	char filename[FILE_MAX];
 	BLI_strncpy(filename, argv[0], sizeof(filename));
 	BLI_path_cwd(filename);
 
@@ -969,12 +952,16 @@ static int load_file(int UNUSED(argc), const char **argv, void *data)
 
 			DAG_on_visible_update(CTX_data_main(C), TRUE);
 		}
+		else {
+			/* failed to load file, stop processing arguments */
+			return -1;
+		}
 
 		/* WM_read_file() runs normally but since we're in background mode do here */
 #ifdef WITH_PYTHON
 		/* run any texts that were loaded in and flagged as modules */
 		BPY_driver_reset();
-		BPY_app_handlers_reset();
+		BPY_app_handlers_reset(FALSE);
 		BPY_modules_load_user(C);
 #endif
 
@@ -1132,6 +1119,10 @@ int main(int argc, const char **argv)
 	br_init( NULL );
 #endif
 
+#ifdef WITH_LIBMV
+	libmv_initLogging(argv[0]);
+#endif
+
 	setCallbacks();
 #ifdef __APPLE__
 		/* patch to ignore argument finder gives us (pid?) */
@@ -1153,10 +1144,8 @@ int main(int argc, const char **argv)
 	fpsetmask(0);
 #endif
 
-	// copy path to executable in bprogname. playanim and creting runtimes
-	// need this.
-
-	BLI_where_am_i(bprogname, sizeof(bprogname), argv[0]);
+	// initialize path to executable
+	BLI_init_program_path(argv[0]);
 
 	BLI_threadapi_init();
 
@@ -1211,9 +1200,10 @@ int main(int argc, const char **argv)
 		WM_init(C, argc, argv);
 
 		/* this is properly initialized with user defs, but this is default */
-		BLI_where_is_temp(btempdir, FILE_MAX, 1); /* call after loading the startup.blend so we can read U.tempdir */
+		/* call after loading the startup.blend so we can read U.tempdir */
+		BLI_init_temporary_dir(U.tempdir);
 
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	BLI_setenv("SDL_VIDEODRIVER", "dummy");
 #endif
 	}
@@ -1222,7 +1212,8 @@ int main(int argc, const char **argv)
 
 		WM_init(C, argc, argv);
 
-		BLI_where_is_temp(btempdir, FILE_MAX, 0); /* call after loading the startup.blend so we can read U.tempdir */
+		/* don't use user preferences temp dir */
+		BLI_init_temporary_dir(NULL);
 	}
 #ifdef WITH_PYTHON
 	/**

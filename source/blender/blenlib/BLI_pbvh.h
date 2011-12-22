@@ -1,6 +1,4 @@
 /*
- * $Id: BLI_pbvh.h 35215 2011-02-27 08:31:10Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -79,7 +77,7 @@ void BLI_pbvh_search_gather(PBVH *bvh,
    hit first */
 
 void BLI_pbvh_raycast(PBVH *bvh, BLI_pbvh_HitOccludedCallback cb, void *data,
-			  float ray_start[3], float ray_normal[3], int original);
+                      float ray_start[3], float ray_normal[3], int original);
 int BLI_pbvh_node_raycast(PBVH *bvh, PBVHNode *node, float (*origco)[3],
 	float ray_start[3], float ray_normal[3], float *dist);
 

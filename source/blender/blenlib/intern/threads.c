@@ -1,6 +1,5 @@
 /*
  *
- * $Id: threads.c 40641 2011-09-28 05:53:40Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -114,6 +113,8 @@ static pthread_mutex_t _viewer_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _custom1_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _rcache_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _opengl_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t _nodes_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t _movieclip_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t mainid;
 static int thread_levels= 0;	/* threads can be invoked inside threads */
 
@@ -348,6 +349,10 @@ void BLI_lock_thread(int type)
 		pthread_mutex_lock(&_rcache_lock);
 	else if (type==LOCK_OPENGL)
 		pthread_mutex_lock(&_opengl_lock);
+	else if (type==LOCK_NODES)
+		pthread_mutex_lock(&_nodes_lock);
+	else if (type==LOCK_MOVIECLIP)
+		pthread_mutex_lock(&_movieclip_lock);
 }
 
 void BLI_unlock_thread(int type)
@@ -364,6 +369,10 @@ void BLI_unlock_thread(int type)
 		pthread_mutex_unlock(&_rcache_lock);
 	else if(type==LOCK_OPENGL)
 		pthread_mutex_unlock(&_opengl_lock);
+	else if(type==LOCK_NODES)
+		pthread_mutex_unlock(&_nodes_lock);
+	else if(type==LOCK_MOVIECLIP)
+		pthread_mutex_unlock(&_movieclip_lock);
 }
 
 /* Mutex Locks */
@@ -660,3 +669,17 @@ void BLI_thread_queue_nowait(ThreadQueue *queue)
 	pthread_mutex_unlock(&queue->mutex);
 }
 
+void BLI_begin_threaded_malloc(void)
+{
+	if(thread_levels == 0) {
+		MEM_set_lock_callback(BLI_lock_malloc_thread, BLI_unlock_malloc_thread);
+	}
+	thread_levels++;
+}
+
+void BLI_end_threaded_malloc(void)
+{
+	thread_levels--;
+	if(thread_levels==0)
+		MEM_set_lock_callback(NULL, NULL);
+}

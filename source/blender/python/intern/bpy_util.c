@@ -1,6 +1,4 @@
 /*
- * $Id: bpy_util.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,8 +22,10 @@
 
 /** \file blender/python/intern/bpy_util.c
  *  \ingroup pythonintern
+ *
+ * This file contains blender/python utility functions for the api's internal
+ * use (unrelated to 'bpy.utils')
  */
-
 
 #include <Python.h>
 

@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -242,7 +241,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 				size_t i;
 				float *heat;
 
-				VECCOPY(vd->resol, smd->domain->res);
+				copy_v3_v3_int(vd->resol, smd->domain->res);
 				totRes= vd_resol_size(vd);
 
 				// scaling heat values from -2.0-2.0 to 0.0-1.0
@@ -263,7 +262,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 				size_t i;
 				float *xvel, *yvel, *zvel;
 
-				VECCOPY(vd->resol, smd->domain->res);
+				copy_v3_v3_int(vd->resol, smd->domain->res);
 				totRes= vd_resol_size(vd);
 
 				// scaling heat values from -2.0-2.0 to 0.0-1.0
@@ -287,7 +286,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 					smoke_turbulence_get_res(smd->domain->wt, vd->resol);
 					density = smoke_turbulence_get_density(smd->domain->wt);
 				} else {
-					VECCOPY(vd->resol, smd->domain->res);
+					copy_v3_v3_int(vd->resol, smd->domain->res);
 					density = smoke_get_density(smd->domain->fluid);
 				}
 
@@ -310,7 +309,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 #endif
 }
 
-static void cache_voxeldata(struct Render *re, Tex *tex)
+void cache_voxeldata(Tex *tex, int scene_frame)
 {	
 	VoxelData *vd = tex->vd;
 	FILE *fp;
@@ -318,7 +317,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 	char path[sizeof(vd->source_path)];
 	
 	/* only re-cache if dataset needs updating */
-	if ((vd->flag & TEX_VD_STILL) || (vd->cachedframe == re->r.cfra))
+	if ((vd->flag & TEX_VD_STILL) || (vd->cachedframe == scene_frame))
 		if (vd->ok) return;
 	
 	/* clear out old cache, ready for new */
@@ -330,7 +329,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 	if (vd->flag & TEX_VD_STILL)
 		curframe = vd->still_frame;
 	else
-		curframe = re->r.cfra;
+		curframe = scene_frame;
 	
 	BLI_strncpy(path, vd->source_path, sizeof(path));
 	
@@ -339,7 +338,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 			load_frame_image_sequence(vd, tex);
 			return;
 		case TEX_VD_SMOKE:
-			init_frame_smoke(vd, re->r.cfra);
+			init_frame_smoke(vd, scene_frame);
 			return;
 		case TEX_VD_BLENDERVOXEL:
 			BLI_path_abs(path, G.main->name);
@@ -374,7 +373,7 @@ void make_voxeldata(struct Render *re)
 	/* XXX: should be doing only textures used in this render */
 	for (tex= re->main->tex.first; tex; tex= tex->id.next) {
 		if(tex->id.us && tex->type==TEX_VOXELDATA) {
-			cache_voxeldata(re, tex);
+			cache_voxeldata(tex, re->r.cfra);
 		}
 	}
 	

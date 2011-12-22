@@ -1,6 +1,4 @@
 /*
- * $Id: bpy_library.c 41032 2011-10-15 14:14:22Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +22,13 @@
 
 /** \file blender/python/intern/bpy_library.c
  *  \ingroup pythonintern
+ *
+ * This file exposed blend file library appending/linking to python, typically
+ * this would be done via RNA api but in this case a hand written python api
+ * allows us to use pythons context manager (__enter__ and __exit__).
+ *
+ * Everything here is exposed via bpy.data.libraries.load(...) which returns
+ * a context manager.
  */
 
 /* nifty feature. swap out strings for RNA data */
@@ -73,8 +78,8 @@ static PyObject *bpy_lib_dir(BPy_Library *self);
 
 static PyMethodDef bpy_lib_methods[]= {
 	{"__enter__", (PyCFunction)bpy_lib_enter, METH_NOARGS},
-	{"__exit__", (PyCFunction)bpy_lib_exit, METH_VARARGS},
-	{"__dir__", (PyCFunction)bpy_lib_dir, METH_NOARGS},
+	{"__exit__",  (PyCFunction)bpy_lib_exit,  METH_VARARGS},
+	{"__dir__",   (PyCFunction)bpy_lib_dir,   METH_NOARGS},
 	{NULL}           /* sentinel */
 };
 
@@ -260,8 +265,8 @@ static PyObject *bpy_lib_enter(BPy_Library *self, PyObject *UNUSED(args))
 
 	/* create a dummy */
 	self_from= PyObject_New(BPy_Library, &bpy_lib_Type);
-	BLI_strncpy(self_from->relpath, self->relpath, sizeof(BPy_Library));
-	BLI_strncpy(self_from->abspath, self->abspath, sizeof(BPy_Library));
+	BLI_strncpy(self_from->relpath, self->relpath, sizeof(self_from->relpath));
+	BLI_strncpy(self_from->abspath, self->abspath, sizeof(self_from->abspath));
 
 	self_from->blo_handle= NULL;
 	self_from->flag= 0;
@@ -285,7 +290,7 @@ static void bpy_lib_exit_warn_idname(BPy_Library *self, const char *name_plural,
 	PyObject *exc, *val, *tb;
 	PyErr_Fetch(&exc, &val, &tb);
 	if (PyErr_WarnFormat(PyExc_UserWarning, 1,
-						 "load: '%s' does not contain %s[\"%s\"]",
+	                     "load: '%s' does not contain %s[\"%s\"]",
 	                     self->abspath, name_plural, idname)) {
 		/* Spurious errors can appear at shutdown */
 		if (PyErr_ExceptionMatches(PyExc_Warning)) {
@@ -300,7 +305,7 @@ static void bpy_lib_exit_warn_type(BPy_Library *self, PyObject *item)
 	PyObject *exc, *val, *tb;
 	PyErr_Fetch(&exc, &val, &tb);
 	if (PyErr_WarnFormat(PyExc_UserWarning, 1,
-						 "load: '%s' expected a string type, not a %.200s",
+	                     "load: '%s' expected a string type, not a %.200s",
 	                     self->abspath, Py_TYPE(item)->tp_name)) {
 		/* Spurious errors can appear at shutdown */
 		if (PyErr_ExceptionMatches(PyExc_Warning)) {
@@ -312,13 +317,14 @@ static void bpy_lib_exit_warn_type(BPy_Library *self, PyObject *item)
 
 static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *UNUSED(args))
 {
+	Main *bmain= CTX_data_main(BPy_GetContext());
 	Main *mainl= NULL;
 	int err= 0;
 
 	flag_all_listbases_ids(LIB_PRE_EXISTING, 1);
 
 	/* here appending/linking starts */
-	mainl= BLO_library_append_begin(CTX_data_main(BPy_GetContext()), &(self->blo_handle), self->relpath);
+	mainl= BLO_library_append_begin(bmain, &(self->blo_handle), self->relpath);
 
 	{
 		int i= 0, code;
@@ -390,6 +396,7 @@ static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *UNUSED(args))
 		return NULL;
 	}
 	else {
+		Library *lib= mainl->curlib; /* newly added lib, assign before append end */
 		BLO_library_append_end(NULL, mainl, &(self->blo_handle), 0, self->flag);
 		BLO_blendhandle_close(self->blo_handle);
 		self->blo_handle= NULL;
@@ -400,9 +407,7 @@ static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *UNUSED(args))
 
 			/* append, rather than linking */
 			if ((self->flag & FILE_LINK)==0) {
-				Library *lib= BLI_findstring(&G.main->library, self->abspath, offsetof(Library, name));
-				if (lib)  all_local(lib, 1);
-				else      BLI_assert(!"cant find name of just added library!");
+				BKE_library_make_local(bmain, lib, 1);
 			}
 		}
 
@@ -420,7 +425,10 @@ static PyObject *bpy_lib_dir(BPy_Library *self)
 
 int bpy_lib_init(PyObject *mod_par)
 {
-	static PyMethodDef load_meth= {"load", (PyCFunction)bpy_lib_load, METH_STATIC|METH_VARARGS|METH_KEYWORDS, bpy_lib_load_doc};
+	static PyMethodDef load_meth= {"load", (PyCFunction)bpy_lib_load,
+	                               METH_STATIC|METH_VARARGS|METH_KEYWORDS,
+	                               bpy_lib_load_doc};
+
 	PyModule_AddObject(mod_par, "_library_load", PyCFunction_New(&load_meth, NULL));
 
 	/* some compilers dont like accessing this directly, delay assignment */

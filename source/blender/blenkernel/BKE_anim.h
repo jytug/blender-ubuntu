@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_anim.h 40904 2011-10-10 09:44:14Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,6 +40,7 @@ struct ListBase;
 struct bAnimVizSettings;
 struct bMotionPath;
 struct bPoseChannel;
+struct ReportList;
 
 /* ---------------------------------------------------- */
 /* Animation Visualisation */
@@ -51,7 +50,7 @@ void animviz_settings_init(struct bAnimVizSettings *avs);
 void animviz_free_motionpath_cache(struct bMotionPath *mpath);
 void animviz_free_motionpath(struct bMotionPath *mpath);
 
-struct bMotionPath *animviz_verify_motionpaths(struct Scene *scene, struct Object *ob, struct bPoseChannel *pchan);
+struct bMotionPath *animviz_verify_motionpaths(struct ReportList *reports, struct Scene *scene, struct Object *ob, struct bPoseChannel *pchan);
 
 void animviz_get_object_motionpaths(struct Object *ob, ListBase *targets);
 void animviz_calc_motionpaths(struct Scene *scene, ListBase *targets);

@@ -1,6 +1,5 @@
 /*
  * Expression.h: interface for the CExpression class.
- * $Id: Expression.h 35063 2011-02-22 10:33:14Z jesterking $
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -25,19 +24,25 @@
 //extern int gRefCountExpr; // only for debugging purposes (detect mem.leaks)
 
 
-#define PLUGIN_DECLARE_SERIAL_EXPRESSION(class_name,base_class_name)									\
-public:																						\
-	virtual base_class_name *	Copy()						{ return new class_name; }		\
-	virtual bool EdSerialize(CompressorArchive& arch,class CFactoryManager* facmgr,bool bIsStoring);    \
-	virtual bool EdIdSerialize(CompressorArchive& arch,class CFactoryManager* facmgr,bool bIsStoring)  \
-{				\
-	if (bIsStoring)			\
-	{							\
-		unsigned char exprID = GetExpressionID(); \
-		arch << exprID;					\
-	}						\
-	return true; \
-}				\
+#define PLUGIN_DECLARE_SERIAL_EXPRESSION(class_name, base_class_name)          \
+public:                                                                        \
+	virtual base_class_name * Copy() {                                         \
+		return new class_name;                                                 \
+	}                                                                          \
+	virtual bool EdSerialize(CompressorArchive& arch,                          \
+	                         class CFactoryManager* facmgr,                    \
+	                         bool bIsStoring);                                 \
+	virtual bool EdIdSerialize(CompressorArchive& arch,                        \
+	                           class CFactoryManager* facmgr,                  \
+	                           bool bIsStoring)                                \
+	{                                                                          \
+		if (bIsStoring)                                                        \
+		{                                                                      \
+			unsigned char exprID = GetExpressionID();                          \
+			arch << exprID;                                                    \
+		}                                                                      \
+		return true;                                                           \
+	}                                                                          \
 
 
 

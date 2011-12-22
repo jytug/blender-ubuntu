@@ -27,7 +27,7 @@ For HTML generation
 -------------------
 - Run this script from blenders root path once you have compiled blender
 
-    ./blender.bin --background --python doc/python_api/sphinx_doc_gen.py
+    ./blender.bin --background -noaudio --python doc/python_api/sphinx_doc_gen.py
 
   This will generate python files in doc/python_api/sphinx-in/
   providing ./blender.bin is or links to the blender executable
@@ -50,7 +50,7 @@ For PDF generation
 
 # Check we're running in blender
 if __import__("sys").modules.get("bpy") is None:
-    print("\nError, this script must run from inside blender2.5")
+    print("\nError, this script must run from inside blender")
     print(script_help_msg)
 
     import sys
@@ -70,13 +70,14 @@ else:
     # for testing so doc-builds dont take so long.
     EXCLUDE_MODULES = (
         "bpy.context",
-        "bpy.app",
+        #"bpy.app",
+        #"bpy.app.handlers",
         "bpy.path",
         "bpy.data",
         "bpy.props",
         "bpy.utils",
         "bpy.context",
-        # "bpy.types",  # supports filtering
+        "bpy.types",  # supports filtering
         "bpy.ops",  # supports filtering
         "bpy_extras",
         "bge",
@@ -86,6 +87,7 @@ else:
         "gpu",
         "mathutils",
         "mathutils.geometry",
+        "mathutils.noise",
     )
 
     FILTER_BPY_TYPES = ("bpy_struct", "Operator", "ID")  # allow
@@ -94,7 +96,7 @@ else:
     # for quick rebuilds
     """
 rm -rf /b/doc/python_api/sphinx-* && \
-./blender.bin --background --factory-startup --python  doc/python_api/sphinx_doc_gen.py && \
+./blender.bin --background -noaudio --factory-startup --python  doc/python_api/sphinx_doc_gen.py && \
 sphinx-build doc/python_api/sphinx-in doc/python_api/sphinx-out
 
     """
@@ -102,15 +104,31 @@ sphinx-build doc/python_api/sphinx-in doc/python_api/sphinx-out
 # extra info, not api reference docs
 # stored in ./rst/info/
 INFO_DOCS = (
-    ("info_quickstart.rst", "Blender/Python Quickstart: new to blender/scripting and want to get you're feet wet?"),
+    ("info_quickstart.rst", "Blender/Python Quickstart: new to blender/scripting and want to get your feet wet?"),
     ("info_overview.rst", "Blender/Python API Overview: a more complete explanation of python integration"),
     ("info_best_practice.rst", "Best Practice: Conventions to follow for writing good scripts"),
     ("info_tips_and_tricks.rst", "Tips and Tricks: Hints to help you while writeing scripts for blender"),
     ("info_gotcha.rst", "Gotcha's: some of the problems you may come up against when writing scripts"),
     )
 
-# import rpdb2; rpdb2.start_embedded_debugger('test')
+# only support for properties atm.
+RNA_BLACKLIST = {
+    # messes up PDF!, really a bug but for now just workaround.
+    "UserPreferencesSystem": {"language", },
+    }
 
+
+# -----------------------------------------------------------------------------
+# configure compile time options
+
+try:
+    __import__("aud")
+except ImportError:
+    print("Warning: Built without 'aud' module, docs incomplete...")
+    EXCLUDE_MODULES = EXCLUDE_MODULES + ("aud", )
+
+
+# import rpdb2; rpdb2.start_embedded_debugger('test')
 import os
 import inspect
 import bpy
@@ -120,6 +138,7 @@ import rna_info
 ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 MethodDescriptorType = type(dict.get)
 GetSetDescriptorType = type(int.real)
+from types import MemberDescriptorType
 
 EXAMPLE_SET = set()
 EXAMPLE_SET_USED = set()
@@ -132,6 +151,10 @@ if _BPY_PROP_COLLECTION_FAKE:
     _BPY_PROP_COLLECTION_ID = ":class:`%s`" % _BPY_PROP_COLLECTION_FAKE
 else:
     _BPY_PROP_COLLECTION_ID = "collection"
+
+
+def is_struct_seq(value):
+    return isinstance(value, tuple) and type(tuple) != tuple and hasattr(value, "n_fields")
 
 
 def undocumented_message(module_name, type_name, identifier):
@@ -305,6 +328,10 @@ def py_descr2sphinx(ident, fw, descr, module_name, type_name, identifier):
         fw(ident + ".. attribute:: %s\n\n" % identifier)
         write_indented_lines(ident + "   ", fw, doc, False)
         fw("\n")
+    elif type(descr) == MemberDescriptorType:  # same as above but use 'data'
+        fw(ident + ".. data:: %s\n\n" % identifier)
+        write_indented_lines(ident + "   ", fw, doc, False)
+        fw("\n")
     elif type(descr) in (MethodDescriptorType, ClassMethodDescriptorType):
         write_indented_lines(ident, fw, doc, False)
         fw("\n")
@@ -411,59 +438,90 @@ def pymodule2sphinx(BASEPATH, module_name, module, title):
         if key.startswith("__"):
             continue
         # naughty, we also add getset's into PyStructs, this is not typical py but also not incorrect.
-        if type(descr) == types.GetSetDescriptorType:  # 'bpy_app_type' name is only used for examples and messages
-            py_descr2sphinx("", fw, descr, module_name, "bpy_app_type", key)
+
+        # type_name is only used for examples and messages
+        type_name = str(type(module)).strip("<>").split(" ", 1)[-1][1:-1]  # "<class 'bpy.app.handlers'>" --> bpy.app.handlers
+        if type(descr) == types.GetSetDescriptorType:
+            py_descr2sphinx("", fw, descr, module_name, type_name, key)
             attribute_set.add(key)
+    descr_sorted = []
     for key, descr in sorted(type(module).__dict__.items()):
         if key.startswith("__"):
             continue
 
-        if type(descr) == types.MemberDescriptorType:
+        if type(descr) == MemberDescriptorType:
             if descr.__doc__:
-                fw(".. data:: %s\n\n" % key)
-                write_indented_lines("   ", fw, descr.__doc__, False)
-                fw("\n")
-                attribute_set.add(key)
+                value = getattr(module, key, None)
 
-    del key, descr
+                value_type = type(value)
+                descr_sorted.append((key, descr, value, type(value)))
+    # sort by the valye type
+    descr_sorted.sort(key=lambda descr_data: str(descr_data[3]))
+    for key, descr, value, value_type in descr_sorted:
+
+        # must be documented as a submodule
+        if is_struct_seq(value):
+            continue
+
+        type_name = value_type.__name__
+        py_descr2sphinx("", fw, descr, module_name, type_name, key)
+
+        attribute_set.add(key)
+
+    del key, descr, descr_sorted
 
     classes = []
     submodules = []
 
+    # use this list so we can sort by type
+    module_dir_value_type = []
+
     for attribute in module_dir:
-        if not attribute.startswith("_"):
-            if attribute in attribute_set:
-                continue
+        if attribute.startswith("_"):
+            continue
 
-            if attribute.startswith("n_"):  # annoying exception, needed for bpy.app
-                continue
+        if attribute in attribute_set:
+            continue
 
-            value = getattr(module, attribute)
+        if attribute.startswith("n_"):  # annoying exception, needed for bpy.app
+            continue
 
-            value_type = type(value)
+        # workaround for bpy.app documenting .index() and .count()
+        if isinstance(module, tuple) and hasattr(tuple, attribute):
+            continue
 
-            if value_type == types.FunctionType:
-                pyfunc2sphinx("", fw, attribute, value, is_class=False)
-            elif value_type in (types.BuiltinMethodType, types.BuiltinFunctionType):  # both the same at the moment but to be future proof
-                # note: can't get args from these, so dump the string as is
-                # this means any module used like this must have fully formatted docstrings.
-                py_c_func2sphinx("", fw, module_name, None, attribute, value, is_class=False)
-            elif value_type == type:
-                classes.append((attribute, value))
-            elif issubclass(value_type, types.ModuleType):
-                submodules.append((attribute, value))
-            elif value_type in (bool, int, float, str, tuple):
-                # constant, not much fun we can do here except to list it.
-                # TODO, figure out some way to document these!
-                fw(".. data:: %s\n\n" % attribute)
-                write_indented_lines("   ", fw, "constant value %s" % repr(value), False)
-                fw("\n")
-            else:
-                print("\tnot documenting %s.%s of %r type" % (module_name, attribute, value_type.__name__))
-                continue
+        value = getattr(module, attribute)
 
-            attribute_set.add(attribute)
-            # TODO, more types...
+        module_dir_value_type.append((attribute, value, type(value)))
+
+    # sort by str of each type
+    # this way lists, functions etc are grouped.
+    module_dir_value_type.sort(key=lambda triple: str(triple[2]))
+
+    for attribute, value, value_type in module_dir_value_type:
+        if value_type == types.FunctionType:
+            pyfunc2sphinx("", fw, attribute, value, is_class=False)
+        elif value_type in (types.BuiltinMethodType, types.BuiltinFunctionType):  # both the same at the moment but to be future proof
+            # note: can't get args from these, so dump the string as is
+            # this means any module used like this must have fully formatted docstrings.
+            py_c_func2sphinx("", fw, module_name, None, attribute, value, is_class=False)
+        elif value_type == type:
+            classes.append((attribute, value))
+        elif issubclass(value_type, types.ModuleType):
+            submodules.append((attribute, value))
+        elif value_type in (bool, int, float, str, tuple):
+            # constant, not much fun we can do here except to list it.
+            # TODO, figure out some way to document these!
+            #fw(".. data:: %s\n\n" % attribute)
+            write_indented_lines("   ", fw, "constant value %s" % repr(value), False)
+            fw("\n")
+        else:
+            print("\tnot documenting %s.%s of %r type" % (module_name, attribute, value_type.__name__))
+            continue
+
+        attribute_set.add(attribute)
+        # TODO, more types...
+    del module_dir_value_type
 
     # TODO, bpy_extras does this already, mathutils not.
     """
@@ -538,6 +596,7 @@ def pycontext2sphinx(BASEPATH):
         "active_base": ("ObjectBase", False),
         "active_bone": ("Bone", False),
         "active_object": ("Object", False),
+        "active_operator": ("Operator", False),
         "active_pose_bone": ("PoseBone", False),
         "armature": ("Armature", False),
         "bone": ("Bone", False),
@@ -546,6 +605,7 @@ def pycontext2sphinx(BASEPATH):
         "cloth": ("ClothModifier", False),
         "collision": ("CollisionModifier", False),
         "curve": ("Curve", False),
+        "dynamic_paint": ("DynamicPaintModifier", False),
         "edit_bone": ("EditBone", False),
         "edit_image": ("Image", False),
         "edit_object": ("Object", False),
@@ -584,6 +644,7 @@ def pycontext2sphinx(BASEPATH):
         "speaker": ("Speaker", False),
         "texture": ("Texture", False),
         "texture_slot": ("MaterialTextureSlot", False),
+        "texture_user": ("ID", False),
         "vertex_paint_object": ("Object", False),
         "visible_bases": ("ObjectBase", True),
         "visible_bones": ("Object", True),
@@ -604,7 +665,7 @@ def pycontext2sphinx(BASEPATH):
         char_array = c_char_p_p.from_address(attr)
         i = 0
         while char_array[i] is not None:
-            member = ctypes.string_at(char_array[i]).decode()
+            member = ctypes.string_at(char_array[i]).decode(encoding="ascii")
             fw(".. data:: %s\n\n" % member)
             member_type, is_seq = type_map[member]
             fw("   :type: %s :class:`bpy.types.%s`\n\n" % ("sequence of " if is_seq else "", member_type))
@@ -703,22 +764,23 @@ def pyrna2sphinx(BASEPATH):
         fw = file.write
 
         base_id = getattr(struct.base, "identifier", "")
+        struct_id = struct.identifier
 
         if _BPY_STRUCT_FAKE:
             if not base_id:
                 base_id = _BPY_STRUCT_FAKE
 
         if base_id:
-            title = "%s(%s)" % (struct.identifier, base_id)
+            title = "%s(%s)" % (struct_id, base_id)
         else:
-            title = struct.identifier
+            title = struct_id
 
         write_title(fw, title, "=")
 
         fw(".. module:: bpy.types\n\n")
 
         # docs first?, ok
-        write_example_ref("", fw, "bpy.types.%s" % struct.identifier)
+        write_example_ref("", fw, "bpy.types.%s" % struct_id)
 
         base_ids = [base.identifier for base in struct.get_bases()]
 
@@ -747,9 +809,9 @@ def pyrna2sphinx(BASEPATH):
                 base_id = _BPY_STRUCT_FAKE
 
         if base_id:
-            fw(".. class:: %s(%s)\n\n" % (struct.identifier, base_id))
+            fw(".. class:: %s(%s)\n\n" % (struct_id, base_id))
         else:
-            fw(".. class:: %s\n\n" % struct.identifier)
+            fw(".. class:: %s\n\n" % struct_id)
 
         fw("   %s\n\n" % struct.description)
 
@@ -757,7 +819,15 @@ def pyrna2sphinx(BASEPATH):
         sorted_struct_properties = struct.properties[:]
         sorted_struct_properties.sort(key=lambda prop: prop.identifier)
 
+        # support blacklisting props
+        struct_blacklist = RNA_BLACKLIST.get(struct_id, ())
+
         for prop in sorted_struct_properties:
+
+            # support blacklisting props
+            if prop.identifier in struct_blacklist:
+                continue
+
             type_descr = prop.get_type_description(class_fmt=":class:`%s`", collection_id=_BPY_PROP_COLLECTION_ID)
             # readonly properties use "data" directive, variables properties use "attribute" directive
             if 'readonly' in type_descr:
@@ -806,7 +876,7 @@ def pyrna2sphinx(BASEPATH):
                         descr = prop.name
                     fw("         `%s`, %s, %s\n\n" % (prop.identifier, descr, type_descr))
 
-            write_example_ref("      ", fw, "bpy.types." + struct.identifier + "." + func.identifier)
+            write_example_ref("      ", fw, "bpy.types." + struct_id + "." + func.identifier)
 
             fw("\n")
 
@@ -822,7 +892,7 @@ def pyrna2sphinx(BASEPATH):
         py_func = None
 
         for identifier, py_func in py_funcs:
-            py_c_func2sphinx("   ", fw, "bpy.types", struct.identifier, identifier, py_func, is_class=True)
+            py_c_func2sphinx("   ", fw, "bpy.types", struct_id, identifier, py_func, is_class=True)
 
         lines = []
 
@@ -901,7 +971,7 @@ def pyrna2sphinx(BASEPATH):
             fw("\n")
 
         # docs last?, disable for now
-        # write_example_ref("", fw, "bpy.types.%s" % struct.identifier)
+        # write_example_ref("", fw, "bpy.types.%s" % struct_id)
         file.close()
 
     if "bpy.types" not in EXCLUDE_MODULES:
@@ -1103,6 +1173,8 @@ def rna2sphinx(BASEPATH):
         fw("   bpy.path.rst\n\n")
     if "bpy.app" not in EXCLUDE_MODULES:
         fw("   bpy.app.rst\n\n")
+    if "bpy.app.handlers" not in EXCLUDE_MODULES:
+        fw("   bpy.app.handlers.rst\n\n")
 
     # C modules
     if "bpy.props" not in EXCLUDE_MODULES:
@@ -1119,6 +1191,8 @@ def rna2sphinx(BASEPATH):
         fw("   mathutils.rst\n\n")
     if "mathutils.geometry" not in EXCLUDE_MODULES:
         fw("   mathutils.geometry.rst\n\n")
+    if "mathutils.noise" not in EXCLUDE_MODULES:
+        fw("   mathutils.noise.rst\n\n")
     if "bgl" not in EXCLUDE_MODULES:
         fw("   bgl.rst\n\n")
     if "blf" not in EXCLUDE_MODULES:
@@ -1242,6 +1316,10 @@ def rna2sphinx(BASEPATH):
         from bpy import app as module
         pymodule2sphinx(BASEPATH, "bpy.app", module, "Application Data")
 
+    if "bpy.app.handlers" not in EXCLUDE_MODULES:
+        from bpy.app import handlers as module
+        pymodule2sphinx(BASEPATH, "bpy.app.handlers", module, "Application Handlers")
+
     if "bpy.props" not in EXCLUDE_MODULES:
         from bpy import props as module
         pymodule2sphinx(BASEPATH, "bpy.props", module, "Property Definitions")
@@ -1253,6 +1331,10 @@ def rna2sphinx(BASEPATH):
     if "mathutils.geometry" not in EXCLUDE_MODULES:
         import mathutils.geometry as module
         pymodule2sphinx(BASEPATH, "mathutils.geometry", module, "Geometry Utilities")
+
+    if "mathutils.noise" not in EXCLUDE_MODULES:
+        import mathutils.noise as module
+        pymodule2sphinx(BASEPATH, "mathutils.noise", module, "Noise Utilities")
 
     if "blf" not in EXCLUDE_MODULES:
         import blf as module

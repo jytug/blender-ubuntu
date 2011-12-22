@@ -18,8 +18,8 @@
 bl_info = {
     "name": "Export Unreal Engine Format(.psk/.psa)",
     "author": "Darknet/Optimus_P-Fat/Active_Trash/Sinsoft/VendorX",
-    "version": (2, 3),
-    "blender": (2, 5, 7),
+    "version": (2, 4),
+    "blender": (2, 6, 0),
     "api": 36079,
     "location": "File > Export > Skeletal Mesh/Animation Data (.psk/.psa)",
     "description": "Export Skeleletal Mesh/Animation Data",
@@ -257,6 +257,7 @@ class VMaterial:
         self.LodStyle = 0
         
     def dump(self):
+        print("DATA MATERIAL:",self.MaterialName)
         data = pack('64siLiLii', str.encode(self.MaterialName), self.TextureIndex, self.PolyFlags, self.AuxMaterial, self.AuxFlags, self.LodBias, self.LodStyle)
         return data
 
@@ -667,15 +668,37 @@ def parse_meshes(blender_meshes, psk_file):
         current_mesh = current_obj.data
         
         #collect a list of the material names
+        print("== MATERIAL EXPORT LIST & INDEX")
         if len(current_obj.material_slots) > 0:
             counter = 0
+            
             while counter < len(current_obj.material_slots):
+                print("[MATERIAL IDX:",counter,"=]")
                 MaterialName.append(current_obj.material_slots[counter].name)
-                print("Material Name:",current_obj.material_slots[counter].name)
+                #print("Material Name:",current_obj.material_slots[counter].name)
+                #print("Material Name:",dir(current_obj.material_slots[counter].material))                
+                #print("TEXTURE:",dir(current_obj.material_slots[counter].material.texture_slots[0].texture.image.filepath))
+                #print("Imagepath:",(current_obj.material_slots[counter].material.texture_slots[0].texture.image.filepath))
+                #print("TEXTURES:",len(current_obj.material_slots[counter].material.texture_slots))
+                #while slot in current_obj.material_slots[counter].material.texture_slots:
+                    #print(dir(slot))
+                    #if slot.texture.image.filepath != None:
+                        #print("file path:",slot.texture.image.filepath)
+                if current_obj.material_slots[counter].material.texture_slots[0] != None:
+                    if current_obj.material_slots[counter].material.texture_slots[0].texture.image.filepath != None:
+                        print("TEXTURE PATH:",current_obj.material_slots[counter].material.texture_slots[0].texture.image.filepath)
+                #print("Imagepath:",(current_obj.material_slots[counter].material.texture_slots[0].texture.image.filepath_raw))
+                #print("Imagepath2:",dir(current_obj.material_slots[counter].material.texture_slots[0].texture.image))				
                 #create the current material
-                psk_file.GetMatByIndex(counter)
+                matdata = psk_file.GetMatByIndex(counter)
+                matdata.MaterialName = current_obj.material_slots[counter].name
+                matdata.TextureIndex = counter
+                matdata.AuxMaterial = counter
                 #print("materials: ",MaterialName[counter])
                 counter += 1
+                print("PSK INDEX:",matdata.TextureIndex)
+                print("=====")
+                print("")
         #    object_mat = current_obj.materials[0]
         object_material_index = current_obj.active_material_index
     
@@ -758,16 +781,20 @@ def parse_meshes(blender_meshes, psk_file):
                     uv[1] = 1.0 - uv[1]
                     
                     #deal with the min and max value
+                    #check if limit boolean
                     #if value is over the set limit it will null the uv texture
-                    if (uv[0] > 1):
-                        uv[0] = 1
-                    if (uv[0] < 0):
-                        uv[0] = 0
-                    if (uv[1] > 1):
-                        uv[1] = 1
-                    if (uv[1] < 0):
-                        uv[1] = 0
-
+                    if bpy.context.scene.limituv:
+                        if (uv[0] > 1):
+                            uv[0] = 1
+                        if (uv[0] < 0):
+                            uv[0] = 0
+                        if (uv[1] > 1):
+                            uv[1] = 1
+                        if (uv[1] < 0):
+                            uv[1] = 0
+                        #print("limited on")
+                    #else:
+                        #print("limited off")
                     
                     # RE - Append untransformed vector (for normal calc below)
                     # TODO: convert to Blender.Mathutils
@@ -849,7 +876,7 @@ def parse_meshes(blender_meshes, psk_file):
                     tri.SmoothingGroups = 1
                 else:
                     tri.SmoothingGroups = 0
-                
+                #tri.SmoothingGroups = 1
                 tri.MatIndex = object_material_index
                 #print(tri)
                 psk_file.AddFace(tri)                
@@ -860,7 +887,7 @@ def parse_meshes(blender_meshes, psk_file):
         for point in points.items():
             psk_file.AddPoint(point)
         if len(points.dict) > 32767:
-           raise RuntimeError("Vertex point reach max limited 32767 in pack data. Your",len(points.dict))
+            raise RuntimeError("Vertex point reach max limited 32767 in pack data. Your",len(points.dict))
         print (" -- Dumping Mesh Wedge -- LEN:",len(wedges.dict))
         
         for wedge in wedges.items():
@@ -1062,15 +1089,15 @@ def parse_armature(blender_armature, psk_file, psa_file):
             raise RuntimeError("Warning add two bones else it will crash the unreal editor.")
         if len(current_armature.bones) == 1:
             raise RuntimeError("Warning add one more bone else it will crash the unreal editor.")
-		
+
         mainbonecount = 0;
         for current_bone in current_armature.bones: #list the bone. #note this will list all the bones.
             if(current_bone.parent is None):
                 mainbonecount += 1
         print("Main Bone",mainbonecount)
         if mainbonecount > 1:
-           #print("Warning there no main bone.")
-           raise RuntimeError("There too many Main bones. Number main bones:",mainbonecount)
+            #print("Warning there no main bone.")
+            raise RuntimeError("There too many Main bones. Number main bones:",mainbonecount)
         for current_bone in current_armature.bones: #list the bone. #note this will list all the bones.
             if(current_bone.parent is None):
                 parse_bone(current_bone, psk_file, psa_file, 0, 0, current_obj.matrix_local, None)
@@ -1134,7 +1161,7 @@ def parse_animation(blender_scene, blender_armatures, psa_file):
             #for bone in action.groups:
                 #print("> Name: ",bone.name)
                 #print(dir(bone))
-				
+
         amatureobject = None #this is the armature set to none
         bonenames = [] #bone name of the armature bones list
         
@@ -1658,7 +1685,7 @@ def fs_callback(filename, context):
         bmesh = False
     bArmatureScale = True
     bArmatureCenter = True
-    if blender_armature[0] is not None:
+    if blender_armature and blender_armature[0] is not None:
         if blender_armature[0].scale.x == 1 and blender_armature[0].scale.y == 1 and blender_armature[0].scale.z == 1:
             #print("Okay")
             bArmatureScale = True
@@ -1822,6 +1849,11 @@ bpy.types.Scene.unrealexportpsa = BoolProperty(
     name="bool export psa",
     description="bool for exporting this psa format",
     default=True)
+
+bpy.types.Scene.limituv = BoolProperty(
+    name="bool limit UV",
+    description="limit UV co-ordinates to [0-1]",
+    default=False)
 	
 class UEAPropertyGroup(bpy.types.PropertyGroup):
     ## create Properties for the collection entries:
@@ -1906,9 +1938,6 @@ class ExportUDKAnimData(bpy.types.Operator):
     # to the class instance from the operator settings before calling.
 
     filepath = StringProperty(
-            name="File Path",
-            description="Filepath used for exporting the PSA file",
-            maxlen= 1024,
             subtype='FILE_PATH',
             )
     filter_glob = StringProperty(
@@ -1938,6 +1967,11 @@ class ExportUDKAnimData(bpy.types.Operator):
                         "animation data",
             default= False,
             )
+    limituvbool = BoolProperty(
+            name="Limit UV Co-ordinates",
+            description="Limit UV co-ordinates to [0-1]",
+            default= False,
+            ) 
 
     @classmethod
     def poll(cls, context):
@@ -1965,6 +1999,10 @@ class ExportUDKAnimData(bpy.types.Operator):
         else:
             bpy.context.scene.unrealignoreactionmatchcount = False
 
+        if(self.limituvbool):
+            bpy.types.Scene.limituv = True
+        else:
+            bpy.types.Scene.limituv = False
         write_data(self.filepath, context)
         
         self.report({'WARNING', 'INFO'}, exportmessage)
@@ -1993,17 +2031,17 @@ class VIEW3D_PT_unrealtools_objectmode(bpy.types.Panel):
         
         #FPS #it use the real data from your scene
         layout.prop(rd.render, "fps")
+        layout.prop(rd, "limituv")
         layout.operator(OBJECT_OT_UnrealExport.bl_idname)
-        
         
         layout.prop(rd, "unrealdisplayactionsets")
         
         ArmatureSelect = None
         for obj in bpy.data.objects:
-                if obj.type == 'ARMATURE' and obj.select == True:
-                    #print("Armature Name:",obj.name)
-                    ArmatureSelect = obj
-                    break
+            if obj.type == 'ARMATURE' and obj.select == True:
+                #print("Armature Name:",obj.name)
+                ArmatureSelect = obj
+                break
         #display armature actions list
         if ArmatureSelect != None and rd.unrealdisplayactionsets == True:
             layout.label(("Selected: "+ArmatureSelect.name))
@@ -2322,8 +2360,12 @@ class OBJECT_OT_UTRebuildMesh(bpy.types.Operator):
                         #print("[vertex id, weight]",v[0],":",v[1]) #array (0,0)
                 bpy.context.scene.objects.link(obmesh)
                 print("Mesh Material Count:",len(me_ob.materials))
+                matcount = 0
+                print("MATERIAL ID OREDER:")
                 for mat in me_ob.materials:
-                    print("-Material:",mat.name)
+                    print("-Material:",mat.name,"INDEX:",matcount)
+                    matcount += 1
+                print("")
                 print("Object Name:",obmesh.name)
                 bpy.context.scene.update()
                 #bpy.ops.wm.console_toggle()

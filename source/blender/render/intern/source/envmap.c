@@ -1,5 +1,4 @@
 /* 
- * $Id: envmap.c 40519 2011-09-24 14:34:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -132,6 +131,7 @@ static void envmap_split_ima(EnvMap *env, ImBuf *ibuf)
 static Render *envmap_render_copy(Render *re, EnvMap *env)
 {
 	Render *envre;
+	float viewscale;
 	int cuberes;
 	
 	envre= RE_NewRender("Envmap");
@@ -157,14 +157,8 @@ static Render *envmap_render_copy(Render *re, EnvMap *env)
 	envre->lay= re->lay;
 
 	/* view stuff in env render */
-	envre->lens= 16.0f;
-	if(env->type==ENV_PLANE)
-		envre->lens*= env->viewscale;
-	envre->ycor= 1.0f; 
-	envre->clipsta= env->clipsta;	/* render_scene_set_window() respects this for now */
-	envre->clipend= env->clipend;
-	
-	RE_SetCamera(envre, env->object);
+	viewscale= (env->type == ENV_PLANE)? env->viewscale: 1.0f;
+	RE_SetEnvmapCamera(envre, env->object, viewscale, env->clipsta, env->clipend);
 	
 	/* callbacks */
 	envre->display_draw= re->display_draw;
@@ -601,31 +595,31 @@ static int envcube_isect(EnvMap *env, float *vec, float *answ)
 	}
 	else {
 		/* which face */
-		if( vec[2]<=-fabs(vec[0]) && vec[2]<=-fabs(vec[1]) ) {
+		if( vec[2] <= -fabsf(vec[0]) && vec[2] <= -fabsf(vec[1]) ) {
 			face= 0;
 			labda= -1.0f/vec[2];
 			answ[0]= labda*vec[0];
 			answ[1]= labda*vec[1];
 		}
-		else if( vec[2]>=fabs(vec[0]) && vec[2]>=fabs(vec[1]) ) {
+		else if (vec[2] >= fabsf(vec[0]) && vec[2] >= fabsf(vec[1])) {
 			face= 1;
 			labda= 1.0f/vec[2];
 			answ[0]= labda*vec[0];
 			answ[1]= -labda*vec[1];
 		}
-		else if( vec[1]>=fabs(vec[0]) ) {
+		else if (vec[1] >= fabsf(vec[0])) {
 			face= 2;
 			labda= 1.0f/vec[1];
 			answ[0]= labda*vec[0];
 			answ[1]= labda*vec[2];
 		}
-		else if( vec[0]<=-fabs(vec[1]) ) {
+		else if (vec[0] <= -fabsf(vec[1])) {
 			face= 3;
 			labda= -1.0f/vec[0];
 			answ[0]= labda*vec[1];
 			answ[1]= labda*vec[2];
 		}
-		else if( vec[1]<=-fabs(vec[0]) ) {
+		else if (vec[1] <= -fabsf(vec[0])) {
 			face= 4;
 			labda= -1.0f/vec[1];
 			answ[0]= -labda*vec[0];
@@ -704,7 +698,7 @@ int envmaptex(Tex *tex, float *texvec, float *dxt, float *dyt, int osatex, TexRe
 	}
 	
 	/* rotate to envmap space, if object is set */
-	VECCOPY(vec, texvec);
+	copy_v3_v3(vec, texvec);
 	if(env->object) mul_m3_v3(env->obimat, vec);
 	else mul_mat3_m4_v3(R.viewinv, vec);
 	

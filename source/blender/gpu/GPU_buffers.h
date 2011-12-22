@@ -1,15 +1,10 @@
 /*
- * $Id: GPU_buffers.h 39991 2011-09-07 06:33:29Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -163,17 +158,18 @@ void GPU_buffer_unbind(void);
 int GPU_buffer_legacy( struct DerivedMesh *dm );
 
 /* Buffers for non-DerivedMesh drawing */
-void *GPU_build_mesh_buffers(struct GHash *map, struct MVert *mvert,
+typedef struct GPU_Buffers GPU_Buffers;
+GPU_Buffers *GPU_build_mesh_buffers(struct GHash *map, struct MVert *mvert,
 			struct MFace *mface, int *face_indices,
 			int totface, int *vert_indices, int uniq_verts,
 			int totvert);
-void GPU_update_mesh_buffers(void *buffers, struct MVert *mvert,
+void GPU_update_mesh_buffers(GPU_Buffers *buffers, struct MVert *mvert,
 			int *vert_indices, int totvert);
-void *GPU_build_grid_buffers(struct DMGridData **grids,
+GPU_Buffers *GPU_build_grid_buffers(struct DMGridData **grids,
 	int *grid_indices, int totgrid, int gridsize);
-void GPU_update_grid_buffers(void *buffers_v, struct DMGridData **grids,
+void GPU_update_grid_buffers(GPU_Buffers *buffers_v, struct DMGridData **grids,
 	int *grid_indices, int totgrid, int gridsize, int smooth);
-void GPU_draw_buffers(void *buffers);
-void GPU_free_buffers(void *buffers);
+void GPU_draw_buffers(GPU_Buffers *buffers);
+void GPU_free_buffers(GPU_Buffers *buffers);
 
 #endif

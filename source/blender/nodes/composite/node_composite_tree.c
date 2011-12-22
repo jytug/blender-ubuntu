@@ -1,6 +1,4 @@
-/**
- * $Id: node_composite_tree.c 40255 2011-09-16 08:20:21Z campbellbarton $
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,12 +39,15 @@
 #include "BLI_listbase.h"
 #include "BLI_threads.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_animsys.h"
 #include "BKE_colortools.h"
 #include "BKE_fcurve.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
+#include "BKE_tracking.h"
 #include "BKE_utildefines.h"
 
 #include "node_exec.h"
@@ -67,6 +68,20 @@ static void foreach_nodetree(Main *main, void *calldata, bNodeTreeCallback func)
 			func(calldata, &sce->id, sce->nodetree);
 		}
 	}
+}
+
+static void foreach_nodeclass(Scene *UNUSED(scene), void *calldata, bNodeClassCallback func)
+{
+	func(calldata, NODE_CLASS_INPUT, IFACE_("Input"));
+	func(calldata, NODE_CLASS_OUTPUT, IFACE_("Output"));
+	func(calldata, NODE_CLASS_OP_COLOR, IFACE_("Color"));
+	func(calldata, NODE_CLASS_OP_VECTOR, IFACE_("Vector"));
+	func(calldata, NODE_CLASS_OP_FILTER, IFACE_("Filter"));
+	func(calldata, NODE_CLASS_CONVERTOR, IFACE_("Convertor"));
+	func(calldata, NODE_CLASS_MATTE, IFACE_("Matte"));
+	func(calldata, NODE_CLASS_DISTORT, IFACE_("Distort"));
+	func(calldata, NODE_CLASS_GROUP, IFACE_("Group"));
+	func(calldata, NODE_CLASS_LAYOUT, IFACE_("Layout"));
 }
 
 static void free_node_cache(bNodeTree *UNUSED(ntree), bNode *node)
@@ -170,6 +185,17 @@ static void local_merge(bNodeTree *localtree, bNodeTree *ntree)
 					BKE_image_merge((Image *)lnode->new_node->id, (Image *)lnode->id);
 				}
 			}
+			else if(lnode->type==CMP_NODE_MOVIEDISTORTION) {
+				/* special case for distortion node: distortion context is allocating in exec function
+				   and to achive much better performance on further calls this context should be
+				   copied back to original node */
+				if(lnode->storage) {
+					if(lnode->new_node->storage)
+						BKE_tracking_distortion_destroy(lnode->new_node->storage);
+
+					lnode->new_node->storage= BKE_tracking_distortion_copy(lnode->storage);
+				}
+			}
 			
 			for(lsock= lnode->outputs.first; lsock; lsock= lsock->next) {
 				if(ntreeOutputExists(lnode->new_node, lsock->new_sock)) {
@@ -183,6 +209,11 @@ static void local_merge(bNodeTree *localtree, bNodeTree *ntree)
 	}
 }
 
+static void update(bNodeTree *ntree)
+{
+	ntreeSetOutput(ntree);
+}
+
 bNodeTreeType ntreeType_Composite = {
 	/* type */				NTREE_COMPOSIT,
 	/* idname */			"NTCompositing Nodetree",
@@ -192,11 +223,16 @@ bNodeTreeType ntreeType_Composite = {
 	/* free_cache */		free_cache,
 	/* free_node_cache */	free_node_cache,
 	/* foreach_nodetree */	foreach_nodetree,
+	/* foreach_nodeclass */	foreach_nodeclass,
 	/* localize */			localize,
 	/* local_sync */		local_sync,
 	/* local_merge */		local_merge,
-	/* update */			NULL,
-	/* update_node */		update_node
+	/* update */			update,
+	/* update_node */		update_node,
+	/* validate_link */		NULL,
+	/* mutefunc */			node_compo_pass_on,
+	/* mutelinksfunc */		node_mute_get_links,
+	/* gpumutefunc */		NULL
 };
 
 
@@ -324,13 +360,8 @@ static void *exec_composite_node(void *nodeexec_v)
 	
 	node_get_stack(node, thd->stack, nsin, nsout);
 	
-	if((node->flag & NODE_MUTED) && (!node_only_value(node))) {
-		/* viewers we execute, for feedback to user */
-		if(ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER)) 
-			node->typeinfo->execfunc(thd->rd, node, nsin, nsout);
-		else
-			node_compo_pass_on(node, nsin, nsout);
-	}
+	if((node->flag & NODE_MUTED) && node->typeinfo->mutefunc)
+		node->typeinfo->mutefunc(thd->rd, 0, node, nodeexec->data, nsin, nsout);
 	else if(node->typeinfo->execfunc)
 		node->typeinfo->execfunc(thd->rd, node, nsin, nsout);
 	else if (node->typeinfo->newexecfunc)
@@ -571,7 +602,7 @@ void ntreeCompositExecTree(bNodeTree *ntree, RenderData *rd, int do_preview)
 			if(nodeexec) {
 				node = nodeexec->node;
 				if(ntree->progress && totnode)
-					ntree->progress(ntree->prh, (1.0 - curnode/(float)totnode));
+					ntree->progress(ntree->prh, (1.0f - curnode/(float)totnode));
 				if(ntree->stats_draw) {
 					char str[64];
 					sprintf(str, "Compositing %d %s", curnode, node->name);
@@ -716,9 +747,9 @@ void ntreeCompositTagRender(Scene *curscene)
 			
 			for(node= sce->nodetree->nodes.first; node; node= node->next) {
 				if(node->id==(ID *)curscene || node->type==CMP_NODE_COMPOSITE)
-					NodeTagChanged(sce->nodetree, node);
+					nodeUpdate(sce->nodetree, node);
 				else if(node->type==CMP_NODE_TEXTURE) /* uses scene sizex/sizey */
-					NodeTagChanged(sce->nodetree, node);
+					nodeUpdate(sce->nodetree, node);
 			}
 		}
 	}
@@ -745,7 +776,7 @@ static int node_animation_properties(bNodeTree *ntree, bNode *node)
 		
 		for (index=0; index<len; index++) {
 			if (rna_get_fcurve(&ptr, prop, index, NULL, &driven)) {
-				NodeTagChanged(ntree, node);
+				nodeUpdate(ntree, node);
 				return 1;
 			}
 		}
@@ -763,7 +794,7 @@ static int node_animation_properties(bNodeTree *ntree, bNode *node)
 			
 			for (index=0; index<len; index++) {
 				if (rna_get_fcurve(&ptr, prop, index, NULL, &driven)) {
-					NodeTagChanged(ntree, node);
+					nodeUpdate(ntree, node);
 					return 1;
 				}
 			}
@@ -789,19 +820,23 @@ int ntreeCompositTagAnimated(bNodeTree *ntree)
 		if(node->type==CMP_NODE_IMAGE) {
 			Image *ima= (Image *)node->id;
 			if(ima && ELEM(ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
-				NodeTagChanged(ntree, node);
+				nodeUpdate(ntree, node);
 				tagged= 1;
 			}
 		}
 		else if(node->type==CMP_NODE_TIME) {
-			NodeTagChanged(ntree, node);
+			nodeUpdate(ntree, node);
 			tagged= 1;
 		}
 		/* here was tag render layer, but this is called after a render, so re-composites fail */
 		else if(node->type==NODE_GROUP) {
 			if( ntreeCompositTagAnimated((bNodeTree *)node->id) ) {
-				NodeTagChanged(ntree, node);
+				nodeUpdate(ntree, node);
 			}
+		}
+		else if(ELEM(node->type, CMP_NODE_MOVIECLIP, CMP_NODE_TRANSFORM)) {
+			nodeUpdate(ntree, node);
+			tagged= 1;
 		}
 	}
 	
@@ -818,12 +853,12 @@ void ntreeCompositTagGenerators(bNodeTree *ntree)
 	
 	for(node= ntree->nodes.first; node; node= node->next) {
 		if( ELEM(node->type, CMP_NODE_R_LAYERS, CMP_NODE_IMAGE))
-			NodeTagChanged(ntree, node);
+			nodeUpdate(ntree, node);
 	}
 }
 
 /* XXX after render animation system gets a refresh, this call allows composite to end clean */
-void ntreeClearTags(bNodeTree *ntree)
+void ntreeCompositClearTags(bNodeTree *ntree)
 {
 	bNode *node;
 	
@@ -832,6 +867,6 @@ void ntreeClearTags(bNodeTree *ntree)
 	for(node= ntree->nodes.first; node; node= node->next) {
 		node->need_exec= 0;
 		if(node->type==NODE_GROUP)
-			ntreeClearTags((bNodeTree *)node->id);
+			ntreeCompositClearTags((bNodeTree *)node->id);
 	}
 }

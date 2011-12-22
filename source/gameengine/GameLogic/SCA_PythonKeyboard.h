@@ -1,6 +1,4 @@
 /*
- * $Id: SCA_PythonKeyboard.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +31,7 @@
 
 class SCA_PythonKeyboard : public PyObjectPlus
 {
-	Py_Header;
+	Py_Header
 private:
 	class SCA_IInputDevice *m_keyboard;
 #ifdef WITH_PYTHON

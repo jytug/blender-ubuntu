@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_ID.h 40853 2011-10-08 11:02:58Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,8 +58,8 @@ typedef struct IDProperty {
 	IDPropertyData data;	/* note, alignment for 64 bits */
 	int len; /* array length, also (this is important!) string length + 1.
 				the idea is to be able to reuse array realloc functions on strings.*/
-	/*totallen is total length of allocated array/string, including a buffer.
-	  Note that the buffering is mild; the code comes from python's list implementation.*/
+	/* totallen is total length of allocated array/string, including a buffer.
+	 * Note that the buffering is mild; the code comes from python's list implementation.*/
 	int totallen; /*strings and arrays are both buffered, though the buffer isn't
 					saved.*/
 } IDProperty;
@@ -81,6 +79,13 @@ typedef struct IDProperty {
 #define IDP_DOUBLE		8
 #define IDP_IDPARRAY	9
 #define IDP_NUMTYPES	10
+
+/*->subtype */
+
+/* IDP_STRING */
+#define IDP_STRING_SUB_UTF8  0 /* default */
+#define IDP_STRING_SUB_BYTE  1 /* arbitrary byte array, _not_ null terminated */
+
 
 /* add any future new id property types here.*/
 
@@ -118,7 +123,13 @@ typedef struct Library {
 	ID *idblock;
 	struct FileData *filedata;
 	char name[240];			/* path name used for reading, can be relative and edited in the outliner */
-	char filepath[240];		/* temp. absolute filepath, only used while reading */
+	char filepath[240];		/* absolute filepath, this is only for convenience,
+							 * 'name' is the real path used on file read but in
+							 * some cases its useful to access the absolute one,
+							 * This is set on file read.
+							 * Use BKE_library_filepath_set() rather than
+							 * setting 'name' directly and it will be kepk in
+							 * sync - campbell */
 	int tot, pad;			/* tot, idblock and filedata are only fo read and write */
 	struct Library *parent;	/* set for indirectly linked libs, used in the outliner and while reading */
 } Library;
@@ -190,6 +201,7 @@ typedef struct PreviewImage {
 #define ID_PA		MAKE_ID2('P', 'A') /* ParticleSettings */
 #define ID_GD		MAKE_ID2('G', 'D') /* GreasePencil */
 #define ID_WM		MAKE_ID2('W', 'M') /* WindowManager */
+#define ID_MC		MAKE_ID2('M', 'C') /* MovieClip */
 
 	/* NOTE! Fake IDs, needed for g.sipo->blocktype or outliner */
 #define ID_SEQ		MAKE_ID2('S', 'Q')
@@ -231,6 +243,7 @@ typedef struct PreviewImage {
 #define LIB_PRE_EXISTING	2048
 /* runtime */
 #define LIB_ID_RECALC		4096
+#define LIB_ID_RECALC_DATA	8192
 
 #ifdef __cplusplus
 }

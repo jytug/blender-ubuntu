@@ -1,6 +1,5 @@
 
 /*
- * $Id: sequencer_ops.c 40658 2011-09-28 14:12:27Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -185,7 +184,7 @@ void sequencer_keymap(wmKeyConfig *keyconf)
 	   regular number keys */
 	{
 		int keys[] = { ONEKEY, TWOKEY, THREEKEY, FOURKEY, FIVEKEY,
-			       SIXKEY, SEVENKEY, EIGHTKEY, NINEKEY, ZEROKEY };
+		               SIXKEY, SEVENKEY, EIGHTKEY, NINEKEY, ZEROKEY };
 		int i;
 
 		for (i = 1; i <= 10; i++) {

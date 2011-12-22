@@ -44,7 +44,7 @@ class TEXTURE_MT_envmap_specials(Menu):
         layout.operator("texture.envmap_clear", icon='FILE_REFRESH')
         layout.operator("texture.envmap_clear_all", icon='FILE_REFRESH')
 
-from bl_ui.properties_material import active_node_mat
+from .properties_material import active_node_mat
 
 
 def context_tex_datablock(context):
@@ -166,6 +166,10 @@ class TEXTURE_PT_preview(TextureButtonsPanel, Panel):
             layout.template_preview(tex, parent=idblock, slot=slot)
         else:
             layout.template_preview(tex, slot=slot)
+
+        #Show Alpha Button for Brush Textures, see #29502
+        if context.space_data.texture_context == 'BRUSH':
+            layout.prop(tex, "use_preview_alpha")
 
 
 class TEXTURE_PT_colors(TextureButtonsPanel, Panel):
@@ -726,7 +730,7 @@ class TEXTURE_PT_pointdensity(TextureButtonsPanel, Panel):
         col.prop(pd, "falloff", text="")
         if pd.falloff == 'SOFT':
             col.prop(pd, "falloff_soft")
-        if pd.falloff == "PARTICLE_VELOCITY":
+        if pd.falloff == 'PARTICLE_VELOCITY':
             col.prop(pd, "falloff_speed_scale")
 
         col.prop(pd, "use_falloff_curve")
@@ -774,6 +778,22 @@ class TEXTURE_PT_pointdensity_turbulence(TextureButtonsPanel, Panel):
         col.prop(pd, "turbulence_strength")
 
 
+class TEXTURE_PT_ocean(TextureTypePanel, Panel):
+    bl_label = "Ocean"
+    tex_type = 'OCEAN'
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        tex = context.texture
+        ot = tex.ocean
+
+        col = layout.column()
+        col.prop(ot, "ocean_object")
+        col.prop(ot, "output")
+
+
 class TEXTURE_PT_mapping(TextureSlotPanel, Panel):
     bl_label = "Mapping"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
@@ -815,7 +835,7 @@ class TEXTURE_PT_mapping(TextureSlotPanel, Panel):
                 """
             elif tex.texture_coords == 'UV':
                 split = layout.split(percentage=0.3)
-                split.label(text="Layer:")
+                split.label(text="Map:")
                 ob = context.object
                 if ob and ob.type == 'MESH':
                     split.prop_search(tex, "uv_layer", ob.data, "uv_textures", text="")

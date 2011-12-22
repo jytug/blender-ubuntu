@@ -1,6 +1,4 @@
 /*
- * $Id: idcode.c 40641 2011-09-28 05:53:40Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -80,6 +78,7 @@ static IDType idtypes[]= {
 	{ ID_VF,		"VFont",	"fonts",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_WO,		"World",	"worlds",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_WM,		"WindowManager", "window_managers",	0}, 
+	{ ID_MC,		"MovieClip", "movieclips",	IDTYPE_FLAGS_ISLINKABLE},
 };
 static int nidtypes= sizeof(idtypes)/sizeof(idtypes[0]);
 

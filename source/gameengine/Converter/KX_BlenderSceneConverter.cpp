@@ -1,5 +1,4 @@
 /*
- * $Id: KX_BlenderSceneConverter.cpp 39946 2011-09-05 23:40:52Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -766,7 +765,7 @@ void	KX_BlenderSceneConverter::WritePhysicsObjectToAnimationIpo(int frameNumber)
 		{
 			KX_GameObject* gameObj = (KX_GameObject*)parentList->GetValue(g);
 			Object* blenderObject = gameObj->GetBlenderObject();
-			if (blenderObject && blenderObject->parent==NULL && gameObj->GetPhysicsController() != NULL)
+			if (blenderObject && blenderObject->parent==NULL && gameObj->IsDynamic())
 			{
 				//KX_IPhysicsController* physCtrl = gameObj->GetPhysicsController();
 

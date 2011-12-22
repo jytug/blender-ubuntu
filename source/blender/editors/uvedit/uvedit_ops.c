@@ -1,6 +1,4 @@
 /*
- * $Id: uvedit_ops.c 40455 2011-09-22 14:42:29Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,9 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_object_types.h"
+#include "DNA_material_types.h"
 #include "DNA_meshdata_types.h"
+#include "DNA_node_types.h"
 #include "DNA_scene_types.h"
 
 #include "BLI_math.h"
@@ -52,11 +52,16 @@
 #include "BKE_depsgraph.h"
 #include "BKE_image.h"
 #include "BKE_library.h"
+#include "BKE_main.h"
+#include "BKE_material.h"
 #include "BKE_mesh.h"
+#include "BKE_node.h"
 #include "BKE_report.h"
+#include "BKE_scene.h"
 
 #include "ED_image.h"
 #include "ED_mesh.h"
+#include "ED_node.h"
 #include "ED_uvedit.h"
 #include "ED_object.h"
 #include "ED_screen.h"
@@ -89,9 +94,46 @@ int ED_uvedit_test(Object *obedit)
 	return ret;
 }
 
+/**************************** object active image *****************************/
+
+static int is_image_texture_node(bNode *node)
+{
+	return ELEM(node->type, SH_NODE_TEX_IMAGE, SH_NODE_TEX_ENVIRONMENT);
+}
+
+int ED_object_get_active_image(Object *ob, int mat_nr, Image **ima, ImageUser **iuser, bNode **node_r)
+{
+	Material *ma= give_current_material(ob, mat_nr);
+	bNode *node= (ma && ma->use_nodes)? nodeGetActiveTexture(ma->nodetree): NULL;
+
+	if(node && is_image_texture_node(node)) {
+		if(ima) *ima= (Image*)node->id;
+		if(iuser) *iuser= NULL;
+		if(node_r) *node_r= node;
+		return TRUE;
+	}
+	
+	if(ima) *ima= NULL;
+	if(iuser) *iuser= NULL;
+	if(node_r) *node_r= node;
+
+	return FALSE;
+}
+
+void ED_object_assign_active_image(Main *bmain, Object *ob, int mat_nr, Image *ima)
+{
+	Material *ma= give_current_material(ob, mat_nr);
+	bNode *node= (ma && ma->use_nodes)? nodeGetActiveTexture(ma->nodetree): NULL;
+
+	if(node && is_image_texture_node(node)) {
+		node->id= &ima->id;
+		ED_node_generic_update(bmain, ma->nodetree, node);
+	}
+}
+
 /************************* assign image ************************/
 
-void ED_uvedit_assign_image(Scene *scene, Object *obedit, Image *ima, Image *previma)
+void ED_uvedit_assign_image(Main *bmain, Scene *scene, Object *obedit, Image *ima, Image *previma)
 {
 	EditMesh *em;
 	EditFace *efa;
@@ -111,35 +153,46 @@ void ED_uvedit_assign_image(Scene *scene, Object *obedit, Image *ima, Image *pre
 		BKE_mesh_end_editmesh(obedit->data, em);
 		return;
 	}
-	
-	/* ensure we have a uv layer */
-	if(!CustomData_has_layer(&em->fdata, CD_MTFACE)) {
-		EM_add_data_layer(em, &em->fdata, CD_MTFACE, NULL);
-		update= 1;
+
+	if(scene_use_new_shading_nodes(scene)) {
+		/* new shading system, assign image in material */
+		int sloppy= 1;
+		EditFace *efa= EM_get_actFace(em, sloppy);
+
+		if(efa)
+			ED_object_assign_active_image(bmain, obedit, efa->mat_nr, ima);
 	}
-
-	/* now assign to all visible faces */
-	for(efa= em->faces.first; efa; efa= efa->next) {
-		tf = CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
-
-		if(uvedit_face_visible(scene, previma, efa, tf)) {
-			if(ima) {
-				tf->tpage= ima;
-				
-				if(ima->id.us==0) id_us_plus(&ima->id);
-				else id_lib_extern(&ima->id);
-			}
-			else {
-				tf->tpage= NULL;
-			}
-
-			update = 1;
+	else {
+		/* old shading system, assign image to selected faces */
+		
+		/* ensure we have a uv map */
+		if(!CustomData_has_layer(&em->fdata, CD_MTFACE)) {
+			EM_add_data_layer(em, &em->fdata, CD_MTFACE, NULL);
+			update= 1;
 		}
-	}
 
-	/* and update depdency graph */
-	if(update)
-		DAG_id_tag_update(obedit->data, 0);
+		/* now assign to all visible faces */
+		for(efa= em->faces.first; efa; efa= efa->next) {
+			tf = CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
+
+			if(uvedit_face_visible(scene, previma, efa, tf)) {
+				if(ima) {
+					tf->tpage= ima;
+					
+					if(ima->id.us==0) id_us_plus(&ima->id);
+					else id_lib_extern(&ima->id);
+				}
+				else
+					tf->tpage= NULL;
+
+				update = 1;
+			}
+		}
+
+		/* and update depdency graph */
+		if(update)
+			DAG_id_tag_update(obedit->data, 0);
+	}
 
 	BKE_mesh_end_editmesh(obedit->data, em);
 }
@@ -1437,7 +1490,7 @@ static void UV_OT_stitch(wmOperatorType *ot)
 
 /* ******************** (de)select all operator **************** */
 
-static int select_all_exec(bContext *C, wmOperator *op)
+static void select_all_perform(bContext *C, int action)
 {
 	Scene *scene;
 	ToolSettings *ts;
@@ -1446,7 +1499,6 @@ static int select_all_exec(bContext *C, wmOperator *op)
 	EditFace *efa;
 	Image *ima;
 	MTFace *tf;
-	int action = RNA_enum_get(op->ptr, "action");
 	
 	scene= CTX_data_scene(C);
 	ts= CTX_data_tool_settings(C);
@@ -1507,6 +1559,15 @@ static int select_all_exec(bContext *C, wmOperator *op)
 			}
 		}
 	}
+}
+
+static int select_all_exec(bContext *C, wmOperator *op)
+{
+	Object *obedit= CTX_data_edit_object(C);
+	EditMesh *em= BKE_mesh_get_editmesh((Mesh*)obedit->data);
+	int action= RNA_enum_get(op->ptr, "action");
+
+	select_all_perform(C, action);
 
 	WM_event_add_notifier(C, NC_GEOM|ND_SELECT, obedit->data);
 
@@ -2222,7 +2283,7 @@ static int border_select_exec(bContext *C, wmOperator *op)
 	MTFace *tface;
 	rcti rect;
 	rctf rectf;
-	int change, pinned, select, faces;
+	int change, pinned, select, faces, extend;
 
 	/* get rectangle from operator */
 	rect.xmin= RNA_int_get(op->ptr, "xmin");
@@ -2236,6 +2297,10 @@ static int border_select_exec(bContext *C, wmOperator *op)
 	/* figure out what to select/deselect */
 	select= (RNA_int_get(op->ptr, "gesture_mode") == GESTURE_MODAL_SELECT);
 	pinned= RNA_boolean_get(op->ptr, "pinned");
+	extend= RNA_boolean_get(op->ptr, "extend");
+
+	if(!extend)
+		select_all_perform(C, SEL_DESELECT);
 	
 	if(ts->uv_flag & UV_SYNC_SELECTION)
 		faces= (ts->selectmode == SCE_SELECT_FACE);
@@ -2358,7 +2423,7 @@ static void UV_OT_select_border(wmOperatorType *ot)
 	/* properties */
 	RNA_def_boolean(ot->srna, "pinned", 0, "Pinned", "Border select pinned UVs only");
 
-	WM_operator_properties_gesture_border(ot, FALSE);
+	WM_operator_properties_gesture_border(ot, TRUE);
 }
 
 /* ******************** circle select operator **************** */
@@ -2532,11 +2597,11 @@ static int snap_uvs_to_cursor(Scene *scene, Image *ima, Object *obedit, SpaceIma
 	for(efa= em->faces.first; efa; efa= efa->next) {
 		tface= CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
 		if(uvedit_face_visible(scene, ima, efa, tface)) {
-			if(uvedit_uv_selected(scene, efa, tface, 0))		VECCOPY2D(tface->uv[0], sima->cursor);
-			if(uvedit_uv_selected(scene, efa, tface, 1))		VECCOPY2D(tface->uv[1], sima->cursor);
-			if(uvedit_uv_selected(scene, efa, tface, 2))		VECCOPY2D(tface->uv[2], sima->cursor);
+			if(uvedit_uv_selected(scene, efa, tface, 0))		copy_v2_v2(tface->uv[0], sima->cursor);
+			if(uvedit_uv_selected(scene, efa, tface, 1))		copy_v2_v2(tface->uv[1], sima->cursor);
+			if(uvedit_uv_selected(scene, efa, tface, 2))		copy_v2_v2(tface->uv[2], sima->cursor);
 			if(efa->v4)
-				if(uvedit_uv_selected(scene, efa, tface, 3))	VECCOPY2D(tface->uv[3], sima->cursor);
+				if(uvedit_uv_selected(scene, efa, tface, 3))	copy_v2_v2(tface->uv[3], sima->cursor);
 
 			change= 1;
 		}

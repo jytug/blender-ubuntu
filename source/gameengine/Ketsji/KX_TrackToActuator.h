@@ -1,4 +1,3 @@
-// $Id: KX_TrackToActuator.h 39883 2011-09-03 02:15:49Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -41,7 +40,7 @@
 
 class KX_TrackToActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 	// Object reference. Actually, we use the object's 'life'
 	SCA_IObject*	m_object;
 	// 3d toggle

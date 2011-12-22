@@ -1,6 +1,4 @@
 /*
- * $Id: view3d_fly.c 41078 2011-10-17 06:39:13Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -316,7 +314,7 @@ static int initFlyInfo (bContext *C, FlyInfo *fly, wmOperator *op, wmEvent *even
 
 	fly->timer= WM_event_add_timer(CTX_wm_manager(C), CTX_wm_window(C), TIMER, 0.01f);
 
-	VECCOPY2D(fly->mval, event->mval)
+	copy_v2_v2_int(fly->mval, event->mval);
 	fly->ndof = NULL;
 
 	fly->time_lastdraw= fly->time_lastwheel= PIL_check_seconds_timer();
@@ -477,7 +475,7 @@ static void flyEvent(FlyInfo *fly, wmEvent *event)
 		fly->redraw = 1;
 	}
 	else if (event->type == MOUSEMOVE) {
-		VECCOPY2D(fly->mval, event->mval);
+		copy_v2_v2_int(fly->mval, event->mval);
 	}
 	else if (event->type == NDOF_MOTION) {
 		// do these automagically get delivered? yes.
@@ -699,11 +697,11 @@ static void move_camera(bContext* C, RegionView3D* rv3d, FlyInfo* fly, int orien
 		 *		TODO: need to check in future that frame changed before doing this 
 		 */
 		if (orientationChanged) {
-			KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "Rotation");
+			KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_ROTATION_ID);
 			ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
 		}
 		if (positionChanged) {
-			KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, "Location");
+			KeyingSet *ks= ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_LOCATION_ID);
 			ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
 		}
 		

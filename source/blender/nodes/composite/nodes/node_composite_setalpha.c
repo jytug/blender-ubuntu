@@ -1,6 +1,4 @@
 /*
- * $Id: node_composite_setalpha.c 39944 2011-09-05 22:04:30Z gsrb3d $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -75,15 +73,14 @@ static void node_composit_exec_setalpha(void *UNUSED(data), bNode *node, bNodeSt
 	}
 }
 
-void register_node_type_cmp_setalpha(ListBase *lb)
+void register_node_type_cmp_setalpha(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_SETALPHA, "Set Alpha", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_SETALPHA, "Set Alpha", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_setalpha_in, cmp_node_setalpha_out);
 	node_type_size(&ntype, 120, 40, 140);
 	node_type_exec(&ntype, node_composit_exec_setalpha);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-

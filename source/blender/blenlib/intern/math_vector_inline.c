@@ -1,6 +1,4 @@
 /*
- * $Id: math_vector_inline.c 40147 2011-09-12 04:14:12Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -80,6 +78,28 @@ MINLINE void copy_v4_v4(float r[4], const float a[4])
 }
 
 /* short */
+MINLINE void copy_v2_v2_char(char r[2], const char a[2])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+}
+
+MINLINE void copy_v3_v3_char(char r[3], const char a[3])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+}
+
+MINLINE void copy_v4_v4_char(char r[4], const char a[4])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+	r[3]= a[3];
+}
+
+/* short */
 MINLINE void copy_v2_v2_short(short r[2], const short a[2])
 {
 	r[0]= a[0];
@@ -94,6 +114,28 @@ MINLINE void copy_v3_v3_short(short r[3], const short a[3])
 }
 
 MINLINE void copy_v4_v4_short(short r[4], const short a[4])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+	r[3]= a[3];
+}
+
+/* int */
+MINLINE void copy_v2_v2_int(int r[2], const int a[2])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+}
+
+MINLINE void copy_v3_v3_int(int r[3], const int a[3])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+}
+
+MINLINE void copy_v4_v4_int(int r[4], const int a[4])
 {
 	r[0]= a[0];
 	r[1]= a[1];
@@ -139,19 +181,19 @@ MINLINE void add_v4_fl(float r[4], float f)
 	r[3] += f;
 }
 
-MINLINE void add_v2_v2(float *r, const float *a)
+MINLINE void add_v2_v2(float r[2], const float a[2])
 {
 	r[0] += a[0];
 	r[1] += a[1];
 }
 
-MINLINE void add_v2_v2v2(float *r, const float *a, const float *b)
+MINLINE void add_v2_v2v2(float r[2], const float a[2], const float b[2])
 {
 	r[0]= a[0] + b[0];
 	r[1]= a[1] + b[1];
 }
 
-MINLINE void add_v3_v3(float *r, const float *a)
+MINLINE void add_v3_v3(float r[3], const float a[3])
 {
 	r[0] += a[0];
 	r[1] += a[1];
@@ -308,6 +350,18 @@ MINLINE void mul_v3_v3v3(float r[3], const float v1[3], const float v2[3])
 	r[0] = v1[0] * v2[0];
 	r[1] = v1[1] * v2[1];
 	r[2] = v1[2] * v2[2];
+}
+
+MINLINE void negate_v2(float r[3])
+{
+	r[0]= -r[0];
+	r[1]= -r[1];
+}
+
+MINLINE void negate_v2_v2(float r[2], const float a[2])
+{
+	r[0]= -a[0];
+	r[1]= -a[1];
 }
 
 MINLINE void negate_v3(float r[3])

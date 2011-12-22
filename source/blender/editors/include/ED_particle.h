@@ -1,5 +1,4 @@
 /* 
- * $Id: ED_particle.h 39991 2011-09-07 06:33:29Z mont29 $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -52,7 +51,7 @@ int PE_start_edit(struct PTCacheEdit *edit);
 struct PTCacheEdit *PE_get_current(struct Scene *scene, struct Object *ob);
 struct PTCacheEdit *PE_create_current(struct Scene *scene, struct Object *ob);
 void PE_current_changed(struct Scene *scene, struct Object *ob);
-int PE_minmax(struct Scene *scene, float *min, float *max);
+int PE_minmax(struct Scene *scene, float min[3], float max[3]);
 struct ParticleEditSettings *PE_settings(struct Scene *scene);
 
 /* update calls */
@@ -73,7 +72,7 @@ void PE_undo(struct Scene *scene);
 void PE_redo(struct Scene *scene);
 int PE_undo_valid(struct Scene *scene);
 void PE_undo_number(struct Scene *scene, int nr);
-char *PE_undo_get_name(struct Scene *scene, int nr, int *active);
+const char *PE_undo_get_name(struct Scene *scene, int nr, int *active);
 
 #endif /* ED_PARTICLE_H */
 

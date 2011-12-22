@@ -1,6 +1,4 @@
 /*
- * $Id: rna_controller.c 37427 2011-06-12 08:34:53Z dfelinto $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -74,6 +72,18 @@ static struct StructRNA* rna_Controller_refine(struct PointerRNA *ptr)
 		return &RNA_PythonController;
 	default:
 		return &RNA_Controller;
+	}
+}
+
+void rna_Constroller_name_set(PointerRNA *ptr, const char *value)
+{
+	bController *cont= (bController *)ptr->data;
+
+	BLI_strncpy_utf8(cont->name, value, sizeof(cont->name));
+
+	if (ptr->id.data) {
+		Object *ob= (Object *)ptr->id.data;
+		BLI_uniquename(&ob->controllers, cont, "Controller", '.', offsetof(bController, name), sizeof(cont->name));
 	}
 }
 
@@ -179,6 +189,7 @@ void RNA_def_controller(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Name", "");
+	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Constroller_name_set");
 	RNA_def_struct_name_property(srna, prop);
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 
@@ -247,7 +258,7 @@ void RNA_def_controller(BlenderRNA *brna)
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 
 	prop= RNA_def_property(srna, "module", PROP_STRING, PROP_NONE);
-	RNA_def_property_ui_text(prop, "Module", "Module name and function to run e.g. \"someModule.main\". Internal texts and external python files can be used");
+	RNA_def_property_ui_text(prop, "Module", "Module name and function to run, e.g. \"someModule.main\" (internal texts and external python files can be used)");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 
 	prop= RNA_def_property(srna, "use_debug", PROP_BOOLEAN, PROP_NONE);

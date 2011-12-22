@@ -1,6 +1,4 @@
 /*
- * $Id: AUD_ChannelMapperReader.cpp 41220 2011-10-23 12:33:11Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller

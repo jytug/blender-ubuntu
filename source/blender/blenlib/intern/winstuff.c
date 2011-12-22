@@ -1,6 +1,4 @@
 /*
- * $Id: winstuff.c 41021 2011-10-15 03:56:05Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -49,14 +47,14 @@
 #define WIN32_SKIP_HKEY_PROTECTION		// need to use HKEY
 #include "BLI_winstuff.h"
 
- /* FILE_MAXDIR + FILE_MAXFILE */
+ /* FILE_MAX */
 
 int BLI_getInstallationDir( char * str ) {
 	char dir[FILE_MAXDIR];
 	int a;
 	
-	GetModuleFileName(NULL,str,FILE_MAXDIR+FILE_MAXFILE);
-	BLI_split_dirfile(str, dir, NULL, sizeof(dir), 0); /* shouldn't be relative */
+	GetModuleFileName(NULL,str,FILE_MAX);
+	BLI_split_dir_part(str, dir, sizeof(dir)); /* shouldn't be relative */
 	a = strlen(dir);
 	if(dir[a-1] == '\\') dir[a-1]=0;
 	

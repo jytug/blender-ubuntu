@@ -1,6 +1,4 @@
 /*
- * $Id: bpy_driver.h 35236 2011-02-27 20:10:08Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -35,7 +33,7 @@ int bpy_pydriver_create_dict(void);
 extern PyObject *bpy_pydriver_Dict;
 
 /* externals */
-float BPY_driver_exec(struct ChannelDriver *driver);
+float BPY_driver_exec(struct ChannelDriver *driver, const float evaltime);
 void BPY_driver_reset(void);
 
 #endif // BPY_DRIVER_H

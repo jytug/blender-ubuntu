@@ -1,6 +1,4 @@
 /*
-* $Id: shadeinput.c 40519 2011-09-24 14:34:24Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -129,8 +127,8 @@ void shade_material_loop(ShadeInput *shi, ShadeResult *shr)
 		if(shi->passflag & SCE_PASS_SHADOW)
 			VECADDISFAC(shr->shad, shr_t.shad, fac);
 
-		VECMUL(shi->vn, -1.0f);
-		VECMUL(shi->facenor, -1.0f);
+		negate_v3(shi->vn);
+		negate_v3(shi->facenor);
 	}
 	
 	/* depth >= 1 when ray-shading */
@@ -471,17 +469,20 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 					scol->col[0]= cp[3]/255.0f;
 					scol->col[1]= cp[2]/255.0f;
 					scol->col[2]= cp[1]/255.0f;
+					scol->col[3]= cp[0]/255.0f;
 				}
 
 				if(shi->totcol) {
 					shi->vcol[0]= shi->col[shi->actcol].col[0];
 					shi->vcol[1]= shi->col[shi->actcol].col[1];
 					shi->vcol[2]= shi->col[shi->actcol].col[2];
+					shi->vcol[3]= shi->col[shi->actcol].col[3];
 				}
 				else {
 					shi->vcol[0]= 0.0f;
 					shi->vcol[1]= 0.0f;
 					shi->vcol[2]= 0.0f;
+					shi->vcol[3]= 0.0f;
 				}
 			}
 
@@ -514,6 +515,7 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 						shi->vcol[0]= 1.0f;
 						shi->vcol[1]= 1.0f;
 						shi->vcol[2]= 1.0f;
+						shi->vcol[3]= 1.0f;
 					}
 				}
 			}
@@ -530,6 +532,7 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 					shi->vcol[0]= 1.0f;
 					shi->vcol[1]= 1.0f;
 					shi->vcol[2]= 1.0f;
+					shi->vcol[3]= 1.0f;
 				}
 			}
 
@@ -753,17 +756,11 @@ void shade_input_set_uv(ShadeInput *shi)
 		}
 		else {
 			/* most of this could become re-used for faces */
-			float detsh, t00, t10, t01, t11, xn, yn, zn;
+			float detsh, t00, t10, t01, t11;
 			int axis1, axis2;
 
 			/* find most stable axis to project */
-			xn= fabs(shi->facenor[0]);
-			yn= fabs(shi->facenor[1]);
-			zn= fabs(shi->facenor[2]);
-
-			if(zn>=xn && zn>=yn) { axis1= 0; axis2= 1; }
-			else if(yn>=xn && yn>=zn) { axis1= 0; axis2= 2; }
-			else { axis1= 1; axis2= 2; }
+			axis_dominant_v3(&axis1, &axis2, shi->facenor);
 
 			/* compute u,v and derivatives */
 			t00= v3[axis1]-v1[axis1]; t01= v3[axis2]-v1[axis2];
@@ -1098,6 +1095,7 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 				for (i=0; (mcol=RE_vlakren_get_mcol(obr, vlr, i, &name, 0)); i++) {
 					ShadeInputCol *scol= &shi->col[i];
 					char *cp1, *cp2, *cp3;
+					float a[3];
 					
 					shi->totcol++;
 					scol->name= name;
@@ -1105,17 +1103,29 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 					cp1= (char *)(mcol+j1);
 					cp2= (char *)(mcol+j2);
 					cp3= (char *)(mcol+j3);
-					
-					scol->col[0]= (l*((float)cp3[3]) - u*((float)cp1[3]) - v*((float)cp2[3]))/255.0f;
-					scol->col[1]= (l*((float)cp3[2]) - u*((float)cp1[2]) - v*((float)cp2[2]))/255.0f;
-					scol->col[2]= (l*((float)cp3[1]) - u*((float)cp1[1]) - v*((float)cp2[1]))/255.0f;
+
+					/* alpha values */
+					a[0] = ((float)cp1[0])/255.f;
+					a[1] = ((float)cp2[0])/255.f;
+					a[2] = ((float)cp3[0])/255.f;
+					scol->col[3]= l*a[2] - u*a[0] - v*a[1];
+
+					/* sample premultiplied color value */
+					scol->col[0]= (l*((float)cp3[3])*a[2] - u*((float)cp1[3])*a[0] - v*((float)cp2[3])*a[1])/255.f;
+					scol->col[1]= (l*((float)cp3[2])*a[2] - u*((float)cp1[2])*a[0] - v*((float)cp2[2])*a[1])/255.f;
+					scol->col[2]= (l*((float)cp3[1])*a[2] - u*((float)cp1[1])*a[0] - v*((float)cp2[1])*a[1])/255.f;
+
+					/* if not zero alpha, restore non-multiplied color */
+					if (scol->col[3]) {
+						mul_v3_fl(scol->col, 1.0f/scol->col[3]);
+					}
 				}
 
 				if(shi->totcol) {
 					shi->vcol[0]= shi->col[shi->actcol].col[0];
 					shi->vcol[1]= shi->col[shi->actcol].col[1];
 					shi->vcol[2]= shi->col[shi->actcol].col[2];
-					shi->vcol[3]= 1.0f;
+					shi->vcol[3]= shi->col[shi->actcol].col[3];
 				}
 				else {
 					shi->vcol[0]= 0.0f;

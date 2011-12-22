@@ -1,5 +1,4 @@
 /*
- * $Id: quicktime_import.c 36243 2011-04-20 12:04:07Z jesterking $
  *
  * quicktime_import.c
  *
@@ -382,8 +381,9 @@ ImBuf * qtime_fetchibuf (struct anim *anim, int position)
 		//add alpha to ibuf
 		boxsize = anim->x * anim->y * 4;
 		crect = (unsigned char *) rect;
-		for( index = 0; index < boxsize; index+=4, crect+=4 )
-			 crect[3] = 0xFF;
+		for( index = 0; index < boxsize; index+=4, crect+=4 ) {
+			crect[3] = 0xFF;
+		}
 	}
 #endif
 
@@ -523,8 +523,8 @@ int startquicktime (struct anim *anim)
 		anim->qtime->have_gw = TRUE;
 
 		SetMovieGWorld(anim->qtime->movie,
-				 anim->qtime->offscreenGWorld,
-				 GetGWorldDevice(anim->qtime->offscreenGWorld));
+		               anim->qtime->offscreenGWorld,
+		               GetGWorldDevice(anim->qtime->offscreenGWorld));
 		SetMoviePlayHints(anim->qtime->movie, hintsHighQuality, hintsHighQuality);
 		
 		// sets Media and Track!
@@ -781,7 +781,7 @@ bail:
 
 		if( depth < 32 && (**desc).cType != kGIFCodecType) {
 			for(i = 0; i < box; i++, arect+=4)
-				 arect[3] = 0xFF;
+				arect[3] = 0xFF;
 		}
 #endif
 
@@ -800,25 +800,25 @@ bail:
 #if 0
 
 struct ImageDescription {
-	 long         idSize;
-	 CodecType    cType;
-	 long         resvd1;
-	 short        resvd2;
-	 short        dataRefIndex;
-	 short        version;
-	 short        revisionLevel;
-	 long         vendor;
-	 CodecQ       temporalQuality;
-	 CodecQ       spatialQuality;
-	 short        width;
-	 short        height;
-	 Fixed        hRes;
-	 Fixed        vRes;
-	 long         dataSize;
-	 short        frameCount;
-	 Str31        name;
-	 short        depth;
-	 short        clutID;
+	long         idSize;
+	CodecType    cType;
+	long         resvd1;
+	short        resvd2;
+	short        dataRefIndex;
+	short        version;
+	short        revisionLevel;
+	long         vendor;
+	CodecQ       temporalQuality;
+	CodecQ       spatialQuality;
+	short        width;
+	short        height;
+	Fixed        hRes;
+	Fixed        vRes;
+	long         dataSize;
+	short        frameCount;
+	Str31        name;
+	short        depth;
+	short        clutID;
 };
 
 #endif // 0

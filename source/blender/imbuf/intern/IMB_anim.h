@@ -1,7 +1,6 @@
 /*
  * allocimbuf.h
  *
- * $Id: IMB_anim.h 40341 2011-09-19 08:02:17Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -66,9 +65,6 @@
 #else
 #  include <dirent.h>
 #endif
-
-#include "BLI_blenlib.h" /* BLI_remlink BLI_filesize BLI_addtail
-							BLI_countlist BLI_stringdec */
 
 #include "imbuf.h"
 
@@ -177,6 +173,7 @@ struct anim {
 	AVCodecContext *pCodecCtx;
 	AVCodec *pCodec;
 	AVFrame *pFrame;
+	int pFrameComplete;
 	AVFrame *pFrameRGB;
 	AVFrame *pFrameDeinterlaced;
 	struct SwsContext *img_convert_ctx;
@@ -185,7 +182,6 @@ struct anim {
 	struct ImBuf * last_frame;
 	int64_t last_pts;
 	int64_t next_pts;
-	int64_t next_undecoded_pts;
 	AVPacket next_packet;
 #endif
 

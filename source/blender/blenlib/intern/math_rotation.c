@@ -1,6 +1,4 @@
 /*
- * $Id: math_rotation.c 40352 2011-09-19 13:08:01Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -55,7 +53,7 @@ void unit_qt(float q[4])
 	q[1]= q[2]= q[3]= 0.0f;
 }
 
-void copy_qt_qt(float *q1, const float *q2)
+void copy_qt_qt(float q1[4], const float q2[4])
 {
 	q1[0]= q2[0];
 	q1[1]= q2[1];
@@ -213,7 +211,7 @@ void quat_to_mat4(float m[][4], const float q[4])
 	double q0, q1, q2, q3, qda,qdb,qdc,qaa,qab,qac,qbb,qbc,qcc;
 
 #ifdef DEBUG
-	if(!((q0=dot_qtqt(q, q))==0.0f || (fabs(q0-1.0) < QUAT_EPSILON))) {
+	if(!((q0=dot_qtqt(q, q))==0.0f || (fabsf(q0-1.0) < QUAT_EPSILON))) {
 		fprintf(stderr, "Warning! quat_to_mat4() called with non-normalized: size %.8f *** report a bug ***\n", (float)q0);
 	}
 #endif
@@ -259,7 +257,7 @@ void mat3_to_quat(float *q, float wmat[][3])
 
 	/* work on a copy */
 	copy_m3_m3(mat, wmat);
-	normalize_m3(mat);			/* this is needed AND a NormalQuat in the end */
+	normalize_m3(mat);  /* this is needed AND a 'normalize_qt' in the end */
 	
 	tr= 0.25* (double)(1.0f+mat[0][0]+mat[1][1]+mat[2][2]);
 	
@@ -273,31 +271,31 @@ void mat3_to_quat(float *q, float wmat[][3])
 	}
 	else {
 		if(mat[0][0] > mat[1][1] && mat[0][0] > mat[2][2]) {
-			s= 2.0*sqrtf(1.0f + mat[0][0] - mat[1][1] - mat[2][2]);
+			s= 2.0f*sqrtf(1.0f + mat[0][0] - mat[1][1] - mat[2][2]);
 			q[1]= (float)(0.25*s);
 
 			s= 1.0/s;
-			q[0]= (float)((mat[2][1] - mat[1][2])*s);
-			q[2]= (float)((mat[1][0] + mat[0][1])*s);
-			q[3]= (float)((mat[2][0] + mat[0][2])*s);
+			q[0]= (float)((double)(mat[2][1] - mat[1][2])*s);
+			q[2]= (float)((double)(mat[1][0] + mat[0][1])*s);
+			q[3]= (float)((double)(mat[2][0] + mat[0][2])*s);
 		}
 		else if(mat[1][1] > mat[2][2]) {
-			s= 2.0*sqrtf(1.0f + mat[1][1] - mat[0][0] - mat[2][2]);
+			s= 2.0f*sqrtf(1.0f + mat[1][1] - mat[0][0] - mat[2][2]);
 			q[2]= (float)(0.25*s);
 
 			s= 1.0/s;
-			q[0]= (float)((mat[2][0] - mat[0][2])*s);
-			q[1]= (float)((mat[1][0] + mat[0][1])*s);
-			q[3]= (float)((mat[2][1] + mat[1][2])*s);
+			q[0]= (float)((double)(mat[2][0] - mat[0][2])*s);
+			q[1]= (float)((double)(mat[1][0] + mat[0][1])*s);
+			q[3]= (float)((double)(mat[2][1] + mat[1][2])*s);
 		}
 		else {
-			s= 2.0*sqrtf(1.0 + mat[2][2] - mat[0][0] - mat[1][1]);
+			s= 2.0f*sqrtf(1.0f + mat[2][2] - mat[0][0] - mat[1][1]);
 			q[3]= (float)(0.25*s);
 
 			s= 1.0/s;
-			q[0]= (float)((mat[1][0] - mat[0][1])*s);
-			q[1]= (float)((mat[2][0] + mat[0][2])*s);
-			q[2]= (float)((mat[2][1] + mat[1][2])*s);
+			q[0]= (float)((double)(mat[1][0] - mat[0][1])*s);
+			q[1]= (float)((double)(mat[2][0] + mat[0][2])*s);
+			q[2]= (float)((double)(mat[2][1] + mat[1][2])*s);
 		}
 	}
 
@@ -1324,8 +1322,8 @@ void mat3_to_compatible_eulO(float eul[3], float oldrot[3], short order,float ma
 	compatible_eul(eul1, oldrot);
 	compatible_eul(eul2, oldrot);
 	
-	d1= (float)fabs(eul1[0]-oldrot[0]) + (float)fabs(eul1[1]-oldrot[1]) + (float)fabs(eul1[2]-oldrot[2]);
-	d2= (float)fabs(eul2[0]-oldrot[0]) + (float)fabs(eul2[1]-oldrot[1]) + (float)fabs(eul2[2]-oldrot[2]);
+	d1= fabsf(eul1[0]-oldrot[0]) + fabsf(eul1[1]-oldrot[1]) + fabsf(eul1[2]-oldrot[2]);
+	d2= fabsf(eul2[0]-oldrot[0]) + fabsf(eul2[1]-oldrot[1]) + fabsf(eul2[2]-oldrot[2]);
 	
 	/* return best, which is just the one with lowest difference */
 	if (d1 > d2)
@@ -1690,14 +1688,14 @@ void vec_apply_track(float vec[3], short axis)
 }
 
 /* lens/angle conversion (radians) */
-float lens_to_angle(float lens)
+float focallength_to_fov(float focal_length, float sensor)
 {
-	return 2.0f * atanf(16.0f/lens);
+	return 2.0f * atanf((sensor/2.0f) / focal_length);
 }
 
-float angle_to_lens(float angle)
+float fov_to_focallength(float hfov, float sensor)
 {
-	return 16.0f / tanf(angle * 0.5f);
+	return (sensor/2.0f) / tanf(hfov * 0.5f);
 }
 
 /* 'mod_inline(-3,4)= 1', 'fmod(-3,4)= -3' */

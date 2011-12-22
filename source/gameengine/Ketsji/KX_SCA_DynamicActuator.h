@@ -1,4 +1,3 @@
-// $Id: KX_SCA_DynamicActuator.h 40538 2011-09-25 12:31:21Z campbellbarton $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -43,7 +42,7 @@
 
 class KX_SCA_DynamicActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 	// dynamics operation to apply to the game object
 	short m_dyn_operation;

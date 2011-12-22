@@ -1,4 +1,3 @@
-// $Id: KX_SCA_AddObjectActuator.h 36523 2011-05-06 20:18:42Z blendix $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -46,7 +45,7 @@ class SCA_IScene;
 
 class KX_SCA_AddObjectActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 	/// Time field: lifetime of the new object
 	int	m_timeProp;

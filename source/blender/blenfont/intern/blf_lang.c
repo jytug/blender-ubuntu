@@ -1,6 +1,4 @@
 /*
- * $Id: blf_lang.c 40928 2011-10-11 05:52:58Z dfelinto $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,6 +34,8 @@
 
 #include "BLF_api.h"
 
+#include "BLF_translation.h" /* own include */
+
 #ifdef WITH_INTERNATIONAL
 
 #include <locale.h>
@@ -55,6 +55,7 @@
 
 #include "BLI_linklist.h"	/* linknode */
 #include "BLI_string.h"
+#include "BLI_utildefines.h"
 #include "BLI_path_util.h"
 
 #define DOMAIN_NAME "blender"
@@ -77,7 +78,7 @@ static const char *locales[] = {
 	"finnish", "fi_FI",
 	"swedish", "sv_SE",
 	"french", "fr_FR",
-	"spanish", "es_ES",
+	"spanish", "es",
 	"catalan", "ca_AD",
 	"czech", "cs_CZ",
 	"ptb", "pt_BR",
@@ -95,6 +96,7 @@ static const char *locales[] = {
 	"korean", "ko_KR",
 	"nepali", "ne_NP",
 	"persian", "fa_PE",
+	"indonesian", "id_ID"
 };
 
 void BLF_lang_init(void)
@@ -103,10 +105,13 @@ void BLF_lang_init(void)
 	
 	BLI_strncpy(global_encoding_name, SYSTEM_ENCODING_DEFAULT, sizeof(global_encoding_name));
 	
-	if (messagepath)
+	if (messagepath) {
 		BLI_strncpy(global_messagepath, messagepath, sizeof(global_messagepath));
-	else
+	}
+	else {
+		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 		global_messagepath[0]= '\0';
+	}
 	
 }
 
@@ -117,7 +122,7 @@ void BLF_lang_set(const char *str)
 	const char *short_locale;
 	int ok= 1;
 #if defined (_WIN32) && !defined(FREE_WINDOWS)
-	char *long_locale = locales[ 2 * U.language];
+	const char *long_locale = locales[ 2 * U.language];
 #endif
 
 	if((U.transopts&USER_DOTRANSLATE)==0)

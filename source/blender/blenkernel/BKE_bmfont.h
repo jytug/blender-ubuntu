@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_bmfont.h 34962 2011-02-18 13:05:18Z jesterking $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -46,19 +44,19 @@ struct bmFont;
 void printfGlyph(struct bmGlyph * glyph);
 void calcAlpha(struct ImBuf * ibuf);
 void readBitmapFontVersion0(struct ImBuf * ibuf,
-								   unsigned char * rect,
-								   int step);
+                            unsigned char * rect,
+                            int step);
 void detectBitmapFont(struct ImBuf *ibuf);
 int locateGlyph(struct bmFont *bmfont, unsigned short unicode);
 void matrixGlyph(struct ImBuf * ibuf, unsigned short unicode,
-				 float *centerx, float *centery,
-				 float *sizex,   float *sizey,
-				 float *transx,  float *transy,
-				 float *movex,   float *movey, float *advance); 
+                 float *centerx, float *centery,
+                 float *sizex,   float *sizey,
+                 float *transx,  float *transy,
+                 float *movex,   float *movey, float *advance);
 
 #ifdef __cplusplus
 }
 #endif
-	
+
 #endif
 

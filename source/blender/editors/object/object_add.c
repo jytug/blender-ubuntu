@@ -1,6 +1,4 @@
 /*
- * $Id: object_add.c 40831 2011-10-06 12:51:33Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -50,12 +48,14 @@
 #include "DNA_vfont_types.h"
 
 #include "BLI_math.h"
+#include "BLI_string.h"
 #include "BLI_listbase.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_anim.h"
 #include "BKE_animsys.h"
 #include "BKE_armature.h"
+#include "BKE_camera.h"
 #include "BKE_constraint.h"
 #include "BKE_context.h"
 #include "BKE_curve.h"
@@ -64,6 +64,7 @@
 #include "BKE_displist.h"
 #include "BKE_effect.h"
 #include "BKE_group.h"
+#include "BKE_lamp.h"
 #include "BKE_lattice.h"
 #include "BKE_library.h"
 #include "BKE_key.h"
@@ -77,6 +78,7 @@
 #include "BKE_particle.h"
 #include "BKE_report.h"
 #include "BKE_sca.h"
+#include "BKE_scene.h"
 #include "BKE_speaker.h"
 #include "BKE_texture.h"
 
@@ -91,6 +93,7 @@
 #include "ED_curve.h"
 #include "ED_mball.h"
 #include "ED_mesh.h"
+#include "ED_node.h"
 #include "ED_object.h"
 #include "ED_render.h"
 #include "ED_screen.h"
@@ -241,7 +244,8 @@ int ED_object_add_generic_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(ev
 	return op->type->exec(C, op);
 }
 
-int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc, float *rot, int *enter_editmode, unsigned int *layer)
+int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc,
+	float *rot, int *enter_editmode, unsigned int *layer)
 {
 	View3D *v3d = CTX_wm_view3d(C);
 	int a, layer_values[20];
@@ -302,7 +306,8 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc, floa
 
 /* for object add primitive operators */
 /* do not call undo push in this function (users of this function have to) */
-Object *ED_object_add_type(bContext *C, int type, float *loc, float *rot, int enter_editmode, unsigned int layer)
+Object *ED_object_add_type(bContext *C, int type, float *loc, float *rot,
+	int enter_editmode, unsigned int layer)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
@@ -321,8 +326,11 @@ Object *ED_object_add_type(bContext *C, int type, float *loc, float *rot, int en
 	/* more editor stuff */
 	ED_object_base_init_transform(C, BASACT, loc, rot);
 
+	DAG_id_type_tag(bmain, ID_OB);
 	DAG_scene_sort(bmain, scene);
-	ED_render_id_flush_update(bmain, ob->data);
+	if (ob->data) {
+		ED_render_id_flush_update(bmain, ob->data);
+	}
 
 	if(enter_editmode)
 		ED_object_enter_editmode(C, EM_IGNORE_LAYER);
@@ -699,7 +707,9 @@ static const char *get_lamp_defname(int type)
 
 static int object_lamp_add_exec(bContext *C, wmOperator *op)
 {
+	Scene *scene= CTX_data_scene(C);
 	Object *ob;
+	Lamp *la;
 	int type= RNA_enum_get(op->ptr, "type");
 	int enter_editmode;
 	unsigned int layer;
@@ -710,9 +720,16 @@ static int object_lamp_add_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 
 	ob= ED_object_add_type(C, OB_LAMP, loc, rot, FALSE, layer);
-	((Lamp*)ob->data)->type= type;
-	rename_id((ID *)ob, get_lamp_defname(type));
-	rename_id((ID *)ob->data, get_lamp_defname(type));
+	la= (Lamp*)ob->data;
+
+	la->type= type;
+	rename_id(&ob->id, get_lamp_defname(type));
+	rename_id(&la->id, get_lamp_defname(type));
+
+	if(scene_use_new_shading_nodes(scene)) {
+		ED_node_shader_default(scene, &la->id);
+		la->use_nodes= 1;
+	}
 	
 	return OPERATOR_FINISHED;
 }
@@ -865,16 +882,18 @@ void OBJECT_OT_group_instance_add(wmOperatorType *ot)
 /* note: now unlinks constraints as well */
 void ED_base_object_free_and_unlink(Main *bmain, Scene *scene, Base *base)
 {
+	DAG_id_type_tag(bmain, ID_OB);
 	BLI_remlink(&scene->base, base);
 	free_libblock_us(&bmain->object, base->object);
 	if(scene->basact==base) scene->basact= NULL;
 	MEM_freeN(base);
 }
 
-static int object_delete_exec(bContext *C, wmOperator *UNUSED(op))
+static int object_delete_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
+	const short use_global= RNA_boolean_get(op->ptr, "use_global");
 	/* int islamp= 0; */ /* UNUSED */
 	
 	if(CTX_data_edit_object(C)) 
@@ -889,6 +908,22 @@ static int object_delete_exec(bContext *C, wmOperator *UNUSED(op))
 
 		/* remove from current scene only */
 		ED_base_object_free_and_unlink(bmain, scene, base);
+
+		if (use_global) {
+			Scene *scene_iter;
+			Base *base_other;
+
+			for (scene_iter= bmain->scene.first; scene_iter; scene_iter= scene_iter->id.next) {
+				if (scene_iter != scene && !(scene_iter->id.lib)) {
+					base_other= object_in_scene(base->object, scene_iter);
+					if (base_other) {
+						ED_base_object_free_and_unlink(bmain, scene_iter, base_other);
+					}
+				}
+			}
+		}
+		/* end global */
+
 	}
 	CTX_DATA_END;
 
@@ -915,6 +950,8 @@ void OBJECT_OT_delete(wmOperatorType *ot)
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+
+	RNA_def_boolean(ot->srna, "use_global", 0, "Delete Globally", "Remove object from all scenes");
 }
 
 /**************************** Copy Utilities ******************************/
@@ -1007,23 +1044,21 @@ static void copy_object_set_idnew(bContext *C, int dupflag)
 
 /********************* Make Duplicates Real ************************/
 
-static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base)
+static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base,
+                                       const short use_base_parent,
+                                       const short use_hierarchy)
 {
-	Base *basen;
-	Object *ob;
 	ListBase *lb;
 	DupliObject *dob;
-	
-	if(!base && !(base = BASACT))
-		return;
-	
+
 	if(!(base->object->transflag & OB_DUPLI))
 		return;
 	
 	lb= object_duplilist(scene, base->object);
 	
 	for(dob= lb->first; dob; dob= dob->next) {
-		ob= copy_object(dob->ob);
+		Base *basen;
+		Object *ob= copy_object(dob->ob);
 		/* font duplis can have a totcol without material, we get them from parent
 		* should be implemented better...
 		*/
@@ -1050,22 +1085,85 @@ static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base)
 		object_apply_mat4(ob, ob->obmat, FALSE, FALSE);
 	}
 	
+	if (use_hierarchy) {
+		for(dob= lb->first; dob; dob= dob->next) {
+			/* original parents */
+			Object *ob_src=     dob->ob;
+			Object *ob_src_par= ob_src->parent;
+
+			Object *ob_dst=     (Object *)ob_src->id.newid;
+
+			if (ob_src_par && ob_src_par->id.newid) {
+				/* the parent was also made real, parent newly real duplis */
+				Object *ob_dst_par= (Object *)ob_src_par->id.newid;
+
+				/* allow for all possible parent types */
+				ob_dst->partype= ob_src->partype;
+				BLI_strncpy(ob_dst->parsubstr, ob_src->parsubstr, sizeof(ob_dst->parsubstr));
+				ob_dst->par1= ob_src->par1;
+				ob_dst->par2= ob_src->par2;
+				ob_dst->par3= ob_src->par3;
+
+				copy_m4_m4(ob_dst->parentinv, ob_src->parentinv);
+
+				ob_dst->parent= ob_dst_par;
+			}
+			else if (use_base_parent) {
+				ob_dst->parent= base->object;
+				ob_dst->partype= PAROBJECT;
+			}
+
+			if (ob_dst->parent) {
+				invert_m4_m4(ob_dst->parentinv, dob->mat);
+
+				/* note, this may be the parent of other objects, but it should
+				 * still work out ok */
+				object_apply_mat4(ob_dst, dob->mat, FALSE, TRUE);
+
+				/* to set ob_dst->orig and incase theres any other discrepicies */
+				DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB);
+			}
+		}
+	}
+	else if (use_base_parent) {
+		/* since we are ignoring the internal hierarchy - parent all to the
+		 * base object */
+		for(dob= lb->first; dob; dob= dob->next) {
+			/* original parents */
+			Object *ob_src=     dob->ob;
+			Object *ob_dst=     (Object *)ob_src->id.newid;
+
+			ob_dst->parent= base->object;
+			ob_dst->partype= PAROBJECT;
+
+			/* similer to the code above, see comments */
+			invert_m4_m4(ob_dst->parentinv, dob->mat);
+			object_apply_mat4(ob_dst, dob->mat, FALSE, TRUE);
+			DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB);
+
+
+		}
+	}
+
 	copy_object_set_idnew(C, 0);
 	
 	free_object_duplilist(lb);
 	
-	base->object->transflag &= ~OB_DUPLI;	
+	base->object->transflag &= ~OB_DUPLI;
 }
 
-static int object_duplicates_make_real_exec(bContext *C, wmOperator *UNUSED(op))
+static int object_duplicates_make_real_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
+
+	const short use_base_parent= RNA_boolean_get(op->ptr, "use_base_parent");
+	const short use_hierarchy= RNA_boolean_get(op->ptr, "use_hierarchy");
 	
 	clear_id_newpoins();
 		
 	CTX_DATA_BEGIN(C, Base*, base, selected_editable_bases) {
-		make_object_duplilist_real(C, scene, base);
+		make_object_duplilist_real(C, scene, base, use_base_parent, use_hierarchy);
 
 		/* dependencies were changed */
 		WM_event_add_notifier(C, NC_OBJECT|ND_PARENT, base->object);
@@ -1095,6 +1193,9 @@ void OBJECT_OT_duplicates_make_real(wmOperatorType *ot)
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+
+	RNA_def_boolean(ot->srna, "use_base_parent", 0, "Parent", "Parent newly created objects to the original duplicator");
+	RNA_def_boolean(ot->srna, "use_hierarchy", 0, "Keep Hierarchy", "Maintain parent child relationships");
 }
 
 /**************************** Convert **************************/
@@ -1269,6 +1370,7 @@ static int convert_exec(bContext *C, wmOperator *op)
 				makeDispListCurveTypes(scene, newob, 0);
 
 			newob->type= OB_CURVE;
+			cu->type= OB_CURVE;
 
 			if(cu->vfont) {
 				cu->vfont->id.us--;
@@ -1711,7 +1813,9 @@ Base *ED_object_add_duplicate(Main *bmain, Scene *scene, Base *base, int dupflag
 	set_sca_new_poins_ob(ob);
 
 	DAG_scene_sort(bmain, scene);
-	ED_render_id_flush_update(bmain, ob->data);
+	if (ob->data) {
+		ED_render_id_flush_update(bmain, ob->data);
+	}
 
 	return basen;
 }

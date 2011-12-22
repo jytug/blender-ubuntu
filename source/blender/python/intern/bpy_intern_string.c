@@ -1,6 +1,4 @@
 /*
- * $Id: bpy_intern_string.c 39815 2011-08-31 01:07:55Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +22,10 @@
 
 /** \file blender/python/intern/bpy_intern_string.c
  *  \ingroup pythonintern
+ *
+ * Store python versions of strings frequently used for python lookups
+ * to avoid converting, creating the hash and freeing every time as
+ * PyDict_GetItemString and PyObject_GetAttrString do.
  */
 
 #include <Python.h>

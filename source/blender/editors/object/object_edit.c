@@ -1,6 +1,4 @@
 /*
- * $Id: object_edit.c 40853 2011-10-08 11:02:58Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -147,6 +145,7 @@ static int object_hide_view_clear_exec(bContext *C, wmOperator *UNUSED(op))
 		}
 	}
 	if (changed) {
+		DAG_id_type_tag(bmain, ID_OB);
 		DAG_scene_sort(bmain, scene);
 		WM_event_add_notifier(C, NC_SCENE|ND_OB_SELECT, scene);
 	}
@@ -199,6 +198,7 @@ static int object_hide_view_set_exec(bContext *C, wmOperator *op)
 	CTX_DATA_END;
 
 	if (changed) {
+		DAG_id_type_tag(bmain, ID_OB);
 		DAG_scene_sort(bmain, scene);
 		
 		WM_event_add_notifier(C, NC_SCENE|ND_OB_SELECT, CTX_data_scene(C));
@@ -439,9 +439,6 @@ void ED_object_enter_editmode(bContext *C, int flag)
 	ob->mode= OB_MODE_EDIT;
 	
 	if(ob->type==OB_MESH) {
-		Mesh *me= ob->data;
-		
-		if(me->pv) mesh_pmv_off(me);
 		ok= 1;
 		scene->obedit= ob;	// context sees this
 		
@@ -475,7 +472,7 @@ void ED_object_enter_editmode(bContext *C, int flag)
 	else if(ob->type==OB_FONT) {
 		scene->obedit= ob; // XXX for context
 		ok= 1;
-		 make_editText(ob);
+		make_editText(ob);
 
 		WM_event_add_notifier(C, NC_SCENE|ND_MODE|NS_EDITMODE_TEXT, scene);
 	}
@@ -536,9 +533,9 @@ static int editmode_toggle_poll(bContext *C)
 		return 0;
 
 	return (ob->type == OB_MESH || ob->type == OB_ARMATURE ||
-			  ob->type == OB_FONT || ob->type == OB_MBALL ||
-			  ob->type == OB_LATTICE || ob->type == OB_SURF ||
-			  ob->type == OB_CURVE);
+	        ob->type == OB_FONT || ob->type == OB_MBALL ||
+	        ob->type == OB_LATTICE || ob->type == OB_SURF ||
+	        ob->type == OB_CURVE);
 }
 
 void OBJECT_OT_editmode_toggle(wmOperatorType *ot)
@@ -585,7 +582,7 @@ void OBJECT_OT_posemode_toggle(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Toggle Pose Mode";
 	ot->idname= "OBJECT_OT_posemode_toggle";
-	ot->description= "Enables or disables posing/selecting bones";
+	ot->description= "Enable or disable posing/selecting bones";
 	
 	/* api callbacks */
 	ot->exec= posemode_exec;
@@ -1130,19 +1127,19 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 				base->object->recalc |= OB_RECALC_OB;
 				
 				if(event==1) {  /* loc */
-					VECCOPY(base->object->loc, ob->loc);
-					VECCOPY(base->object->dloc, ob->dloc);
+					copy_v3_v3(base->object->loc, ob->loc);
+					copy_v3_v3(base->object->dloc, ob->dloc);
 				}
 				else if(event==2) {  /* rot */
-					VECCOPY(base->object->rot, ob->rot);
-					VECCOPY(base->object->drot, ob->drot);
+					copy_v3_v3(base->object->rot, ob->rot);
+					copy_v3_v3(base->object->drot, ob->drot);
 
-					QUATCOPY(base->object->quat, ob->quat);
-					QUATCOPY(base->object->dquat, ob->dquat);
+					copy_qt_qt(base->object->quat, ob->quat);
+					copy_qt_qt(base->object->dquat, ob->dquat);
 				}
 				else if(event==3) {  /* size */
-					VECCOPY(base->object->size, ob->size);
-					VECCOPY(base->object->dsize, ob->dsize);
+					copy_v3_v3(base->object->size, ob->size);
+					copy_v3_v3(base->object->dscale, ob->dscale);
 				}
 				else if(event==4) {  /* drawtype */
 					base->object->dt= ob->dt;
@@ -1182,7 +1179,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 					base->object->min_vel= ob->min_vel;
 					base->object->max_vel= ob->max_vel;
 					if (ob->gameflag & OB_BOUNDS) {
-						base->object->boundtype = ob->boundtype;
+						base->object->collision_boundtype = ob->collision_boundtype;
 					}
 					base->object->margin= ob->margin;
 					base->object->bsoft= copy_bulletsoftbody(ob->bsoft);
@@ -1331,7 +1328,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 					base->object->index= ob->index;
 				}
 				else if(event==31) { /* object color */
-					QUATCOPY(base->object->col, ob->col);
+					copy_v4_v4(base->object->col, ob->col);
 				}
 			}
 		}
@@ -1461,7 +1458,7 @@ void ED_objects_recalculate_paths(bContext *C, Scene *scene)
 /* For the object with pose/action: create path curves for selected bones 
  * This recalculates the WHOLE path within the pchan->pathsf and pchan->pathef range
  */
-static int object_calculate_paths_exec (bContext *C, wmOperator *UNUSED(op))
+static int object_calculate_paths_exec (bContext *C, wmOperator *op)
 {
 	Scene *scene= CTX_data_scene(C);
 	
@@ -1469,7 +1466,7 @@ static int object_calculate_paths_exec (bContext *C, wmOperator *UNUSED(op))
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects)  
 	{
 		/* verify makes sure that the selected bone has a bone with the appropriate settings */
-		animviz_verify_motionpaths(scene, ob, NULL);
+		animviz_verify_motionpaths(op->reports, scene, ob, NULL);
 	}
 	CTX_DATA_END;
 	
@@ -2056,10 +2053,8 @@ static int game_property_copy_exec(bContext *C, wmOperator *op)
 		
 		if(prop) {
 			CTX_DATA_BEGIN(C, Object*, ob_iter, selected_editable_objects) {
-				if (ob != ob_iter) {
-					if (ob->data != ob_iter->data)
-						set_ob_property(ob_iter, prop);
-				}
+				if (ob != ob_iter)
+					set_ob_property(ob_iter, prop);
 			} CTX_DATA_END;
 		}
 	}
@@ -2067,17 +2062,13 @@ static int game_property_copy_exec(bContext *C, wmOperator *op)
 	else {
 		CTX_DATA_BEGIN(C, Object*, ob_iter, selected_editable_objects) {
 			if (ob != ob_iter) {
-				if (ob->data != ob_iter->data){
-					if (type == COPY_PROPERTIES_REPLACE)
-						copy_properties( &ob_iter->prop, &ob->prop );
+				if (type == COPY_PROPERTIES_REPLACE)
+					copy_properties(&ob_iter->prop, &ob->prop);
 
-					/* merge - the default when calling with no argument */
-					else {
-						for(prop = ob->prop.first; prop; prop= prop->next ) {
-							set_ob_property(ob_iter, prop);
-						}
-					}
-				}
+				/* merge - the default when calling with no argument */
+				else
+					for(prop = ob->prop.first; prop; prop= prop->next)
+						set_ob_property(ob_iter, prop);
 			}
 		}
 		CTX_DATA_END;

@@ -1,7 +1,6 @@
 /*
  * SCA_AlwaysSensor.h
  *
- * $Id: SCA_AlwaysSensor.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,7 +38,7 @@
 
 class SCA_AlwaysSensor : public SCA_ISensor
 {
-	Py_Header;
+	Py_Header
 	bool			m_alwaysresult;
 public:
 	SCA_AlwaysSensor(class SCA_EventManager* eventmgr,

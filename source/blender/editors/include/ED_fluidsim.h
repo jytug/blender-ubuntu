@@ -1,7 +1,6 @@
 /*
  * BKE_fluidsim.h 
  *	
- * $Id: ED_fluidsim.h 35016 2011-02-21 07:25:24Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,9 +48,4 @@ void fluidsimSettingsFree(struct FluidsimSettings* sb);
 /* duplicate internal data */
 struct FluidsimSettings* fluidsimSettingsCopy(struct FluidsimSettings* sb);
 
-/* memory estimate */
-void fluidsimEstimateMemory(struct Object *ob, struct FluidsimSettings *fs, char *value);
-
 #endif /* ED_FLUIDSIM_H */
-
-

@@ -1,6 +1,4 @@
 /*
- * $Id: py_capi_utils.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -18,10 +16,17 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file blender/python/generic/py_capi_utils.c
  *  \ingroup pygen
+ *
+ * Extend upon CPython's API, filling in some gaps, these functions use PyC_
+ * prefix to distinguish them apart from CPython.
+ *
+ * \note
+ * This module should only depend on CPython, however it currently uses
+ * BLI_string_utf8() for unicode conversion.
  */
 
 
@@ -30,7 +35,7 @@
 
 #include "py_capi_utils.h"
 
-#include "BKE_font.h" /* only for utf8towchar, should replace with py funcs but too late in release now */
+#include "BLI_string_utf8.h" /* only for BLI_strncpy_wchar_from_utf8, should replace with py funcs but too late in release now */
 
 #ifdef _WIN32 /* BLI_setenv */
 #include "BLI_path_util.h"
@@ -182,6 +187,15 @@ void PyC_FileAndNum(const char **filename, int *lineno)
 	if (lineno) {
 		*lineno = PyFrame_GetLineNumber(frame);
 	}
+}
+
+void PyC_FileAndNum_Safe(const char **filename, int *lineno)
+{
+	if(!PYC_INTERPRETER_ACTIVE) {
+		return;
+	}
+
+	PyC_FileAndNum(filename, lineno);
 }
 
 /* Would be nice if python had this built in */
@@ -356,7 +370,7 @@ error_cleanup:
 /* string conversion, escape non-unicode chars, coerce must be set to NULL */
 const char *PyC_UnicodeAsByte(PyObject *py_str, PyObject **coerce)
 {
-	char *result;
+	const char *result;
 
 	result= _PyUnicode_AsString(py_str);
 
@@ -371,15 +385,19 @@ const char *PyC_UnicodeAsByte(PyObject *py_str, PyObject **coerce)
 		if (PyBytes_Check(py_str)) {
 			return PyBytes_AS_STRING(py_str);
 		}
+		else if ((*coerce= PyUnicode_EncodeFSDefault(py_str))) {
+			return PyBytes_AS_STRING(*coerce);
+		}
 		else {
-			return PyBytes_AS_STRING((*coerce= PyUnicode_EncodeFSDefault(py_str)));
+			/* leave error raised from EncodeFS */
+			return NULL;
 		}
 	}
 }
 
-PyObject *PyC_UnicodeFromByte(const char *str)
+PyObject *PyC_UnicodeFromByteAndSize(const char *str, Py_ssize_t size)
 {
-	PyObject *result= PyUnicode_FromString(str);
+    PyObject *result= PyUnicode_FromStringAndSize(str, size);
 	if (result) {
 		/* 99% of the time this is enough but we better support non unicode
 		 * chars since blender doesnt limit this */
@@ -388,9 +406,14 @@ PyObject *PyC_UnicodeFromByte(const char *str)
 	else {
 		PyErr_Clear();
 		/* this means paths will always be accessible once converted, on all OS's */
-		result= PyUnicode_DecodeFSDefault(str);
+		result= PyUnicode_DecodeFSDefaultAndSize(str, size);
 		return result;
 	}
+}
+
+PyObject *PyC_UnicodeFromByte(const char *str)
+{
+	return PyC_UnicodeFromByteAndSize(str, strlen(str));
 }
 
 /*****************************************************************************
@@ -469,7 +492,7 @@ void PyC_SetHomePath(const char *py_path_bundle)
 		/* cant use this, on linux gives bug: #23018, TODO: try LANG="en_US.UTF-8" /usr/bin/blender, suggested 22008 */
 		/* mbstowcs(py_path_bundle_wchar, py_path_bundle, FILE_MAXDIR); */
 
-		utf8towchar(py_path_bundle_wchar, py_path_bundle);
+		BLI_strncpy_wchar_from_utf8(py_path_bundle_wchar, py_path_bundle, sizeof(py_path_bundle_wchar) / sizeof(wchar_t));
 
 		Py_SetPythonHome(py_path_bundle_wchar);
 		// printf("found python (wchar_t) '%ls'\n", py_path_bundle_wchar);

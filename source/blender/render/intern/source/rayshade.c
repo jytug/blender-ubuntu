@@ -1,6 +1,4 @@
 /*
- * $Id: rayshade.c 40519 2011-09-24 14:34:24Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -487,18 +485,12 @@ void makeraytree(Render *re)
 /* 	if(shi->osatex)  */
 static void shade_ray_set_derivative(ShadeInput *shi)
 {
-	float detsh, t00, t10, t01, t11, xn, yn, zn;
+	float detsh, t00, t10, t01, t11;
 	int axis1, axis2;
 
 	/* find most stable axis to project */
-	xn= fabs(shi->facenor[0]);
-	yn= fabs(shi->facenor[1]);
-	zn= fabs(shi->facenor[2]);
-	
-	if(zn>=xn && zn>=yn) { axis1= 0; axis2= 1; }
-	else if(yn>=xn && yn>=zn) { axis1= 0; axis2= 2; }
-	else { axis1= 1; axis2= 2; }
-	
+	axis_dominant_v3(&axis1, &axis2, shi->facenor);
+
 	/* compute u,v and derivatives */
 	if(shi->obi->flag & R_TRANSFORMED) {
 		float v1[3], v2[3], v3[3];
@@ -1526,7 +1518,7 @@ void ray_trace(ShadeInput *shi, ShadeResult *shr)
 	do_tra= ((shi->mode & MA_TRANSP) && (shi->mode & MA_RAYTRANSP) && shr->alpha!=1.0f && (shi->depth <= shi->mat->ray_depth_tra));
 	do_mir= ((shi->mat->mode & MA_RAYMIRROR) && shi->ray_mirror!=0.0f && (shi->depth <= shi->mat->ray_depth));
 	
-	/* raytrace mirror amd refract like to separate the spec color */
+	/* raytrace mirror and refract like to separate the spec color */
 	if(shi->combinedflag & SCE_PASS_SPEC)
 		sub_v3_v3v3(diff, shr->combined, shr->spec);
 	else
@@ -1595,7 +1587,7 @@ void ray_trace(ShadeInput *shi, ShadeResult *shr)
 	}
 	/* put back together */
 	if(shi->combinedflag & SCE_PASS_SPEC)
-		VECADD(shr->combined, diff, shr->spec) /* no ; */
+		add_v3_v3v3(shr->combined, diff, shr->spec);
 	else
 		copy_v3_v3(shr->combined, diff);
 }

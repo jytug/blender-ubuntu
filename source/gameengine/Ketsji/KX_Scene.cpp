@@ -1,6 +1,4 @@
 /*
- * $Id: KX_Scene.cpp 40274 2011-09-16 20:08:05Z moguri $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -1249,9 +1247,10 @@ KX_Camera* KX_Scene::FindCamera(KX_Camera* cam)
 {
 	list<KX_Camera*>::iterator it = m_cameras.begin();
 
-	while ( (it != m_cameras.end()) 
-			&& ((*it) != cam) ) {
-	  it++;
+	while ( (it != m_cameras.end())
+	        && ((*it) != cam) )
+	{
+		it++;
 	}
 
 	return ((it == m_cameras.end()) ? NULL : (*it));
@@ -1262,9 +1261,10 @@ KX_Camera* KX_Scene::FindCamera(STR_String& name)
 {
 	list<KX_Camera*>::iterator it = m_cameras.begin();
 
-	while ( (it != m_cameras.end()) 
-			&& ((*it)->GetName() != name) ) {
-	  it++;
+	while ( (it != m_cameras.end())
+	        && ((*it)->GetName() != name) )
+	{
+		it++;
 	}
 
 	return ((it == m_cameras.end()) ? NULL : (*it));
@@ -2119,7 +2119,7 @@ PySequenceMethods KX_Scene::Sequence = {
 PyObject* KX_Scene::pyattr_get_name(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	KX_Scene* self= static_cast<KX_Scene*>(self_v);
-	return PyUnicode_FromString(self->GetName().ReadPtr());
+	return PyUnicode_From_STR_String(self->GetName());
 }
 
 PyObject* KX_Scene::pyattr_get_objects(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)

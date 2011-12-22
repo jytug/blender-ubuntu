@@ -1,6 +1,4 @@
 /*
- * $Id: rna_sequencer.c 41021 2011-10-15 03:56:05Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -191,6 +189,13 @@ static int rna_Sequence_frame_length_get(PointerRNA *ptr)
 {
 	Sequence *seq= (Sequence*)ptr->data;
 	return seq_tx_get_final_right(seq, 0)-seq_tx_get_final_left(seq, 0);
+}
+
+static int rna_Sequence_frame_editable(PointerRNA *ptr)
+{
+	Sequence *seq = (Sequence*)ptr->data;
+	/* Effect sequences' start frame and length must be readonly! */
+	return (get_sequence_effect_num_inputs(seq->type))? 0: PROP_EDITABLE;
 }
 
 static void rna_Sequence_channel_set(PointerRNA *ptr, int value)
@@ -540,10 +545,10 @@ static int rna_Sequence_input_count_get(PointerRNA *ptr)
 static void rna_SequenceElement_filename_set(PointerRNA *ptr, const char *value)
 {
 	StripElem *elem= (StripElem*)(ptr->data);
-	BLI_split_dirfile(value, NULL, elem->name, 0, sizeof(elem->name));
+	BLI_split_file_part(value, elem->name, sizeof(elem->name));
 }*/
 
-static void rna_Sequence_update(Main *UNUSED(bmain), Scene *scene, PointerRNA *ptr)
+static void rna_Sequence_update(Main *UNUSED(bmain), Scene *scene, PointerRNA *UNUSED(ptr))
 {
 	Editing *ed= seq_give_editing(scene, FALSE);
 
@@ -1027,8 +1032,9 @@ static void rna_def_sequence(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "frame_final_duration", PROP_INT, PROP_TIME);
 	RNA_def_property_range(prop, 1, MAXFRAME);
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-	RNA_def_property_ui_text(prop, "Length", "The length of the contents of this strip before the handles are applied");
+	RNA_def_property_ui_text(prop, "Length", "The length of the contents of this strip after the handles are applied");
 	RNA_def_property_int_funcs(prop, "rna_Sequence_frame_length_get", "rna_Sequence_frame_length_set",NULL);
+	RNA_def_property_editable_func(prop, "rna_Sequence_frame_editable");
 	RNA_def_property_update(prop, NC_SCENE|ND_SEQUENCER, "rna_Sequence_update");
 
 	prop= RNA_def_property(srna, "frame_duration", PROP_INT, PROP_TIME);
@@ -1042,6 +1048,7 @@ static void rna_def_sequence(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Start Frame", "");
 	RNA_def_property_int_funcs(prop, NULL, "rna_Sequence_start_frame_set",NULL); // overlap tests and calc_seq_disp
+	RNA_def_property_editable_func(prop, "rna_Sequence_frame_editable");
 	RNA_def_property_update(prop, NC_SCENE|ND_SEQUENCER, "rna_Sequence_update");
 	
 	prop= RNA_def_property(srna, "frame_final_start", PROP_INT, PROP_TIME);
@@ -1049,6 +1056,7 @@ static void rna_def_sequence(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Start Frame", "Start frame displayed in the sequence editor after offsets are applied, setting this is equivalent to moving the handle, not the actual start frame");
 	RNA_def_property_int_funcs(prop, NULL, "rna_Sequence_start_frame_final_set", NULL); // overlap tests and calc_seq_disp
+	RNA_def_property_editable_func(prop, "rna_Sequence_frame_editable");
 	RNA_def_property_update(prop, NC_SCENE|ND_SEQUENCER, "rna_Sequence_update");
 
 	prop= RNA_def_property(srna, "frame_final_end", PROP_INT, PROP_TIME);
@@ -1056,6 +1064,7 @@ static void rna_def_sequence(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "End Frame", "End frame displayed in the sequence editor after offsets are applied");
 	RNA_def_property_int_funcs(prop, NULL, "rna_Sequence_end_frame_final_set", NULL); // overlap tests and calc_seq_disp
+	RNA_def_property_editable_func(prop, "rna_Sequence_frame_editable");
 	RNA_def_property_update(prop, NC_SCENE|ND_SEQUENCER, "rna_Sequence_update");
 
 	prop= RNA_def_property(srna, "frame_offset_start", PROP_INT, PROP_TIME);
@@ -1190,7 +1199,7 @@ static void rna_def_editor(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Overlay Offset", "");
 	RNA_def_property_int_funcs(prop, "rna_SequenceEditor_overlay_frame_get", "rna_SequenceEditor_overlay_frame_set", NULL);
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_SEQUENCER, NULL);
-	RNA_def_property_ui_text(prop, "Active Strip", "Sequencers active strip");
+	RNA_def_property_ui_text(prop, "Active Strip", "Sequencer's active strip");
 }
 
 static void rna_def_filter_video(StructRNA *srna)
@@ -1609,7 +1618,7 @@ static void rna_def_glow(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "clamp", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "fClamp");
 	RNA_def_property_range(prop, 0.0f, 1.0f);
-	RNA_def_property_ui_text(prop, "Clamp", "rightness limit of intensity");
+	RNA_def_property_ui_text(prop, "Clamp", "Brightness limit of intensity");
 	RNA_def_property_update(prop, NC_SCENE|ND_SEQUENCER, "rna_Sequence_update");
 	
 	prop= RNA_def_property(srna, "boost_factor", PROP_FLOAT, PROP_NONE);
@@ -1713,7 +1722,7 @@ static void rna_def_solid_color(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna = RNA_def_struct(brna, "ColorSequence", "EffectSequence");
-	RNA_def_struct_ui_text(srna, "Color Sequence", "Sequence strip creating an image filled with a single g");
+	RNA_def_struct_ui_text(srna, "Color Sequence", "Sequence strip creating an image filled with a single color");
 	RNA_def_struct_sdna_from(srna, "SolidColorVars", "effectdata");
 	
 	prop= RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);

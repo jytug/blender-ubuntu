@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_material.h 40734 2011-10-01 17:51:47Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -93,7 +91,7 @@ void end_render_materials(struct Main *);
 
 int material_in_material(struct Material *parmat, struct Material *mat);
 
-void ramp_blend(int type, float *r, float *g, float *b, float fac, const float col[3]);
+void	ramp_blend(int type, float r_col[3], const float fac, const float col[3]);
 
 /* copy/paste */
 void clear_matcopybuf(void);

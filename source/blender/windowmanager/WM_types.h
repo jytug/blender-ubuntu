@@ -1,6 +1,4 @@
 /*
- * $Id: WM_types.h 40762 2011-10-03 01:36:25Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -98,6 +96,11 @@ enum {
 #define KM_ALT2		64
 #define KM_OSKEY2	128
 
+/* KM_MOD_ flags for wmKeyMapItem and wmEvent.alt/shift/oskey/ctrl  */
+/* note that KM_ANY and FALSE are used with these defines too */
+#define KM_MOD_FIRST  1
+#define KM_MOD_SECOND 2
+
 /* type: defined in wm_event_types.c */
 #define KM_TEXTINPUT	-2
 
@@ -163,6 +166,7 @@ typedef struct wmNotifier {
 #define NC_NODE				(17<<24)
 #define NC_ID				(18<<24)
 #define NC_LOGIC			(19<<24)
+#define NC_MOVIECLIP			(20<<24)
 
 /* data type, 256 entries is enough, it can overlap */
 #define NOTE_DATA			0x00FF0000
@@ -272,6 +276,7 @@ typedef struct wmNotifier {
 #define ND_SPACE_SEQUENCER		(16<<16)
 #define ND_SPACE_NODE_VIEW		(17<<16)
 #define ND_SPACE_CHANGED		(18<<16) /*sent to a new editor type after it's replaced an old one*/
+#define ND_SPACE_CLIP			(19<<16)
 
 /* subtype, 256 entries too */
 #define NOTE_SUBTYPE		0x0000FF00
@@ -341,8 +346,10 @@ typedef struct wmEvent {
 	short val;			/* press, release, scrollvalue */
 	int x, y;			/* mouse pointer position, screen coord */
 	int mval[2];		/* region mouse position, name convention pre 2.5 :) */
-	short unicode;		/* future, ghost? */
-	char ascii;			/* from ghost */
+	char utf8_buf[6];	/* from, ghost if utf8 is enabled for the platform,
+						 * BLI_str_utf8_size() must _always_ be valid, check
+						 * when assigning s we dont need to check on every access after */
+	char ascii;			/* from ghost, fallback if utf8 isnt set */
 	char pad;
 
 	/* previous state */

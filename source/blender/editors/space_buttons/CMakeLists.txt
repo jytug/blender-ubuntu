@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 12931 2007-12-17 18:20:48Z theeth $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -39,6 +38,7 @@ set(SRC
 	buttons_context.c
 	buttons_header.c
 	buttons_ops.c
+	buttons_texture.c
 	space_buttons.c
 
 	buttons_intern.h

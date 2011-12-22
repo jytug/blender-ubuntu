@@ -198,7 +198,9 @@ typedef struct bPoseChannel {
 	struct Bone			*bone;		/* set on read file or rebuild pose */
 	struct bPoseChannel *parent;	/* set on read file or rebuild pose */
 	struct bPoseChannel *child;		/* set on read file or rebuild pose, the 'ik' child, for b-bones */
-	struct ListBase		 iktree;		/* only while evaluating pose */
+	
+	struct ListBase		 iktree;		/* "IK trees" - only while evaluating pose */
+	struct ListBase 	siktree;		/* Spline-IK "trees" - only while evaluating pose */
 	
 	bMotionPath *mpath;				/* motion path cache for this bone */
 	struct Object *custom;			/* draws custom object instead of default bone shape */
@@ -580,7 +582,7 @@ typedef struct SpaceAction {
 
 	short blockhandler[8];
 
-	View2D v2d;					/* depricated, copied to region */
+	View2D v2d  DNA_DEPRECATED; /* copied to region */
 	
 	bAction		*action;		/* the currently active action */
 	bDopeSheet 	ads;			/* the currently active context (when not showing action) */

@@ -1,7 +1,4 @@
-/** \file gameengine/VideoTexture/ImageRender.cpp
- *  \ingroup bgevideotex
- */
-/* $Id: ImageRender.cpp 39883 2011-09-03 02:15:49Z campbellbarton $
+/*
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -22,6 +19,10 @@ Place - Suite 330, Boston, MA 02111-1307, USA, or go to
 http://www.gnu.org/copyleft/lesser.txt.
 -----------------------------------------------------------------------------
 */
+
+/** \file gameengine/VideoTexture/ImageRender.cpp
+ *  \ingroup bgevideotex
+ */
 
 // implementation
 
@@ -213,6 +214,8 @@ void ImageRender::Render()
 	} else
 	{
 		float lens = m_camera->GetLens();
+		float sensor_x = m_camera->GetSensorWidth();
+		float sensor_y = m_camera->GetSensorHeight();
 		bool orthographic = !m_camera->GetCameraData()->m_perspective;
 		float nearfrust = m_camera->GetCameraNear();
 		float farfrust = m_camera->GetCameraFar();
@@ -232,6 +235,7 @@ void ImageRender::Render()
 			            farfrust,
 			            m_camera->GetScale(),
 			            aspect_ratio,
+						m_camera->GetSensorFit(),
 			            frustrum
 			            );
 
@@ -243,6 +247,9 @@ void ImageRender::Render()
 			            nearfrust,
 			            farfrust,
 			            lens,
+			            sensor_x,
+			            sensor_y,
+			            RAS_SENSORFIT_AUTO,
 			            aspect_ratio,
 			            frustrum);
 			

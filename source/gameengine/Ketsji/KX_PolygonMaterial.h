@@ -1,6 +1,4 @@
 /*
- * $Id: KX_PolygonMaterial.h 40372 2011-09-19 19:55:59Z dfelinto $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -57,7 +55,7 @@ struct Image;
  */
 class KX_PolygonMaterial : public PyObjectPlus, public RAS_IPolyMaterial
 {
-	Py_Header;
+	Py_Header
 private:
 	/** Blender texture face structure. */
 	MTFace*			m_tface;

@@ -1,6 +1,4 @@
 /*
- * $Id: rna_texture_api.c 40354 2011-09-19 13:23:58Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -51,7 +49,7 @@ void save_envmap(struct EnvMap *env, bContext *C, ReportList *reports, const cha
 		scene = CTX_data_scene(C);
 	}
 
-	RE_WriteEnvmapResult(reports, scene, env, filepath, scene->r.imtype, layout);
+	RE_WriteEnvmapResult(reports, scene, env, filepath, scene->r.im_format.imtype, layout);
 }
 
 void clear_envmap(struct EnvMap *env, bContext *C)
@@ -120,10 +118,10 @@ void RNA_api_environment_map(StructRNA *srna)
 
 	RNA_def_pointer(func, "scene", "Scene", "", "Overrides the scene from which image parameters are taken");
 
-	parm = RNA_def_float_array(func, "layout", 12, default_layout, 0.0f, 0.0f, "File layout",
-	                           "Flat array describing the X,Y position of each cube face in the "
-	                           "output image, where 1 is the size of a face - order is [+Z -Z +Y -X -Y +X] "
-	                           "(use -1 to skip a face)", 0.0f, 0.0f);
+	RNA_def_float_array(func, "layout", 12, default_layout, 0.0f, 0.0f, "File layout",
+	                    "Flat array describing the X,Y position of each cube face in the "
+	                    "output image, where 1 is the size of a face - order is [+Z -Z +Y -X -Y +X] "
+	                    "(use -1 to skip a face)", 0.0f, 0.0f);
 }
 
 #endif

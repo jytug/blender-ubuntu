@@ -30,9 +30,7 @@ class EditExternally(Operator):
     bl_options = {'REGISTER'}
 
     filepath = StringProperty(
-            name="File Path",
-            description="Path to an image file",
-            maxlen=1024,
+            subtype='FILE_PATH',
             )
 
     def _editor_guess(self, context):
@@ -145,7 +143,11 @@ class ProjectEdit(Operator):
         for image in bpy.data.images:
             image.tag = True
 
-        if 'FINISHED' not in bpy.ops.paint.image_from_view():
+        # opengl buffer may fail, we can't help this, but best report it.
+        try:
+            bpy.ops.paint.image_from_view()
+        except RuntimeError as err:
+            self.report({'ERROR'}, str(err))
             return {'CANCELLED'}
 
         image_new = None
@@ -187,6 +189,8 @@ class ProjectEdit(Operator):
         image_new.filepath_raw = filepath_final  # TODO, filepath raw is crummy
         image_new.file_format = 'PNG'
         image_new.save()
+
+        filepath_final = bpy.path.abspath(filepath_final)
 
         try:
             bpy.ops.image.external_edit(filepath=filepath_final)

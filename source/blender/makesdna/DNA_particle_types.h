@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_particle_types.h 41060 2011-10-16 16:14:36Z jhk $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -34,6 +32,7 @@
  *  \ingroup DNA
  */
 
+#include "DNA_defs.h"
 #include "DNA_ID.h"
 #include "DNA_boid_types.h"
 
@@ -227,15 +226,18 @@ typedef struct ParticleSettings {
 
 	struct Group *dup_group;
 	struct ListBase dupliweights;
-	struct Group *eff_group;		// deprecated
+	struct Group *eff_group  DNA_DEPRECATED;		// deprecated
 	struct Object *dup_ob;
 	struct Object *bb_ob;
-	struct Ipo *ipo;				// xxx depreceated... old animation system
+	struct Ipo *ipo  DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
 	struct PartDeflect *pd;
 	struct PartDeflect *pd2;
 } ParticleSettings;
 
-typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in copy_particlesystem */
+typedef struct ParticleSystem
+{	/* note1: make sure all (runtime) are NULL's in 'copy_particlesystem' XXX, this function is no more! - need to invstigate */
+	/* note2: make sure any uses of this struct in DNA are accounted for in 'copy_object_particlesystems' */
+
 	struct ParticleSystem *next, *prev;
 
 	ParticleSettings *part;					/* particle settings */

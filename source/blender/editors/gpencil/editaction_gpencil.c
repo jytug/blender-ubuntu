@@ -311,7 +311,7 @@ void copy_gpdata ()
 		gpln= MEM_callocN(sizeof(bGPDlayer), "GPCopyPasteLayer");
 		
 		gpln->frames.first= gpln->frames.last= NULL;
-		strcpy(gpln->info, gpls->info);
+		BLI_strncpy(gpln->info, gpls->info, sizeof(gpln->info));
 		
 		BLI_addtail(&gpcopybuf, gpln);
 		
@@ -422,6 +422,7 @@ void paste_gpdata (Scene *scene)
 								
 							case SPACE_NODE: /* Nodes Editor: either screen-aligned or view-aligned */
 							case SPACE_IMAGE: /* Image Editor: either screen-aligned or view\image-aligned */
+							case SPACE_CLIP: /* Image Editor: either screen-aligned or view\image-aligned */
 								if ((gps->flag == 0) || (gps->flag & GP_STROKE_2DSPACE))
 									stroke_ok= 1;
 								break;

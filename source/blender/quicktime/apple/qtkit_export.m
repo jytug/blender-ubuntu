@@ -1,8 +1,4 @@
-/**
- * $Id: qtkit_export.m 37750 2011-06-23 09:27:56Z campbellbarton $
- *
- * qtkit_export.m
- *
+/*
  * Code to create QuickTime Movies with Blender
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
@@ -217,7 +213,7 @@ void makeqtstring (RenderData *rd, char *string) {
 	BLI_make_existing_file(string);
 
 	if (BLI_strcasecmp(string + strlen(string) - 4, ".mov")) {
-		sprintf(txt, "%04d_%04d.mov", (rd->sfra) , (rd->efra) );
+		sprintf(txt, "%04d-%04d.mov", (rd->sfra) , (rd->efra) );
 		strcat(string, txt);
 	}
 }
@@ -783,7 +779,7 @@ void free_qtcomponentdata(void) {
 
 void quicktime_verify_image_type(RenderData *rd)
 {
-	if (rd->imtype == R_QUICKTIME) {
+	if (rd->imtype == R_IMF_IMTYPE_QUICKTIME) {
 		if ((rd->qtcodecsettings.codecType<= 0) ||
 			(rd->qtcodecsettings.codecSpatialQuality <0) ||
 			(rd->qtcodecsettings.codecSpatialQuality > 100)) {

@@ -1,6 +1,4 @@
 /*
- * $Id: fluidsim.c 35247 2011-02-27 20:40:57Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +31,6 @@
 
 
 #include <stddef.h>
-#include "BLI_storage.h" /* _LARGEFILE_SOURCE */
 
 #include "MEM_guardedalloc.h"
 
@@ -95,7 +92,7 @@ void initElbeemMesh(struct Scene *scene, struct Object *ob,
 	*numVertices = totvert;
 	verts = MEM_callocN( totvert*3*sizeof(float), "elbeemmesh_vertices");
 	for(i=0; i<totvert; i++) {
-		VECCOPY( &verts[i*3], mvert[i].co);
+		copy_v3_v3(&verts[i*3], mvert[i].co);
 		if(useGlobalCoords) { mul_m4_v3(ob->obmat, &verts[i*3]); }
 	}
 	*vertices = verts;

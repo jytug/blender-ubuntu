@@ -163,7 +163,10 @@ def demo_mode_init():
         print("  render")
 
         # setup tempfile
-        global_state["render_out"] = tempfile.mkstemp()[1]
+        handle, global_state["render_out"] = tempfile.mkstemp()
+        os.close(handle)
+        del handle
+
         if os.path.exists(global_state["render_out"]):
             print("  render!!!")
             os.remove(global_state["render_out"])
@@ -171,7 +174,7 @@ def demo_mode_init():
         # setup scene.
         scene = bpy.context.scene
         scene.render.filepath = global_state["render_out"]
-        scene.render.file_format = 'AVI_JPEG' if global_config["anim_render"] else 'PNG'
+        scene.render.image_settings.file_format = 'AVI_JPEG' if global_config["anim_render"] else 'PNG'
         scene.render.use_file_extension = False
         scene.render.use_placeholder = False
         try:
@@ -447,7 +450,7 @@ def load_config(cfg_name=DEMO_CFG):
     if demo_search_path is None:
         print("reading: %r, no search_path found, missing files wont be searched." % demo_path)
     if demo_search_path.startswith("//"):
-        demo_search_path = os.path.relpath(demo_search_path)
+        demo_search_path = bpy.path.abspath(demo_search_path)
     if not os.path.exists(demo_search_path):
         print("reading: %r, search_path %r does not exist." % (demo_path, demo_search_path))
         demo_search_path = None

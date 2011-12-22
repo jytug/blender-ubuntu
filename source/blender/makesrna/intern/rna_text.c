@@ -1,6 +1,4 @@
 /*
- * $Id: rna_text.c 40640 2011-09-28 05:20:14Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -44,7 +42,7 @@
 
 #ifdef RNA_RUNTIME
 
-int text_file_modified(Text *text);
+int text_file_modified(Text *text); /* XXX bad level call */
 
 static void rna_Text_filename_get(PointerRNA *ptr, char *value)
 {

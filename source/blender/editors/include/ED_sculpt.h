@@ -1,6 +1,4 @@
 /*
- * $Id: ED_sculpt.h 40193 2011-09-14 00:37:27Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,7 +40,7 @@ struct wmWindowManager;
 /* sculpt.c */
 void ED_operatortypes_sculpt(void);
 void sculpt_get_redraw_planes(float planes[4][4], struct ARegion *ar,
-				   struct RegionView3D *rv3d, struct Object *ob);
+                              struct RegionView3D *rv3d, struct Object *ob);
 void ED_sculpt_force_update(struct bContext *C);
 
 /* paint_ops.c */

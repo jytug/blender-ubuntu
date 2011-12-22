@@ -1,5 +1,4 @@
 /*
- * $Id: GHOST_SystemPathsWin32.h 38908 2011-08-02 04:28:05Z merwin $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -75,18 +74,18 @@ public:
 	 * If needed, it will create the base directory.
 	 * @return Unsigned char string pointing to user dir (eg ~/).
 	 */
-	 const GHOST_TUns8* getUserDir() const;
+	const GHOST_TUns8* getUserDir() const;
 
-	 /**
-	  * Determine the directory of the current binary
-	  * @return Unsigned char string pointing to the binary dir
-	  */
-	 const GHOST_TUns8* getBinaryDir() const;
+	/**
+	 * Determine the directory of the current binary
+	 * @return Unsigned char string pointing to the binary dir
+	 */
+	const GHOST_TUns8* getBinaryDir() const;
 
-	 /**
-	  * Add the file to the operating system most recently used files
-	  */
-	 void addToSystemRecentFiles(const char* filename) const;
+	/**
+	 * Add the file to the operating system most recently used files
+	 */
+	void addToSystemRecentFiles(const char* filename) const;
 };
 
 #endif // _GHOST_SYSTEM_PATHS_WIN32_H_

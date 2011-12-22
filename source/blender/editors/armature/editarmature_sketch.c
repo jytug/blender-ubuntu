@@ -1,6 +1,4 @@
 /*
- * $Id: editarmature_sketch.c 40147 2011-09-12 04:14:12Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -189,7 +187,7 @@ void BIF_makeListTemplates(const bContext *C)
 	}
 }
 
-char *BIF_listTemplates(const bContext *UNUSED(C))
+const char *BIF_listTemplates(const bContext *UNUSED(C))
 {
 	GHashIterator ghi;
 	char menu_header[] = "Template%t|None%x0|";
@@ -510,7 +508,7 @@ static void sk_drawEdge(GLUquadric *quad, SK_Point *pt0, SK_Point *pt1, float si
 
 	angle = angle_normalized_v3v3(vec2, vec1);
 
-	glRotatef(angle * 180 / M_PI + 180, axis[0], axis[1], axis[2]);
+	glRotatef(angle * (float)(180.0/M_PI) + 180.0f, axis[0], axis[1], axis[2]);
 
 	gluCylinder(quad, sk_clampPointSize(pt1, size), sk_clampPointSize(pt0, size), length, 8, 8);
 }
@@ -531,7 +529,7 @@ static void sk_drawNormal(GLUquadric *quad, SK_Point *pt, float size, float heig
 
 	angle = angle_normalized_v3v3(vec2, pt->no);
 
-	glRotatef(angle * 180 / M_PI, axis[0], axis[1], axis[2]);
+	glRotatef(angle * (float)(180.0/M_PI), axis[0], axis[1], axis[2]);
 
 	glColor3f(0, 1, 1);
 	gluCylinder(quad, sk_clampPointSize(pt, size), 0, sk_clampPointSize(pt, height), 10, 2);
@@ -626,7 +624,7 @@ static void drawSubdividedStrokeBy(ToolSettings *toolsettings, BArcIterator *ite
 	gluQuadricNormals(quad, GLU_SMOOTH);
 
 	iter->head(iter);
-	VECCOPY(head, iter->p);
+	copy_v3_v3(head, iter->p);
 
 	index = next_subdividion(toolsettings, iter, bone_start, end, head, tail);
 	while (index != -1)
@@ -642,7 +640,7 @@ static void drawSubdividedStrokeBy(ToolSettings *toolsettings, BArcIterator *ite
 
 		glPopMatrix();
 
-		VECCOPY(head, tail);
+		copy_v3_v3(head, tail);
 		bone_start = index; // start next bone from current index
 
 		index = next_subdividion(toolsettings, iter, bone_start, end, head, tail);
@@ -750,7 +748,7 @@ static SK_Point *sk_snapPointArmature(bContext *C, Object *ob, ListBase *ebones,
 
 		if ((bone->flag & BONE_CONNECTED) == 0)
 		{
-			VECCOPY(vec, bone->head);
+			copy_v3_v3(vec, bone->head);
 			mul_m4_v3(ob->obmat, vec);
 			project_short_noclip(ar, vec, pval);
 
@@ -760,13 +758,13 @@ static SK_Point *sk_snapPointArmature(bContext *C, Object *ob, ListBase *ebones,
 			{
 				*dist = pdist;
 				pt = &boneSnap;
-				VECCOPY(pt->p, vec);
+				copy_v3_v3(pt->p, vec);
 				pt->type = PT_EXACT;
 			}
 		}
 
 
-		VECCOPY(vec, bone->tail);
+		copy_v3_v3(vec, bone->tail);
 		mul_m4_v3(ob->obmat, vec);
 		project_short_noclip(ar, vec, pval);
 
@@ -776,7 +774,7 @@ static SK_Point *sk_snapPointArmature(bContext *C, Object *ob, ListBase *ebones,
 		{
 			*dist = pdist;
 			pt = &boneSnap;
-			VECCOPY(pt->p, vec);
+			copy_v3_v3(pt->p, vec);
 			pt->type = PT_EXACT;
 		}
 	}
@@ -1026,7 +1024,7 @@ static void sk_projectDrawPoint(bContext *C, float vec[3], SK_Stroke *stk, SK_Dr
 
 	if (last != NULL)
 	{
-		VECCOPY(fp, last->p);
+		copy_v3_v3(fp, last->p);
 	}
 
 	initgrabz(ar->regiondata, fp[0], fp[1], fp[2]);
@@ -1136,12 +1134,12 @@ static int sk_getStrokeSnapPoint(bContext *C, SK_Point *pt, SK_Sketch *sketch, S
 				}
 				else
 				{
-					VECCOPY(vec, p1->p);
+					copy_v3_v3(vec, p1->p);
 				}
 
 				if (last_p == NULL)
 				{
-					VECCOPY(p, vec);
+					copy_v3_v3(p, vec);
 					size = new_size;
 					dist = 0;
 					break;
@@ -1151,7 +1149,7 @@ static int sk_getStrokeSnapPoint(bContext *C, SK_Point *pt, SK_Sketch *sketch, S
 
 				if (new_dist < dist)
 				{
-					VECCOPY(p, vec);
+					copy_v3_v3(p, vec);
 					dist = new_dist;
 					size = new_size;
 				}
@@ -1163,7 +1161,7 @@ static int sk_getStrokeSnapPoint(bContext *C, SK_Point *pt, SK_Sketch *sketch, S
 			pt->type = dd->type;
 			pt->mode = PT_SNAP;
 			pt->size = size / 2;
-			VECCOPY(pt->p, p);
+			copy_v3_v3(pt->p, p);
 
 			point_added = 1;
 		}
@@ -1195,7 +1193,7 @@ static int sk_getStrokeSnapPoint(bContext *C, SK_Point *pt, SK_Sketch *sketch, S
 
 			if (spt != NULL)
 			{
-				VECCOPY(pt->p, spt->p);
+				copy_v3_v3(pt->p, spt->p);
 				point_added = 1;
 			}
 		}
@@ -1209,7 +1207,7 @@ static int sk_getStrokeSnapPoint(bContext *C, SK_Point *pt, SK_Sketch *sketch, S
 		{
 			pt->type = dd->type;
 			pt->mode = PT_SNAP;
-			VECCOPY(pt->p, vec);
+			copy_v3_v3(pt->p, vec);
 
 			point_added = 1;
 		}
@@ -1236,7 +1234,7 @@ static int sk_addStrokeSnapPoint(bContext *C, SK_Sketch *sketch, SK_Stroke *stk,
 		int total;
 		int i;
 
-		VECCOPY(final_p, pt.p);
+		copy_v3_v3(final_p, pt.p);
 
 		sk_projectDrawPoint(C, pt.p, stk, dd);
 		sk_appendStrokePoint(stk, &pt);
@@ -1261,7 +1259,7 @@ static int sk_addStrokeSnapPoint(bContext *C, SK_Sketch *sketch, SK_Stroke *stk,
 			sk_interpolateDepth(C, stk, i + 1, stk->nb_points - 2, length, distance);
 		}
 
-		VECCOPY(stk->points[stk->nb_points - 1].p, final_p);
+		copy_v3_v3(stk->points[stk->nb_points - 1].p, final_p);
 
 		point_added = 1;
 	}
@@ -1298,7 +1296,7 @@ static void sk_getStrokePoint(bContext *C, SK_Point *pt, SK_Sketch *sketch, SK_S
 	{
 		point_added = sk_getStrokeSnapPoint(C, pt, sketch, stk, dd);
 		LAST_SNAP_POINT_VALID = 1;
-		VECCOPY(LAST_SNAP_POINT, pt->p);
+		copy_v3_v3(LAST_SNAP_POINT, pt->p);
 	}
 	else
 	{
@@ -1538,8 +1536,8 @@ static void sk_convertStroke(bContext *C, SK_Stroke *stk)
 				{
 					bone = ED_armature_edit_bone_add(arm, "Bone");
 
-					VECCOPY(bone->head, head->p);
-					VECCOPY(bone->tail, pt->p);
+					copy_v3_v3(bone->head, head->p);
+					copy_v3_v3(bone->tail, pt->p);
 
 					mul_m4_v3(invmat, bone->head);
 					mul_m4_v3(invmat, bone->tail);
@@ -1819,7 +1817,7 @@ int sk_detectTrimGesture(bContext *UNUSED(C), SK_Gesture *gest, SK_Sketch *UNUSE
 		sub_v3_v3v3(s1, gest->segments->points[1].p, gest->segments->points[0].p);
 		sub_v3_v3v3(s2, gest->segments->points[2].p, gest->segments->points[1].p);
 
-		angle = RAD2DEG(angle_v2v2(s1, s2));
+		angle = RAD2DEGF(angle_v2v2(s1, s2));
 
 		if (angle > 60 && angle < 120)
 		{
@@ -1937,7 +1935,7 @@ int sk_detectDeleteGesture(bContext *UNUSED(C), SK_Gesture *gest, SK_Sketch *UNU
 		sub_v3_v3v3(s1, gest->segments->points[1].p, gest->segments->points[0].p);
 		sub_v3_v3v3(s2, gest->segments->points[2].p, gest->segments->points[1].p);
 
-		angle = RAD2DEG(angle_v2v2(s1, s2));
+		angle = RAD2DEGF(angle_v2v2(s1, s2));
 
 		if (angle > 120)
 		{
@@ -2069,7 +2067,7 @@ int sk_detectReverseGesture(bContext *UNUSED(C), SK_Gesture *gest, SK_Sketch *UN
 					sub_v3_v3v3(end_v, sk_lastStrokePoint(gest->stk)->p, isect->p);
 				}
 
-				angle = RAD2DEG(angle_v2v2(start_v, end_v));
+				angle = RAD2DEGF(angle_v2v2(start_v, end_v));
 
 				if (angle > 120)
 				{

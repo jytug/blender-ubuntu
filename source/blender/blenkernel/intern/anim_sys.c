@@ -1,6 +1,4 @@
 /*
- * $Id: anim_sys.c 40904 2011-10-10 09:44:14Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -45,12 +43,15 @@
 #include "BLI_utildefines.h"
 
 #include "DNA_anim_types.h"
+#include "DNA_lamp_types.h"
 #include "DNA_material_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_texture_types.h"
+#include "DNA_world_types.h"
 
 #include "BKE_animsys.h"
 #include "BKE_action.h"
+#include "BKE_depsgraph.h"
 #include "BKE_fcurve.h"
 #include "BKE_nla.h"
 #include "BKE_global.h"
@@ -544,7 +545,7 @@ void BKE_animdata_separate_by_basepath (ID *srcID, ID *dstID, ListBase *basepath
 /* Path Validation -------------------------------------------- */
 
 /* Check if a given RNA Path is valid, by tracing it from the given ID, and seeing if we can resolve it */
-static short check_rna_path_is_valid (ID *owner_id, char *path)
+static short check_rna_path_is_valid (ID *owner_id, const char *path)
 {
 	PointerRNA id_ptr, ptr;
 	PropertyRNA *prop=NULL;
@@ -559,7 +560,7 @@ static short check_rna_path_is_valid (ID *owner_id, char *path)
 /* Check if some given RNA Path needs fixing - free the given path and set a new one as appropriate 
  * NOTE: we assume that oldName and newName have [" "] padding around them
  */
-static char *rna_path_rename_fix (ID *owner_id, const char *prefix, char *oldName, char *newName, char *oldpath, int verify_paths)
+static char *rna_path_rename_fix (ID *owner_id, const char *prefix, const char *oldName, const char *newName, char *oldpath, int verify_paths)
 {
 	char *prefixPtr= strstr(oldpath, prefix);
 	char *oldNamePtr= strstr(oldpath, oldName);
@@ -630,7 +631,7 @@ static void fcurves_path_rename_fix (ID *owner_id, const char *prefix, char *old
 }
 
 /* Check RNA-Paths for a list of Drivers */
-static void drivers_path_rename_fix (ID *owner_id, const char *prefix, char *oldName, char *newName, char *oldKey, char *newKey, ListBase *curves, int verify_paths)
+static void drivers_path_rename_fix (ID *owner_id, const char *prefix, const char *oldName, const char *newName, const char *oldKey, const char *newKey, ListBase *curves, int verify_paths)
 {
 	FCurve *fcu;
 	
@@ -690,7 +691,7 @@ static void nlastrips_path_rename_fix (ID *owner_id, const char *prefix, char *o
  * NOTE: it is assumed that the structure we're replacing is <prefix><["><name><"]>
  * 		i.e. pose.bones["Bone"]
  */
-void BKE_animdata_fix_paths_rename (ID *owner_id, AnimData *adt, const char *prefix, char *oldName, char *newName, int oldSubscript, int newSubscript, int verify_paths)
+void BKE_animdata_fix_paths_rename (ID *owner_id, AnimData *adt, const char *prefix, const char *oldName, const char *newName, int oldSubscript, int newSubscript, int verify_paths)
 {
 	NlaTrack *nlt;
 	char *oldN, *newN;
@@ -807,7 +808,7 @@ void BKE_animdata_main_cb (Main *mainptr, ID_AnimData_Edit_Callback func, void *
  * 		i.e. pose.bones["Bone"]
  */
 /* TODO: use BKE_animdata_main_cb for looping over all data  */
-void BKE_all_animdata_fix_paths_rename (char *prefix, char *oldName, char *newName)
+void BKE_all_animdata_fix_paths_rename (const char *prefix, const char *oldName, const char *newName)
 {
 	Main *mainptr= G.main;
 	ID *id;
@@ -1181,6 +1182,15 @@ static short animsys_write_rna_setting (PointerRNA *ptr, char *path, int array_i
 					RNA_property_update_cache_add(&new_ptr, prop);
 			}
 #endif
+
+			/* as long as we don't do property update, we still tag datablock
+			   as having been updated. this flag does not cause any updates to
+			   be run, it's for e.g. render engines to synchronize data */
+			if(new_ptr.id.data) {
+				ID *id= new_ptr.id.data;
+				id->flag |= LIB_ID_RECALC;
+				DAG_id_type_tag(G.main, GS(id->name));
+			}
 		}
 		
 		/* successful */
@@ -1363,17 +1373,17 @@ void animsys_evaluate_action (PointerRNA *ptr, bAction *act, AnimMapper *remap, 
 static float nlastrip_get_influence (NlaStrip *strip, float cframe)
 {
 	/* sanity checks - normalise the blendin/out values? */
-	strip->blendin= (float)fabs(strip->blendin);
-	strip->blendout= (float)fabs(strip->blendout);
+	strip->blendin= fabsf(strip->blendin);
+	strip->blendout= fabsf(strip->blendout);
 	
 	/* result depends on where frame is in respect to blendin/out values */
 	if (IS_EQ(strip->blendin, 0)==0 && (cframe <= (strip->start + strip->blendin))) {
 		/* there is some blend-in */
-		return (float)fabs(cframe - strip->start) / (strip->blendin);
+		return fabsf(cframe - strip->start) / (strip->blendin);
 	}
 	else if (IS_EQ(strip->blendout, 0)==0 && (cframe >= (strip->end - strip->blendout))) {
 		/* there is some blend-out */
-		return (float)fabs(strip->end - cframe) / (strip->blendout);
+		return fabsf(strip->end - cframe) / (strip->blendout);
 	}
 	else {
 		/* in the middle of the strip, we should be full strength */
@@ -2293,7 +2303,7 @@ void BKE_animsys_evaluate_all_animation (Main *main, Scene *scene, float ctime)
 	EVAL_ANIM_NODETREE_IDS(main->tex.first, Tex, ADT_RECALC_ANIM);
 	
 	/* lamps */
-	EVAL_ANIM_IDS(main->lamp.first, ADT_RECALC_ANIM);
+	EVAL_ANIM_NODETREE_IDS(main->lamp.first, Lamp, ADT_RECALC_ANIM);
 	
 	/* materials */
 	EVAL_ANIM_NODETREE_IDS(main->mat.first, Material, ADT_RECALC_ANIM);
@@ -2322,7 +2332,7 @@ void BKE_animsys_evaluate_all_animation (Main *main, Scene *scene, float ctime)
 	/* particles */
 	EVAL_ANIM_IDS(main->particle.first, ADT_RECALC_ANIM);
 	
-	/* lamps */
+	/* speakers */
 	EVAL_ANIM_IDS(main->speaker.first, ADT_RECALC_ANIM);
 
 	/* objects */
@@ -2333,7 +2343,7 @@ void BKE_animsys_evaluate_all_animation (Main *main, Scene *scene, float ctime)
 	EVAL_ANIM_IDS(main->object.first, 0); 
 	
 	/* worlds */
-	EVAL_ANIM_IDS(main->world.first, ADT_RECALC_ANIM);
+	EVAL_ANIM_NODETREE_IDS(main->world.first, World, ADT_RECALC_ANIM);
 	
 	/* scenes */
 	EVAL_ANIM_NODETREE_IDS(main->scene.first, Scene, ADT_RECALC_ANIM);

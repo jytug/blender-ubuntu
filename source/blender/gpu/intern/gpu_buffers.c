@@ -1,15 +1,10 @@
 /*
- * $Id: gpu_buffers.c 40641 2011-09-28 05:53:40Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -470,11 +465,11 @@ void GPU_drawobject_free(DerivedMesh *dm)
 }
 
 typedef void (*GPUBufferCopyFunc)(DerivedMesh *dm, float *varray, int *index,
-				  int *mat_orig_to_new, void *user_data);
+                                  int *mat_orig_to_new, void *user_data);
 
 static GPUBuffer *gpu_buffer_setup(DerivedMesh *dm, GPUDrawObject *object,
-				   int vector_size, int size, GLenum target,
-				   void *user, GPUBufferCopyFunc copy_f)
+                                   int vector_size, int size, GLenum target,
+                                   void *user, GPUBufferCopyFunc copy_f)
 {
 	GPUBufferPool *pool;
 	GPUBuffer *buffer;
@@ -548,8 +543,8 @@ static GPUBuffer *gpu_buffer_setup(DerivedMesh *dm, GPUDrawObject *object,
 			while(uploaded == GL_FALSE) {
 				(*copy_f)(dm, varray, cur_index_per_mat, mat_orig_to_new, user);
 				/* glUnmapBuffer returns GL_FALSE if
-				   the data store is corrupted; retry
-				   in that case */
+				 * the data store is corrupted; retry
+				 * in that case */
 				uploaded = glUnmapBufferARB(target);
 			}
 		}
@@ -926,8 +921,8 @@ static GPUBuffer *gpu_buffer_setup_type(DerivedMesh *dm, GPUBufferType type)
 	}
 
 	buf = gpu_buffer_setup(dm, dm->drawObject, ts->vector_size,
-			       gpu_buffer_size_from_type(dm, type),
-			       ts->gl_buffer_type, user_data, ts->copy);
+	                       gpu_buffer_size_from_type(dm, type),
+	                       ts->gl_buffer_type, user_data, ts->copy);
 
 	return buf;
 }
@@ -1146,8 +1141,8 @@ void GPU_buffer_unbind(void)
 		}
 	}
 	GLStates &= !(GPU_BUFFER_VERTEX_STATE | GPU_BUFFER_NORMAL_STATE |
-		      GPU_BUFFER_TEXCOORD_STATE | GPU_BUFFER_COLOR_STATE |
-		      GPU_BUFFER_ELEMENT_STATE);
+	              GPU_BUFFER_TEXCOORD_STATE | GPU_BUFFER_COLOR_STATE |
+	              GPU_BUFFER_ELEMENT_STATE);
 
 	for(i = 0; i < MAX_GPU_ATTRIB_DATA; i++) {
 		if(attribData[i].index != -1) {
@@ -1281,7 +1276,7 @@ typedef struct {
 	short no[3];
 } VertexBufferFormat;
 
-typedef struct {
+struct GPU_Buffers {
 	/* opengl buffer handles */
 	GLuint vert_buf, index_buf;
 	GLenum index_type;
@@ -1299,9 +1294,9 @@ typedef struct {
 	int gridsize;
 
 	unsigned int tot_tri, tot_quad;
-} GPU_Buffers;
+};
 
-void GPU_update_mesh_buffers(void *buffers_v, MVert *mvert,
+void GPU_update_mesh_buffers(GPU_Buffers *buffers_v, MVert *mvert,
 			int *vert_indices, int totvert)
 {
 	GPU_Buffers *buffers = buffers_v;
@@ -1312,8 +1307,8 @@ void GPU_update_mesh_buffers(void *buffers_v, MVert *mvert,
 		/* Build VBO */
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, buffers->vert_buf);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-				 sizeof(VertexBufferFormat) * totvert,
-				 NULL, GL_STATIC_DRAW_ARB);
+		                sizeof(VertexBufferFormat) * totvert,
+		                NULL, GL_STATIC_DRAW_ARB);
 		vert_data = glMapBufferARB(GL_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 
 		if(vert_data) {
@@ -1338,7 +1333,7 @@ void GPU_update_mesh_buffers(void *buffers_v, MVert *mvert,
 	buffers->mvert = mvert;
 }
 
-void *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
+GPU_Buffers *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
 			int *face_indices, int totface,
 			int *vert_indices, int tot_uniq_verts,
 			int totvert)
@@ -1361,7 +1356,7 @@ void *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
 		/* Generate index buffer object */
 		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, buffers->index_buf);
 		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-				 sizeof(unsigned short) * tottri * 3, NULL, GL_STATIC_DRAW_ARB);
+		                sizeof(unsigned short) * tottri * 3, NULL, GL_STATIC_DRAW_ARB);
 
 		/* Fill the triangle buffer */
 		tri_data = glMapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
@@ -1418,7 +1413,7 @@ void *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
 	return buffers;
 }
 
-void GPU_update_grid_buffers(void *buffers_v, DMGridData **grids,
+void GPU_update_grid_buffers(GPU_Buffers *buffers_v, DMGridData **grids,
 	int *grid_indices, int totgrid, int gridsize, int smooth)
 {
 	GPU_Buffers *buffers = buffers_v;
@@ -1431,8 +1426,8 @@ void GPU_update_grid_buffers(void *buffers_v, DMGridData **grids,
 	if(buffers->vert_buf) {
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, buffers->vert_buf);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-				 sizeof(DMGridData) * totvert,
-				 NULL, GL_STATIC_DRAW_ARB);
+		                sizeof(DMGridData) * totvert,
+		                NULL, GL_STATIC_DRAW_ARB);
 		vert_data = glMapBufferARB(GL_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 		if(vert_data) {
 			for(i = 0; i < totgrid; ++i) {
@@ -1473,7 +1468,7 @@ void GPU_update_grid_buffers(void *buffers_v, DMGridData **grids,
 	//printf("node updated %p\n", buffers_v);
 }
 
-void *GPU_build_grid_buffers(DMGridData **UNUSED(grids), int *UNUSED(grid_indices),
+GPU_Buffers *GPU_build_grid_buffers(DMGridData **UNUSED(grids), int *UNUSED(grid_indices),
 				int totgrid, int gridsize)
 {
 	GPU_Buffers *buffers;
@@ -1563,7 +1558,7 @@ void *GPU_build_grid_buffers(DMGridData **UNUSED(grids), int *UNUSED(grid_indice
 	return buffers;
 }
 
-void GPU_draw_buffers(void *buffers_v)
+void GPU_draw_buffers(GPU_Buffers *buffers_v)
 {
 	GPU_Buffers *buffers = buffers_v;
 
@@ -1637,7 +1632,7 @@ void GPU_draw_buffers(void *buffers_v)
 	}
 }
 
-void GPU_free_buffers(void *buffers_v)
+void GPU_free_buffers(GPU_Buffers *buffers_v)
 {
 	if(buffers_v) {
 		GPU_Buffers *buffers = buffers_v;

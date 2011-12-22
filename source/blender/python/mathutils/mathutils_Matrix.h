@@ -1,5 +1,4 @@
 /* 
- * $Id: mathutils_Matrix.h 38409 2011-07-15 04:01:47Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,8 +26,8 @@
  *
  */
 
-/** \file blender/python/generic/mathutils_Matrix.h
- *  \ingroup pygen
+/** \file blender/python/mathutils/mathutils_Matrix.h
+ *  \ingroup pymathutils
  */
 
 
@@ -40,7 +39,7 @@ extern PyTypeObject matrix_Type;
 #define MATRIX_MAX_DIM 4
 
 typedef struct {
-	BASE_MATH_MEMBERS(contigPtr)
+	BASE_MATH_MEMBERS(contigPtr);
 	float *matrix[MATRIX_MAX_DIM];		/* ptr to the contigPtr (accessor) */
 	unsigned short row_size;
 	unsigned short col_size;
@@ -52,8 +51,10 @@ be stored in py_data) or be a wrapper for data allocated through
 blender (stored in blend_data). This is an either/or struct not both*/
 
 /*prototypes*/
-PyObject *newMatrixObject(float *mat, const unsigned short row_size, const unsigned short col_size, int type, PyTypeObject *base_type);
-PyObject *newMatrixObject_cb(PyObject *user, int row_size, int col_size, int cb_type, int cb_subtype);
+PyObject *Matrix_CreatePyObject(float *mat,
+                                const unsigned short row_size, const unsigned short col_size,
+                                int type, PyTypeObject *base_type);
+PyObject *Matrix_CreatePyObject_cb(PyObject *user, int row_size, int col_size, int cb_type, int cb_subtype);
 
 extern int mathutils_matrix_vector_cb_index;
 extern struct Mathutils_Callback mathutils_matrix_vector_cb;

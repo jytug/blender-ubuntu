@@ -1,6 +1,4 @@
 /*
- * $Id: BL_SkinDeformer.cpp 40148 2011-09-12 04:29:35Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,7 +34,7 @@
 #pragma warning (disable : 4786)
 #endif //WIN32
 
-// Eigen2 stuff used for BGEDeformVerts
+// Eigen3 stuff used for BGEDeformVerts
 #include <Eigen/Core>
 #include <Eigen/LU>
 
@@ -219,14 +217,14 @@ void BL_SkinDeformer::BGEDeformVerts()
 	Object *par_arma = m_armobj->GetArmatureObject();
 	MDeformVert *dverts = m_bmesh->dvert;
 	bDeformGroup *dg;
-	int numGroups = BLI_countlist(&m_objMesh->defbase);
+	int defbase_tot = BLI_countlist(&m_objMesh->defbase);
 
 	if (!dverts)
 		return;
 
 	if (m_dfnrToPC == NULL)
 	{
-		m_dfnrToPC = new bPoseChannel*[numGroups];
+		m_dfnrToPC = new bPoseChannel*[defbase_tot];
 		int i;
 		for (i=0, dg=(bDeformGroup*)m_objMesh->defbase.first;
 			dg;
@@ -262,7 +260,7 @@ void BL_SkinDeformer::BGEDeformVerts()
 		{
 			int index = dvert->dw[j].def_nr;
 
-			if (index < numGroups && (pchan=m_dfnrToPC[index]))
+			if (index < defbase_tot && (pchan=m_dfnrToPC[index]))
 			{
 				weight = dvert->dw[j].weight;
 
@@ -289,7 +287,7 @@ void BL_SkinDeformer::BGEDeformVerts()
 
 		
 		// Update Vertex Normal
-		norm = norm_chan_mat.corner<3, 3>(Eigen::TopLeft)*norm;
+		norm = norm_chan_mat.topLeftCorner<3, 3>()*norm;
 				
 		if (contrib > 0.0001f)
 		{

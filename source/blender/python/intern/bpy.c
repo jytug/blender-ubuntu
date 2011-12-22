@@ -1,6 +1,4 @@
 /*
- * $Id: bpy.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,11 +22,11 @@
 
 /** \file blender/python/intern/bpy.c
  *  \ingroup pythonintern
+ *
+ * This file defines the '_bpy' module which is used by python's 'bpy' package
+ * to access C defined builtin functions.
+ * A script writer should never directly access this module.
  */
-
- 
-/* This file defines the '_bpy' module which is used by python's 'bpy' package.
- * a script writer should never directly access this module */
  
 #define WITH_PYTHON /* for AUD_PyInit.h, possibly others */
 
@@ -55,7 +53,7 @@
 #include "MEM_guardedalloc.h"
 
  /* external util modules */
-#include "../generic/IDProp.h"
+#include "../generic/idprop_py_api.h"
 #include "../generic/bgl.h"
 #include "../generic/blf_py_api.h"
 #include "../mathutils/mathutils.h"
@@ -83,53 +81,52 @@ static PyObject *bpy_script_paths(PyObject *UNUSED(self))
 	return ret;
 }
 
+static int bpy_blend_paths_visit_cb(void *userdata, char *UNUSED(path_dst), const char *path_src)
+{
+	PyObject *list= (PyObject *)userdata;
+	PyObject *item= PyUnicode_DecodeFSDefault(path_src);
+	PyList_Append(list, item);
+	Py_DECREF(item);
+	return FALSE; /* never edits the path */
+}
+
 PyDoc_STRVAR(bpy_blend_paths_doc,
-".. function:: blend_paths(absolute=False)\n"
+".. function:: blend_paths(absolute=False, packed=False, local=False)\n"
 "\n"
 "   Returns a list of paths to external files referenced by the loaded .blend file.\n"
 "\n"
 "   :arg absolute: When true the paths returned are made absolute.\n"
 "   :type absolute: boolean\n"
+"   :arg packed: When true skip file paths for packed data.\n"
+"   :type packed: boolean\n"
+"   :arg local: When true skip linked library paths.\n"
+"   :type local: boolean\n"
 "   :return: path list.\n"
 "   :rtype: list of strings\n"
 );
 static PyObject *bpy_blend_paths(PyObject *UNUSED(self), PyObject *args, PyObject *kw)
 {
-	struct BPathIterator *bpi;
-	PyObject *list, *st; /* stupidly big string to be safe */
-	/* be sure there is low chance of the path being too short */
-	char filepath_expanded[1024];
-	const char *lib;
+	int flag= 0;
+	PyObject *list;
 
-	int absolute= 0;
-	static const char *kwlist[]= {"absolute", NULL};
+	int absolute= FALSE;
+	int packed=   FALSE;
+	int local=    FALSE;
+	static const char *kwlist[]= {"absolute", "packed", "local", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|i:blend_paths", (char **)kwlist, &absolute))
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|ii:blend_paths",
+	                                 (char **)kwlist, &absolute, &packed))
+	{
 		return NULL;
+	}
+
+	if (absolute) flag |= BPATH_TRAVERSE_ABS;
+	if (!packed)  flag |= BPATH_TRAVERSE_SKIP_PACKED;
+	if (local)    flag |= BPATH_TRAVERSE_SKIP_LIBRARY;
 
 	list= PyList_New(0);
 
-	for (BLI_bpathIterator_init(&bpi, G.main, G.main->name, 0); !BLI_bpathIterator_isDone(bpi); BLI_bpathIterator_step(bpi)) {
-		/* build the list */
-		if (absolute) {
-			BLI_bpathIterator_getPathExpanded(bpi, filepath_expanded);
-		}
-		else {
-			lib= BLI_bpathIterator_getLib(bpi);
-			if (lib && (BLI_path_cmp(lib, BLI_bpathIterator_getBasePath(bpi)))) { /* relative path to the library is NOT the same as our blendfile path, return an absolute path */
-				BLI_bpathIterator_getPathExpanded(bpi, filepath_expanded);
-			}
-			else {
-				BLI_bpathIterator_getPath(bpi, filepath_expanded);
-			}
-		}
-		st= PyUnicode_DecodeFSDefault(filepath_expanded);
-
-		PyList_Append(list, st);
-		Py_DECREF(st);
-	}
-
-	BLI_bpathIterator_free(bpi);
+	bpath_traverse_main(G.main, bpy_blend_paths_visit_cb, flag, (void *)list);
 
 	return list;
 }
@@ -149,10 +146,10 @@ static PyObject *bpy_user_resource(PyObject *UNUSED(self), PyObject *args, PyObj
 		return NULL;
 	
 	/* stupid string compare */
-	if     (!strcmp(type, "DATAFILES")) folder_id= BLENDER_USER_DATAFILES;
-	else if (!strcmp(type, "CONFIG"))   folder_id= BLENDER_USER_CONFIG;
-	else if (!strcmp(type, "SCRIPTS"))  folder_id= BLENDER_USER_SCRIPTS;
-	else if (!strcmp(type, "AUTOSAVE")) folder_id= BLENDER_USER_AUTOSAVE;
+	if      (!strcmp(type, "DATAFILES")) folder_id= BLENDER_USER_DATAFILES;
+	else if (!strcmp(type, "CONFIG"))    folder_id= BLENDER_USER_CONFIG;
+	else if (!strcmp(type, "SCRIPTS"))   folder_id= BLENDER_USER_SCRIPTS;
+	else if (!strcmp(type, "AUTOSAVE"))  folder_id= BLENDER_USER_AUTOSAVE;
 	else {
 		PyErr_SetString(PyExc_ValueError, "invalid resource argument");
 		return NULL;
@@ -206,10 +203,14 @@ static PyObject *bpy_resource_path(PyObject *UNUSED(self), PyObject *args, PyObj
 	return PyUnicode_DecodeFSDefault(path);
 }
 
-static PyMethodDef meth_bpy_script_paths= {"script_paths", (PyCFunction)bpy_script_paths, METH_NOARGS, bpy_script_paths_doc};
-static PyMethodDef meth_bpy_blend_paths= {"blend_paths", (PyCFunction)bpy_blend_paths, METH_VARARGS|METH_KEYWORDS, bpy_blend_paths_doc};
-static PyMethodDef meth_bpy_user_resource= {"user_resource", (PyCFunction)bpy_user_resource, METH_VARARGS|METH_KEYWORDS, NULL};
-static PyMethodDef meth_bpy_resource_path= {"resource_path", (PyCFunction)bpy_resource_path, METH_VARARGS|METH_KEYWORDS, bpy_resource_path_doc};
+static PyMethodDef meth_bpy_script_paths=
+	{"script_paths", (PyCFunction)bpy_script_paths, METH_NOARGS, bpy_script_paths_doc};
+static PyMethodDef meth_bpy_blend_paths=
+	{"blend_paths", (PyCFunction)bpy_blend_paths, METH_VARARGS|METH_KEYWORDS, bpy_blend_paths_doc};
+static PyMethodDef meth_bpy_user_resource=
+	{"user_resource", (PyCFunction)bpy_user_resource, METH_VARARGS|METH_KEYWORDS, NULL};
+static PyMethodDef meth_bpy_resource_path=
+	{"resource_path", (PyCFunction)bpy_resource_path, METH_VARARGS|METH_KEYWORDS, bpy_resource_path_doc};
 
 
 static PyObject *bpy_import_test(const char *modname)
@@ -260,16 +261,21 @@ void BPy_init_modules(void)
 	/* run first, initializes rna types */
 	BPY_rna_init();
 
-	PyModule_AddObject(mod, "types", BPY_rna_types()); /* needs to be first so bpy_types can run */
-	PyModule_AddObject(mod, "StructMetaPropGroup", (PyObject *)&pyrna_struct_meta_idprop_Type); /* metaclass for idprop types, bpy_types.py needs access */
+	/* needs to be first so bpy_types can run */
+	PyModule_AddObject(mod, "types", BPY_rna_types());
 
-	bpy_lib_init(mod); /* adds '_bpy._library_load', must be called before 'bpy_types' which uses it */
+	/* metaclass for idprop types, bpy_types.py needs access */
+	PyModule_AddObject(mod, "StructMetaPropGroup", (PyObject *)&pyrna_struct_meta_idprop_Type);
+
+	/* needs to be first so bpy_types can run */
+	bpy_lib_init(mod);
 
 	bpy_import_test("bpy_types");
 	PyModule_AddObject(mod, "data", BPY_rna_module()); /* imports bpy_types by running this */
 	bpy_import_test("bpy_types");
-	PyModule_AddObject(mod, "props", BPY_rna_props());
-	PyModule_AddObject(mod, "ops", BPY_operator_module()); /* ops is now a python module that does the conversion from SOME_OT_foo -> some.foo */
+	PyModule_AddObject(mod, "props", BPY_rna_props());	
+	 /* ops is now a python module that does the conversion from SOME_OT_foo -> some.foo */
+	PyModule_AddObject(mod, "ops", BPY_operator_module());
 	PyModule_AddObject(mod, "app", BPY_app_struct());
 
 	/* bpy context */

@@ -1,6 +1,4 @@
 /*
- * $Id: implicit.c 40693 2011-09-29 15:28:22Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -81,9 +79,9 @@ double itval(void)
 // #include <pmmintrin.h>
 // #include <pthread.h>
 
-			 static struct timeval _itstart, _itend;
-	 static struct timezone itz;
-	 void itstart(void)
+static struct timeval _itstart, _itend;
+static struct timezone itz;
+void itstart(void)
 {
 	gettimeofday(&_itstart, &itz);
 }
@@ -1816,7 +1814,7 @@ int cloth_calc_helper_forces(Object *UNUSED(ob), ClothModifierData * clmd, float
 		
 		/*compute forces*/
 		sub_v3_v3v3(vec, cos[i], cv->tx);
-		mul_v3_fl(vec, cv->mass*dt*20.0);
+		mul_v3_fl(vec, cv->mass*dt*20.0f);
 		add_v3_v3(cv->tv, vec);
 		//copy_v3_v3(cv->tx, cos[i]);
 	}

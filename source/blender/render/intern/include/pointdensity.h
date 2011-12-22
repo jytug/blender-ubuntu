@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,6 +40,7 @@
 struct Render;
 struct TexResult;
 
+void cache_pointdensity(struct Render *re, struct Tex *tex);
 void make_pointdensities(struct Render *re);
 void free_pointdensities(struct Render *re);
 int pointdensitytex(struct Tex *tex, float *texvec, struct TexResult *texres);

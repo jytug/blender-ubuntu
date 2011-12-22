@@ -1,6 +1,4 @@
 /*
- * $Id: BLI_heap.c 35246 2011-02-27 20:37:56Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -64,8 +62,10 @@ struct Heap {
 #define HEAP_COMPARE(a, b) (a->value < b->value)
 #define HEAP_EQUALS(a, b) (a->value == b->value)
 #define HEAP_SWAP(heap, i, j) \
-	{ SWAP(int, heap->tree[i]->index, heap->tree[j]->index); \
-	  SWAP(HeapNode*, heap->tree[i], heap->tree[j]);  }
+{                                                                             \
+	SWAP(int, heap->tree[i]->index, heap->tree[j]->index);                    \
+	SWAP(HeapNode*, heap->tree[i], heap->tree[j]);                            \
+}
 
 /***/
 

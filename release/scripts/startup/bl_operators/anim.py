@@ -38,7 +38,7 @@ class ANIM_OT_keying_set_export(Operator):
     bl_label = "Export Keying Set..."
 
     filepath = StringProperty(
-            name="File Path",
+            subtype='FILE_PATH',
             )
     filter_folder = BoolProperty(
             name="Filter folders",
@@ -228,7 +228,7 @@ class BakeAction(Operator):
 
 class ClearUselessActions(Operator):
     """Mark actions with no F-Curves for deletion after save+reload of """ \
-    """file preserving "action libraries"""
+    """file preserving \"action libraries\""""
     bl_idname = "anim.clear_useless_actions"
     bl_label = "Clear Useless Actions"
     bl_options = {'REGISTER', 'UNDO'}

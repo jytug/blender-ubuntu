@@ -2,7 +2,6 @@
  *
  * Functions for struct-dna, the genetic file dot c!
  *
- * $Id: dna_genfile.c 39568 2011-08-20 14:23:43Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -805,7 +804,6 @@ static int elem_strcmp(const char *name, const char *oname)
 		if(name[a]==0) break;
 		a++;
 	}
-	if(name[a] != oname[a]) return 1;
 	return 0;
 }
 

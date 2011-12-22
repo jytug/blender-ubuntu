@@ -1,6 +1,4 @@
 /*
- * $Id: node_draw.c 40395 2011-09-20 13:41:43Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,11 +36,13 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_node_types.h"
+#include "DNA_lamp_types.h"
 #include "DNA_material_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_space_types.h"
 #include "DNA_screen_types.h"
+#include "DNA_world_types.h"
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
@@ -73,6 +73,8 @@
 #include "NOD_composite.h"
 #include "NOD_shader.h"
 
+#include "intern/node_util.h"
+
 #include "node_intern.h"
 
 /* width of socket columns in group display */
@@ -99,15 +101,22 @@ void ED_node_changed_update(ID *id, bNode *node)
 
 	if(treetype==NTREE_SHADER) {
 		DAG_id_tag_update(id, 0);
-		WM_main_add_notifier(NC_MATERIAL|ND_SHADING_DRAW, id);
+
+		if(GS(id->name) == ID_MA)
+			WM_main_add_notifier(NC_MATERIAL|ND_SHADING_DRAW, id);
+		else if(GS(id->name) == ID_LA)
+			WM_main_add_notifier(NC_LAMP|ND_LIGHTING_DRAW, id);
+		else if(GS(id->name) == ID_WO)
+			WM_main_add_notifier(NC_WORLD|ND_WORLD_DRAW, id);
 	}
 	else if(treetype==NTREE_COMPOSIT) {
-		NodeTagChanged(edittree, node);
+		if(node)
+			nodeUpdate(edittree, node);
 		/* don't use NodeTagIDChanged, it gives far too many recomposites for image, scene layers, ... */
 			
 		node= node_tree_get_editgroup(nodetree);
 		if(node)
-			NodeTagIDChanged(nodetree, node->id);
+			nodeUpdateID(nodetree, node->id);
 
 		WM_main_add_notifier(NC_SCENE|ND_NODES, id);
 	}			
@@ -188,28 +197,16 @@ static void node_uiblocks_init(const bContext *C, bNodeTree *ntree)
 	bNode *node;
 	char str[32];
 	
-	/* add node uiBlocks in reverse order - prevents events going to overlapping nodes */
+	/* add node uiBlocks in drawing order - prevents events going to overlapping nodes */
 	
-	/* process selected nodes first so they're at the start of the uiblocks list */
-	for(node= ntree->nodes.last; node; node= node->prev) {
-		
-		if (node->flag & NODE_SELECT) {
+	for(node= ntree->nodes.first; node; node=node->next) {
 			/* ui block */
 			sprintf(str, "node buttons %p", (void *)node);
 			node->block= uiBeginBlock(C, CTX_wm_region(C), str, UI_EMBOSS);
 			uiBlockSetHandleFunc(node->block, do_node_internal_buttons, node);
-		}
-	}
-	
-	/* then the rest */
-	for(node= ntree->nodes.last; node; node= node->prev) {
-		
-		if (!(node->flag & (NODE_GROUP_EDIT|NODE_SELECT))) {
-			/* ui block */
-			sprintf(str, "node buttons %p", (void *)node);
-			node->block= uiBeginBlock(C, CTX_wm_region(C), str, UI_EMBOSS);
-			uiBlockSetHandleFunc(node->block, do_node_internal_buttons, node);
-		}
+			
+			/* this cancels events for background nodes */
+			uiBlockSetFlag(node->block, UI_BLOCK_CLIP_EVENTS);
 	}
 }
 
@@ -330,6 +327,15 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 	node->totr.xmax= locx + node->width;
 	node->totr.ymax= locy;
 	node->totr.ymin= MIN2(dy, locy-2*NODE_DY);
+	
+	/* Set the block bounds to clip mouse events from underlying nodes.
+	 * Add a margin for sockets on each side.
+	 */
+	uiExplicitBoundsBlock(node->block,
+						  node->totr.xmin - NODE_SOCKSIZE,
+						  node->totr.ymin,
+						  node->totr.xmax + NODE_SOCKSIZE,
+						  node->totr.ymax);
 }
 
 /* based on settings in node, sets drawing rect info. each redraw! */
@@ -382,6 +388,15 @@ static void node_update_hidden(bNode *node)
 			rad+= drad;
 		}
 	}
+
+	/* Set the block bounds to clip mouse events from underlying nodes.
+	 * Add a margin for sockets on each side.
+	 */
+	uiExplicitBoundsBlock(node->block,
+						  node->totr.xmin - NODE_SOCKSIZE,
+						  node->totr.ymin,
+						  node->totr.xmax + NODE_SOCKSIZE,
+						  node->totr.ymax);
 }
 
 void node_update_default(const bContext *C, bNodeTree *ntree, bNode *node)
@@ -411,38 +426,41 @@ static int node_get_colorid(bNode *node)
 	return TH_NODE;
 }
 
-/* note: in cmp_util.c is similar code, for node_compo_pass_on() */
+/* note: in cmp_util.c is similar code, for node_compo_pass_on()
+ *       the same goes for shader and texture nodes. */
 /* note: in node_edit.c is similar code, for untangle node */
 static void node_draw_mute_line(View2D *v2d, SpaceNode *snode, bNode *node)
 {
-	static int types[]= { SOCK_FLOAT, SOCK_VECTOR, SOCK_RGBA };
+	ListBase links;
+	LinkInOutsMuteNode *lnk;
 	bNodeLink link= {NULL};
 	int i;
-	
-	/* connect the first input of each type with first output of the same type */
-	
+
+	if(node->typeinfo->mutelinksfunc == NULL)
+		return;
+
+	/* Get default muting links (as bNodeSocket pointers). */
+	links = node->typeinfo->mutelinksfunc(snode->edittree, node, NULL, NULL, NULL, NULL);
+
 	glEnable(GL_BLEND);
-	glEnable( GL_LINE_SMOOTH );
-	
+	glEnable(GL_LINE_SMOOTH);
+
 	link.fromnode = link.tonode = node;
-	for (i=0; i < 3; ++i) {
-		/* find input socket */
-		for (link.fromsock=node->inputs.first; link.fromsock; link.fromsock=link.fromsock->next)
-			if (link.fromsock->type==types[i] && nodeCountSocketLinks(snode->edittree, link.fromsock))
-				break;
-		if (link.fromsock) {
-			for (link.tosock=node->outputs.first; link.tosock; link.tosock=link.tosock->next)
-				if (link.tosock->type==types[i] && nodeCountSocketLinks(snode->edittree, link.tosock))
-					break;
-			
-			if (link.tosock) {
-				node_draw_link_bezier(v2d, snode, &link, TH_REDALERT, 0, TH_WIRE, 0, TH_WIRE);
-			}
+	for(lnk = links.first; lnk; lnk = lnk->next) {
+		for(i = 0; i < lnk->num_outs; i++) {
+			link.fromsock = (bNodeSocket*)(lnk->in);
+			link.tosock   = (bNodeSocket*)(lnk->outs)+i;
+			node_draw_link_bezier(v2d, snode, &link, TH_REDALERT, 0, TH_WIRE, 0, TH_WIRE);
 		}
+		/* If num_outs > 1, lnk->outs was an allocated table of pointers... */
+		if(i > 1)
+			MEM_freeN(lnk->outs);
 	}
-	
+
 	glDisable(GL_BLEND);
-	glDisable( GL_LINE_SMOOTH );
+	glDisable(GL_LINE_SMOOTH);
+
+	BLI_freelistN(&links);
 }
 
 /* this might have some more generic use */
@@ -578,8 +596,8 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 		UI_ThemeColor(color_id);
 	
 	if(node->flag & NODE_MUTED)
-	   UI_ThemeColorBlend(color_id, TH_REDALERT, 0.5f);
-		
+		UI_ThemeColorBlend(color_id, TH_REDALERT, 0.5f);
+
 	uiSetRoundBox(UI_CNR_TOP_LEFT | UI_CNR_TOP_RIGHT);
 	uiRoundBox(rct->xmin, rct->ymax-NODE_DY, rct->xmax, rct->ymax, BASIS_RAD);
 	
@@ -587,15 +605,11 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 	iconofs= rct->xmax - 7.0f;
 	
 	if(node->typeinfo->flag & NODE_PREVIEW) {
-		int icon_id;
+		float alpha = (node->flag & (NODE_ACTIVE_ID|NODE_DO_OUTPUT))? 1.0f: 0.5f;
 		
-		if(node->flag & (NODE_ACTIVE_ID|NODE_DO_OUTPUT))
-			icon_id= ICON_MATERIAL;
-		else
-			icon_id= ICON_MATERIAL_DATA;
 		iconofs-=iconbutw;
-		uiDefIconBut(node->block, LABEL, B_REDR, icon_id, iconofs, rct->ymax-NODE_DY,
-					 iconbutw, UI_UNIT_Y, NULL, 0.0, 0.0, 1.0, 0.5, "");
+		uiDefIconBut(node->block, LABEL, B_REDR, ICON_MATERIAL, iconofs, rct->ymax-NODE_DY,
+					 iconbutw, UI_UNIT_Y, NULL, 0.0, 0.0, 1.0, alpha, "");
 	}
 	if(node->type == NODE_GROUP) {
 		
@@ -685,7 +699,7 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 		
 		node_socket_circle_draw(ntree, sock, NODE_SOCKSIZE);
 		
-		if (sock->link) {
+		if (sock->link || (sock->flag & SOCK_HIDE_VALUE)) {
 			uiDefBut(node->block, LABEL, 0, sock->name, sock->locx+NODE_DYS, sock->locy-NODE_DYS, node->width-NODE_DY, NODE_DY,
 					 NULL, 0, 0, 0, 0, "");
 		}
@@ -751,7 +765,7 @@ static void node_draw_hidden(const bContext *C, ARegion *ar, SpaceNode *snode, b
 	/* body */
 	UI_ThemeColor(color_id);
 	if(node->flag & NODE_MUTED)
-	   UI_ThemeColorBlend(color_id, TH_REDALERT, 0.5f);	
+		UI_ThemeColorBlend(color_id, TH_REDALERT, 0.5f);
 	uiRoundBox(rct->xmin, rct->ymin, rct->xmax, rct->ymax, hiddenrad);
 	
 	/* outline active and selected emphasis */
@@ -915,14 +929,15 @@ void drawnodespace(const bContext *C, ARegion *ar, View2D *v2d)
 	if(snode->nodetree) {
 		bNode *node;
 		
-		/* init ui blocks for opened node group trees first 
-		 * so they're in the correct depth stack order */
+		node_uiblocks_init(C, snode->nodetree);
+		
+		/* uiBlocks must be initialized in drawing order for correct event clipping.
+		 * Node group internal blocks added after the main group block.
+		 */
 		for(node= snode->nodetree->nodes.first; node; node= node->next) {
 			if(node->flag & NODE_GROUP_EDIT)
 				node_uiblocks_init(C, (bNodeTree *)node->id);
 		}
-		
-		node_uiblocks_init(C, snode->nodetree);
 		
 		node_update_nodetree(C, snode->nodetree, 0.0f, 0.0f);
 		node_draw_nodetree(C, ar, snode, snode->nodetree);

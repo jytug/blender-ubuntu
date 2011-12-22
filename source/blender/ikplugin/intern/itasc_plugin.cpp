@@ -1,5 +1,4 @@
 /*
- * $Id: itasc_plugin.cpp 35814 2011-03-27 07:56:29Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -327,11 +326,19 @@ static int initialize_chain(Object *ob, bPoseChannel *pchan_tip, bConstraint *co
 				break;
 			for(; a<size && t<tree->totchannel && tree->pchan[t]==chanlist[segcount-a-1]; a++, t++);
 		}
-		parent= a-1;
+
 		segcount= segcount-a;
 		target->tip= tree->totchannel + segcount - 1;
 
 		if (segcount > 0) {
+			for(parent = a - 1; parent < tree->totchannel; parent++)
+				if(tree->pchan[parent] == chanlist[segcount-1]->parent)
+					break;
+			
+			/* shouldn't happen, but could with dependency cycles */
+			if(parent == tree->totchannel)
+				parent = a - 1;
+
 			/* resize array */
 			newsize= tree->totchannel + segcount;
 			oldchan= tree->pchan;
@@ -559,7 +566,7 @@ static bool target_callback(const iTaSC::Timestamp& timestamp, const iTaSC::Fram
 			pchan = pchan->parent;
 			float chanmat[4][4];
 			copy_m4_m4(chanmat, pchan->pose_mat);
-			VECCOPY(chanmat[3], pchan->pose_tail);
+			copy_v3_v3(chanmat[3], pchan->pose_tail);
 			mul_serie_m4(restmat, target->owner->obmat, chanmat, target->eeRest, NULL, NULL, NULL, NULL, NULL);
 		} 
 		else {
@@ -586,7 +593,7 @@ static bool base_callback(const iTaSC::Timestamp& timestamp, const iTaSC::Frame&
 		pchan = pchan->parent;
 		float chanmat[4][4];
 		copy_m4_m4(chanmat, pchan->pose_mat);
-		VECCOPY(chanmat[3], pchan->pose_tail);
+		copy_v3_v3(chanmat[3], pchan->pose_tail);
 		// save the base as a frame too so that we can compute deformation
 		// after simulation
 		ikscene->baseFrame.setValue(&chanmat[0][0]);
@@ -1663,12 +1670,12 @@ static void execute_scene(Scene* blscene, IK_Scene* ikscene, bItasc* ikparam, fl
 		pchan = ikchan->pchan;
 		// tail mat
 		ikchan->frame.getValue(&pchan->pose_mat[0][0]);
-		VECCOPY(pchan->pose_tail, pchan->pose_mat[3]);
+		copy_v3_v3(pchan->pose_tail, pchan->pose_mat[3]);
 		// shift to head
-		VECCOPY(yaxis, pchan->pose_mat[1]);
+		copy_v3_v3(yaxis, pchan->pose_mat[1]);
 		mul_v3_fl(yaxis, length);
 		sub_v3_v3v3(pchan->pose_mat[3], pchan->pose_mat[3], yaxis);
-		VECCOPY(pchan->pose_head, pchan->pose_mat[3]);
+		copy_v3_v3(pchan->pose_head, pchan->pose_mat[3]);
 		// add scale
 		mul_v3_fl(pchan->pose_mat[0], scale);
 		mul_v3_fl(pchan->pose_mat[1], scale);

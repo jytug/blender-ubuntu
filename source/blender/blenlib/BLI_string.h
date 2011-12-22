@@ -1,6 +1,4 @@
 /*
- * $Id: BLI_string.h 41049 2011-10-16 12:25:42Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,9 +23,7 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- *
- * $Id: BLI_string.h 41049 2011-10-16 12:25:42Z campbellbarton $ 
-*/
+ */
 
 #ifndef BLI_STRING_H
 #define BLI_STRING_H
@@ -136,21 +132,10 @@ int BLI_strcasecmp(const char *s1, const char *s2);
 int BLI_strncasecmp(const char *s1, const char *s2, size_t len);
 int BLI_natstrcmp(const char *s1, const char *s2);
 size_t BLI_strnlen(const char *str, size_t maxlen);
-
 void BLI_timestr(double _time, char *str); /* time var is global */
 
 void BLI_ascii_strtolower(char *str, int len);
 void BLI_ascii_strtoupper(char *str, int len);
-
-
-/* string_utf8.c - may move these into their own header some day - campbell */
-char *BLI_strncpy_utf8(char *dst, const char *src, size_t maxncpy);
-int BLI_utf8_invalid_byte(const char *str, int length);
-int BLI_utf8_invalid_strip(char *str, int length);
-      /* copied from glib */
-char *BLI_str_find_prev_char_utf8(const char *str, const char *p);
-char *BLI_str_find_next_char_utf8(const char *p, const char *end);
-char *BLI_str_prev_char_utf8(const char *p);
 
 #ifdef __cplusplus
 }

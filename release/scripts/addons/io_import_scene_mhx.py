@@ -30,7 +30,7 @@ Version 1.9.0
 
 This script should be distributed with Blender.
 If not, place it in the .blender/scripts/addons dir
-Activate the script in the "Add-Ons" tab (user preferences).
+Activate the script in the "Addons" tab (user preferences).
 Access from the File > Import menu.
 
 Alternatively, run the script in the script editor (Alt-P), and access from the File > Import menu
@@ -39,7 +39,7 @@ Alternatively, run the script in the script editor (Alt-P), and access from the 
 bl_info = {
     'name': 'Import: MakeHuman (.mhx)',
     'author': 'Thomas Larsson',
-    'version': (1, 9, 0),
+    'version': (1, 9, 1),
     "blender": (2, 5, 9),
     "api": 40335,
     'location': "File > Import > MakeHuman (.mhx)",
@@ -115,16 +115,6 @@ T_Symm = 0x4000
 
 toggle = (T_EnforceVersion + T_Replace + T_Mesh + T_Armature + 
         T_Face + T_Shape + T_Proxy + T_Clothes + T_Rigify)
-
-#
-#    Blender versions
-#
-
-BLENDER_GRAPHICALL = 0
-BLENDER_256a = 1
-
-BlenderVersions = ['Graphicall', 'Blender256a']
-theBlenderVersion = BLENDER_GRAPHICALL
 
 #
 #    setFlagsAndFloats(rigFlags):
@@ -265,12 +255,13 @@ def checkBlenderVersion():
 #
 
 def readMhxFile(filePath):
-    global todo, nErrors, theScale, defaultScale, One, toggle
+    global todo, nErrors, theScale, defaultScale, One, toggle, warnedVersion
 
     #checkBlenderVersion()    
     
     defaultScale = theScale
     One = 1.0/theScale
+    warnedVersion = False
 
     fileName = os.path.expanduser(filePath)
     (shortName, ext) = os.path.splitext(fileName)
@@ -390,25 +381,29 @@ def getObject(name, var, glbals, lcals):
 
 def checkMhxVersion(major, minor):
     global warnedVersion
-    print((major,minor), (MAJOR_VERSION, MINOR_VERSION), warnedVersion)
+    print("MHX", (major,minor), (MAJOR_VERSION, MINOR_VERSION), warnedVersion)
     if  major != MAJOR_VERSION or minor != MINOR_VERSION:
         if warnedVersion:
             return
         else:
             msg = (
 "Wrong MHX version\n" +
-"Expected MHX %d.%d but the loaded file \n" % (MAJOR_VERSION, MINOR_VERSION) +
-"has version MHX %d.%d\n" % (major, minor) +
+"Expected MHX %d.%d but the loaded file " % (MAJOR_VERSION, MINOR_VERSION) +
+"has version MHX %d.%d\n" % (major, minor))
+            if minor < MINOR_VERSION:
+                msg += (
 "You can disable this error message by deselecting the \n" +
-"Enforce version option when importing. \n" +
-"Alternatively, you can try to download the most recent \n" +
-"Blender build from www.graphicall.org. \n" +
+"Enforce version option when importing. Better:\n" +
+"Export the MHX file again with an updated version of MakeHuman.\n" +
+"The most up-to-date version of MakeHuman is the nightly build.\n")
+            else:
+                msg += (
+"Download the most recent Blender build from www.graphicall.org. \n" +
 "The most up-to-date version of the import script is distributed\n" +
-"with Blender, but can also be downloaded from MakeHuman. \n" +
+"with Blender. It can also be downloaded from MakeHuman. \n" +
 "It is located in the importers/mhx/blender25x \n" +
-"folder and is called import_scene_mhx.py. \n"
-)
-        if toggle & T_EnforceVersion:
+"folder and is called import_scene_mhx.py. \n")
+        if (toggle & T_EnforceVersion or minor > MINOR_VERSION):
             MyError(msg)
         else:
             print(msg)
@@ -713,7 +708,6 @@ def parseAnimationData(rna, args, tokens):
     return adata
 
 def parseAnimDataFCurve(adata, rna, args, tokens):
-    global theBlenderVersion
     if invalid(args[2]):
         return
     dataPath = args[0]
@@ -727,10 +721,7 @@ def parseAnimDataFCurve(adata, rna, args, tokens):
         elif key == 'FModifier':
             parseFModifier(fcu, val, sub)
         elif key == 'kp':
-            if theBlenderVersion >= BLENDER_256a:
-                pt = fcu.keyframe_points.add(n, 0)
-            else:
-                pt = fcu.keyframe_points.insert(n, 0)
+            pt = fcu.keyframe_points.insert(n, 0)
             pt.interpolation = 'LINEAR'
             pt = parseKeyFramePoint(pt, val, sub)
             n += 1
@@ -1453,7 +1444,7 @@ def parseVertColorData(args, tokens, data):
 #
 
 def parseVertexGroup(ob, me, args, tokens):
-    global toggle, theBlenderVersion
+    global toggle
     if verbosity > 2:
         print( "Parsing vertgroup %s" % args )
     grpName = args[0]
@@ -1467,14 +1458,9 @@ def parseVertexGroup(ob, me, args, tokens):
     if (toggle & T_Armature) or (grpName in ['Eye_L', 'Eye_R', 'Gums', 'Head', 'Jaw', 'Left', 'Middle', 'Right', 'Scalp']):
         group = ob.vertex_groups.new(grpName)
         loadedData['VertexGroup'][grpName] = group
-        if theBlenderVersion >= BLENDER_256a:
-            for (key, val, sub) in tokens:
-                if key == 'wv':
-                    ob.vertex_groups.assign([int(val[0])], group, float(val[1]), 'REPLACE')
-        else:
-            for (key, val, sub) in tokens:
-                if key == 'wv':
-                    group.add( [int(val[0])], float(val[1]), 'REPLACE' )
+        for (key, val, sub) in tokens:
+            if key == 'wv':
+                group.add( [int(val[0])], float(val[1]), 'REPLACE' )
     return
 
 
@@ -2067,19 +2053,20 @@ def postProcess(args):
 #
 #    deleteDiamonds(ob)
 #    Delete joint diamonds in main mesh
+#    Invisio = material # 1
 #
 
 def deleteDiamonds(ob):
     bpy.context.scene.objects.active = ob
     if not bpy.context.object:
         return
-    print("Delete diamonds in %s" % bpy.context.object)
+    print("Delete helper geometry in %s" % bpy.context.object)
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='DESELECT')
     bpy.ops.object.mode_set(mode='OBJECT')
     me = ob.data
-    for f in me.faces:        
-        if len(f.vertices) < 4:
+    for f in me.faces:    
+        if f.material_index == 1:
             for vn in f.vertices:
                 me.vertices[vn].select = True
     bpy.ops.object.mode_set(mode='EDIT')
@@ -2428,7 +2415,7 @@ ConfigFile = '~/mhx_import.cfg'
 
 
 def readDefaults():
-    global toggle, theScale, theBlenderVersion, BlenderVersions
+    global toggle, theScale
     path = os.path.realpath(os.path.expanduser(ConfigFile))
     try:
         fp = open(path, 'rU')
@@ -2443,14 +2430,13 @@ def readDefaults():
             try:
                 toggle = int(words[0],16)
                 theScale = float(words[1])
-                theBlenderVersion = BlenderVersions.index(words[2])
             except:
                 print('Configuration file "%s" is corrupt' % path)                
     fp.close()
     return
 
 def writeDefaults():
-    global toggle, theScale, theBlenderVersion, BlenderVersions
+    global toggle, theScale
     path = os.path.realpath(os.path.expanduser(ConfigFile))
     try:
         fp = open(path, 'w')
@@ -2458,7 +2444,7 @@ def writeDefaults():
     except:
         print('Cannot open "%s" for writing' % path)
         return
-    fp.write("%x %f %s" % (toggle, theScale, BlenderVersions[theBlenderVersion]))
+    fp.write("%x %f Graphicall" % (toggle, theScale))
     fp.close()
     return
 
@@ -2543,7 +2529,7 @@ def rigifyMhx(context, name):
         success = False
     if not success:
         MyError("Unable to create advanced human. \n" \
-                "Make sure that the Rigify add-on is enabled. \n" \
+                "Make sure that the Rigify addon is enabled. \n" \
                 "It is found under Rigging.")
         return
 
@@ -2867,7 +2853,7 @@ MhxBoolProps = [
     ("face", "Face shapes", "Include facial shapekeys", T_Face),
     ("shape", "Body shapes", "Include body shapekeys", T_Shape),
     ("symm", "Symmetric shapes", "Keep shapekeys symmetric", T_Symm),
-    ("diamond", "Diamonds", "Keep joint diamonds", T_Diamond),
+    ("diamond", "Helper geometry", "Keep helper geometry", T_Diamond),
     ("rigify", "Rigify", "Create rigify control rig", T_Rigify),
 ]
 
@@ -2881,28 +2867,22 @@ class ImportMhx(bpy.types.Operator, ImportHelper):
     bl_options = {'UNDO'}
 
     scale = FloatProperty(name="Scale", description="Default meter, decimeter = 1.0", default = theScale)
-    enums = []
-    for enum in BlenderVersions:
-        enums.append((enum,enum,enum))
-    bver = EnumProperty(name="Blender version", items=enums, default = BlenderVersions[0])
-
     filename_ext = ".mhx"
     filter_glob = StringProperty(default="*.mhx", options={'HIDDEN'})
-    filepath = StringProperty(name="File Path", description="File path used for importing the MHX file", maxlen= 1024, default= "")
+    filepath = StringProperty(subtype='FILE_PATH')
 
     for (prop, name, desc, flag) in MhxBoolProps:
         expr = '%s = BoolProperty(name="%s", description="%s", default=toggle&%s)' % (prop, name, desc, flag)
         exec(expr)
         
     def execute(self, context):
-        global toggle, theScale, MhxBoolProps, theBlenderVersion, BlenderVersions
+        global toggle, theScale, MhxBoolProps
         toggle = 0
         for (prop, name, desc, flag) in MhxBoolProps:
             expr = '(%s if self.%s else 0)' % (flag, prop)
             toggle |=  eval(expr)
         print("execute flags %x" % toggle)
         theScale = self.scale
-        theBlenderVersion = BlenderVersions.index(self.bver)
 
         try:
             readMhxFile(self.filepath)
@@ -2914,10 +2894,9 @@ class ImportMhx(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        global toggle, theScale, MhxBoolProps, theBlenderVersion, BlenderVersions
+        global toggle, theScale, MhxBoolProps
         readDefaults()
         self.scale = theScale
-        self.bver = BlenderVersions[theBlenderVersion]
         for (prop, name, desc, flag) in MhxBoolProps:
             expr = 'self.%s = toggle&%s' % (prop, flag)
             exec(expr)
@@ -3284,7 +3263,7 @@ def readMagpie(context, filepath, offs):
 class VIEW3D_OT_MhxLoadMohoButton(bpy.types.Operator):
     bl_idname = "mhx.pose_load_moho"
     bl_label = "Moho (.dat)"
-    filepath = StringProperty(name="File Path", description="File path used for importing the file", maxlen= 1024, default= "")
+    filepath = StringProperty(subtype='FILE_PATH')
     startFrame = IntProperty(name="Start frame", description="First frame to import", default=1)
 
     def execute(self, context):
@@ -3303,7 +3282,7 @@ class VIEW3D_OT_MhxLoadMohoButton(bpy.types.Operator):
 class VIEW3D_OT_MhxLoadMagpieButton(bpy.types.Operator):
     bl_idname = "mhx.pose_load_magpie"
     bl_label = "Magpie (.mag)"
-    filepath = StringProperty(name="File Path", description="File path used for importing the file", maxlen= 1024, default= "")
+    filepath = StringProperty(subtype='FILE_PATH')
     startFrame = IntProperty(name="Start frame", description="First frame to import", default=1)
 
     def execute(self, context):

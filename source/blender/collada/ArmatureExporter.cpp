@@ -1,6 +1,4 @@
 /*
- * $Id: ArmatureExporter.cpp 40019 2011-09-07 18:23:30Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -269,7 +267,7 @@ void ArmatureExporter::export_controller(Object* ob, Object *ob_arm)
 	std::string controller_id = get_controller_id(ob_arm, ob);
 
 	openSkin(controller_id, controller_name,
-			 COLLADABU::URI(COLLADABU::Utils::EMPTY_STRING, get_geometry_id(ob)));
+	         COLLADABU::URI(COLLADABU::Utils::EMPTY_STRING, get_geometry_id(ob)));
 
 	add_bind_shape_mat(ob);
 

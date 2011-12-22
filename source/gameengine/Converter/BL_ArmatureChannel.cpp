@@ -1,5 +1,4 @@
 /*
- * $Id: BL_ArmatureChannel.cpp 40538 2011-09-25 12:31:21Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -296,7 +295,7 @@ PyObject* BL_ArmatureChannel::py_attr_get_joint_rotation(void *self_v, const str
 		mul_v3_fl(joints,norm);
 		break;
 	}
-	return newVectorObject(joints, 3, Py_NEW, NULL);
+	return Vector_CreatePyObject(joints, 3, Py_NEW, NULL);
 }
 
 int BL_ArmatureChannel::py_attr_set_joint_rotation(void *self_v, const struct KX_PYATTRIBUTE_DEF *attrdef, PyObject *value)
@@ -435,7 +434,7 @@ PyAttributeDef BL_ArmatureBone::AttributesPtr[] = {
 	KX_PYATTRIBUTE_FLOAT_VECTOR_RO("arm_head",Bone,arm_head,3),
 	KX_PYATTRIBUTE_FLOAT_VECTOR_RO("arm_tail",Bone,arm_tail,3),
 	KX_PYATTRIBUTE_FLOAT_MATRIX_RO("arm_mat",Bone,arm_mat,4),
-	KX_PYATTRIBUTE_FLOAT_MATRIX_RO("bone_mat",Bone,bone_mat,4),
+	KX_PYATTRIBUTE_FLOAT_MATRIX_RO("bone_mat",Bone,bone_mat,3),
 	KX_PYATTRIBUTE_RO_FUNCTION("parent",BL_ArmatureBone,py_bone_get_parent),
 	KX_PYATTRIBUTE_RO_FUNCTION("children",BL_ArmatureBone,py_bone_get_children),
 	{ NULL }	//Sentinel

@@ -1,6 +1,4 @@
 /*
- * $Id: drawvolume.c 40390 2011-09-20 08:48:48Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -244,7 +242,7 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 
 	tstart();
 
-	VECSUB(size, max, min);
+	sub_v3_v3v3(size, max, min);
 
 	// maxx, maxy, maxz
 	cv[0][0] = max[0];

@@ -1,6 +1,4 @@
 /*
- * $Id: context.c 36442 2011-05-02 13:35:04Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -359,6 +357,13 @@ struct SpaceInfo *CTX_wm_space_info(const bContext *C)
 struct SpaceUserPref *CTX_wm_space_userpref(const bContext *C)
 {
 	if(C->wm.area && C->wm.area->spacetype==SPACE_USERPREF)
+		return C->wm.area->spacedata.first;
+	return NULL;
+}
+
+struct SpaceClip *CTX_wm_space_clip(const bContext *C)
+{
+	if(C->wm.area && C->wm.area->spacetype==SPACE_CLIP)
 		return C->wm.area->spacedata.first;
 	return NULL;
 }
@@ -882,6 +887,11 @@ struct Image *CTX_data_edit_image(const bContext *C)
 struct Text *CTX_data_edit_text(const bContext *C)
 {
 	return ctx_data_pointer_get(C, "edit_text");
+}
+
+struct MovieClip *CTX_data_edit_movieclip(const bContext *C)
+{
+	return ctx_data_pointer_get(C, "edit_movieclip");
 }
 
 struct EditBone *CTX_data_active_bone(const bContext *C)

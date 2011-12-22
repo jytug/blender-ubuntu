@@ -1,6 +1,4 @@
 /*
- * $Id: wm_apple.c 37030 2011-05-31 01:15:44Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -100,8 +98,8 @@ static int checkAppleVideoCard(void)
 		StandardAlert (   kAlertStopAlert, (ConstStr255Param) &inError, (ConstStr255Param)&inText,NULL,&junkHit);
 		abort();
 	}
-CGLDestroyRendererInfo (rend);
-return 0;
+	CGLDestroyRendererInfo (rend);
+	return 0;
 }
 
 static void getMacAvailableBounds(short *top, short *left, short *bottom, short *right) 

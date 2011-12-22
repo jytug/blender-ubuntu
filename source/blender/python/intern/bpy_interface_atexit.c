@@ -1,6 +1,4 @@
 /*
- * $Id: bpy_interface_atexit.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +22,10 @@
 
 /** \file blender/python/intern/bpy_interface_atexit.c
  *  \ingroup pythonintern
+ *
+ * This file inserts an exit callback into pythons 'atexit' module.
+ * Without this sys.exit() can crash because blender is not properly closing
+ * resources.
  */
 
 

@@ -1,6 +1,4 @@
 /*
- * $Id: view3d_header.c 40828 2011-10-06 10:06:53Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -84,9 +82,6 @@
  *
  * This can be cleaned when I make some new 'mode' icons.
  */
-
-#define TEST_EDITMESH	if(obedit==0) return; \
-						if( (v3d->lay & obedit->lay)==0 ) return;
 
 /* view3d handler codes */
 #define VIEW3D_HANDLER_BACKGROUND	1
@@ -275,35 +270,29 @@ static int modeselect_addmode(char *str, const char *title, int id, int icon)
 {
 	static char formatstr[] = "|%s %%x%d %%i%d";
 
-	if(UI_translate_iface())
-		return sprintf(str, formatstr, BLF_gettext(title), id, icon);
-	else
-		return sprintf(str, formatstr, title, id, icon);
+	return sprintf(str, formatstr, IFACE_(title), id, icon);
 }
 
 static char *view3d_modeselect_pup(Scene *scene)
 {
 	Object *ob= OBACT;
 	static char string[256];
-	const char *title= N_("Mode: %t");
+	const char *title= IFACE_("Mode: %t");
 	char *str = string;
-
-	if(U.transopts&USER_TR_IFACE)
-		title= BLF_gettext(title);
 
 	BLI_strncpy(str, title, sizeof(string));
 
 	str += modeselect_addmode(str, N_("Object Mode"), OB_MODE_OBJECT, ICON_OBJECT_DATA);
-	
+
 	if(ob==NULL || ob->data==NULL) return string;
 	if(ob->id.lib) return string;
-	
+
 	if(!((ID *)ob->data)->lib) {
 		/* if active object is editable */
 		if ( ((ob->type == OB_MESH)
 			|| (ob->type == OB_CURVE) || (ob->type == OB_SURF) || (ob->type == OB_FONT)
 			|| (ob->type == OB_MBALL) || (ob->type == OB_LATTICE))) {
-			
+
 			str += modeselect_addmode(str, N_("Edit Mode"), OB_MODE_EDIT, ICON_EDITMODE_HLT);
 		}
 		else if (ob->type == OB_ARMATURE) {
@@ -321,7 +310,7 @@ static char *view3d_modeselect_pup(Scene *scene)
 			str += modeselect_addmode(str, N_("Weight Paint"), OB_MODE_WEIGHT_PAINT, ICON_WPAINT_HLT);
 		}
 	}
-		
+
 	/* if active object is an armature */
 	if (ob->type==OB_ARMATURE) {
 		str += modeselect_addmode(str, N_("Pose Mode"), OB_MODE_POSE, ICON_POSE_HLT);
@@ -470,7 +459,6 @@ void uiTemplateEditModeSelection(uiLayout *layout, struct bContext *C)
 	}
 }
 
-#define TIP_(msgid) UI_translate_do_tooltip(msgid)
 void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 {
 	bScreen *screen= CTX_wm_screen(C);
@@ -497,15 +485,16 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 	uiBlockSetEmboss(block, UI_EMBOSS);
 	
 	/* mode */
-	if(ob)
+	if(ob) {
 		v3d->modeselect = ob->mode;
-	else
+	}
+	else {
 		v3d->modeselect = OB_MODE_OBJECT;
+	}
 
-	uiBlockBeginAlign(block);
+	row= uiLayoutRow(layout, 1);
 	uiDefIconTextButS(block, MENU, B_MODESELECT, object_mode_icon(v3d->modeselect), view3d_modeselect_pup(scene) , 
-			  0,0,126 * dpi_fac, UI_UNIT_Y, &(v3d->modeselect), 0, 0, 0, 0, TIP_(N_("Mode")));
-	uiBlockEndAlign(block);
+			  0,0,126 * dpi_fac, UI_UNIT_Y, &(v3d->modeselect), 0, 0, 0, 0, TIP_("Mode"));
 	
 	/* Draw type */
 	uiItemR(layout, &v3dptr, "viewport_shade", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
@@ -543,11 +532,11 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 		block= uiLayoutGetBlock(row);
 		
 		if(v3d->twflag & V3D_USE_MANIPULATOR) {
-			but= uiDefIconButBitC(block, TOG, V3D_MANIP_TRANSLATE, B_MAN_TRANS, ICON_MAN_TRANS, 0,0,UI_UNIT_X,UI_UNIT_Y, &v3d->twtype, 1.0, 0.0, 0, 0, TIP_(N_("Translate manipulator mode")));
+			but= uiDefIconButBitC(block, TOG, V3D_MANIP_TRANSLATE, B_MAN_TRANS, ICON_MAN_TRANS, 0,0,UI_UNIT_X,UI_UNIT_Y, &v3d->twtype, 1.0, 0.0, 0, 0, TIP_("Translate manipulator mode"));
 			uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
-			but= uiDefIconButBitC(block, TOG, V3D_MANIP_ROTATE, B_MAN_ROT, ICON_MAN_ROT, 0,0,UI_UNIT_X,UI_UNIT_Y, &v3d->twtype, 1.0, 0.0, 0, 0, TIP_(N_("Rotate manipulator mode")));
+			but= uiDefIconButBitC(block, TOG, V3D_MANIP_ROTATE, B_MAN_ROT, ICON_MAN_ROT, 0,0,UI_UNIT_X,UI_UNIT_Y, &v3d->twtype, 1.0, 0.0, 0, 0, TIP_("Rotate manipulator mode"));
 			uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
-			but= uiDefIconButBitC(block, TOG, V3D_MANIP_SCALE, B_MAN_SCALE, ICON_MAN_SCALE, 0,0,UI_UNIT_X,UI_UNIT_Y, &v3d->twtype, 1.0, 0.0, 0, 0, TIP_(N_("Scale manipulator mode")));
+			but= uiDefIconButBitC(block, TOG, V3D_MANIP_SCALE, B_MAN_SCALE, ICON_MAN_SCALE, 0,0,UI_UNIT_X,UI_UNIT_Y, &v3d->twtype, 1.0, 0.0, 0, 0, TIP_("Scale manipulator mode"));
 			uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
 		}
 			
@@ -555,20 +544,17 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 			v3d->twmode = 0;
 		}
 			
-		str_menu = BIF_menustringTransformOrientation(C, N_("Orientation"));
-		but= uiDefButC(block, MENU, B_MAN_MODE, str_menu,0,0,70 * dpi_fac, UI_UNIT_Y, &v3d->twmode, 0, 0, 0, 0, TIP_(N_("Transform Orientation")));
+		str_menu = BIF_menustringTransformOrientation(C, "Orientation");
+		but= uiDefButC(block, MENU, B_MAN_MODE, str_menu,0,0,70 * dpi_fac, UI_UNIT_Y, &v3d->twmode, 0, 0, 0, 0, TIP_("Transform Orientation"));
 		uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
 		MEM_freeN((void *)str_menu);
 	}
 
 	if(obedit==NULL && v3d->localvd==NULL) {
 		unsigned int ob_lay = ob ? ob->lay : 0;
-		
+
 		/* Layers */
-		if (v3d->scenelock)
-			uiTemplateLayers(layout, &sceneptr, "layers", &v3dptr, "layers_used", ob_lay);
-		else
-			uiTemplateLayers(layout, &v3dptr, "layers", &v3dptr, "layers_used", ob_lay);
+		uiTemplateLayers(layout, v3d->scenelock ? &sceneptr : &v3dptr, "layers", &v3dptr, "layers_used", ob_lay);
 
 		/* Scene lock */
 		uiItemR(layout, &v3dptr, "lock_camera_and_layers", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
@@ -576,4 +562,3 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 	
 	uiTemplateEditModeSelection(layout, C);
 }
-#undef TIP_

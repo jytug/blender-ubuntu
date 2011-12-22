@@ -1,6 +1,4 @@
-/* 
- * $Id: bgl.h 37088 2011-06-02 08:29:16Z campbellbarton $
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +23,7 @@
  * Contributor(s): Willian P. Germano
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file blender/python/generic/bgl.h
  *  \ingroup pygen
@@ -332,12 +330,13 @@ extern PyTypeObject BGL_bufferType;
 #define ret_def_GLstring  const unsigned char *ret_str;
 #define ret_set_GLstring  ret_str=
 
-#define ret_ret_GLstring \
-	if (ret_str) {\
-		return PyUnicode_FromString((const char *)ret_str);\
-	} else {\
-		PyErr_SetString(PyExc_AttributeError, "could not get opengl string");\
-		return NULL;\
-	}
+#define ret_ret_GLstring                                                      \
+	if (ret_str) {                                                            \
+		return PyUnicode_FromString((const char *)ret_str);                   \
+	}                                                                         \
+	else {                                                                    \
+		PyErr_SetString(PyExc_AttributeError, "could not get opengl string"); \
+		return NULL;                                                          \
+	}                                                                         \
 
 #endif /* BGL_H */

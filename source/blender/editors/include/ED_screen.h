@@ -1,6 +1,4 @@
 /*
- * $Id: ED_screen.h 37232 2011-06-06 00:42:36Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -67,6 +65,7 @@ void	ED_region_header_init(struct ARegion *ar);
 void	ED_region_header(const struct bContext *C, struct ARegion *ar);
 void	ED_region_toggle_hidden(struct bContext *C, struct ARegion *ar);
 void	region_scissor_winrct(struct ARegion *ar, struct rcti *winrct);
+void	ED_region_info_draw(struct ARegion *ar, const char *text, int block, float alpha);
 
 /* spaces */
 void	ED_spacetypes_init(void);
@@ -161,6 +160,7 @@ int		ED_operator_editmesh_view3d(struct bContext *C);
 int		ED_operator_editmesh_region_view3d(struct bContext *C);
 int		ED_operator_editarmature(struct bContext *C);
 int		ED_operator_editcurve(struct bContext *C);
+int		ED_operator_editcurve_3d(struct bContext *C);
 int		ED_operator_editsurf(struct bContext *C);
 int		ED_operator_editsurfcurve(struct bContext *C);
 int		ED_operator_editsurfcurve_region_view3d(struct bContext *C);

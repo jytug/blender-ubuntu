@@ -1,6 +1,4 @@
 /*
- * $Id: KX_Scene.h 40080 2011-09-09 21:28:56Z ben2610 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -103,7 +101,7 @@ class KX_ObstacleSimulation;
  * */
 class KX_Scene : public PyObjectPlus, public SCA_IScene
 {
-	Py_Header;
+	Py_Header
 
 #ifdef WITH_PYTHON
 	PyObject*	m_attr_dict;

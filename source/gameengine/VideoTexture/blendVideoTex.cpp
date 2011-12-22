@@ -1,7 +1,4 @@
-/** \file gameengine/VideoTexture/blendVideoTex.cpp
- *  \ingroup bgevideotex
- */
-/* $Id: blendVideoTex.cpp 40095 2011-09-10 09:38:38Z campbellbarton $
+/*
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -22,6 +19,10 @@ Place - Suite 330, Boston, MA 02111-1307, USA, or go to
 http://www.gnu.org/copyleft/lesser.txt.
 -----------------------------------------------------------------------------
 */
+
+/** \file gameengine/VideoTexture/blendVideoTex.cpp
+ *  \ingroup bgevideotex
+ */
 
 #include <PyObjectPlus.h>
 
@@ -90,7 +91,7 @@ static PyObject * imageToArray (PyObject * self, PyObject *args)
 	// parameter is Image object
 	PyObject * pyImg;
 	char *mode = NULL;
-	if (!PyArg_ParseTuple(args, "O|s:imageToArray", &pyImg, &mode) || !pyImageTypes.in(pyImg->ob_type))
+	if (!PyArg_ParseTuple(args, "O|s:imageToArray", &pyImg, &mode) || !pyImageTypes.in(Py_TYPE(pyImg)))
 	{
 		// if object is incorect, report error
 		PyErr_SetString(PyExc_TypeError, "VideoTexture.imageToArray(image): The value must be a image source object");

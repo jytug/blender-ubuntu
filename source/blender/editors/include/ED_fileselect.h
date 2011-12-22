@@ -1,6 +1,4 @@
 /*
- * $Id: ED_fileselect.h 41022 2011-10-15 05:01:47Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or

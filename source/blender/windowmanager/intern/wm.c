@@ -1,6 +1,4 @@
 /*
- * $Id: wm.c 40690 2011-09-29 13:52:58Z blendix $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -175,26 +173,6 @@ int WM_menutype_add(MenuType* mt)
 {
 	BLI_ghash_insert(menutypes_hash, (void *)mt->idname, mt);
 	return 1;
-}
-
-/* inefficient but only used for tooltip code */
-int WM_menutype_contains(MenuType* mt)
-{
-	int found= FALSE;
-
-	if(mt) {
-		GHashIterator *iter= BLI_ghashIterator_new(menutypes_hash);
-
-		for( ; !BLI_ghashIterator_isDone(iter); BLI_ghashIterator_step(iter)) {
-			if(mt == BLI_ghashIterator_getValue(iter)) {
-				found= TRUE;
-				break;
-			}
-		}
-		BLI_ghashIterator_free(iter);
-	}
-
-	return found;
 }
 
 void WM_menutype_freelink(MenuType* mt)

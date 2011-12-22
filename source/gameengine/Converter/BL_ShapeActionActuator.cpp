@@ -1,6 +1,4 @@
 /*
-* $Id: BL_ShapeActionActuator.cpp 40419 2011-09-21 08:40:30Z campbellbarton $
-*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +23,7 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file gameengine/Converter/BL_ShapeActionActuator.cpp
  *  \ingroup bgeconv
@@ -179,8 +177,9 @@ void BL_ShapeActionActuator::BlendShape(Key* key, float srcweight)
 	dstweight = 1.0F - srcweight;
 
 	for (it=m_blendshape.begin(), kb = (KeyBlock*)key->block.first; 
-		 kb && it != m_blendshape.end(); 
-		 kb = (KeyBlock*)kb->next, it++) {
+	     kb && it != m_blendshape.end();
+	     kb = (KeyBlock*)kb->next, it++)
+	{
 		kb->curval = kb->curval * dstweight + (*it) * srcweight;
 	}
 }

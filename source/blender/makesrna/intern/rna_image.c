@@ -1,6 +1,4 @@
 /*
- * $Id: rna_image.c 38551 2011-07-21 00:41:00Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -260,20 +258,20 @@ static int rna_Image_depth_get(PointerRNA *ptr)
 	Image *im= (Image*)ptr->data;
 	ImBuf *ibuf;
 	void *lock;
-	int depth;
+	int planes;
 	
 	ibuf= BKE_image_acquire_ibuf(im, NULL, &lock);
 
 	if(!ibuf)
-		depth= 0;
+		planes= 0;
 	else if(ibuf->rect_float)
-		depth= ibuf->depth * 4;
+		planes= ibuf->planes * 4;
 	else
-		depth= ibuf->depth;
+		planes= ibuf->planes;
 
 	BKE_image_release_ibuf(im, lock);
 
-	return depth;
+	return planes;
 }
 
 static int rna_Image_pixels_get_length(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
@@ -369,25 +367,25 @@ static void rna_def_imageuser(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "frame_duration", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "frames");
 	RNA_def_property_range(prop, 0, MAXFRAMEF);
-	RNA_def_property_ui_text(prop, "Frames", "Sets the number of images of a movie to use");
+	RNA_def_property_ui_text(prop, "Frames", "Number of images of a movie to use");
 	RNA_def_property_update(prop, 0, "rna_ImageUser_update");
 
 	prop= RNA_def_property(srna, "frame_offset", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "offset");
 	RNA_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
-	RNA_def_property_ui_text(prop, "Offset", "Offsets the number of the frame to use in the animation");
+	RNA_def_property_ui_text(prop, "Offset", "Offset the number of the frame to use in the animation");
 	RNA_def_property_update(prop, 0, "rna_ImageUser_update");
 
 	prop= RNA_def_property(srna, "frame_start", PROP_INT, PROP_TIME);
 	RNA_def_property_int_sdna(prop, NULL, "sfra");
 	RNA_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
-	RNA_def_property_ui_text(prop, "Start Frame", "Sets the global starting frame of the movie/sequence, assuming first picture has a #1");
+	RNA_def_property_ui_text(prop, "Start Frame", "Global starting frame of the movie/sequence, assuming first picture has a #1");
 	RNA_def_property_update(prop, 0, "rna_ImageUser_update");
 
 	prop= RNA_def_property(srna, "fields_per_frame", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "fie_ima");
 	RNA_def_property_range(prop, 1, 200);
-	RNA_def_property_ui_text(prop, "Fields per Frame", "The number of fields per rendered frame (2 fields is 1 image)");
+	RNA_def_property_ui_text(prop, "Fields per Frame", "Number of fields per rendered frame (2 fields is 1 image)");
 	RNA_def_property_update(prop, 0, "rna_ImageUser_update");
 
 	prop= RNA_def_property(srna, "multilayer_layer", PROP_INT, PROP_UNSIGNED);
@@ -464,7 +462,7 @@ static void rna_def_image(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "field_order", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
 	RNA_def_property_enum_items(prop, prop_field_order_items);
-	RNA_def_property_ui_text(prop, "Field Order", "Order of video fields. Select which lines are displayed first");
+	RNA_def_property_ui_text(prop, "Field Order", "Order of video fields (select which lines are displayed first)");
 	RNA_def_property_update(prop, NC_IMAGE|ND_DISPLAY, NULL);
 	
 	/* booleans */

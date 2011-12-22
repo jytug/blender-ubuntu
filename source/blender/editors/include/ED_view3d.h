@@ -1,6 +1,4 @@
 /*
- * $Id: ED_view3d.h 40368 2011-09-19 16:13:34Z jason_hays22 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -77,6 +75,12 @@ typedef struct ViewDepths {
 	char damaged;
 } ViewDepths;
 
+/* enum for passing to foreach functions to test RV3D_CLIPPING */
+typedef enum eV3DClipTest {
+	V3D_CLIP_TEST_OFF =            0, /* clipping is off */
+	V3D_CLIP_TEST_RV3D_CLIPPING =  1, /* clip single points */
+	V3D_CLIP_TEST_REGION =         2  /* use for edges to check if both verts are in the view, but not RV3D_CLIPPING */
+} eV3DClipTest;
 
 float *give_cursor(struct Scene *scene, struct View3D *v3d);
 
@@ -132,7 +136,6 @@ void ED_view3d_win_to_segment_clip(struct ARegion *ar, struct View3D *v3d, const
  * In orthographic view the resulting ray_normal will match the view vector.
  * @param ar The region (used for the window width and height).
  * @param v3d The 3d viewport (used for near clipping value).
- * @param out The resulting normalized world-space direction vector.
  * @param mval The area relative 2d location (such as event->mval, converted into float[2]).
  * @param ray_start The world-space starting point of the segment.
  * @param ray_normal The normalized world-space direction of towards mval.
@@ -142,7 +145,7 @@ void ED_view3d_win_to_ray(struct ARegion *ar, struct View3D *v3d, const float mv
 /**
  * Calculate a normalized 3d direction vector from the viewpoint towards a global location.
  * In orthographic view the resulting vector will match the view vector.
- * @param ar The region (used for the window width and height).
+ * @param rv3d The region (used for the window width and height).
  * @param coord The world-space location.
  * @param vec The resulting normalized vector.
  */
@@ -173,6 +176,7 @@ void ED_view3d_from_m4(float mat[][4], float ofs[3], float quat[4], float *dist)
  * @param ofs The view offset to be set, normally from RegionView3D.ofs.
  * @param quat The view rotation to be set, quaternion normally from RegionView3D.viewquat.
  * @param dist The view distance from ofs to be set, normally from RegionView3D.dist.
+ * @param lens The view lens angle set for cameras and lamps, normally from View3D.lens.
  */
 void ED_view3d_from_object(struct Object *ob, float ofs[3], float quat[4], float *dist, float *lens);
 
@@ -208,16 +212,16 @@ void project_int_noclip(struct ARegion *ar, const float vec[3], int adr[2]);
 void project_float(struct ARegion *ar, const float vec[3], float adr[2]);
 void project_float_noclip(struct ARegion *ar, const float vec[3], float adr[2]);
 
-void ED_view3d_ob_clip_range_get(struct Object *ob, float *lens, float *clipsta, float *clipend);
 int ED_view3d_clip_range_get(struct View3D *v3d, struct RegionView3D *rv3d, float *clipsta, float *clipend);
-int ED_view3d_viewplane_get(struct View3D *v3d, struct RegionView3D *rv3d, int winxi, int winyi, struct rctf *viewplane, float *clipsta, float *clipend, float *pixsize);
+int ED_view3d_viewplane_get(struct View3D *v3d, struct RegionView3D *rv3d, int winxi, int winyi, struct rctf *viewplane, float *clipsta, float *clipend);
 void ED_view3d_ob_project_mat_get(struct RegionView3D *v3d, struct Object *ob, float pmat[4][4]);
 void ED_view3d_project_float(struct ARegion *a, const float vec[3], float adr[2], float mat[4][4]);
-void ED_view3d_calc_camera_border(struct Scene *scene, struct ARegion *ar, struct View3D *v3d, struct RegionView3D *rv3d, struct rctf *viewborder_r, short do_shift);
+void ED_view3d_calc_camera_border(struct Scene *scene, struct ARegion *ar, struct View3D *v3d, struct RegionView3D *rv3d, struct rctf *viewborder_r, short no_shift);
+void ED_view3d_calc_camera_border_size(struct Scene *scene, struct ARegion *ar, struct View3D *v3d, struct RegionView3D *rv3d, float size_r[2]);
 
 /* drawobject.c iterators */
-void mesh_foreachScreenVert(struct ViewContext *vc, void (*func)(void *userData, struct EditVert *eve, int x, int y, int index), void *userData, int clipVerts);
-void mesh_foreachScreenEdge(struct ViewContext *vc, void (*func)(void *userData, struct EditEdge *eed, int x0, int y0, int x1, int y1, int index), void *userData, int clipVerts);
+void mesh_foreachScreenVert(struct ViewContext *vc, void (*func)(void *userData, struct EditVert *eve, int x, int y, int index), void *userData, eV3DClipTest clipVerts);
+void mesh_foreachScreenEdge(struct ViewContext *vc, void (*func)(void *userData, struct EditEdge *eed, int x0, int y0, int x1, int y1, int index), void *userData, eV3DClipTest clipVerts);
 void mesh_foreachScreenFace(struct ViewContext *vc, void (*func)(void *userData, struct EditFace *efa, int x, int y, int index), void *userData);
 void nurbs_foreachScreenVert(struct ViewContext *vc, void (*func)(void *userData, struct Nurb *nu, struct BPoint *bp, struct BezTriple *bezt, int beztindex, int x, int y), void *userData);
 void lattice_foreachScreenVert(struct ViewContext *vc, void (*func)(void *userData, struct BPoint *bp, int x, int y), void *userData);
@@ -291,5 +295,9 @@ int ED_view3d_camera_lock_check(struct View3D *v3d, struct RegionView3D *rv3d);
 void ED_view3d_camera_lock_init(struct View3D *v3d, struct RegionView3D *rv3d);
 /* copy the view to the camera, return TRUE if */
 int ED_view3d_camera_lock_sync(struct View3D *v3d, struct RegionView3D *rv3d);
+
+struct BGpic *ED_view3D_background_image_new(struct View3D *v3d);
+void ED_view3D_background_image_remove(struct View3D *v3d, struct BGpic *bgpic);
+void ED_view3D_background_image_clear(struct View3D *v3d);
 
 #endif /* ED_VIEW3D_H */

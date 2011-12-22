@@ -1,4 +1,4 @@
-/* $Id: Texture.h 35176 2011-02-25 13:39:34Z jesterking $
+/*
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -79,13 +79,13 @@ extern PyTypeObject TextureType;
 
 // load texture
 void loadTexture (unsigned int texId, unsigned int * texture, short * size,
-				  bool mipmap = false);
+                  bool mipmap = false);
 
 // get material
 RAS_IPolyMaterial * getMaterial (PyObject *obj, short matID);
 
 // get material ID
-short getMaterialID (PyObject * obj, char * name);
+short getMaterialID (PyObject * obj, const char *name);
 
 // Exceptions
 extern ExceptionID MaterialNotAvail;

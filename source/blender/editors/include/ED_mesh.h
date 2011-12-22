@@ -1,6 +1,4 @@
 /*
- * $Id: ED_mesh.h 40368 2011-09-19 16:13:34Z jason_hays22 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -207,11 +205,12 @@ void paintface_reveal(struct Object *ob);
 struct bDeformGroup		*ED_vgroup_add(struct Object *ob);
 struct bDeformGroup		*ED_vgroup_add_name(struct Object *ob, const char *name);
 void 					ED_vgroup_delete(struct Object *ob, struct bDeformGroup *defgroup);
+void					ED_vgroup_clear(struct Object *ob);
 void					ED_vgroup_select_by_name(struct Object *ob, const char *name);
 int						ED_vgroup_data_create(struct ID *id);
 int						ED_vgroup_give_array(struct ID *id, struct MDeformVert **dvert_arr, int *dvert_tot);
 int						ED_vgroup_copy_array(struct Object *ob, struct Object *ob_from);
-void					ED_vgroup_mirror(struct Object *ob, const short mirror_weights, const short flip_vgroups);
+void					ED_vgroup_mirror(struct Object *ob, const short mirror_weights, const short flip_vgroups, const short all_vgroups);
 
 int						ED_vgroup_object_is_edit_mode(struct Object *ob);
 
@@ -242,6 +241,7 @@ int ED_mesh_uv_texture_add(struct bContext *C, struct Mesh *me, const char *name
 int ED_mesh_uv_texture_remove(struct bContext *C, struct Object *ob, struct Mesh *me);
 int ED_mesh_color_add(struct bContext *C, struct Scene *scene, struct Object *ob, struct Mesh *me, const char *name, int active_set);
 int ED_mesh_color_remove(struct bContext *C, struct Object *ob, struct Mesh *me);
+int ED_mesh_color_remove_named(struct bContext *C, struct Object *ob, struct Mesh *me, const char *name);
 
 #ifdef __cplusplus
 }

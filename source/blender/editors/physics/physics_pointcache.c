@@ -1,6 +1,4 @@
 /*
- * $Id: physics_pointcache.c 39991 2011-09-07 06:33:29Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -323,7 +321,9 @@ static int ptcache_add_new_exec(bContext *C, wmOperator *UNUSED(op))
 	
 	for(pid=pidlist.first; pid; pid=pid->next) {
 		if(pid->cache == cache) {
-			*(pid->cache_ptr) = BKE_ptcache_add(pid->ptcaches);
+			PointCache *cache = BKE_ptcache_add(pid->ptcaches);
+			cache->step = pid->default_step;
+			*(pid->cache_ptr) = cache;
 			break;
 		}
 	}

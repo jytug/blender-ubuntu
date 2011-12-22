@@ -1,34 +1,32 @@
 /*
-* $Id: MOD_mask.c 39342 2011-08-12 18:11:22Z blendix $
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_mask.c
  *  \ingroup modifiers
@@ -38,6 +36,8 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_listbase.h"
+#include "BLI_string.h"
 #include "BLI_ghash.h"
 
 #include "DNA_armature_types.h"
@@ -137,12 +137,13 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		bDeformGroup *def;
 		char *bone_select_array;
 		int bone_select_tot= 0;
+		const int defbase_tot= BLI_countlist(&ob->defbase);
 		
 		/* check that there is armature object with bones to use, otherwise return original mesh */
 		if (ELEM3(NULL, mmd->ob_arm, mmd->ob_arm->pose, ob->defbase.first))
 			return derivedData;
 
-		bone_select_array= MEM_mallocN(BLI_countlist(&ob->defbase) * sizeof(char), "mask array");
+		bone_select_array= MEM_mallocN(defbase_tot * sizeof(char), "mask array");
 
 		for (i = 0, def = ob->defbase.first; def; def = def->next, i++)
 		{
@@ -194,12 +195,12 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 			MDeformWeight *dw= dv->dw;
 			int j;
 
-			for (j= dv->totweight; j > 0; j--, dw++)
-			{
-				if (bone_select_array[dw->def_nr])
-				{
-					if(dw->weight != 0.0f) {
-						break;
+			for (j= dv->totweight; j > 0; j--, dw++) {
+				if (dw->def_nr < defbase_tot) {
+					if (bone_select_array[dw->def_nr]) {
+						if(dw->weight != 0.0f) {
+							break;
+						}
 					}
 				}
 			}

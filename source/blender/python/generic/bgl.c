@@ -1,6 +1,4 @@
-/* 
- * $Id: bgl.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -22,19 +20,20 @@
  *
  * This is a new part of Blender.
  *
- * Contributor(s): Willian P. Germano
+ * Contributor(s): Willian P. Germano, Campbell Barton
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file blender/python/generic/bgl.c
  *  \ingroup pygen
+ *
+ * This file is the 'bgl' module which wraps OpenGL functions and constants,
+ * allowing script writers to make OpenGL calls in their Python scripts.
+ *
+ * \note
+ * This module is very similar to 'PyOpenGL' which could replace 'bgl' one day.
  */
-
-
-/* This file is the 'bgl' module.
- * The BGL submodule "wraps" OpenGL functions and constants,
- * allowing script writers to make OpenGL calls in their Python scripts. */
 
 #include <Python.h>
 
@@ -206,28 +205,35 @@ PyTypeObject BGL_bufferType = {
 	NULL						/*tp_del*/
 };
 
-
-/* #ifndef __APPLE__ */
-
-#define BGL_Wrap(nargs, funcname, ret, arg_list) \
-static PyObject *Method_##funcname (PyObject *UNUSED(self), PyObject *args) {\
-	arg_def##nargs arg_list; \
-	ret_def_##ret; \
-	if (!PyArg_ParseTuple(args, arg_str##nargs arg_list, arg_ref##nargs arg_list)) return NULL;\
-	ret_set_##ret gl##funcname (arg_var##nargs arg_list);\
-	ret_ret_##ret; \
+#define BGL_Wrap(nargs, funcname, ret, arg_list)                              \
+static PyObject *Method_##funcname (PyObject *UNUSED(self), PyObject *args)   \
+{                                                                             \
+	arg_def##nargs arg_list;                                                  \
+	ret_def_##ret;                                                            \
+	if (!PyArg_ParseTuple(args,                                               \
+	                      arg_str##nargs arg_list,                            \
+	                      arg_ref##nargs arg_list))                           \
+	{                                                                         \
+		return NULL;                                                          \
+	}                                                                         \
+	ret_set_##ret gl##funcname (arg_var##nargs arg_list);                     \
+	ret_ret_##ret;                                                            \
 }
 
-#define BGLU_Wrap(nargs, funcname, ret, arg_list) \
-static PyObject *Method_##funcname (PyObject *UNUSED(self), PyObject *args) {\
-	arg_def##nargs arg_list; \
-	ret_def_##ret; \
-	if (!PyArg_ParseTuple(args, arg_str##nargs arg_list, arg_ref##nargs arg_list)) return NULL;\
-	ret_set_##ret glu##funcname (arg_var##nargs arg_list);\
-	ret_ret_##ret; \
+#define BGLU_Wrap(nargs, funcname, ret, arg_list)                             \
+static PyObject *Method_##funcname (PyObject *UNUSED(self), PyObject *args)   \
+{                                                                             \
+	arg_def##nargs arg_list;                                                  \
+	ret_def_##ret;                                                            \
+	if (!PyArg_ParseTuple(args,                                               \
+						  arg_str##nargs arg_list,                            \
+						  arg_ref##nargs arg_list))                           \
+	{                                                                         \
+		return NULL;                                                          \
+	}                                                                         \
+	ret_set_##ret glu##funcname (arg_var##nargs arg_list);                    \
+	ret_ret_##ret;                                                            \
 }
-
-/* #endif */
 
 /********/
 int BGL_typeSize(int type)
@@ -268,7 +274,7 @@ Buffer *BGL_MakeBuffer(int type, int ndimensions, int *dimensions, void *initbuf
 	memcpy(buffer->dimensions, dimensions, ndimensions*sizeof(int));
 	buffer->type= type;
 	buffer->buf.asvoid= buf;
- 
+
 	if (initbuffer) {
 		memcpy(buffer->buf.asvoid, initbuffer, length*size);
 	}

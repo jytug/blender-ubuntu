@@ -1,6 +1,4 @@
 /*
- * $Id: KX_KetsjiEngine.h 40113 2011-09-11 05:54:07Z dfelinto $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -389,8 +387,7 @@ public:
 	void SetUseOverrideFrameColor(bool overrideFrameColor);
 
 	/** 
-	 * Enables/disables the use of the framing bar color of the Blender file's scenes.
-	 * @param useSceneFrameColor The new setting.
+	 * Check if the frame color is being overridden.
 	 */
 	bool GetUseOverrideFrameColor(void) const; 
 

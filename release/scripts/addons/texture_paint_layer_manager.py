@@ -185,7 +185,7 @@ class OBJECT_PT_Texture_paint_layers(bpy.types.Panel):
                                 ic = 'RESTRICT_VIEW_ON'
                             row.prop(t,'use', text = "",icon = ic)
                     except:
-                         continue
+                        continue
     
             
     
@@ -558,7 +558,7 @@ def save_painted(ts):
                     elif i.file_format =='TARGA':   
                         name = name +'.tga' 
                         
-                    bpy.context.scene.render.color_mode = 'RGBA'                          
+                    bpy.context.scene.render.image_settings.color_mode = 'RGBA'                          
                     fp =bpy.path.abspath('//textures' + sep + name)
                     try:
                         i.save_render(fp)

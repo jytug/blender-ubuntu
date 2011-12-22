@@ -1,6 +1,4 @@
 /*
- * $Id: GeometryExporter.cpp 40382 2011-09-20 06:25:15Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -198,7 +196,7 @@ void GeometryExporter::createPolylist(short material_index,
 		COLLADASW::Input input3(COLLADASW::InputSemantic::TEXCOORD,
 								makeUrl(makeTexcoordSourceId(geom_id, i)),
 								2, // offset always 2, this is only until we have optimized UV sets
-								i  // set number equals UV layer index
+								i  // set number equals UV map index
 								);
 		til.push_back(input3);
 	}

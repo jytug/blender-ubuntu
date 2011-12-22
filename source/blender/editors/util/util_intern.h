@@ -1,6 +1,4 @@
 /*
- * $Id: util_intern.h 37185 2011-06-04 17:03:46Z ton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,7 @@
 /* editmode_undo.c */
 void	undo_editmode_name			(struct bContext *C, const char *undoname);
 int		undo_editmode_valid			(const char *undoname);
-char	*undo_editmode_get_name		(struct bContext *C, int nr, int *active);
+const char *undo_editmode_get_name	(struct bContext *C, int nr, int *active);
 void	*undo_editmode_get_prev		(struct Object *ob);
 void	undo_editmode_step			(struct bContext *C, int step);
 void	undo_editmode_number		(struct bContext *C, int nr);

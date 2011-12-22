@@ -1,6 +1,4 @@
 /*
- * $Id: node_composite_util.c 39944 2011-09-05 22:04:30Z gsrb3d $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -133,44 +131,29 @@ void compbuf_set_node(CompBuf *cbuf, bNode *node)
 }
 
 /* used for disabling node  (similar code in node_draw.c for disable line and node_edit for untangling nodes) */
-void node_compo_pass_on(bNode *node, bNodeStack **nsin, bNodeStack **nsout)
+void node_compo_pass_on(void *UNUSED(data), int UNUSED(thread), struct bNode *node, void *UNUSED(nodedata),
+                        struct bNodeStack **in, struct bNodeStack **out)
 {
-	CompBuf *valbuf= NULL, *colbuf= NULL, *vecbuf= NULL;
-	bNodeSocket *sock;
-	int a;
-	
-	/* connect the first value buffer in with first value out */
-	/* connect the first RGBA buffer in with first RGBA out */
-	
-	/* test the inputs */
-	for(a=0, sock= node->inputs.first; sock; sock= sock->next, a++) {
-		if(nsin[a]->data) {
-			CompBuf *cbuf= nsin[a]->data;
-			if(cbuf->type==1 && valbuf==NULL) valbuf= cbuf;
-			if(cbuf->type==3 && vecbuf==NULL) vecbuf= cbuf;
-			if(cbuf->type==4 && colbuf==NULL) colbuf= cbuf;
+	ListBase links;
+	LinkInOutsMuteNode *lnk;
+	int i;
+
+	if(node->typeinfo->mutelinksfunc == NULL)
+		return;
+
+	/* Get default muting links (as bNodeStack pointers). */
+	links = node->typeinfo->mutelinksfunc(NULL, node, in, out, NULL, NULL);
+
+	for(lnk = links.first; lnk; lnk = lnk->next) {
+		for(i = 0; i < lnk->num_outs; i++) {
+			if(((bNodeStack*)(lnk->in))->data)
+				(((bNodeStack*)(lnk->outs))+i)->data = pass_on_compbuf((CompBuf*)((bNodeStack*)(lnk->in))->data);
 		}
+		/* If num_outs > 1, lnk->outs was an allocated table of pointers... */
+		if(i > 1)
+			MEM_freeN(lnk->outs);
 	}
-	
-	/* outputs */
-	if(valbuf || colbuf || vecbuf) {
-		for(a=0, sock= node->outputs.first; sock; sock= sock->next, a++) {
-			if(nsout[a]->hasoutput) {
-				if(sock->type==SOCK_FLOAT && valbuf) {
-					nsout[a]->data= pass_on_compbuf(valbuf);
-					valbuf= NULL;
-				}
-				if(sock->type==SOCK_VECTOR && vecbuf) {
-					nsout[a]->data= pass_on_compbuf(vecbuf);
-					vecbuf= NULL;
-				}
-				if(sock->type==SOCK_RGBA && colbuf) {
-					nsout[a]->data= pass_on_compbuf(colbuf);
-					colbuf= NULL;
-				}
-			}
-		}
-	}
+	BLI_freelistN(&links);
 }
 
 
@@ -319,8 +302,8 @@ CompBuf *typecheck_compbuf(CompBuf *inbuf, int type)
 
 		if(inbuf->rect_procedural) {
 			outbuf->rect_procedural= inbuf->rect_procedural;
-			VECCOPY(outbuf->procedural_size, inbuf->procedural_size);
-			VECCOPY(outbuf->procedural_offset, inbuf->procedural_offset);
+			copy_v3_v3(outbuf->procedural_size, inbuf->procedural_size);
+			copy_v3_v3(outbuf->procedural_offset, inbuf->procedural_offset);
 			outbuf->procedural_type= inbuf->procedural_type;
 			outbuf->node= inbuf->node;
 			return outbuf;
@@ -709,12 +692,12 @@ void do_ycca_to_rgba(bNode *UNUSED(node), float *out, float *in)
 
 void do_copy_rgba(bNode *UNUSED(node), float *out, float *in)
 {
-	QUATCOPY(out, in);
+	copy_v4_v4(out, in);
 }
 
 void do_copy_rgb(bNode *UNUSED(node), float *out, float *in)
 {
-	VECCOPY(out, in);
+	copy_v3_v3(out, in);
 	out[3]= 1.0f;
 }
 
@@ -725,7 +708,7 @@ void do_copy_value(bNode *UNUSED(node), float *out, float *in)
 
 void do_copy_a_rgba(bNode *UNUSED(node), float *out, float *in, float *fac)
 {
-	VECCOPY(out, in);
+	copy_v3_v3(out, in);
 	out[3]= *fac;
 }
 
@@ -764,7 +747,7 @@ void premul_compbuf(CompBuf *img, int inversed)
 	drect= img->rect;
 	if(inversed) {
 		for(x=img->x*img->y; x>0; x--, drect+=4) {
-			if(fabs(drect[3]) < 1e-5f) {
+			if(fabsf(drect[3]) < 1e-5f) {
 				drect[0]= 0.0f;
 				drect[1]= 0.0f;
 				drect[2]= 0.0f;
@@ -1316,11 +1299,11 @@ void IIR_gauss(CompBuf* src, float sigma, int chan, int xy)
 	int i, x, y, sz;
 
 	// <0.5 not valid, though can have a possibly useful sort of sharpening effect
-	if (sigma < 0.5) return;
+	if (sigma < 0.5f) return;
 	
 	if ((xy < 1) || (xy > 3)) xy = 3;
 	
-	// XXX The YVV macro defined below explicitely expects sources of at least 3x3 pixels,
+	// XXX The YVV macro defined below explicitly expects sources of at least 3x3 pixels,
 	//     so just skiping blur along faulty direction if src's def is below that limit!
 	if (src->x < 3) xy &= ~(int) 1;
 	if (src->y < 3) xy &= ~(int) 2;
@@ -1328,10 +1311,10 @@ void IIR_gauss(CompBuf* src, float sigma, int chan, int xy)
 
 	// see "Recursive Gabor Filtering" by Young/VanVliet
 	// all factors here in double.prec. Required, because for single.prec it seems to blow up if sigma > ~200
-	if (sigma >= 3.556)
-		q = 0.9804*(sigma - 3.556) + 2.5091;
+	if (sigma >= 3.556f)
+		q = 0.9804f*(sigma - 3.556f) + 2.5091f;
 	else // sigma >= 0.5
-		q = (0.0561*sigma + 0.5784)*sigma - 0.2568;
+		q = (0.0561f*sigma + 0.5784f)*sigma - 0.2568f;
 	q2 = q*q;
 	sc = (1.1668 + q)*(3.203729649  + (2.21566 + q)*q);
 	// no gabor filtering here, so no complex multiplies, just the regular coefs.
@@ -1346,7 +1329,7 @@ void IIR_gauss(CompBuf* src, float sigma, int chan, int xy)
 	// it seems to work, not entirely sure if it is actually totally correct,
 	// Besides J.M.Geusebroek's anigauss.c (see http://www.science.uva.nl/~mark),
 	// found one other implementation by Cristoph Lampert,
-	// but neither seem to be quite the same, result seems to be ok sofar anyway.
+	// but neither seem to be quite the same, result seems to be ok so far anyway.
 	// Extra scale factor here to not have to do it in filter,
 	// though maybe this had something to with the precision errors
 	sc = cf[0]/((1.0 + cf[1] - cf[2] + cf[3])*(1.0 - cf[1] - cf[2] - cf[3])*(1.0 + cf[2] + (cf[1] - cf[3])*cf[3]));
@@ -1360,24 +1343,24 @@ void IIR_gauss(CompBuf* src, float sigma, int chan, int xy)
 	tsM[7] = sc*(cf[1]*cf[2] + cf[3]*cf[2]*cf[2] - cf[1]*cf[3]*cf[3] - cf[3]*cf[3]*cf[3] - cf[3]*cf[2] + cf[3]);
 	tsM[8] = sc*(cf[3]*(cf[1] + cf[3]*cf[2]));
 
-#define YVV(L)\
-{\
-	W[0] = cf[0]*X[0] + cf[1]*X[0] + cf[2]*X[0] + cf[3]*X[0];\
-	W[1] = cf[0]*X[1] + cf[1]*W[0] + cf[2]*X[0] + cf[3]*X[0];\
-	W[2] = cf[0]*X[2] + cf[1]*W[1] + cf[2]*W[0] + cf[3]*X[0];\
-	for (i=3; i<L; i++)\
-		W[i] = cf[0]*X[i] + cf[1]*W[i-1] + cf[2]*W[i-2] + cf[3]*W[i-3];\
-	tsu[0] = W[L-1] - X[L-1];\
-	tsu[1] = W[L-2] - X[L-1];\
-	tsu[2] = W[L-3] - X[L-1];\
-	tsv[0] = tsM[0]*tsu[0] + tsM[1]*tsu[1] + tsM[2]*tsu[2] + X[L-1];\
-	tsv[1] = tsM[3]*tsu[0] + tsM[4]*tsu[1] + tsM[5]*tsu[2] + X[L-1];\
-	tsv[2] = tsM[6]*tsu[0] + tsM[7]*tsu[1] + tsM[8]*tsu[2] + X[L-1];\
-	Y[L-1] = cf[0]*W[L-1] + cf[1]*tsv[0] + cf[2]*tsv[1] + cf[3]*tsv[2];\
-	Y[L-2] = cf[0]*W[L-2] + cf[1]*Y[L-1] + cf[2]*tsv[0] + cf[3]*tsv[1];\
-	Y[L-3] = cf[0]*W[L-3] + cf[1]*Y[L-2] + cf[2]*Y[L-1] + cf[3]*tsv[0];\
-	for (i=L-4; i>=0; i--)\
-		Y[i] = cf[0]*W[i] + cf[1]*Y[i+1] + cf[2]*Y[i+2] + cf[3]*Y[i+3];\
+#define YVV(L)                                                                \
+{                                                                             \
+	W[0] = cf[0]*X[0] + cf[1]*X[0] + cf[2]*X[0] + cf[3]*X[0];                 \
+	W[1] = cf[0]*X[1] + cf[1]*W[0] + cf[2]*X[0] + cf[3]*X[0];                 \
+	W[2] = cf[0]*X[2] + cf[1]*W[1] + cf[2]*W[0] + cf[3]*X[0];                 \
+	for (i=3; i<L; i++)                                                       \
+		W[i] = cf[0]*X[i] + cf[1]*W[i-1] + cf[2]*W[i-2] + cf[3]*W[i-3];       \
+	tsu[0] = W[L-1] - X[L-1];                                                 \
+	tsu[1] = W[L-2] - X[L-1];                                                 \
+	tsu[2] = W[L-3] - X[L-1];                                                 \
+	tsv[0] = tsM[0]*tsu[0] + tsM[1]*tsu[1] + tsM[2]*tsu[2] + X[L-1];          \
+	tsv[1] = tsM[3]*tsu[0] + tsM[4]*tsu[1] + tsM[5]*tsu[2] + X[L-1];          \
+	tsv[2] = tsM[6]*tsu[0] + tsM[7]*tsu[1] + tsM[8]*tsu[2] + X[L-1];          \
+	Y[L-1] = cf[0]*W[L-1] + cf[1]*tsv[0] + cf[2]*tsv[1] + cf[3]*tsv[2];       \
+	Y[L-2] = cf[0]*W[L-2] + cf[1]*Y[L-1] + cf[2]*tsv[0] + cf[3]*tsv[1];       \
+	Y[L-3] = cf[0]*W[L-3] + cf[1]*Y[L-2] + cf[2]*Y[L-1] + cf[3]*tsv[0];       \
+	for (i=L-4; i>=0; i--)                                                    \
+		Y[i] = cf[0]*W[i] + cf[1]*Y[i+1] + cf[2]*Y[i+2] + cf[3]*Y[i+3];       \
 }
 
 	// intermediate buffers

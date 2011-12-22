@@ -1,6 +1,4 @@
 /*
- * $Id: KX_IpoActuator.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,7 @@
 
 class KX_IpoActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 private:
 	/** Computes the IPO start time from the current time
 	    and the current frame. */
@@ -120,20 +118,20 @@ public:
 	static const char *S_KX_ACT_IPO_KEY2KEY_STRING;
 	static const char *S_KX_ACT_IPO_FROM_PROP_STRING;
 
-	int string2mode(char* modename);
+	int string2mode(const char *modename);
 	
 	int m_type;
 
 	KX_IpoActuator(SCA_IObject* gameobj,
-				   const STR_String& propname,
-				   const STR_String& framePropname,
-				   float starttime,
-				   float endtime,
-				   bool recurse,
-				   int acttype,
-				   bool ipo_as_force, 
-				   bool ipo_add,
-				   bool ipo_local);
+	               const STR_String& propname,
+	               const STR_String& framePropname,
+	               float starttime,
+	               float endtime,
+	               bool recurse,
+	               int acttype,
+	               bool ipo_as_force,
+	               bool ipo_add,
+	               bool ipo_local);
 	virtual ~KX_IpoActuator() {};
 
 	virtual CValue* GetReplica() {

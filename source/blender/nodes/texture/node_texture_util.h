@@ -1,6 +1,4 @@
 /*
- * $Id: node_texture_util.h 39944 2011-09-05 22:04:30Z gsrb3d $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -120,5 +118,7 @@ void tex_output(bNode *node, bNodeStack **in, bNodeStack *out, TexFn texfn, TexC
 void tex_do_preview(bNode *node, float *coord, float *col);
 
 void params_from_cdata(TexParams *out, TexCallData *in);
+
+void node_tex_pass_on(void *data, int thread, struct bNode *node, void *nodedata, struct bNodeStack **in, struct bNodeStack **out);
 
 #endif

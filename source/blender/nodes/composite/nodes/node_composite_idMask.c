@@ -1,6 +1,4 @@
 /*
- * $Id: node_composite_idMask.c 40742 2011-10-02 12:57:49Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,7 +36,7 @@
 /* **************** ID Mask  ******************** */
 
 static bNodeSocketTemplate cmp_node_idmask_in[]= {
-	{	SOCK_FLOAT, 1, "ID value",			0.8f, 0.8f, 0.8f, 1.0f, 0.0f, 1.0f, PROP_NONE},
+	{	SOCK_FLOAT, 1, "ID value",			1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_idmask_out[]= {
@@ -109,17 +107,14 @@ static void node_composit_exec_idmask(void *data, bNode *node, bNodeStack **in, 
 }
 
 
-void register_node_type_cmp_idmask(ListBase *lb)
+void register_node_type_cmp_idmask(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_ID_MASK, "ID Mask", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_ID_MASK, "ID Mask", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_idmask_in, cmp_node_idmask_out);
 	node_type_size(&ntype, 140, 100, 320);
 	node_type_exec(&ntype, node_composit_exec_idmask);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-
