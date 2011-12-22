@@ -1,8 +1,8 @@
-0001-install_in_usr_lib.patch
-0002-use_systemwide_libraries.patch
-0003-filter_docs_to_install.patch
-0004-locales_directory_install.patch
-0005-blender_thumbnailer.patch
-0006-fix_FTBFS_on_KFreeBSD.patch
-0007-disable_tests.patch
+0001-use_systemwide_libraries.patch
+0002-blender_thumbnailer.patch
+0003-fix_FTBFS_on_KFreeBSD.patch
+0004-disable_tests.patch
+0005-install_in_usr_lib.patch
+0006-filter_docs_to_install.patch
+0007-locales_directory_install.patch
 0008-update_manpages.patch

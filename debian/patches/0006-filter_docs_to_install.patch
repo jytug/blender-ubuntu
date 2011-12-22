@@ -1,5 +1,5 @@
-From: Kevin Roy <kiniou@gmail.com>
-Date: Tue, 28 Sep 2010 15:00:26 +0200
+From: "Matteo F. Vescovi" <m.vescovi@revese.it>
+Date: Thu, 22 Dec 2011 18:13:03 +0100
 Subject: filter_docs_to_install
 
 Install relevant documentation
@@ -8,11 +8,11 @@ Install relevant documentation
  1 files changed, 0 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 9e83195..62cc7be 100644
+index f6f7cc1..c8d5648 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -234,8 +234,6 @@ endif()
- # Install Targets
+@@ -206,8 +206,6 @@ else()
+ endif()
  
  set(BLENDER_TEXT_FILES
 -	${CMAKE_SOURCE_DIR}/release/text/GPL-license.txt
