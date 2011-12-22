@@ -1,6 +1,4 @@
 /*
- * $Id: node_composite_value.c 39995 2011-09-07 07:29:29Z lukastoenne $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -59,17 +57,15 @@ static void node_composit_exec_value(void *UNUSED(data), bNode *node, bNodeStack
 	out[0]->vec[0]= val;
 }
 
-void register_node_type_cmp_value(ListBase *lb)
+void register_node_type_cmp_value(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_VALUE, "Value", NODE_CLASS_INPUT, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_VALUE, "Value", NODE_CLASS_INPUT, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, NULL, cmp_node_value_out);
 	node_type_init(&ntype, node_composit_init_value);
 	node_type_size(&ntype, 80, 40, 120);
 	node_type_exec(&ntype, node_composit_exec_value);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-

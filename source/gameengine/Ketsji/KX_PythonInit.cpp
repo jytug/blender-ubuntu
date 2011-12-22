@@ -1,6 +1,4 @@
 /*
- * $Id: KX_PythonInit.cpp 41021 2011-10-15 03:56:05Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -149,8 +147,8 @@ extern "C" {
 #ifdef WITH_PYTHON
 
 static RAS_ICanvas* gp_Canvas = NULL;
-static char gp_GamePythonPath[FILE_MAXDIR + FILE_MAXFILE] = "";
-static char gp_GamePythonPathOrig[FILE_MAXDIR + FILE_MAXFILE] = ""; // not super happy about this, but we need to remember the first loaded file for the global/dict load save
+static char gp_GamePythonPath[FILE_MAX] = "";
+static char gp_GamePythonPathOrig[FILE_MAX] = ""; // not super happy about this, but we need to remember the first loaded file for the global/dict load save
 
 static SCA_PythonKeyboard* gp_PythonKeyboard = NULL;
 static SCA_PythonMouse* gp_PythonMouse = NULL;
@@ -239,13 +237,13 @@ The function also converts the directory separator to the local file system form
 
 static PyObject* gPyExpandPath(PyObject*, PyObject* args)
 {
-	char expanded[FILE_MAXDIR + FILE_MAXFILE];
+	char expanded[FILE_MAX];
 	char* filename;
 	
 	if (!PyArg_ParseTuple(args,"s:ExpandPath",&filename))
 		return NULL;
 
-	BLI_strncpy(expanded, filename, FILE_MAXDIR + FILE_MAXFILE);
+	BLI_strncpy(expanded, filename, FILE_MAX);
 	BLI_path_abs(expanded, gp_GamePythonPath);
 	return PyUnicode_DecodeFSDefault(expanded);
 }
@@ -498,11 +496,11 @@ static PyObject* gPyGetBlendFileList(PyObject*, PyObject* args)
 	list = PyList_New(0);
 	
 	if (searchpath) {
-		BLI_strncpy(cpath, searchpath, FILE_MAXDIR + FILE_MAXFILE);
+		BLI_strncpy(cpath, searchpath, FILE_MAX);
 		BLI_path_abs(cpath, gp_GamePythonPath);
 	} else {
 		/* Get the dir only */
-		BLI_split_dirfile(gp_GamePythonPath, cpath, NULL, sizeof(cpath), 0);
+		BLI_split_dir_part(gp_GamePythonPath, cpath, sizeof(cpath));
 	}
 
 	if((dp  = opendir(cpath)) == NULL) {
@@ -707,7 +705,7 @@ static PyObject *gLibNew(PyObject*, PyObject* args)
 	KX_Scene *kx_scene= gp_KetsjiScene;
 	char *path;
 	char *group;
-	char *name;
+	const char *name;
 	PyObject *names;
 	int idcode;
 
@@ -817,7 +815,7 @@ static struct PyMethodDef game_methods[] = {
 	{"getAverageFrameRate", (PyCFunction) gPyGetAverageFrameRate, METH_NOARGS, (const char *)"Gets the estimated average frame rate"},
 	{"getBlendFileList", (PyCFunction)gPyGetBlendFileList, METH_VARARGS, (const char *)"Gets a list of blend files in the same directory as the current blend file"},
 	{"PrintGLInfo", (PyCFunction)pyPrintExt, METH_NOARGS, (const char *)"Prints GL Extension Info"},
-	{"PrintMemInfo", (PyCFunction)pyPrintStats, METH_NOARGS, (const char *)"Print engine stastics"},
+	{"PrintMemInfo", (PyCFunction)pyPrintStats, METH_NOARGS, (const char *)"Print engine statistics"},
 	
 	/* library functions */
 	{"LibLoad", (PyCFunction)gLibLoad, METH_VARARGS|METH_KEYWORDS, (const char *)""},
@@ -1091,7 +1089,7 @@ static PyObject* gPyDisableMotionBlur(PyObject*)
 	Py_RETURN_NONE;
 }
 
-int getGLSLSettingFlag(char *setting)
+static int getGLSLSettingFlag(const char *setting)
 {
 	if(strcmp(setting, "lights") == 0)
 		return GAME_GLSL_NO_LIGHTS;
@@ -1727,12 +1725,12 @@ static void backupPySysObjects(void)
  *
  * "/home/me/foo.blend" -> "/home/me/scripts"
  */
-static void initPySysObjects__append(PyObject *sys_path, char *filename)
+static void initPySysObjects__append(PyObject *sys_path, const char *filename)
 {
 	PyObject *item;
-	char expanded[FILE_MAXDIR + FILE_MAXFILE];
+	char expanded[FILE_MAX];
 	
-	BLI_split_dirfile(filename, expanded, NULL, sizeof(expanded), 0); /* get the dir part of filename only */
+	BLI_split_dir_part(filename, expanded, sizeof(expanded)); /* get the dir part of filename only */
 	BLI_path_abs(expanded, gp_GamePythonPath); /* filename from lib->filename is (always?) absolute, so this may not be needed but it wont hurt */
 	BLI_cleanup_file(gp_GamePythonPath, expanded); /* Dont use BLI_cleanup_dir because it adds a slash - BREAKS WIN32 ONLY */
 	item= PyUnicode_DecodeFSDefault(expanded);
@@ -1816,7 +1814,7 @@ PyObject* initGamePlayerPythonScripting(const STR_String& progname, TPythonSecur
 	/* Yet another gotcha in the py api
 	 * Cant run PySys_SetArgv more then once because this adds the
 	 * binary dir to the sys.path each time.
-	 * Id have thaught python being totally restarted would make this ok but
+	 * Id have thought python being totally restarted would make this ok but
 	 * somehow it remembers the sys.path - Campbell
 	 */
 	static bool first_time = true;
@@ -2327,7 +2325,7 @@ int loadGamePythonConfig(char *marshal_buffer, int marshal_length)
 	return 0;
 }
 
-void pathGamePythonConfig( char *path )
+void pathGamePythonConfig(char *path)
 {
 	int len = strlen(gp_GamePythonPathOrig); // Always use the first loaded blend filename
 	
@@ -2341,7 +2339,7 @@ void pathGamePythonConfig( char *path )
 	}
 }
 
-void setGamePythonPath(char *path)
+void setGamePythonPath(const char *path)
 {
 	BLI_strncpy(gp_GamePythonPath, path, sizeof(gp_GamePythonPath));
 	BLI_cleanup_file(NULL, gp_GamePythonPath); /* not absolutely needed but makes resolving path problems less confusing later */

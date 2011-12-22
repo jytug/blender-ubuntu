@@ -33,6 +33,7 @@
  *  \ingroup DNA
  */
 
+#include "DNA_defs.h"
 #include "DNA_ID.h"
 #include "DNA_listBase.h"
 
@@ -66,7 +67,7 @@ typedef struct bConstraint {
 	float		headtail;	/*	Point along subtarget bone where the actual target is. 0=head (default for all), 1=tail*/
 	int			pad;
 	
-	struct Ipo *ipo;		/* local influence ipo or driver */ // XXX depreceated for 2.5... old animation system hack
+	struct Ipo *ipo    DNA_DEPRECATED;		/* local influence ipo or driver */  /* old animation system, deprecated for 2.5 */
 	
 	/* below are readonly fields that are set at runtime by the solver for use in the GE (only IK atm) */
 	float       lin_error;		/* residual error on constraint expressed in blender unit*/
@@ -406,6 +407,18 @@ typedef struct bShrinkwrapConstraint {
 	char 		pad[9];
 } bShrinkwrapConstraint;
 
+/* Follow Track constraints */
+typedef struct bFollowTrackConstraint {
+	struct MovieClip	*clip;
+	char	track[24];
+	int		flag, pad;
+} bFollowTrackConstraint;
+
+/* Camera Solver constraints */
+typedef struct bCameraSolverConstraint {
+	struct MovieClip	*clip;
+	int		flag, pad;
+} bCameraSolverConstraint;
 
 /* ------------------------------------------ */
 
@@ -440,6 +453,8 @@ typedef enum eBConstraint_Types {
 	CONSTRAINT_TYPE_TRANSLIKE,			/* Copy transform matrix */
 	CONSTRAINT_TYPE_SAMEVOL,			/* Maintain volume during scaling */
 	CONSTRAINT_TYPE_PIVOT,				/* Pivot Constraint */
+	CONSTRAINT_TYPE_FOLLOWTRACK,		/* Follow Track Constraint */
+	CONSTRAINT_TYPE_CAMERASOLVER,		/* Camera Solver Constraint */
 	
 	/* NOTE: no constraints are allowed to be added after this */
 	NUM_CONSTRAINT_TYPES
@@ -736,6 +751,16 @@ typedef enum ePivotConstraint_Flag {
 	/* rotation-based activation uses negative rotation to drive result */
 	PIVOTCON_FLAG_ROTACT_NEG	= (1<<1)
 } ePivotConstraint_Flag;
+
+typedef enum eFollowTrack_Flags {
+	FOLLOWTRACK_ACTIVECLIP	= (1<<0),
+	FOLLOWTRACK_USE_3D_POSITION	= (1<<1)
+} eFollowTrack_Flags;
+
+/* CameraSolver Constraint -> flag */
+typedef enum eCameraSolver_Flags {
+	CAMERASOLVER_ACTIVECLIP	= (1<<0)
+} eCameraSolver_Flags;
 
 /* Rigid-Body Constraint */
 #define CONSTRAINT_DRAW_PIVOT 0x40

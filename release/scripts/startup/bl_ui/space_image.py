@@ -61,7 +61,7 @@ class IMAGE_MT_view(Menu):
 
         layout.separator()
 
-        ratios = [[1, 8], [1, 4], [1, 2], [1, 1], [2, 1], [4, 1], [8, 1]]
+        ratios = ((1, 8), (1, 4), (1, 2), (1, 1), (2, 1), (4, 1), (8, 1))
 
         for a, b in ratios:
             layout.operator("image.view_zoom_ratio", text="Zoom" + " %d:%d" % (a, b)).ratio = a / b
@@ -157,24 +157,24 @@ class IMAGE_MT_image_invert(Menu):
     def draw(self, context):
         layout = self.layout
 
-        op = layout.operator("image.invert", text="Invert Image Colors")
-        op.invert_r = True
-        op.invert_g = True
-        op.invert_b = True
+        props = layout.operator("image.invert", text="Invert Image Colors")
+        props.invert_r = True
+        props.invert_g = True
+        props.invert_b = True
 
         layout.separator()
 
-        op = layout.operator("image.invert", text="Invert Red Channel")
-        op.invert_r = True
+        props = layout.operator("image.invert", text="Invert Red Channel")
+        props.invert_r = True
 
-        op = layout.operator("image.invert", text="Invert Green Channel")
-        op.invert_g = True
+        props = layout.operator("image.invert", text="Invert Green Channel")
+        props.invert_g = True
 
-        op = layout.operator("image.invert", text="Invert Blue Channel")
-        op.invert_b = True
+        props = layout.operator("image.invert", text="Invert Blue Channel")
+        props.invert_b = True
 
-        op = layout.operator("image.invert", text="Invert Alpha Channel")
-        op.invert_a = True
+        props = layout.operator("image.invert", text="Invert Alpha Channel")
+        props.invert_a = True
 
 
 class IMAGE_MT_uvs_showhide(Menu):
@@ -312,19 +312,19 @@ class IMAGE_MT_uvs_select_mode(Menu):
 
         else:
             prop = layout.operator("wm.context_set_string", text="Vertex", icon='UV_VERTEXSEL')
-            prop.value = "VERTEX"
+            prop.value = 'VERTEX'
             prop.data_path = "tool_settings.uv_select_mode"
 
             prop = layout.operator("wm.context_set_string", text="Edge", icon='UV_EDGESEL')
-            prop.value = "EDGE"
+            prop.value = 'EDGE'
             prop.data_path = "tool_settings.uv_select_mode"
 
             prop = layout.operator("wm.context_set_string", text="Face", icon='UV_FACESEL')
-            prop.value = "FACE"
+            prop.value = 'FACE'
             prop.data_path = "tool_settings.uv_select_mode"
 
             prop = layout.operator("wm.context_set_string", text="Island", icon='UV_ISLANDSEL')
-            prop.value = "ISLAND"
+            prop.value = 'ISLAND'
             prop.data_path = "tool_settings.uv_select_mode"
 
 
@@ -746,12 +746,12 @@ class IMAGE_PT_paint_curve(BrushButtonsPanel, Panel):
         layout.template_curve_mapping(brush, "curve")
 
         row = layout.row(align=True)
-        row.operator("brush.curve_preset", icon="SMOOTHCURVE", text="").shape = 'SMOOTH'
-        row.operator("brush.curve_preset", icon="SPHERECURVE", text="").shape = 'ROUND'
-        row.operator("brush.curve_preset", icon="ROOTCURVE", text="").shape = 'ROOT'
-        row.operator("brush.curve_preset", icon="SHARPCURVE", text="").shape = 'SHARP'
-        row.operator("brush.curve_preset", icon="LINCURVE", text="").shape = 'LINE'
-        row.operator("brush.curve_preset", icon="NOCURVE", text="").shape = 'MAX'
+        row.operator("brush.curve_preset", icon='SMOOTHCURVE', text="").shape = 'SMOOTH'
+        row.operator("brush.curve_preset", icon='SPHERECURVE', text="").shape = 'ROUND'
+        row.operator("brush.curve_preset", icon='ROOTCURVE', text="").shape = 'ROOT'
+        row.operator("brush.curve_preset", icon='SHARPCURVE', text="").shape = 'SHARP'
+        row.operator("brush.curve_preset", icon='LINCURVE', text="").shape = 'LINE'
+        row.operator("brush.curve_preset", icon='NOCURVE', text="").shape = 'MAX'
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

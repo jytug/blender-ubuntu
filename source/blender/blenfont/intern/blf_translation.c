@@ -1,6 +1,4 @@
 /*
- * $Id: blf_translation.c 40563 2011-09-26 10:35:47Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,6 +36,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
 #include "BLI_path_util.h"
@@ -45,8 +44,10 @@
 
 #include "BLF_translation.h"
 
+#include "DNA_userdef_types.h" /* For user settings. */
+
 #ifdef WITH_INTERNATIONAL
-const char unifont_filename[]="droidsans.ttf.gz";
+static const char unifont_filename[]="droidsans.ttf.gz";
 static unsigned char *unifont_ttf= NULL;
 static int unifont_size= 0;
 
@@ -54,11 +55,16 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
 {
 	if(unifont_ttf==NULL) {
 		char *fontpath = BLI_get_folder(BLENDER_DATAFILES, "fonts");
-		char unifont_path[1024];
+		if (fontpath) {
+			char unifont_path[1024];
 
-		BLI_snprintf(unifont_path, sizeof(unifont_path), "%s/%s", fontpath, unifont_filename);
+			BLI_snprintf(unifont_path, sizeof(unifont_path), "%s/%s", fontpath, unifont_filename);
 
-		unifont_ttf= (unsigned char*)BLI_ungzip_to_mem(unifont_path, &unifont_size);
+			unifont_ttf= (unsigned char*)BLI_file_ungzip_to_mem(unifont_path, &unifont_size);
+		}
+		else {
+			printf("%s: 'fonts' data path not found for international font, continuing\n", __func__);
+		}
 	}
 
 	*unifont_size_r= unifont_size;
@@ -84,3 +90,46 @@ const char* BLF_gettext(const char *msgid)
 	return msgid;
 #endif
 }
+
+int BLF_translate_iface(void)
+{
+#ifdef WITH_INTERNATIONAL
+	return (U.transopts & USER_DOTRANSLATE) && (U.transopts & USER_TR_IFACE);
+#else
+	return 0;
+#endif
+}
+
+int BLF_translate_tooltips(void)
+{
+#ifdef WITH_INTERNATIONAL
+	return (U.transopts & USER_DOTRANSLATE) && (U.transopts & USER_TR_TOOLTIPS);
+#else
+	return 0;
+#endif
+}
+
+const char *BLF_translate_do_iface(const char *msgid)
+{
+#ifdef WITH_INTERNATIONAL
+	if(BLF_translate_iface())
+		return BLF_gettext(msgid);
+	else
+		return msgid;
+#else
+	return msgid;
+#endif
+}
+
+const char *BLF_translate_do_tooltip(const char *msgid)
+{
+#ifdef WITH_INTERNATIONAL
+	if(BLF_translate_tooltips())
+		return BLF_gettext(msgid);
+	else
+		return msgid;
+#else
+	return msgid;
+#endif
+}
+

@@ -1,6 +1,4 @@
 /*
- * $Id: transform_input.c 40988 2011-10-13 14:32:45Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -191,16 +189,16 @@ void setCustomPoints(TransInfo *UNUSED(t), MouseInput *mi, int start[2], int end
 
 static void InputCustomRatio(TransInfo *UNUSED(t), MouseInput *mi, const int mval[2], float output[3])
 {
-	float length;
-	float distance;
+	double length;
+	double distance;
+	double dx, dy;
 	int *data = mi->data;
-	int dx, dy;
 	
 	if (data) {
 		dx = data[2] - data[0];
 		dy = data[3] - data[1];
 		
-		length = (float)sqrtf(dx*dx + dy*dy);
+		length = sqrt(dx*dx + dy*dy);
 		
 		if (mi->precision) {
 			/* deal with Shift key by adding motion / 10 to motion before shift press */
@@ -218,7 +216,7 @@ static void InputCustomRatio(TransInfo *UNUSED(t), MouseInput *mi, const int mva
 			distance = (length != 0.0f)? (mdx*dx + mdy*dy) / length: 0.0f;
 		}
 
-		output[0] = (length != 0.0f)? distance / length: 0.0f;
+		output[0] = (float)((length != 0.0f)? distance / length: 0.0f);
 	}
 }
 
@@ -411,7 +409,7 @@ int handleMouseInput(TransInfo *t, MouseInput *mi, wmEvent *event)
 			t->modifiers |= MOD_PRECISION;
 			/* shift is modifier for higher precision transform
 			 * store the mouse position where the normal movement ended */
-			VECCOPY2D(mi->precision_mval, event->mval);
+			copy_v2_v2_int(mi->precision_mval, event->mval);
 			mi->precision = 1;
 		}
 		else

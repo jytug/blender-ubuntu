@@ -44,6 +44,7 @@ _modules = (
     "properties_particle",
     "properties_physics_cloth",
     "properties_physics_common",
+    "properties_physics_dynamicpaint",
     "properties_physics_field",
     "properties_physics_fluid",
     "properties_physics_smoke",
@@ -52,6 +53,7 @@ _modules = (
     "properties_scene",
     "properties_texture",
     "properties_world",
+    "space_clip",
     "space_console",
     "space_dopesheet",
     "space_filebrowser",
@@ -110,15 +112,19 @@ def register():
     WindowManager.addon_filter = EnumProperty(
             items=addon_filter_items,
             name="Category",
-            description="Filter add-ons by category",
+            description="Filter addons by category",
             )
 
     WindowManager.addon_support = EnumProperty(
-            items=[('OFFICIAL', "Official", ""),
-                   ('COMMUNITY', 'Community', ""),
+            items=[('OFFICIAL', "Official", "Officially supported"),
+                   ('COMMUNITY', "Community", "Maintained by community developers"),
+                   ('TESTING', "Testing", "Newly contributed scripts (excluded from release builds)"),
                   ],
             name="Support",
-            description="Display support level", default={'OFFICIAL', 'COMMUNITY'}, options={'ENUM_FLAG'})
+            description="Display support level",
+            default={'OFFICIAL', 'COMMUNITY'},
+            options={'ENUM_FLAG'},
+            )
     # done...
 
 

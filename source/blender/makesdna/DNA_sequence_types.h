@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_sequence_types.h 40122 2011-09-11 10:35:26Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -34,6 +32,7 @@
  *  \author nzc
  */
 
+#include "DNA_defs.h"
 #include "DNA_listBase.h"
 #include "DNA_vec_types.h"
 
@@ -144,7 +143,7 @@ typedef struct Sequence {
 
 	Strip *strip;
 
-	struct Ipo *ipo;	// xxx depreceated... old animation system
+	struct Ipo *ipo  DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
 	struct Scene *scene;
 	struct Object *scene_camera; /* override scene camera */
 

@@ -1,6 +1,4 @@
 /*
- * $Id: KX_PhysicsObjectWrapper.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,7 @@
 
 class	KX_PhysicsObjectWrapper : public PyObjectPlus
 {
-	Py_Header;
+	Py_Header
 public:
 	KX_PhysicsObjectWrapper(class PHY_IPhysicsController* ctrl,class PHY_IPhysicsEnvironment* physenv);
 	virtual ~KX_PhysicsObjectWrapper();

@@ -1,6 +1,4 @@
 /*
- * $Id: SCA_NANDController.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,7 +36,7 @@
 
 class SCA_NANDController : public SCA_IController
 {
-	Py_Header;
+	Py_Header
 	//virtual void Trigger(class SCA_LogicManager* logicmgr);
 public:
 	SCA_NANDController(SCA_IObject* gameobj);

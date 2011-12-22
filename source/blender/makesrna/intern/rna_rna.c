@@ -1,6 +1,4 @@
 /*
- * $Id: rna_rna.c 40855 2011-10-08 12:27:52Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -167,7 +165,7 @@ static int rna_idproperty_known(CollectionPropertyIterator *iter, void *data)
 	return 0;
 }
 
-static int rna_property_builtin(CollectionPropertyIterator *iter, void *data)
+static int rna_property_builtin(CollectionPropertyIterator *UNUSED(iter), void *data)
 {
 	PropertyRNA *prop= (PropertyRNA*)data;
 
@@ -176,7 +174,7 @@ static int rna_property_builtin(CollectionPropertyIterator *iter, void *data)
 	return (prop->flag & PROP_BUILTIN);
 }
 
-static int rna_function_builtin(CollectionPropertyIterator *iter, void *data)
+static int rna_function_builtin(CollectionPropertyIterator *UNUSED(iter), void *data)
 {
 	FunctionRNA *func= (FunctionRNA*)data;
 
@@ -415,7 +413,7 @@ static StructRNA *rna_Property_refine(PointerRNA *ptr)
 	rna_idproperty_check(&prop, ptr); /* XXX ptr? */
 
 	switch(prop->type) {
-		case PROP_BOOLEAN: return &RNA_BooleanProperty;
+		case PROP_BOOLEAN: return &RNA_BoolProperty;
 		case PROP_INT: return &RNA_IntProperty;
 		case PROP_FLOAT: return &RNA_FloatProperty;
 		case PROP_STRING: return &RNA_StringProperty;
@@ -580,7 +578,7 @@ static int rna_BoolProperty_default_get(PointerRNA *ptr)
 {
 	PropertyRNA *prop= (PropertyRNA*)ptr->data;
 	rna_idproperty_check(&prop, ptr);
-	return ((BooleanPropertyRNA*)prop)->defaultvalue;
+	return ((BoolPropertyRNA*)prop)->defaultvalue;
 }
 
 static int rna_IntProperty_default_get(PointerRNA *ptr)
@@ -617,7 +615,7 @@ static void rna_IntProperty_default_array_get(PointerRNA *ptr, int *values)
 static void rna_BoolProperty_default_array_get(PointerRNA *ptr, int *values)
 {
 	PropertyRNA *prop= (PropertyRNA*)ptr->data;
-	BooleanPropertyRNA *nprop= (BooleanPropertyRNA*)prop;
+	BoolPropertyRNA *nprop= (BoolPropertyRNA*)prop;
 	rna_idproperty_check(&prop, ptr);
 
 	if(nprop->defaultarray) {
@@ -748,13 +746,18 @@ static int rna_StringProperty_max_length_get(PointerRNA *ptr)
 	return ((StringPropertyRNA*)prop)->maxlength;
 }
 
-static EnumPropertyItem *rna_EnumProperty_default_itemf(bContext *C, PointerRNA *ptr, PropertyRNA *UNUSED(prop), int *free)
+static EnumPropertyItem *rna_EnumProperty_default_itemf(bContext *C, PointerRNA *ptr, PropertyRNA *prop_parent, int *free)
 {
 	PropertyRNA *prop= (PropertyRNA*)ptr->data;
 	EnumPropertyRNA *eprop;
 
 	rna_idproperty_check(&prop, ptr);
 	eprop= (EnumPropertyRNA*)prop;
+
+	/* incompatible default attributes */
+	if ((prop_parent->flag & PROP_ENUM_FLAG) != (prop->flag & PROP_ENUM_FLAG)) {
+		return NULL;
+	}
 
 	if(		(eprop->itemf == NULL) ||
 			(eprop->itemf == rna_EnumProperty_default_itemf) ||
@@ -775,7 +778,7 @@ static int rna_EnumProperty_default_get(PointerRNA *ptr)
 	return ((EnumPropertyRNA*)prop)->defaultvalue;
 }
 
-static int rna_enum_check_separator(CollectionPropertyIterator *iter, void *data)
+static int rna_enum_check_separator(CollectionPropertyIterator *UNUSED(iter), void *data)
 {
 	EnumPropertyItem *item= (EnumPropertyItem*)data;
 
@@ -1352,8 +1355,8 @@ void RNA_def_rna(BlenderRNA *brna)
 	/* Property */
 	rna_def_property(brna);
 
-	/* BooleanProperty */
-	srna= RNA_def_struct(brna, "BooleanProperty", "Property");
+	/* BoolProperty */
+	srna= RNA_def_struct(brna, "BoolProperty", "Property");
 	RNA_def_struct_ui_text(srna, "Boolean Definition", "RNA boolean property definition");
 	rna_def_number_property(srna, PROP_BOOLEAN);
 

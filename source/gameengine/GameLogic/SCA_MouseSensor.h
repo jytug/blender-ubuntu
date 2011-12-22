@@ -1,6 +1,4 @@
 /*
- * $Id: SCA_MouseSensor.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,7 +39,7 @@
 
 class SCA_MouseSensor : public SCA_ISensor
 {
-	Py_Header;
+	Py_Header
 	
 	/**
 	 * Use SCA_IInputDevice values to encode the mouse mode for now.
@@ -90,9 +88,9 @@ class SCA_MouseSensor : public SCA_ISensor
 	bool isValid(KX_MOUSESENSORMODE);
 	
 	SCA_MouseSensor(class SCA_MouseManager* keybdmgr,
-					int startx,int starty,
-				   short int mousemode,
-				   SCA_IObject* gameobj);
+	                int startx,int starty,
+	                short int mousemode,
+	                SCA_IObject* gameobj);
 
 	virtual ~SCA_MouseSensor();
 	virtual CValue* GetReplica();

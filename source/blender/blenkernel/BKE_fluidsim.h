@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_fluidsim.h 34962 2011-02-18 13:05:18Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -50,7 +48,7 @@ void initElbeemMesh(struct Scene *scene, struct Object *ob,
 
 /* bounding box & memory estimate */
 void fluid_get_bb(struct MVert *mvert, int totvert, float obmat[][4],
-		 float start[3], float size[3]);
+                  float start[3], float size[3]);
 
 void fluid_estimate_memory(struct Object *ob, struct FluidsimSettings *fss, char *value);
 

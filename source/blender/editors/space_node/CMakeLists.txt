@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 12931 2007-12-17 18:20:48Z theeth $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -26,6 +25,7 @@ set(INC
 	../../blenlib
 	../../blenloader
 	../../imbuf
+	../../gpu
 	../../makesdna
 	../../makesrna
 	../../nodes
@@ -48,6 +48,7 @@ set(SRC
 	node_ops.c
 	node_select.c
 	node_state.c
+	node_templates.c
 	space_node.c
 
 	node_intern.h

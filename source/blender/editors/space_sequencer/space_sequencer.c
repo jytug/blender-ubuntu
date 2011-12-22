@@ -1,6 +1,4 @@
 /*
- * $Id: space_sequencer.c 41021 2011-10-15 03:56:05Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,7 +38,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_path_util.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -108,7 +105,6 @@ static SpaceLink *sequencer_new(const bContext *C)
 	
 	sseq= MEM_callocN(sizeof(SpaceSeq), "initsequencer");
 	sseq->spacetype= SPACE_SEQ;
-	sseq->zoom= 4;
 	sseq->chanshown = 0;
 	sseq->view = SEQ_VIEW_SEQUENCE;
 	sseq->mainb = SEQ_DRAW_IMG_IMBUF;

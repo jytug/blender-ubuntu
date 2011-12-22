@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_view3d_types.h 39683 2011-08-24 20:28:54Z moguri $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,7 +38,10 @@ struct Tex;
 struct SpaceLink;
 struct Base;
 struct BoundBox;
+struct MovieClip;
+struct MovieClipUser;
 struct RenderInfo;
+struct RenderEngine;
 struct bGPdata;
 struct SmoothViewStore;
 struct wmTimer;
@@ -54,8 +55,10 @@ struct wmTimer;
 #define far clipend
 #endif
 
+#include "DNA_defs.h"
 #include "DNA_listBase.h"
 #include "DNA_image_types.h"
+#include "DNA_movieclip_types.h"
 
 /* ******************************** */
 
@@ -68,10 +71,12 @@ typedef struct BGpic {
 
 	struct Image *ima;
 	struct ImageUser iuser;
+	struct MovieClip *clip;
+	struct MovieClipUser cuser;
 	float xof, yof, size, blend;
 	short view;
 	short flag;
-	float pad2;
+	short source, pad;
 } BGpic;
 
 /* ********************************* */
@@ -117,6 +122,7 @@ typedef struct RegionView3D {
 	
 	struct RegionView3D *localvd; /* allocated backup of its self while in localview */
 	struct RenderInfo *ri;
+	struct RenderEngine *render_engine;
 	struct ViewDepths *depths;
 	
 	/* animated smooth view */
@@ -145,18 +151,24 @@ typedef struct View3D {
 	int spacetype;
 	float blockscale;
 	short blockhandler[8];
-	
-	float viewquat[4], dist, pad1;	/* XXX depricated */
+
+	float viewquat[4]  DNA_DEPRECATED;
+	float dist         DNA_DEPRECATED;
+
+	float bundle_size;			/* size of bundles in reconstructed data */
+	short bundle_drawtype;		/* display style for bundle */
+
+	char pad[6];
 	
 	unsigned int lay_used; /* used while drawing */
 	
-	short persp;	/* XXX depricated */
-	short view;	/* XXX depricated */
+	short persp  DNA_DEPRECATED;
+	short view   DNA_DEPRECATED;
 	
 	struct Object *camera, *ob_centre;
 
 	struct ListBase bgpicbase;
-	struct BGpic *bgpic; /* deprecated, use bgpicbase, only kept for do_versions(...) */
+	struct BGpic *bgpic  DNA_DEPRECATED; /* deprecated, use bgpicbase, only kept for do_versions(...) */
 
 	struct View3D *localvd; /* allocated backup of its self while in localview */
 	
@@ -166,8 +178,8 @@ typedef struct View3D {
 	int layact;
 	
 	/**
-	 * The drawing mode for the 3d display. Set to OB_WIRE, OB_SOLID,
-	 * OB_SHADED or OB_TEXTURE */
+	 * The drawing mode for the 3d display. Set to OB_BOUNDBOX, OB_WIRE, OB_SOLID,
+	 * OB_TEXTURE, OB_MATERIAL or OB_RENDER */
 	short drawtype;
 	short ob_centre_cursor;		/* optional bool for 3d cursor to define center */
 	short scenelock, around;
@@ -175,7 +187,7 @@ typedef struct View3D {
 	
 	float lens, grid;
 	float near, far;
-	float ofs[3];			/* XXX deprecated */
+	float ofs[3]  DNA_DEPRECATED;			/* XXX deprecated */
 	float cursor[3];
 
 	short modeselect;
@@ -198,8 +210,8 @@ typedef struct View3D {
 
 	void *properties_storage;	/* Nkey panel stores stuff here (runtime only!) */
 
-	/* XXX depricated? */
-	struct bGPdata *gpd;		/* Grease-Pencil Data (annotation layers) */
+	/* XXX deprecated? */
+	struct bGPdata *gpd  DNA_DEPRECATED;		/* Grease-Pencil Data (annotation layers) */
 
 } View3D;
 
@@ -248,6 +260,9 @@ typedef struct View3D {
 #define V3D_DISPGP				16
 #define V3D_LOCK_CAMERA			32
 #define V3D_RENDER_SHADOW		64 /* This is a runtime only flag that's used to tell draw_mesh_object() that we're doing a shadow pass instead of a regular draw */
+#define V3D_SHOW_RECONSTRUCTION		128
+#define V3D_SHOW_CAMERAPATH		256
+#define V3D_SHOW_BUNDLENAME		512
 
 /* View3D->around */
 #define V3D_CENTER		 0
@@ -294,6 +309,13 @@ typedef struct View3D {
 /* BGPic->flag */
 /* may want to use 1 for select ?*/
 #define V3D_BGPIC_EXPANDED		2
+#define V3D_BGPIC_CAMERACLIP	4
+#define V3D_BGPIC_DISABLED		8
+
+/* BGPic->source */
+/* may want to use 1 for select ?*/
+#define V3D_BGPIC_IMAGE		0
+#define V3D_BGPIC_MOVIE		1
 
 #define RV3D_CAMZOOM_MIN -30
 #define RV3D_CAMZOOM_MAX 600

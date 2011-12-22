@@ -1,7 +1,6 @@
 /*
  * KX_EXPRESSIONController.h
  *
- * $Id: SCA_ExpressionController.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -40,7 +39,7 @@
 
 class SCA_ExpressionController : public SCA_IController
 {
-//	Py_Header;
+//	Py_Header
 	STR_String			m_exprText;
 	CExpression*		m_exprCache;
 

@@ -1,6 +1,4 @@
 /*
- * $Id: paint_utils.c 40370 2011-09-19 17:27:33Z gsrb3d $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -126,7 +124,7 @@ float paint_get_tex_pixel(Brush* br, float u, float v)
 
 static void imapaint_project(Object *ob, float *model, float *proj, float *co, float *pco)
 {
-	VECCOPY(pco, co);
+	copy_v3_v3(pco, co);
 	pco[3]= 1.0f;
 
 	mul_m4_v3(ob->obmat, pco);
@@ -168,7 +166,7 @@ static void imapaint_tri_weights(Object *ob, float *v1, float *v2, float *v3, fl
 	invert_m3_m3(invwmat, wmat);
 	mul_m3_v3(invwmat, h);
 
-	VECCOPY(w, h);
+	copy_v3_v3(w, h);
 
 	/* w is still divided by perspdiv, make it sum to one */
 	divw= w[0] + w[1] + w[2];

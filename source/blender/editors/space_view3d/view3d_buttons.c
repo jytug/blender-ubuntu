@@ -1,6 +1,4 @@
 /*
- * $Id: view3d_buttons.c 40776 2011-10-03 17:29:43Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -141,6 +139,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 	float median[7], ve_median[7];
 	int tot, totw, totweight, totedge, totradius;
 	char defstr[320];
+	PointerRNA radius_ptr;
 
 	median[0]= median[1]= median[2]= median[3]= median[4]= median[5]= median[6]= 0.0;
 	tot= totw= totweight= totedge= totradius= 0;
@@ -212,6 +211,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		BezTriple *bezt;
 		int a;
 		ListBase *nurbs= curve_editnurbs(cu);
+		StructRNA *seltype= NULL;
+		void *selp= NULL;
 
 		nu= nurbs->first;
 		while(nu) {
@@ -226,6 +227,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 						totweight++;
 						median[5]+= bezt->radius;
 						totradius++;
+						selp= bezt;
+						seltype= &RNA_BezierSplinePoint;
 					}
 					else {
 						if(bezt->f1 & SELECT) {
@@ -253,12 +256,17 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 						totweight++;
 						median[5]+= bp->radius;
 						totradius++;
+						selp= bp;
+						seltype= &RNA_SplinePoint;
 					}
 					bp++;
 				}
 			}
 			nu= nu->next;
 		}
+
+		if(totradius==1)
+			RNA_pointer_create(&cu->id, seltype, selp, &radius_ptr);
 	}
 	else if(ob->type==OB_LATTICE) {
 		Lattice *lt= ob->data;
@@ -321,9 +329,11 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 				uiBlockEndAlign(block);
 				if(totweight)
 					uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Weight:",	0, 20, 200, 20, &(tfp->ve_median[4]), 0.0, 1.0, 1, 3, "");
-				if(totradius)
-					uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Radius:",	0, 20, 200, 20, &(tfp->ve_median[5]), 0.0, 100.0, 1, 3, "Radius of curve CPs");
+				if(totradius) {
+					if(totradius==1) uiDefButR(block, NUM, 0, "Radius", 0, 20, 200, 20, &radius_ptr, "radius", 0, 0.0, 100.0, 10, 3, NULL);
+					else uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Radius:",	0, 20, 200, 20, &(tfp->ve_median[5]), 0.0, 100.0, 1, 3, "Radius of curve CPs");
 				}
+			}
 			else {
 				uiBlockBeginAlign(block);
 				uiDefButBitS(block, TOG, V3D_GLOBAL_STATS, B_REDR, "Global",		0, 65, 100, 20, &v3d->flag, 0, 0, 0, 0, "Displays global values");
@@ -331,8 +341,10 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 				uiBlockEndAlign(block);
 				if(totweight)
 					uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Weight:",	0, 40, 200, 20, &(tfp->ve_median[4]), 0.0, 1.0, 10, 3, "");
-				if(totradius)
-					uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Radius:",	0, 40, 200, 20, &(tfp->ve_median[5]), 0.0, 100.0, 10, 3, "Radius of curve CPs");
+				if(totradius) {
+					if(totradius==1) uiDefButR(block, NUM, 0, "Radius", 0, 40, 200, 20, &radius_ptr, "radius", 0, 0.0, 100.0, 10, 3, NULL);
+					else uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Radius:",	0, 40, 200, 20, &(tfp->ve_median[5]), 0.0, 100.0, 10, 3, "Radius of curve CPs");
+				}
 			}
 		}
 		else {
@@ -615,9 +627,9 @@ static void editvert_mirror_update(Object *ob, EditVert *eve, int def_nr, int in
 		if(dvert_dst) {
 			if(def_nr == -1) {
 				/* all vgroups, add groups where neded  */
-
-				int *flip_map= defgroup_flip_map(ob, 1);
-				defvert_sync_mapped(dvert_dst, dvert_src, flip_map, 1);
+				int flip_map_len;
+				int *flip_map= defgroup_flip_map(ob, &flip_map_len, TRUE);
+				defvert_sync_mapped(dvert_dst, dvert_src, flip_map, flip_map_len, TRUE);
 				MEM_freeN(flip_map);
 			}
 			else {
@@ -1352,142 +1364,6 @@ static void view3d_panel_preview(bContext *C, ARegion *ar, short cntrl)	// VIEW3
 	}
 }
 #endif
-
-#if 0 // XXX not used
-static void delete_sketch_armature(bContext *C, void *arg1, void *arg2)
-{
-	BIF_deleteSketch(C);
-}
-
-static void convert_sketch_armature(bContext *C, void *arg1, void *arg2)
-{
-	BIF_convertSketch(C);
-}
-
-static void assign_template_sketch_armature(bContext *C, void *arg1, void *arg2)
-{
-	int index = *(int*)arg1;
-	BIF_setTemplate(C, index);
-}
-
-
-static int view3d_panel_bonesketch_spaces_poll(const bContext *C, PanelType *pt)
-{
-	Object *obedit = CTX_data_edit_object(C);
-
-	/* replace with check call to sketching lib */
-	return (obedit && obedit->type == OB_ARMATURE);
-}
-static void view3d_panel_bonesketch_spaces(const bContext *C, Panel *pa)
-{
-	Scene *scene = CTX_data_scene(C);
-	static int template_index;
-	static char joint_label[128];
-	uiBlock *block;
-	uiBut *but;
-	char *bone_name;
-	int yco = 130;
-	int nb_joints;
-	static char subdiv_tooltip[4][64] = {
-		"Subdivide arcs based on a fixed number of bones",
-		"Subdivide arcs in bones of equal length",
-		"Subdivide arcs based on correlation",
-		"Retarget template to stroke"
-		};
-
-	
-	block= uiLayoutAbsoluteBlock(pa->layout);
-	uiBlockSetHandleFunc(block, do_view3d_region_buttons, NULL);
-
-	uiBlockBeginAlign(block);
-	
-	/* use real flag instead of 1 */
-	uiDefButBitC(block, TOG, BONE_SKETCHING, B_REDR, "Use Bone Sketching", 10, yco, 160, 20, &scene->toolsettings->bone_sketching, 0, 0, 0, 0, "Use sketching to create and edit bones, (Ctrl snaps to mesh volume)");
-	uiDefButBitC(block, TOG, BONE_SKETCHING_ADJUST, B_REDR, "A", 170, yco, 20, 20, &scene->toolsettings->bone_sketching, 0, 0, 0, 0, "Adjust strokes by drawing near them");
-	uiDefButBitC(block, TOG, BONE_SKETCHING_QUICK, B_REDR, "Q", 190, yco, 20, 20, &scene->toolsettings->bone_sketching, 0, 0, 0, 0, "Automatically convert and delete on stroke end");
-	yco -= 20;
-	
-	but = uiDefBut(block, BUT, B_REDR, "Convert", 10,yco,100,20, 0, 0, 0, 0, 0, "Convert sketch to armature");
-	uiButSetFunc(but, convert_sketch_armature, NULL, NULL);
-
-	but = uiDefBut(block, BUT, B_REDR, "Delete", 110,yco,100,20, 0, 0, 0, 0, 0, "Delete sketch");
-	uiButSetFunc(but, delete_sketch_armature, NULL, NULL);
-	yco -= 20;
-	
-	uiBlockEndAlign(block);
-
-	uiBlockBeginAlign(block);
-	
-	uiDefButC(block, MENU, B_REDR, "Subdivision Method%t|Length%x1|Adaptative%x2|Fixed%x0|Template%x3", 10,yco,60,19, &scene->toolsettings->bone_sketching_convert, 0, 0, 0, 0, subdiv_tooltip[(unsigned char)scene->toolsettings->bone_sketching_convert]);
-
-	switch(scene->toolsettings->bone_sketching_convert)
-	{
-	case SK_CONVERT_CUT_LENGTH:
-		uiDefButF(block, NUM, B_REDR, 					"Lim:",		70, yco, 140, 19, &scene->toolsettings->skgen_length_limit,0.1,50.0, 10, 0,		"Maximum length of the subdivided bones");
-		yco -= 20;
-		break;
-	case SK_CONVERT_CUT_ADAPTATIVE:
-		uiDefButF(block, NUM, B_REDR, 					"Thres:",			70, yco, 140, 19, &scene->toolsettings->skgen_correlation_limit,0.0, 1.0, 0.01, 0,	"Correlation threshold for subdivision");
-		yco -= 20;
-		break;
-	default:
-	case SK_CONVERT_CUT_FIXED:
-		uiDefButC(block, NUM, B_REDR, 					"Num:",		70, yco, 140, 19, &scene->toolsettings->skgen_subdivision_number,1, 100, 1, 5,	"Number of subdivided bones");
-		yco -= 20;
-		break;
-	case SK_CONVERT_RETARGET:
-		uiDefButC(block, ROW, B_NOP, "No",			70,  yco, 40,19, &scene->toolsettings->skgen_retarget_roll, 0, 0, 0, 0,									"No special roll treatment");
-		uiDefButC(block, ROW, B_NOP, "View",		110,  yco, 50,19, &scene->toolsettings->skgen_retarget_roll, 0, SK_RETARGET_ROLL_VIEW, 0, 0,				"Roll bones perpendicular to view");
-		uiDefButC(block, ROW, B_NOP, "Joint",		160, yco, 50,19, &scene->toolsettings->skgen_retarget_roll, 0, SK_RETARGET_ROLL_JOINT, 0, 0,				"Roll bones relative to joint bend");
-		yco -= 30;
-
-		uiBlockEndAlign(block);
-
-		uiBlockBeginAlign(block);
-		/* button here to select what to do (copy or not), template, ...*/
-
-		BIF_makeListTemplates(C);
-		template_index = BIF_currentTemplate(C);
-		
-		but = uiDefButI(block, MENU, B_REDR, BIF_listTemplates(C), 10,yco,200,19, &template_index, 0, 0, 0, 0, "Template");
-		uiButSetFunc(but, assign_template_sketch_armature, &template_index, NULL);
-		
-		yco -= 20;
-		
-		uiDefButF(block, NUM, B_NOP, 							"A:",			10, yco, 66,19, &scene->toolsettings->skgen_retarget_angle_weight, 0, 10, 1, 0,		"Angle Weight");
-		uiDefButF(block, NUM, B_NOP, 							"L:",			76, yco, 67,19, &scene->toolsettings->skgen_retarget_length_weight, 0, 10, 1, 0,		"Length Weight");
-		uiDefButF(block, NUM, B_NOP, 							"D:",		143,yco, 67,19, &scene->toolsettings->skgen_retarget_distance_weight, 0, 10, 1, 0,		"Distance Weight");
-		yco -= 20;
-		
-		uiDefBut(block, TEX,B_REDR,"S:",							10,  yco, 90, 20, scene->toolsettings->skgen_side_string, 0.0, 8.0, 0, 0, "Text to replace &S with");
-		uiDefBut(block, TEX,B_REDR,"N:",							100, yco, 90, 20, scene->toolsettings->skgen_num_string, 0.0, 8.0, 0, 0, "Text to replace &N with");
-		uiDefIconButBitC(block, TOG, SK_RETARGET_AUTONAME, B_NOP, ICON_AUTO,190,yco,20,20, &scene->toolsettings->skgen_retarget_options, 0, 0, 0, 0, "Use Auto Naming");	
-		yco -= 20;
-
-		/* auto renaming magic */
-		uiBlockEndAlign(block);
-		
-		nb_joints = BIF_nbJointsTemplate(C);
-
-		if (nb_joints == -1)
-		{
-			//XXX
-			//nb_joints = G.totvertsel;
-		}
-		
-		bone_name = BIF_nameBoneTemplate(C);
-		
-		BLI_snprintf(joint_label, 32, "%i joints: %s", nb_joints, bone_name);
-		
-		uiDefBut(block, LABEL, 1, joint_label,					10, yco, 200, 20, NULL, 0.0, 0.0, 0, 0, "");
-		yco -= 20;
-		break;
-	}
-
-	uiBlockEndAlign(block);
-}
-
-#endif // XXX not used
 
 void view3d_buttons_register(ARegionType *art)
 {

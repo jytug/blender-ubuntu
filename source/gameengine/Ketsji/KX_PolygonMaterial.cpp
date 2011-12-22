@@ -1,5 +1,4 @@
 /*
- * $Id: KX_PolygonMaterial.cpp 40372 2011-09-19 19:55:59Z dfelinto $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -347,13 +346,13 @@ KX_PYMETHODDEF_DOC(KX_PolygonMaterial, activate, "activate(rasty, cachingInfo)")
 PyObject* KX_PolygonMaterial::pyattr_get_texture(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	KX_PolygonMaterial* self= static_cast<KX_PolygonMaterial*>(self_v);
-	return PyUnicode_FromString(self->m_texturename.ReadPtr());
+	return PyUnicode_From_STR_String(self->m_texturename);
 }
 
 PyObject* KX_PolygonMaterial::pyattr_get_material(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	KX_PolygonMaterial* self= static_cast<KX_PolygonMaterial*>(self_v);
-	return PyUnicode_FromString(self->m_materialname.ReadPtr());
+	return PyUnicode_From_STR_String(self->m_materialname);
 }
 
 /* this does not seem useful */

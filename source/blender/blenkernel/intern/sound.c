@@ -1,6 +1,4 @@
 /*
- * $Id: sound.c 41004 2011-10-14 07:56:33Z nexyon $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -79,9 +77,9 @@ struct bSound* sound_new_file(struct Main *bmain, const char *filename)
 	char str[FILE_MAX];
 	char *path;
 
-	int len;
+	size_t len;
 
-	strcpy(str, filename);
+	BLI_strncpy(str, filename, sizeof(str));
 
 	path = /*bmain ? bmain->name :*/ G.main->name;
 

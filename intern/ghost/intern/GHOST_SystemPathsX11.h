@@ -1,6 +1,4 @@
 /*
- * $Id: GHOST_SystemPathsX11.h 35152 2011-02-25 11:28:33Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -70,12 +68,12 @@ public:
 	  * Determine the directory of the current binary
 	  * @return Unsigned char string pointing to the binary dir
 	  */
-	 const GHOST_TUns8* getBinaryDir() const;
+	const GHOST_TUns8* getBinaryDir() const;
 
-	 /**
-	  * Add the file to the operating system most recently used files
-	  */
-	 void addToSystemRecentFiles(const char* filename) const;
+	/**
+	 * Add the file to the operating system most recently used files
+	 */
+	void addToSystemRecentFiles(const char* filename) const;
 };
 
 #endif

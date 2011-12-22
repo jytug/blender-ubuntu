@@ -1,5 +1,4 @@
 /*
- * $Id: PyObjectPlus.cpp 38602 2011-07-22 11:21:01Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -419,7 +418,7 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 							return NULL;
 						}
 #ifdef USE_MATHUTILS
-						return newVectorObject(val, attrdef->m_imax, Py_NEW, NULL);
+						return Vector_CreatePyObject(val, attrdef->m_imax, Py_NEW, NULL);
 #else
 						PyObject* resultlist = PyList_New(attrdef->m_imax);
 						for (unsigned int i=0; i<attrdef->m_imax; i++)
@@ -436,7 +435,7 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 						return NULL;
 					}
 #ifdef USE_MATHUTILS
-					return newMatrixObject(val, attrdef->m_imin, attrdef->m_imax, Py_WRAP, NULL);
+					return Matrix_CreatePyObject(val, attrdef->m_imin, attrdef->m_imax, Py_WRAP, NULL);
 #else
 					PyObject* collist = PyList_New(attrdef->m_imin);
 					for (unsigned int i=0; i<attrdef->m_imin; i++)
@@ -458,7 +457,7 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 				MT_Vector3 *val = reinterpret_cast<MT_Vector3*>(ptr);
 #ifdef USE_MATHUTILS
 				float fval[3]= {(*val)[0], (*val)[1], (*val)[2]};
-				return newVectorObject(fval, 3, Py_NEW, NULL);
+				return Vector_CreatePyObject(fval, 3, Py_NEW, NULL);
 #else
 				PyObject* resultlist = PyList_New(3);
 				for (unsigned int i=0; i<3; i++)
@@ -471,7 +470,7 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 		case KX_PYATTRIBUTE_TYPE_STRING:
 			{
 				STR_String *val = reinterpret_cast<STR_String*>(ptr);
-				return PyUnicode_FromString(*val);
+				return PyUnicode_From_STR_String(*val);
 			}
 		case KX_PYATTRIBUTE_TYPE_CHAR:
 			{
@@ -1013,8 +1012,8 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 			{
 				if (PyUnicode_Check(value)) 
 				{
-					Py_ssize_t val_len;
-					char *val = _PyUnicode_AsStringAndSize(value, &val_len);
+					Py_ssize_t val_size;
+					const char *val = _PyUnicode_AsStringAndSize(value, &val_size);
 					strncpy(ptr, val, attrdef->m_size);
 					ptr[attrdef->m_size-1] = 0;
 				}
@@ -1031,7 +1030,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 				if (PyUnicode_Check(value)) 
 				{
 					Py_ssize_t val_len;
-					char *val = _PyUnicode_AsStringAndSize(value, &val_len);
+					const char *val = _PyUnicode_AsStringAndSize(value, &val_len); /* XXX, should be 'const' but we do a silly trick to have a shorter string */
 					if (attrdef->m_clamp)
 					{
 						if (val_len < attrdef->m_imin)
@@ -1043,10 +1042,8 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 						else if (val_len > attrdef->m_imax)
 						{
 							// trim the string
-							char c = val[attrdef->m_imax];
-							val[attrdef->m_imax] = 0;
-							*var = val;
-							val[attrdef->m_imax] = c;
+							var->SetLength(attrdef->m_imax);
+							memcpy(var->Ptr(), val, attrdef->m_imax - 1);
 							break;
 						}
 					} else if (val_len < attrdef->m_imin || val_len > attrdef->m_imax)
@@ -1172,6 +1169,11 @@ PyObject *PyObjectPlus::NewProxyPlus_Ext(PyObjectPlus *self, PyTypeObject *tp, v
 		Py_DECREF(self->m_proxy); /* could avoid thrashing here but for now its ok */
 	}
 	return self->m_proxy;
+}
+
+PyObject *PyUnicode_From_STR_String(const STR_String& str)
+{
+	return PyUnicode_FromStringAndSize(str.ReadPtr(), str.Length());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

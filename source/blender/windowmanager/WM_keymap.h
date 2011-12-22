@@ -1,6 +1,4 @@
 /*
- * $Id: WM_keymap.h 39084 2011-08-05 20:45:26Z blendix $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -94,7 +92,7 @@ void		WM_keymap_restore_item_to_default(struct bContext *C, struct wmKeyMap *key
 
 const char	*WM_key_event_string(short type);
 int			WM_key_event_operator_id(const struct bContext *C, const char *opname, int opcontext, struct IDProperty *properties, int hotkey, struct wmKeyMap **keymap_r);
-char		*WM_key_event_operator_string(const struct bContext *C, const char *opname, int opcontext, struct IDProperty *properties, char *str, int len);
+char		*WM_key_event_operator_string(const struct bContext *C, const char *opname, int opcontext, struct IDProperty *properties, const short sloppy, char *str, int len);
 
 #ifdef __cplusplus
 }

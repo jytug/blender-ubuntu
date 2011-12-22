@@ -1,6 +1,4 @@
 /*
- * $Id: KX_MouseFocusSensor.h 40538 2011-09-25 12:31:21Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -49,7 +47,7 @@ class KX_RayCast;
 class KX_MouseFocusSensor : public SCA_MouseSensor
 {
 
-	Py_Header;
+	Py_Header
 	
  public:
 	
@@ -123,7 +121,7 @@ class KX_MouseFocusSensor : public SCA_MouseSensor
 	/**
 	 * The focus mode. 1 for handling focus, 0 for not handling, 2 for focus on any object
 	*/
-	 int	m_focusmode;
+	int	m_focusmode;
 
 	/**
 	 * Flags whether the previous test showed a mouse-over.

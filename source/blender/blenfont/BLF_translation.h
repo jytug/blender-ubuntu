@@ -1,6 +1,4 @@
 /*
- * $Id: BLF_translation.h 40563 2011-09-26 10:35:47Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,7 +58,18 @@ void BLF_lang_encoding_name(const char *str);
 
 void BLF_lang_encoding(const char *str);
 
-#define _(msgid) BLF_gettext(msgid)
+/* translation */
+int BLF_translate_iface(void);
+int BLF_translate_tooltips(void);
+const char *BLF_translate_do_iface(const char *msgid);
+const char *BLF_translate_do_tooltip(const char *msgid);
+
+
+/*#define _(msgid) BLF_gettext(msgid)*/
+/* The "translation-marker" macro. */
 #define N_(msgid) msgid
+/* Those macros should be used everywhere in UI code. */
+#define IFACE_(msgid) BLF_translate_do_iface(msgid)
+#define TIP_(msgid) BLF_translate_do_tooltip(msgid)
 
 #endif /* BLF_TRANSLATION_H */

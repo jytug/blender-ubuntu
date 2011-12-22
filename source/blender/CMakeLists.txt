@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 39792 2011-08-30 09:15:55Z nexyon $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -39,7 +38,9 @@ set(SRC_DNA_INC
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_controller_types.h
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_curve_types.h
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_customdata_types.h
+	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_defs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_documentation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_dynamicpaint_types.h
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_effect_types.h
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_fileglobal_types.h
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_genfile.h
@@ -83,6 +84,8 @@ set(SRC_DNA_INC
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_view3d_types.h
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_windowmanager_types.h
 	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_world_types.h
+	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_movieclip_types.h
+	${CMAKE_CURRENT_SOURCE_DIR}/makesdna/DNA_tracking_types.h
 )
 
 add_subdirectory(editors)

@@ -1,6 +1,4 @@
 /*
- * $Id: rna_internal.h 40738 2011-10-01 21:09:42Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -138,6 +136,7 @@ void RNA_def_constraint(struct BlenderRNA *brna);
 void RNA_def_context(struct BlenderRNA *brna);
 void RNA_def_controller(struct BlenderRNA *brna);
 void RNA_def_curve(struct BlenderRNA *brna);
+void RNA_def_dynamic_paint(struct BlenderRNA *brna);
 void RNA_def_fluidsim(struct BlenderRNA *brna);
 void RNA_def_fcurve(struct BlenderRNA *brna);
 void RNA_def_gameproperty(struct BlenderRNA *brna);
@@ -179,6 +178,8 @@ void RNA_def_userdef(struct BlenderRNA *brna);
 void RNA_def_vfont(struct BlenderRNA *brna);
 void RNA_def_wm(struct BlenderRNA *brna);
 void RNA_def_world(struct BlenderRNA *brna);
+void RNA_def_movieclip(struct BlenderRNA *brna);
+void RNA_def_tracking(struct BlenderRNA *brna);
 
 /* Common Define functions */
 
@@ -292,6 +293,7 @@ void RNA_def_main_armatures(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_actions(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_particles(BlenderRNA *brna, PropertyRNA *cprop);
 void RNA_def_main_gpencil(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_movieclips(BlenderRNA *brna, PropertyRNA *cprop);
 
 /* ID Properties */
 

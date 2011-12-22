@@ -1,34 +1,32 @@
 /*
-* $Id: MOD_uvproject.c 40372 2011-09-19 19:55:59Z dfelinto $
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_uvproject.c
  *  \ingroup modifiers
@@ -40,6 +38,7 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_camera_types.h"
 #include "DNA_object_types.h"
+#include "DNA_scene_types.h"
 
 #include "BLI_math.h"
 #include "BLI_string.h"
@@ -47,6 +46,7 @@
 #include "BLI_utildefines.h"
 
 
+#include "BKE_camera.h"
 #include "BKE_DerivedMesh.h"
 
 #include "MOD_modifiertypes.h"
@@ -161,7 +161,7 @@ static DerivedMesh *uvprojectModifier_do(UVProjectModifierData *umd,
 	float scax= umd->scalex ? umd->scalex : 1.0f;
 	float scay= umd->scaley ? umd->scaley : 1.0f;
 	int free_uci= 0;
-	
+
 	aspect = aspx / aspy;
 
 	for(i = 0; i < umd->num_projectors; ++i)
@@ -170,12 +170,12 @@ static DerivedMesh *uvprojectModifier_do(UVProjectModifierData *umd,
 
 	if(num_projectors == 0) return dm;
 
-	/* make sure there are UV layers available */
+	/* make sure there are UV Maps available */
 
 	if(!CustomData_has_layer(&dm->faceData, CD_MTFACE)) return dm;
 
 	/* make sure we're using an existing layer */
-	validate_layer_name(&dm->faceData, CD_MTFACE, umd->uvlayer_name, uvname);
+	CustomData_validate_layer_name(&dm->faceData, CD_MTFACE, umd->uvlayer_name, uvname);
 
 	/* calculate a projection matrix and normal for each projector */
 	for(i = 0; i < num_projectors; ++i) {
@@ -196,16 +196,20 @@ static DerivedMesh *uvprojectModifier_do(UVProjectModifierData *umd,
 				free_uci= 1;
 			}
 			else {
-				float scale= (cam->type == CAM_PERSP) ? cam->clipsta * 32.0f / cam->lens : cam->ortho_scale;
+				float sensor= camera_sensor_size(cam->sensor_fit, cam->sensor_x, cam->sensor_y);
+				int sensor_fit= camera_sensor_fit(cam->sensor_fit, aspx, aspy);
+				float scale= (cam->type == CAM_PERSP) ? cam->clipsta * sensor / cam->lens : cam->ortho_scale;
 				float xmax, xmin, ymax, ymin;
 
-				if(aspect > 1.0f) {
+				if(sensor_fit==CAMERA_SENSOR_FIT_HOR) {
 					xmax = 0.5f * scale;
 					ymax = xmax / aspect;
-				} else {
+				}
+				else {
 					ymax = 0.5f * scale;
 					xmax = ymax * aspect;
 				}
+
 				xmin = -xmax;
 				ymin = -ymax;
 
@@ -255,7 +259,7 @@ static DerivedMesh *uvprojectModifier_do(UVProjectModifierData *umd,
 		mul_mat3_m4_v3(projectors[i].ob->obmat, projectors[i].normal);
 	}
 
-	/* make sure we are not modifying the original UV layer */
+	/* make sure we are not modifying the original UV map */
 	tface = CustomData_duplicate_referenced_layer_named(&dm->faceData,
 			CD_MTFACE, uvname);
 

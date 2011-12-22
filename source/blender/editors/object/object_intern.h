@@ -1,6 +1,4 @@
 /*
- * $Id: object_intern.h 40595 2011-09-27 09:09:52Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -161,6 +159,7 @@ void OBJECT_OT_multires_external_save(struct wmOperatorType *ot);
 void OBJECT_OT_multires_external_pack(struct wmOperatorType *ot);
 void OBJECT_OT_meshdeform_bind(struct wmOperatorType *ot);
 void OBJECT_OT_explode_refresh(struct wmOperatorType *ot);
+void OBJECT_OT_ocean_bake(struct wmOperatorType *ot);
 
 /* object_constraint.c */
 void OBJECT_OT_constraint_add(struct wmOperatorType *ot);

@@ -1,6 +1,4 @@
 /*
- * $Id: ed_util.c 40872 2011-10-09 06:03:38Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -166,7 +164,7 @@ void unpack_menu(bContext *C, const char *opname, const char *id_name, const cha
 	PointerRNA props_ptr;
 	uiPopupMenu *pup;
 	uiLayout *layout;
-	char line[FILE_MAXDIR + FILE_MAXFILE + 100];
+	char line[FILE_MAX + 100];
 
 	pup= uiPupMenuBegin(C, "Unpack file", ICON_NONE);
 	layout= uiPupMenuLayout(pup);

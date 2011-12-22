@@ -1,6 +1,4 @@
 /*
- * $Id: AUD_C-API.h 39792 2011-08-30 09:15:55Z nexyon $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -456,7 +454,7 @@ extern float* AUD_readSoundBuffer(const char* filename, float low, float high,
 /**
  * Pauses a playing sound after a specific amount of time.
  * \param handle The handle to the sound.
- * \param time The time in seconds.
+ * \param seconds The time in seconds.
  * \return The silence handle.
  */
 extern AUD_Handle* AUD_pauseAfter(AUD_Handle* handle, float seconds);

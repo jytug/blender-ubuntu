@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_sound.h 41003 2011-10-14 07:41:45Z ender79 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or

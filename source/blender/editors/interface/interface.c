@@ -1,6 +1,4 @@
 /*
- * $Id: interface.c 41032 2011-10-15 14:14:22Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -50,6 +48,8 @@
 #include "BKE_context.h"
 #include "BKE_library.h"
 #include "BKE_unit.h"
+#include "BKE_screen.h"
+#include "BKE_idprop.h"
 #include "BKE_utildefines.h" /* FILE_MAX */
 
 #include "BIF_gl.h"
@@ -91,50 +91,6 @@
  */
 
 static void ui_free_but(const bContext *C, uiBut *but);
-
-/* ************* translation ************** */
-
-int UI_translate_iface(void)
-{
-#ifdef WITH_INTERNATIONAL
-	return (U.transopts & USER_DOTRANSLATE) && (U.transopts & USER_TR_IFACE);
-#else
-	return 0;
-#endif
-}
-
-int UI_translate_tooltips(void)
-{
-#ifdef WITH_INTERNATIONAL
-	return (U.transopts & USER_DOTRANSLATE) && (U.transopts & USER_TR_TOOLTIPS);
-#else
-	return 0;
-#endif
-}
-
-const char *UI_translate_do_iface(const char *msgid)
-{
-#ifdef WITH_INTERNATIONAL
-	if(UI_translate_iface())
-		return BLF_gettext(msgid);
-	else
-		return msgid;
-#else
-	return msgid;
-#endif
-}
-
-const char *UI_translate_do_tooltip(const char *msgid)
-{
-#ifdef WITH_INTERNATIONAL
-	if(UI_translate_tooltips())
-		return BLF_gettext(msgid);
-	else
-		return msgid;
-#else
-	return msgid;
-#endif
-}
 
 /* ************* window matrix ************** */
 
@@ -320,7 +276,7 @@ void ui_bounds_block(uiBlock *block)
 			if(bt->x1 < block->minx) block->minx= bt->x1;
 			if(bt->y1 < block->miny) block->miny= bt->y1;
 	
-			  if(bt->x2 > block->maxx) block->maxx= bt->x2;
+			if(bt->x2 > block->maxx) block->maxx= bt->x2;
 			if(bt->y2 > block->maxy) block->maxy= bt->y2;
 
 			bt= bt->next;
@@ -409,7 +365,7 @@ static void ui_popup_bounds_block(const bContext *C, uiBlock *block, int bounds_
 	oldheight= oldheight > 0 ? oldheight : MAX2(1, height);
 
 	/* offset block based on mouse position, user offset is scaled
-	   along in case we resized the block in ui_text_bounds_block */
+	 * along in case we resized the block in ui_text_bounds_block */
 	startx= window->eventstate->x + block->minx + (block->mx*width)/oldwidth;
 	starty= window->eventstate->y + block->miny + (block->my*height)/oldheight;
 
@@ -476,6 +432,15 @@ void uiCenteredBoundsBlock(uiBlock *block, int addval)
 {
 	block->bounds= addval;
 	block->dobounds= UI_BLOCK_BOUNDS_POPUP_CENTER;
+}
+
+void uiExplicitBoundsBlock(uiBlock *block, int minx, int miny, int maxx, int maxy)
+{
+	block->minx = minx;
+	block->miny = miny;
+	block->maxx = maxx;
+	block->maxy = maxy;
+	block->dobounds = 0;
 }
 
 /* ************** LINK LINE DRAWING  ************* */
@@ -679,7 +644,7 @@ static int ui_but_update_from_old_block(const bContext *C, uiBlock *block, uiBut
 				}
 				
 				/* copy hardmin for list rows to prevent 'sticking' highlight to mouse position
-				   when scrolling without moving mouse (see [#28432]) */
+				 * when scrolling without moving mouse (see [#28432]) */
 				if(ELEM(oldbut->type, ROW, LISTROW))
 					oldbut->hardmax= but->hardmax;
 				
@@ -705,7 +670,7 @@ static int ui_but_update_from_old_block(const bContext *C, uiBlock *block, uiBut
 }
 
 /* needed for temporarily rename buttons, such as in outliner or fileselect,
-   they should keep calling uiDefButs to keep them alive */
+ * they should keep calling uiDefButs to keep them alive */
 /* returns 0 when button removed */
 int uiButActiveOnly(const bContext *C, uiBlock *block, uiBut *but)
 {
@@ -758,6 +723,9 @@ static int ui_but_is_rna_undo(uiBut *but)
 			return TRUE;
 		}
 	}
+	else if (but->rnapoin.type && !RNA_struct_undo_check(but->rnapoin.type)) {
+		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -768,7 +736,7 @@ static void ui_menu_block_set_keyaccels(uiBlock *block)
 {
 	uiBut *but;
 
-	unsigned int meny_key_mask= 0;
+	unsigned int menu_key_mask= 0;
 	unsigned char menu_key;
 	const char *str_pt;
 	int pass;
@@ -790,8 +758,8 @@ static void ui_menu_block_set_keyaccels(uiBlock *block)
 				if(but->str) {
 					for(str_pt= but->str; *str_pt; ) {
 						menu_key= tolower(*str_pt);
-						if((menu_key >= 'a' && menu_key <= 'z') && !(meny_key_mask & 1<<(menu_key-'a'))) {
-							meny_key_mask |= 1<<(menu_key-'a');
+						if((menu_key >= 'a' && menu_key <= 'z') && !(menu_key_mask & 1<<(menu_key-'a'))) {
+							menu_key_mask |= 1<<(menu_key-'a');
 							break;
 						}
 
@@ -818,7 +786,7 @@ static void ui_menu_block_set_keyaccels(uiBlock *block)
 					}
 
 					/* if all keys have been used just exit, unlikely */
-					if(meny_key_mask == (1<<26)-1) {
+					if(menu_key_mask == (1<<26)-1) {
 						return;
 					}
 				}
@@ -836,26 +804,61 @@ static void ui_menu_block_set_keyaccels(uiBlock *block)
 static void ui_menu_block_set_keymaps(const bContext *C, uiBlock *block)
 {
 	uiBut *but;
-	IDProperty *prop;
 	char buf[512];
+
+	/* for menu's */
+	MenuType *mt;
+	IDProperty *prop_menu= NULL;
+	IDProperty *prop_menu_name= NULL;
 
 	/* only do it before bounding */
 	if(block->minx != block->maxx)
 		return;
 
+
+#define UI_MENU_KEY_STR_CAT                                                   \
+	char *butstr_orig= BLI_strdup(but->str);                                  \
+	BLI_snprintf(but->strdata,                                                \
+				 sizeof(but->strdata),                                        \
+				 "%s|%s",                                                     \
+				 butstr_orig, buf);                                           \
+	MEM_freeN(butstr_orig);                                                   \
+	but->str= but->strdata;                                                   \
+	ui_check_but(but);                                                        \
+
+
 	for(but=block->buttons.first; but; but=but->next) {
 		if(but->optype) {
-			prop= (but->opptr)? but->opptr->data: NULL;
+			IDProperty *prop= (but->opptr)? but->opptr->data: NULL;
 
-			if(WM_key_event_operator_string(C, but->optype->idname, but->opcontext, prop, buf, sizeof(buf))) {
-				char *butstr_orig= BLI_strdup(but->str);
-				BLI_snprintf(but->strdata, sizeof(but->strdata), "%s|%s", butstr_orig, buf);
-				MEM_freeN(butstr_orig);
-				but->str= but->strdata;
-				ui_check_but(but);
+			if(WM_key_event_operator_string(C, but->optype->idname, but->opcontext, prop, TRUE, buf, sizeof(buf))) {
+				UI_MENU_KEY_STR_CAT
+			}
+		}
+		else if ((mt= uiButGetMenuType(but))) {
+			/* only allocate menu property once */
+			if (prop_menu == NULL) {
+				/* annoying, create a property */
+				IDPropertyTemplate val = {0};
+				prop_menu= IDP_New(IDP_GROUP, &val, __func__); /* dummy, name is unimportant  */
+				IDP_AddToGroup(prop_menu, (prop_menu_name= IDP_NewString("", "name", sizeof(mt->idname))));
+			}
+
+			IDP_AssignString(prop_menu_name, mt->idname, sizeof(mt->idname));
+
+			if(WM_key_event_operator_string(C, "WM_OT_call_menu", WM_OP_INVOKE_REGION_WIN, prop_menu, FALSE, buf, sizeof(buf))) {
+				UI_MENU_KEY_STR_CAT
 			}
 		}
 	}
+
+	if (prop_menu) {
+		IDP_FreeProperty(prop_menu);
+		MEM_freeN(prop_menu);
+	}
+
+#undef UI_MENU_KEY_STR_CAT
+
 }
 
 void uiEndBlock(const bContext *C, uiBlock *block)
@@ -964,6 +967,7 @@ void uiDrawBlock(const bContext *C, uiBlock *block)
 	ARegion *ar;
 	uiBut *but;
 	rcti rect;
+	int multisample_enabled;
 	
 	/* get menu region or area region */
 	ar= CTX_wm_menu(C);
@@ -972,6 +976,11 @@ void uiDrawBlock(const bContext *C, uiBlock *block)
 
 	if(!block->endblock)
 		uiEndBlock(C, block);
+
+	/* disable AA, makes widgets too blurry */
+	multisample_enabled= glIsEnabled(GL_MULTISAMPLE_ARB);
+	if(multisample_enabled)
+		glDisable(GL_MULTISAMPLE_ARB);
 
 	/* we set this only once */
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1017,6 +1026,9 @@ void uiDrawBlock(const bContext *C, uiBlock *block)
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+
+	if(multisample_enabled)
+		glEnable(GL_MULTISAMPLE_ARB);
 	
 	ui_draw_links(block);
 }
@@ -1025,25 +1037,25 @@ void uiDrawBlock(const bContext *C, uiBlock *block)
 
 static void ui_is_but_sel(uiBut *but, double *value)
 {
-	short push=0, true=1;
+	short is_push=0, is_true=1;
 
-	if(ELEM3(but->type, TOGN, ICONTOGN, OPTIONN)) true= 0;
+	if(ELEM3(but->type, TOGN, ICONTOGN, OPTIONN)) is_true= 0;
 
 	if( but->bit ) {
 		int lvalue;
 		UI_GET_BUT_VALUE_INIT(but, *value)
 		lvalue= (int)*value;
-		if( BTST(lvalue, (but->bitnr)) ) push= true;
-		else push= !true;
+		if( BTST(lvalue, (but->bitnr)) ) is_push= is_true;
+		else is_push= !is_true;
 	}
 	else {
 		switch(but->type) {
 		case BUT:
-			push= 2;
+			is_push= 2;
 			break;
 		case HOTKEYEVT:
 		case KEYEVT:
-			push= 2;
+			is_push= 2;
 			break;
 		case TOGBUT:
 		case TOG:
@@ -1053,36 +1065,36 @@ static void ui_is_but_sel(uiBut *but, double *value)
 		case ICONTOG:
 		case OPTION:
 			UI_GET_BUT_VALUE_INIT(but, *value)
-			if(*value != (double)but->hardmin) push= 1;
+			if(*value != (double)but->hardmin) is_push= 1;
 			break;
 		case ICONTOGN:
 		case TOGN:
 		case OPTIONN:
 			UI_GET_BUT_VALUE_INIT(but, *value)
-			if(*value==0.0) push= 1;
+			if(*value==0.0) is_push= 1;
 			break;
 		case ROW:
 		case LISTROW:
 			UI_GET_BUT_VALUE_INIT(but, *value)
 			/* support for rna enum buts */
 			if(but->rnaprop && (RNA_property_flag(but->rnaprop) & PROP_ENUM_FLAG)) {
-				if((int)*value & (int)but->hardmax) push= 1;
+				if((int)*value & (int)but->hardmax) is_push= 1;
 			}
 			else {
-				if(*value == (double)but->hardmax) push= 1;
+				if(*value == (double)but->hardmax) is_push= 1;
 			}
 			break;
 		case COL:
-			push= 2;
+			is_push= 2;
 			break;
 		default:
-			push= 2;
+			is_push= 2;
 			break;
 		}
 	}
 	
-	if(push==2);
-	else if(push==1) but->flag |= UI_SELECT;
+	if(is_push==2);
+	else if(is_push==1) but->flag |= UI_SELECT;
 	else but->flag &= ~UI_SELECT;
 }
 
@@ -1217,7 +1229,7 @@ void ui_get_but_vectorf(uiBut *but, float vec[3])
 	int a, tot;
 
 	if(but->editvec) {
-		VECCOPY(vec, but->editvec);
+		copy_v3_v3(vec, but->editvec);
 	}
 
 	if(but->rnaprop) {
@@ -1241,7 +1253,7 @@ void ui_get_but_vectorf(uiBut *but, float vec[3])
 	}
 	else if(but->pointype == FLO) {
 		float *fp= (float *)but->poin;
-		VECCOPY(vec, fp);
+		copy_v3_v3(vec, fp);
 	}
 	else {
 		if (but->editvec==NULL) {
@@ -1593,17 +1605,18 @@ void ui_get_but_string(uiBut *but, char *str, size_t maxlen)
 	if(but->rnaprop && ELEM3(but->type, TEX, IDPOIN, SEARCH_MENU)) {
 		PropertyType type;
 		char *buf= NULL;
+		int buf_len;
 
 		type= RNA_property_type(but->rnaprop);
 
 		if(type == PROP_STRING) {
 			/* RNA string */
-			buf= RNA_property_string_get_alloc(&but->rnapoin, but->rnaprop, str, maxlen);
+			buf= RNA_property_string_get_alloc(&but->rnapoin, but->rnaprop, str, maxlen, &buf_len);
 		}
 		else if(type == PROP_POINTER) {
 			/* RNA pointer */
 			PointerRNA ptr= RNA_property_pointer_get(&but->rnapoin, but->rnaprop);
-			buf= RNA_struct_name_get_alloc(&ptr, str, maxlen);
+			buf= RNA_struct_name_get_alloc(&ptr, str, maxlen, &buf_len);
 		}
 
 		if(!buf) {
@@ -1611,7 +1624,7 @@ void ui_get_but_string(uiBut *but, char *str, size_t maxlen)
 		}
 		else if(buf && buf != str) {
 			/* string was too long, we have to truncate */
-			BLI_strncpy(str, buf, maxlen);
+			memcpy(str, buf, MIN2(maxlen, buf_len+1));
 			MEM_freeN(buf);
 		}
 	}
@@ -1747,7 +1760,9 @@ int ui_set_but_string(bContext *C, uiBut *but, const char *str)
 	}
 	else if(but->type == TEX) {
 		/* string */
-		BLI_strncpy(but->poin, str, but->hardmax);
+		if(ui_is_but_utf8(but)) BLI_strncpy_utf8(but->poin, str, but->hardmax);
+		else                    BLI_strncpy(but->poin, str, but->hardmax);
+
 		return 1;
 	}
 	else if(but->type == SEARCH_MENU) {
@@ -1921,8 +1936,8 @@ static void ui_free_but(const bContext *C, uiBut *but)
 	if(but->func_argN) MEM_freeN(but->func_argN);
 	if(but->active) {
 		/* XXX solve later, buttons should be free-able without context ideally,
-		   however they may have open tooltips or popup windows, which need to
-		   be closed using a context pointer */
+		 * however they may have open tooltips or popup windows, which need to
+		 * be closed using a context pointer */
 		if(C) 
 			ui_button_active_free(C, but);
 		else
@@ -2455,14 +2470,13 @@ void ui_block_do_align(uiBlock *block)
 }
 
 /*
-ui_def_but is the function that draws many button types
+ * ui_def_but is the function that draws many button types
 
-for float buttons:
-	"a1" Click Step (how much to change the value each click)
-	"a2" Number of decimal point values to display. 0 defaults to 3 (0.000) 1,2,3, and a maximum of 4,
-	   all greater values will be clamped to 4.
-
-*/
+ * for float buttons:
+ *   "a1" Click Step (how much to change the value each click)
+ *   "a2" Number of decimal point values to display. 0 defaults to 3 (0.000)
+ *        1,2,3, and a maximum of 4, all greater values will be clamped to 4.
+ */
 static uiBut *ui_def_but(uiBlock *block, int type, int retval, const char *str, int x1, int y1, short x2, short y2, void *poin, float min, float max, float a1, float a2, const char *tip)
 {
 	uiBut *but;
@@ -2559,6 +2573,13 @@ static uiBut *ui_def_but(uiBlock *block, int type, int retval, const char *str, 
 	if(block->curlayout)
 		ui_layout_add_but(block->curlayout, but);
 
+#ifdef WITH_PYTHON
+	/* if the 'UI_OT_editsource' is running, extract the source info from the button  */
+	if (UI_editsource_enable_check()) {
+		UI_editsource_active_but_test(but);
+	}
+#endif
+
 	return but;
 }
 
@@ -2606,11 +2627,8 @@ static uiBut *ui_def_but_rna(uiBlock *block, int type, int retval, const char *s
 				else
 					BLI_dynstr_appendf(dynstr, "|%s %%x%d", item[i].name, item[i].value);
 
-				if(value == item[i].value) {
+				if(value == item[i].value)
 					icon= item[i].icon;
-					if(!tip)
-						tip= item[i].description;
-				}
 			}
 			str= BLI_dynstr_get_cstring(dynstr);
 			BLI_dynstr_free(dynstr);
@@ -2753,10 +2771,7 @@ static uiBut *ui_def_but_operator(uiBlock *block, int type, const char *opname, 
 	if ((!tip || tip[0]=='\0') && ot && ot->description) {
 		tip= ot->description;
 
-#ifdef WITH_INTERNATIONAL
-		if(UI_translate_tooltips())
-			tip= BLF_gettext(tip);
-#endif
+		tip = TIP_(tip);
 	}
 
 	but= ui_def_but(block, type, -1, str, x1, y1, x2, y2, NULL, 0, 0, 0, 0, tip);
@@ -3573,7 +3588,7 @@ void UI_init_userdef(void)
 	uiStyleInit();
 }
 
-void UI_reinit_font()
+void UI_reinit_font(void)
 {
 	uiStyleInit();
 }

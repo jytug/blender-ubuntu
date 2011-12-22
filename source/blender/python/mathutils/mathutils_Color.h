@@ -1,5 +1,4 @@
 /*
- * $Id: mathutils_Color.h 38409 2011-07-15 04:01:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,8 +27,8 @@
  *
  */
 
-/** \file blender/python/generic/mathutils_Color.h
- *  \ingroup pygen
+/** \file blender/python/mathutils/mathutils_Color.h
+ *  \ingroup pymathutils
  */
 
 
@@ -40,7 +39,7 @@ extern PyTypeObject color_Type;
 #define ColorObject_Check(_v) PyObject_TypeCheck((_v), &color_Type)
 
 typedef struct {
-	BASE_MATH_MEMBERS(col)
+	BASE_MATH_MEMBERS(col);
 } ColorObject;
 
 /*struct data contains a pointer to the actual data that the
@@ -49,7 +48,7 @@ be stored in py_data) or be a wrapper for data allocated through
 blender (stored in blend_data). This is an either/or struct not both*/
 
 //prototypes
-PyObject *newColorObject( float *col, int type, PyTypeObject *base_type);
-PyObject *newColorObject_cb(PyObject *cb_user, int cb_type, int cb_subtype);
+PyObject *Color_CreatePyObject( float *col, int type, PyTypeObject *base_type);
+PyObject *Color_CreatePyObject_cb(PyObject *cb_user, int cb_type, int cb_subtype);
 
 #endif /* MATHUTILS_COLOR_H */

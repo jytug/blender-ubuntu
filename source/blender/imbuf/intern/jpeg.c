@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,9 +23,6 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * jpeg.c
- *
- * $Id: jpeg.c 40641 2011-09-28 05:53:40Z campbellbarton $
  */
 
 /** \file blender/imbuf/intern/jpeg.c
@@ -223,14 +219,13 @@ static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t 
  * Note we do *not* do INPUT_SYNC before calling fill_input_buffer,
  * but we must reload the local copies after a successful fill.
  */
-#define MAKE_BYTE_AVAIL(cinfo,action)  \
-	if (bytes_in_buffer == 0) {  \
-	  if (! (*datasrc->fill_input_buffer) (cinfo))  \
-	    { action; }  \
-	  INPUT_RELOAD(cinfo);  \
+#define MAKE_BYTE_AVAIL(cinfo, action)                                        \
+	if (bytes_in_buffer == 0) {                                               \
+		if (! (*datasrc->fill_input_buffer) (cinfo))                          \
+			{ action; }                                                       \
+		INPUT_RELOAD(cinfo);  \
 	}
 
-	
 
 /* Read a byte into variable V.
  * If must suspend, take the specified action (typically "return FALSE").
@@ -576,9 +571,13 @@ static int init_jpeg(FILE * outfile, struct jpeg_compress_struct * cinfo, struct
 	cinfo->image_height = ibuf->y;
 
 	cinfo->in_color_space = JCS_RGB;
-	if (ibuf->depth == 8) cinfo->in_color_space = JCS_GRAYSCALE;
-	if (ibuf->depth == 32) cinfo->in_color_space = JCS_UNKNOWN;
-	
+	if (ibuf->planes == 8) cinfo->in_color_space = JCS_GRAYSCALE;
+#if 0
+	/* just write RGBA as RGB,
+	 * unsupported feature only confuses other s/w */
+
+	if (ibuf->planes == 32) cinfo->in_color_space = JCS_UNKNOWN;
+#endif
 	switch(cinfo->in_color_space){
 	case JCS_RGB:
 		cinfo->input_components = 3;

@@ -63,10 +63,6 @@ class ExportUVLayout(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     filepath = StringProperty(
-            name="File Path",
-            description="File path used for exporting the SVG file",
-            maxlen=1024,
-            default="",
             subtype='FILE_PATH',
             )
     check_existing = BoolProperty(
@@ -76,7 +72,7 @@ class ExportUVLayout(bpy.types.Operator):
             options={'HIDDEN'},
             )
     export_all = BoolProperty(
-            name="All UV's",
+            name="All UVs",
             description="Export all UVs in this mesh (not just visible ones)",
             default=False,
             )
@@ -86,7 +82,7 @@ class ExportUVLayout(bpy.types.Operator):
                    ('EPS', "Encapsulate PostScript (.eps)",
                     "Export the UV layout to a vector EPS file"),
                    ('PNG', "PNG Image (.png)",
-                    "Export the UV layout a bitmap image"),
+                    "Export the UV layout to a bitmap image"),
                    ),
             name="Format",
             description="File format to export the UV layout to",

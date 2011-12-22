@@ -1,6 +1,4 @@
 /*
- * $Id: lattice.c 40903 2011-10-10 09:38:02Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,6 +39,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_bpath.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
@@ -205,7 +204,7 @@ Lattice *copy_lattice(Lattice *lt)
 {
 	Lattice *ltn;
 
-	ltn= copy_libblock(lt);
+	ltn= copy_libblock(&lt->id);
 	ltn->def= MEM_dupallocN(lt->def);
 
 	ltn->key= copy_key(ltn->key);
@@ -248,7 +247,7 @@ void make_local_lattice(Lattice *lt)
 {
 	Main *bmain= G.main;
 	Object *ob;
-	int local=0, lib=0;
+	int is_local= FALSE, is_lib= FALSE;
 
 	/* - only lib users: do nothing
 	 * - only local users: set flag
@@ -257,33 +256,32 @@ void make_local_lattice(Lattice *lt)
 	
 	if(lt->id.lib==NULL) return;
 	if(lt->id.us==1) {
-		lt->id.lib= NULL;
-		lt->id.flag= LIB_LOCAL;
-		new_id(&bmain->latt, (ID *)lt, NULL);
+		id_clear_lib_data(bmain, &lt->id);
 		return;
 	}
 	
-	for(ob= bmain->object.first; ob && ELEM(0, lib, local); ob= ob->id.next) {
+	for(ob= bmain->object.first; ob && ELEM(FALSE, is_lib, is_local); ob= ob->id.next) {
 		if(ob->data==lt) {
-			if(ob->id.lib) lib= 1;
-			else local= 1;
+			if(ob->id.lib) is_lib= TRUE;
+			else is_local= TRUE;
 		}
 	}
 	
-	if(local && lib==0) {
-		lt->id.lib= NULL;
-		lt->id.flag= LIB_LOCAL;
-		new_id(&bmain->latt, (ID *)lt, NULL);
+	if(is_local && is_lib==FALSE) {
+		id_clear_lib_data(bmain, &lt->id);
 	}
-	else if(local && lib) {
-		Lattice *ltn= copy_lattice(lt);
-		ltn->id.us= 0;
+	else if(is_local && is_lib) {
+		Lattice *lt_new= copy_lattice(lt);
+		lt_new->id.us= 0;
+
+		/* Remap paths of new ID using old library as base. */
+		BKE_id_lib_local_paths(bmain, lt->id.lib, &lt_new->id);
 
 		for(ob= bmain->object.first; ob; ob= ob->id.next) {
 			if(ob->data==lt) {
 				if(ob->id.lib==NULL) {
-					ob->data= ltn;
-					ltn->id.us++;
+					ob->data= lt_new;
+					lt_new->id.us++;
 					lt->id.us--;
 				}
 			}
@@ -464,7 +462,7 @@ void end_latt_deform(Object *ob)
 	   so we store in latmat transform from path coord inside object 
 	 */
 typedef struct {
-	float dmin[3], dmax[3], dsize, dloc[3];
+	float dmin[3], dmax[3], dscale, dloc[3];
 	float curvespace[4][4], objectspace[4][4], objectspace3[3][3];
 	int no_rot_axis;
 } CurveDeform;
@@ -660,7 +658,9 @@ static int calc_curve_deform(Scene *scene, Object *par, float *co, short axis, C
 	return 0;
 }
 
-void curve_deform_verts(Scene *scene, Object *cuOb, Object *target, DerivedMesh *dm, float (*vertexCos)[3], int numVerts, char *vgroup, short defaxis)
+void curve_deform_verts(Scene *scene, Object *cuOb, Object *target,
+                        DerivedMesh *dm, float (*vertexCos)[3],
+                        int numVerts, const char *vgroup, short defaxis)
 {
 	Curve *cu;
 	int a, flag;
@@ -819,7 +819,7 @@ void curve_deform_vector(Scene *scene, Object *cuOb, Object *target, float *orco
 }
 
 void lattice_deform_verts(Object *laOb, Object *target, DerivedMesh *dm,
-						  float (*vertexCos)[3], int numVerts, char *vgroup)
+                          float (*vertexCos)[3], int numVerts, const char *vgroup)
 {
 	int a;
 	int use_vgroups;

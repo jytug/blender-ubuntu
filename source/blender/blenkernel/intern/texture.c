@@ -1,6 +1,4 @@
 /*
- * $Id: texture.c 40903 2011-10-10 09:38:02Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -44,6 +42,7 @@
 #include "BLI_math.h"
 #include "BLI_kdopbvh.h"
 #include "BLI_utildefines.h"
+#include "BLI_bpath.h"
 
 #include "DNA_key_types.h"
 #include "DNA_object_types.h"
@@ -61,6 +60,7 @@
 #include "BKE_utildefines.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
+#include "BKE_ocean.h"
 
 #include "BKE_library.h"
 #include "BKE_image.h"
@@ -71,6 +71,7 @@
 #include "BKE_node.h"
 #include "BKE_animsys.h"
 #include "BKE_colortools.h"
+
 
 /* ------------------------------------------------------------------------- */
 
@@ -203,33 +204,93 @@ void free_plugin_tex(PluginTex *pit)
 
 /* ****************** Mapping ******************* */
 
-TexMapping *add_mapping(void)
+TexMapping *add_tex_mapping(void)
 {
-	TexMapping *texmap= MEM_callocN(sizeof(TexMapping), "Tex map");
+	TexMapping *texmap= MEM_callocN(sizeof(TexMapping), "TexMapping");
 	
-	texmap->size[0]= texmap->size[1]= texmap->size[2]= 1.0f;
-	texmap->max[0]= texmap->max[1]= texmap->max[2]= 1.0f;
-	unit_m4(texmap->mat);
+	default_tex_mapping(texmap);
 	
 	return texmap;
 }
 
-void init_mapping(TexMapping *texmap)
+void default_tex_mapping(TexMapping *texmap)
 {
-	float eul[3], smat[3][3], rmat[3][3], mat[3][3];
-	
-	size_to_mat3( smat,texmap->size);
-	
-	eul[0]= DEG2RADF(texmap->rot[0]);
-	eul[1]= DEG2RADF(texmap->rot[1]);
-	eul[2]= DEG2RADF(texmap->rot[2]);
-	eul_to_mat3( rmat,eul);
-	
-	mul_m3_m3m3(mat, rmat, smat);
-	
-	copy_m4_m3(texmap->mat, mat);
-	VECCOPY(texmap->mat[3], texmap->loc);
+	memset(texmap, 0, sizeof(TexMapping));
 
+	texmap->size[0]= texmap->size[1]= texmap->size[2]= 1.0f;
+	texmap->max[0]= texmap->max[1]= texmap->max[2]= 1.0f;
+	unit_m4(texmap->mat);
+
+	texmap->projx= PROJ_X;
+	texmap->projy= PROJ_Y;
+	texmap->projz= PROJ_Z;
+	texmap->mapping= MTEX_FLAT;
+}
+
+void init_tex_mapping(TexMapping *texmap)
+{
+	float smat[3][3], rmat[3][3], mat[3][3], proj[3][3];
+
+	if(texmap->projx == PROJ_X && texmap->projy == PROJ_Y && texmap->projz == PROJ_Z &&
+	   is_zero_v3(texmap->loc) && is_zero_v3(texmap->rot) && is_one_v3(texmap->size)) {
+		unit_m4(texmap->mat);
+
+		texmap->flag |= TEXMAP_UNIT_MATRIX;
+	}
+	else {
+		/* axis projection */
+		zero_m3(proj);
+
+		if(texmap->projx != PROJ_N)
+			proj[texmap->projx-1][0]= 1.0f;
+		if(texmap->projy != PROJ_N)
+			proj[texmap->projy-1][1]= 1.0f;
+		if(texmap->projz != PROJ_N)
+			proj[texmap->projz-1][2]= 1.0f;
+
+		/* scale */
+		size_to_mat3(smat, texmap->size);
+		
+		/* rotation */
+		/* TexMapping rotation are now in radians. */
+		eul_to_mat3(rmat, texmap->rot);
+		
+		/* compose it all */
+		mul_m3_m3m3(mat, rmat, smat);
+		mul_m3_m3m3(mat, proj, mat);
+		
+		/* translation */
+		copy_m4_m3(texmap->mat, mat);
+		copy_v3_v3(texmap->mat[3], texmap->loc);
+
+		texmap->flag &= ~TEXMAP_UNIT_MATRIX;
+	}
+}
+
+ColorMapping *add_color_mapping(void)
+{
+	ColorMapping *colormap= MEM_callocN(sizeof(ColorMapping), "ColorMapping");
+	
+	default_color_mapping(colormap);
+	
+	return colormap;
+}
+
+void default_color_mapping(ColorMapping *colormap)
+{
+	memset(colormap, 0, sizeof(ColorMapping));
+
+	init_colorband(&colormap->coba, 1);
+
+	colormap->bright= 1.0;
+	colormap->contrast= 1.0;
+	colormap->saturation= 1.0;
+
+	colormap->blend_color[0]= 0.8f;
+	colormap->blend_color[1]= 0.8f;
+	colormap->blend_color[2]= 0.8f;
+	colormap->blend_type= MA_RAMP_BLEND;
+	colormap->blend_factor= 0.0f;
 }
 
 /* ****************** COLORBAND ******************* */
@@ -485,6 +546,7 @@ void free_texture(Tex *tex)
 	if(tex->env) BKE_free_envmap(tex->env);
 	if(tex->pd) BKE_free_pointdensity(tex->pd);
 	if(tex->vd) BKE_free_voxeldata(tex->vd);
+	if(tex->ot) BKE_free_oceantex(tex->ot);
 	BKE_free_animdata((struct ID *)tex);
 	
 	BKE_previewimg_free(&tex->preview);
@@ -567,6 +629,11 @@ void default_tex(Tex *tex)
 		tex->vd->interp_type=TEX_VD_LINEAR;
 		tex->vd->file_format=TEX_VD_SMOKE;
 	}
+	
+	if (tex->ot) {
+		tex->ot->output = TEX_OCN_DISPLACEMENT;
+		tex->ot->object = NULL;
+	}
 	pit = tex->plugin;
 	if (pit) {
 		varstr= pit->varstr;
@@ -600,6 +667,10 @@ void tex_set_type(Tex *tex, int type)
 		case TEX_ENVMAP:
 			if (tex->env == NULL)
 				tex->env = BKE_add_envmap();
+			break;
+		case TEX_OCEAN:
+			if (tex->ot == NULL)
+				tex->ot = BKE_add_oceantex();
 			break;
 	}
 	
@@ -638,11 +709,7 @@ void default_mtex(MTex *mtex)
 	mtex->size[1]= 1.0;
 	mtex->size[2]= 1.0;
 	mtex->tex= NULL;
-
-	/* MTEX_BUMP_FLIPPED is temporary before 2.61 release to prevent flipping normals
-	   when creating file in 2.60, opening it in 2.59, saving and opening in 2.60 again */
-	mtex->texflag= MTEX_3TAP_BUMP | MTEX_BUMP_OBJECTSPACE | MTEX_BUMP_FLIPPED;
-
+	mtex->texflag= MTEX_3TAP_BUMP | MTEX_BUMP_OBJECTSPACE;
 	mtex->colormodel= 0;
 	mtex->r= 1.0;
 	mtex->g= 0.0;
@@ -752,7 +819,7 @@ Tex *copy_texture(Tex *tex)
 {
 	Tex *texn;
 	
-	texn= copy_libblock(tex);
+	texn= copy_libblock(&tex->id);
 	if(texn->type==TEX_IMAGE) id_us_plus((ID *)texn->ima);
 	else texn->ima= NULL;
 	
@@ -765,6 +832,7 @@ Tex *copy_texture(Tex *tex)
 	if(texn->env) texn->env= BKE_copy_envmap(texn->env);
 	if(texn->pd) texn->pd= BKE_copy_pointdensity(texn->pd);
 	if(texn->vd) texn->vd= MEM_dupallocN(texn->vd);
+	if(texn->ot) texn->ot= BKE_copy_oceantex(texn->ot);
 	if(tex->preview) texn->preview = BKE_previewimg_copy(tex->preview);
 
 	if(tex->nodetree) {
@@ -782,7 +850,7 @@ Tex *localize_texture(Tex *tex)
 {
 	Tex *texn;
 	
-	texn= copy_libblock(tex);
+	texn= copy_libblock(&tex->id);
 	BLI_remlink(&G.main->tex, texn);
 	
 	/* image texture: free_texture also doesn't decrease */
@@ -803,6 +871,9 @@ Tex *localize_texture(Tex *tex)
 		if(texn->vd->dataset)
 			texn->vd->dataset= MEM_dupallocN(texn->vd->dataset);
 	}
+	if(texn->ot) {
+		texn->ot= BKE_copy_oceantex(tex->ot);
+	}
 	
 	texn->preview = NULL;
 	
@@ -816,16 +887,20 @@ Tex *localize_texture(Tex *tex)
 
 /* ------------------------------------------------------------------------- */
 
+static void extern_local_texture(Tex *tex)
+{
+	id_lib_extern((ID *)tex->ima);
+}
+
 void make_local_texture(Tex *tex)
 {
 	Main *bmain= G.main;
-	Tex *texn;
 	Material *ma;
 	World *wrld;
 	Lamp *la;
 	Brush *br;
 	ParticleSettings *pa;
-	int a, local=0, lib=0;
+	int a, is_local= FALSE, is_lib= FALSE;
 
 	/* - only lib users: do nothing
 		* - only local users: set flag
@@ -834,18 +909,9 @@ void make_local_texture(Tex *tex)
 	
 	if(tex->id.lib==NULL) return;
 
-	/* special case: ima always local immediately */
-	if(tex->ima) {
-		tex->ima->id.lib= NULL;
-		tex->ima->id.flag= LIB_LOCAL;
-		new_id(&bmain->image, (ID *)tex->ima, NULL);
-	}
-
 	if(tex->id.us==1) {
-		tex->id.lib= NULL;
-		tex->id.flag= LIB_LOCAL;
-		new_id(&bmain->tex, (ID *)tex, NULL);
-
+		id_clear_lib_data(bmain, &tex->id);
+		extern_local_texture(tex);
 		return;
 	}
 	
@@ -853,8 +919,8 @@ void make_local_texture(Tex *tex)
 	while(ma) {
 		for(a=0; a<MAX_MTEX; a++) {
 			if(ma->mtex[a] && ma->mtex[a]->tex==tex) {
-				if(ma->id.lib) lib= 1;
-				else local= 1;
+				if(ma->id.lib) is_lib= TRUE;
+				else is_local= TRUE;
 			}
 		}
 		ma= ma->id.next;
@@ -863,8 +929,8 @@ void make_local_texture(Tex *tex)
 	while(la) {
 		for(a=0; a<MAX_MTEX; a++) {
 			if(la->mtex[a] && la->mtex[a]->tex==tex) {
-				if(la->id.lib) lib= 1;
-				else local= 1;
+				if(la->id.lib) is_lib= TRUE;
+				else is_local= TRUE;
 			}
 		}
 		la= la->id.next;
@@ -873,8 +939,8 @@ void make_local_texture(Tex *tex)
 	while(wrld) {
 		for(a=0; a<MAX_MTEX; a++) {
 			if(wrld->mtex[a] && wrld->mtex[a]->tex==tex) {
-				if(wrld->id.lib) lib= 1;
-				else local= 1;
+				if(wrld->id.lib) is_lib= TRUE;
+				else is_local= TRUE;
 			}
 		}
 		wrld= wrld->id.next;
@@ -882,8 +948,8 @@ void make_local_texture(Tex *tex)
 	br= bmain->brush.first;
 	while(br) {
 		if(br->mtex.tex==tex) {
-			if(br->id.lib) lib= 1;
-			else local= 1;
+			if(br->id.lib) is_lib= TRUE;
+			else is_local= TRUE;
 		}
 		br= br->id.next;
 	}
@@ -891,29 +957,32 @@ void make_local_texture(Tex *tex)
 	while(pa) {
 		for(a=0; a<MAX_MTEX; a++) {
 			if(pa->mtex[a] && pa->mtex[a]->tex==tex) {
-				if(pa->id.lib) lib= 1;
-				else local= 1;
+				if(pa->id.lib) is_lib= TRUE;
+				else is_local= TRUE;
 			}
 		}
 		pa= pa->id.next;
 	}
 	
-	if(local && lib==0) {
-		tex->id.lib= NULL;
-		tex->id.flag= LIB_LOCAL;
-		new_id(&bmain->tex, (ID *)tex, NULL);
+	if(is_local && is_lib == FALSE) {
+		id_clear_lib_data(bmain, &tex->id);
+		extern_local_texture(tex);
 	}
-	else if(local && lib) {
-		texn= copy_texture(tex);
-		texn->id.us= 0;
+	else if(is_local && is_lib) {
+		Tex *tex_new= copy_texture(tex);
+
+		tex_new->id.us= 0;
+
+		/* Remap paths of new ID using old library as base. */
+		BKE_id_lib_local_paths(bmain, tex->id.lib, &tex_new->id);
 		
 		ma= bmain->mat.first;
 		while(ma) {
 			for(a=0; a<MAX_MTEX; a++) {
 				if(ma->mtex[a] && ma->mtex[a]->tex==tex) {
 					if(ma->id.lib==NULL) {
-						ma->mtex[a]->tex= texn;
-						texn->id.us++;
+						ma->mtex[a]->tex= tex_new;
+						tex_new->id.us++;
 						tex->id.us--;
 					}
 				}
@@ -925,8 +994,8 @@ void make_local_texture(Tex *tex)
 			for(a=0; a<MAX_MTEX; a++) {
 				if(la->mtex[a] && la->mtex[a]->tex==tex) {
 					if(la->id.lib==NULL) {
-						la->mtex[a]->tex= texn;
-						texn->id.us++;
+						la->mtex[a]->tex= tex_new;
+						tex_new->id.us++;
 						tex->id.us--;
 					}
 				}
@@ -938,8 +1007,8 @@ void make_local_texture(Tex *tex)
 			for(a=0; a<MAX_MTEX; a++) {
 				if(wrld->mtex[a] && wrld->mtex[a]->tex==tex) {
 					if(wrld->id.lib==NULL) {
-						wrld->mtex[a]->tex= texn;
-						texn->id.us++;
+						wrld->mtex[a]->tex= tex_new;
+						tex_new->id.us++;
 						tex->id.us--;
 					}
 				}
@@ -950,8 +1019,8 @@ void make_local_texture(Tex *tex)
 		while(br) {
 			if(br->mtex.tex==tex) {
 				if(br->id.lib==NULL) {
-					br->mtex.tex= texn;
-					texn->id.us++;
+					br->mtex.tex= tex_new;
+					tex_new->id.us++;
 					tex->id.us--;
 				}
 			}
@@ -962,8 +1031,8 @@ void make_local_texture(Tex *tex)
 			for(a=0; a<MAX_MTEX; a++) {
 				if(pa->mtex[a] && pa->mtex[a]->tex==tex) {
 					if(pa->id.lib==NULL) {
-						pa->mtex[a]->tex= texn;
-						texn->id.us++;
+						pa->mtex[a]->tex= tex_new;
+						tex_new->id.us++;
 						tex->id.us--;
 					}
 				}
@@ -980,7 +1049,7 @@ void autotexname(Tex *tex)
 	Main *bmain= G.main;
 	char texstr[20][15]= {"None"  , "Clouds" , "Wood", "Marble", "Magic"  , "Blend",
 		"Stucci", "Noise"  , "Image", "Plugin", "EnvMap" , "Musgrave",
-		"Voronoi", "DistNoise", "Point Density", "Voxel Data", "", "", "", ""};
+		"Voronoi", "DistNoise", "Point Density", "Voxel Data", "Ocean", "", "", ""};
 	Image *ima;
 	char di[FILE_MAXDIR], fi[FILE_MAXFILE];
 	
@@ -992,7 +1061,7 @@ void autotexname(Tex *tex)
 		if(tex->type==TEX_IMAGE) {
 			ima= tex->ima;
 			if(ima) {
-				strcpy(di, ima->name);
+				BLI_strncpy(di, ima->name, sizeof(di));
 				BLI_splitdirstring(di, fi);
 				strcpy(di, "I.");
 				strcat(di, fi);
@@ -1410,6 +1479,7 @@ void BKE_free_pointdensity(PointDensity *pd)
 	MEM_freeN(pd);
 }
 
+/* ------------------------------------------------------------------------- */
 
 void BKE_free_voxeldatadata(struct VoxelData *vd)
 {
@@ -1452,6 +1522,31 @@ struct VoxelData *BKE_copy_voxeldata(struct VoxelData *vd)
 	vdn->dataset = NULL;
 
 	return vdn;
+}
+
+/* ------------------------------------------------------------------------- */
+
+struct OceanTex *BKE_add_oceantex(void)
+{
+	OceanTex *ot;
+	
+	ot= MEM_callocN(sizeof(struct OceanTex), "ocean texture");
+	ot->output = TEX_OCN_DISPLACEMENT;
+	ot->object = NULL;
+	
+	return ot;
+}
+
+struct OceanTex *BKE_copy_oceantex(struct OceanTex *ot)
+{
+	OceanTex *otn= MEM_dupallocN(ot);
+	
+	return otn;
+}
+
+void BKE_free_oceantex(struct OceanTex *ot)
+{
+	MEM_freeN(ot);
 }
 
 

@@ -1,6 +1,4 @@
 /*
- * $Id: object_constraint.c 40351 2011-09-19 12:26:20Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -57,6 +55,7 @@
 #include "BKE_main.h"
 #include "BKE_object.h"
 #include "BKE_report.h"
+#include "BKE_tracking.h"
 #include "BIK_api.h"
 
 #ifdef WITH_PYTHON
@@ -245,7 +244,7 @@ static void set_constraint_nth_target (bConstraint *con, Object *target, const c
 		for (ct=targets.first, i=0; ct; ct= ct->next, i++) {
 			if (i == index) {
 				ct->tar= target;
-				strcpy(ct->subtarget, subtarget);
+				BLI_strncpy(ct->subtarget, subtarget, sizeof(ct->subtarget));
 				break;
 			}
 		}
@@ -403,6 +402,23 @@ static void test_constraints (Object *owner, bPoseChannel *pchan)
 					/* clear the bound flag, forcing a rebind next time this is evaluated */
 					data->flag &= ~CONSTRAINT_SPLINEIK_BOUND;
 				}
+			}
+			else if (curcon->type == CONSTRAINT_TYPE_FOLLOWTRACK) {
+				bFollowTrackConstraint *data = curcon->data;
+
+				if((data->flag&CAMERASOLVER_ACTIVECLIP)==0) {
+					if(data->clip != NULL && data->track[0]) {
+						if (!BKE_tracking_named_track(&data->clip->tracking, data->track))
+							curcon->flag |= CONSTRAINT_DISABLE;
+					}
+					else curcon->flag |= CONSTRAINT_DISABLE;
+				}
+			}
+			else if (curcon->type == CONSTRAINT_TYPE_CAMERASOLVER) {
+				bCameraSolverConstraint *data = curcon->data;
+
+				if((data->flag&CAMERASOLVER_ACTIVECLIP)==0 && data->clip == NULL)
+					curcon->flag |= CONSTRAINT_DISABLE;
 			}
 			
 			/* Check targets for constraints */
@@ -675,6 +691,7 @@ static int childof_set_inverse_exec (bContext *C, wmOperator *op)
 	Object *ob = ED_object_active_context(C);
 	bConstraint *con = edit_constraint_property_get(op, ob, CONSTRAINT_TYPE_CHILDOF);
 	bChildOfConstraint *data= (con) ? (bChildOfConstraint *)con->data : NULL;
+	bConstraint *lastcon = NULL;
 	bPoseChannel *pchan= NULL;
 	
 	/* despite 3 layers of checks, we may still not be able to find a constraint */
@@ -684,27 +701,48 @@ static int childof_set_inverse_exec (bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 	
-	/* try to find a pose channel */
+	/* nullify inverse matrix first */
+	unit_m4(data->invmat);
+	
+	/* try to find a pose channel - assume that this is the constraint owner */
 	// TODO: get from context instead?
 	if (ob && ob->pose)
 		pchan= get_active_posechannel(ob);
 	
-	/* calculate/set inverse matrix */
+	/* calculate/set inverse matrix:
+	 * 	We just calculate all transform-stack eval up to but not including this constraint.
+	 * 	This is because inverse should just inverse correct for just the constraint's influence
+	 * 	when it gets applied; that is, at the time of application, we don't know anything about
+	 * 	what follows.
+	 */
 	if (pchan) {
-		float pmat[4][4], cinf;
 		float imat[4][4], tmat[4][4];
+		float pmat[4][4];
 		
-		/* make copy of pchan's original pose-mat (for use later) */
+		/* 1. calculate posemat where inverse doesn't exist yet (inverse was cleared above), 
+		 * to use as baseline ("pmat") to derive delta from. This extra calc saves users 
+		 * from having pressing "Clear Inverse" first
+		 */
+		where_is_pose(scene, ob);
 		copy_m4_m4(pmat, pchan->pose_mat);
 		
-		/* disable constraint for pose to be solved without it */
-		cinf= con->enforce;
-		con->enforce= 0.0f;
+		/* 2. knock out constraints starting from this one */
+		lastcon = pchan->constraints.last;
+		pchan->constraints.last = con->prev;
 		
-		/* solve pose without constraint */
+		if (con->prev) {
+			/* new end must not point to this one, else this chain cutting is useless */
+			con->prev->next = NULL;
+		}
+		else {
+			/* constraint was first */
+			pchan->constraints.first = NULL;
+		}
+		
+		/* 3. solve pose without disabled constraints */
 		where_is_pose(scene, ob);
 		
-		/* determine effect of constraint by removing the newly calculated 
+		/* 4. determine effect of constraint by removing the newly calculated 
 		 * pchan->pose_mat from the original pchan->pose_mat, thus determining 
 		 * the effect of the constraint
 		 */
@@ -712,23 +750,31 @@ static int childof_set_inverse_exec (bContext *C, wmOperator *op)
 		mul_m4_m4m4(tmat, imat, pmat);
 		invert_m4_m4(data->invmat, tmat);
 		
-		/* recalculate pose with new inv-mat */
-		con->enforce= cinf;
+		/* 5. restore constraints */
+		pchan->constraints.last = lastcon;
+		
+		if (con->prev) {
+			/* hook up prev to this one again */
+			con->prev->next = con;
+		}
+		else {
+			/* set as first again */
+			pchan->constraints.first = con;
+		}
+		
+		/* 6. recalculate pose with new inv-mat applied */
 		where_is_pose(scene, ob);
 	}
 	else if (ob) {
 		Object workob;
-		/* use what_does_parent to find inverse - just like for normal parenting.
-		 * NOTE: what_does_parent uses a static workob defined in object.c 
-		 */
+		
+		/* use what_does_parent to find inverse - just like for normal parenting */
 		what_does_parent(scene, ob, &workob);
 		invert_m4_m4(data->invmat, workob.obmat);
 	}
-	else
-		unit_m4(data->invmat);
-		
+	
 	WM_event_add_notifier(C, NC_OBJECT|ND_CONSTRAINT, ob);
-		
+	
 	return OPERATOR_FINISHED;
 }
 
@@ -1270,9 +1316,10 @@ static short get_new_constraint_target(bContext *C, int con_type, Object **tar_o
 			else
 				mul_v3_m4v3(obt->loc, obact->obmat, pchanact->pose_head);
 		}
-		else
-			VECCOPY(obt->loc, obact->obmat[3]);
-		
+		else {
+			copy_v3_v3(obt->loc, obact->obmat[3]);
+		}
+
 		/* restore, add_object sets active */
 		BASACT= base;
 		base->flag |= SELECT;
@@ -1369,7 +1416,9 @@ static int constraint_add_exec(bContext *C, wmOperator *op, Object *ob, ListBase
 				BPY_pyconstraint_update(ob, con);
 			}
 #endif
+			break;
 		}
+
 		default:
 			break;
 	}

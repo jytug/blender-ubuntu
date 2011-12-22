@@ -1,34 +1,32 @@
 /*
-* $Id: MOD_build.c 39342 2011-08-12 18:11:22Z blendix $
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_build.c
  *  \ingroup modifiers
@@ -77,7 +75,7 @@ static int dependsOnTime(ModifierData *UNUSED(md))
 	return 1;
 }
 
-static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
+static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
 						DerivedMesh *derivedData,
 						int UNUSED(useRenderParams),
 						int UNUSED(isFinalCalc))
@@ -108,12 +106,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	faceMap = MEM_callocN(sizeof(*faceMap) * maxFaces, "build modifier faceMap");
 	for(i = 0; i < maxFaces; ++i) faceMap[i] = i;
 
-	if (ob) {
-		frac = bsystem_time(md->scene, ob, md->scene->r.cfra,
-					bmd->start - 1.0f) / bmd->length;
-	} else {
-		frac = BKE_curframe(md->scene) - bmd->start / bmd->length;
-	}
+	frac = (BKE_curframe(md->scene) - bmd->start) / bmd->length;
 	CLAMP(frac, 0.0f, 1.0f);
 
 	numFaces = dm->getNumFaces(dm) * frac;

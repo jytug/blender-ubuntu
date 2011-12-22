@@ -1,6 +1,4 @@
-/**
- * $Id: node_common.c 40957 2011-10-12 13:53:03Z lukastoenne $
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -239,9 +237,11 @@ bNode *node_group_make_from_selected(bNodeTree *ntree)
 		}
 	}
 
+	/* update of the group tree */
 	ngroup->update |= NTREE_UPDATE;
 	ntreeUpdateTree(ngroup);
-	ntree->update |= NTREE_UPDATE_NODES|NTREE_UPDATE_LINKS;
+	/* update of the tree containing the group instance node */
+	ntree->update |= NTREE_UPDATE_NODES | NTREE_UPDATE_LINKS;
 	ntreeUpdateTree(ntree);
 
 	return gnode;
@@ -559,7 +559,7 @@ int node_group_ungroup(bNodeTree *ntree, bNode *gnode)
 	/* free the group tree (takes care of user count) */
 	free_libblock(&G.main->nodetree, wgroup);
 	
-	ntree->update |= NTREE_UPDATE_NODES|NTREE_UPDATE_LINKS;
+	ntree->update |= NTREE_UPDATE_NODES | NTREE_UPDATE_LINKS;
 	ntreeUpdateTree(ntree);
 	
 	return 1;
@@ -716,7 +716,7 @@ static bNodeSocket *group_verify_socket(bNodeTree *ntree, ListBase *lb, int in_o
 	if(sock) {
 		sock->groupsock = gsock;
 		
-		strcpy(sock->name, gsock->name);
+		BLI_strncpy(sock->name, gsock->name, sizeof(sock->name));
 		sock->type= gsock->type;
 		
 		/* XXX hack: group socket input/output roles are inverted internally,
@@ -901,7 +901,7 @@ static void loop_sync(bNodeTree *ntree, int sync_in_out)
 					if (mirror->own_index == GET_INT_FROM_POINTER(sock->storage))
 						break;
 				/* make sure the name is the same (only for identification by user, no deeper meaning) */
-				strcpy(mirror->name, sock->name);
+				BLI_strncpy(mirror->name, sock->name, sizeof(mirror->name));
 				/* fix the socket order if necessary */
 				if (mirror != sync) {
 					BLI_remlink(sync_lb, mirror);
@@ -973,14 +973,15 @@ bNodeTemplate node_whileloop_template(bNode *node)
 
 /**** FRAME ****/
 
-void register_node_type_frame(ListBase *lb)
+void register_node_type_frame(bNodeTreeType *ttype)
 {
 	/* frame type is used for all tree types, needs dynamic allocation */
 	bNodeType *ntype= MEM_callocN(sizeof(bNodeType), "frame node type");
 
-	node_type_base(ntype, NODE_FRAME, "Frame", NODE_CLASS_LAYOUT, NODE_BACKGROUND);
+	node_type_base(ttype, ntype, NODE_FRAME, "Frame", NODE_CLASS_LAYOUT, NODE_BACKGROUND);
 	node_type_size(ntype, 150, 100, 0);
+	node_type_compatibility(ntype, NODE_OLD_SHADING|NODE_NEW_SHADING);
 	
 	ntype->needs_free = 1;
-	nodeRegisterType(lb, ntype);
+	nodeRegisterType(ttype, ntype);
 }

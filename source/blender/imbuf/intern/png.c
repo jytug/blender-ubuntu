@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,7 +23,6 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * $Id: png.c 36777 2011-05-19 11:54:03Z blendix $
  */
 
 /** \file blender/imbuf/intern/png.c
@@ -119,7 +117,7 @@ int imb_savepng(struct ImBuf *ibuf, const char *name, int flags)
 	if(flags & IB_mem)
 		name= "<memory>";
 
-	bytesperpixel = (ibuf->depth + 7) >> 3;
+	bytesperpixel = (ibuf->planes + 7) >> 3;
 	if ((bytesperpixel > 4) || (bytesperpixel == 2)) {
 		printf("imb_savepng: Cunsupported bytes per pixel: %d for file: '%s'\n", bytesperpixel, name);
 		return (0);
@@ -192,10 +190,11 @@ int imb_savepng(struct ImBuf *ibuf, const char *name, int flags)
 		ibuf->encodedsize = 0;
 
 		png_set_write_fn(png_ptr,
-			 (png_voidp) ibuf,
-			 WriteData,
-			 Flush);
-	} else {
+		                 (png_voidp) ibuf,
+		                 WriteData,
+		                 Flush);
+	}
+	else {
 		fp = fopen(name, "wb");
 		if (!fp) {
 			png_destroy_write_struct(&png_ptr, &info_ptr);
@@ -220,14 +219,14 @@ int imb_savepng(struct ImBuf *ibuf, const char *name, int flags)
 
 	// png image settings
 	png_set_IHDR(png_ptr,
-		 info_ptr,
-		 ibuf->x,
-		 ibuf->y,
-		 8,
-		 color_type,
-		 PNG_INTERLACE_NONE,
-		 PNG_COMPRESSION_TYPE_DEFAULT,
-		 PNG_FILTER_TYPE_DEFAULT);
+	             info_ptr,
+	             ibuf->x,
+	             ibuf->y,
+	             8,
+	             color_type,
+	             PNG_INTERLACE_NONE,
+	             PNG_COMPRESSION_TYPE_DEFAULT,
+	             PNG_FILTER_TYPE_DEFAULT);
 
 	/* image text info */
 	if (ibuf->metadata) {

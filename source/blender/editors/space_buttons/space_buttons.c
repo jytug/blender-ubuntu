@@ -1,6 +1,4 @@
 /*
- * $Id: space_buttons.c 39755 2011-08-28 18:54:02Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -106,6 +104,12 @@ static void buttons_free(SpaceLink *sl)
 
 	if(sbuts->path)
 		MEM_freeN(sbuts->path);
+	
+	if(sbuts->texuser) {
+		ButsContextTexture *ct= sbuts->texuser;
+		BLI_freelistN(&ct->users);
+		MEM_freeN(ct);
+	}
 }
 
 /* spacetype; init callback */
@@ -129,6 +133,7 @@ static SpaceLink *buttons_duplicate(SpaceLink *sl)
 	/* clear or remove stuff from old */
 	sbutsn->ri= NULL;
 	sbutsn->path= NULL;
+	sbutsn->texuser= NULL;
 	
 	return (SpaceLink *)sbutsn;
 }

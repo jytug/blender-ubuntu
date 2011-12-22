@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_modifier.h 39342 2011-08-12 18:11:22Z blendix $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -365,6 +363,9 @@ void test_object_modifiers(struct Object *ob);
 
 /* here for do_versions */
 void modifier_mdef_compact_influences(struct ModifierData *md);
+
+void        modifier_path_init(char *path, int path_maxlen, const char *name);
+const char *modifier_path_relbase(struct Object *ob);
 
 #endif
 

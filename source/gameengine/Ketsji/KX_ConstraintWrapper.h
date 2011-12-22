@@ -1,6 +1,4 @@
 /*
- * $Id: KX_ConstraintWrapper.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,7 @@
 
 class	KX_ConstraintWrapper : public PyObjectPlus
 {
-	Py_Header;
+	Py_Header
 public:
 	KX_ConstraintWrapper(PHY_ConstraintType ctype,int constraintId,class PHY_IPhysicsEnvironment* physenv);
 	virtual ~KX_ConstraintWrapper ();

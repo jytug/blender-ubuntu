@@ -1,6 +1,4 @@
 /*
- * $Id: rna_ui.c 40739 2011-10-02 08:46:46Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -58,6 +56,8 @@ EnumPropertyItem operator_context_items[] = {
 
 #ifdef RNA_RUNTIME
 
+#include <assert.h>
+
 #include "MEM_guardedalloc.h"
 
 #include "RNA_access.h"
@@ -95,6 +95,8 @@ static ARegionType *region_type_find(ReportList *reports, int space_type, int re
 
 static int panel_poll(const bContext *C, PanelType *pt)
 {
+	extern FunctionRNA rna_Panel_poll_func;
+
 	PointerRNA ptr;
 	ParameterList list;
 	FunctionRNA *func;
@@ -102,7 +104,7 @@ static int panel_poll(const bContext *C, PanelType *pt)
 	int visible;
 
 	RNA_pointer_create(NULL, pt->ext.srna, NULL, &ptr); /* dummy */
-	func= RNA_struct_find_function(&ptr, "poll");
+	func= &rna_Panel_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
 
 	RNA_parameter_list_create(&list, &ptr, func);
 	RNA_parameter_set_lookup(&list, "context", &C);
@@ -118,12 +120,14 @@ static int panel_poll(const bContext *C, PanelType *pt)
 
 static void panel_draw(const bContext *C, Panel *pnl)
 {
+	extern FunctionRNA rna_Panel_draw_func;
+
 	PointerRNA ptr;
 	ParameterList list;
 	FunctionRNA *func;
 
 	RNA_pointer_create(&CTX_wm_screen(C)->id, pnl->type->ext.srna, pnl, &ptr);
-	func= RNA_struct_find_function(&ptr, "draw");
+	func= &rna_Panel_draw_func;/* RNA_struct_find_function(&ptr, "draw"); */
 
 	RNA_parameter_list_create(&list, &ptr, func);
 	RNA_parameter_set_lookup(&list, "context", &C);
@@ -134,12 +138,14 @@ static void panel_draw(const bContext *C, Panel *pnl)
 
 static void panel_draw_header(const bContext *C, Panel *pnl)
 {
+	extern FunctionRNA rna_Panel_draw_header_func;
+
 	PointerRNA ptr;
 	ParameterList list;
 	FunctionRNA *func;
 
 	RNA_pointer_create(&CTX_wm_screen(C)->id, pnl->type->ext.srna, pnl, &ptr);
-	func= RNA_struct_find_function(&ptr, "draw_header");
+	func= &rna_Panel_draw_header_func; /* RNA_struct_find_function(&ptr, "draw_header"); */
 
 	RNA_parameter_list_create(&list, &ptr, func);
 	RNA_parameter_set_lookup(&list, "context", &C);
@@ -249,12 +255,14 @@ static StructRNA* rna_Panel_refine(PointerRNA *ptr)
 
 static void header_draw(const bContext *C, Header *hdr)
 {
+	extern FunctionRNA rna_Header_draw_func;
+
 	PointerRNA htr;
 	ParameterList list;
 	FunctionRNA *func;
 
 	RNA_pointer_create(&CTX_wm_screen(C)->id, hdr->type->ext.srna, hdr, &htr);
-	func= RNA_struct_find_function(&htr, "draw");
+	func= &rna_Header_draw_func; /* RNA_struct_find_function(&htr, "draw"); */
 
 	RNA_parameter_list_create(&list, &htr, func);
 	RNA_parameter_set_lookup(&list, "context", &C);
@@ -347,6 +355,8 @@ static StructRNA* rna_Header_refine(PointerRNA *htr)
 
 static int menu_poll(const bContext *C, MenuType *pt)
 {
+	extern FunctionRNA rna_Menu_poll_func;
+
 	PointerRNA ptr;
 	ParameterList list;
 	FunctionRNA *func;
@@ -354,7 +364,7 @@ static int menu_poll(const bContext *C, MenuType *pt)
 	int visible;
 
 	RNA_pointer_create(NULL, pt->ext.srna, NULL, &ptr); /* dummy */
-	func= RNA_struct_find_function(&ptr, "poll");
+	func= &rna_Menu_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
 
 	RNA_parameter_list_create(&list, &ptr, func);
 	RNA_parameter_set_lookup(&list, "context", &C);
@@ -370,12 +380,14 @@ static int menu_poll(const bContext *C, MenuType *pt)
 
 static void menu_draw(const bContext *C, Menu *hdr)
 {
+	extern FunctionRNA rna_Menu_draw_func;
+
 	PointerRNA mtr;
 	ParameterList list;
 	FunctionRNA *func;
 
 	RNA_pointer_create(&CTX_wm_screen(C)->id, hdr->type->ext.srna, hdr, &mtr);
-	func= RNA_struct_find_function(&mtr, "draw");
+	func= &rna_Menu_draw_func; /* RNA_struct_find_function(&mtr, "draw"); */
 
 	RNA_parameter_list_create(&list, &mtr, func);
 	RNA_parameter_set_lookup(&list, "context", &C);
@@ -401,6 +413,7 @@ static void rna_Menu_unregister(Main *UNUSED(bmain), StructRNA *type)
 	WM_main_add_notifier(NC_SCREEN|NA_EDITED, NULL);
 }
 
+static char _menu_descr[RNA_DYN_DESCR_MAX];
 static StructRNA *rna_Menu_register(Main *bmain, ReportList *reports, void *data, const char *identifier,
                                     StructValidateFunc validate, StructCallbackFunc call, StructFreeFunc free)
 {
@@ -408,10 +421,16 @@ static StructRNA *rna_Menu_register(Main *bmain, ReportList *reports, void *data
 	Menu dummymenu= {NULL};
 	PointerRNA dummymtr;
 	int have_function[2];
+	size_t over_alloc= 0; /* warning, if this becomes a bess, we better do another alloc */
+	size_t description_size= 0;
 
 	/* setup dummy menu & menu type to store static properties in */
 	dummymenu.type= &dummymt;
+	dummymenu.type->description= _menu_descr;
 	RNA_pointer_create(NULL, &RNA_Menu, &dummymenu, &dummymtr);
+
+	/* clear incase they are left unset */
+	_menu_descr[0]= '\0';
 
 	/* validate the python class */
 	if(validate(&dummymtr, data, have_function) != 0)
@@ -429,8 +448,19 @@ static StructRNA *rna_Menu_register(Main *bmain, ReportList *reports, void *data
 		rna_Menu_unregister(bmain, mt->ext.srna);
 	
 	/* create a new menu type */
-	mt= MEM_callocN(sizeof(MenuType), "python buttons menu");
+	if (_menu_descr[0]) {
+		description_size= strlen(_menu_descr) + 1;
+		over_alloc += description_size;
+	}
+
+	mt= MEM_callocN(sizeof(MenuType) + over_alloc, "python buttons menu");
 	memcpy(mt, &dummymt, sizeof(dummymt));
+
+	if (_menu_descr[0]) {
+		char *buf= (char *)(mt + 1);
+		memcpy(buf, _menu_descr, description_size);
+		mt->description= buf;
+	}
 
 	mt->ext.srna= RNA_def_struct(&BLENDER_RNA, mt->idname, "Menu"); 
 	mt->ext.data= data;
@@ -454,6 +484,14 @@ static StructRNA* rna_Menu_refine(PointerRNA *mtr)
 {
 	Menu *hdr= (Menu*)mtr->data;
 	return (hdr->type && hdr->type->ext.srna)? hdr->type->ext.srna: &RNA_Menu;
+}
+
+static void rna_Menu_bl_description_set(PointerRNA *ptr, const char *value)
+{
+	Menu *data= (Menu*)(ptr->data);
+	char *str= (char *)data->type->description;
+	if(!str[0])	BLI_strncpy(str, value, RNA_DYN_DESCR_MAX);  /* utf8 already ensured */
+	else		assert(!"setting the bl_description on a non-builtin menu");
 }
 
 static int rna_UILayout_active_get(PointerRNA *ptr)
@@ -789,6 +827,13 @@ static void rna_def_menu(BlenderRNA *brna)
 	RNA_def_property_string_sdna(prop, NULL, "type->label");
 	RNA_def_property_flag(prop, PROP_REGISTER);
 	RNA_def_property_ui_text(prop, "Label", "The menu label");
+
+	prop= RNA_def_property(srna, "bl_description", PROP_STRING, PROP_TRANSLATE);
+	RNA_def_property_string_sdna(prop, NULL, "type->description");
+	RNA_def_property_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
+	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Menu_bl_description_set");
+	// RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
 
 	RNA_define_verify_sdna(1);
 }

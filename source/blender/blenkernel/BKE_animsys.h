@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_animsys.h 41078 2011-10-17 06:39:13Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -107,10 +105,10 @@ void BKE_keyingsets_free(struct ListBase *list);
 /* Path Fixing API */
 
 /* Fix all the paths for the given ID+AnimData */
-void BKE_animdata_fix_paths_rename(struct ID *owner_id, struct AnimData *adt, const char *prefix, char *oldName, char *newName, int oldSubscript, int newSubscript, int verify_paths);
+void BKE_animdata_fix_paths_rename(struct ID *owner_id, struct AnimData *adt, const char *prefix, const char *oldName, const char *newName, int oldSubscript, int newSubscript, int verify_paths);
 
 /* Fix all the paths for the entire database... */
-void BKE_all_animdata_fix_paths_rename(char *prefix, char *oldName, char *newName);
+void BKE_all_animdata_fix_paths_rename(const char *prefix, const char *oldName, const char *newName);
 
 /* -------------------------------------- */
 

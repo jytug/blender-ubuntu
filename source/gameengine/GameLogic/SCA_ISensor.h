@@ -1,6 +1,4 @@
 /*
- * $Id: SCA_ISensor.h 39815 2011-08-31 01:07:55Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -49,7 +47,7 @@
  */
 class SCA_ISensor : public SCA_ILogicBrick
 {
-	Py_Header;
+	Py_Header
 protected:
 	class SCA_EventManager* m_eventmgr;
 

@@ -1,6 +1,4 @@
 /*
- * $Id: constraint.c 41074 2011-10-17 02:20:53Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,12 +39,12 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_listbase.h"
 #include "BLI_math.h"
 #include "BLI_editVert.h"
 #include "BLI_utildefines.h"
 
 #include "DNA_armature_types.h"
+#include "DNA_camera_types.h"
 #include "DNA_constraint_types.h"
 #include "DNA_modifier_types.h"
 #include "DNA_object_types.h"
@@ -54,15 +52,19 @@
 #include "DNA_curve_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
+
 #include "DNA_lattice_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_text_types.h"
+#include "DNA_tracking_types.h"
+#include "DNA_movieclip_types.h"
 
 
 #include "BKE_action.h"
 #include "BKE_anim.h" /* for the curve calculation part */
 #include "BKE_armature.h"
 #include "BKE_blender.h"
+#include "BKE_camera.h"
 #include "BKE_constraint.h"
 #include "BKE_displist.h"
 #include "BKE_deform.h"
@@ -75,6 +77,8 @@
 #include "BKE_idprop.h"
 #include "BKE_shrinkwrap.h"
 #include "BKE_mesh.h"
+#include "BKE_tracking.h"
+#include "BKE_movieclip.h"
 
 #ifdef WITH_PYTHON
 #include "BPY_extern.h"
@@ -450,7 +454,8 @@ static void contarget_get_mesh_mat (Object *ob, const char *substring, float mat
 	}
 	else {
 		/* when not in EditMode, use the 'final' derived mesh, depsgraph
-		 * ensures we build with CD_MDEFORMVERT layer */
+		 * ensures we build with CD_MDEFORMVERT layer 
+		 */
 		dm = (DerivedMesh *)ob->derivedFinal;
 	}
 	
@@ -706,7 +711,7 @@ static void default_get_tarmat (bConstraint *con, bConstraintOb *UNUSED(cob), bC
 				ct->type = CONSTRAINT_OBTYPE_BONE; \
 				ct->rotOrder= (pchan) ? (pchan->rotmode) : EULER_ORDER_DEFAULT; \
 			}\
-			else if (ELEM(ct->tar->type, OB_MESH, OB_LATTICE) && (ct->subtarget[0])) { \
+			else if (OB_TYPE_SUPPORT_VGROUP(ct->tar->type) && (ct->subtarget[0])) { \
 				ct->type = CONSTRAINT_OBTYPE_VERT; \
 				ct->rotOrder = EULER_ORDER_DEFAULT; \
 			} \
@@ -1259,10 +1264,7 @@ static void followpath_get_tarmat (bConstraint *con, bConstraintOb *cob, bConstr
 			float quat[4];
 			if ((data->followflag & FOLLOWPATH_STATIC) == 0) {
 				/* animated position along curve depending on time */
-				if (cob->scene)
-					curvetime= bsystem_time(cob->scene, ct->tar, cu->ctime, 0.0) - data->offset;
-				else	
-					curvetime= cu->ctime - data->offset;
+				curvetime= cu->ctime - data->offset;
 				
 				/* ctime is now a proper var setting of Curve which gets set by Animato like any other var that's animated,
 				 * but this will only work if it actually is animated... 
@@ -3929,6 +3931,200 @@ static bConstraintTypeInfo CTI_PIVOT = {
 	pivotcon_evaluate /* evaluate */
 };
 
+/* ----------- Follow Track ------------- */
+
+static void followtrack_new_data (void *cdata)
+{
+	bFollowTrackConstraint *data= (bFollowTrackConstraint *)cdata;
+	
+	data->clip= NULL;
+	data->flag |= FOLLOWTRACK_ACTIVECLIP;
+}
+
+static void followtrack_id_looper (bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+	bFollowTrackConstraint *data= con->data;
+	
+	func(con, (ID**)&data->clip, userdata);
+}
+
+static void followtrack_evaluate (bConstraint *con, bConstraintOb *cob, ListBase *UNUSED(targets))
+{
+	Scene *scene= cob->scene;
+	bFollowTrackConstraint *data= con->data;
+	MovieClip *clip= data->clip;
+	MovieTrackingTrack *track;
+	
+	if (data->flag & FOLLOWTRACK_ACTIVECLIP)
+		clip= scene->clip;
+	
+	if (!clip || !data->track[0])
+		return;
+	
+	track= BKE_tracking_named_track(&clip->tracking, data->track);
+	
+	if (!track)
+		return;
+	
+	if (data->flag & FOLLOWTRACK_USE_3D_POSITION) {
+		if (track->flag & TRACK_HAS_BUNDLE) {
+			float pos[3], mat[4][4], obmat[4][4];
+			
+			copy_m4_m4(obmat, cob->matrix);
+			
+			BKE_get_tracking_mat(cob->scene, NULL, mat);
+			mul_v3_m4v3(pos, mat, track->bundle_pos);
+			
+			cob->matrix[3][0] += pos[0];
+			cob->matrix[3][1] += pos[1];
+			cob->matrix[3][2] += pos[2];
+		}
+	} 
+	else {
+		Object *camob= cob->scene->camera;
+		
+		if (camob) {
+			MovieClipUser user;
+			MovieTrackingMarker *marker;
+			float vec[3], disp[3], axis[3], mat[4][4];
+			float aspect= (scene->r.xsch*scene->r.xasp) / (scene->r.ysch*scene->r.yasp);
+			float len, d;
+			
+			where_is_object_mat(scene, camob, mat);
+			
+			/* camera axis */
+			vec[0]= 0.0f;
+			vec[1]= 0.0f;
+			vec[2]= 1.0f;
+			mul_v3_m4v3(axis, mat, vec);
+			
+			/* distance to projection plane */
+			copy_v3_v3(vec, cob->matrix[3]);
+			sub_v3_v3(vec, mat[3]);
+			project_v3_v3v3(disp, vec, axis);
+			
+			len= len_v3(disp);
+			
+			if (len > FLT_EPSILON) {
+				CameraParams params;
+				float pos[2], rmat[4][4];
+				
+				user.framenr= scene->r.cfra;
+				marker= BKE_tracking_get_marker(track, user.framenr);
+				
+				add_v2_v2v2(pos, marker->pos, track->offset);
+				
+				camera_params_init(&params);
+				camera_params_from_object(&params, camob);
+
+				if (params.is_ortho) {
+					vec[0]= params.ortho_scale * (pos[0]-0.5f+params.shiftx);
+					vec[1]= params.ortho_scale * (pos[1]-0.5f+params.shifty);
+					vec[2]= -len;
+					
+					if (aspect > 1.0f) vec[1] /= aspect;
+					else vec[0] *= aspect;
+					
+					mul_v3_m4v3(disp, camob->obmat, vec);
+					
+					copy_m4_m4(rmat, camob->obmat);
+					zero_v3(rmat[3]);
+					mul_m4_m4m4(cob->matrix, rmat, cob->matrix);
+					
+					copy_v3_v3(cob->matrix[3], disp);
+				}
+				else {
+					d= (len*params.sensor_x) / (2.0f*params.lens);
+					
+					vec[0]= d*(2.0f*(pos[0]+params.shiftx)-1.0f);
+					vec[1]= d*(2.0f*(pos[1]+params.shifty)-1.0f);
+					vec[2]= -len;
+					
+					if (aspect > 1.0f) vec[1] /= aspect;
+					else vec[0] *= aspect;
+					
+					mul_v3_m4v3(disp, camob->obmat, vec);
+					
+					/* apply camera rotation so Z-axis would be co-linear */
+					copy_m4_m4(rmat, camob->obmat);
+					zero_v3(rmat[3]);
+					mul_m4_m4m4(cob->matrix, rmat, cob->matrix);
+					
+					copy_v3_v3(cob->matrix[3], disp);
+				}
+			}
+		}
+	}
+}
+
+static bConstraintTypeInfo CTI_FOLLOWTRACK = {
+	CONSTRAINT_TYPE_FOLLOWTRACK, /* type */
+	sizeof(bFollowTrackConstraint), /* size */
+	"Follow Track", /* name */
+	"bFollowTrackConstraint", /* struct name */
+	NULL, /* free data */
+	NULL, /* relink data */
+	followtrack_id_looper, /* id looper */
+	NULL, /* copy data */
+	followtrack_new_data, /* new data */
+	NULL, /* get constraint targets */
+	NULL, /* flush constraint targets */
+	NULL, /* get target matrix */
+	followtrack_evaluate /* evaluate */
+};
+
+/* ----------- Camre Solver ------------- */
+
+static void camerasolver_new_data (void *cdata)
+{
+	bCameraSolverConstraint *data= (bCameraSolverConstraint *)cdata;
+	
+	data->clip = NULL;
+	data->flag |= CAMERASOLVER_ACTIVECLIP;
+}
+
+static void camerasolver_id_looper (bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+	bCameraSolverConstraint *data= con->data;
+	
+	func(con, (ID**)&data->clip, userdata);
+}
+
+static void camerasolver_evaluate (bConstraint *con, bConstraintOb *cob, ListBase *UNUSED(targets))
+{
+	Scene *scene= cob->scene;
+	bCameraSolverConstraint *data= con->data;
+	MovieClip *clip= data->clip;
+	
+	if (data->flag & CAMERASOLVER_ACTIVECLIP)
+		clip= scene->clip;
+	
+	if (clip) {
+		float mat[4][4], obmat[4][4];
+		
+		BKE_tracking_get_interpolated_camera(&clip->tracking, scene->r.cfra, mat);
+		
+		copy_m4_m4(obmat, cob->matrix);
+		mul_m4_m4m4(cob->matrix, mat, obmat);
+	}
+}
+
+static bConstraintTypeInfo CTI_CAMERASOLVER = {
+	CONSTRAINT_TYPE_CAMERASOLVER, /* type */
+	sizeof(bCameraSolverConstraint), /* size */
+	"Camera Solver", /* name */
+	"bCameraSolverConstraint", /* struct name */
+	NULL, /* free data */
+	NULL, /* relink data */
+	camerasolver_id_looper, /* id looper */
+	NULL, /* copy data */
+	camerasolver_new_data, /* new data */
+	NULL, /* get constraint targets */
+	NULL, /* flush constraint targets */
+	NULL, /* get target matrix */
+	camerasolver_evaluate /* evaluate */
+};
+
 /* ************************* Constraints Type-Info *************************** */
 /* All of the constraints api functions use bConstraintTypeInfo structs to carry out
  * and operations that involve constraint specific code.
@@ -3967,6 +4163,8 @@ static void constraints_init_typeinfo (void)
 	constraintsTypeInfo[23]= &CTI_TRANSLIKE;		/* Copy Transforms Constraint */
 	constraintsTypeInfo[24]= &CTI_SAMEVOL;			/* Maintain Volume Constraint */
 	constraintsTypeInfo[25]= &CTI_PIVOT;			/* Pivot Constraint */
+	constraintsTypeInfo[26]= &CTI_FOLLOWTRACK;		/* Follow Track Constraint */
+	constraintsTypeInfo[27]= &CTI_CAMERASOLVER;		/* Camera Solver Constraint */
 }
 
 /* This function should be used for getting the appropriate type-info when only

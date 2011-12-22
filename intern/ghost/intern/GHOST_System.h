@@ -1,5 +1,4 @@
 /*
- * $Id: GHOST_System.h 40538 2011-09-25 12:31:21Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -277,7 +276,7 @@ public:
 	 * @return 				Returns the clipboard data
 	 *
 	 */
-	 virtual GHOST_TUns8* getClipboard(bool selection) const = 0;
+	virtual GHOST_TUns8* getClipboard(bool selection) const = 0;
 	  
 	  /**
 	   * Put data to the Clipboard

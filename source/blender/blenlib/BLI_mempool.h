@@ -1,5 +1,4 @@
 /*
- * $Id: BLI_mempool.h 34966 2011-02-18 13:58:08Z jesterking $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -29,18 +28,52 @@
 #ifndef BLI_MEMPOOL_H
 #define BLI_MEMPOOL_H
 
-/** \file BLI_storage.h
+/** \file BLI_mempool.h
  *  \ingroup bli
  *  \author Geoffrey Bantle
  *  \brief Simple fast memory allocator.
  */
 
-struct BLI_mempool;
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-struct BLI_mempool *BLI_mempool_create(int esize, int tote, int pchunk, int use_sysmalloc);
-void *BLI_mempool_alloc(struct BLI_mempool *pool);
-void *BLI_mempool_calloc(struct BLI_mempool *pool);
-void BLI_mempool_free(struct BLI_mempool *pool, void *addr);
-void BLI_mempool_destroy(struct BLI_mempool *pool);
+struct BLI_mempool;
+struct BLI_mempool_chunk;
+
+typedef struct BLI_mempool BLI_mempool;
+
+/*allow_iter allows iteration on this mempool.  note: this requires that the
+  first four bytes of the elements never contain the character string
+  'free'.  use with care.*/
+
+BLI_mempool *BLI_mempool_create(int esize, int tote, int pchunk,
+                                short use_sysmalloc, short allow_iter);
+void *BLI_mempool_alloc(BLI_mempool *pool);
+void *BLI_mempool_calloc(BLI_mempool *pool);
+void BLI_mempool_free(BLI_mempool *pool, void *addr);
+void BLI_mempool_destroy(BLI_mempool *pool);
+int BLI_mempool_count(BLI_mempool *pool);
+void *BLI_mempool_findelem(BLI_mempool *pool, int index);
+
+/** iteration stuff.  note: this may easy to produce bugs with **/
+/*private structure*/
+typedef struct BLI_mempool_iter {
+	BLI_mempool *pool;
+	struct BLI_mempool_chunk *curchunk;
+	int curindex;
+} BLI_mempool_iter;
+
+/*allow iteration on this mempool.  note: this requires that the
+  first four bytes of the elements never contain the character string
+  'free'.  use with care.*/
+void BLI_mempool_allow_iter(BLI_mempool *pool);
+void BLI_mempool_iternew(BLI_mempool *pool, BLI_mempool_iter *iter);
+void *BLI_mempool_iterstep(BLI_mempool_iter *iter);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

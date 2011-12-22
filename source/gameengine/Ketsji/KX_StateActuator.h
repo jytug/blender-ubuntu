@@ -1,6 +1,4 @@
 /*
- * $Id: KX_StateActuator.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -46,7 +44,7 @@
  */
 class KX_StateActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 	/** Make visible? */
 	enum {

@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -102,7 +101,7 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 
 	int index;
 	
-	int w, h, depth;
+	int w, h, planes;
 	
 	opj_dparameters_t parameters;	/* decompression parameters */
 	
@@ -167,10 +166,10 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 	switch (image->numcomps) {
 	case 1: /* Greyscale */
 	case 3: /* Color */
-		depth= 24; 
+		planes= 24;
 		break;
 	default: /* 2 or 4 - Greyscale or Color + alpha */
-		depth= 32; /* greyscale + alpha */
+		planes= 32; /* greyscale + alpha */
 		break;
 	}
 	
@@ -191,7 +190,7 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 		float_divs[i]= (1<<image->comps[i].prec)-1;
 	}
 	
-	ibuf= IMB_allocImBuf(w, h, depth, use_float ? IB_rectfloat : IB_rect);
+	ibuf= IMB_allocImBuf(w, h, planes, use_float ? IB_rectfloat : IB_rect);
 	
 	if (ibuf==NULL) {
 		if(dinfo)
@@ -495,7 +494,7 @@ static opj_image_t* ibuftoimage(ImBuf *ibuf, opj_cparameters_t *parameters) {
 		
 		/* 32bit images == alpha channel */
 		/* grayscale not supported yet */
-		numcomps= (ibuf->depth==32) ? 4 : 3;
+		numcomps= (ibuf->planes==32) ? 4 : 3;
 	}
 	
 	w= ibuf->x;

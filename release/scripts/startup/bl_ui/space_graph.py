@@ -26,7 +26,7 @@ class GRAPH_HT_header(Header):
     bl_space_type = 'GRAPH_EDITOR'
 
     def draw(self, context):
-        from bl_ui.space_dopesheet import dopesheet_filter
+        from .space_dopesheet import dopesheet_filter
 
         layout = self.layout
 
@@ -144,16 +144,8 @@ class GRAPH_MT_marker(Menu):
     def draw(self, context):
         layout = self.layout
 
-        #layout.operator_context = 'EXEC_REGION_WIN'
-
-        layout.operator("marker.add", "Add Marker")
-        layout.operator("marker.duplicate", text="Duplicate Marker")
-        layout.operator("marker.delete", text="Delete Marker")
-
-        layout.separator()
-
-        layout.operator("marker.rename", text="Rename Marker")
-        layout.operator("marker.move", text="Grab/Move Marker")
+        from .space_time import marker_menu_generic
+        marker_menu_generic(layout)
 
         # TODO: pose markers for action edit mode only?
 

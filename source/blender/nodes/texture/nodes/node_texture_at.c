@@ -1,6 +1,4 @@
 /*
- * $Id: node_texture_at.c 39944 2011-09-05 22:04:30Z gsrb3d $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,14 +58,14 @@ static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
 	tex_output(node, in, out[0], &colorfn, data);
 }
 
-void register_node_type_tex_at(ListBase *lb)
+void register_node_type_tex_at(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 	
-	node_type_base(&ntype, TEX_NODE_AT, "At", NODE_CLASS_DISTORT, 0);
+	node_type_base(ttype, &ntype, TEX_NODE_AT, "At", NODE_CLASS_DISTORT, 0);
 	node_type_socket_templates(&ntype, inputs, outputs);
 	node_type_size(&ntype, 140, 100, 320);
 	node_type_exec(&ntype, exec);
 	
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }

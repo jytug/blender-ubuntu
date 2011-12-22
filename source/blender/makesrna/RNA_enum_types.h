@@ -1,6 +1,4 @@
 /*
- * $Id: RNA_enum_types.h 39941 2011-09-05 21:01:50Z lukastoenne $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -55,6 +53,7 @@ extern EnumPropertyItem boidrule_type_items[];
 
 extern EnumPropertyItem image_type_items[];
 extern EnumPropertyItem image_color_mode_items[];
+extern EnumPropertyItem image_depth_mode_items[];
 
 extern EnumPropertyItem beztriple_keyframe_type_items[];
 extern EnumPropertyItem beztriple_handle_type_items[];
@@ -115,6 +114,8 @@ extern EnumPropertyItem node_vec_math_items[];
 extern EnumPropertyItem node_filter_items[];
 
 extern EnumPropertyItem ramp_blend_items[];
+
+extern EnumPropertyItem prop_dynamicpaint_type_items[];
 
 struct bContext;
 struct PointerRNA;

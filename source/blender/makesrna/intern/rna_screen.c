@@ -1,6 +1,4 @@
 /*
- * $Id: rna_screen.c 40710 2011-09-30 08:10:53Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -289,6 +287,11 @@ static void rna_def_screen(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "use_play_node_editors", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_NODES);
 	RNA_def_property_ui_text(prop, "Node Editors", "");
+	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_TIME, "rna_Screen_redraw_update");
+
+	prop= RNA_def_property(srna, "use_play_clip_editors", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_CLIPS);
+	RNA_def_property_ui_text(prop, "Clip Editors", "");
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_TIME, "rna_Screen_redraw_update");
 }
 

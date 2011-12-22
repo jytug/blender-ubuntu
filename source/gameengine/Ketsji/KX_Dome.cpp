@@ -1,7 +1,4 @@
-/** \file gameengine/Ketsji/KX_Dome.cpp
- *  \ingroup ketsji
- */
-/* $Id: KX_Dome.cpp 40766 2011-10-03 03:32:59Z dfelinto $
+/*
 -----------------------------------------------------------------------------
 
 This program is free software; you can redistribute it and/or modify it under
@@ -24,6 +21,10 @@ This code is originally inspired on some of the ideas and codes from Paul Bourke
 Developed as part of a Research and Development project for SAT - La Société des arts technologiques.
 -----------------------------------------------------------------------------
 */
+
+/** \file gameengine/Ketsji/KX_Dome.cpp
+ *  \ingroup ketsji
+ */
 
 #include "KX_Dome.h"
 
@@ -424,21 +425,21 @@ void KX_Dome::GLDrawWarpQuads(void)
 				if (warp.nodes[i][j].i < 0 || warp.nodes[i2][j].i < 0 || warp.nodes[i2][j+1].i < 0 || warp.nodes[i][j+1].i < 0)
 					continue;
 
-				 glColor3f(warp.nodes[i][j].i,warp.nodes[i][j].i,warp.nodes[i][j].i);
-				 glTexCoord2f((warp.nodes[i][j].u * uv_width), (warp.nodes[i][j].v * uv_height));
-				 glVertex3f(warp.nodes[i][j].x,warp.nodes[i][j].y,0.0);
+				glColor3f(warp.nodes[i][j].i,warp.nodes[i][j].i,warp.nodes[i][j].i);
+				glTexCoord2f((warp.nodes[i][j].u * uv_width), (warp.nodes[i][j].v * uv_height));
+				glVertex3f(warp.nodes[i][j].x,warp.nodes[i][j].y,0.0);
 
-				 glColor3f(warp.nodes[i2][j].i,warp.nodes[i2][j].i,warp.nodes[i2][j].i);
-				 glTexCoord2f((warp.nodes[i2][j].u * uv_width), (warp.nodes[i2][j].v * uv_height));
-				 glVertex3f(warp.nodes[i2][j].x,warp.nodes[i2][j].y,0.0);
+				glColor3f(warp.nodes[i2][j].i,warp.nodes[i2][j].i,warp.nodes[i2][j].i);
+				glTexCoord2f((warp.nodes[i2][j].u * uv_width), (warp.nodes[i2][j].v * uv_height));
+				glVertex3f(warp.nodes[i2][j].x,warp.nodes[i2][j].y,0.0);
 
-				 glColor3f(warp.nodes[i2][j+1].i,warp.nodes[i2][j+1].i,warp.nodes[i2][j+1].i);
-				 glTexCoord2f((warp.nodes[i2][j+1].u * uv_width), (warp.nodes[i2][j+1].v * uv_height));
-				 glVertex3f(warp.nodes[i2][j+1].x,warp.nodes[i2][j+1].y,0.0);
+				glColor3f(warp.nodes[i2][j+1].i,warp.nodes[i2][j+1].i,warp.nodes[i2][j+1].i);
+				glTexCoord2f((warp.nodes[i2][j+1].u * uv_width), (warp.nodes[i2][j+1].v * uv_height));
+				glVertex3f(warp.nodes[i2][j+1].x,warp.nodes[i2][j+1].y,0.0);
 
-				 glColor3f(warp.nodes[i2][j+1].i,warp.nodes[i2][j+1].i,warp.nodes[i2][j+1].i);
-				 glTexCoord2f((warp.nodes[i2][j+1].u * uv_width), (warp.nodes[i2][j+1].v * uv_height));
-				 glVertex3f(warp.nodes[i2][j+1].x,warp.nodes[i2][j+1].y,0.0);
+				glColor3f(warp.nodes[i2][j+1].i,warp.nodes[i2][j+1].i,warp.nodes[i2][j+1].i);
+				glTexCoord2f((warp.nodes[i2][j+1].u * uv_width), (warp.nodes[i2][j+1].v * uv_height));
+				glVertex3f(warp.nodes[i2][j+1].x,warp.nodes[i2][j+1].y,0.0);
 
 			}
 		}

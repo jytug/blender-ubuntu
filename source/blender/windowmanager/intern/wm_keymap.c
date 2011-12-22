@@ -1,6 +1,4 @@
 /*
- * $Id: wm_keymap.c 40043 2011-09-08 13:22:26Z blendix $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -310,31 +308,15 @@ static void keymap_event_set(wmKeyMapItem *kmi, short type, short val, int modif
 	kmi->type= type;
 	kmi->val= val;
 	kmi->keymodifier= keymodifier;
-	
+
 	if(modifier == KM_ANY) {
 		kmi->shift= kmi->ctrl= kmi->alt= kmi->oskey= KM_ANY;
 	}
 	else {
-		
-		kmi->shift= kmi->ctrl= kmi->alt= kmi->oskey= 0;
-		
-		/* defines? */
-		if(modifier & KM_SHIFT)
-			kmi->shift= 1;
-		else if(modifier & KM_SHIFT2)
-			kmi->shift= 2;
-		if(modifier & KM_CTRL)
-			kmi->ctrl= 1;
-		else if(modifier & KM_CTRL2)
-			kmi->ctrl= 2;
-		if(modifier & KM_ALT)
-			kmi->alt= 1;
-		else if(modifier & KM_ALT2)
-			kmi->alt= 2;
-		if(modifier & KM_OSKEY)
-			kmi->oskey= 1;
-		else if(modifier & KM_OSKEY2)
-			kmi->oskey= 2;	
+		kmi->shift= (modifier & KM_SHIFT) ? KM_MOD_FIRST : ((modifier & KM_SHIFT2) ? KM_MOD_SECOND : FALSE);
+		kmi->ctrl=  (modifier & KM_CTRL)  ? KM_MOD_FIRST : ((modifier & KM_CTRL2)  ? KM_MOD_SECOND : FALSE);
+		kmi->alt=   (modifier & KM_ALT)   ? KM_MOD_FIRST : ((modifier & KM_ALT2)   ? KM_MOD_SECOND : FALSE);
+		kmi->oskey= (modifier & KM_OSKEY) ? KM_MOD_FIRST : ((modifier & KM_OSKEY2) ? KM_MOD_SECOND : FALSE);
 	}
 }
 
@@ -615,6 +597,8 @@ static void wm_keymap_diff_update(ListBase *lb, wmKeyMap *defaultmap, wmKeyMap *
 	/* create diff keymap */
 	diffmap= wm_keymap_new(km->idname, km->spaceid, km->regionid);
 	diffmap->flag |= KEYMAP_DIFF;
+	if(defaultmap->flag & KEYMAP_MODAL)
+		diffmap->flag |= KEYMAP_MODAL;
 	wm_keymap_diff(diffmap, defaultmap, km, origmap, addonmap);
 
 	/* add to list if not empty */
@@ -870,19 +854,19 @@ static wmKeyMapItem *wm_keymap_item_find_props(const bContext *C, const char *op
 	return found;
 }
 
-static wmKeyMapItem *wm_keymap_item_find(const bContext *C, const char *opname, int opcontext, IDProperty *properties, int hotkey, wmKeyMap **keymap_r)
+static wmKeyMapItem *wm_keymap_item_find(const bContext *C, const char *opname, int opcontext, IDProperty *properties, const short hotkey, const short sloppy, wmKeyMap **keymap_r)
 {
 	wmKeyMapItem *found= wm_keymap_item_find_props(C, opname, opcontext, properties, 1, hotkey, keymap_r);
 
-	if(!found)
+	if(!found && sloppy)
 		found= wm_keymap_item_find_props(C, opname, opcontext, NULL, 0, hotkey, keymap_r);
 
 	return found;
 }
 
-char *WM_key_event_operator_string(const bContext *C, const char *opname, int opcontext, IDProperty *properties, char *str, int len)
+char *WM_key_event_operator_string(const bContext *C, const char *opname, int opcontext, IDProperty *properties, const short sloppy, char *str, int len)
 {
-	wmKeyMapItem *kmi= wm_keymap_item_find(C, opname, opcontext, properties, 0, NULL);
+	wmKeyMapItem *kmi= wm_keymap_item_find(C, opname, opcontext, properties, 0, sloppy, NULL);
 	
 	if(kmi) {
 		WM_keymap_item_to_string(kmi, str, len);
@@ -894,7 +878,7 @@ char *WM_key_event_operator_string(const bContext *C, const char *opname, int op
 
 int WM_key_event_operator_id(const bContext *C, const char *opname, int opcontext, IDProperty *properties, int hotkey, wmKeyMap **keymap_r)
 {
-	wmKeyMapItem *kmi= wm_keymap_item_find(C, opname, opcontext, properties, hotkey, keymap_r);
+	wmKeyMapItem *kmi= wm_keymap_item_find(C, opname, opcontext, properties, hotkey, TRUE, keymap_r);
 	
 	if(kmi)
 		return kmi->id;

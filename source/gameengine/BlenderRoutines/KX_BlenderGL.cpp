@@ -1,5 +1,4 @@
 /*
- * $Id: KX_BlenderGL.cpp 36083 2011-04-10 09:37:04Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -266,7 +265,7 @@ void BL_MakeScreenShot(ScrArea *curarea, const char* filename)
 		ImBuf *ibuf;
 		BLI_path_abs(path, G.main->name);
 		/* BKE_add_image_extension() checks for if extension was already set */
-		BKE_add_image_extension(path, R_PNG); /* scene->r.imtype */
+		BKE_add_image_extension(path, R_IMF_IMTYPE_PNG); /* scene->r.im_format.imtype */
 		ibuf= IMB_allocImBuf(dumpsx, dumpsy, 24, 0);
 		ibuf->rect= dumprect;
 		ibuf->ftype= PNG;

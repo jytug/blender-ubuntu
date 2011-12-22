@@ -142,7 +142,7 @@ class AddPresetBase():
 
 
 class ExecutePreset(Operator):
-    ''' Executes a preset '''
+    '''Execute a preset'''
     bl_idname = "script.execute_preset"
     bl_label = "Execute a Python Preset"
 
@@ -193,6 +193,25 @@ class AddPresetRender(AddPresetBase, Operator):
     ]
 
     preset_subdir = "render"
+
+
+class AddPresetCamera(AddPresetBase, Operator):
+    '''Add a Camera Preset'''
+    bl_idname = "camera.preset_add"
+    bl_label = "Add Camera Preset"
+    preset_menu = "CAMERA_MT_presets"
+
+    preset_defines = [
+        "cam = bpy.context.object.data"
+    ]
+
+    preset_values = [
+        "cam.sensor_width",
+        "cam.sensor_height",
+        "cam.sensor_fit"
+    ]
+
+    preset_subdir = "camera"
 
 
 class AddPresetSSS(AddPresetBase, Operator):
@@ -300,6 +319,71 @@ class AddPresetInteraction(AddPresetBase, Operator):
     preset_subdir = "interaction"
 
 
+class AddPresetTrackingCamera(AddPresetBase, Operator):
+    '''Add a Tracking Camera Intrinsics  Preset'''
+    bl_idname = "clip.camera_preset_add"
+    bl_label = "Add Camera Preset"
+    preset_menu = "CLIP_MT_camera_presets"
+
+    preset_defines = [
+        "camera = bpy.context.edit_movieclip.tracking.camera"
+    ]
+
+    preset_values = [
+        "camera.sensor_width",
+        "camera.units",
+        "camera.focal_length",
+        "camera.pixel_aspect",
+        "camera.k1",
+        "camera.k2",
+        "camera.k3"
+    ]
+
+    preset_subdir = "tracking_camera"
+
+
+class AddPresetTrackingTrackColor(AddPresetBase, Operator):
+    '''Add a Clip Track Color Preset'''
+    bl_idname = "clip.track_color_preset_add"
+    bl_label = "Add Track Color Preset"
+    preset_menu = "CLIP_MT_track_color_presets"
+
+    preset_defines = [
+        "track = bpy.context.edit_movieclip.tracking.tracks.active"
+    ]
+
+    preset_values = [
+        "track.color",
+        "track.use_custom_color"
+    ]
+
+    preset_subdir = "tracking_track_color"
+
+
+class AddPresetTrackingSettings(AddPresetBase, Operator):
+    '''Add a motion tracking settings preset'''
+    bl_idname = "clip.tracking_settings_preset_add"
+    bl_label = "Add Tracking Settings Preset"
+    preset_menu = "CLIP_MT_tracking_settings_presets"
+
+    preset_defines = [
+        "settings = bpy.context.edit_movieclip.tracking.settings"
+    ]
+
+    preset_values = [
+        "settings.default_tracker",
+        "settings.default_pyramid_levels",
+        "settings.default_correlation_min",
+        "settings.default_pattern_size",
+        "settings.default_search_size",
+        "settings.default_frames_limit",
+        "settings.default_pattern_match",
+        "settings.default_margin"
+    ]
+
+    preset_subdir = "tracking_settings"
+
+
 class AddPresetKeyconfig(AddPresetBase, Operator):
     '''Add a Keyconfig Preset'''
     bl_idname = "wm.keyconfig_preset_add"
@@ -335,9 +419,8 @@ class AddPresetOperator(AddPresetBase, Operator):
             options={'HIDDEN'},
             )
 
-    # XXX, not ideal
     preset_defines = [
-        "op = bpy.context.space_data.operator",
+        "op = bpy.context.active_operator",
     ]
 
     @property
@@ -372,7 +455,7 @@ class WM_MT_operator_presets(Menu):
     bl_label = "Operator Presets"
 
     def draw(self, context):
-        self.operator = context.space_data.operator.bl_idname
+        self.operator = context.active_operator.bl_idname
         Menu.draw_preset(self, context)
 
     @property

@@ -54,7 +54,7 @@ The full-feature importer script from 2.49 will be back in 2.6 release.
 Installation:
 Place this file to Blender addons directory
   (on Windows it is %Blender_directory%\2.53\scripts\addons\)
-You must activate the script in the "Add-Ons" tab (user preferences).
+You must activate the script in the "Addons" tab (user preferences).
 Access it from File > Import menu.
 
 History:
@@ -1224,22 +1224,22 @@ class CText(CEntity):
 
 
 def drawText(text, loc, size, spacing, angle, shear, normal=Vector((0,0,1))):
-        #print('angle_deg=',angle)
-        bpy.ops.object.text_add(
-            view_align=False, 
-            enter_editmode=False, 
-            location= loc, 
-            #rotation=(0, 0, angle), #need radians here
-            )
-        cu = bpy.context.object.data
-        cu.body = text
-        cu.size = size #up 2.56
-        cu.space_word = spacing #up 2.56
-        cu.shear = shear
-        if angle!=0.0 or normal!=Vector((0,0,1)):
-            obj = bpy.context.object
-            transform(normal, angle, obj)
-        return
+    #print('angle_deg=',angle)
+    bpy.ops.object.text_add(
+        view_align=False, 
+        enter_editmode=False, 
+        location= loc, 
+        #rotation=(0, 0, angle), #need radians here
+        )
+    cu = bpy.context.object.data
+    cu.body = text
+    cu.size = size #up 2.56
+    cu.space_word = spacing #up 2.56
+    cu.shear = shear
+    if angle!=0.0 or normal!=Vector((0,0,1)):
+        obj = bpy.context.object
+        transform(normal, angle, obj)
+    return
 
 #
 #    class CTolerance(CEntity):
@@ -2427,9 +2427,6 @@ class IMPORT_OT_autocad_dxf(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     filepath = StringProperty(
-            name="File Path",
-            description="Filepath used for importing the DXF file",
-            maxlen=1024,
             subtype='FILE_PATH',
             )
     new_scene = BoolProperty(
@@ -2448,7 +2445,7 @@ class IMPORT_OT_autocad_dxf(bpy.types.Operator):
             default=toggle & T_Curves,
             )
     thic_on = BoolProperty(
-            name="Thic ON",
+            name="Thick ON",
             description="Support THICKNESS",
             default=toggle & T_ThicON,
             )
@@ -2473,7 +2470,7 @@ class IMPORT_OT_autocad_dxf(bpy.types.Operator):
             )
     circleResolution = IntProperty(
             name="Circle resolution",
-            description="Circle/Arc are aproximated will this factor",
+            description="Circle/Arc are aproximated with this factor",
             default=theCircleRes,
             min=4,
             soft_min=4,

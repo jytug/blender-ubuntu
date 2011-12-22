@@ -1,5 +1,4 @@
 /*
- * $Id: writeffmpeg.c 40903 2011-10-10 09:38:02Z campbellbarton $
  *
  * ffmpeg-write support
  *
@@ -344,8 +343,8 @@ static AVFrame* generate_video_frame(uint8_t* pixels, ReportList *reports)
 
 	if (c->pix_fmt != PIX_FMT_BGR32) {
 		sws_scale(img_convert_ctx, (const uint8_t * const*) rgb_frame->data,
-			  rgb_frame->linesize, 0, c->height, 
-			  current_frame->data, current_frame->linesize);
+		          rgb_frame->linesize, 0, c->height,
+		          current_frame->data, current_frame->linesize);
 		delete_picture(rgb_frame);
 	}
 	return current_frame;
@@ -397,6 +396,20 @@ static void set_ffmpeg_property_option(AVCodecContext* c, IDProperty * prop)
 	}
 }
 
+static int ffmpeg_proprty_valid(AVCodecContext *c, const char *prop_name, IDProperty *curr)
+{
+	int valid= 1;
+
+	if(strcmp(prop_name, "video")==0) {
+		if(strcmp(curr->name, "bf")==0) {
+			/* flash codec doesn't support b frames */
+			valid&= c->codec_id!=CODEC_ID_FLV1;
+		}
+	}
+
+	return valid;
+}
+
 static void set_ffmpeg_properties(RenderData *rd, AVCodecContext *c, const char * prop_name)
 {
 	IDProperty * prop;
@@ -407,8 +420,7 @@ static void set_ffmpeg_properties(RenderData *rd, AVCodecContext *c, const char 
 		return;
 	}
 	
-	prop = IDP_GetPropertyFromGroup(
-		rd->ffcodecdata.properties, (char*) prop_name);
+	prop = IDP_GetPropertyFromGroup(rd->ffcodecdata.properties, prop_name);
 	if (!prop) {
 		return;
 	}
@@ -416,7 +428,8 @@ static void set_ffmpeg_properties(RenderData *rd, AVCodecContext *c, const char 
 	iter = IDP_GetGroupIterator(prop);
 
 	while ((curr = IDP_GroupIterNext(iter)) != NULL) {
-		set_ffmpeg_property_option(c, curr);
+		if(ffmpeg_proprty_valid(c, prop_name, curr))
+			set_ffmpeg_property_option(c, curr);
 	}
 }
 
@@ -1025,8 +1038,7 @@ void ffmpeg_property_del(RenderData *rd, void *type, void *prop_)
 		return;
 	}
 
-	group = IDP_GetPropertyFromGroup(
-		rd->ffcodecdata.properties, (char*) type);
+	group = IDP_GetPropertyFromGroup(rd->ffcodecdata.properties, type);
 	if (group && prop) {
 		IDP_RemFromGroup(group, prop);
 		IDP_FreeProperty(prop);
@@ -1034,7 +1046,7 @@ void ffmpeg_property_del(RenderData *rd, void *type, void *prop_)
 	}
 }
 
-IDProperty *ffmpeg_property_add(RenderData *rd, char * type, int opt_index, int parent_index)
+IDProperty *ffmpeg_property_add(RenderData *rd, const char *type, int opt_index, int parent_index)
 {
 	AVCodecContext c;
 	const AVOption * o;
@@ -1054,14 +1066,13 @@ IDProperty *ffmpeg_property_add(RenderData *rd, char * type, int opt_index, int 
 
 	if (!rd->ffcodecdata.properties) {
 		rd->ffcodecdata.properties 
-			= IDP_New(IDP_GROUP, val, "ffmpeg"); 
+			= IDP_New(IDP_GROUP, &val, "ffmpeg"); 
 	}
 
-	group = IDP_GetPropertyFromGroup(
-		rd->ffcodecdata.properties, (char*) type);
+	group = IDP_GetPropertyFromGroup(rd->ffcodecdata.properties, type);
 	
 	if (!group) {
-		group = IDP_New(IDP_GROUP, val, (char*) type); 
+		group = IDP_New(IDP_GROUP, &val, type);
 		IDP_AddToGroup(rd->ffcodecdata.properties, group);
 	}
 
@@ -1091,7 +1102,9 @@ IDProperty *ffmpeg_property_add(RenderData *rd, char * type, int opt_index, int 
 		idp_type = IDP_FLOAT;
 		break;
 	case FF_OPT_TYPE_STRING:
-		val.str = "                                                                               ";
+		val.string.str = (char *)"                                                                               ";
+		val.string.len = 80;
+/*		val.str = (char *)"                                                                               ";*/
 		idp_type = IDP_STRING;
 		break;
 	case FF_OPT_TYPE_CONST:
@@ -1101,7 +1114,7 @@ IDProperty *ffmpeg_property_add(RenderData *rd, char * type, int opt_index, int 
 	default:
 		return NULL;
 	}
-	prop = IDP_New(idp_type, val, name);
+	prop = IDP_New(idp_type, &val, name);
 	IDP_AddToGroup(group, prop);
 	return prop;
 }
@@ -1191,6 +1204,9 @@ void ffmpeg_set_preset(RenderData *rd, int preset)
 {
 	int isntsc = (rd->frs_sec != 25);
 
+	if(rd->ffcodecdata.properties)
+		IDP_FreeProperty(rd->ffcodecdata.properties);
+
 	switch (preset) {
 	case FFMPEG_PRESET_VCD:
 		rd->ffcodecdata.type = FFMPEG_MPEG1;
@@ -1221,8 +1237,11 @@ void ffmpeg_set_preset(RenderData *rd, int preset)
 	case FFMPEG_PRESET_DVD:
 		rd->ffcodecdata.type = FFMPEG_MPEG2;
 		rd->ffcodecdata.video_bitrate = 6000;
-		rd->xsch = 720;
-		rd->ysch = isntsc ? 480 : 576;
+
+		/* Don't set resolution, see [#21351]
+		 * rd->xsch = 720;
+		 * rd->ysch = isntsc ? 480 : 576; */
+
 		rd->ffcodecdata.gop_size = isntsc ? 18 : 15;
 		rd->ffcodecdata.rc_max_rate = 9000;
 		rd->ffcodecdata.rc_min_rate = 0;
@@ -1318,15 +1337,15 @@ void ffmpeg_verify_image_type(RenderData *rd)
 {
 	int audio= 0;
 
-	if(rd->imtype == R_FFMPEG) {
+	if(rd->imtype == R_IMF_IMTYPE_FFMPEG) {
 		if(rd->ffcodecdata.type <= 0 ||
 		   rd->ffcodecdata.codec <= 0 ||
 		   rd->ffcodecdata.audio_codec <= 0 ||
 		   rd->ffcodecdata.video_bitrate <= 1) {
 
 			rd->ffcodecdata.codec = CODEC_ID_MPEG2VIDEO;
-			/* Don't set preset, disturbs render resolution.
-			 * ffmpeg_set_preset(rd, FFMPEG_PRESET_DVD); */
+
+			ffmpeg_set_preset(rd, FFMPEG_PRESET_DVD);
 		}
 		if(rd->ffcodecdata.type == FFMPEG_OGG) {
 			rd->ffcodecdata.type = FFMPEG_MPEG2;
@@ -1334,19 +1353,19 @@ void ffmpeg_verify_image_type(RenderData *rd)
 
 		audio= 1;
 	}
-	else if(rd->imtype == R_H264) {
+	else if(rd->imtype == R_IMF_IMTYPE_H264) {
 		if(rd->ffcodecdata.codec != CODEC_ID_H264) {
 			ffmpeg_set_preset(rd, FFMPEG_PRESET_H264);
 			audio= 1;
 		}
 	}
-	else if(rd->imtype == R_XVID) {
+	else if(rd->imtype == R_IMF_IMTYPE_XVID) {
 		if(rd->ffcodecdata.codec != CODEC_ID_MPEG4) {
 			ffmpeg_set_preset(rd, FFMPEG_PRESET_XVID);
 			audio= 1;
 		}
 	}
-	else if(rd->imtype == R_THEORA) {
+	else if(rd->imtype == R_IMF_IMTYPE_THEORA) {
 		if(rd->ffcodecdata.codec != CODEC_ID_THEORA) {
 			ffmpeg_set_preset(rd, FFMPEG_PRESET_THEORA);
 			audio= 1;
@@ -1360,4 +1379,3 @@ void ffmpeg_verify_image_type(RenderData *rd)
 }
 
 #endif
-

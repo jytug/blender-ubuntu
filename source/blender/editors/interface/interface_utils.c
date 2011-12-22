@@ -117,7 +117,7 @@ uiBut *uiDefAutoButR(uiBlock *block, PointerRNA *ptr, PropertyRNA *prop, int ind
 		}
 		case PROP_COLLECTION: {
 			char text[256];
-			BLI_snprintf(text, sizeof(text), UI_translate_do_iface(N_("%d items")), RNA_property_collection_length(ptr, prop));
+			BLI_snprintf(text, sizeof(text), IFACE_("%d items"), RNA_property_collection_length(ptr, prop));
 			but= uiDefBut(block, LABEL, 0, text, x1, y1, x2, y2, NULL, 0, 0, 0, 0, NULL);
 			uiButSetFlag(but, UI_BUT_DISABLED);
 			break;
@@ -130,7 +130,7 @@ uiBut *uiDefAutoButR(uiBlock *block, PointerRNA *ptr, PropertyRNA *prop, int ind
 	return but;
 }
 
-int uiDefAutoButsRNA(uiLayout *layout, PointerRNA *ptr, int (*check_prop)(PropertyRNA *), const char label_align)
+int uiDefAutoButsRNA(uiLayout *layout, PointerRNA *ptr, int (*check_prop)(PointerRNA *, PropertyRNA *), const char label_align)
 {
 	uiLayout *split, *col;
 	int flag;
@@ -141,7 +141,7 @@ int uiDefAutoButsRNA(uiLayout *layout, PointerRNA *ptr, int (*check_prop)(Proper
 
 	RNA_STRUCT_BEGIN(ptr, prop) {
 		flag= RNA_property_flag(prop);
-		if(flag & PROP_HIDDEN || (check_prop && check_prop(prop)==FALSE))
+		if(flag & PROP_HIDDEN || (check_prop && check_prop(ptr, prop)==FALSE))
 			continue;
 
 		if(label_align != '\0') {

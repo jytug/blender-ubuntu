@@ -1,6 +1,4 @@
 /*
- * $Id: blf_font.c 41032 2011-10-15 14:14:22Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -124,32 +122,38 @@ static void blf_font_ensure_ascii_table(FontBLF *font)
 /* Note,
  * blf_font_ensure_ascii_table(font); must be called before this macro */
 
-#define BLF_UTF8_NEXT_FAST(font, g, str, i, c, glyph_ascii_table)             \
-	if(((c)= (str)[i]) < 0x80) {                                              \
-		g= (glyph_ascii_table)[c];                                            \
-		i++;                                                                  \
+#define BLF_UTF8_NEXT_FAST(_font, _g, _str, _i, _c, _glyph_ascii_table)       \
+	if(((_c)= (_str)[_i]) < 0x80) {                                           \
+		_g= (_glyph_ascii_table)[_c];                                         \
+		_i++;                                                                 \
 	}                                                                         \
-	else if ((c= blf_utf8_next((unsigned char *)(str), &(i)))) {              \
-		if ((g= blf_glyph_search((font)->glyph_cache, c)) == NULL) {          \
-			g= blf_glyph_add(font, FT_Get_Char_Index((font)->face, c), c);    \
+	else if ((_c= BLI_str_utf8_as_unicode_step(_str, &(_i)))!=BLI_UTF8_ERR) { \
+		if ((_g= blf_glyph_search((_font)->glyph_cache, _c)) == NULL) {       \
+			_g= blf_glyph_add(_font,                                          \
+			                  FT_Get_Char_Index((_font)->face, _c), _c);      \
 		}                                                                     \
 	}                                                                         \
 
 
 #define BLF_KERNING_VARS(_font, _has_kerning, _kern_mode)                     \
-	const short has_kerning= FT_HAS_KERNING((_font)->face);                   \
-	const FT_UInt kern_mode= (has_kerning == 0) ? 0 :                         \
+	const short _has_kerning= FT_HAS_KERNING((_font)->face);                  \
+	const FT_UInt _kern_mode= (_has_kerning == 0) ? 0 :                       \
 	                         (((_font)->flags & BLF_KERNING_DEFAULT) ?        \
 	                          ft_kerning_default : FT_KERNING_UNFITTED)       \
-	                                                                          \
 
 
-#define BLF_KERNING_STEP(_font, kern_mode, g_prev, g, delta, pen_x)           \
+#define BLF_KERNING_STEP(_font, _kern_mode, _g_prev, _g, _delta, _pen_x)      \
 {                                                                             \
-	if (g_prev) {                                                             \
-		delta.x= delta.y= 0;                                                  \
-		if (FT_Get_Kerning((_font)->face, g_prev->idx, g->idx, kern_mode, &delta) == 0) \
-			pen_x += delta.x >> 6;                                            \
+	if (_g_prev) {                                                            \
+		_delta.x= _delta.y= 0;                                                \
+		if (FT_Get_Kerning((_font)->face,                                     \
+		                   (_g_prev)->idx,                                    \
+		                   (_g)->idx,                                         \
+		                   _kern_mode,                                        \
+		                   &(_delta)) == 0)                                   \
+		{                                                                     \
+			_pen_x += delta.x >> 6;                                           \
+		}                                                                     \
 	}                                                                         \
 }                                                                             \
 
@@ -159,7 +163,7 @@ void blf_font_draw(FontBLF *font, const char *str, unsigned int len)
 	GlyphBLF *g, *g_prev= NULL;
 	FT_Vector delta;
 	int pen_x= 0, pen_y= 0;
-	unsigned int i= 0;
+	size_t i= 0;
 	GlyphBLF **glyph_ascii_table= font->glyph_cache->glyph_ascii_table;
 
 	BLF_KERNING_VARS(font, has_kerning, kern_mode);
@@ -170,9 +174,9 @@ void blf_font_draw(FontBLF *font, const char *str, unsigned int len)
 
 		BLF_UTF8_NEXT_FAST(font, g, str, i, c, glyph_ascii_table);
 
-		if (c == 0)      break;
-		if (g == NULL)   continue;
-		if (has_kerning) BLF_KERNING_STEP(font, kern_mode, g_prev, g, delta, pen_x);
+		if (c == BLI_UTF8_ERR)  break;
+		if (g == NULL)          continue;
+		if (has_kerning)        BLF_KERNING_STEP(font, kern_mode, g_prev, g, delta, pen_x);
 
 		/* do not return this loop if clipped, we want every character tested */
 		blf_glyph_render(font, g, (float)pen_x, (float)pen_y);
@@ -214,7 +218,7 @@ void blf_font_buffer(FontBLF *font, const char *str)
 	GlyphBLF *g, *g_prev= NULL;
 	FT_Vector delta;
 	int pen_x= (int)font->pos[0], pen_y= 0;
-	unsigned int i= 0;
+	size_t i= 0;
 	GlyphBLF **glyph_ascii_table= font->glyph_cache->glyph_ascii_table;
 
 	/* buffer specific vars*/
@@ -235,9 +239,9 @@ void blf_font_buffer(FontBLF *font, const char *str)
 
 		BLF_UTF8_NEXT_FAST(font, g, str, i, c, glyph_ascii_table);
 
-		if (c == 0)      break;
-		if (g == NULL)   continue;
-		if (has_kerning) BLF_KERNING_STEP(font, kern_mode, g_prev, g, delta, pen_x);
+		if (c == BLI_UTF8_ERR)  break;
+		if (g == NULL)          continue;
+		if (has_kerning)        BLF_KERNING_STEP(font, kern_mode, g_prev, g, delta, pen_x);
 
 		chx= pen_x + ((int)g->pos_x);
 		chy= (int)font->pos[1] + g->height;
@@ -340,7 +344,7 @@ void blf_font_boundbox(FontBLF *font, const char *str, rctf *box)
 	GlyphBLF *g, *g_prev= NULL;
 	FT_Vector delta;
 	int pen_x= 0, pen_y= 0;
-	unsigned int i= 0;
+	size_t i= 0;
 	GlyphBLF **glyph_ascii_table= font->glyph_cache->glyph_ascii_table;
 
 	rctf gbox;
@@ -358,9 +362,9 @@ void blf_font_boundbox(FontBLF *font, const char *str, rctf *box)
 
 		BLF_UTF8_NEXT_FAST(font, g, str, i, c, glyph_ascii_table);
 
-		if (c == 0)      break;
-		if (g == NULL)   continue;
-		if (has_kerning) BLF_KERNING_STEP(font, kern_mode, g_prev, g, delta, pen_x);
+		if (c == BLI_UTF8_ERR)  break;
+		if (g == NULL)          continue;
+		if (has_kerning)        BLF_KERNING_STEP(font, kern_mode, g_prev, g, delta, pen_x);
 
 		gbox.xmin= pen_x;
 		gbox.xmax= pen_x + g->advance;

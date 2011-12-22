@@ -1,6 +1,4 @@
 /*
- * $Id: wm_files.c 40755 2011-10-02 21:21:14Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -157,8 +155,9 @@ static void wm_window_match_init(bContext *C, ListBase *wmlist)
 	CTX_wm_window_set(C, active_win);
 
 	ED_editors_exit(C);
-	
-return;	
+
+	/* just had return; here from r12991, this code could just get removed?*/
+#if 0
 	if(wm==NULL) return;
 	if(G.fileflags & G_FILE_NO_UI) return;
 	
@@ -170,6 +169,7 @@ return;
 			//BLI_addtail(screenbase, win->screen);
 		}
 	}
+#endif
 }
 
 /* match old WM with new, 4 cases:
@@ -195,9 +195,10 @@ static void wm_window_match_do(bContext *C, ListBase *oldwmlist)
 		
 		/* we've read file without wm..., keep current one entirely alive */
 		if(G.main->wm.first==NULL) {
+			bScreen *screen= NULL;
+
 			/* when loading without UI, no matching needed */
-			if(!(G.fileflags & G_FILE_NO_UI)) {
-				bScreen *screen= CTX_wm_screen(C);
+			if(!(G.fileflags & G_FILE_NO_UI) && (screen= CTX_wm_screen(C))) {
 
 				/* match oldwm to new dbase, only old files */
 				for(wm= oldwmlist->first; wm; wm= wm->id.next) {
@@ -289,8 +290,9 @@ static void wm_init_userdef(bContext *C)
 		if ((U.flag & USER_SCRIPT_AUTOEXEC_DISABLE) == 0) G.f |=  G_SCRIPT_AUTOEXEC;
 		else											  G.f &= ~G_SCRIPT_AUTOEXEC;
 	}
+
 	/* update tempdir from user preferences */
-	BLI_where_is_temp(btempdir, FILE_MAX, 1);
+	BLI_init_temporary_dir(U.tempdir);
 }
 
 
@@ -360,7 +362,7 @@ void WM_read_file(bContext *C, const char *filepath, ReportList *reports)
 	BLI_exec_cb(CTX_data_main(C), NULL, BLI_CB_EVT_LOAD_PRE);
 
 	/* first try to append data from exotic file formats... */
-	/* it throws error box when file doesnt exist and returns -1 */
+	/* it throws error box when file doesn't exist and returns -1 */
 	/* note; it should set some error message somewhere... (ton) */
 	retval= wm_read_exotic(CTX_data_scene(C), filepath);
 	
@@ -369,7 +371,7 @@ void WM_read_file(bContext *C, const char *filepath, ReportList *reports)
 		int G_f= G.f;
 		ListBase wmbase;
 
-		/* put aside screens to match with persistant windows later */
+		/* put aside screens to match with persistent windows later */
 		/* also exit screens and editors */
 		wm_window_match_init(C, &wmbase); 
 		
@@ -409,7 +411,7 @@ void WM_read_file(bContext *C, const char *filepath, ReportList *reports)
 #ifdef WITH_PYTHON
 		/* run any texts that were loaded in and flagged as modules */
 		BPY_driver_reset();
-		BPY_app_handlers_reset();
+		BPY_app_handlers_reset(FALSE);
 		BPY_modules_load_user(C);
 #endif
 
@@ -437,17 +439,17 @@ void WM_read_file(bContext *C, const char *filepath, ReportList *reports)
 	else if(retval == BKE_READ_EXOTIC_OK_OTHER)
 		BKE_write_undo(C, "Import file");
 	else if(retval == BKE_READ_EXOTIC_FAIL_OPEN) {
-		BKE_reportf(reports, RPT_ERROR, UI_translate_do_iface(N_("Can't read file: \"%s\", %s.")), filepath,
-				errno ? strerror(errno) : UI_translate_do_iface(N_("Unable to open the file")));
+		BKE_reportf(reports, RPT_ERROR, IFACE_("Can't read file: \"%s\", %s."), filepath,
+				errno ? strerror(errno) : IFACE_("Unable to open the file"));
 	}
 	else if(retval == BKE_READ_EXOTIC_FAIL_FORMAT) {
-		BKE_reportf(reports, RPT_ERROR, UI_translate_do_iface(N_("File format is not supported in file: \"%s\".")), filepath);
+		BKE_reportf(reports, RPT_ERROR, IFACE_("File format is not supported in file: \"%s\"."), filepath);
 	}
 	else if(retval == BKE_READ_EXOTIC_FAIL_PATH) {
-		BKE_reportf(reports, RPT_ERROR, UI_translate_do_iface(N_("File path invalid: \"%s\".")), filepath);
+		BKE_reportf(reports, RPT_ERROR, IFACE_("File path invalid: \"%s\"."), filepath);
 	}
 	else {
-		BKE_reportf(reports, RPT_ERROR, UI_translate_do_iface(N_("Unknown error loading: \"%s\".")), filepath);
+		BKE_reportf(reports, RPT_ERROR, IFACE_("Unknown error loading: \"%s\"."), filepath);
 		BLI_assert(!"invalid 'retval'");
 	}
 
@@ -462,7 +464,7 @@ void WM_read_file(bContext *C, const char *filepath, ReportList *reports)
 int WM_read_homefile(bContext *C, ReportList *UNUSED(reports), short from_memory)
 {
 	ListBase wmbase;
-	char tstr[FILE_MAXDIR+FILE_MAXFILE];
+	char tstr[FILE_MAX];
 	int success= 0;
 	
 	free_ttfont(); /* still weird... what does it here? */
@@ -481,7 +483,7 @@ int WM_read_homefile(bContext *C, ReportList *UNUSED(reports), short from_memory
 	/* prevent loading no UI */
 	G.fileflags &= ~G_FILE_NO_UI;
 	
-	/* put aside screens to match with persistant windows later */
+	/* put aside screens to match with persistent windows later */
 	wm_window_match_init(C, &wmbase); 
 	
 	if (!from_memory && BLI_exists(tstr)) {
@@ -539,7 +541,7 @@ int WM_read_homefile(bContext *C, ReportList *UNUSED(reports), short from_memory
 		BPY_string_exec(C, "__import__('addon_utils').reset_all()");
 
 		BPY_driver_reset();
-		BPY_app_handlers_reset();
+		BPY_app_handlers_reset(FALSE);
 		BPY_modules_load_user(C);
 	}
 #endif
@@ -573,11 +575,11 @@ void WM_read_history(void)
 
 	BLI_make_file_string("/", name, cfgdir, BLENDER_HISTORY_FILE);
 
-	lines= BLI_read_file_as_lines(name);
+	lines= BLI_file_read_as_lines(name);
 
 	G.recent_files.first = G.recent_files.last = NULL;
 
-	/* read list of recent opend files from recent-files.txt to memory */
+	/* read list of recent opened files from recent-files.txt to memory */
 	for (l= lines, num= 0; l && (num<U.recent_files); l= l->next) {
 		line = l->link;
 		if (line[0] && BLI_exists(line)) {
@@ -588,14 +590,14 @@ void WM_read_history(void)
 		}
 	}
 	
-	BLI_free_file_lines(lines);
+	BLI_file_free_lines(lines);
 
 }
 
 static void write_history(void)
 {
 	struct RecentFile *recent, *next_recent;
-	char name[FILE_MAXDIR+FILE_MAXFILE];
+	char name[FILE_MAX];
 	char *user_config_dir;
 	FILE *fp;
 	int i;
@@ -734,7 +736,7 @@ int WM_write_file(bContext *C, const char *target, int fileflags, ReportList *re
 	/* send the OnSave event */
 	for (li= G.main->library.first; li; li= li->id.next) {
 		if (BLI_path_cmp(li->filepath, filepath) == 0) {
-			BKE_reportf(reports, RPT_ERROR, "Can't overwrite used library '%.200s'", filepath);
+			BKE_reportf(reports, RPT_ERROR, "Can't overwrite used library '%.240s'", filepath);
 			return -1;
 		}
 	}
@@ -808,7 +810,7 @@ int WM_write_homefile(bContext *C, wmOperator *op)
 {
 	wmWindowManager *wm= CTX_wm_manager(C);
 	wmWindow *win= CTX_wm_window(C);
-	char filepath[FILE_MAXDIR+FILE_MAXFILE];
+	char filepath[FILE_MAX];
 	int fileflags;
 
 	/* check current window and close it if temp */
@@ -856,14 +858,14 @@ void wm_autosave_location(char *filepath)
 	 * BLI_make_file_string will create string that has it most likely on C:\
 	 * through get_default_root().
 	 * If there is no C:\tmp autosave fails. */
-	if (!BLI_exists(btempdir)) {
+	if (!BLI_exists(BLI_temporary_dir())) {
 		savedir = BLI_get_folder_create(BLENDER_USER_AUTOSAVE, NULL);
 		BLI_make_file_string("/", filepath, savedir, pidstr);
 		return;
 	}
 #endif
 
-	BLI_make_file_string("/", filepath, btempdir, pidstr);
+	BLI_make_file_string("/", filepath, BLI_temporary_dir(), pidstr);
 }
 
 void WM_autosave_init(wmWindowManager *wm)
@@ -920,8 +922,8 @@ void wm_autosave_delete(void)
 	wm_autosave_location(filename);
 
 	if(BLI_exists(filename)) {
-		char str[FILE_MAXDIR+FILE_MAXFILE];
-		BLI_make_file_string("/", str, btempdir, "quit.blend");
+		char str[FILE_MAX];
+		BLI_make_file_string("/", str, BLI_temporary_dir(), "quit.blend");
 
 		/* if global undo; remove tempsave, otherwise rename */
 		if(U.uiflag & USER_GLOBALUNDO) BLI_delete(filename, 0, 0);

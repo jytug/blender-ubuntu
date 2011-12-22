@@ -1,6 +1,5 @@
 /*
  *
- * $Id: imagetexture.c 40162 2011-09-12 13:00:24Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -89,11 +88,11 @@ static void ibuf_get_color(float *col, struct ImBuf *ibuf, int x, int y)
 	if(ibuf->rect_float) {
 		if(ibuf->channels==4) {
 			float *fp= ibuf->rect_float + 4*ofs;
-			QUATCOPY(col, fp);
+			copy_v4_v4(col, fp);
 		}
 		else if(ibuf->channels==3) {
 			float *fp= ibuf->rect_float + 3*ofs;
-			VECCOPY(col, fp);
+			copy_v3_v3(col, fp);
 			col[3]= 1.0f;
 		}
 		else {
@@ -1093,7 +1092,7 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 
 	if (tex->imaflag & TEX_FILTER_MIN) {
 		// make sure the filtersize is minimal in pixels (normal, ref map can have miniature pixel dx/dy)
-		 const float addval = (0.5f * tex->filtersize) / (float)MIN2(ibuf->x, ibuf->y);
+		const float addval = (0.5f * tex->filtersize) / (float)MIN2(ibuf->x, ibuf->y);
 		if (addval > minx) minx = addval;
 		if (addval > miny) miny = addval;
 	}

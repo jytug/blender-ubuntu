@@ -1,7 +1,6 @@
 /*
  * tiff.c
  *
- * $Id: tiff.c 40340 2011-09-19 06:32:19Z campbellbarton $
  * 
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -405,7 +404,7 @@ static int imb_read_tiff_pixels(ImBuf *ibuf, TIFF *image, int premul)
 		ib_flag = IB_rect;
 	}
 	
-	tmpibuf= IMB_allocImBuf(ibuf->x, ibuf->y, ibuf->depth, ib_flag);
+	tmpibuf= IMB_allocImBuf(ibuf->x, ibuf->y, ibuf->planes, ib_flag);
 	
 	/* simple RGBA image */
 	if (!(bitspersample == 32 || bitspersample == 16)) {
@@ -686,7 +685,7 @@ int imb_savetiff(ImBuf *ibuf, const char *name, int flags)
 	/* check for a valid number of bytes per pixel.  Like the PNG writer,
 	 * the TIFF writer supports 1, 3 or 4 bytes per pixel, corresponding
 	 * to gray, RGB, RGBA respectively. */
-	samplesperpixel = (uint16)((ibuf->depth + 7) >> 3);
+	samplesperpixel = (uint16)((ibuf->planes + 7) >> 3);
 	if((samplesperpixel > 4) || (samplesperpixel == 2)) {
 		fprintf(stderr,
 			"imb_savetiff: unsupported number of bytes per " 

@@ -1,6 +1,4 @@
 /*
- * $Id: math_matrix.c 40162 2011-09-12 13:00:24Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -428,9 +426,9 @@ void mul_m3_v3_double(float mat[][3], double vec[3])
 
 	x=vec[0]; 
 	y=vec[1];
-	vec[0]= x*mat[0][0] + y*mat[1][0] + mat[2][0]*vec[2];
-	vec[1]= x*mat[0][1] + y*mat[1][1] + mat[2][1]*vec[2];
-	vec[2]= x*mat[0][2] + y*mat[1][2] + mat[2][2]*vec[2];
+	vec[0]= x*(double)mat[0][0] + y*(double)mat[1][0] + (double)mat[2][0]*vec[2];
+	vec[1]= x*(double)mat[0][1] + y*(double)mat[1][1] + (double)mat[2][1]*vec[2];
+	vec[2]= x*(double)mat[0][2] + y*(double)mat[1][2] + (double)mat[2][2]*vec[2];
 }
 
 void add_m3_m3m3(float m1[][3], float m2[][3], float m3[][3])
@@ -1123,18 +1121,18 @@ void blend_m3_m3m3(float out[][3], float dst[][3], float src[][3], const float s
 {
 	float srot[3][3], drot[3][3];
 	float squat[4], dquat[4], fquat[4];
-	float ssize[3], dsize[3], fsize[3];
+	float sscale[3], dscale[3], fsize[3];
 	float rmat[3][3], smat[3][3];
 	
-	mat3_to_rot_size(drot, dsize, dst);
-	mat3_to_rot_size(srot, ssize, src);
+	mat3_to_rot_size(drot, dscale, dst);
+	mat3_to_rot_size(srot, sscale, src);
 
 	mat3_to_quat(dquat, drot);
 	mat3_to_quat(squat, srot);
 
 	/* do blending */
 	interp_qt_qtqt(fquat, dquat, squat, srcweight);
-	interp_v3_v3v3(fsize, dsize, ssize, srcweight);
+	interp_v3_v3v3(fsize, dscale, sscale, srcweight);
 
 	/* compose new matrix */
 	quat_to_mat3(rmat,fquat);
@@ -1147,10 +1145,10 @@ void blend_m4_m4m4(float out[][4], float dst[][4], float src[][4], const float s
 	float sloc[3], dloc[3], floc[3];
 	float srot[3][3], drot[3][3];
 	float squat[4], dquat[4], fquat[4];
-	float ssize[3], dsize[3], fsize[3];
+	float sscale[3], dscale[3], fsize[3];
 
-	mat4_to_loc_rot_size(dloc, drot, dsize, dst);
-	mat4_to_loc_rot_size(sloc, srot, ssize, src);
+	mat4_to_loc_rot_size(dloc, drot, dscale, dst);
+	mat4_to_loc_rot_size(sloc, srot, sscale, src);
 
 	mat3_to_quat(dquat, drot);
 	mat3_to_quat(squat, srot);
@@ -1158,7 +1156,7 @@ void blend_m4_m4m4(float out[][4], float dst[][4], float src[][4], const float s
 	/* do blending */
 	interp_v3_v3v3(floc, dloc, sloc, srcweight);
 	interp_qt_qtqt(fquat, dquat, squat, srcweight);
-	interp_v3_v3v3(fsize, dsize, ssize, srcweight);
+	interp_v3_v3v3(fsize, dscale, sscale, srcweight);
 
 	/* compose new matrix */
 	loc_quat_size_to_mat4(out, floc, fquat, fsize);

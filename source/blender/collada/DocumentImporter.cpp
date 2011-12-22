@@ -1,6 +1,4 @@
 /*
- * $Id: DocumentImporter.cpp 41021 2011-10-15 03:56:05Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -56,7 +54,9 @@
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
 
+#include "BKE_camera.h"
 #include "BKE_main.h"
+#include "BKE_lamp.h"
 #include "BKE_library.h"
 #include "BKE_texture.h"
 #include "BKE_fcurve.h"
@@ -816,7 +816,7 @@ bool DocumentImporter::writeCamera( const COLLADAFW::Camera* camera )
 						double aspect = camera->getAspectRatio().getValue();
 						double xfov = aspect*yfov;
 						// xfov is in degrees, cam->lens is in millimiters
-						cam->lens = angle_to_lens(DEG2RADF(xfov));
+						cam->lens = fov_to_focallength(DEG2RADF(xfov), cam->sensor_x);
 					}
 					break;
 			}
@@ -837,7 +837,7 @@ bool DocumentImporter::writeCamera( const COLLADAFW::Camera* camera )
 					{
 						double x = camera->getXFov().getValue();
 						// x is in degrees, cam->lens is in millimiters
-						cam->lens = angle_to_lens(DEG2RADF(x));
+						cam->lens = fov_to_focallength(DEG2RADF(x), cam->sensor_x);
 					}
 					break;
 			}
@@ -854,7 +854,7 @@ bool DocumentImporter::writeCamera( const COLLADAFW::Camera* camera )
 					{
 					double yfov = camera->getYFov().getValue();
 					// yfov is in degrees, cam->lens is in millimiters
-					cam->lens = angle_to_lens(DEG2RADF(yfov));
+					cam->lens = fov_to_focallength(DEG2RADF(yfov), cam->sensor_x);
 					}
 					break;
 			}
@@ -884,7 +884,7 @@ bool DocumentImporter::writeImage( const COLLADAFW::Image* image )
 	char dir[FILE_MAX];
 	char full_path[FILE_MAX];
 	
-	BLI_split_dirfile(filename, dir, NULL, sizeof(dir), 0);
+	BLI_split_dir_part(filename, dir, sizeof(dir));
 	BLI_join_dirfile(full_path, sizeof(full_path), dir, filepath.c_str());
 	Image *ima = BKE_add_image_file(full_path);
 	if (!ima) {

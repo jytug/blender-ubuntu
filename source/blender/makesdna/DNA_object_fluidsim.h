@@ -1,6 +1,5 @@
 /*
  *
- * $Id: DNA_object_fluidsim.h 37441 2011-06-12 23:51:30Z genscher $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -178,6 +177,11 @@ typedef struct FluidsimSettings {
 #define OB_FLUIDSIM_REVERSE			(1 << 0)
 #define OB_FLUIDSIM_ACTIVE			(1 << 1)
 #define OB_FLUIDSIM_OVERRIDE_TIME	(1 << 2)
+
+#define OB_FLUIDSIM_SURF_PREVIEW_OBJ_FNAME "fluidsurface_preview_####.bobj.gz"
+#define OB_FLUIDSIM_SURF_FINAL_OBJ_FNAME   "fluidsurface_final_####.bobj.gz"
+#define OB_FLUIDSIM_SURF_FINAL_VEL_FNAME   "fluidsurface_final_####.bvel.gz"
+#define OB_FLUIDSIM_SURF_PARTICLES_FNAME   "fluidsurface_particles_####.gz"
 
 #ifdef __cplusplus
 }

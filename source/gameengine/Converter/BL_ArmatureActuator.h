@@ -1,6 +1,4 @@
 /*
- * $Id: BL_ArmatureActuator.h 36523 2011-05-06 20:18:42Z blendix $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -48,7 +46,7 @@
 
 class	BL_ArmatureActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 public:
 	BL_ArmatureActuator(SCA_IObject* gameobj,
 						int type,

@@ -169,7 +169,7 @@ static IDProperty *rna_Bone_idprops(PointerRNA *ptr, int create)
 
 	if(create && !bone->prop) {
 		IDPropertyTemplate val = {0};
-		bone->prop= IDP_New(IDP_GROUP, val, "RNA_Bone ID properties");
+		bone->prop= IDP_New(IDP_GROUP, &val, "RNA_Bone ID properties");
 	}
 
 	return bone->prop;
@@ -181,7 +181,7 @@ static IDProperty *rna_EditBone_idprops(PointerRNA *ptr, int create)
 
 	if(create && !ebone->prop) {
 		IDPropertyTemplate val = {0};
-		ebone->prop= IDP_New(IDP_GROUP, val, "RNA_EditBone ID properties");
+		ebone->prop= IDP_New(IDP_GROUP, &val, "RNA_EditBone ID properties");
 	}
 
 	return ebone->prop;
@@ -283,7 +283,7 @@ static void rna_EditBone_connected_check(EditBone *ebone)
 	if(ebone->parent) {
 		if(ebone->flag & BONE_CONNECTED) {
 			/* Attach this bone to its parent */
-			VECCOPY(ebone->head, ebone->parent->tail);
+			copy_v3_v3(ebone->head, ebone->parent->tail);
 
 			if(ebone->flag & BONE_ROOTSEL)
 				ebone->parent->flag |= BONE_TIPSEL;
@@ -350,7 +350,7 @@ static void rna_EditBone_matrix_get(PointerRNA *ptr, float *values)
 	sub_v3_v3v3(delta, ebone->tail, ebone->head);
 	vec_roll_to_mat3(delta, ebone->roll, tmat);
 	copy_m4_m3(mat, tmat);
-	VECCOPY(mat[3], ebone->head);
+	copy_v3_v3(mat[3], ebone->head);
 
 	memcpy(values, mat, 16 * sizeof(float));
 }
@@ -363,12 +363,12 @@ static void rna_Armature_editbone_transform_update(Main *bmain, Scene *scene, Po
 	
 	/* update our parent */
 	if(ebone->parent && ebone->flag & BONE_CONNECTED)
-		VECCOPY(ebone->parent->tail, ebone->head)
+		copy_v3_v3(ebone->parent->tail, ebone->head);
 
 	/* update our children if necessary */
 	for(child = arm->edbo->first; child; child=child->next)
 		if(child->parent == ebone && (child->flag & BONE_CONNECTED))
-			VECCOPY(child->head, ebone->tail);
+			copy_v3_v3(child->head, ebone->tail);
 
 	if(arm->flag & ARM_MIRROR_EDIT) {
 		eboflip= ED_armature_bone_get_mirrored(arm->edbo, ebone);
@@ -381,12 +381,12 @@ static void rna_Armature_editbone_transform_update(Main *bmain, Scene *scene, Po
 			
 			/* update our parent */
 			if(eboflip->parent && eboflip->flag & BONE_CONNECTED)
-				VECCOPY(eboflip->parent->tail, eboflip->head);
+				copy_v3_v3(eboflip->parent->tail, eboflip->head);
 			
 			/* update our children if necessary */
 			for(child = arm->edbo->first; child; child=child->next)
 				if(child->parent == eboflip && (child->flag & BONE_CONNECTED))
-					VECCOPY (child->head, eboflip->tail);
+					copy_v3_v3 (child->head, eboflip->tail);
 		}
 	}
 
@@ -820,8 +820,8 @@ static void rna_def_armature(BlenderRNA *brna)
 		{ARM_WIRE, "WIRE", 0, "Wire", "Display bones as thin wires, showing subdivision and B-Splines"},
 		{0, NULL, 0, NULL, NULL}};
 	static EnumPropertyItem prop_vdeformer[] = {
-		{ARM_VDEF_BLENDER, "BLENDER", 0, "Blender", "Uses Blender's armature vertex deformation"},
-		{ARM_VDEF_BGE_CPU, "BGE_CPU", 0, "BGE", "Uses vertex deformation code optimized for the BGE"},
+		{ARM_VDEF_BLENDER, "BLENDER", 0, "Blender", "Use Blender's armature vertex deformation"},
+		{ARM_VDEF_BGE_CPU, "BGE_CPU", 0, "BGE", "Use vertex deformation code optimized for the BGE"},
 		{0, NULL, 0, NULL, NULL}};
 	static EnumPropertyItem prop_ghost_type_items[] = {
 		{ARM_GHOST_CUR, "CURRENT_FRAME", 0, "Around Frame",
@@ -831,7 +831,7 @@ static void rna_def_armature(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 	static const EnumPropertyItem prop_pose_position_items[]= {
 		{0, "POSE", 0, "Pose Position", "Show armature in posed state"},
-		{ARM_RESTPOS, "REST", 0, "Rest Position", "Show Armature in binding pose state. No posing possible"},
+		{ARM_RESTPOS, "REST", 0, "Rest Position", "Show Armature in binding pose state (no posing possible)"},
 		{0, NULL, 0, NULL, NULL}};
 	
 	srna= RNA_def_struct(brna, "Armature", "ID");

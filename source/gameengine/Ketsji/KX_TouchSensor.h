@@ -1,6 +1,4 @@
 /*
- * $Id: KX_TouchSensor.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -53,7 +51,7 @@ class KX_TouchEventManager;
 class KX_TouchSensor : public SCA_ISensor
 {
 protected:
-	Py_Header;
+	Py_Header
 
 	/**
 	 * The sensor should only look for objects with this property.

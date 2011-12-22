@@ -1,7 +1,6 @@
 /*
  * SCA_DelaySensor.h
  *
- * $Id: SCA_DelaySensor.h 35063 2011-02-22 10:33:14Z jesterking $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -39,7 +38,7 @@
 
 class SCA_DelaySensor : public SCA_ISensor
 {
-	Py_Header;
+	Py_Header
 	bool			m_lastResult;
 	bool			m_repeat;
 	int				m_delay; 

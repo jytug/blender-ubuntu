@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_writeavi.h 34962 2011-02-18 13:05:18Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -52,7 +50,7 @@ typedef struct bMovieHandle {
 	void (*get_movie_path)(char *string, struct RenderData *rd); /* optional */
 } bMovieHandle;
 
-bMovieHandle *BKE_get_movie_handle(int imtype);
+bMovieHandle *BKE_get_movie_handle(const char imtype);
 void BKE_makeanimstring(char *string, struct RenderData *rd);
 
 #ifdef __cplusplus

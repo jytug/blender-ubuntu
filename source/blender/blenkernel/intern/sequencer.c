@@ -1,6 +1,4 @@
 /*
- * $Id: sequencer.c 41021 2011-10-15 03:56:05Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -61,8 +59,9 @@
 #include "BKE_sequencer.h"
 #include "BKE_fcurve.h"
 #include "BKE_scene.h"
-#include "RNA_access.h"
 #include "BKE_utildefines.h"
+
+#include "RNA_access.h"
 
 #include "RE_pipeline.h"
 
@@ -595,6 +594,9 @@ void calc_sequence(Scene *scene, Sequence *seq)
 		// seq->enddisp= MIN2(seq->seq1->enddisp, seq->seq2->enddisp);
 
 		if (seq->seq1) {
+			/* XXX These resets should not be necessary, but users used to be able to
+			 *     edit effect's length, leading to strange results. See #29190. */
+			seq->startofs = seq->endofs = seq->startstill = seq->endstill = 0;
 			seq->start= seq->startdisp= MAX3(seq->seq1->startdisp, seq->seq2->startdisp, seq->seq3->startdisp);
 			seq->enddisp= MIN3(seq->seq1->enddisp, seq->seq2->enddisp, seq->seq3->enddisp);
 			/* we cant help if strips don't overlap, it wont give useful results.
@@ -650,7 +652,7 @@ void calc_sequence(Scene *scene, Sequence *seq)
 /* note: caller should run calc_sequence(scene, seq) after */
 void reload_sequence_new_file(Scene *scene, Sequence * seq, int lock_range)
 {
-	char str[FILE_MAXDIR+FILE_MAXFILE];
+	char str[FILE_MAX];
 	int prev_startdisp=0, prev_enddisp=0;
 	/* note: dont rename the strip, will break animation curves */
 
@@ -866,8 +868,8 @@ void seqbase_unique_name_recursive(ListBase *seqbasep, struct Sequence *seq)
 	SeqUniqueInfo sui;
 	char *dot;
 	sui.seq= seq;
-	strcpy(sui.name_src, seq->name+2);
-	strcpy(sui.name_dest, seq->name+2);
+	BLI_strncpy(sui.name_src, seq->name+2, sizeof(sui.name_src));
+	BLI_strncpy(sui.name_dest, seq->name+2, sizeof(sui.name_dest));
 
 	sui.count= 1;
 	sui.match= 1; /* assume the worst to start the loop */
@@ -887,7 +889,7 @@ void seqbase_unique_name_recursive(ListBase *seqbasep, struct Sequence *seq)
 		seqbase_recursive_apply(seqbasep, seqbase_unique_name_recursive_cb, &sui);
 	}
 
-	strcpy(seq->name+2, sui.name_dest);
+	BLI_strncpy(seq->name+2, sui.name_dest, sizeof(seq->name)-2);
 }
 
 static const char *give_seqname_by_type(int type)
@@ -1154,20 +1156,20 @@ static IMB_Proxy_Size seq_rendersize_to_proxysize(int size)
 
 static void seq_open_anim_file(Sequence * seq)
 {
-	char name[FILE_MAXDIR+FILE_MAXFILE];
+	char name[FILE_MAX];
 	StripProxy * proxy;
 
 	if(seq->anim != NULL) {
 		return;
 	}
 
-	BLI_join_dirfile(name, sizeof(name), 
-			 seq->strip->dir, seq->strip->stripdata->name);
+	BLI_join_dirfile(name, sizeof(name),
+	                 seq->strip->dir, seq->strip->stripdata->name);
 	BLI_path_abs(name, G.main->name);
 	
 	seq->anim = openanim(name, IB_rect |
-			     ((seq->flag & SEQ_FILTERY) ? 
-			      IB_animdeinterlace : 0), seq->streamindex);
+	                     ((seq->flag & SEQ_FILTERY) ?
+	                          IB_animdeinterlace : 0), seq->streamindex);
 
 	if (seq->anim == NULL) {
 		return;
@@ -1204,7 +1206,7 @@ static int seq_proxy_get_fname(SeqRenderData context, Sequence * seq, int cfra, 
 	   sorry folks, please rebuild your proxies... */
 
 	if (seq->flag & (SEQ_USE_PROXY_CUSTOM_DIR|SEQ_USE_PROXY_CUSTOM_FILE)) {
-		strcpy(dir, seq->strip->proxy->dir);
+		BLI_strncpy(dir, seq->strip->proxy->dir, sizeof(dir));
 	} else if (seq->type == SEQ_IMAGE) {
 		BLI_snprintf(dir, PROXY_MAXFILE, "%s/BL_proxy", seq->strip->dir);
 	} else {
@@ -1212,8 +1214,8 @@ static int seq_proxy_get_fname(SeqRenderData context, Sequence * seq, int cfra, 
 	}
 
 	if (seq->flag & SEQ_USE_PROXY_CUSTOM_FILE) {
-		BLI_join_dirfile(name, PROXY_MAXFILE, 
-				 dir, seq->strip->proxy->file);
+		BLI_join_dirfile(name, PROXY_MAXFILE,
+		                 dir, seq->strip->proxy->file);
 		BLI_path_abs(name, G.main->name);
 
 		return TRUE;
@@ -1228,14 +1230,13 @@ static int seq_proxy_get_fname(SeqRenderData context, Sequence * seq, int cfra, 
 
 	if (seq->type == SEQ_IMAGE) {
 		BLI_snprintf(name, PROXY_MAXFILE, "%s/images/%d/%s_proxy", dir,
-			 context.preview_render_size, 
-			 give_stripelem(seq, cfra)->name);
+		             context.preview_render_size,
+		             give_stripelem(seq, cfra)->name);
 		frameno = 1;
 	} else {
-		frameno = (int) give_stripelem_index(seq, cfra) 
-			+ seq->anim_startofs;
+		frameno = (int) give_stripelem_index(seq, cfra) + seq->anim_startofs;
 		BLI_snprintf(name, PROXY_MAXFILE, "%s/proxy_misc/%d/####", dir, 
-			 context.preview_render_size);
+		             context.preview_render_size);
 	}
 
 	BLI_path_abs(name, G.main->name);
@@ -1324,6 +1325,10 @@ static void seq_proxy_build_frame(SeqRenderData context,
 	   won't work... */
 	quality = seq->strip->proxy->quality;
 	ibuf->ftype= JPG | quality;
+
+	/* unsupported feature only confuses other s/w */
+	if(ibuf->planes==32)
+		ibuf->planes= 24;
 
 	BLI_make_existing_file(name);
 	
@@ -1501,7 +1506,7 @@ static void color_balance_byte_byte(Sequence * seq, ImBuf* ibuf, float mul)
 
 	for (c = 0; c < 3; c++) {
 		make_cb_table_byte(cb.lift[c], cb.gain[c], cb.gamma[c],
-				   cb_tab[c], mul);
+		                   cb_tab[c], mul);
 	}
 
 	while (p < e) {
@@ -1724,7 +1729,7 @@ static ImBuf * input_preprocess(
 	}
 
 	if(seq->flag & SEQ_MAKE_PREMUL) {
-		if(ibuf->depth == 32 && ibuf->zbuf == NULL) {
+		if(ibuf->planes == 32 && ibuf->zbuf == NULL) {
 			IMB_premultiply_alpha(ibuf);
 		}
 	}
@@ -1844,14 +1849,14 @@ static ImBuf* seq_render_effect_strip_impl(
 
 	switch (early_out) {
 	case EARLY_NO_INPUT:
-		out = sh.execute(context, seq, cfra, fac, facf, 
-				 NULL, NULL, NULL);
+		out = sh.execute(context, seq, cfra, fac, facf,
+		                 NULL, NULL, NULL);
 		break;
 	case EARLY_DO_EFFECT:
 		for(i=0; i<3; i++) {
 			if(input[i])
 				ibuf[i] = seq_render_strip(
-					context, input[i], cfra);
+				            context, input[i], cfra);
 		}
 
 		if (ibuf[0] && ibuf[1]) {
@@ -1977,6 +1982,8 @@ static ImBuf * seq_render_scene_strip_impl(
 	/* stooping to new low's in hackyness :( */
 	oldmarkers= scene->markers;
 	scene->markers.first= scene->markers.last= NULL;
+#else
+	(void)oldmarkers;
 #endif
 	
 	if(sequencer_view3d_cb && BLI_thread_is_main() && doseq_gl && (scene == context.scene || have_seq==0) && camera) {
@@ -2050,7 +2057,7 @@ static ImBuf * seq_render_scene_strip_impl(
 static ImBuf * seq_render_strip(SeqRenderData context, Sequence * seq, float cfra)
 {
 	ImBuf * ibuf = NULL;
-	char name[FILE_MAXDIR+FILE_MAXFILE];
+	char name[FILE_MAX];
 	int use_preprocess = input_have_to_preprocess(context, seq, cfra);
 	float nr = give_stripelem_index(seq, cfra);
 	/* all effects are handled similarly with the exception of speed effect */
@@ -2502,9 +2509,6 @@ static void *seq_prefetch_thread(void * This_)
 
 		for (e = prefetch_done.first; e; e = e->next) {
 			if (s_last > e->monoton_cfra) {
-				if (e->ibuf) {
-					IMB_cache_limiter_unref(e->ibuf);
-				}
 				BLI_remlink(&prefetch_done, e);
 				MEM_freeN(e);
 			}
@@ -2582,9 +2586,6 @@ static void seq_stop_threads()
 	}
 
 	for (e = prefetch_done.first; e; e = e->next) {
-		if (e->ibuf) {
-			IMB_cache_limiter_unref(e->ibuf);
-		}
 		BLI_remlink(&prefetch_done, e);
 		MEM_freeN(e);
 	}
@@ -2910,7 +2911,7 @@ int seq_single_check(Sequence *seq)
 	return (seq->len==1 && (
 			seq->type == SEQ_IMAGE 
 			|| ((seq->type & SEQ_EFFECT) && 
-			    get_sequence_effect_num_inputs(seq->type) == 0)));
+	            get_sequence_effect_num_inputs(seq->type) == 0)));
 }
 
 /* check if the selected seq's reference unselected seq's */
@@ -3360,9 +3361,9 @@ int seq_swap(Sequence *seq_a, Sequence *seq_b, const char **error_str)
 	SWAP(Sequence, *seq_a, *seq_b);
 
 	/* swap back names so animation fcurves dont get swapped */
-	strcpy(name, seq_a->name+2);
-	strcpy(seq_a->name+2, seq_b->name+2);
-	strcpy(seq_b->name+2, name);
+	BLI_strncpy(name, seq_a->name+2, sizeof(name));
+	BLI_strncpy(seq_a->name+2, seq_b->name+2, sizeof(seq_b->name)-2);
+	BLI_strncpy(seq_b->name+2, name, sizeof(seq_b->name)-2);
 
 	/* swap back opacity, and overlay mode */
 	SWAP(int, seq_a->blend_mode, seq_b->blend_mode);
@@ -3407,7 +3408,7 @@ void seq_offset_animdata(Scene *scene, Sequence *seq, int ofs)
 	}
 }
 
-void seq_dupe_animdata(Scene *scene, char *name_from, char *name_to)
+void seq_dupe_animdata(Scene *scene, const char *name_src, const char *name_dst)
 {
 	char str_from[32];
 	FCurve *fcu;
@@ -3418,7 +3419,7 @@ void seq_dupe_animdata(Scene *scene, char *name_from, char *name_to)
 	if(scene->adt==NULL || scene->adt->action==NULL)
 		return;
 
-	sprintf(str_from, "[\"%s\"]", name_from);
+	sprintf(str_from, "[\"%s\"]", name_src);
 
 	fcu_last= scene->adt->action->curves.last;
 
@@ -3430,7 +3431,7 @@ void seq_dupe_animdata(Scene *scene, char *name_from, char *name_to)
 	}
 
 	/* notice validate is 0, keep this because the seq may not be added to the scene yet */
-	BKE_animdata_fix_paths_rename(&scene->id, scene->adt, "sequence_editor.sequences_all", name_from, name_to, 0, 0, 0);
+	BKE_animdata_fix_paths_rename(&scene->id, scene->adt, "sequence_editor.sequences_all", name_src, name_dst, 0, 0, 0);
 
 	/* add the original fcurves back */
 	BLI_movelisttolist(&scene->adt->action->curves, &lb);

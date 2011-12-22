@@ -1,6 +1,4 @@
 /*
- * $Id: cloth.c 41078 2011-10-17 06:39:13Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,6 +38,7 @@
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
 #include "BLI_utildefines.h"
+#include "BLI_linklist.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_cloth.h"
@@ -61,9 +60,9 @@ double tval( void )
 }
 #else
 #include <sys/time.h>
-			 static struct timeval _tstart, _tend;
-	 static struct timezone tz;
-	 void tstart ( void )
+static struct timeval _tstart, _tend;
+static struct timezone tz;
+void tstart ( void )
 {
 	gettimeofday ( &_tstart, &tz );
 }
@@ -191,7 +190,7 @@ static BVHTree *bvhselftree_build_from_cloth (ClothModifierData *clmd, float eps
 	// fill tree
 	for(i = 0; i < cloth->numverts; i++, verts++)
 	{
-		VECCOPY(&co[0*3], verts->xold);
+		copy_v3_v3(&co[0*3], verts->xold);
 		
 		BLI_bvhtree_insert(bvhtree, i, co, 1);
 	}
@@ -232,12 +231,12 @@ static BVHTree *bvhtree_build_from_cloth (ClothModifierData *clmd, float epsilon
 	// fill tree
 	for(i = 0; i < cloth->numfaces; i++, mfaces++)
 	{
-		VECCOPY(&co[0*3], verts[mfaces->v1].xold);
-		VECCOPY(&co[1*3], verts[mfaces->v2].xold);
-		VECCOPY(&co[2*3], verts[mfaces->v3].xold);
+		copy_v3_v3(&co[0*3], verts[mfaces->v1].xold);
+		copy_v3_v3(&co[1*3], verts[mfaces->v2].xold);
+		copy_v3_v3(&co[2*3], verts[mfaces->v3].xold);
 		
 		if(mfaces->v4)
-			VECCOPY(&co[3*3], verts[mfaces->v4].xold);
+			copy_v3_v3(&co[3*3], verts[mfaces->v4].xold);
 		
 		BLI_bvhtree_insert(bvhtree, i, co, (mfaces->v4 ? 4 : 3));
 	}
@@ -268,23 +267,23 @@ void bvhtree_update_from_cloth(ClothModifierData *clmd, int moving)
 	{
 		for(i = 0; i < cloth->numfaces; i++, mfaces++)
 		{
-			VECCOPY(&co[0*3], verts[mfaces->v1].txold);
-			VECCOPY(&co[1*3], verts[mfaces->v2].txold);
-			VECCOPY(&co[2*3], verts[mfaces->v3].txold);
+			copy_v3_v3(&co[0*3], verts[mfaces->v1].txold);
+			copy_v3_v3(&co[1*3], verts[mfaces->v2].txold);
+			copy_v3_v3(&co[2*3], verts[mfaces->v3].txold);
 			
 			if(mfaces->v4)
-				VECCOPY(&co[3*3], verts[mfaces->v4].txold);
+				copy_v3_v3(&co[3*3], verts[mfaces->v4].txold);
 		
 			// copy new locations into array
 			if(moving)
 			{
 				// update moving positions
-				VECCOPY(&co_moving[0*3], verts[mfaces->v1].tx);
-				VECCOPY(&co_moving[1*3], verts[mfaces->v2].tx);
-				VECCOPY(&co_moving[2*3], verts[mfaces->v3].tx);
+				copy_v3_v3(&co_moving[0*3], verts[mfaces->v1].tx);
+				copy_v3_v3(&co_moving[1*3], verts[mfaces->v2].tx);
+				copy_v3_v3(&co_moving[2*3], verts[mfaces->v3].tx);
 				
 				if(mfaces->v4)
-					VECCOPY(&co_moving[3*3], verts[mfaces->v4].tx);
+					copy_v3_v3(&co_moving[3*3], verts[mfaces->v4].tx);
 				
 				ret = BLI_bvhtree_update_node(bvhtree, i, co, co_moving, (mfaces->v4 ? 4 : 3));
 			}
@@ -322,13 +321,13 @@ void bvhselftree_update_from_cloth(ClothModifierData *clmd, int moving)
 	{
 		for(i = 0; i < cloth->numverts; i++, verts++)
 		{
-			VECCOPY(&co[0*3], verts->txold);
+			copy_v3_v3(&co[0*3], verts->txold);
 			
 			// copy new locations into array
 			if(moving)
 			{
 				// update moving positions
-				VECCOPY(&co_moving[0*3], verts->tx);
+				copy_v3_v3(&co_moving[0*3], verts->tx);
 				
 				ret = BLI_bvhtree_update_node(bvhtree, i, co, co_moving, 1);
 			}
@@ -400,11 +399,11 @@ static int do_step_cloth(Object *ob, ClothModifierData *clmd, DerivedMesh *resul
 	/* force any pinned verts to their constrained location. */
 	for(i = 0; i < clmd->clothObject->numverts; i++, verts++) {
 		/* save the previous position. */
-		VECCOPY(verts->xold, verts->xconst);
-		VECCOPY(verts->txold, verts->x);
+		copy_v3_v3(verts->xold, verts->xconst);
+		copy_v3_v3(verts->txold, verts->x);
 
 		/* Get the current position. */
-		VECCOPY(verts->xconst, mvert[i].co);
+		copy_v3_v3(verts->xconst, mvert[i].co);
 		mul_m4_v3(ob->obmat, verts->xconst);
 	}
 
@@ -713,7 +712,7 @@ static void cloth_to_object (Object *ob,  ClothModifierData *clmd, DerivedMesh *
 
 		for (i = 0; i < numverts; i++)
 		{
-			VECCOPY (mvert[i].co, cloth->verts[i].x);
+			copy_v3_v3 (mvert[i].co, cloth->verts[i].x);
 			mul_m4_v3(ob->imat, mvert[i].co);	/* cloth is in global coords */
 		}
 	}
@@ -881,14 +880,14 @@ static int cloth_from_object(Object *ob, ClothModifierData *clmd, DerivedMesh *d
 			verts->goal= 0.0f;
 
 		verts->flags = 0;
-		VECCOPY ( verts->xold, verts->x );
-		VECCOPY ( verts->xconst, verts->x );
-		VECCOPY ( verts->txold, verts->x );
-		VECCOPY ( verts->tx, verts->x );
+		copy_v3_v3 ( verts->xold, verts->x );
+		copy_v3_v3 ( verts->xconst, verts->x );
+		copy_v3_v3 ( verts->txold, verts->x );
+		copy_v3_v3 ( verts->tx, verts->x );
 		mul_v3_fl( verts->v, 0.0f );
 
 		verts->impulse_count = 0;
-		VECCOPY ( verts->impulse, tnull );
+		copy_v3_v3 ( verts->impulse, tnull );
 	}
 	
 	// apply / set vertex groups
@@ -1054,7 +1053,6 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 	LinkNode **edgelist = NULL;
 	EdgeHash *edgehash = NULL;
 	LinkNode *search = NULL, *search2 = NULL;
-	float temp[3];
 	
 	// error handling
 	if ( numedges==0 )
@@ -1087,8 +1085,7 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 		{
 			spring->ij = MIN2(medge[i].v1, medge[i].v2);
 			spring->kl = MAX2(medge[i].v2, medge[i].v1);
-			VECSUB ( temp, cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest );
-			spring->restlen =  sqrt ( INPR ( temp, temp ) );
+			spring->restlen = len_v3v3(cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest);
 			clmd->sim_parms->avg_spring_len += spring->restlen;
 			cloth->verts[spring->ij].avg_spring_len += spring->restlen;
 			cloth->verts[spring->kl].avg_spring_len += spring->restlen;
@@ -1096,7 +1093,7 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 			cloth->verts[spring->kl].spring_count++;
 			spring->type = CLOTH_SPRING_TYPE_STRUCTURAL;
 			spring->flags = 0;
-			spring->stiffness = (cloth->verts[spring->kl].struct_stiff + cloth->verts[spring->ij].struct_stiff) / 2.0;
+			spring->stiffness = (cloth->verts[spring->kl].struct_stiff + cloth->verts[spring->ij].struct_stiff) / 2.0f;
 			struct_springs++;
 			
 			BLI_linklist_prepend ( &cloth->springs, spring );
@@ -1113,7 +1110,7 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 	
 	for(i = 0; i < numverts; i++)
 	{
-		cloth->verts[i].avg_spring_len = cloth->verts[i].avg_spring_len * 0.49 / ((float)cloth->verts[i].spring_count);
+		cloth->verts[i].avg_spring_len = cloth->verts[i].avg_spring_len * 0.49f / ((float)cloth->verts[i].spring_count);
 	}
 	
 	// shear springs
@@ -1133,10 +1130,9 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 
 		spring->ij = MIN2(mface[i].v1, mface[i].v3);
 		spring->kl = MAX2(mface[i].v3, mface[i].v1);
-		VECSUB ( temp, cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest );
-		spring->restlen =  sqrt ( INPR ( temp, temp ) );
+		spring->restlen = len_v3v3(cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest);
 		spring->type = CLOTH_SPRING_TYPE_SHEAR;
-		spring->stiffness = (cloth->verts[spring->kl].shear_stiff + cloth->verts[spring->ij].shear_stiff) / 2.0;
+		spring->stiffness = (cloth->verts[spring->kl].shear_stiff + cloth->verts[spring->ij].shear_stiff) / 2.0f;
 
 		BLI_linklist_append ( &edgelist[spring->ij], spring );
 		BLI_linklist_append ( &edgelist[spring->kl], spring );
@@ -1156,8 +1152,7 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 
 		spring->ij = MIN2(mface[i].v2, mface[i].v4);
 		spring->kl = MAX2(mface[i].v4, mface[i].v2);
-		VECSUB ( temp, cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest );
-		spring->restlen =  sqrt ( INPR ( temp, temp ) );
+		spring->restlen = len_v3v3(cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest);
 		spring->type = CLOTH_SPRING_TYPE_SHEAR;
 		spring->stiffness = (cloth->verts[spring->kl].shear_stiff + cloth->verts[spring->ij].shear_stiff) / 2.0;
 
@@ -1198,10 +1193,9 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 
 					spring->ij = MIN2(tspring2->ij, index2);
 					spring->kl = MAX2(tspring2->ij, index2);
-					VECSUB ( temp, cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest );
-					spring->restlen =  sqrt ( INPR ( temp, temp ) );
+					spring->restlen = len_v3v3(cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest);
 					spring->type = CLOTH_SPRING_TYPE_BENDING;
-					spring->stiffness = (cloth->verts[spring->kl].bend_stiff + cloth->verts[spring->ij].bend_stiff) / 2.0;
+					spring->stiffness = (cloth->verts[spring->kl].bend_stiff + cloth->verts[spring->ij].bend_stiff) / 2.0f;
 					BLI_edgehash_insert ( edgehash, spring->ij, spring->kl, NULL );
 					bend_springs++;
 
@@ -1238,10 +1232,9 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 
 				spring->ij = tspring2->ij;
 				spring->kl = tspring->kl;
-				VECSUB ( temp, cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest );
-				spring->restlen =  sqrt ( INPR ( temp, temp ) );
+				spring->restlen = len_v3v3(cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest);
 				spring->type = CLOTH_SPRING_TYPE_BENDING;
-				spring->stiffness = (cloth->verts[spring->kl].bend_stiff + cloth->verts[spring->ij].bend_stiff) / 2.0;
+				spring->stiffness = (cloth->verts[spring->kl].bend_stiff + cloth->verts[spring->ij].bend_stiff) / 2.0f;
 				bend_springs++;
 
 				BLI_linklist_prepend ( &cloth->springs, spring );

@@ -1,7 +1,4 @@
-
 /*
- * $Id: bpy_operator.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,12 +22,14 @@
 
 /** \file blender/python/intern/bpy_operator.c
  *  \ingroup pythonintern
+ *
+ * This file defines '_bpy.ops', an internal python module which gives python
+ * the ability to inspect and call both C and Python defined operators.
+ *
+ * \note
+ * This module is exposed to the user via 'release/scripts/modules/bpy/ops.py'
+ * which fakes exposing operators as modules/functions using its own classes.
  */
-
-
-/* Note, this module is not to be used directly by the user.
- * Internally its exposed as '_bpy.ops', which provides functions for 'bpy.ops', a python package.
- * */
 
 #include <Python.h>
 
@@ -44,6 +43,7 @@
 #include "../generic/bpy_internal_import.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 #include "RNA_access.h"
 #include "RNA_enum_types.h"
@@ -73,7 +73,8 @@ static PyObject *pyop_poll(PyObject *UNUSED(self), PyObject *args)
 
 	int context= WM_OP_EXEC_DEFAULT;
 
-	// XXX Todo, work out a better solution for passing on context, could make a tuple from self and pack the name and Context into it...
+	/* XXX Todo, work out a better solution for passing on context,
+	 * could make a tuple from self and pack the name and Context into it... */
 	bContext *C= (bContext *)BPy_GetContext();
 	
 	if (C==NULL) {
@@ -147,7 +148,8 @@ static PyObject *pyop_call(PyObject *UNUSED(self), PyObject *args)
 	/* note that context is an int, python does the conversion in this case */
 	int context= WM_OP_EXEC_DEFAULT;
 
-	// XXX Todo, work out a better solution for passing on context, could make a tuple from self and pack the name and Context into it...
+	/* XXX Todo, work out a better solution for passing on context,
+	 * could make a tuple from self and pack the name and Context into it... */
 	bContext *C= (bContext *)BPy_GetContext();
 	
 	if (C==NULL) {
@@ -380,7 +382,7 @@ static PyObject *pyop_getrna(PyObject *UNUSED(self), PyObject *value)
 {
 	wmOperatorType *ot;
 	PointerRNA ptr;
-	char *opname= _PyUnicode_AsString(value);
+	const char *opname= _PyUnicode_AsString(value);
 	BPy_StructRNA *pyrna= NULL;
 	
 	if (opname==NULL) {
@@ -413,7 +415,7 @@ static PyObject *pyop_getinstance(PyObject *UNUSED(self), PyObject *value)
 	wmOperatorType *ot;
 	wmOperator *op;
 	PointerRNA ptr;
-	char *opname= _PyUnicode_AsString(value);
+	const char *opname= _PyUnicode_AsString(value);
 	BPy_StructRNA *pyrna= NULL;
 
 	if (opname==NULL) {

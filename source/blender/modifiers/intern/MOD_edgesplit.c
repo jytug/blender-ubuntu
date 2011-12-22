@@ -1,34 +1,32 @@
 /*
-* $Id: MOD_edgesplit.c 39342 2011-08-12 18:11:22Z blendix $
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_edgesplit.c
  *  \ingroup modifiers
@@ -47,6 +45,7 @@
 #include "BLI_edgehash.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_linklist.h"
 
 
 #include "BKE_cdderivedmesh.h"
@@ -1030,12 +1029,17 @@ static void split_edge(SmoothEdge *edge, SmoothVert *vert, SmoothMesh *mesh)
 
 		vert2 = smoothvert_copy(vert, mesh);
 
-		/* replace vert with its copy in visited_faces (must be done after
-		* edge replacement so edges have correct vertices)
-		*/
-		repdata.find = vert;
-		repdata.replace = vert2;
-		BLI_linklist_apply(visited_faces, face_replace_vert, &repdata);
+		/* bug [#29205] which is caused by exactly the same reason as [#26316]
+		   this check will only prevent crash without fixing actual issue and
+		   some vertices can stay unsplitted when they should (sergey) */
+		if(vert2) {
+			/* replace vert with its copy in visited_faces (must be done after
+			 * edge replacement so edges have correct vertices)
+			 */
+			repdata.find = vert;
+			repdata.replace = vert2;
+			BLI_linklist_apply(visited_faces, face_replace_vert, &repdata);
+		}
 
 		/* copying and replacing is done; the mesh should be consistent.
 		* now propagate the split to the vertex at the other end

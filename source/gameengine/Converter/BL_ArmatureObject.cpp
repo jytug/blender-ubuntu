@@ -1,6 +1,4 @@
 /*
- * $Id: BL_ArmatureObject.cpp 41078 2011-10-17 06:39:13Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -164,8 +162,8 @@ void game_blend_poses(bPose *dst, bPose *src, float srcweight/*, short mode*/)
 		if (schan->rotmode == ROT_MODE_QUAT) {
 			float dquat[4], squat[4];
 			
-			QUATCOPY(dquat, dchan->quat);
-			QUATCOPY(squat, schan->quat);
+			copy_qt_qt(dquat, dchan->quat);
+			copy_qt_qt(squat, schan->quat);
 			if (mode==ACTSTRIPMODE_BLEND)
 				interp_qt_qtqt(dchan->quat, dquat, squat, srcweight);
 			else {

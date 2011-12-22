@@ -1,15 +1,10 @@
 /*
- * $Id: BKE_sequencer.h 40122 2011-09-11 10:35:26Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.	
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -69,21 +64,21 @@ void seq_next(SeqIterator *iter);
 void seq_end(SeqIterator *iter);
 void seq_array(struct Editing *ed, struct Sequence ***seqarray, int *tot, int use_pointer);
 
-#define SEQP_BEGIN(ed, _seq) \
-{ \
-	SeqIterator iter;\
-		for(seq_begin(ed, &iter, 1); iter.valid; seq_next(&iter)) { \
+#define SEQP_BEGIN(ed, _seq)                                                  \
+{                                                                             \
+	SeqIterator iter;                                                         \
+		for(seq_begin(ed, &iter, 1); iter.valid; seq_next(&iter)) {           \
 			_seq= iter.seq;
 			
-#define SEQ_BEGIN(ed, _seq) \
-	{ \
-		SeqIterator iter;\
-		for(seq_begin(ed, &iter, 0); iter.valid; seq_next(&iter)) { \
+#define SEQ_BEGIN(ed, _seq)                                                   \
+	{                                                                         \
+		SeqIterator iter;                                                     \
+		for(seq_begin(ed, &iter, 0); iter.valid; seq_next(&iter)) {           \
 			_seq= iter.seq;
 
-#define SEQ_END \
-		} \
-		seq_end(&iter); \
+#define SEQ_END                                                               \
+		}                                                                     \
+		seq_end(&iter);                                                       \
 	}
 
 typedef struct SeqRenderData {
@@ -200,8 +195,8 @@ int input_have_to_preprocess(
 	SeqRenderData context, struct Sequence * seq, float cfra);
 
 void seq_proxy_rebuild(struct Main * bmain, 
-		       struct Scene *scene, struct Sequence * seq,
-		       short *stop, short *do_update, float *progress);
+                       struct Scene *scene, struct Sequence * seq,
+                       short *stop, short *do_update, float *progress);
 
 
 /* **********************************************************************
@@ -217,9 +212,7 @@ typedef enum {
 	SEQ_STRIPELEM_IBUF_ENDSTILL
 } seq_stripelem_ibuf_t;
 
-void seq_stripelem_cache_init(void);
 void seq_stripelem_cache_destruct(void);
-
 void seq_stripelem_cache_cleanup(void);
 
 /* returned ImBuf is properly refed and has to be freed */
@@ -278,7 +271,7 @@ struct Sequence *seq_metastrip(
 	struct Sequence * meta /* = NULL */, struct Sequence *seq);
 
 void seq_offset_animdata(struct Scene *scene, struct Sequence *seq, int ofs);
-void seq_dupe_animdata(struct Scene *scene, char *name_from, char *name_to);
+void seq_dupe_animdata(struct Scene *scene, const char *name_src, const char *name_dst);
 int shuffle_seq(struct ListBase * seqbasep, struct Sequence *test, struct Scene *evil_scene);
 int shuffle_seq_time(ListBase * seqbasep, struct Scene *evil_scene);
 int seqbase_isolated_sel_check(struct ListBase *seqbase);

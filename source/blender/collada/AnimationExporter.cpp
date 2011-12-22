@@ -1,26 +1,24 @@
 /*
-* $Id: AnimationExporter.cpp 40289 2011-09-17 09:43:51Z campbellbarton $
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* Contributor(s): Chingiz Dyussenov, Arystanbek Dyussenov, Jan Diederich, Tod Liverseed.
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Contributor(s): Chingiz Dyussenov, Arystanbek Dyussenov, Jan Diederich, Tod Liverseed.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 #include "GeometryExporter.h"
 #include "AnimationExporter.h"
@@ -761,7 +759,7 @@ std::string AnimationExporter::create_4x4_source(std::vector<float> &frames , Ob
 	for (it = frames.begin(); it != frames.end(); it++) {
 		float mat[4][4], ipar[4][4];
 
-		float ctime = bsystem_time(scene, ob_arm, *it, 0.0f);
+		float ctime = BKE_frame_to_ctime(scene, *it);
 
 		BKE_animsys_evaluate_animdata(scene , &ob_arm->id, ob_arm->adt, ctime, ADT_RECALC_ANIM);
 		where_is_pose_bone(scene, ob_arm, pchan, ctime, 1);
@@ -1267,7 +1265,7 @@ void AnimationExporter::sample_animation(float *v, std::vector<float> &frames, i
 	for (it = frames.begin(); it != frames.end(); it++) {
 		float mat[4][4], ipar[4][4];
 
-		float ctime = bsystem_time(scene, ob_arm, *it, 0.0f);
+		float ctime = BKE_frame_to_ctime(scene, *it);
 
 
 		BKE_animsys_evaluate_animdata(scene , &ob_arm->id, ob_arm->adt, ctime, ADT_RECALC_ANIM);

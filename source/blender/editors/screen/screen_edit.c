@@ -1,6 +1,4 @@
 /*
- * $Id: screen_edit.c 39694 2011-08-25 15:49:52Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,6 +58,8 @@
 #include "ED_screen.h"
 #include "ED_screen_types.h"
 #include "ED_fileselect.h"
+#include "ED_clip.h"
+#include "ED_render.h"
 
 #include "UI_interface.h"
 
@@ -1426,6 +1426,7 @@ void ED_screen_delete(bContext *C, bScreen *sc)
 /* only call outside of area/region loops */
 void ED_screen_set_scene(bContext *C, Scene *scene)
 {
+	Main *bmain= CTX_data_main(C);
 	bScreen *sc;
 	bScreen *curscreen= CTX_wm_screen(C);
 	
@@ -1485,9 +1486,10 @@ void ED_screen_set_scene(bContext *C, Scene *scene)
 	}
 	
 	CTX_data_scene_set(C, scene);
-	set_scene_bg(CTX_data_main(C), scene);
+	set_scene_bg(bmain, scene);
 	
-	ED_update_for_newframe(CTX_data_main(C), scene, curscreen, 1);
+	ED_render_engine_changed(bmain);
+	ED_update_for_newframe(bmain, scene, curscreen, 1);
 	
 	/* complete redraw */
 	WM_event_add_notifier(C, NC_WINDOW, NULL);
@@ -1810,6 +1812,8 @@ void ED_update_for_newframe(Main *bmain, Scene *scene, bScreen *screen, int UNUS
 	/* update animated image textures for gpu, etc,
 	 * call before scene_update_for_newframe so modifiers with textuers dont lag 1 frame */
 	ED_image_update_frame(bmain, scene->r.cfra);
+
+	ED_clip_update_frame(bmain, scene->r.cfra);
 
 	/* this function applies the changes too */
 	/* XXX future: do all windows */

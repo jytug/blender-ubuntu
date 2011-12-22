@@ -1,6 +1,4 @@
 /*
- * $Id: interface_intern.h 41024 2011-10-15 09:43:42Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -81,6 +79,7 @@ typedef enum {
 	UI_WTYPE_MENU_RADIO,
 	UI_WTYPE_MENU_ICON_RADIO,
 	UI_WTYPE_MENU_POINTER_LINK,
+	UI_WTYPE_MENU_NODE_LINK,
 	
 	UI_WTYPE_PULLDOWN,
 	UI_WTYPE_MENU_ITEM,
@@ -98,11 +97,6 @@ typedef enum {
 	
 } uiWidgetTypeEnum;
 
-
-
-#define UI_MAX_DRAW_STR	400
-#define UI_MAX_NAME_STR	128
-
 /* panel limits */
 #define UI_PANEL_MINX	100
 #define UI_PANEL_MINY	70
@@ -118,7 +112,7 @@ typedef enum {
 
 /* internal panel drawing defines */
 #define PNL_GRID	(UI_UNIT_Y / 5)	/* 4 default */
-#define PNL_HEADER  UI_UNIT_Y		/* 20 default */
+#define PNL_HEADER  (UI_UNIT_Y + 4)	/* 24 default */
 
 /* panel->flag */
 #define PNL_SELECT	1
@@ -320,7 +314,10 @@ struct uiBlock {
 	ListBase saferct;			// uiSafetyRct list
 
 	uiPopupBlockHandle *handle;	// handle
-	
+
+	struct wmOperator *ui_operator;// use so presets can find the operator,
+								// across menus and from nested popups which fail for operator context.
+
 	void *evil_C;				// XXX hack for dynamic operator enums
 
 	struct UnitSettings *unit;	// unit system, used a lot for numeric buttons so include here rather then fetching through the scene every time.
@@ -368,6 +365,7 @@ extern void ui_check_but(uiBut *but);
 extern int  ui_is_but_float(uiBut *but);
 extern int  ui_is_but_unit(uiBut *but);
 extern int  ui_is_but_rna_valid(uiBut *but);
+extern int  ui_is_but_utf8(uiBut *but);
 
 extern void ui_bounds_block(uiBlock *block);
 extern void ui_block_translate(uiBlock *block, int x, int y);
@@ -455,6 +453,7 @@ void ui_draw_but_COLORBAND(uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 void ui_draw_but_NORMAL(uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 void ui_draw_but_CURVE(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 void ui_draw_but_IMAGE(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
+void ui_draw_but_TRACKPREVIEW(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 
 /* interface_handlers.c */
 extern void ui_button_activate_do(struct bContext *C, struct ARegion *ar, uiBut *but);

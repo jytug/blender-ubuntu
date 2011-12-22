@@ -1,6 +1,4 @@
 /*
- * $Id: text.c 40903 2011-10-10 09:38:02Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -239,12 +237,12 @@ int reopen_text(Text *text)
 	int i, llen, len;
 	unsigned char *buffer;
 	TextLine *tmp;
-	char str[FILE_MAXDIR+FILE_MAXFILE];
+	char str[FILE_MAX];
 	struct stat st;
 
 	if (!text || !text->name) return 0;
 	
-	BLI_strncpy(str, text->name, FILE_MAXDIR+FILE_MAXFILE);
+	BLI_strncpy(str, text->name, FILE_MAX);
 	BLI_path_abs(str, G.main->name);
 	
 	fp= fopen(str, "r");
@@ -336,10 +334,10 @@ Text *add_text(const char *file, const char *relpath)
 	unsigned char *buffer;
 	TextLine *tmp;
 	Text *ta;
-	char str[FILE_MAXDIR+FILE_MAXFILE];
+	char str[FILE_MAX];
 	struct stat st;
 
-	BLI_strncpy(str, file, FILE_MAXDIR+FILE_MAXFILE);
+	BLI_strncpy(str, file, FILE_MAX);
 	if (relpath) /* can be NULL (bg mode) */
 		BLI_path_abs(str, relpath);
 	
@@ -433,7 +431,7 @@ Text *copy_text(Text *ta)
 	Text *tan;
 	TextLine *line, *tmp;
 	
-	tan= copy_libblock(ta);
+	tan= copy_libblock(&ta->id);
 	
 	/* file name can be NULL */
 	if(ta->name) {
@@ -481,16 +479,10 @@ void unlink_text(Main *bmain, Text *text)
 	bScreen *scr;
 	ScrArea *area;
 	SpaceLink *sl;
-	Scene *scene;
 	Object *ob;
 	bController *cont;
 	bConstraint *con;
 	short update;
-
-	/* dome */
-	for(scene=bmain->scene.first; scene; scene=scene->id.next)
-		if(scene->r.dometext == text)
-			scene->r.dometext = NULL;
 
 	for(ob=bmain->object.first; ob; ob=ob->id.next) {
 		/* game controllers */
@@ -798,6 +790,7 @@ void txt_move_left(Text *text, short sel)
 {
 	TextLine **linep;
 	int *charp, oundoing= undoing;
+	int tabsize = 1, i=0;
 	
 	if (!text) return;
 	if(sel) txt_curs_sel(text, &linep, &charp);
@@ -805,14 +798,34 @@ void txt_move_left(Text *text, short sel)
 	if (!*linep) return;
 
 	undoing= 1;
+
+	// do nice left only if there are only spaces
+	// TXT_TABSIZE hardcoded in DNA_text_types.h
+	if (text->flags & TXT_TABSTOSPACES) {
+		tabsize = TXT_TABSIZE;
+
+		if (*charp < tabsize)
+			tabsize = *charp;
+		else {
+			for (i=0;i<(*charp);i++)
+				if ((*linep)->line[i] != ' ') {
+					tabsize = 1;
+					break;
+				}
+			// if in the middle of the space-tab
+			if ((*charp) % tabsize != 0)
+					tabsize = ((*charp) % tabsize);
+		}
+	}
+
 	if (*charp== 0) {
 		if ((*linep)->prev) {
 			txt_move_up(text, sel);
 			*charp= (*linep)->len;
 		}
-	} else {
-		(*charp)--;
 	}
+	else (*charp)-= tabsize;
+
 	undoing= oundoing;
 	if(!undoing) txt_undo_add_op(text, sel?UNDO_SLEFT:UNDO_CLEFT);
 	
@@ -823,6 +836,7 @@ void txt_move_right(Text *text, short sel)
 {
 	TextLine **linep;
 	int *charp, oundoing= undoing;
+	int tabsize=1, i=0;
 	
 	if (!text) return;
 	if(sel) txt_curs_sel(text, &linep, &charp);
@@ -830,13 +844,32 @@ void txt_move_right(Text *text, short sel)
 	if (!*linep) return;
 
 	undoing= 1;
+
+	// do nice right only if there are only spaces
+	// spaces hardcoded in DNA_text_types.h
+	if (text->flags & TXT_TABSTOSPACES) {
+		tabsize = TXT_TABSIZE;
+
+		if ((*charp) + tabsize > (*linep)->len)
+			tabsize = 1;
+		else {
+			for (i=0;i<(*charp) + tabsize - ((*charp) % tabsize);i++)
+				if ((*linep)->line[i] != ' ') {
+					tabsize = 1;
+					break;
+				}
+			// if in the middle of the space-tab
+			tabsize -= (*charp) % tabsize;
+		}
+	}
+
 	if (*charp== (*linep)->len) {
 		if ((*linep)->next) {
 			txt_move_down(text, sel);
 			*charp= 0;
 		}
 	} else {
-		(*charp)++;
+		(*charp)+=tabsize;
 	}
 	undoing= oundoing;
 	if(!undoing) txt_undo_add_op(text, sel?UNDO_SRIGHT:UNDO_CRIGHT);
@@ -1236,7 +1269,7 @@ char *txt_to_buf (Text *text)
 	return buf;
 }
 
-int txt_find_string(Text *text, char *findstr, int wrap, int match_case)
+int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
 {
 	TextLine *tl, *startl;
 	char *s= NULL;

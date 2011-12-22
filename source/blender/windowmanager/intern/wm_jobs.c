@@ -1,6 +1,4 @@
 /*
- * $Id: wm_jobs.c 39749 2011-08-28 14:46:03Z schlaile $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -507,3 +505,13 @@ void wm_jobs_timer(const bContext *C, wmWindowManager *wm, wmTimer *wt)
 	}
 }
 
+int WM_jobs_has_running(wmWindowManager *wm)
+{
+	wmJob *steve;
+
+	for(steve= wm->jobs.first; steve; steve= steve->next)
+		if(steve->running)
+			return 1;
+
+	return 0;
+}

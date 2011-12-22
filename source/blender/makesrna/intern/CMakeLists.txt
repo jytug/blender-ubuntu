@@ -1,5 +1,4 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 17433 2008-11-12 21:16:53Z blendix $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -47,6 +46,7 @@ set(DEFSRC
 	rna_context.c
 	rna_controller.c
 	rna_curve.c
+	rna_dynamicpaint.c
 	rna_fcurve.c
 	rna_fluidsim.c
 	rna_gpencil.c
@@ -60,6 +60,7 @@ set(DEFSRC
 	rna_mesh.c
 	rna_meta.c
 	rna_modifier.c
+	rna_movieclip.c
 	rna_nla.c
 	rna_nodetree.c
 	rna_object.c
@@ -83,6 +84,7 @@ set(DEFSRC
 	rna_text.c
 	rna_texture.c
 	rna_timeline.c
+	rna_tracking.c
 	rna_ui.c
 	rna_userdef.c
 	rna_vfont.c
@@ -196,12 +198,16 @@ if(WITH_CODEC_FFMPEG)
 	add_definitions(-DWITH_FFMPEG)
 endif()
 
-if(NOT WITH_MOD_FLUID)
-	add_definitions(-DDISABLE_ELBEEM)
+if(WITH_MOD_FLUID)
+	add_definitions(-DWITH_MOD_FLUID)
 endif()
 
 if(WITH_FFTW3)
 	add_definitions(-DWITH_FFTW3)
+endif()
+
+if(WITH_MOD_OCEANSIM)
+	add_definitions(-DWITH_OCEANSIM)
 endif()
 
 if(WITH_SDL)

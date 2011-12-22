@@ -1,6 +1,4 @@
 /*
- * $Id: object_transform.c 40907 2011-10-10 12:56:21Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -135,7 +133,7 @@ static void object_clear_rot(Object *ob)
 			float eul[3], oldeul[3], quat1[4] = {0};
 			
 			if (ob->rotmode == ROT_MODE_QUAT) {
-				QUATCOPY(quat1, ob->quat);
+				copy_qt_qt(quat1, ob->quat);
 				quat_to_eul(oldeul, ob->quat);
 			}
 			else if (ob->rotmode == ROT_MODE_AXISANGLE) {
@@ -190,15 +188,15 @@ static void object_clear_scale(Object *ob)
 {
 	/* clear scale factors which are not locked */
 	if ((ob->protectflag & OB_LOCK_SCALEX)==0) {
-		ob->dsize[0]= 0.0f;
+		ob->dscale[0]= 1.0f;
 		ob->size[0]= 1.0f;
 	}
 	if ((ob->protectflag & OB_LOCK_SCALEY)==0) {
-		ob->dsize[1]= 0.0f;
+		ob->dscale[1]= 1.0f;
 		ob->size[1]= 1.0f;
 	}
 	if ((ob->protectflag & OB_LOCK_SCALEZ)==0) {
-		ob->dsize[2]= 0.0f;
+		ob->dscale[2]= 1.0f;
 		ob->size[2]= 1.0f;
 	}
 }
@@ -252,7 +250,7 @@ static int object_clear_transform_generic_exec(bContext *C, wmOperator *op,
 
 static int object_location_clear_exec(bContext *C, wmOperator *op)
 {
-	return object_clear_transform_generic_exec(C, op, object_clear_loc, "Location");
+	return object_clear_transform_generic_exec(C, op, object_clear_loc, ANIM_KS_LOCATION_ID);
 }
 
 void OBJECT_OT_location_clear(wmOperatorType *ot)
@@ -272,7 +270,7 @@ void OBJECT_OT_location_clear(wmOperatorType *ot)
 
 static int object_rotation_clear_exec(bContext *C, wmOperator *op)
 {
-	return object_clear_transform_generic_exec(C, op, object_clear_rot, "Rotation");
+	return object_clear_transform_generic_exec(C, op, object_clear_rot, ANIM_KS_ROTATION_ID);
 }
 
 void OBJECT_OT_rotation_clear(wmOperatorType *ot)
@@ -292,7 +290,7 @@ void OBJECT_OT_rotation_clear(wmOperatorType *ot)
 
 static int object_scale_clear_exec(bContext *C, wmOperator *op)
 {
-	return object_clear_transform_generic_exec(C, op, object_clear_scale, "Scaling");
+	return object_clear_transform_generic_exec(C, op, object_clear_scale, ANIM_KS_SCALING_ID);
 }
 
 void OBJECT_OT_scale_clear(wmOperatorType *ot)
@@ -647,7 +645,7 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 		/* get the view settings if 'around' isnt set and the view is available */
 		View3D *v3d= CTX_wm_view3d(C);
 		copy_v3_v3(cursor, give_cursor(scene, v3d));
-		if(v3d && !RNA_property_is_set(op->ptr, "around"))
+		if(v3d && !RNA_property_is_set(op->ptr, "center"))
 			around= v3d->around;
 	}
 

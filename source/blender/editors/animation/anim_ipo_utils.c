@@ -78,7 +78,8 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 		
 		/* try to resolve the path */
 		if (RNA_path_resolve(&id_ptr, fcu->rna_path, &ptr, &prop)) {
-			char *structname=NULL, *propname=NULL, arrayindbuf[16];
+			const char *structname=NULL, *propname=NULL;
+			char arrayindbuf[16];
 			const char *arrayname=NULL;
 			short free_structname = 0;
 			
@@ -118,15 +119,15 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 				PropertyRNA *nameprop= RNA_struct_name_property(ptr.type);
 				if (nameprop) {
 					/* this gets a string which will need to be freed */
-					structname= RNA_property_string_get_alloc(&ptr, nameprop, NULL, 0);
+					structname= RNA_property_string_get_alloc(&ptr, nameprop, NULL, 0, NULL);
 					free_structname= 1;
 				}
 				else
-					structname= (char *)RNA_struct_ui_name(ptr.type);
+					structname= RNA_struct_ui_name(ptr.type);
 			}
 			
 			/* Property Name is straightforward */
-			propname= (char *)RNA_property_ui_name(prop);
+			propname= RNA_property_ui_name(prop);
 			
 			/* Array Index - only if applicable */
 			if (RNA_property_array_length(&ptr, prop)) {
@@ -153,7 +154,7 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 			
 			/* free temp name if nameprop is set */
 			if (free_structname)
-				MEM_freeN(structname);
+				MEM_freeN((void *)structname);
 			
 			
 			/* Icon for this property's owner:

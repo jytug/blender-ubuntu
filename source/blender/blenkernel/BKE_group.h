@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_group.h 34962 2011-02-18 13:05:18Z jesterking $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -54,8 +52,10 @@ int			group_is_animated(struct Object *parent, struct Group *group);
 
 void		group_tag_recalc(struct Group *group);
 void		group_handle_recalc_and_update(struct Scene *scene, struct Object *parent, struct Group *group);
+#if 0 /* UNUSED */
 struct Object *group_get_member_with_action(struct Group *group, struct bAction *act);
 void		group_relink_nla_objects(struct Object *ob);
+#endif
 
 #endif
 

@@ -1,6 +1,4 @@
 /*
- * $Id: AUD_C-API.cpp 41014 2011-10-14 16:58:21Z nexyon $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller

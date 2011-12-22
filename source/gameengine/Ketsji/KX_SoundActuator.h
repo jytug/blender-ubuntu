@@ -1,6 +1,4 @@
 /*
- * $Id: KX_SoundActuator.h 39792 2011-08-30 09:15:55Z nexyon $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -59,7 +57,7 @@ typedef struct KX_3DSoundSettings
 
 class KX_SoundActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 	bool					m_isplaying;
 	AUD_Reference<AUD_IFactory>				m_sound;
 	float					m_volume;

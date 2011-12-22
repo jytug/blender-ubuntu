@@ -1,6 +1,4 @@
 /*
- * $Id: AnimationExporter.h 39809 2011-08-30 19:38:32Z gsrb3d $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,6 +38,7 @@ extern "C"
 #include "BKE_DerivedMesh.h"
 #include "BKE_fcurve.h"
 #include "BKE_animsys.h"
+#include "BKE_scene.h"
 #ifdef NAN_BUILDINFO
 extern char build_rev[];
 #endif

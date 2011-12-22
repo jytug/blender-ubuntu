@@ -1,6 +1,4 @@
 /*
- * $Id: GPC_Canvas.cpp 35170 2011-02-25 13:35:11Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -453,14 +451,14 @@ MakeScreenShot(
 
 	// png image settings
 	png_set_IHDR(png_ptr,
-		 info_ptr,
-		 GetWidth(),
-		 GetHeight(),
-		 8,
-		 color_type,
-		 PNG_INTERLACE_NONE,
-		 PNG_COMPRESSION_TYPE_DEFAULT,
-		 PNG_FILTER_TYPE_DEFAULT);
+	             info_ptr,
+	             GetWidth(),
+	             GetHeight(),
+	             8,
+	             color_type,
+	             PNG_INTERLACE_NONE,
+	             PNG_COMPRESSION_TYPE_DEFAULT,
+	             PNG_FILTER_TYPE_DEFAULT);
 
 	// write the file header information
 	png_write_info(png_ptr, info_ptr);

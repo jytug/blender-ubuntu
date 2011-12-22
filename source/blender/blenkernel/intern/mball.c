@@ -1,6 +1,4 @@
 /*
- * $Id: mball.c 40903 2011-10-10 09:38:02Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -52,7 +50,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
-
+#include "BLI_bpath.h"
 
 
 #include "BKE_global.h"
@@ -122,7 +120,7 @@ MetaBall *copy_mball(MetaBall *mb)
 	MetaBall *mbn;
 	int a;
 	
-	mbn= copy_libblock(mb);
+	mbn= copy_libblock(&mb->id);
 
 	BLI_duplicatelist(&mbn->elems, &mb->elems);
 	
@@ -149,7 +147,7 @@ void make_local_mball(MetaBall *mb)
 {
 	Main *bmain= G.main;
 	Object *ob;
-	int local=0, lib=0;
+	int is_local= FALSE, is_lib= FALSE;
 
 	/* - only lib users: do nothing
 	 * - only local users: set flag
@@ -158,37 +156,35 @@ void make_local_mball(MetaBall *mb)
 	
 	if(mb->id.lib==NULL) return;
 	if(mb->id.us==1) {
-		mb->id.lib= NULL;
-		mb->id.flag= LIB_LOCAL;
-		new_id(&bmain->mball, (ID *)mb, NULL);
+		id_clear_lib_data(bmain, &mb->id);
 		extern_local_mball(mb);
 		
 		return;
 	}
 
-	for(ob= G.main->object.first; ob && ELEM(0, lib, local); ob= ob->id.next) {
+	for(ob= G.main->object.first; ob && ELEM(0, is_lib, is_local); ob= ob->id.next) {
 		if(ob->data == mb) {
-			if(ob->id.lib) lib= 1;
-			else local= 1;
+			if(ob->id.lib) is_lib= TRUE;
+			else is_local= TRUE;
 		}
 	}
 	
-	if(local && lib==0) {
-		mb->id.lib= NULL;
-		mb->id.flag= LIB_LOCAL;
-
-		new_id(&bmain->mball, (ID *)mb, NULL);
+	if(is_local && is_lib == FALSE) {
+		id_clear_lib_data(bmain, &mb->id);
 		extern_local_mball(mb);
 	}
-	else if(local && lib) {
-		MetaBall *mbn= copy_mball(mb);
-		mbn->id.us= 0;
+	else if(is_local && is_lib) {
+		MetaBall *mb_new= copy_mball(mb);
+		mb_new->id.us= 0;
+
+		/* Remap paths of new ID using old library as base. */
+		BKE_id_lib_local_paths(bmain, mb->id.lib, &mb_new->id);
 
 		for(ob= G.main->object.first; ob; ob= ob->id.next) {
 			if(ob->data == mb) {
 				if(ob->id.lib==NULL) {
-					ob->data= mbn;
-					mbn->id.us++;
+					ob->data= mb_new;
+					mb_new->id.us++;
 					mb->id.us--;
 				}
 			}
@@ -780,7 +776,7 @@ void *new_pgn_element(int size)
 	if(cur) {
 		if(size+offs < blocksize) {
 			adr= (void *) (cur->data+offs);
-			 offs+= size;
+			offs+= size;
 			return adr;
 		}
 	}
@@ -1785,11 +1781,11 @@ float init_meta(Scene *scene, Object *ob)	/* return totsize */
 
 		calc_mballco(mainb[a], vec);
 	
-		size= (float)fabs( vec[0] );
+		size= fabsf( vec[0] );
 		if( size > totsize ) totsize= size;
-		size= (float)fabs( vec[1] );
+		size= fabsf( vec[1] );
 		if( size > totsize ) totsize= size;
-		size= (float)fabs( vec[2] );
+		size= fabsf( vec[2] );
 		if( size > totsize ) totsize= size;
 
 		vec[0]= mainb[a]->x - mainb[a]->rad;
@@ -1798,11 +1794,11 @@ float init_meta(Scene *scene, Object *ob)	/* return totsize */
 				
 		calc_mballco(mainb[a], vec);
 	
-		size= (float)fabs( vec[0] );
+		size= fabsf( vec[0] );
 		if( size > totsize ) totsize= size;
-		size= (float)fabs( vec[1] );
+		size= fabsf( vec[1] );
 		if( size > totsize ) totsize= size;
-		size= (float)fabs( vec[2] );
+		size= fabsf( vec[2] );
 		if( size > totsize ) totsize= size;
 	}
 

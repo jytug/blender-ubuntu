@@ -1,6 +1,4 @@
 /*
- * $Id: rna_ui_api.c 40786 2011-10-04 13:24:48Z blendix $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -399,6 +397,30 @@ void RNA_api_ui_layout(StructRNA *srna)
 	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_RNAPTR|PROP_NEVER_NULL);
 	RNA_def_boolean(func, "compact", 0, "", "Use more compact layout");
 
+	func= RNA_def_function(srna, "template_image_settings", "uiTemplateImageSettings");
+	RNA_def_function_ui_description(func, "User interface for setting image format options");
+	parm= RNA_def_pointer(func, "image_settings", "ImageFormatSettings", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_RNAPTR|PROP_NEVER_NULL);
+
+	func= RNA_def_function(srna, "template_movieclip", "uiTemplateMovieClip");
+	RNA_def_function_ui_description(func, "Item(s). User interface for selecting movie clips and their source paths");
+	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+	api_ui_item_rna_common(func);
+	RNA_def_boolean(func, "compact", 0, "", "Use more compact layout");
+
+	func= RNA_def_function(srna, "template_track", "uiTemplateTrack");
+	RNA_def_function_ui_description(func, "Item. A movie-track widget to preview tracking image.");
+	api_ui_item_rna_common(func);
+
+	func= RNA_def_function(srna, "template_marker", "uiTemplateMarker");
+	RNA_def_function_ui_description(func, "Item. A widget to control single marker settings.");
+	api_ui_item_rna_common(func);
+	parm= RNA_def_pointer(func, "clip_user", "MovieClipUser", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_RNAPTR|PROP_NEVER_NULL);
+	parm= RNA_def_pointer(func, "track", "MovieTrackingTrack", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_RNAPTR|PROP_NEVER_NULL);
+	RNA_def_boolean(func, "compact", 0, "", "Use more compact layout");
+
 	func= RNA_def_function(srna, "template_list", "uiTemplateList");
 	RNA_def_function_ui_description(func, "Item. A list widget to display data. e.g. vertexgroups");
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
@@ -410,6 +432,10 @@ void RNA_api_ui_layout(StructRNA *srna)
 	RNA_def_property_flag(parm, PROP_REQUIRED|PROP_RNAPTR|PROP_NEVER_NULL);
 	parm= RNA_def_string(func, "active_property", "", 0, "", "Identifier of property in data, for the active element");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
+	RNA_def_string(func, "prop_list", "", 0, "",
+	               "Identifier of a string property in each data member, specifying which "
+	               "of its properties should have a widget displayed in its row "
+	               "(format: \"propname1:propname2:propname3:...\")");
 	RNA_def_int(func, "rows", 5, 0, INT_MAX, "", "Number of rows to display", 0, INT_MAX);
 	RNA_def_int(func, "maxrows", 5, 0, INT_MAX, "", "Maximum number of rows to display", 0, INT_MAX);
 	RNA_def_enum(func, "type", list_type_items, 0, "Type", "Type of list to use");
@@ -426,6 +452,26 @@ void RNA_api_ui_layout(StructRNA *srna)
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 	
 	func= RNA_def_function(srna, "template_reports_banner", "uiTemplateReportsBanner");
+	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+
+	func= RNA_def_function(srna, "template_node_link", "uiTemplateNodeLink");
+	parm= RNA_def_pointer(func, "ntree", "NodeTree", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm= RNA_def_pointer(func, "node", "Node", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm= RNA_def_pointer(func, "socket", "NodeSocket", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+
+	func= RNA_def_function(srna, "template_node_view", "uiTemplateNodeView");
+	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+	parm= RNA_def_pointer(func, "ntree", "NodeTree", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm= RNA_def_pointer(func, "node", "Node", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm= RNA_def_pointer(func, "socket", "NodeSocket", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+
+	func= RNA_def_function(srna, "template_texture_user", "uiTemplateTextureUser");
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 
 	func= RNA_def_function(srna, "template_keymap_item_properties", "uiTemplateKeymapItemProperties");

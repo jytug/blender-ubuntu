@@ -1,6 +1,4 @@
 /*
- * $Id: ED_curve.h 40193 2011-09-14 00:37:27Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -90,6 +88,8 @@ void ED_curve_beztcpy(struct EditNurb *editnurb, struct BezTriple *dst, struct B
 void ED_curve_bpcpy(struct EditNurb *editnurb, struct BPoint *dst, struct BPoint *src, int count);
 
 int ED_curve_updateAnimPaths(struct Object *obedit);
+
+int ED_curve_actSelection(struct Curve *cu, float center[3]);
 
 /* debug only */
 void printknots(struct Object *obedit);

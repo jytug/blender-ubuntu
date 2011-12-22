@@ -1,6 +1,4 @@
 /*
- * $Id: transform.h 40538 2011-09-25 12:31:21Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -132,7 +130,7 @@ typedef struct TransDataExtension {
 	// float drotAngle;	 /* Initial object drotAngle,    TODO: not yet implimented */
 	// float drotAxis[3];	 /* Initial object drotAxis, TODO: not yet implimented */
 	float dquat[4];		 /* Initial object dquat */
-	float dsize[3];		 /* Initial object dsize */
+	float dscale[3];     /* Initial object dscale */
 	float *rot;          /* Rotation of the data to transform (Faculative)                                 */
 	float  irot[3];      /* Initial rotation                                                               */
 	float *quat;         /* Rotation quaternion of the data to transform (Faculative)                      */
@@ -152,7 +150,7 @@ typedef struct TransData2D {
 	float loc[3];		/* Location of data used to transform (x,y,0) */
 	float *loc2d;		/* Pointer to real 2d location of data */
 
-	float *h1, *h2;     /* Pointer to handle locations, if handles aren't being moved independantly*/
+	float *h1, *h2;     /* Pointer to handle locations, if handles aren't being moved independently */
 	float ih1[2], ih2[2];
 } TransData2D;
 
@@ -384,6 +382,9 @@ typedef struct TransInfo {
 
 #define T_RELEASE_CONFIRM	(1 << 23)
 
+	/* alternative transformation. used to add offset to tracking markers */
+#define T_ALT_TRANSFORM		(1 << 24)
+
 /* TransInfo->modifiers */
 #define	MOD_CONSTRAINT_SELECT	0x01
 #define	MOD_PRECISION			0x02
@@ -548,6 +549,7 @@ void flushTransParticles(TransInfo *t);
 int clipUVTransform(TransInfo *t, float *vec, int resize);
 void flushTransNodes(TransInfo *t);
 void flushTransSeq(TransInfo *t);
+void flushTransTracking(TransInfo *t);
 
 /*********************** exported from transform_manipulator.c ********** */
 int gimbal_axis(struct Object *ob, float gmat[][3]); /* return 0 when no gimbal for selection */

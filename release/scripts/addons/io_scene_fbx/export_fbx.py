@@ -235,6 +235,9 @@ def save_single(operator, scene, filepath="",
 
     if global_matrix is None:
         global_matrix = Matrix()
+        global_scale = 1.0
+    else:
+        global_scale = global_matrix.median_scale
 
     # Use this for working out paths relative to the export location
     base_src = os.path.dirname(bpy.data.filepath)
@@ -846,21 +849,28 @@ def save_single(operator, scene, filepath="",
         aspect = width / height
 
         data = my_cam.blenObject.data
+        # film width & height from mm to inches
+        filmwidth = data.sensor_width * 0.0393700787
+        filmheight = data.sensor_height * 0.0393700787
+        filmaspect = filmwidth / filmheight
+        # film offset
+        offsetx = filmwidth * data.shift_x
+        offsety = filmaspect * filmheight * data.shift_y
 
         fw('\n\tModel: "Model::%s", "Camera" {' % my_cam.fbxName)
         fw('\n\t\tVersion: 232')
         loc, rot, scale, matrix, matrix_rot = write_object_props(my_cam.blenObject, None, my_cam.parRelMatrix())
 
         fw('\n\t\t\tProperty: "Roll", "Roll", "A+",0')
-        fw('\n\t\t\tProperty: "FieldOfView", "FieldOfView", "A+",%.6f' % math.degrees(data.angle))
+        fw('\n\t\t\tProperty: "FieldOfView", "FieldOfView", "A+",%.6f' % math.degrees(data.angle_y))
 
         fw('\n\t\t\tProperty: "FieldOfViewX", "FieldOfView", "A+",1'
            '\n\t\t\tProperty: "FieldOfViewY", "FieldOfView", "A+",1'
            )
 
-        # fw('\n\t\t\tProperty: "FocalLength", "Real", "A+",14.0323972702026')
-        fw('\n\t\t\tProperty: "OpticalCenterX", "Real", "A+",%.6f' % data.shift_x)  # not sure if this is in the correct units?
-        fw('\n\t\t\tProperty: "OpticalCenterY", "Real", "A+",%.6f' % data.shift_y)  # ditto
+        fw('\n\t\t\tProperty: "FocalLength", "Number", "A+",%.6f' % data.lens)
+        fw('\n\t\t\tProperty: "FilmOffsetX", "Number", "A+",%.6f' % offsetx)
+        fw('\n\t\t\tProperty: "FilmOffsetY", "Number", "A+",%.6f' % offsety)
 
         fw('\n\t\t\tProperty: "BackgroundColor", "Color", "A+",0,0,0'
            '\n\t\t\tProperty: "TurnTable", "Real", "A+",0'
@@ -869,7 +879,7 @@ def save_single(operator, scene, filepath="",
            '\n\t\t\tProperty: "UseMotionBlur", "bool", "",0'
            '\n\t\t\tProperty: "UseRealTimeMotionBlur", "bool", "",1'
            '\n\t\t\tProperty: "ResolutionMode", "enum", "",0'
-           '\n\t\t\tProperty: "ApertureMode", "enum", "",2'
+           '\n\t\t\tProperty: "ApertureMode", "enum", "",3'  # horizontal - Houdini compatible
            '\n\t\t\tProperty: "GateFit", "enum", "",2'
            '\n\t\t\tProperty: "CameraFormat", "enum", "",0'
            )
@@ -886,7 +896,7 @@ def save_single(operator, scene, filepath="",
 
         Definition at line 234 of file kfbxcamera.h. '''
 
-        fw('\n\t\t\tProperty: "PixelAspectRatio", "double", "",2'
+        fw('\n\t\t\tProperty: "PixelAspectRatio", "double", "",1'
            '\n\t\t\tProperty: "UseFrameColor", "bool", "",0'
            '\n\t\t\tProperty: "FrameColor", "ColorRGB", "",0.3,0.3,0.3'
            '\n\t\t\tProperty: "ShowName", "bool", "",1'
@@ -896,14 +906,12 @@ def save_single(operator, scene, filepath="",
            '\n\t\t\tProperty: "ShowTimeCode", "bool", "",0'
            )
 
-        fw('\n\t\t\tProperty: "NearPlane", "double", "",%.6f' % data.clip_start)
-        fw('\n\t\t\tProperty: "FarPlane", "double", "",%.6f' % data.clip_end)
+        fw('\n\t\t\tProperty: "NearPlane", "double", "",%.6f' % (data.clip_start * global_scale))
+        fw('\n\t\t\tProperty: "FarPlane", "double", "",%.6f' % (data.clip_end * global_scale))
 
-        fw('\n\t\t\tProperty: "FilmWidth", "double", "",1.0'
-           '\n\t\t\tProperty: "FilmHeight", "double", "",1.0'
-           )
-
-        fw('\n\t\t\tProperty: "FilmAspectRatio", "double", "",%.6f' % aspect)
+        fw('\n\t\t\tProperty: "FilmWidth", "double", "",%.6f' % filmwidth)
+        fw('\n\t\t\tProperty: "FilmHeight", "double", "",%.6f' % filmheight)
+        fw('\n\t\t\tProperty: "FilmAspectRatio", "double", "",%.6f' % filmaspect)
 
         fw('\n\t\t\tProperty: "FilmSqueezeRatio", "double", "",1'
            '\n\t\t\tProperty: "FilmFormatIndex", "enum", "",0'
@@ -1423,15 +1431,15 @@ def save_single(operator, scene, filepath="",
         fw('\n\t\tEdges: ')
         i = -1
         for ed in me_edges:
-                if i == -1:
-                    fw('%i,%i' % (ed.vertices[0], ed.vertices[1]))
+            if i == -1:
+                fw('%i,%i' % (ed.vertices[0], ed.vertices[1]))
+                i = 0
+            else:
+                if i == 13:
+                    fw('\n\t\t')
                     i = 0
-                else:
-                    if i == 13:
-                        fw('\n\t\t')
-                        i = 0
-                    fw(',%i,%i' % (ed.vertices[0], ed.vertices[1]))
-                i += 1
+                fw(',%i,%i' % (ed.vertices[0], ed.vertices[1]))
+            i += 1
 
         fw('\n\t\tGeometryVersion: 124')
 
@@ -1861,7 +1869,7 @@ def save_single(operator, scene, filepath="",
                     i = 0
                 fw(',%.6f,%.6f,%.6f' % v.co[:])
             i += 1
-        
+
         fw('\n\t}')
 
     def write_group(name):

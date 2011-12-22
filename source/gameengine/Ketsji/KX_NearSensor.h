@@ -1,6 +1,4 @@
 /*
- * $Id: KX_NearSensor.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,7 +41,7 @@ struct PHY_CollData;
 
 class KX_NearSensor : public KX_TouchSensor
 {
-	Py_Header;
+	Py_Header
 protected:
 	float	m_Margin;
 	float  m_ResetMargin;
@@ -51,12 +49,12 @@ protected:
 	KX_ClientObjectInfo*	m_client_info;
 public:
 	KX_NearSensor(class SCA_EventManager* eventmgr,
-			class KX_GameObject* gameobj,
-			float margin,
-			float resetmargin,
-			bool bFindMaterial,
-			const STR_String& touchedpropname,
-			 PHY_IPhysicsController*	ctrl);
+	              class KX_GameObject* gameobj,
+	              float margin,
+	              float resetmargin,
+	              bool bFindMaterial,
+	              const STR_String& touchedpropname,
+	              PHY_IPhysicsController*	ctrl);
 /*
 public:
 	KX_NearSensor(class SCA_EventManager* eventmgr,

@@ -1,6 +1,4 @@
 /*
- * $Id: ED_image.h 36576 2011-05-09 14:41:44Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,7 +41,7 @@ struct wmWindowManager;
 
 /* space_image.c, exported for transform */
 struct Image *ED_space_image(struct SpaceImage *sima);
-void ED_space_image_set(struct bContext *C, struct SpaceImage *sima, struct Scene *scene, struct Object *obedit, struct Image *ima);
+void ED_space_image_set(struct SpaceImage *sima, struct Scene *scene, struct Object *obedit, struct Image *ima);
 
 struct ImBuf *ED_space_image_acquire_buffer(struct SpaceImage *sima, void **lock_r);
 void ED_space_image_release_buffer(struct SpaceImage *sima, void *lock);

@@ -1,7 +1,6 @@
 /*
  * SCA_2DFilterActuator.h
  *
- * $Id: SCA_2DFilterActuator.h 40838 2011-10-06 22:04:01Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -38,7 +37,7 @@
 
 class SCA_2DFilterActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 private:
 	vector<STR_String> m_propNames;

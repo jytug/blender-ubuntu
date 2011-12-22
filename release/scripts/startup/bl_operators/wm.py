@@ -106,7 +106,7 @@ def operator_path_is_undo(context, data_path):
     # luckily we don't do this!
     #
     # When we cant find the data owner assume no undo is needed.
-    data_path_head, data_path_sep, data_path_tail = data_path.rpartition(".")
+    data_path_head = data_path.rpartition(".")[0]
 
     if not data_path_head:
         return False
@@ -457,8 +457,8 @@ class WM_OT_context_cycle_enum(Operator):
 
 
 class WM_OT_context_cycle_array(Operator):
-    '''Set a context array value.
-    Useful for cycling the active mesh edit mode'''
+    '''Set a context array value. '''
+    '''Useful for cycling the active mesh edit mode'''
     bl_idname = "wm.context_cycle_array"
     bl_label = "Context Array Cycle"
     bl_options = {'UNDO', 'INTERNAL'}
@@ -748,8 +748,6 @@ class WM_OT_path_open(Operator):
     bl_label = ""
 
     filepath = StringProperty(
-            name="File Path",
-            maxlen=1024,
             subtype='FILE_PATH',
             )
 
@@ -1085,8 +1083,7 @@ class WM_OT_keyconfig_activate(Operator):
     bl_label = "Activate Keyconfig"
 
     filepath = StringProperty(
-            name="File Path",
-            maxlen=1024,
+            subtype='FILE_PATH',
             )
 
     def execute(self, context):
@@ -1116,8 +1113,7 @@ class WM_OT_appconfig_activate(Operator):
     bl_label = "Activate Application Configuration"
 
     filepath = StringProperty(
-            name="File Path",
-            maxlen=1024,
+            subtype='FILE_PATH',
             )
 
     def execute(self, context):
@@ -1203,8 +1199,7 @@ class WM_OT_keyconfig_import(Operator):
     bl_label = "Import Key Configuration..."
 
     filepath = StringProperty(
-            name="File Path",
-            description="Filepath to write file to",
+            subtype='FILE_PATH',
             default="keymap.py",
             )
     filter_folder = BoolProperty(
@@ -1270,8 +1265,7 @@ class WM_OT_keyconfig_export(Operator):
     bl_label = "Export Key Configuration..."
 
     filepath = StringProperty(
-            name="File Path",
-            description="Filepath to write file to",
+            subtype='FILE_PATH',
             default="keymap.py",
             )
     filter_folder = BoolProperty(
@@ -1371,9 +1365,9 @@ class WM_OT_keyitem_add(Operator):
         km = context.keymap
 
         if km.is_modal:
-            km.keymap_items.new_modal("", 'A', 'PRESS')  #~ kmi
+            km.keymap_items.new_modal("", 'A', 'PRESS')
         else:
-            km.keymap_items.new("none", 'A', 'PRESS')  #~ kmi
+            km.keymap_items.new("none", 'A', 'PRESS')
 
         # clear filter and expand keymap so we can see the newly added item
         if context.space_data.filter_text != "":
@@ -1451,7 +1445,7 @@ class WM_OT_operator_cheat_sheet(Operator):
 class WM_OT_addon_enable(Operator):
     "Enable an addon"
     bl_idname = "wm.addon_enable"
-    bl_label = "Enable Add-On"
+    bl_label = "Enable Addon"
 
     module = StringProperty(
             name="Module",
@@ -1482,7 +1476,7 @@ class WM_OT_addon_enable(Operator):
 class WM_OT_addon_disable(Operator):
     "Disable an addon"
     bl_idname = "wm.addon_disable"
-    bl_label = "Disable Add-On"
+    bl_label = "Disable Addon"
 
     module = StringProperty(
             name="Module",
@@ -1499,7 +1493,7 @@ class WM_OT_addon_disable(Operator):
 class WM_OT_addon_install(Operator):
     "Install an addon"
     bl_idname = "wm.addon_install"
-    bl_label = "Install Add-On..."
+    bl_label = "Install Addon..."
 
     overwrite = BoolProperty(
             name="Overwrite",
@@ -1513,8 +1507,7 @@ class WM_OT_addon_install(Operator):
             )
 
     filepath = StringProperty(
-            name="File Path",
-            description="File path to write file to",
+            subtype='FILE_PATH',
             )
     filter_folder = BoolProperty(
             name="Filter folders",
@@ -1667,7 +1660,7 @@ class WM_OT_addon_install(Operator):
 class WM_OT_addon_remove(Operator):
     "Disable an addon"
     bl_idname = "wm.addon_remove"
-    bl_label = "Remove Add-On"
+    bl_label = "Remove Addon"
 
     module = StringProperty(
             name="Module",
@@ -1722,7 +1715,7 @@ class WM_OT_addon_remove(Operator):
 
 
 class WM_OT_addon_expand(Operator):
-    "Display more information on this add-on"
+    "Display more information on this addon"
     bl_idname = "wm.addon_expand"
     bl_label = ""
 

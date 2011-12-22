@@ -1,6 +1,4 @@
 /*
- * $Id: BLI_math_vector.h 40147 2011-09-12 04:14:12Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -56,11 +54,18 @@ MINLINE void swap_v2_v2(float a[2], float b[2]);
 MINLINE void swap_v3_v3(float a[3], float b[3]);
 MINLINE void swap_v4_v4(float a[4], float b[4]);
 
+/* char */
+MINLINE void copy_v2_v2_char(char r[2], const char a[2]);
+MINLINE void copy_v3_v3_char(char r[3], const char a[3]);
+MINLINE void copy_v4_v4_char(char r[4], const char a[4]);
 /* short */
 MINLINE void copy_v2_v2_short(short r[2], const short a[2]);
 MINLINE void copy_v3_v3_short(short r[3], const short a[3]);
 MINLINE void copy_v4_v4_short(short r[4], const short a[4]);
-
+/* int */
+MINLINE void copy_v2_v2_int(int r[2], const int a[2]);
+MINLINE void copy_v3_v3_int(int r[3], const int a[3]);
+MINLINE void copy_v4_v4_int(int r[4], const int a[4]);
 
 /********************************* Arithmetic ********************************/
 
@@ -94,6 +99,8 @@ MINLINE void madd_v3_v3v3fl(float r[3], const float a[3], const float b[3], floa
 MINLINE void madd_v3_v3v3v3(float r[3], const float a[3], const float b[3], const float c[3]);
 MINLINE void madd_v4_v4fl(float r[4], const float a[4], float f);
 
+MINLINE void negate_v2(float r[2]);
+MINLINE void negate_v2_v2(float r[2], const float a[2]);
 MINLINE void negate_v3(float r[3]);
 MINLINE void negate_v3_v3(float r[3], const float a[3]);
 MINLINE void negate_v4(float r[4]);
@@ -187,17 +194,20 @@ void minmax_v3v3_v3(float min[3], float max[3], const float vec[3]);
 
 /***************************** Array Functions *******************************/
 /* attempted to follow fixed length vertex functions. names could be improved*/
-void range_vni(int *array, const int size, const int start);
+double dot_vn_vn(const float *array_src_a, const float *array_src_b, const int size);
+float normalize_vn_vn(float *array_tar, const float *array_src, const int size);
+float normalize_vn(float *array_tar, const int size);
+void range_vn_i(int *array_tar, const int size, const int start);
 void negate_vn(float *array_tar, const int size);
 void negate_vn_vn(float *array_tar, const float *array_src, const int size);
-void mul_vn_fl(float *array, const int size, const float f);
+void mul_vn_fl(float *array_tar, const int size, const float f);
 void mul_vn_vn_fl(float *array_tar, const float *array_src, const int size, const float f);
 void add_vn_vn(float *array_tar, const float *array_src, const int size);
 void add_vn_vnvn(float *array_tar, const float *array_src_a, const float *array_src_b, const int size);
 void sub_vn_vn(float *array_tar, const float *array_src, const int size);
 void sub_vn_vnvn(float *array_tar, const float *array_src_a, const float *array_src_b, const int size);
-void fill_vni(int *array_tar, const int size, const int val);
-void fill_vn(float *array_tar, const int size, const float val);
+void fill_vn_i(int *array_tar, const int size, const int val);
+void fill_vn_fl(float *array_tar, const int size, const float val);
 
 #ifdef __cplusplus
 }

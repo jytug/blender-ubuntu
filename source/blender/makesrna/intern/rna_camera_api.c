@@ -1,6 +1,4 @@
 /*
- * $Id: rna_camera_api.c 40699 2011-09-29 18:37:09Z gsrb3d $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,6 +36,8 @@
 #ifdef RNA_RUNTIME
 
 #include "DNA_scene_types.h"
+
+#include "BKE_camera.h"
 #include "BKE_context.h"
 #include "BKE_object.h"
 

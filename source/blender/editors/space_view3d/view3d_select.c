@@ -1,6 +1,4 @@
 /*
- * $Id: view3d_select.c 40874 2011-10-09 08:39:38Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -44,6 +42,7 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
+#include "DNA_tracking_types.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -62,6 +61,9 @@
 #include "BKE_context.h"
 #include "BKE_paint.h"
 #include "BKE_armature.h"
+#include "BKE_movieclip.h"
+#include "BKE_object.h"
+#include "BKE_tracking.h"
 
 
 #include "BIF_gl.h"
@@ -519,17 +521,17 @@ static void do_lasso_select_mesh(ViewContext *vc, int mcords[][2], short moves, 
 			EM_backbuf_checkAndSelectVerts(vc->em, select);
 		}
 		else {
-			mesh_foreachScreenVert(vc, do_lasso_select_mesh__doSelectVert, &data, 1);
+			mesh_foreachScreenVert(vc, do_lasso_select_mesh__doSelectVert, &data, V3D_CLIP_TEST_RV3D_CLIPPING);
 		}
 	}
 	if(ts->selectmode & SCE_SELECT_EDGE) {
 		/* Does both bbsel and non-bbsel versions (need screen cos for both) */
 		data.pass = 0;
-		mesh_foreachScreenEdge(vc, do_lasso_select_mesh__doSelectEdge, &data, 0);
+		mesh_foreachScreenEdge(vc, do_lasso_select_mesh__doSelectEdge, &data, V3D_CLIP_TEST_OFF);
 
 		if (data.done==0) {
 			data.pass = 1;
-			mesh_foreachScreenEdge(vc, do_lasso_select_mesh__doSelectEdge, &data, 0);
+			mesh_foreachScreenEdge(vc, do_lasso_select_mesh__doSelectEdge, &data, V3D_CLIP_TEST_OFF);
 		}
 	}
 	
@@ -1375,6 +1377,7 @@ static int mouse_select(bContext *C, const int mval[2], short extend, short obce
 		if(hits>0) {
 			int has_bones= 0;
 			
+			/* note: bundles are handling in the same way as bones */
 			for(a=0; a<hits; a++) if(buffer[4*a+3] & 0xFFFF0000) has_bones= 1;
 
 			/* note; shift+alt goes to group-flush-selecting */
@@ -1385,7 +1388,45 @@ static int mouse_select(bContext *C, const int mval[2], short extend, short obce
 			}
 			
 			if(has_bones && basact) {
-				if(ED_do_pose_selectbuffer(scene, basact, buffer, hits, extend) ) {	/* then bone is found */
+				if(basact->object->type==OB_CAMERA) {
+					if(BASACT==basact) {
+						int i, hitresult;
+						MovieTrackingTrack *track;
+
+						for (i=0; i< hits; i++) {
+							hitresult= buffer[3+(i*4)];
+
+							/* if there's bundles in buffer select bundles first,
+							   so non-camera elements should be ignored in buffer */
+							if(basact->selcol != (hitresult & 0xFFFF))
+								continue;
+
+							/* index of bundle is 1<<16-based. if there's no "bone" index
+							   in hight word, this buffer value belongs to camera,. not to bundle */
+							if(buffer[4*i+3] & 0xFFFF0000) {
+								MovieClip *clip= object_get_movieclip(scene, basact->object, 0);
+								int selected;
+								track= BKE_tracking_indexed_track(&clip->tracking, hitresult >> 16);
+
+								selected= (track->flag&SELECT) || (track->pat_flag&SELECT) || (track->search_flag&SELECT);
+
+								if(selected && extend)  BKE_tracking_deselect_track(track, TRACK_AREA_ALL);
+								else BKE_tracking_select_track(&clip->tracking, track, TRACK_AREA_ALL, extend);
+
+								basact->flag|= SELECT;
+								basact->object->flag= basact->flag;
+
+								retval= 1;
+
+								WM_event_add_notifier(C, NC_MOVIECLIP|ND_SELECT, track);
+								WM_event_add_notifier(C, NC_SCENE|ND_OB_SELECT, scene);
+
+								break;
+							}
+						}
+					}
+				}
+				else if(ED_do_pose_selectbuffer(scene, basact, buffer, hits, extend) ) {	/* then bone is found */
 				
 					/* we make the armature selected: 
 					   not-selected active object in posemode won't work well for tools */
@@ -1603,18 +1644,18 @@ static int do_mesh_box_select(ViewContext *vc, rcti *rect, int select, int exten
 		if (bbsel) {
 			EM_backbuf_checkAndSelectVerts(vc->em, select);
 		} else {
-			mesh_foreachScreenVert(vc, do_mesh_box_select__doSelectVert, &data, 1);
+			mesh_foreachScreenVert(vc, do_mesh_box_select__doSelectVert, &data, V3D_CLIP_TEST_RV3D_CLIPPING);
 		}
 	}
 	if(ts->selectmode & SCE_SELECT_EDGE) {
 			/* Does both bbsel and non-bbsel versions (need screen cos for both) */
 
 		data.pass = 0;
-		mesh_foreachScreenEdge(vc, do_mesh_box_select__doSelectEdge, &data, 0);
+		mesh_foreachScreenEdge(vc, do_mesh_box_select__doSelectEdge, &data, V3D_CLIP_TEST_OFF);
 
 		if (data.done==0) {
 			data.pass = 1;
-			mesh_foreachScreenEdge(vc, do_mesh_box_select__doSelectEdge, &data, 0);
+			mesh_foreachScreenEdge(vc, do_mesh_box_select__doSelectEdge, &data, V3D_CLIP_TEST_OFF);
 		}
 	}
 	
@@ -2129,7 +2170,7 @@ static void mesh_circle_select(ViewContext *vc, int select, const int mval[2], f
 		if(bbsel) {
 			EM_backbuf_checkAndSelectVerts(vc->em, select==LEFTMOUSE);
 		} else {
-			mesh_foreachScreenVert(vc, mesh_circle_doSelectVert, &data, 1);
+			mesh_foreachScreenVert(vc, mesh_circle_doSelectVert, &data, V3D_CLIP_TEST_RV3D_CLIPPING);
 		}
 	}
 
@@ -2137,7 +2178,7 @@ static void mesh_circle_select(ViewContext *vc, int select, const int mval[2], f
 		if (bbsel) {
 			EM_backbuf_checkAndSelectEdges(vc->em, select==LEFTMOUSE);
 		} else {
-			mesh_foreachScreenEdge(vc, mesh_circle_doSelectEdge, &data, 0);
+			mesh_foreachScreenEdge(vc, mesh_circle_doSelectEdge, &data, V3D_CLIP_TEST_OFF);
 		}
 	}
 	

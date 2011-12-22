@@ -1,6 +1,4 @@
 /*
- * $Id: file_ops.c 41021 2011-10-15 03:56:05Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
-#include "BLI_storage_types.h"
 #ifdef WIN32
 #include "BLI_winstuff.h"
 #endif
@@ -276,12 +273,19 @@ static int file_border_select_exec(bContext *C, wmOperator *op)
 	ARegion *ar= CTX_wm_region(C);
 	rcti rect;
 	FileSelect ret;
-
+	int extend= RNA_boolean_get(op->ptr, "extend");
 	short select= (RNA_int_get(op->ptr, "gesture_mode")==GESTURE_MODAL_SELECT);
+
 	rect.xmin= RNA_int_get(op->ptr, "xmin");
 	rect.ymin= RNA_int_get(op->ptr, "ymin");
 	rect.xmax= RNA_int_get(op->ptr, "xmax");
 	rect.ymax= RNA_int_get(op->ptr, "ymax");
+
+	if(!extend) {
+		SpaceFile *sfile= CTX_wm_space_file(C);
+
+		file_deselect_all(sfile, SELECTED_FILE);
+	}
 
 	BLI_isect_rcti(&(ar->v2d.mask), &rect, &rect);
 
@@ -309,7 +313,7 @@ void FILE_OT_select_border(wmOperatorType *ot)
 	ot->cancel= WM_border_select_cancel;
 
 	/* rna */
-	WM_operator_properties_gesture_border(ot, 0);
+	WM_operator_properties_gesture_border(ot, 1);
 }
 
 static int file_select_invoke(bContext *C, wmOperator *op, wmEvent *event)
@@ -711,7 +715,7 @@ int file_draw_check_exists(SpaceFile *sfile)
 			if(RNA_boolean_get(sfile->op->ptr, "check_existing")) {
 				char filepath[FILE_MAX];
 				BLI_join_dirfile(filepath, sizeof(filepath), sfile->params->dir, sfile->params->file);
-				if(BLI_exists(filepath) && !BLI_is_dir(filepath)) {
+				if(BLI_is_file(filepath)) {
 					return TRUE;
 				}
 			}
@@ -749,7 +753,7 @@ int file_exec(bContext *C, wmOperator *exec_op)
 
 		file_sfile_to_operator(op, sfile, filepath);
 
-		if (BLI_exist(sfile->params->dir))
+		if (BLI_exists(sfile->params->dir))
 			fsmenu_insert_entry(fsmenu_get(), FS_CATEGORY_RECENT, sfile->params->dir, 0, 1);
 
 		BLI_make_file_string(G.main->name, filepath, BLI_get_folder_create(BLENDER_USER_CONFIG, NULL), BLENDER_BOOKMARK_FILE);
@@ -1042,7 +1046,7 @@ int file_directory_new_exec(bContext *C, wmOperator *op)
 	}
 
 	/* create the file */
-	BLI_recurdir_fileops(path);
+	BLI_dir_create_recursive(path);
 
 	if (!BLI_exists(path)) {
 		BKE_report(op->reports,RPT_ERROR, "Couldn't create new folder");
@@ -1136,11 +1140,11 @@ int file_directory_exec(bContext *C, wmOperator *UNUSED(unused))
 		file_expand_directory(C);
 
 		if (!BLI_exists(sfile->params->dir)) {
-			BLI_recurdir_fileops(sfile->params->dir);
+			BLI_dir_create_recursive(sfile->params->dir);
 		}
 
-		/* special case, user may have pasted a fulepath into the directory */
-		if(BLI_exists(sfile->params->dir) && BLI_is_dir(sfile->params->dir) == 0) {
+		/* special case, user may have pasted a filepath into the directory */
+		if(BLI_is_file(sfile->params->dir)) {
 			char path[sizeof(sfile->params->dir)];
 			BLI_strncpy(path, sfile->params->dir, sizeof(path));
 			BLI_split_dirfile(path, sfile->params->dir, sfile->params->file, sizeof(sfile->params->dir), sizeof(sfile->params->file));

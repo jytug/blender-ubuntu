@@ -1,6 +1,4 @@
 /*
- * $Id: drawarmature.c 41220 2011-10-23 12:33:11Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -117,7 +115,7 @@ static void set_pchan_colorset (Object *ob, bPoseChannel *pchan)
 	 * color set (based on the theme colors for 3d-view) is used. 
 	 */
 	if (color_index > 0) {
-		bTheme *btheme= U.themes.first;
+		bTheme *btheme= UI_GetTheme();
 		bcolor= &btheme->tarm[(color_index - 1)];
 	}
 	else if (color_index == -1) {
@@ -155,17 +153,17 @@ static short set_pchan_glColor (short colCode, int boneflag, short constflag)
 			unsigned char cp[3];
 			
 			if (boneflag & BONE_DRAW_ACTIVE) {
-				VECCOPY(cp, bcolor->active);
+				copy_v3_v3_char((char *)cp, bcolor->active);
 				if(!(boneflag & BONE_SELECTED)) {
 					cp_shade_color3ub(cp, -80);
 				}
 			}
 			else if (boneflag & BONE_SELECTED) {
-				VECCOPY(cp, bcolor->select);
+				copy_v3_v3_char((char *)cp, bcolor->select);
 			}
 			else {
 				/* a bit darker than solid */
-				VECCOPY(cp, bcolor->solid);
+				copy_v3_v3_char((char *)cp, bcolor->solid);
 				cp_shade_color3ub(cp, -50);
 			}
 			
@@ -215,13 +213,13 @@ static short set_pchan_glColor (short colCode, int boneflag, short constflag)
 			unsigned char cp[3];
 			
 			if (boneflag & BONE_DRAW_ACTIVE) {
-				VECCOPY(cp, bcolor->active);
+				copy_v3_v3_char((char *)cp, bcolor->active);
 			}
 			else if (boneflag & BONE_SELECTED) {
-				VECCOPY(cp, bcolor->select);
+				copy_v3_v3_char((char *)cp, bcolor->select);
 			}
 			else {
-				VECCOPY(cp, bcolor->solid);
+				copy_v3_v3_char((char *)cp, bcolor->solid);
 			}
 			
 			glColor3ubv(cp);
@@ -241,15 +239,15 @@ static short set_pchan_glColor (short colCode, int boneflag, short constflag)
 			unsigned char cp[3];
 			
 			if (boneflag & BONE_DRAW_ACTIVE) {
-				VECCOPY(cp, bcolor->active);
+				copy_v3_v3_char((char *)cp, bcolor->active);
 				cp_shade_color3ub(cp, 10);
 			}
 			else if (boneflag & BONE_SELECTED) {
-				VECCOPY(cp, bcolor->select);
+				copy_v3_v3_char((char *)cp, bcolor->select);
 				cp_shade_color3ub(cp, -30);
 			}
 			else {
-				VECCOPY(cp, bcolor->solid);
+				copy_v3_v3_char((char *)cp, bcolor->solid);
 				cp_shade_color3ub(cp, -30);
 			}
 			
@@ -1948,7 +1946,7 @@ static void draw_pose_bones(Scene *scene, View3D *v3d, ARegion *ar, Base *base, 
 				index+= 0x10000;	
 		}
 		/* restore things */
-		if ((arm->drawtype!=ARM_LINE)&& (dt>OB_WIRE) && (arm->flag & ARM_POSEMODE))
+		if (!ELEM(arm->drawtype, ARM_WIRE, ARM_LINE) && (dt>OB_WIRE) && (arm->flag & ARM_POSEMODE))
 			bglPolygonOffset(rv3d->dist, 0.0);
 	}	
 	

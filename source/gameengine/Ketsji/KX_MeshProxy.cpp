@@ -1,5 +1,4 @@
 /*
- * $Id: KX_MeshProxy.cpp 39834 2011-09-01 02:12:53Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -130,7 +129,7 @@ PyObject* KX_MeshProxy::PyGetMaterialName(PyObject* args, PyObject* kwds)
 		return NULL;
 	}
 
-	return PyUnicode_FromString(matname.Ptr());
+	return PyUnicode_From_STR_String(matname);
 
 }
 
@@ -148,7 +147,7 @@ PyObject* KX_MeshProxy::PyGetTextureName(PyObject* args, PyObject* kwds)
 		return NULL;
 	}
 
-	return PyUnicode_FromString(matname.Ptr());
+	return PyUnicode_From_STR_String(matname);
 		
 }
 

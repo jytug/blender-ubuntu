@@ -1,6 +1,4 @@
 /*
- * $Id: gpu.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -29,6 +27,9 @@
 
 /** \file blender/python/intern/gpu.c
  *  \ingroup pythonintern
+ *
+ * This file defines the 'gpu' module, used to get GLSL shader code and data
+ * from blender materials.
  */
 
 /* python redefines */
@@ -86,6 +87,7 @@ PyInit_gpu(void)
 	PY_MODULE_ADD_CONSTANT(m, GPU_DYNAMIC_OBJECT_VIEWIMAT);
 	PY_MODULE_ADD_CONSTANT(m, GPU_DYNAMIC_OBJECT_IMAT);
 	PY_MODULE_ADD_CONSTANT(m, GPU_DYNAMIC_OBJECT_COLOR);
+	PY_MODULE_ADD_CONSTANT(m, GPU_DYNAMIC_OBJECT_AUTOBUMPSCALE);
 	PY_MODULE_ADD_CONSTANT(m, GPU_DYNAMIC_LAMP_DYNVEC);
 	PY_MODULE_ADD_CONSTANT(m, GPU_DYNAMIC_LAMP_DYNCO);
 	PY_MODULE_ADD_CONSTANT(m, GPU_DYNAMIC_LAMP_DYNIMAT);
@@ -238,7 +240,7 @@ static PyObject* GPU_export_shader(PyObject* UNUSED(self), PyObject *args, PyObj
 			PY_DICT_ADD_LONG(dict,uniform,texnumber);
 		}
 		if (uniform->texpixels) {
-			val = PyByteArray_FromStringAndSize((const char *)uniform->texpixels, uniform->texsize);
+			val = PyByteArray_FromStringAndSize((const char *)uniform->texpixels, uniform->texsize * 4);
 			PyDict_SetItemString(dict, "texpixels", val);
 			Py_DECREF(val);
 			PY_DICT_ADD_LONG(dict,uniform,texsize);

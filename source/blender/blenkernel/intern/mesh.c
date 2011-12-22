@@ -1,6 +1,4 @@
 /*
- * $Id: mesh.c 40903 2011-10-10 09:38:02Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -45,6 +43,7 @@
 #include "DNA_ipo_types.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_bpath.h"
 #include "BLI_editVert.h"
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
@@ -107,31 +106,17 @@ void unlink_mesh(Mesh *me)
 	}
 
 	if(me->key) {
-		   me->key->id.us--;
-		if (me->key->id.us == 0 && me->key->ipo )
-			me->key->ipo->id.us--;
+		me->key->id.us--;
 	}
 	me->key= NULL;
 	
 	if(me->texcomesh) me->texcomesh= NULL;
 }
 
-
 /* do not free mesh itself */
 void free_mesh(Mesh *me)
 {
 	unlink_mesh(me);
-
-	if(me->pv) {
-		if(me->pv->vert_map) MEM_freeN(me->pv->vert_map);
-		if(me->pv->edge_map) MEM_freeN(me->pv->edge_map);
-		if(me->pv->old_faces) MEM_freeN(me->pv->old_faces);
-		if(me->pv->old_edges) MEM_freeN(me->pv->old_edges);
-		me->totvert= me->pv->totvert;
-		me->totedge= me->pv->totedge;
-		me->totface= me->pv->totface;
-		MEM_freeN(me->pv);
-	}
 
 	CustomData_free(&me->vdata, me->totvert);
 	CustomData_free(&me->edata, me->totedge);
@@ -207,7 +192,7 @@ Mesh *copy_mesh(Mesh *me)
 	MTFace *tface;
 	int a, i;
 	
-	men= copy_libblock(me);
+	men= copy_libblock(&me->id);
 	
 	men->mat= MEM_dupallocN(me->mat);
 	for(a=0; a<men->totcol; a++) {
@@ -233,7 +218,6 @@ Mesh *copy_mesh(Mesh *me)
 	
 	men->mselect= NULL;
 	men->edit_mesh= NULL;
-	men->pv= NULL; /* looks like this is no-longer supported but NULL just incase */
 
 	men->bb= MEM_dupallocN(men->bb);
 	
@@ -243,38 +227,25 @@ Mesh *copy_mesh(Mesh *me)
 	return men;
 }
 
-static void make_local_tface(Main *bmain, Mesh *me)
-{
-	MTFace *tface;
-	Image *ima;
-	int a, i;
-	
-	for(i=0; i<me->fdata.totlayer; i++) {
-		if(me->fdata.layers[i].type == CD_MTFACE) {
-			tface= (MTFace*)me->fdata.layers[i].data;
-			
-			for(a=0; a<me->totface; a++, tface++) {
-				/* special case: ima always local immediately */
-				if(tface->tpage) {
-					ima= tface->tpage;
-					if(ima->id.lib) {
-						ima->id.lib= NULL;
-						ima->id.flag= LIB_LOCAL;
-						new_id(&bmain->image, (ID *)ima, NULL);
-					}
-				}
-			}
-		}
-	}
-}
-
-static void expand_local_mesh(Main *bmain, Mesh *me)
+static void expand_local_mesh(Mesh *me)
 {
 	id_lib_extern((ID *)me->texcomesh);
 
 	if(me->mtface) {
-		/* why is this an exception? - should not really make local when extern'ing - campbell */
-		make_local_tface(bmain, me);
+		MTFace *tface;
+		int a, i;
+
+		for(i=0; i<me->fdata.totlayer; i++) {
+			if(me->fdata.layers[i].type == CD_MTFACE) {
+				tface= (MTFace*)me->fdata.layers[i].data;
+
+				for(a=0; a<me->totface; a++, tface++) {
+					if(tface->tpage) {
+						id_lib_extern((ID *)tface->tpage);
+					}
+				}
+			}
+		}
 	}
 
 	if(me->mat) {
@@ -286,7 +257,7 @@ void make_local_mesh(Mesh *me)
 {
 	Main *bmain= G.main;
 	Object *ob;
-	int local=0, lib=0;
+	int is_local= FALSE, is_lib= FALSE;
 
 	/* - only lib users: do nothing
 	 * - only local users: set flag
@@ -295,36 +266,34 @@ void make_local_mesh(Mesh *me)
 
 	if(me->id.lib==NULL) return;
 	if(me->id.us==1) {
-		me->id.lib= NULL;
-		me->id.flag= LIB_LOCAL;
-
-		new_id(&bmain->mesh, (ID *)me, NULL);
-		expand_local_mesh(bmain, me);
+		id_clear_lib_data(bmain, &me->id);
+		expand_local_mesh(me);
 		return;
 	}
 
-	for(ob= bmain->object.first; ob && ELEM(0, lib, local); ob= ob->id.next) {
+	for(ob= bmain->object.first; ob && ELEM(0, is_lib, is_local); ob= ob->id.next) {
 		if(me == ob->data) {
-			if(ob->id.lib) lib= 1;
-			else local= 1;
+			if(ob->id.lib) is_lib= TRUE;
+			else is_local= TRUE;
 		}
 	}
 
-	if(local && lib==0) {
-		me->id.lib= NULL;
-		me->id.flag= LIB_LOCAL;
-
-		new_id(&bmain->mesh, (ID *)me, NULL);
-		expand_local_mesh(bmain, me);
+	if(is_local && is_lib == FALSE) {
+		id_clear_lib_data(bmain, &me->id);
+		expand_local_mesh(me);
 	}
-	else if(local && lib) {
-		Mesh *men= copy_mesh(me);
-		men->id.us= 0;
+	else if(is_local && is_lib) {
+		Mesh *me_new= copy_mesh(me);
+		me_new->id.us= 0;
+
+
+		/* Remap paths of new ID using old library as base. */
+		BKE_id_lib_local_paths(bmain, me->id.lib, &me_new->id);
 
 		for(ob= bmain->object.first; ob; ob= ob->id.next) {
 			if(me == ob->data) {
 				if(ob->id.lib==NULL) {
-					set_mesh(ob, men);
+					set_mesh(ob, me_new);
 				}
 			}
 		}
@@ -1332,7 +1301,6 @@ UvVertMap *make_uv_vert_map(struct MFace *mface, struct MTFace *tface, unsigned 
 	UvVertMap *vmap;
 	UvMapVert *buf;
 	MFace *mf;
-	MTFace *tf;
 	unsigned int a;
 	int	i, totuv, nverts;
 
@@ -1340,8 +1308,7 @@ UvVertMap *make_uv_vert_map(struct MFace *mface, struct MTFace *tface, unsigned 
 
 	/* generate UvMapVert array */
 	mf= mface;
-	tf= tface;
-	for(a=0; a<totface; a++, mf++, tf++)
+	for(a=0; a<totface; a++, mf++)
 		if(!selected || (!(mf->flag & ME_HIDE) && (mf->flag & ME_FACE_SEL)))
 			totuv += (mf->v4)? 4: 3;
 		
@@ -1361,8 +1328,7 @@ UvVertMap *make_uv_vert_map(struct MFace *mface, struct MTFace *tface, unsigned 
 	}
 
 	mf= mface;
-	tf= tface;
-	for(a=0; a<totface; a++, mf++, tf++) {
+	for(a=0; a<totface; a++, mf++) {
 		if(!selected || (!(mf->flag & ME_HIDE) && (mf->flag & ME_FACE_SEL))) {
 			nverts= (mf->v4)? 4: 3;
 
@@ -1378,7 +1344,6 @@ UvVertMap *make_uv_vert_map(struct MFace *mface, struct MTFace *tface, unsigned 
 	}
 	
 	/* sort individual uvs for each vert */
-	tf= tface;
 	for(a=0; a<totvert; a++) {
 		UvMapVert *newvlist= NULL, *vlist=vmap->vert[a];
 		UvMapVert *iterv, *v, *lastv, *next;
@@ -1390,14 +1355,14 @@ UvVertMap *make_uv_vert_map(struct MFace *mface, struct MTFace *tface, unsigned 
 			v->next= newvlist;
 			newvlist= v;
 
-			uv= (tf+v->f)->uv[v->tfindex];
+			uv= tface[v->f].uv[v->tfindex];
 			lastv= NULL;
 			iterv= vlist;
 
 			while(iterv) {
 				next= iterv->next;
 
-				uv2= (tf+iterv->f)->uv[iterv->tfindex];
+				uv2= tface[iterv->f].uv[iterv->tfindex];
 				sub_v2_v2v2(uvdiff, uv2, uv);
 
 
@@ -1475,72 +1440,6 @@ void create_vert_edge_map(ListBase **map, IndexNode **mem, const MEdge *medge, c
 			node->index = i;
 			BLI_addtail(&(*map)[((unsigned int*)(&medge[i].v1))[j]], node);
 		}
-	}
-}
-
-/* Partial Mesh Visibility */
-PartialVisibility *mesh_pmv_copy(PartialVisibility *pmv)
-{
-	PartialVisibility *n= MEM_dupallocN(pmv);
-	n->vert_map= MEM_dupallocN(pmv->vert_map);
-	n->edge_map= MEM_dupallocN(pmv->edge_map);
-	n->old_edges= MEM_dupallocN(pmv->old_edges);
-	n->old_faces= MEM_dupallocN(pmv->old_faces);
-	return n;
-}
-
-void mesh_pmv_free(PartialVisibility *pv)
-{
-	MEM_freeN(pv->vert_map);
-	MEM_freeN(pv->edge_map);
-	MEM_freeN(pv->old_faces);
-	MEM_freeN(pv->old_edges);
-	MEM_freeN(pv);
-}
-
-void mesh_pmv_revert(Mesh *me)
-{
-	if(me->pv) {
-		unsigned i;
-		MVert *nve, *old_verts;
-		
-		/* Reorder vertices */
-		nve= me->mvert;
-		old_verts = MEM_mallocN(sizeof(MVert)*me->pv->totvert,"PMV revert verts");
-		for(i=0; i<me->pv->totvert; ++i)
-			old_verts[i]= nve[me->pv->vert_map[i]];
-
-		/* Restore verts, edges and faces */
-		CustomData_free_layer_active(&me->vdata, CD_MVERT, me->totvert);
-		CustomData_free_layer_active(&me->edata, CD_MEDGE, me->totedge);
-		CustomData_free_layer_active(&me->fdata, CD_MFACE, me->totface);
-
-		CustomData_add_layer(&me->vdata, CD_MVERT, CD_ASSIGN, old_verts, me->pv->totvert);
-		CustomData_add_layer(&me->edata, CD_MEDGE, CD_ASSIGN, me->pv->old_edges, me->pv->totedge);
-		CustomData_add_layer(&me->fdata, CD_MFACE, CD_ASSIGN, me->pv->old_faces, me->pv->totface);
-		mesh_update_customdata_pointers(me);
-
-		me->totvert= me->pv->totvert;
-		me->totedge= me->pv->totedge;
-		me->totface= me->pv->totface;
-
-		me->pv->old_edges= NULL;
-		me->pv->old_faces= NULL;
-
-		/* Free maps */
-		MEM_freeN(me->pv->edge_map);
-		me->pv->edge_map= NULL;
-		MEM_freeN(me->pv->vert_map);
-		me->pv->vert_map= NULL;
-	}
-}
-
-void mesh_pmv_off(Mesh *me)
-{
-	if(me->pv) {
-		mesh_pmv_revert(me);
-		MEM_freeN(me->pv);
-		me->pv= NULL;
 	}
 }
 

@@ -1,6 +1,4 @@
 /*
- * $Id: makesdna.c 39792 2011-08-30 09:15:55Z nexyon $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -50,7 +48,7 @@
  * numbers give more output.
  * */
 
-#define DNA_VERSION_DATE "$Id: makesdna.c 39792 2011-08-30 09:15:55Z nexyon $"
+#define DNA_VERSION_DATE "FIXME-DNA_VERSION_DATE"
 
 #include <string.h>
 #include <stdlib.h>
@@ -66,7 +64,7 @@
 
 /* Included the path relative from /source/blender/ here, so we can move     */
 /* headers around with more freedom.                                         */
-const char *includefiles[] = {
+static const char *includefiles[] = {
 
 	// if you add files here, please add them at the end
 	// of makesdna.c (this file) as well
@@ -133,6 +131,9 @@ const char *includefiles[] = {
 	"DNA_boid_types.h",
 	"DNA_smoke_types.h",
 	"DNA_speaker_types.h",
+	"DNA_movieclip_types.h",
+	"DNA_tracking_types.h",
+	"DNA_dynamicpaint_types.h",
 
 	// empty string to indicate end of includefiles
 	""
@@ -147,9 +148,9 @@ static char **types, *typedata;		/* at address types[a] is string a */
 static short *typelens;				/* at typelens[a] is de length of type a */
 static short *alphalens;			/* contains sizes as they are calculated on the DEC Alpha (64 bits), infact any 64bit system */
 static short **structs, *structdata;/* at sp= structs[a] is the first address of a struct definition
-								       sp[0] is type number
-							    	   sp[1] is amount of elements
-							    	   sp[2] sp[3] is typenr,  namenr (etc) */
+                                       sp[0] is type number
+                                       sp[1] is amount of elements
+                                       sp[2] sp[3] is typenr,  namenr (etc) */
 /**
  * Variable to control debug output of makesdna.
  * debugSDNA:
@@ -170,35 +171,35 @@ static int additional_slen_offset;
  * \param str char
  * \param len int
  */
-int add_type(const char *str, int len);
+static int add_type(const char *str, int len);
 
 /**
  * Add variable \c str to 
  * \param str
  */
-int add_name(char *str);
+static int add_name(const char *str);
 
 /**
  * Search whether this structure type was already found, and if not,
  * add it.
  */
-short *add_struct(int namecode);
+static short *add_struct(int namecode);
 
 /**
  * Remove comments from this buffer. Assumes that the buffer refers to
  * ascii-code text.
  */
-int preprocess_include(char *maindata, int len);
+static int preprocess_include(char *maindata, int len);
 
 /**
  * Scan this file for serializable types.
  */ 
-int convert_include(char *filename);
+static int convert_include(char *filename);
 
 /**
  * Determine how many bytes are needed for an array.
  */ 
-int arraysize(char *astr, int len);
+static int arraysize(char *astr, int len);
 
 /**
  * Determine how many bytes are needed for each struct.
@@ -223,7 +224,7 @@ void printStructLenghts(void);
 
 /* ************************* MAKEN DNA ********************** */
 
-int add_type(const char *str, int len)
+static int add_type(const char *str, int len)
 {
 	int nr;
 	char *cp;
@@ -269,12 +270,12 @@ int add_type(const char *str, int len)
  * cases, unfortunately. These are explicitly checked.
  *
  * */
-int add_name(char *str)
+static int add_name(const char *str)
 {
 	int nr, i, j, k;
 	char *cp;
 	char buf[255]; /* stupid limit, change it :) */
-	char *name;
+	const char *name;
 
 	additional_slen_offset = 0;
 	
@@ -308,8 +309,9 @@ int add_name(char *str)
 			if (debugSDNA > 3) printf("seen %c ( %d) \n", str[j], str[j]);
 			j++;
 		}
-		if (debugSDNA > 3) printf("seen %c ( %d) \n", str[j], str[j]); 
-		if (debugSDNA > 3) printf("special after offset %d\n", j); 
+		if (debugSDNA > 3) printf("seen %c ( %d) \n"
+		                          "special after offset%d\n",
+		                          str[j], str[j], j);
 				
 		if (!isfuncptr) {
 			/* multidimensional array pointer case */
@@ -398,7 +400,7 @@ int add_name(char *str)
 	return nr_names-1;
 }
 
-short *add_struct(int namecode)
+static short *add_struct(int namecode)
 {
 	int len;
 	short *sp;
@@ -424,7 +426,7 @@ short *add_struct(int namecode)
 	return sp;
 }
 
-int preprocess_include(char *maindata, int len)
+static int preprocess_include(char *maindata, int len)
 {
 	int a, newlen, comment = 0;
 	char *cp, *temp, *md;
@@ -473,6 +475,13 @@ int preprocess_include(char *maindata, int len)
 		if(comment);
 		else if( cp[0]==' ' && cp[1]==' ' );
 		else if( cp[-1]=='*' && cp[0]==' ' );	/* pointers with a space */
+
+		/* skip special keywords */
+		else if (strncmp("DNA_DEPRECATED", cp, 14)==0) {
+			/* single values are skipped already, so decrement 1 less */
+			a -= 13;
+			cp += 13;
+		}
 		else {
 			md[0]= cp[0];
 			md++;
@@ -521,7 +530,7 @@ static void *read_file_data(char *filename, int *len_r)
 	return data;
 }
 
-int convert_include(char *filename)
+static int convert_include(char *filename)
 {
 	/* read include file, skip structs with a '#' before it.
 	   store all data in temporal arrays.
@@ -658,7 +667,7 @@ int convert_include(char *filename)
 	return 0;
 }
 
-int arraysize(char *astr, int len)
+static int arraysize(char *astr, int len)
 {
 	int a, mul=1;
 	char str[100], *cp=NULL;
@@ -1089,7 +1098,7 @@ static int make_structDNA(char *baseDirectory, FILE *file)
 
 /* ************************* END MAKE DNA ********************** */
 
-static void make_bad_file(char *file, int line)
+static void make_bad_file(const char *file, int line)
 {
 	FILE *fp= fopen(file, "w");
 	fprintf(fp, "#error \"Error! can't make correct DNA.c file from %s:%d, STUPID!\"\n", __FILE__, line);
@@ -1198,4 +1207,7 @@ int main(int argc, char ** argv)
 #include "DNA_boid_types.h"
 #include "DNA_smoke_types.h"
 #include "DNA_speaker_types.h"
+#include "DNA_movieclip_types.h"
+#include "DNA_tracking_types.h"
+#include "DNA_dynamicpaint_types.h"
 /* end of list */

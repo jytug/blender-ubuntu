@@ -1,6 +1,4 @@
 /*
- * $Id: KX_MeshProxy.h 35063 2011-02-22 10:33:14Z jesterking $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,7 +41,7 @@ bool ConvertPythonToMesh(PyObject * value, class RAS_MeshObject **object, bool p
 
 class KX_MeshProxy	: public CValue
 {
-	Py_Header;
+	Py_Header
 
 	class RAS_MeshObject*	m_meshobj;
 public:

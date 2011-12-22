@@ -1,6 +1,4 @@
 /*
- * $Id: SCA_PropertyActuator.h 36523 2011-05-06 20:18:42Z blendix $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,7 +36,7 @@
 
 class SCA_PropertyActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 	
 	enum KX_ACT_PROP_MODE {
 		KX_ACT_PROP_NODEF = 0,

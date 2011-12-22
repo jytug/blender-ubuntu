@@ -1,6 +1,4 @@
 /*
- * $Id: math_base_inline.c 37336 2011-06-09 14:27:51Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,7 +39,7 @@
 #define BLI_MATH_BASE_INLINE_H
 
 /* A few small defines. Keep'em local! */
-#define SMALL_NUMBER	1.e-8
+#define SMALL_NUMBER	1.e-8f
 
 MINLINE float sqrt3f(float f)
 {
@@ -108,7 +106,7 @@ MINLINE float interpf(float target, float origin, float fac)
  * the distance gets very high, 180d would be inf, but this case isn't valid */
 MINLINE float shell_angle_to_dist(const float angle)
 {
-	return (angle < (float)SMALL_NUMBER) ? 1.0f : fabsf(1.0f / cosf(angle));
+	return (angle < SMALL_NUMBER) ? 1.0f : fabsf(1.0f / cosf(angle));
 }
 
 /* used for zoom values*/

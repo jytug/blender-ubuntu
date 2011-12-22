@@ -1,6 +1,4 @@
 /*
- * $Id: BKE_customdata.h 40903 2011-10-10 09:38:02Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -280,12 +278,15 @@ const char *CustomData_layertype_name(int type);
 /* make sure the name of layer at index is unique */
 void CustomData_set_layer_unique_name(struct CustomData *data, int index);
 
+void CustomData_validate_layer_name(const struct CustomData *data, int type, char *name, char *outname);
+
 /* for file reading compatibility, returns false if the layer was freed,
    only after this test passes, layer->data should be assigned */
 int CustomData_verify_versions(struct CustomData *data, int index);
 
 /*BMesh specific customdata stuff*/
-void CustomData_to_bmeshpoly(struct CustomData *fdata, struct CustomData *pdata, struct CustomData *ldata);
+void CustomData_to_bmeshpoly(struct CustomData *fdata, struct CustomData *pdata,
+                             struct CustomData *ldata);
 void CustomData_from_bmeshpoly(struct CustomData *fdata, struct CustomData *pdata, struct CustomData *ldata, int total);
 void CustomData_bmesh_init_pool(struct CustomData *data, int allocsize);
 

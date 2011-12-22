@@ -1,6 +1,4 @@
 /*
- * $Id: SCA_PythonController.h 39883 2011-09-03 02:15:49Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -44,7 +42,7 @@
 class SCA_IObject;
 class SCA_PythonController : public SCA_IController
 {
-	Py_Header;
+	Py_Header
 #ifdef WITH_PYTHON
 	struct _object *		m_bytecode; /* SCA_PYEXEC_SCRIPT only */
 	PyObject*				m_function; /* SCA_PYEXEC_MODULE only */

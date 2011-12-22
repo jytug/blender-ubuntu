@@ -1,6 +1,4 @@
 /*
- * $Id: DNA_camera_types.h 36696 2011-05-15 05:43:59Z campbellbarton $ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,6 +31,8 @@
  *  \ingroup DNA
  */
 
+#include "DNA_defs.h"
+
 #include "DNA_ID.h"
 
 #ifdef __cplusplus
@@ -53,6 +53,7 @@ typedef struct Camera {
 	float passepartalpha;
 	float clipsta, clipend;
 	float lens, ortho_scale, drawsize;
+	float sensor_x, sensor_y;
 	float shiftx, shifty;
 	
 	/* yafray: dof params */
@@ -60,9 +61,12 @@ typedef struct Camera {
 			The name was not changed so that no other files need to be modified */
 	float YF_dofdist;
 
-	struct Ipo *ipo;			// XXX depreceated... old animation system
+	struct Ipo *ipo  DNA_DEPRECATED; /* old animation system, deprecated for 2.5 */
 	
 	struct Object *dof_ob;
+
+	char sensor_fit;
+	char pad[7];
 } Camera;
 
 /* **************** CAMERA ********************* */
@@ -90,10 +94,18 @@ typedef struct Camera {
 #define CAM_ANGLETOGGLE		32
 #define CAM_DS_EXPAND		64
 #define CAM_PANORAMA		128
+#define CAM_SHOWSENSOR		256
 
 /* yafray: dof sampling switch */
 /* #define CAM_YF_NO_QMC	512 */ /* depreceated */
 
+/* Sensor fit */
+#define CAMERA_SENSOR_FIT_AUTO	0
+#define CAMERA_SENSOR_FIT_HOR	1
+#define CAMERA_SENSOR_FIT_VERT	2
+
+#define DEFAULT_SENSOR_WIDTH	32.0f
+#define DEFAULT_SENSOR_HEIGHT	18.0f
 
 #ifdef __cplusplus
 }

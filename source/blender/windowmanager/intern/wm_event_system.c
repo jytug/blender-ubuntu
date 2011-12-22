@@ -1,6 +1,4 @@
 /*
- * $Id: wm_event_system.c 41005 2011-10-14 08:06:59Z ender79 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -61,6 +59,7 @@
 
 #include "ED_fileselect.h"
 #include "ED_info.h"
+#include "ED_render.h"
 #include "ED_screen.h"
 #include "ED_view3d.h"
 #include "ED_util.h"
@@ -78,6 +77,10 @@
 #include "wm_event_system.h"
 #include "wm_event_types.h"
 #include "wm_draw.h"
+
+#ifndef NDEBUG
+#  include "RNA_enum_types.h"
+#endif
 
 static int wm_operator_call_internal(bContext *C, wmOperatorType *ot, PointerRNA *properties, ReportList *reports, short context, short poll_only);
 
@@ -309,6 +312,7 @@ void wm_event_do_notifiers(bContext *C)
 		/* XXX make lock in future, or separated derivedmesh users in scene */
 		if(!G.rendering) {
 			/* depsgraph & animation: update tagged datablocks */
+			Main *bmain = CTX_data_main(C);
 
 			/* copied to set's in scene_update_tagged_recursive() */
 			win->screen->scene->customdata_mask= win_combine_v3d_datamask;
@@ -316,7 +320,7 @@ void wm_event_do_notifiers(bContext *C)
 			/* XXX, hack so operators can enforce datamasks [#26482], gl render */
 			win->screen->scene->customdata_mask |= win->screen->scene->customdata_mask_modal;
 
-			scene_update_tagged(CTX_data_main(C), win->screen->scene);
+			scene_update_tagged(bmain, win->screen->scene);
 		}
 	}
 
@@ -434,6 +438,36 @@ static void wm_operator_print(bContext *C, wmOperator *op)
 	printf("%s\n", buf);
 	MEM_freeN(buf);
 }
+
+/* for debugging only, getting inspecting events manually is tedious */
+#ifndef NDEBUG
+
+void WM_event_print(wmEvent *event)
+{
+	if(event) {
+		const char *unknown= "UNKNOWN";
+		const char *type_id= unknown;
+		const char *val_id= unknown;
+
+		RNA_enum_identifier(event_type_items, event->type, &type_id);
+		RNA_enum_identifier(event_value_items, event->val, &val_id);
+
+		printf("wmEvent - type:%d/%s, val:%d/%s, "
+		       "shift:%d, ctrl:%d, alt:%d, oskey:%d, keymodifier:%d, "
+		       "mouse:(%d,%d), ascii:'%c', utf8:'%.*s', "
+		       "keymap_idname:%s, pointer:%p\n",
+		       event->type, type_id, event->val, val_id,
+		       event->shift, event->ctrl, event->alt, event->oskey, event->keymodifier,
+		       event->x, event->y, event->ascii,
+		       BLI_str_utf8_size(event->utf8_buf), event->utf8_buf,
+		       event->keymap_idname, (void *)event);
+	}
+	else {
+		printf("wmEvent - NULL\n");
+	}
+}
+
+#endif /* NDEBUG */
 
 static void wm_operator_reports(bContext *C, wmOperator *op, int retval, int popup)
 {
@@ -563,10 +597,34 @@ static int wm_operator_exec(bContext *C, wmOperator *op, int repeat)
 	
 }
 
-/* for running operators with frozen context (modal handlers, menus) */
+/* simply calls exec with basic checks */
+static int wm_operator_exec_notest(bContext *C, wmOperator *op)
+{
+	int retval= OPERATOR_CANCELLED;
+
+	if(op==NULL || op->type==NULL || op->type->exec==NULL)
+		return retval;
+
+	retval= op->type->exec(C, op);
+	OPERATOR_RETVAL_CHECK(retval);
+
+	return retval;
+}
+
+/* for running operators with frozen context (modal handlers, menus)
+ *
+ * warning: do not use this within an operator to call its self! [#29537] */
 int WM_operator_call(bContext *C, wmOperator *op)
 {
 	return wm_operator_exec(C, op, 0);
+}
+
+/* this is intended to be used when an invoke operator wants to call exec on its self
+ * and is basically like running op->type->exec() directly, no poll checks no freeing,
+ * since we assume whoever called invokle will take care of that */
+int WM_operator_call_notest(bContext *C, wmOperator *op)
+{
+	return wm_operator_exec_notest(C, op);
 }
 
 /* do this operator again, put here so it can share above code */
@@ -598,7 +656,7 @@ static wmOperator *wm_operator_create(wmWindowManager *wm, wmOperatorType *ot, P
 	}
 	else {
 		IDPropertyTemplate val = {0};
-		op->properties= IDP_New(IDP_GROUP, val, "wmOperatorProperties");
+		op->properties= IDP_New(IDP_GROUP, &val, "wmOperatorProperties");
 	}
 	RNA_pointer_create(&wm->id, ot->srna, op->properties, op->ptr);
 
@@ -1146,7 +1204,7 @@ static int wm_eventmatch(wmEvent *winevent, wmKeyMapItem *kmi)
 
 	/* the matching rules */
 	if(kmitype==KM_TEXTINPUT)
-		if(ISTEXTINPUT(winevent->type) && winevent->ascii) return 1;
+		if(ISTEXTINPUT(winevent->type) && (winevent->ascii || winevent->utf8_buf[0])) return 1;
 	if(kmitype!=KM_ANY)
 		if(winevent->type!=kmitype) return 0;
 	
@@ -1921,8 +1979,9 @@ void wm_event_do_handlers(bContext *C)
 					win->eventstate->prevy= event->y;
 					//printf("win->eventstate->prev = %d %d\n", event->x, event->y);
 				}
-				else
-					;//printf("not setting prev to %d %d\n", event->x, event->y);
+				else {
+					//printf("not setting prev to %d %d\n", event->x, event->y);
+				}
 			}
 			
 			/* store last event for this window */
@@ -2578,38 +2637,52 @@ void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, int U
 			GHOST_TEventKeyData *kd= customdata;
 			event.type= convert_key(kd->key);
 			event.ascii= kd->ascii;
+			memcpy(event.utf8_buf, kd->utf8_buf,sizeof(event.utf8_buf));/* might be not null terminated*/
 			event.val= (type==GHOST_kEventKeyDown)?KM_PRESS:KM_RELEASE;
 			
 			/* exclude arrow keys, esc, etc from text input */
-			if(type==GHOST_kEventKeyUp || (event.ascii<32 && event.ascii>0))
+			if(type==GHOST_kEventKeyUp) {
 				event.ascii= '\0';
-			
-			/* modifiers */
-			if (event.type==LEFTSHIFTKEY || event.type==RIGHTSHIFTKEY) {
-				event.shift= evt->shift= (event.val==KM_PRESS);
-				if(event.val==KM_PRESS && (evt->ctrl || evt->alt || evt->oskey))
-				   event.shift= evt->shift = 3;		// define?
-			} 
-			else if (event.type==LEFTCTRLKEY || event.type==RIGHTCTRLKEY) {
-				event.ctrl= evt->ctrl= (event.val==KM_PRESS);
-				if(event.val==KM_PRESS && (evt->shift || evt->alt || evt->oskey))
-				   event.ctrl= evt->ctrl = 3;		// define?
-			} 
-			else if (event.type==LEFTALTKEY || event.type==RIGHTALTKEY) {
-				event.alt= evt->alt= (event.val==KM_PRESS);
-				if(event.val==KM_PRESS && (evt->ctrl || evt->shift || evt->oskey))
-				   event.alt= evt->alt = 3;		// define?
-			} 
-			else if (event.type==OSKEY) {
-				event.oskey= evt->oskey= (event.val==KM_PRESS);
-				if(event.val==KM_PRESS && (evt->ctrl || evt->alt || evt->shift))
-				   event.oskey= evt->oskey = 3;		// define?
+
+				/* ghost should do this already for key up */
+				if (event.utf8_buf[0]) {
+					printf("%s: ghost on your platform is misbehaving, utf8 events on key up!\n", __func__);
+				}
+				event.utf8_buf[0]= '\0';
 			}
-			else {
+			else if (event.ascii<32 && event.ascii > 0) {
+				event.ascii= '\0';
+				/* TODO. should this also zero utf8?, dont for now, campbell */
+			}
+
+			if (event.utf8_buf[0]) {
+				if (BLI_str_utf8_size(event.utf8_buf) == -1) {
+					printf("%s: ghost detected an invalid unicode character '%d'!\n", __func__, (int)(unsigned char)event.utf8_buf[0]);
+					event.utf8_buf[0]= '\0';
+				}
+			}
+
+			/* modifiers */
+			/* assigning both first and second is strange - campbell */
+			switch(event.type) {
+			case LEFTSHIFTKEY: case RIGHTSHIFTKEY:
+				event.shift= evt->shift= (event.val==KM_PRESS) ? ((evt->ctrl || evt->alt || evt->oskey) ? (KM_MOD_FIRST | KM_MOD_SECOND) : KM_MOD_FIRST) : FALSE;
+				break;
+			case LEFTCTRLKEY: case RIGHTCTRLKEY:
+				event.ctrl= evt->ctrl= (event.val==KM_PRESS) ? ((evt->shift || evt->alt || evt->oskey) ? (KM_MOD_FIRST | KM_MOD_SECOND) : KM_MOD_FIRST) : FALSE;
+				break;
+			case LEFTALTKEY: case RIGHTALTKEY:
+				event.alt= evt->alt= (event.val==KM_PRESS) ? ((evt->ctrl || evt->shift || evt->oskey) ? (KM_MOD_FIRST | KM_MOD_SECOND) : KM_MOD_FIRST) : FALSE;
+				break;
+			case OSKEY:
+				event.oskey= evt->oskey= (event.val==KM_PRESS) ? ((evt->ctrl || evt->alt || evt->shift) ? (KM_MOD_FIRST | KM_MOD_SECOND) : KM_MOD_FIRST) : FALSE;
+				break;
+			default:
 				if(event.val==KM_PRESS && event.keymodifier==0)
 					evt->keymodifier= event.type; /* only set in eventstate, for next event */
 				else if(event.val==KM_RELEASE && event.keymodifier==event.type)
 					event.keymodifier= evt->keymodifier= 0;
+				break;
 			}
 
 			/* this case happens on some systems that on holding a key pressed,
@@ -2617,6 +2690,11 @@ void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, int U
 			   modifier in win->eventstate, but for the press event of the same
 			   key we don't want the key modifier */
 			if(event.keymodifier == event.type)
+				event.keymodifier= 0;
+			/* this case happened with an external numpad, it's not really clear
+			   why, but it's also impossible to map a key modifier to an unknwon
+			   key, so it shouldn't harm */
+			if(event.keymodifier == UNKNOWNKEY)
 				event.keymodifier= 0;
 			
 			/* if test_break set, it catches this. XXX Keep global for now? */
@@ -2695,4 +2773,8 @@ void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, int U
 		}
 
 	}
+
+	/* Handy when debugging checking events */
+	/* WM_event_print(&event); */
+
 }

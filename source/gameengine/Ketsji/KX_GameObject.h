@@ -1,6 +1,4 @@
 /*
- * $Id: KX_GameObject.h 40080 2011-09-09 21:28:56Z ben2610 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -82,7 +80,7 @@ void KX_GameObject_Mathutils_Callback_Init(void);
  */
 class KX_GameObject : public SCA_IObject
 {
-	Py_Header;
+	Py_Header
 protected:
 
 	bool								m_bDyna;

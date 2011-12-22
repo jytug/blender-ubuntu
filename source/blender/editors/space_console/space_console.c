@@ -1,6 +1,4 @@
 /*
- * $Id: space_console.c 40539 2011-09-25 12:33:51Z ender79 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -194,7 +192,7 @@ static int path_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(eve
 
 static void path_drop_copy(wmDrag *drag, wmDropBox *drop)
 {
-	char pathname[FILE_MAXDIR+FILE_MAXFILE+2];
+	char pathname[FILE_MAX+2];
 	BLI_snprintf(pathname, sizeof(pathname), "\"%s\"", drag->path);
 	RNA_string_set(drop->ptr, "text", pathname);
 }

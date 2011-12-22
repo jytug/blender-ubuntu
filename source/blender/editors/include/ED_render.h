@@ -36,6 +36,7 @@ struct Main;
 struct MTex;
 struct Render;
 struct RenderInfo;
+struct Scene;
 
 /* render_ops.c */
 
@@ -44,6 +45,8 @@ void ED_operatortypes_render(void);
 /* render_shading.c */
 
 void ED_render_id_flush_update(struct Main *bmain, struct ID *id);
+void ED_render_engine_changed(struct Main *bmain);
+void ED_render_scene_update(struct Main *bmain, struct Scene *scene, int updated);
 
 /* render_preview.c */
 
@@ -54,7 +57,7 @@ typedef struct RenderInfo {
 	short curtile, tottile, status;
 	rcti disprect;			/* storage for view3d preview rect */
 	unsigned int* rect;		
-	struct Render *re;		/* persistant render */
+	struct Render *re;		/* persistent render */
 } RenderInfo;
 
 /* ri->status */

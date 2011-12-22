@@ -1,6 +1,4 @@
 /*
- * $Id: uvedit_draw.c 40289 2011-09-17 09:43:51Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -221,7 +219,7 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, EditMesh *em, MTFac
 						else
 							areadiff = 1.0f-(area/uvarea);
 						
-						weight_to_rgb(areadiff, col, col+1, col+2);
+						weight_to_rgb(col, areadiff);
 						glColor3fv(col);
 						
 						glBegin(efa->v4?GL_QUADS:GL_TRIANGLES);
@@ -269,10 +267,10 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, EditMesh *em, MTFac
 #endif
 						
 						/* uv angles */
-						VECSUB2D(av1, tf_uv[3], tf_uv[0]); normalize_v2(av1);
-						VECSUB2D(av2, tf_uv[0], tf_uv[1]); normalize_v2(av2);
-						VECSUB2D(av3, tf_uv[1], tf_uv[2]); normalize_v2(av3);
-						VECSUB2D(av4, tf_uv[2], tf_uv[3]); normalize_v2(av4);
+						sub_v2_v2v2(av1, tf_uv[3], tf_uv[0]); normalize_v2(av1);
+						sub_v2_v2v2(av2, tf_uv[0], tf_uv[1]); normalize_v2(av2);
+						sub_v2_v2v2(av3, tf_uv[1], tf_uv[2]); normalize_v2(av3);
+						sub_v2_v2v2(av4, tf_uv[2], tf_uv[3]); normalize_v2(av4);
 						
 						/* This is the correct angle however we are only comparing angles
 						 * uvang1 = 90-((angle_normalized_v2v2(av1, av2) * RAD2DEGF(1.0f))-90);*/
@@ -282,10 +280,10 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, EditMesh *em, MTFac
 						uvang4 = angle_normalized_v2v2(av4, av1);
 						
 						/* 3d angles */
-						VECSUB(av1, efa->v4->co, efa->v1->co); normalize_v3(av1);
-						VECSUB(av2, efa->v1->co, efa->v2->co); normalize_v3(av2);
-						VECSUB(av3, efa->v2->co, efa->v3->co); normalize_v3(av3);
-						VECSUB(av4, efa->v3->co, efa->v4->co); normalize_v3(av4);
+						sub_v3_v3v3(av1, efa->v4->co, efa->v1->co); normalize_v3(av1);
+						sub_v3_v3v3(av2, efa->v1->co, efa->v2->co); normalize_v3(av2);
+						sub_v3_v3v3(av3, efa->v2->co, efa->v3->co); normalize_v3(av3);
+						sub_v3_v3v3(av4, efa->v3->co, efa->v4->co); normalize_v3(av4);
 						
 						/* This is the correct angle however we are only comparing angles
 						 * ang1 = 90-((angle_normalized_v3v3(av1, av2) * RAD2DEGF(1.0f))-90);*/
@@ -300,19 +298,19 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, EditMesh *em, MTFac
 						 * 1.0-powf((1.0-a), 2) */
 						
 						a = fabsf(uvang1-ang1)/(float)M_PI;
-						weight_to_rgb(1.0f-powf((1.0f-a), 2.0f), col, col+1, col+2);
+						weight_to_rgb(col, 1.0f-powf((1.0f-a), 2.0f));
 						glColor3fv(col);
 						glVertex2fv(tf->uv[0]);
 						a = fabsf(uvang2-ang2)/(float)M_PI;
-						weight_to_rgb(1.0f-powf((1.0f-a), 2.0f), col, col+1, col+2);
+						weight_to_rgb(col, 1.0f-powf((1.0f-a), 2.0f));
 						glColor3fv(col);
 						glVertex2fv(tf->uv[1]);
 						a = fabsf(uvang3-ang3)/(float)M_PI;
-						weight_to_rgb(1.0f-powf((1.0f-a), 2.0f), col, col+1, col+2);
+						weight_to_rgb(col, 1.0f-powf((1.0f-a), 2.0f));
 						glColor3fv(col);
 						glVertex2fv(tf->uv[2]);
 						a = fabsf(uvang4-ang4)/(float)M_PI;
-						weight_to_rgb(1.0f-powf((1.0f-a), 2.0f), col, col+1, col+2);
+						weight_to_rgb(col, 1.0f-powf((1.0f-a), 2.0f));
 						glColor3fv(col);
 						glVertex2fv(tf->uv[3]);
 						
@@ -330,9 +328,9 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, EditMesh *em, MTFac
 #endif						
 						
 						/* uv angles */
-						VECSUB2D(av1, tf_uv[2], tf_uv[0]); normalize_v2(av1);
-						VECSUB2D(av2, tf_uv[0], tf_uv[1]); normalize_v2(av2);
-						VECSUB2D(av3, tf_uv[1], tf_uv[2]); normalize_v2(av3);
+						sub_v2_v2v2(av1, tf_uv[2], tf_uv[0]); normalize_v2(av1);
+						sub_v2_v2v2(av2, tf_uv[0], tf_uv[1]); normalize_v2(av2);
+						sub_v2_v2v2(av3, tf_uv[1], tf_uv[2]); normalize_v2(av3);
 						
 						/* This is the correct angle however we are only comparing angles
 						 * uvang1 = 90-((angle_normalized_v2v2(av1, av2) * 180.0/M_PI)-90); */
@@ -341,9 +339,9 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, EditMesh *em, MTFac
 						uvang3 = angle_normalized_v2v2(av3, av1);
 						
 						/* 3d angles */
-						VECSUB(av1, efa->v3->co, efa->v1->co); normalize_v3(av1);
-						VECSUB(av2, efa->v1->co, efa->v2->co); normalize_v3(av2);
-						VECSUB(av3, efa->v2->co, efa->v3->co); normalize_v3(av3);
+						sub_v3_v3v3(av1, efa->v3->co, efa->v1->co); normalize_v3(av1);
+						sub_v3_v3v3(av2, efa->v1->co, efa->v2->co); normalize_v3(av2);
+						sub_v3_v3v3(av3, efa->v2->co, efa->v3->co); normalize_v3(av3);
 						/* This is the correct angle however we are only comparing angles
 						 * ang1 = 90-((angle_normalized_v3v3(av1, av2) * 180.0/M_PI)-90); */
 						ang1 = angle_normalized_v3v3(av1, av2);
@@ -355,15 +353,15 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, EditMesh *em, MTFac
 						
 						glBegin(GL_TRIANGLES);
 						a = fabsf(uvang1-ang1)/(float)M_PI;
-						weight_to_rgb(1.0f-powf((1.0f-a), 2.0f), col, col+1, col+2);
+						weight_to_rgb(col, 1.0f-powf((1.0f-a), 2.0f));
 						glColor3fv(col);
 						glVertex2fv(tf->uv[0]);
 						a = fabsf(uvang2-ang2)/(float)M_PI;
-						weight_to_rgb(1.0f-powf((1.0f-a), 2.0f), col, col+1, col+2);
+						weight_to_rgb(col, 1.0f-powf((1.0f-a), 2.0f));
 						glColor3fv(col);
 						glVertex2fv(tf->uv[1]);
 						a = fabsf(uvang3-ang3)/(float)M_PI;
-						weight_to_rgb(1.0f-powf((1.0f-a), 2.0f), col, col+1, col+2);
+						weight_to_rgb(col, 1.0f-powf((1.0f-a), 2.0f));
 						glColor3fv(col);
 						glVertex2fv(tf->uv[2]);
 					}

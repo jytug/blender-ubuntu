@@ -1,5 +1,4 @@
 /* 
- * $Id: mathutils_Euler.h 38409 2011-07-15 04:01:47Z campbellbarton $
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,8 +27,8 @@
  *
  */
 
-/** \file blender/python/generic/mathutils_Euler.h
- *  \ingroup pygen
+/** \file blender/python/mathutils/mathutils_Euler.h
+ *  \ingroup pymathutils
  */
 
 
@@ -40,7 +39,7 @@ extern PyTypeObject euler_Type;
 #define EulerObject_Check(_v) PyObject_TypeCheck((_v), &euler_Type)
 
 typedef struct {
-	BASE_MATH_MEMBERS(eul)
+	BASE_MATH_MEMBERS(eul);
 	unsigned char order;		/* rotation order */
 
 } EulerObject;
@@ -51,8 +50,8 @@ be stored in py_data) or be a wrapper for data allocated through
 blender (stored in blend_data). This is an either/or struct not both*/
 
 //prototypes
-PyObject *newEulerObject( float *eul, short order, int type, PyTypeObject *base_type);
-PyObject *newEulerObject_cb(PyObject *cb_user, short order, int cb_type, int cb_subtype);
+PyObject *Euler_CreatePyObject( float *eul, short order, int type, PyTypeObject *base_type);
+PyObject *Euler_CreatePyObject_cb(PyObject *cb_user, short order, int cb_type, int cb_subtype);
 
 short euler_order_from_string(const char *str, const char *error_prefix);
 

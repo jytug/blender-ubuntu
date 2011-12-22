@@ -1,6 +1,4 @@
 /*
- * $Id: drawnode.c 40838 2011-10-06 22:04:01Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -96,6 +94,14 @@ static void node_sync_cb(bContext *UNUSED(C), void *snode_v, void *node_v)
 		// allqueue(REDRAWBUTSSHADING, 0);
 	}
 }
+
+static void node_socket_button_label(const bContext *UNUSED(C), uiBlock *block,
+							  bNodeTree *UNUSED(ntree), bNode *UNUSED(node), bNodeSocket *sock,
+							  const char *UNUSED(name), int x, int y, int width)
+{
+	uiDefBut(block, LABEL, 0, sock->name, x, y, width, NODE_DY, NULL, 0, 0, 0, 0, "");
+}
+
 
 static void node_socket_button_default(const bContext *C, uiBlock *block,
 								bNodeTree *ntree, bNode *node, bNodeSocket *sock,
@@ -334,8 +340,9 @@ static void node_buts_normal(uiLayout *layout, bContext *UNUSED(C), PointerRNA *
 	uiBut *bt;
 	
 	bt= uiDefButF(block, BUT_NORMAL, B_NODE_EXEC, "", 
-			  (short)butr->xmin, (short)butr->xmin, butr->xmax-butr->xmin, butr->xmax-butr->xmin, 
-			  nor, 0.0f, 1.0f, 0, 0, "");
+	              (short)butr->xmin, (short)butr->xmin,
+	              butr->xmax-butr->xmin, butr->xmax-butr->xmin,
+	              nor, 0.0f, 1.0f, 0, 0, "");
 	uiButSetFunc(bt, node_normal_cb, ntree, node);
 }
 #if 0 // not used in 2.5x yet
@@ -464,6 +471,7 @@ static void node_update_group(const bContext *C, bNodeTree *ntree, bNode *gnode)
 		float locx, locy;
 		rctf *rect= &gnode->totr;
 		float node_group_frame= U.dpi*NODE_GROUP_FRAME/72;
+		float group_header= 26*U.dpi/72;
 		int counter;
 		int dy;
 		
@@ -587,6 +595,15 @@ static void node_update_group(const bContext *C, bNodeTree *ntree, bNode *gnode)
 				gsock = gsock->next;
 			}
 		}
+		
+		/* Set the block bounds to clip mouse events from underlying nodes.
+		 * Add margin for header and input/output columns.
+		 */
+		uiExplicitBoundsBlock(gnode->block,
+							  rect->xmin - node_group_frame,
+							  rect->ymin,
+							  rect->xmax + node_group_frame,
+							  rect->ymax + group_header);
 	}
 }
 
@@ -621,9 +638,9 @@ static void draw_group_socket_name(SpaceNode *snode, bNode *gnode, bNodeSocket *
 			uiButSetFunc(bt, update_group_output_cb, snode, ngroup);
 	}
 	else {
-		uiDefBut(gnode->block, LABEL, 0, sock->name, 
-				 sock->locx+xoffset, sock->locy+1+yoffset, 72, NODE_DY,
-				 NULL, 0, 31, 0, 0, "");
+		uiDefBut(gnode->block, LABEL, 0, sock->name,
+		         sock->locx+xoffset, sock->locy+1+yoffset, 72, NODE_DY,
+		         NULL, 0, 31, 0, 0, "");
 	}
 }
 
@@ -844,6 +861,11 @@ static void node_draw_group(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 	}
 }
 
+void node_uifunc_group(uiLayout *layout, bContext *C, PointerRNA *ptr)
+{
+	uiTemplateIDBrowse(layout, C, ptr, "node_tree", NULL, NULL, NULL);
+}
+
 static void node_common_buts_whileloop(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "max_iterations", 0, NULL, 0);
@@ -869,7 +891,7 @@ static void node_common_set_butfunc(bNodeType *ntype)
 {
 	switch(ntype->type) {
 		case NODE_GROUP:
-//			ntype->uifunc= node_common_buts_group;
+			ntype->uifunc= node_uifunc_group;
 			ntype->drawfunc= node_draw_group;
 			ntype->drawupdatefunc= node_update_group;
 			break;
@@ -956,7 +978,6 @@ static void node_shader_buts_mapping(uiLayout *layout, bContext *UNUSED(C), Poin
 	row= uiLayoutRow(layout, 1);
 	uiItemR(row, ptr, "use_max", 0, "Max", ICON_NONE);
 	uiItemR(row, ptr, "max", 0, "", ICON_NONE);
-	
 }
 
 static void node_shader_buts_vect_math(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
@@ -981,6 +1002,53 @@ static void node_shader_buts_geometry(uiLayout *layout, bContext *C, PointerRNA 
 		uiItemR(col, ptr, "uv_layer", 0, "UV", ICON_NONE);
 		uiItemR(col, ptr, "color_layer", 0, "VCol", ICON_NONE);
 	}
+}
+
+static void node_shader_buts_attribute(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "attribute_name", 0, "Name", ICON_NONE);
+}
+
+static void node_shader_buts_tex_image(uiLayout *layout, bContext *C, PointerRNA *ptr)
+{
+	uiTemplateID(layout, C, ptr, "image", NULL, "IMAGE_OT_open", NULL);
+	uiItemR(layout, ptr, "color_space", 0, "", ICON_NONE);
+}
+
+static void node_shader_buts_tex_sky(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "sun_direction", 0, "", ICON_NONE);
+	uiItemR(layout, ptr, "turbidity", 0, NULL, ICON_NONE);
+}
+
+static void node_shader_buts_tex_gradient(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "gradient_type", 0, "", ICON_NONE);
+}
+
+static void node_shader_buts_tex_magic(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "turbulence_depth", 0, NULL, ICON_NONE);
+}
+
+static void node_shader_buts_tex_wave(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "wave_type", 0, "", ICON_NONE);
+}
+
+static void node_shader_buts_tex_musgrave(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "musgrave_type", 0, "", ICON_NONE);
+}
+
+static void node_shader_buts_tex_voronoi(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "coloring", 0, "", ICON_NONE);
+}
+
+static void node_shader_buts_glossy(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "distribution", 0, "", ICON_NONE);
 }
 
 static void node_shader_buts_dynamic(uiLayout *layout, bContext *C, PointerRNA *ptr)
@@ -1068,6 +1136,37 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 			break; 
 		case SH_NODE_GEOMETRY:
 			ntype->uifunc= node_shader_buts_geometry;
+			break;
+		case SH_NODE_ATTRIBUTE:
+			ntype->uifunc= node_shader_buts_attribute;
+			break;
+		case SH_NODE_TEX_SKY:
+			ntype->uifunc= node_shader_buts_tex_sky;
+			break;
+		case SH_NODE_TEX_IMAGE:
+			ntype->uifunc= node_shader_buts_tex_image;
+			break;
+		case SH_NODE_TEX_ENVIRONMENT:
+			ntype->uifunc= node_shader_buts_tex_image;
+			break;
+		case SH_NODE_TEX_GRADIENT:
+			ntype->uifunc= node_shader_buts_tex_gradient;
+			break;
+		case SH_NODE_TEX_MAGIC:
+			ntype->uifunc= node_shader_buts_tex_magic;
+			break;
+		case SH_NODE_TEX_WAVE:
+			ntype->uifunc= node_shader_buts_tex_wave;
+			break;
+		case SH_NODE_TEX_MUSGRAVE:
+			ntype->uifunc= node_shader_buts_tex_musgrave;
+			break;
+		case SH_NODE_TEX_VORONOI:
+			ntype->uifunc= node_shader_buts_tex_voronoi;
+			break;
+		case SH_NODE_BSDF_GLOSSY:
+		case SH_NODE_BSDF_GLASS:
+			ntype->uifunc= node_shader_buts_glossy;
 			break;
 		case NODE_DYNAMIC:
 			ntype->uifunc= node_shader_buts_dynamic;
@@ -1543,24 +1642,17 @@ static void node_composit_buts_id_mask(uiLayout *layout, bContext *UNUSED(C), Po
 
 static void node_composit_buts_file_output(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
-	uiLayout *col, *row;
+	bNode *node= ptr->data;
+	NodeImageFile *nif= node->storage;
+	PointerRNA imfptr;
 
-	col= uiLayoutColumn(layout, 0);
-	uiItemR(col, ptr, "filepath", 0, "", ICON_NONE);
-	uiItemR(col, ptr, "image_type", 0, "", ICON_NONE);
-	
-	row= uiLayoutRow(layout, 0);
-	if (RNA_enum_get(ptr, "image_type")== R_OPENEXR) {
-		uiItemR(row, ptr, "use_exr_half", 0, NULL, ICON_NONE);
-		uiItemR(row, ptr, "exr_codec", 0, "", ICON_NONE);
-	}
-	else if (RNA_enum_get(ptr, "image_type")== R_JPEG90) {
-		uiItemR(row, ptr, "quality", UI_ITEM_R_SLIDER, "Quality", ICON_NONE);
-	}
-	else if (RNA_enum_get(ptr, "image_type")== R_PNG) {
-		uiItemR(row, ptr, "quality", UI_ITEM_R_SLIDER, "Compression", ICON_NONE);
-	}
-	
+	uiLayout *row;
+
+	uiItemR(layout, ptr, "filepath", 0, "", ICON_NONE);
+
+	RNA_pointer_create(NULL, &RNA_ImageFormatSettings, &nif->im_format, &imfptr);
+	uiTemplateImageSettings(layout, &imfptr);
+
 	row= uiLayoutRow(layout, 1);
 	uiItemR(row, ptr, "frame_start", 0, "Start", ICON_NONE);
 	uiItemR(row, ptr, "frame_end", 0, "End", ICON_NONE);
@@ -1674,6 +1766,40 @@ static void node_composit_buts_huecorrect(uiLayout *layout, bContext *UNUSED(C),
 static void node_composit_buts_ycc(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 { 
 	uiItemR(layout, ptr, "mode", 0, "", ICON_NONE);
+}
+
+static void node_composit_buts_movieclip(uiLayout *layout, bContext *C, PointerRNA *ptr)
+{
+	uiTemplateID(layout, C, ptr, "clip", NULL, "CLIP_OT_open", NULL);
+}
+
+static void node_composit_buts_stabilize2d(uiLayout *layout, bContext *C, PointerRNA *ptr)
+{
+	bNode *node= ptr->data;
+
+	uiTemplateID(layout, C, ptr, "clip", NULL, "CLIP_OT_open", NULL);
+
+	if(!node->id)
+		return;
+
+	uiItemR(layout, ptr, "filter_type", 0, "", 0);
+}
+
+static void node_composit_buts_transform(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "filter_type", 0, "", 0);
+}
+
+static void node_composit_buts_moviedistortion(uiLayout *layout, bContext *C, PointerRNA *ptr)
+{
+	bNode *node= ptr->data;
+
+	uiTemplateID(layout, C, ptr, "clip", NULL, "CLIP_OT_open", NULL);
+
+	if(!node->id)
+		return;
+
+	uiItemR(layout, ptr, "distortion_type", 0, "", 0);
 }
 
 /* only once called */
@@ -1826,6 +1952,20 @@ static void node_composit_set_butfunc(bNodeType *ntype)
 		case CMP_NODE_SEPYCCA:
 			ntype->uifunc=node_composit_buts_ycc;
 			break;
+		case CMP_NODE_MOVIECLIP:
+			ntype->uifunc= node_composit_buts_movieclip;
+			break;
+		case CMP_NODE_STABILIZE2D:
+			ntype->uifunc= node_composit_buts_stabilize2d;
+			break;
+		case CMP_NODE_TRANSFORM:
+			ntype->uifunc= node_composit_buts_transform;
+			break;
+		case CMP_NODE_MOVIEDISTORTION:
+			ntype->uifunc= node_composit_buts_moviedistortion;
+			break;
+		default:
+			ntype->uifunc= NULL;
 	}
 	if (ntype->uifuncbut == NULL) ntype->uifuncbut = ntype->uifunc;
 
@@ -2038,6 +2178,9 @@ void ED_init_node_butfuncs(void)
 			case SOCK_RGBA:
 				stype->buttonfunc = node_socket_button_color;
 				break;
+			case SOCK_SHADER:
+				stype->buttonfunc = node_socket_button_label;
+				break;
 			default:
 				stype->buttonfunc = NULL;
 			}
@@ -2121,7 +2264,7 @@ void draw_nodespace_back_pix(ARegion *ar, SpaceNode *snode, int color_manage)
 	}
 }
 
-void draw_nodespace_color_info(ARegion *ar, int color_manage, int channels, int x, int y, char *cp, float *fp)
+void draw_nodespace_color_info(ARegion *ar, int color_manage, int channels, int x, int y, const char cp[4], const float fp[4])
 {
 	char str[256];
 	float dx= 6;
@@ -2452,18 +2595,32 @@ void node_draw_link_bezier(View2D *v2d, SpaceNode *snode, bNodeLink *link, int t
 			glEnd();
 		}
 		
-		UI_ThemeColor(th_col1);
+		/* XXX using GL_LINES for shaded node lines is a workaround
+		 * for Intel hardware, this breaks with GL_LINE_STRIP and
+		 * changing color in begin/end blocks.
+		 */
 		glLineWidth(1.5f);
-		
-		glBegin(GL_LINE_STRIP);
-		for(i=0; i<=LINK_RESOL; i++) {
-			if(do_shaded) {
+		if(do_shaded) {
+			glBegin(GL_LINES);
+			for(i=0; i<LINK_RESOL; i++) {
 				UI_ThemeColorBlend(th_col1, th_col2, spline_step);
+				glVertex2fv(coord_array[i]);
+				
+				UI_ThemeColorBlend(th_col1, th_col2, spline_step+dist);
+				glVertex2fv(coord_array[i+1]);
+				
 				spline_step += dist;
 			}
-			glVertex2fv(coord_array[i]);
+			glEnd();
 		}
-		glEnd();
+		else {
+			UI_ThemeColor(th_col1);
+			glBegin(GL_LINE_STRIP);
+			for(i=0; i<=LINK_RESOL; i++) {
+				glVertex2fv(coord_array[i]);
+			}
+			glEnd();
+		}
 		
 		glDisable(GL_LINE_SMOOTH);
 		
@@ -2520,14 +2677,31 @@ void node_draw_link_straight(View2D *v2d, SpaceNode *snode, bNodeLink *link, int
 	UI_ThemeColor(th_col1);
 	glLineWidth(1.5f);
 	
-	glBegin(GL_LINE_STRIP);
-	for (i=0; i < LINK_RESOL; ++i) {
-		float t= (float)i/(float)(LINK_RESOL-1);
-		if(do_shaded)
+	/* XXX using GL_LINES for shaded node lines is a workaround
+	 * for Intel hardware, this breaks with GL_LINE_STRIP and
+	 * changing color in begin/end blocks.
+	 */
+	if(do_shaded) {
+		glBegin(GL_LINES);
+		for (i=0; i < LINK_RESOL-1; ++i) {
+			float t= (float)i/(float)(LINK_RESOL-1);
 			UI_ThemeColorBlend(th_col1, th_col2, t);
-		glVertex2f((1.0f-t)*coord_array[0][0]+t*coord_array[1][0], (1.0f-t)*coord_array[0][1]+t*coord_array[1][1]);
+			glVertex2f((1.0f-t)*coord_array[0][0]+t*coord_array[1][0], (1.0f-t)*coord_array[0][1]+t*coord_array[1][1]);
+			
+			t= (float)(i+1)/(float)(LINK_RESOL-1);
+			UI_ThemeColorBlend(th_col1, th_col2, t);
+			glVertex2f((1.0f-t)*coord_array[0][0]+t*coord_array[1][0], (1.0f-t)*coord_array[0][1]+t*coord_array[1][1]);
+		}
+		glEnd();
 	}
-	glEnd();
+	else {
+		glBegin(GL_LINE_STRIP);
+		for (i=0; i < LINK_RESOL; ++i) {
+			float t= (float)i/(float)(LINK_RESOL-1);
+			glVertex2f((1.0f-t)*coord_array[0][0]+t*coord_array[1][0], (1.0f-t)*coord_array[0][1]+t*coord_array[1][1]);
+		}
+		glEnd();
+	}
 	
 	glDisable(GL_LINE_SMOOTH);
 	

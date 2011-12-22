@@ -36,9 +36,9 @@ class MESH_MT_vertex_group_specials(Menu):
         layout.operator("object.vertex_group_mirror", icon='ARROW_LEFTRIGHT')
         layout.operator("object.vertex_group_remove", icon='X', text="Delete All").all = True
         layout.separator()
-        layout.operator("object.vertex_group_lock", icon='LOCK', text="Lock All").action = 'SELECT'
-        layout.operator("object.vertex_group_lock", icon='UNLOCK', text="UnLock All").action = 'DESELECT'
-        layout.operator("object.vertex_group_lock", icon='LOCK', text="Lock Invert All").action = 'INVERT'
+        layout.operator("object.vertex_group_lock", icon='LOCKED', text="Lock All").action = 'SELECT'
+        layout.operator("object.vertex_group_lock", icon='UNLOCKED', text="UnLock All").action = 'DESELECT'
+        layout.operator("object.vertex_group_lock", icon='LOCKED', text="Lock Invert All").action = 'INVERT'
 
 
 class MESH_MT_shape_key_specials(Menu):
@@ -51,8 +51,7 @@ class MESH_MT_shape_key_specials(Menu):
         layout.operator("object.shape_key_transfer", icon='COPY_ID')  # icon is not ideal
         layout.operator("object.join_shapes", icon='COPY_ID')  # icon is not ideal
         layout.operator("object.shape_key_mirror", icon='ARROW_LEFTRIGHT')
-        op = layout.operator("object.shape_key_add", icon='ZOOMIN', text="New Shape From Mix")
-        op.from_mix = True
+        layout.operator("object.shape_key_add", icon='ZOOMIN', text="New Shape From Mix").from_mix = True
 
 
 class MeshButtonsPanel():
@@ -207,8 +206,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
         col = row.column()
 
         sub = col.column(align=True)
-        op = sub.operator("object.shape_key_add", icon='ZOOMIN', text="")
-        op.from_mix = False
+        sub.operator("object.shape_key_add", icon='ZOOMIN', text="").from_mix = False
         sub.operator("object.shape_key_remove", icon='ZOOMOUT', text="")
         sub.menu("MESH_MT_shape_key_specials", icon='DOWNARROW_HLT', text="")
 
@@ -267,7 +265,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 
 
 class DATA_PT_uv_texture(MeshButtonsPanel, Panel):
-    bl_label = "UV Texture"
+    bl_label = "UV Maps"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     def draw(self, context):

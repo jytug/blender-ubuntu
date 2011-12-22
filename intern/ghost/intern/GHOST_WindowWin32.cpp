@@ -1,5 +1,4 @@
 /*
- * $Id: GHOST_WindowWin32.cpp 40538 2011-09-25 12:31:21Z campbellbarton $
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +32,6 @@
 
 /**
 
- * $Id: GHOST_WindowWin32.cpp 40538 2011-09-25 12:31:21Z campbellbarton $
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 10, 2001
@@ -1048,9 +1046,9 @@ GHOST_TSuccess GHOST_WindowWin32::setWindowCursorGrab(GHOST_TGrabCursorMode mode
 			/* use to generate a mouse move event, otherwise the last event
 			 * blender gets can be outside the screen causing menus not to show
 			 * properly unless the user moves the mouse */
-			 GHOST_TInt32 pos[2];
-			 m_system->getCursorPosition(pos[0], pos[1]);
-			 m_system->setCursorPosition(pos[0], pos[1]);
+			GHOST_TInt32 pos[2];
+			m_system->getCursorPosition(pos[0], pos[1]);
+			m_system->setCursorPosition(pos[0], pos[1]);
 		}
 
 		/* Almost works without but important otherwise the mouse GHOST location can be incorrect on exit */

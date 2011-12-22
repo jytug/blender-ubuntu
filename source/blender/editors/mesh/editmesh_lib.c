@@ -1,6 +1,4 @@
 /*
- * $Id: editmesh_lib.c 41078 2011-10-17 06:39:13Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -527,9 +525,9 @@ void EM_set_flag_all(EditMesh *em, int flag)
 
 void EM_set_flag_all_selectmode(EditMesh *em, int flag)
 {
-	 EditVert *eve;
-	 EditEdge *eed;
-	 EditFace *efa;
+	EditVert *eve;
+	EditEdge *eed;
+	EditFace *efa;
 
 	int selvert= 0, seledge= 0, selface= 0;
 

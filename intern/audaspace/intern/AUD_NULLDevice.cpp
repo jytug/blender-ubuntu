@@ -1,6 +1,4 @@
 /*
- * $Id: AUD_NULLDevice.cpp 40995 2011-10-13 22:19:29Z nexyon $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller

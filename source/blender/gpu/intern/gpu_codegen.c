@@ -1,15 +1,10 @@
 /*
- * $Id: gpu_codegen.c 40158 2011-09-12 09:47:28Z nazgul $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -55,6 +50,8 @@
 #include "BLO_sys_types.h" // for intptr_t support
 
 #include "gpu_codegen.h"
+
+#include "node_util.h" /* For muting node stuff... */
 
 #include <string.h>
 #include <stdarg.h>
@@ -347,6 +344,8 @@ const char *GPU_builtin_name(GPUBuiltin builtin)
 		return "varnormal";
 	else if(builtin == GPU_OBCOLOR)
 		return "unfobcolor";
+	else if(builtin == GPU_AUTO_BUMPSCALE)
+		return "unfobautobumpscale";
 	else
 		return "";
 }
@@ -911,7 +910,7 @@ static void gpu_node_input_socket(GPUNode *node, GPUNodeStack *sock)
 		gpu_node_input_link(node, sock->link, sock->type);
 	}
 	else {
-		 link = GPU_node_link_create(0);
+		link = GPU_node_link_create(0);
 		link->ptr1 = sock->vec;
 		gpu_node_input_link(node, link, sock->type);
 	}
@@ -1211,6 +1210,31 @@ int GPU_stack_link(GPUMaterial *mat, const char *name, GPUNodeStack *in, GPUNode
 
 	gpu_material_add_node(mat, node);
 	
+	return 1;
+}
+
+int GPU_stack_link_mute(GPUMaterial *mat, const char *name, LinkInOutsMuteNode *mlnk)
+{
+	GPUNode *node;
+	GPUFunction *function;
+	int i;
+
+	function = GPU_lookup_function(name);
+	if(!function) {
+		fprintf(stderr, "GPU failed to find function %s\n", name);
+		return 0;
+	}
+
+	for(i = 0; i < mlnk->num_outs; i++) {
+		node = GPU_node_begin(name);
+		gpu_node_input_socket(node, (GPUNodeStack*)mlnk->in);
+		GPU_node_output(node, ((GPUNodeStack*)mlnk->outs+i)->type, ((GPUNodeStack*)mlnk->outs+i)->name,
+		                &((GPUNodeStack*)mlnk->outs+i)->link);
+		GPU_node_end(node);
+
+		gpu_material_add_node(mat, node);
+	}
+
 	return 1;
 }
 

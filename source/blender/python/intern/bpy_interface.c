@@ -1,6 +1,4 @@
 /*
- * $Id: bpy_interface.c 40976 2011-10-13 01:29:08Z campbellbarton $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,6 +23,10 @@
 
 /** \file blender/python/intern/bpy_interface.c
  *  \ingroup pythonintern
+ *
+ * This file deals with embedding the python interpreter within blender,
+ * starting and stopping python and exposing blender/python modules so they can
+ * be accesses from scripts.
  */
 
  
@@ -52,12 +54,12 @@
 #include "BLI_path_util.h"
 #include "BLI_math_base.h"
 #include "BLI_string.h"
+#include "BLI_string_utf8.h"
 #include "BLI_utildefines.h"
 
 
 #include "BKE_context.h"
 #include "BKE_text.h"
-#include "BKE_font.h" /* only for utf8towchar */
 #include "BKE_main.h"
 #include "BKE_global.h" /* only for script checking */
 
@@ -69,7 +71,6 @@
 /* inittab initialization functions */
 #include "../generic/bgl.h"
 #include "../generic/blf_py_api.h"
-#include "../generic/noise_py_api.h"
 #include "../mathutils/mathutils.h"
 
 /* for internal use, when starting and ending python scripts */
@@ -132,9 +133,12 @@ void bpy_context_clear(bContext *UNUSED(C), PyGILState_STATE *gilstate)
 		fprintf(stderr, "ERROR: Python context internal state bug. this should not happen!\n");
 	}
 	else if (py_call_level==0) {
-		// XXX - Calling classes currently wont store the context :\, cant set NULL because of this. but this is very flakey still.
-		//BPy_SetContext(NULL);
-		//bpy_import_main_set(NULL);
+		/* XXX - Calling classes currently wont store the context :\,
+		 * cant set NULL because of this. but this is very flakey still. */
+#if 0
+		BPy_SetContext(NULL);
+		bpy_import_main_set(NULL);
+#endif
 
 #ifdef TIME_PY_RUN
 		bpy_timer_run_tot += PIL_check_seconds_timer() - bpy_timer_run;
@@ -172,15 +176,20 @@ void BPY_context_set(bContext *C)
 
 /* defined in AUD_C-API.cpp */
 extern PyObject *AUD_initPython(void);
+/* defined in cycles/blender */
+extern PyObject *CYCLES_initPython(void);
 
 static struct _inittab bpy_internal_modules[]= {
-	{(char *)"noise", BPyInit_noise},
 	{(char *)"mathutils", PyInit_mathutils},
 //	{(char *)"mathutils.geometry", PyInit_mathutils_geometry},
+//	{(char *)"mathutils.noise", PyInit_mathutils_noise},
 	{(char *)"bgl", BPyInit_bgl},
 	{(char *)"blf", BPyInit_blf},
 #ifdef WITH_AUDASPACE
 	{(char *)"aud", AUD_initPython},
+#endif
+#ifdef WITH_CYCLES
+	{(char *)"bcycles", CYCLES_initPython},
 #endif
 	{(char *)"gpu", GPU_initPython},
 	{NULL, NULL}
@@ -193,9 +202,9 @@ void BPY_python_start(int argc, const char **argv)
 	PyThreadState *py_tstate= NULL;
 
 	/* not essential but nice to set our name */
-	static wchar_t bprogname_wchar[FILE_MAXDIR+FILE_MAXFILE]; /* python holds a reference */
-	utf8towchar(bprogname_wchar, bprogname);
-	Py_SetProgramName(bprogname_wchar);
+	static wchar_t program_path_wchar[FILE_MAX]; /* python holds a reference */
+	BLI_strncpy_wchar_from_utf8(program_path_wchar, BLI_program_path(), sizeof(program_path_wchar) / sizeof(wchar_t));
+	Py_SetProgramName(program_path_wchar);
 
 	/* must run before python initializes */
 	PyImport_ExtendInittab(bpy_internal_modules);
@@ -203,9 +212,16 @@ void BPY_python_start(int argc, const char **argv)
 	/* allow to use our own included python */
 	PyC_SetHomePath(BLI_get_folder(BLENDER_SYSTEM_PYTHON, NULL));
 
-	/* Python 3.2 now looks for '2.58/python/include/python3.2d/pyconfig.h' to parse
-	 * from the 'sysconfig' module which is used by 'site', so for now disable site.
-	 * alternatively we could copy the file. */
+	/* without this the sys.stdout may be set to 'ascii'
+	 * (it is on my system at least), where printing unicode values will raise
+	 * an error, this is highly annoying, another stumbling block for devs,
+	 * so use a more relaxed error handler and enforce utf-8 since the rest of
+	 * blender is utf-8 too - campbell */
+	BLI_setenv("PYTHONIOENCODING", "utf-8:surrogateescape");
+
+	/* Python 3.2 now looks for '2.xx/python/include/python3.2d/pyconfig.h' to
+	 * parse from the 'sysconfig' module which is used by 'site',
+	 * so for now disable site. alternatively we could copy the file. */
 	Py_NoSiteFlag= 1;
 
 	Py_Initialize();
@@ -215,8 +231,11 @@ void BPY_python_start(int argc, const char **argv)
 	{
 		int i;
 		PyObject *py_argv= PyList_New(argc);
-		for (i=0; i<argc; i++)
-			PyList_SET_ITEM(py_argv, i, PyC_UnicodeFromByte(argv[i])); /* should fix bug #20021 - utf path name problems, by replacing PyUnicode_FromString */
+		for (i=0; i<argc; i++) {
+			/* should fix bug #20021 - utf path name problems, by replacing
+			 * PyUnicode_FromString, with this one */
+			PyList_SET_ITEM(py_argv, i, PyC_UnicodeFromByte(argv[i]));
+		}
 
 		PySys_SetObject("argv", py_argv);
 		Py_DECREF(py_argv);
@@ -312,7 +331,8 @@ typedef struct {
 } PyModuleObject;
 #endif
 
-static int python_script_exec(bContext *C, const char *fn, struct Text *text, struct ReportList *reports, const short do_jump)
+static int python_script_exec(bContext *C, const char *fn, struct Text *text,
+                              struct ReportList *reports, const short do_jump)
 {
 	PyObject *main_mod= NULL;
 	PyObject *py_dict= NULL, *py_result= NULL;
@@ -671,7 +691,7 @@ int BPY_context_member_get(bContext *C, const char *member, bContextDataResult *
 
 
 #ifdef WITH_PYTHON_MODULE
-#include "BLI_storage.h"
+#include "BLI_fileops.h"
 /* TODO, reloading the module isnt functional at the moment. */
 
 static void bpy_module_free(void *mod);
@@ -700,7 +720,10 @@ void bpy_module_delay_init(PyObject *bpy_proxy)
 {
 	const int argc= 1;
 	const char *argv[2];
-	PyObject *filename_obj= PyModule_GetFilenameObject(bpy_proxy); /* updating the module dict below will loose the reference to __file__ */
+
+	/* updating the module dict below will loose the reference to __file__ */
+	PyObject *filename_obj= PyModule_GetFilenameObject(bpy_proxy);
+
 	const char *filename_rel= _PyUnicode_AsString(filename_obj); /* can be relative */
 	char filename_abs[1024];
 

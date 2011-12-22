@@ -1,4 +1,3 @@
-// $Id: KX_GameActuator.h 35063 2011-02-22 10:33:14Z jesterking $
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -41,7 +40,7 @@
 
 class KX_GameActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 protected:
 	int							m_mode;
 	bool						m_restart;

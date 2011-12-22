@@ -11,7 +11,6 @@
  * are self-explanatory (e.g. IS_amiga tests whether the buffer
  * contains an Amiga-format file).
  *
- * $Id: IMB_imbuf_types.h 36715 2011-05-16 13:34:42Z blendix $ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -75,7 +74,7 @@ typedef struct ImBuf {
 							 * but this is problematic with texture math in imagetexture.c
 							 * avoid problems and use int. - campbell */
 
-	unsigned char depth;	/* Active amount of bits/bitplanes */
+	unsigned char planes;	/* Active amount of bits/bitplanes */
 	int channels;			/* amount of channels in rect_float (0 = 4 channel default) */
 
 	/* flags */

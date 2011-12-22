@@ -1,6 +1,4 @@
 /*
- * $Id: object_vgroup.c 40739 2011-10-02 08:46:46Z mont29 $
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -101,8 +99,8 @@ int ED_vgroup_object_is_edit_mode(Object *ob)
 bDeformGroup *ED_vgroup_add_name(Object *ob, const char *name)
 {
 	bDeformGroup *defgroup;
-	
-	if(!ob || !ELEM(ob->type, OB_MESH, OB_LATTICE))
+
+	if(!ob || !OB_TYPE_SUPPORT_VGROUP(ob->type))
 		return NULL;
 	
 	defgroup = MEM_callocN(sizeof(bDeformGroup), "add deformGroup");
@@ -139,6 +137,23 @@ void ED_vgroup_delete(Object *ob, bDeformGroup *defgroup)
 		vgroup_delete_edit_mode(ob, dg);
 	else
 		vgroup_delete_object_mode(ob, dg);
+}
+
+void ED_vgroup_clear(Object *ob)
+{
+	bDeformGroup *dg= (bDeformGroup *)ob->defbase.first;
+	int edit_mode= ED_vgroup_object_is_edit_mode(ob);
+
+	while (dg) {
+		bDeformGroup *next_dg= dg->next;
+
+		if(edit_mode)
+			vgroup_delete_edit_mode(ob, dg);
+		else
+			vgroup_delete_object_mode(ob, dg);
+
+		dg= next_dg;
+	}
 }
 
 int ED_vgroup_data_create(ID *id)
@@ -271,8 +286,8 @@ int ED_vgroup_copy_array(Object *ob, Object *ob_from)
 	int dvert_tot_from;
 	int dvert_tot;
 	int i;
-	int totdef_from= BLI_countlist(&ob_from->defbase);
-	int totdef= BLI_countlist(&ob->defbase);
+	int defbase_tot_from= BLI_countlist(&ob_from->defbase);
+	int defbase_tot= BLI_countlist(&ob->defbase);
 	short new_vgroup= FALSE;
 
 	ED_vgroup_give_parray(ob_from->data, &dvert_array_from, &dvert_tot_from);
@@ -299,11 +314,11 @@ int ED_vgroup_copy_array(Object *ob, Object *ob_from)
 	BLI_duplicatelist(&ob->defbase, &ob_from->defbase);
 	ob->actdef= ob_from->actdef;
 
-	if(totdef_from < totdef) {
+	if(defbase_tot_from < defbase_tot) {
 		/* correct vgroup indices because the number of vgroups is being reduced. */
-		int *remap= MEM_mallocN(sizeof(int) * (totdef + 1), "ED_vgroup_copy_array");
-		for(i=0; i<=totdef_from; i++) remap[i]= i;
-		for(; i<=totdef; i++) remap[i]= 0; /* can't use these, so disable */
+		int *remap= MEM_mallocN(sizeof(int) * (defbase_tot + 1), "ED_vgroup_copy_array");
+		for(i=0; i<=defbase_tot_from; i++) remap[i]= i;
+		for(; i<=defbase_tot; i++) remap[i]= 0; /* can't use these, so disable */
 
 		vgroup_remap_update_users(ob, remap);
 		MEM_freeN(remap);
@@ -669,7 +684,7 @@ static void vgroup_duplicate(Object *ob)
 	}
 
 	cdg = defgroup_duplicate(dg);
-	strcpy(cdg->name, name);
+	BLI_strncpy(cdg->name, name, sizeof(cdg->name));
 	defgroup_unique_name(cdg, ob);
 
 	BLI_addtail(&ob->defbase, cdg);
@@ -802,7 +817,7 @@ static int* getSurroundingVerts(Mesh *me, int vert, int *count)
 		}
 	}
 	if(!length) {
-		return 0;
+		return NULL;
 	}
 	tverts = MEM_mallocN(sizeof(int)*length, "tempSurroundingVerts");
 	mf = me->mface;
@@ -1097,8 +1112,8 @@ static void moveCloserToDistanceFromPlane(Scene *scene, Object *ob, Mesh *me, in
 				dm_deform_clear(dm, ob); dm = NULL;
 			}
 		}
-	} while(wasChange && (distToStart-distToBe)/fabs(distToStart-distToBe) ==
-	                     (dists[bestIndex]-distToBe)/fabs(dists[bestIndex]-distToBe));
+	} while(wasChange && (distToStart-distToBe)/fabsf(distToStart-distToBe) ==
+	                     (dists[bestIndex]-distToBe)/fabsf(dists[bestIndex]-distToBe));
 	MEM_freeN(upDown);
 	MEM_freeN(changes);
 	MEM_freeN(dists);
@@ -1529,80 +1544,176 @@ static void vgroup_clean_all(Object *ob, float eul, int keep_single)
 
 static void dvert_mirror_op(MDeformVert *dvert, MDeformVert *dvert_mirr,
                             const char sel, const char sel_mirr,
-                            const int *flip_map,
-                            const short mirror_weights, const short flip_vgroups)
+                            const int *flip_map, const int flip_map_len,
+                            const short mirror_weights, const short flip_vgroups,
+                            const short all_vgroups, const int act_vgroup)
 {
 	BLI_assert(sel || sel_mirr);
 
 	if(sel_mirr && sel) {
 		/* swap */
-		if(mirror_weights)
-			SWAP(MDeformVert, *dvert, *dvert_mirr);
+		if(mirror_weights) {
+			if (all_vgroups) {
+				SWAP(MDeformVert, *dvert, *dvert_mirr);
+			}
+			else {
+				MDeformWeight *dw=      defvert_find_index(dvert, act_vgroup);
+				MDeformWeight *dw_mirr= defvert_find_index(dvert_mirr, act_vgroup);
+
+				if (dw || dw_mirr) {
+					if (dw_mirr == NULL)
+						dw_mirr= defvert_verify_index(dvert_mirr, act_vgroup);
+					if (dw == NULL)
+						dw= defvert_verify_index(dvert, act_vgroup);
+
+					SWAP(float, dw->weight, dw_mirr->weight);
+				}
+			}
+		}
+
 		if(flip_vgroups) {
-			defvert_flip(dvert, flip_map);
-			defvert_flip(dvert_mirr, flip_map);
+			defvert_flip(dvert, flip_map, flip_map_len);
+			defvert_flip(dvert_mirr, flip_map, flip_map_len);
 		}
 	}
 	else {
-		/* dvert should always be the target */
+		/* dvert should always be the target, only swaps pointer */
 		if(sel_mirr) {
 			SWAP(MDeformVert *, dvert, dvert_mirr);
 		}
 
-		if(mirror_weights)
-			defvert_copy(dvert, dvert_mirr);
+		if(mirror_weights) {
+			if (all_vgroups) {
+				defvert_copy(dvert, dvert_mirr);
+			}
+			else {
+				defvert_copy_index(dvert, dvert_mirr, act_vgroup);
+			}
+		}
+
+		/* flip map already modified for 'all_vgroups' */
 		if(flip_vgroups) {
-			defvert_flip(dvert, flip_map);
+			defvert_flip(dvert, flip_map, flip_map_len);
 		}
 	}
 }
 
-void ED_vgroup_mirror(Object *ob, const short mirror_weights, const short flip_vgroups)
+/* TODO, vgroup locking */
+/* TODO, face masking */
+void ED_vgroup_mirror(Object *ob, const short mirror_weights, const short flip_vgroups, const short all_vgroups)
 {
-#define VGROUP_MIRR_OP dvert_mirror_op(dvert, dvert_mirr, sel, sel_mirr, flip_map, mirror_weights, flip_vgroups)
+
+#define VGROUP_MIRR_OP                                                        \
+        dvert_mirror_op(dvert, dvert_mirr,                                    \
+                        sel, sel_mirr,                                        \
+                        flip_map, flip_map_len,                               \
+                        mirror_weights, flip_vgroups,                         \
+                        all_vgroups, def_nr                                   \
+                        )
 
 	EditVert *eve, *eve_mirr;
 	MDeformVert *dvert, *dvert_mirr;
 	short sel, sel_mirr;
-	int	*flip_map;
+	int	*flip_map, flip_map_len;
+	const int def_nr= ob->actdef-1;
 
-	if(mirror_weights==0 && flip_vgroups==0)
+	if ( (mirror_weights==0 && flip_vgroups==0) ||
+	     (BLI_findlink(&ob->defbase, def_nr) == NULL) )
+	{
 		return;
+	}
 
-	flip_map= defgroup_flip_map(ob, 0);
+	if (flip_vgroups) {
+		flip_map= all_vgroups ?
+					defgroup_flip_map(ob, &flip_map_len, FALSE) :
+					defgroup_flip_map_single(ob, &flip_map_len, FALSE, def_nr);
+
+		BLI_assert(flip_map != NULL);
+
+		if (flip_map == NULL) {
+			/* something went wrong!, possibly no groups */
+			return;
+		}
+	}
+	else {
+		flip_map= NULL;
+		flip_map_len= 0;
+	}
 
 	/* only the active group */
 	if(ob->type == OB_MESH) {
 		Mesh *me= ob->data;
 		EditMesh *em = BKE_mesh_get_editmesh(me);
 
+		if (em) {
+			if(!CustomData_has_layer(&em->vdata, CD_MDEFORMVERT)) {
+				goto cleanup;
+			}
 
-		if(!CustomData_has_layer(&em->vdata, CD_MDEFORMVERT)) {
-			MEM_freeN(flip_map);
-			return;
+			EM_cache_x_mirror_vert(ob, em);
+
+			/* Go through the list of editverts and assign them */
+			for(eve=em->verts.first; eve; eve=eve->next){
+				if((eve_mirr=eve->tmp.v)) {
+					sel= eve->f & SELECT;
+					sel_mirr= eve_mirr->f & SELECT;
+
+					if((sel || sel_mirr) && (eve != eve_mirr)) {
+						dvert= CustomData_em_get(&em->vdata, eve->data, CD_MDEFORMVERT);
+						dvert_mirr= CustomData_em_get(&em->vdata, eve_mirr->data, CD_MDEFORMVERT);
+						if(dvert && dvert_mirr) {
+							VGROUP_MIRR_OP;
+						}
+					}
+
+					eve->tmp.v= eve_mirr->tmp.v= NULL;
+				}
+			}
+			BKE_mesh_end_editmesh(me, em);
 		}
+		else {
+			/* object mode / weight paint */
+			MVert *mv, *mv_mirr;
+			int vidx, vidx_mirr;
+			const int use_vert_sel= (me->editflag & ME_EDIT_VERT_SEL) != 0;
 
-		EM_cache_x_mirror_vert(ob, em);
+			if (me->dvert == NULL) {
+				goto cleanup;
+			}
 
-		/* Go through the list of editverts and assign them */
-		for(eve=em->verts.first; eve; eve=eve->next){
-			if((eve_mirr=eve->tmp.v)) {
-				sel= eve->f & SELECT;
-				sel_mirr= eve_mirr->f & SELECT;
+			if (!use_vert_sel) {
+				sel= sel_mirr= TRUE;
+			}
 
-				if((sel || sel_mirr) && (eve != eve_mirr)) {
-					dvert= CustomData_em_get(&em->vdata, eve->data, CD_MDEFORMVERT);
-					dvert_mirr= CustomData_em_get(&em->vdata, eve_mirr->data, CD_MDEFORMVERT);
-					if(dvert && dvert_mirr) {
+			/* tag verts we have used */
+			for(vidx= 0, mv= me->mvert; vidx < me->totvert; vidx++, mv++) {
+				mv->flag &= ~ME_VERT_TMP_TAG;
+			}
+
+			for(vidx= 0, mv= me->mvert; vidx < me->totvert; vidx++, mv++) {
+				if (    ((mv->flag & ME_VERT_TMP_TAG) == 0) &&
+				        ((vidx_mirr= mesh_get_x_mirror_vert(ob, vidx)) != -1) &&
+				        (vidx != vidx_mirr) &&
+				        ((((mv_mirr= me->mvert + vidx_mirr)->flag) & ME_VERT_TMP_TAG) == 0))
+				{
+
+					if (use_vert_sel) {
+						sel= mv->flag & SELECT;
+						sel_mirr= mv_mirr->flag & SELECT;
+					}
+
+					if (sel || sel_mirr) {
+						dvert= &me->dvert[vidx];
+						dvert_mirr= &me->dvert[vidx_mirr];
+
 						VGROUP_MIRR_OP;
 					}
-				}
 
-				eve->tmp.v= eve_mirr->tmp.v= NULL;
+					mv->flag |= ME_VERT_TMP_TAG;
+					mv_mirr->flag |= ME_VERT_TMP_TAG;
+				}
 			}
 		}
-
-		BKE_mesh_end_editmesh(me, em);
 	}
 	else if (ob->type == OB_LATTICE) {
 		Lattice *lt= ob->data;
@@ -1614,8 +1725,7 @@ void ED_vgroup_mirror(Object *ob, const short mirror_weights, const short flip_v
 		if(lt->editlatt) lt= lt->editlatt->latt;
 
 		if(lt->pntsu == 1 || lt->dvert == NULL) {
-			MEM_freeN(flip_map);
-			return;
+			goto cleanup;
 		}
 
 		/* unlike editmesh we know that by only looping over the first hald of
@@ -1651,9 +1761,11 @@ void ED_vgroup_mirror(Object *ob, const short mirror_weights, const short flip_v
 		}
 	}
 
-	MEM_freeN(flip_map);
+cleanup:
+	if (flip_map) MEM_freeN(flip_map);
 
 #undef VGROUP_MIRR_OP
+
 }
 
 static void vgroup_remap_update_users(Object *ob, int *map)
@@ -1697,12 +1809,12 @@ static void vgroup_remap_update_users(Object *ob, int *map)
 
 static void vgroup_delete_update_users(Object *ob, int id)
 {
-	int i, tot= BLI_countlist(&ob->defbase) + 1;
-	int *map= MEM_mallocN(sizeof(int) * tot, "vgroup del");
+	int i, defbase_tot= BLI_countlist(&ob->defbase) + 1;
+	int *map= MEM_mallocN(sizeof(int) * defbase_tot, "vgroup del");
 
 	map[id]= map[0]= 0;
 	for(i=1; i<id; i++) map[i]=i;
-	for(i=id+1; i<tot; i++) map[i]=i-1;
+	for(i=id+1; i<defbase_tot; i++) map[i]=i-1;
 
 	vgroup_remap_update_users(ob, map);
 	MEM_freeN(map);
@@ -2015,7 +2127,7 @@ static int vertex_group_poll(bContext *C)
 {
 	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
 	ID *data= (ob)? ob->data: NULL;
-	return (ob && !ob->id.lib && ELEM(ob->type, OB_MESH, OB_LATTICE) && data && !data->lib);
+	return (ob && !ob->id.lib && OB_TYPE_SUPPORT_VGROUP(ob->type) && data && !data->lib);
 }
 
 static int vertex_group_poll_edit(bContext *C)
@@ -2082,7 +2194,10 @@ void OBJECT_OT_vertex_group_remove(wmOperatorType *ot)
 	ot->exec= vertex_group_remove_exec;
 
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	/* redo operator will fail in this case because vertex groups aren't stored
+	   in local edit mode stack and toggling "all" property will lead to
+	   all groups deleted without way to restore them (see [#29527], sergey) */
+	ot->flag= /*OPTYPE_REGISTER|*/OPTYPE_UNDO;
 
 	/* properties */
 	RNA_def_boolean(ot->srna, "all", 0, "All", "Remove from all vertex groups");
@@ -2114,7 +2229,10 @@ void OBJECT_OT_vertex_group_assign(wmOperatorType *ot)
 	ot->exec= vertex_group_assign_exec;
 
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	/* redo operator will fail in this case because vertex group assignment
+	   isn't stored in local edit mode stack and toggling "new" property will
+	   lead to creating plenty of new veretx groups (see [#29527], sergey) */
+	ot->flag= /*OPTYPE_REGISTER|*/OPTYPE_UNDO;
 
 	/* properties */
 	RNA_def_boolean(ot->srna, "new", 0, "New", "Assign vertex to new vertex group");
@@ -2153,7 +2271,10 @@ void OBJECT_OT_vertex_group_remove_from(wmOperatorType *ot)
 	ot->exec= vertex_group_remove_from_exec;
 
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	/* redo operator will fail in this case because vertex groups ssignment
+	   isn't stored in local edit mode stack and toggling "all" property will lead to
+	   removing vertices from all groups (see [#29527], sergey) */
+	ot->flag= /*OPTYPE_REGISTER|*/OPTYPE_UNDO;
 
 	/* properties */
 	RNA_def_boolean(ot->srna, "all", 0, "All", "Remove from all vertex groups");
@@ -2511,7 +2632,10 @@ static int vertex_group_mirror_exec(bContext *C, wmOperator *op)
 {
 	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
 
-	ED_vgroup_mirror(ob, RNA_boolean_get(op->ptr,"mirror_weights"), RNA_boolean_get(op->ptr,"flip_group_names"));
+	ED_vgroup_mirror(ob,
+	                 RNA_boolean_get(op->ptr,"mirror_weights"),
+	                 RNA_boolean_get(op->ptr,"flip_group_names"),
+	                 RNA_boolean_get(op->ptr,"all_groups"));
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_OBJECT|ND_DRAW, ob);
@@ -2529,7 +2653,7 @@ void OBJECT_OT_vertex_group_mirror(wmOperatorType *ot)
 	                 "flipping when both sides are selected otherwise copy from unselected";
 
 	/* api callbacks */
-	ot->poll= vertex_group_poll_edit;
+	ot->poll= vertex_group_poll;
 	ot->exec= vertex_group_mirror_exec;
 
 	/* flags */
@@ -2538,6 +2662,7 @@ void OBJECT_OT_vertex_group_mirror(wmOperatorType *ot)
 	/* properties */
 	RNA_def_boolean(ot->srna, "mirror_weights", TRUE, "Mirror Weights", "Mirror weights");
 	RNA_def_boolean(ot->srna, "flip_group_names", TRUE, "Flip Groups", "Flip vertex group names");
+	RNA_def_boolean(ot->srna, "all_groups", FALSE, "All Groups", "Mirror all vertex groups weights");
 
 }
 
@@ -2631,6 +2756,7 @@ static int set_active_group_exec(bContext *C, wmOperator *op)
 	int nr= RNA_enum_get(op->ptr, "group");
 
 	ob->actdef= nr+1;
+	BLI_assert(ob->actdef >= 0);
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_GEOM|ND_DATA, ob);
@@ -2691,8 +2817,8 @@ void OBJECT_OT_vertex_group_set_active(wmOperatorType *ot)
 static char *vgroup_init_remap(Object *ob)
 {
 	bDeformGroup *def;
-	int def_tot = BLI_countlist(&ob->defbase);
-	char *name_array= MEM_mallocN(MAX_VGROUP_NAME * sizeof(char) * def_tot, "sort vgroups");
+	int defbase_tot = BLI_countlist(&ob->defbase);
+	char *name_array= MEM_mallocN(MAX_VGROUP_NAME * sizeof(char) * defbase_tot, "sort vgroups");
 	char *name;
 
 	name= name_array;
@@ -2708,8 +2834,8 @@ static int vgroup_do_remap(Object *ob, char *name_array, wmOperator *op)
 {
 	MDeformVert *dvert= NULL;
 	bDeformGroup *def;
-	int def_tot = BLI_countlist(&ob->defbase);
-	int *sort_map_update= MEM_mallocN(MAX_VGROUP_NAME * sizeof(int) * def_tot + 1, "sort vgroups"); /* needs a dummy index at the start*/
+	int defbase_tot = BLI_countlist(&ob->defbase);
+	int *sort_map_update= MEM_mallocN(sizeof(int) * (defbase_tot + 1), "sort vgroups"); /* needs a dummy index at the start*/
 	int *sort_map= sort_map_update + 1;
 	char *name;
 	int i;
@@ -2718,6 +2844,8 @@ static int vgroup_do_remap(Object *ob, char *name_array, wmOperator *op)
 	for(def= ob->defbase.first, i=0; def; def=def->next, i++){
 		sort_map[i]= BLI_findstringindex(&ob->defbase, name, offsetof(bDeformGroup, name));
 		name += MAX_VGROUP_NAME;
+
+		BLI_assert(sort_map[i] != -1);
 	}
 
 	if(ob->mode == OB_MODE_EDIT) {
@@ -2728,7 +2856,7 @@ static int vgroup_do_remap(Object *ob, char *name_array, wmOperator *op)
 			for(eve=em->verts.first; eve; eve=eve->next){
 				dvert= CustomData_em_get(&em->vdata, eve->data, CD_MDEFORMVERT);
 				if(dvert && dvert->totweight){
-					defvert_remap(dvert, sort_map);
+					defvert_remap(dvert, sort_map, defbase_tot);
 				}
 			}
 		}
@@ -2746,19 +2874,20 @@ static int vgroup_do_remap(Object *ob, char *name_array, wmOperator *op)
 		/*create as necassary*/
 		while(dvert && dvert_tot--) {
 			if(dvert->totweight)
-				defvert_remap(dvert, sort_map);
+				defvert_remap(dvert, sort_map, defbase_tot);
 			dvert++;
 		}
 	}
 
 	/* update users */
-	for(i=0; i<def_tot; i++)
+	for(i=0; i<defbase_tot; i++)
 		sort_map[i]++;
 
 	sort_map_update[0]= 0;
 	vgroup_remap_update_users(ob, sort_map_update);
 
 	ob->actdef= sort_map_update[ob->actdef];
+	BLI_assert(ob->actdef >= 0);
 	
 	MEM_freeN(sort_map_update);
 

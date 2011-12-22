@@ -1,6 +1,5 @@
 /*
  * ListValue.h: interface for the CListValue class.
- * $Id: ListValue.h 35063 2011-02-22 10:33:14Z jesterking $
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -24,7 +23,7 @@
 
 class CListValue : public CPropValue  
 {
-	Py_Header;
+	Py_Header
 	//PLUGIN_DECLARE_SERIAL (CListValue,CValue)
 
 public:
@@ -59,7 +58,7 @@ public:
 	void Resize(int num);
 	void SetValue(int i,CValue* val);
 	CValue* GetValue(int i){	assertd(i < m_pValueArray.size());	return m_pValueArray[i];}
-	int GetCount() { return m_pValueArray.size();};
+	int GetCount() { return m_pValueArray.size(); }
 	virtual const STR_String & GetText();
 
 	bool CheckEqual(CValue* first,CValue* second);

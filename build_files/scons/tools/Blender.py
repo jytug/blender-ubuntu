@@ -34,6 +34,7 @@ import bcolors
 bc = bcolors.bcolors()
 import btools
 VERSION = btools.VERSION
+VERSION_RELEASE_CYCLE = btools.VERSION_RELEASE_CYCLE
 
 Split = SCons.Util.Split
 Action = SCons.Action.Action
@@ -49,6 +50,7 @@ program_list = [] # A list holding Nodes to final binaries, used to create insta
 arguments = None
 targets = None
 resources = []
+bitness = 0
 
 #some internals
 blenderdeps = [] # don't manipulate this one outside this module!
@@ -192,6 +194,16 @@ def setup_staticlibs(lenv):
     if lenv['WITH_BF_OPENMP']:
         if lenv['OURPLATFORM'] == 'linuxcross':
             libincs += Split(lenv['BF_OPENMP_LIBPATH'])
+            
+    if lenv['WITH_BF_OIIO']:
+        libincs += Split(lenv['BF_OIIO_LIBPATH'])
+        if lenv['WITH_BF_STATICOIIO']:
+            statlibs += Split(lenv['BF_OIIO_LIB_STATIC'])
+
+    if lenv['WITH_BF_BOOST']:
+        libincs += Split(lenv['BF_BOOST_LIBPATH'])
+        if lenv['WITH_BF_STATICBOOST']:
+            statlibs += Split(lenv['BF_BOOST_LIB_STATIC'])
 
     # setting this last so any overriding of manually libs could be handled
     if lenv['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
@@ -211,11 +223,7 @@ def setup_staticlibs(lenv):
     return statlibs, libincs
 
 def setup_syslibs(lenv):
-    syslibs = [
-        
-        lenv['BF_JPEG_LIB'],
-        lenv['BF_PNG_LIB'],
-        ]
+    syslibs = []
 
     if not lenv['WITH_BF_FREETYPE_STATIC']:
         syslibs += Split(lenv['BF_FREETYPE_LIB'])
@@ -236,6 +244,10 @@ def setup_syslibs(lenv):
             syslibs += ['gomp']
     if lenv['WITH_BF_ICONV']:
         syslibs += Split(lenv['BF_ICONV_LIB'])
+    if lenv['WITH_BF_OIIO']:
+        if not lenv['WITH_BF_STATICOIIO']:
+            syslibs += Split(lenv['BF_OIIO_LIB'])
+
     if lenv['WITH_BF_OPENEXR'] and not lenv['WITH_BF_STATICOPENEXR']:
         syslibs += Split(lenv['BF_OPENEXR_LIB'])
     if lenv['WITH_BF_TIFF'] and not lenv['WITH_BF_STATICTIFF']:
@@ -247,9 +259,9 @@ def setup_syslibs(lenv):
         if lenv['WITH_BF_OGG']:
             syslibs += Split(lenv['BF_OGG_LIB'])
     if lenv['WITH_BF_JACK']:
-            syslibs += Split(lenv['BF_JACK_LIB'])
+        syslibs += Split(lenv['BF_JACK_LIB'])
     if lenv['WITH_BF_SNDFILE'] and not lenv['WITH_BF_STATICSNDFILE']:
-            syslibs += Split(lenv['BF_SNDFILE_LIB'])
+        syslibs += Split(lenv['BF_SNDFILE_LIB'])
     if lenv['WITH_BF_FFTW3'] and not lenv['WITH_BF_STATICFFTW3']:
         syslibs += Split(lenv['BF_FFTW3_LIB'])
     if lenv['WITH_BF_SDL']:
@@ -274,6 +286,12 @@ def setup_syslibs(lenv):
         if lenv['WITH_BF_3DMOUSE']:
             if not lenv['WITH_BF_STATIC3DMOUSE']:
                 syslibs += Split(lenv['BF_3DMOUSE_LIB'])
+                
+    if lenv['WITH_BF_BOOST'] and not lenv['WITH_BF_STATICBOOST']:
+        syslibs += Split(lenv['BF_BOOST_LIB'])
+
+    syslibs += Split(lenv['BF_JPEG_LIB'])
+    syslibs += Split(lenv['BF_PNG_LIB'])
 
     syslibs += lenv['LLIBS']
 
@@ -302,22 +320,17 @@ def creator(env):
     incs = ['#/intern/guardedalloc', '#/source/blender/blenlib', '#/source/blender/blenkernel', '#/source/blender/editors/include', '#/source/blender/blenloader', '#/source/blender/imbuf', '#/source/blender/renderconverter', '#/source/blender/render/extern/include', '#/source/blender/windowmanager', '#/source/blender/makesdna', '#/source/blender/makesrna', '#/source/gameengine/BlenderRoutines', '#/extern/glew/include', '#/source/blender/gpu', env['BF_OPENGL_INC']]
 
     defs = []
-    if env['WITH_BF_QUICKTIME']:
-        incs.append(env['BF_QUICKTIME_INC'])
-        defs.append('WITH_QUICKTIME')
 
     if env['WITH_BF_BINRELOC']:
         incs.append('#/extern/binreloc/include')
         defs.append('WITH_BINRELOC')
 
-    if env['WITH_BF_OPENEXR']:
-        defs.append('WITH_OPENEXR')
+    if env['WITH_BF_SDL']:
+        defs.append('WITH_SDL')
 
-    if env['WITH_BF_TIFF']:
-        defs.append('WITH_TIFF')
-
-    if not env['WITH_BF_SDL']:
-        defs.append('DISABLE_SDL')
+    if env['WITH_BF_LIBMV']:
+        incs.append('#/extern/libmv')
+        defs.append('WITH_LIBMV')
 
     if env['WITH_BF_PYTHON']:
         incs.append('#/source/blender/python')
@@ -536,10 +549,6 @@ def AppIt(target=None, source=None, env=None):
     bldroot = env.Dir('.').abspath
     binary = env['BINARYKIND']
      
-    if b=='verse':
-        print bc.OKBLUE+"no bundle for verse"+bc.ENDC 
-        return 0
-    
     sourcedir = bldroot + '/source/darwin/%s.app'%binary
     sourceinfo = bldroot + "/source/darwin/%s.app/Contents/Info.plist"%binary
     targetinfo = installdir +'/' + "%s.app/Contents/Info.plist"%binary
@@ -561,12 +570,37 @@ def AppIt(target=None, source=None, env=None):
     if binary == 'blender':
         cmd = 'mkdir %s/%s.app/Contents/MacOS/%s/datafiles'%(installdir, binary, VERSION)
         commands.getoutput(cmd)
-        cmd = 'cp -R %s/release/bin/.blender/locale %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
+        cmd = 'cp -R %s/release/datafiles/locale %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
         commands.getoutput(cmd)
-        cmd = 'cp -R %s/release/bin/.blender/fonts %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
+        cmd = 'cp -R %s/release/datafiles/fonts %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
         commands.getoutput(cmd)
         cmd = 'cp -R %s/release/scripts %s/%s.app/Contents/MacOS/%s/'%(bldroot,installdir,binary,VERSION)
         commands.getoutput(cmd)
+
+        if VERSION_RELEASE_CYCLE == "release":
+            cmd = 'rm -rf %s/%s.app/Contents/MacOS/%s/scripts/addons_contrib'%(installdir,binary,VERSION)
+            commands.getoutput(cmd)
+
+        if env['WITH_BF_CYCLES']:
+            croot = '%s/intern/cycles' % (bldroot)
+            cinstalldir = '%s/%s.app/Contents/MacOS/%s/scripts/addons/cycles' % (installdir,binary,VERSION)
+
+            cmd = 'mkdir %s' % (cinstalldir)
+            commands.getoutput(cmd)
+            cmd = 'mkdir %s/kernel' % (cinstalldir)
+            commands.getoutput(cmd)
+            cmd = 'mkdir %s/lib' % (cinstalldir)
+            commands.getoutput(cmd)
+            cmd = 'cp -R %s/blender/addon/*.py %s/' % (croot, cinstalldir)
+            commands.getoutput(cmd)
+            cmd = 'cp -R %s/doc/license %s/license' % (croot, cinstalldir)
+            commands.getoutput(cmd)
+            cmd = 'cp -R %s/kernel/*.h %s/kernel/*.cl %s/kernel/*.cu %s/kernel/' % (croot, croot, croot, cinstalldir)
+            commands.getoutput(cmd)
+            cmd = 'cp -R %s/kernel/svm %s/util/util_color.h %s/util/util_math.h %s/util/util_transform.h %s/util/util_types.h %s/kernel/' % (croot, croot, croot, croot, croot, cinstalldir)
+            commands.getoutput(cmd)
+            cmd = 'cp -R %s/../intern/cycles/kernel/*.cubin %s/lib/' % (builddir, cinstalldir)
+            commands.getoutput(cmd)
 
     if env['WITH_OSX_STATICPYTHON']:
         cmd = 'mkdir %s/%s.app/Contents/MacOS/%s/python/'%(installdir,binary, VERSION)
@@ -726,17 +760,17 @@ class BlenderEnvironment(SConsEnvironment):
             lenv.Append(CPPPATH=includes)
             lenv.Append(CPPDEFINES=defines)
             if lenv['BF_DEBUG'] or (libname in quickdebug):
-                    lenv.Append(CFLAGS = lenv['BF_DEBUG_CFLAGS'])
-                    lenv.Append(CCFLAGS = lenv['BF_DEBUG_CCFLAGS'])
-                    lenv.Append(CXXFLAGS = lenv['BF_DEBUG_CXXFLAGS'])
+                lenv.Append(CFLAGS = lenv['BF_DEBUG_CFLAGS'])
+                lenv.Append(CCFLAGS = lenv['BF_DEBUG_CCFLAGS'])
+                lenv.Append(CXXFLAGS = lenv['BF_DEBUG_CXXFLAGS'])
             else:
-                    lenv.Append(CFLAGS = lenv['REL_CFLAGS'])
-                    lenv.Append(CCFLAGS = lenv['REL_CCFLAGS'])
-                    lenv.Append(CXXFLAGS = lenv['REL_CXXFLAGS'])
+                lenv.Append(CFLAGS = lenv['REL_CFLAGS'])
+                lenv.Append(CCFLAGS = lenv['REL_CCFLAGS'])
+                lenv.Append(CXXFLAGS = lenv['REL_CXXFLAGS'])
             if lenv['BF_PROFILE']:
-                    lenv.Append(CFLAGS = lenv['BF_PROFILE_CFLAGS'])
-                    lenv.Append(CCFLAGS = lenv['BF_PROFILE_CCFLAGS'])
-                    lenv.Append(CXXFLAGS = lenv['BF_PROFILE_CXXFLAGS'])
+                lenv.Append(CFLAGS = lenv['BF_PROFILE_CFLAGS'])
+                lenv.Append(CCFLAGS = lenv['BF_PROFILE_CCFLAGS'])
+                lenv.Append(CXXFLAGS = lenv['BF_PROFILE_CXXFLAGS'])
             if compileflags:
                 lenv.Replace(CFLAGS = compileflags)
             if cc_compileflags:
@@ -796,7 +830,7 @@ class BlenderEnvironment(SConsEnvironment):
             if lenv['WITH_BF_PYTHON']:
                 lenv.Append(LINKFLAGS = lenv['BF_PYTHON_LINKFLAGS'])
             if lenv['CXX'].endswith('CC'):
-                 lenv.Replace(LINK = '$CXX')
+                lenv.Replace(LINK = '$CXX')
         if  lenv['OURPLATFORM']=='darwin':
             if lenv['WITH_BF_PYTHON']:
                 lenv.Append(LINKFLAGS = lenv['BF_PYTHON_LINKFLAGS'])
@@ -808,8 +842,8 @@ class BlenderEnvironment(SConsEnvironment):
         lenv.Append(LIBPATH=libpath)
         lenv.Append(LIBS=libs)
         if lenv['WITH_BF_QUICKTIME']:
-             lenv.Append(LIBS = lenv['BF_QUICKTIME_LIB'])
-             lenv.Append(LIBPATH = lenv['BF_QUICKTIME_LIBPATH'])
+            lenv.Append(LIBS = lenv['BF_QUICKTIME_LIB'])
+            lenv.Append(LIBPATH = lenv['BF_QUICKTIME_LIBPATH'])
         prog = lenv.Program(target=builddir+'bin/'+progname, source=sources)
         if lenv['BF_DEBUG'] and lenv['OURPLATFORM'] in ('win32-vc', 'win64-vc') and lenv['BF_BSC']:
             f = lenv.File(progname + '.bsc', builddir)
