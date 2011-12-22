@@ -6,3 +6,4 @@
 0006-filter_docs_to_install.patch
 0007-locales_directory_install.patch
 0008-update_manpages.patch
+0009-fix_FTBFS_with_ffmpeg_debian.patch
