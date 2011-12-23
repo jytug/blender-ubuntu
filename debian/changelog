@@ -2,6 +2,8 @@ blender (2.61-1) unstable; urgency=low
 
   [ Matteo F. Vescovi ]
   * [a8e26a2] Imported Upstream version 2.61
+  * [bb397a7] debian/patches: re-arranged after new version
+  * [4673049] debian/gbp.conf: config file added
 
   [ Kevin Roy ]
   * Fix the FTBFS with ffmpeg missing function in debian package
