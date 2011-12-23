@@ -1,7 +1,9 @@
 Source: blender
 Section: graphics
 Priority: optional
-Maintainer: Kevin Roy <kiniou@gmail.com> 
+Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
+Uploaders: Kevin Roy <kiniou@gmail.com>,
+           Matteo F. Vescovi <m.vescovi@revese.it>
 Build-Depends: debhelper (>= 7.0.50~),
  libftgl-dev,
  gettext,
