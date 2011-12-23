@@ -39,8 +39,8 @@ Build-Depends: debhelper (>= 7.0.50~),
 Build-Conflicts: nvidia-glx
 Standards-Version: 3.9.2
 Homepage: http://blender.org
-Vcs-Git: git://anonscm.debian.org/collab-maint/blender.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/blender.git
+Vcs-Git: git://anonscm.debian.org/pkg-multimedia/blender.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-multimedia/blender.git
 
 Package: blender
 Architecture: any
