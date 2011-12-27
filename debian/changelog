@@ -1,10 +1,10 @@
 blender (2.61-1) UNRELEASED; urgency=low
 
   [ Matteo F. Vescovi ]
-  * [a8e26a2] Imported Upstream version 2.61
-  * [bb397a7] debian/patches: re-arranged after new version
-  * [4673049] debian/gbp.conf: config file added
   * [07b1e88] debian/copyright: URI updated (DEP-5 compliance)
+  * [bb397a7] debian/patches: re-arranged after new version
+  * [8597b0c] debian/watch: link to stable releases added
+  * [4673049] debian/gbp.conf: config file added
 
   [ Kevin Roy ]
   * Fix the FTBFS with ffmpeg missing function in debian package
