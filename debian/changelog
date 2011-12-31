@@ -7,7 +7,8 @@ blender (2.61-1) UNRELEASED; urgency=low
   * [4673049] debian/gbp.conf: config file added
 
   [ Kevin Roy ]
-  * Fix the FTBFS with ffmpeg missing function in debian package
+  * [d71a759] Fix the FTBFS with ffmpeg missing function
+    in debian package.
     Thanks to Antonio Ospite for the patch. (Closes: #652098)
 
  -- Kevin Roy <kiniou@gmail.com>  Thu, 22 Dec 2011 18:33:03 +0100
