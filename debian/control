@@ -2,7 +2,8 @@ Source: blender
 Section: graphics
 Priority: optional
 Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
-Uploaders: Kevin Roy <kiniou@gmail.com>,
+Uploaders: Alessio Treglia <alessio@debian.org>,
+           Kevin Roy <kiniou@gmail.com>,
            Matteo F. Vescovi <m.vescovi@revese.it>
 Build-Depends: autotools-dev,
                cmake,
