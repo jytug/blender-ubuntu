@@ -1,4 +1,4 @@
-blender (2.61-1) UNRELEASED; urgency=low
+blender (2.61-1) unstable; urgency=low
 
   [ Matteo F. Vescovi ]
   * [07b1e88] debian/copyright: URI updated (DEP-5 compliance)
