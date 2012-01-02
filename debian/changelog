@@ -11,14 +11,15 @@ blender (2.61-1) unstable; urgency=low
   * [0b9ac59] debian/control: Alessio Treglia added as Uploader
   * [52b5334] debian/control: mfv's email address changed
   * [83a7038] debian/rules: gzip->bz2 compression for upstream source
-  * [6f6f11d] debian/rules: BZIP2 variable corrected
 
   [ Kevin Roy ]
   * [d71a759] Fix the FTBFS with ffmpeg missing function
     in debian package.
     Thanks to Antonio Ospite for the patch. (Closes: #652098)
+  * [72d8f01] debian/patches: fixup ffmpeg compat patch.
+    Bumped libavformat minor version check from 3 to 4
 
- -- Kevin Roy <kiniou@gmail.com>  Thu, 22 Dec 2011 18:33:03 +0100
+ -- Kevin Roy <kiniou@gmail.com>  Mon, 02 Jan 2012 23:42:50 +0100
 
 blender (2.59-1) unstable; urgency=low
 
