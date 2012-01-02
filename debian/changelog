@@ -1,10 +1,17 @@
 blender (2.61-1) unstable; urgency=low
 
+  [ Alessio Treglia ]
+  * [f032fe8] Use bzip2'd tarballs.
+
   [ Matteo F. Vescovi ]
   * [07b1e88] debian/copyright: URI updated (DEP-5 compliance)
   * [bb397a7] debian/patches: re-arranged after new version
   * [8597b0c] debian/watch: link to stable releases added
   * [4673049] debian/gbp.conf: config file added
+  * [0b9ac59] debian/control: Alessio Treglia added as Uploader
+  * [52b5334] debian/control: mfv's email address changed
+  * [83a7038] debian/rules: gzip->bz2 compression for upstream source
+  * [6f6f11d] debian/rules: BZIP2 variable corrected
 
   [ Kevin Roy ]
   * [d71a759] Fix the FTBFS with ffmpeg missing function
