@@ -22,7 +22,7 @@ index dfdad22..5259f69 100644
  #define FFMPEG_HAVE_AVIO 1
  #endif
  
-+#if (LIBAVFORMAT_VERSION_MAJOR < 53) || ((LIBAVFORMAT_VERSION_MAJOR == 53) && (LIBAVFORMAT_VERSION_MINOR < 3))
++#if (LIBAVFORMAT_VERSION_MAJOR < 53) || ((LIBAVFORMAT_VERSION_MAJOR == 53) && (LIBAVFORMAT_VERSION_MINOR < 4))
 +/* XXX The last check above should be (LIBAVFORMAT_VERSION_MINOR < 2),
 + * look at http://patches.libav.org/patch/3333/ but ffmpeg in Debian is
 + * strange: 53.2.0 should have avformat_alloc_output_context2() but it does
