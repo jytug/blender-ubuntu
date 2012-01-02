@@ -16,7 +16,7 @@ get-orig-source:
 	mkdir get-orig-source
 	svn export -r $(SVN_REVISION) $(UPSTREAM_SVN_REPOSITORY) \
 	get-orig-source/$(PACKAGE)-$(SRC_VERSION).orig
-	BZ2='--best --no-name' tar cjf $(TARBALL) -C get-orig-source $(PACKAGE)-$(SRC_VERSION).orig
+	BZIP2='--best --no-name' tar cjf $(TARBALL) -C get-orig-source $(PACKAGE)-$(SRC_VERSION).orig
 	rm -rf get-orig-source
 	@echo "  "$(TARBALL)" created; move it to the right destination to build the package"
 
