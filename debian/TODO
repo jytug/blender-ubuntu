@@ -27,9 +27,6 @@ TODO for blender:
      - Maybe add libode0-dev to the B-D (not needed?).
      - Maybe add libalut-dev to the B-D (not needed?).
      - Maybe add libquicktime-dev to the B-D (FBTFS).
-  * Ship a -dbg package. See how to deal with running gdb on blender
-    because of the wrapper: how to make it intuitive to users? Maybe
-    a --debug or --gdb option?
   * More items have been mentioned on the list, see the thread
     beginning at:
     http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html
