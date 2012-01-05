@@ -1,15 +1,10 @@
-From: "Matteo F. Vescovi" <m.vescovi@revese.it>
-Date: Thu, 22 Dec 2011 18:10:48 +0100
+From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+Date: Thu, 05 Jan 2012 09:50:48 +0100
 Subject: install_in_usr_lib
 
  * Arch-specific files go to /usr/lib rather than /usr/share
  * Make blender look for systemdir into /usr/lib instead of /usr/share
- * Remove blender_version from system directory result
 ---
- intern/ghost/intern/GHOST_SystemPathsX11.cpp |    2 +-
- source/blender/blenlib/intern/path_util.c    |    2 +-
- source/creator/CMakeLists.txt                |    4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/intern/ghost/intern/GHOST_SystemPathsX11.cpp b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
 index 7261491..30ff1da 100644
@@ -24,19 +19,6 @@ index 7261491..30ff1da 100644
  #else
  static const char *static_path= NULL;
  #endif
-diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index e79d850..eb5e063 100644
---- a/source/blender/blenlib/intern/path_util.c
-+++ b/source/blender/blenlib/intern/path_util.c
-@@ -1025,7 +1025,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
- 
- 	system_base_path = (const char *)GHOST_getSystemDir();
- 	if (system_base_path) {
--		BLI_snprintf(system_path, FILE_MAX, BLENDER_SYSTEM_FORMAT, system_base_path, blender_version_decimal(ver));
-+		BLI_snprintf(system_path, FILE_MAX, BLENDER_SYSTEM_FORMAT, system_base_path);
- 	}
- 	
- 	if(!system_path[0])
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
 index 7a9a44c..f6f7cc1 100644
 --- a/source/creator/CMakeLists.txt
@@ -48,7 +30,7 @@ index 7a9a44c..f6f7cc1 100644
 -		DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts
 -		DESTINATION ${TARGETDIR_VER}
 +		DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts/
-+ 		DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
++ 		DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts/
  		PATTERN ".svn" EXCLUDE
  		PATTERN "__pycache__" EXCLUDE
  		PATTERN "${ADDON_EXCLUDE_CONDITIONAL}" EXCLUDE
