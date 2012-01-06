@@ -159,8 +159,8 @@ index ec77aef..7651027 100644
  			DESTINATION ${TARGETDIR}
  		)
  
-@@ -361,7 +362,9 @@ if(UNIX AND NOT APPLE)
-             DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
+@@ -361,7 +362,9 @@
+ 			DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
  		)
  		install(
 -			FILES ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
