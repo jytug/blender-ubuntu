@@ -7,3 +7,4 @@
 0007-locales_directory_install.patch
 0008-update_manpages.patch
 0009-fix_FTBFS_with_ffmpeg_debian.patch
+0010-Don-t-use-version-number-in-the-system_path.patch
