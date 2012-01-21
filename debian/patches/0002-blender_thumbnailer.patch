@@ -29,7 +29,7 @@ index 8b93eeb..a056852 100755
  
  import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 79a7f5b..7a9a44c 100644
+index 79a7f5b..27c13d7 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -360,7 +360,7 @@ if(UNIX AND NOT APPLE)

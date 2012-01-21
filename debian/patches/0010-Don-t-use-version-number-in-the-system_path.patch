@@ -1,10 +1,6 @@
-From 93a84599a36fb10588d4c93bc4c465d179b5ee6e Mon Sep 17 00:00:00 2001
 From: Antonio Ospite <ospite@studenti.unina.it>
 Date: Fri, 6 Jan 2012 14:31:50 +0100
-Subject: [PATCH] Don't use version number in the system_path.
-X-Face: z*RaLf`X<@C75u6Ig9}{oW$H;1_\2t5)({*|jhM<pyWR#k60!#=#>/Vb;]yA5<GWI5`6u&+
- ;6b'@y|8w"wB;4/e!7wYYrcqdJFY,~%Gk_4]cq$Ei/7<j&N3ah(m`ku?pX.&+~:_/wC~dwn^)MizBG
- !pE^+iDQQ1yC6^,)YDKkxDd!T>\I~93>J<_`<4)A{':UrE
+Subject: Don't use version number in the system_path.
 
 Global installation expects system patch to be something like
 /usr/lib/blender/scripts/ without version numbers.
@@ -35,5 +31,3 @@ index e79d850..bc6f6e6 100644
  	
  	if(!system_path[0])
 -- 
-1.7.8.2
-
