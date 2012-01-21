@@ -1,0 +1,30 @@
+Description: Adapt to libavutil API changes
+ Add include for libavutil/mathematics.h in ffmpeg_compat.h and writeffmpeg.c
+ since it is no longer included in libavutil/avutil.h
+Author: Thomas Preud'homme <robotux@celest.fr>
+Origin: vendor
+Forwarded: no
+Last-Update: 2012-01-19
+---
+
+--- blender-2.61.orig/intern/ffmpeg/ffmpeg_compat.h
++++ blender-2.61/intern/ffmpeg/ffmpeg_compat.h
+@@ -35,6 +35,7 @@
+ 
+ #include <libavcodec/avcodec.h>
+ #include <libavutil/rational.h>
++#include <libavutil/mathematics.h>
+ 
+ #if (LIBAVFORMAT_VERSION_MAJOR > 52) || ((LIBAVFORMAT_VERSION_MAJOR >= 52) && (LIBAVFORMAT_VERSION_MINOR >= 101))
+ #define FFMPEG_HAVE_PARSE_UTILS 1
+
+--- blender-2.61.orig/source/blender/blenkernel/intern/writeffmpeg.c
++++ blender-2.61/source/blender/blenkernel/intern/writeffmpeg.c
+@@ -36,6 +36,7 @@
+ #include <libavformat/avformat.h>
+ #include <libavcodec/avcodec.h>
+ #include <libavutil/rational.h>
++#include <libavutil/mathematics.h>
+ #include <libswscale/swscale.h>
+ #include <libavcodec/opt.h>
+ 
