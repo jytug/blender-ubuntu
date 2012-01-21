@@ -8,3 +8,4 @@
 0008-update_manpages.patch
 0009-fix_FTBFS_with_ffmpeg_debian.patch
 0010-do_not_use_version_number_in_the_system_path.patch
+0011-adapt_to_libav_API_changes.patch
