@@ -1,20 +1,29 @@
 From: Antonio Ospite <ospite@studenti.unina.it>
 Date: Sat, 17 Dec 2011 15:45:16 +0100
-Subject: Make blender compile with FFmpeg from Debian.
+Subject: fix_FTBFS_with_ffmpeg_from_debian
 
 avformat_alloc_output_context2() should be in the libavformat 53.2.0 but
 it isn't in Debian, re-define it.
 
 Signed-off-by: Antonio Ospite <ospite@studenti.unina.it>
 ---
- intern/ffmpeg/ffmpeg_compat.h |   61 +++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 61 insertions(+), 0 deletions(-)
+ intern/ffmpeg/ffmpeg_compat.h                  |   62 ++++++++++++++++++++++++
+ source/blender/blenkernel/intern/writeffmpeg.c |    1 +
+ 2 files changed, 63 insertions(+), 0 deletions(-)
 
 diff --git a/intern/ffmpeg/ffmpeg_compat.h b/intern/ffmpeg/ffmpeg_compat.h
-index dfdad22..e7cb1fe 100644
+index dfdad22..bb07576 100644
 --- a/intern/ffmpeg/ffmpeg_compat.h
 +++ b/intern/ffmpeg/ffmpeg_compat.h
-@@ -48,6 +48,67 @@
+@@ -35,6 +35,7 @@
+ 
+ #include <libavcodec/avcodec.h>
+ #include <libavutil/rational.h>
++#include <libavutil/mathematics.h>
+ 
+ #if (LIBAVFORMAT_VERSION_MAJOR > 52) || ((LIBAVFORMAT_VERSION_MAJOR >= 52) && (LIBAVFORMAT_VERSION_MINOR >= 101))
+ #define FFMPEG_HAVE_PARSE_UTILS 1
+@@ -48,6 +49,67 @@
  #define FFMPEG_HAVE_AVIO 1
  #endif
  
@@ -82,4 +91,16 @@ index dfdad22..e7cb1fe 100644
  #if (LIBAVCODEC_VERSION_MAJOR > 53) || ((LIBAVCODEC_VERSION_MAJOR == 53) && (LIBAVCODEC_VERSION_MINOR > 1)) || ((LIBAVCODEC_VERSION_MAJOR == 53) && (LIBAVCODEC_VERSION_MINOR == 1) && (LIBAVCODEC_VERSION_MICRO >= 1)) || ((LIBAVCODEC_VERSION_MAJOR == 52) && (LIBAVCODEC_VERSION_MINOR >= 121))
  #define FFMPEG_HAVE_DEFAULT_VAL_UNION 1
  #endif
+diff --git a/source/blender/blenkernel/intern/writeffmpeg.c b/source/blender/blenkernel/intern/writeffmpeg.c
+index aa7d71b..2e2633b 100644
+--- a/source/blender/blenkernel/intern/writeffmpeg.c
++++ b/source/blender/blenkernel/intern/writeffmpeg.c
+@@ -36,6 +36,7 @@
+ #include <libavformat/avformat.h>
+ #include <libavcodec/avcodec.h>
+ #include <libavutil/rational.h>
++#include <libavutil/mathematics.h>
+ #include <libswscale/swscale.h>
+ #include <libavcodec/opt.h>
+ 
 -- 

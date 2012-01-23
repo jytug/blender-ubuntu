@@ -1,0 +1,52 @@
+From: Kevin Roy <kiniou@gmail.com>
+Date: Wed, 11 Jan 2012 23:15:16 +0100
+Subject: fix_FTBFS_with_libmv
+
+This must fix build on debian ports that differs from generic i386/x86_64
+like kFreeBSD
+---
+ extern/libmv/third_party/glog/src/config.h       |   10 +++++-----
+ extern/libmv/third_party/glog/src/config_linux.h |    4 +++-
+ 2 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/extern/libmv/third_party/glog/src/config.h b/extern/libmv/third_party/glog/src/config.h
+index 49c0d89..102bf9e 100644
+--- a/extern/libmv/third_party/glog/src/config.h
++++ b/extern/libmv/third_party/glog/src/config.h
+@@ -2,14 +2,14 @@
+ /* src/config.h.in.  Generated from configure.ac by autoheader.  */
+ 
+ /* Namespace for Google classes */
+-#ifdef __APPLE__
++#if defined(__APPLE__)
+  #include "config_mac.h"
+-#elif __FreeBSD__
++#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+  #include "config_freebsd.h"
+-#elif __MINGW32__
++#elif defined(__MINGW32__)
+  #include "windows/config.h"
+-#elif __GNUC__
++#elif defined(__linux__)
+  #include "config_linux.h"
+-#elif _MSC_VER
++#elif defined(_MSC_VER)
+  #include "windows/config.h"
+ #endif
+diff --git a/extern/libmv/third_party/glog/src/config_linux.h b/extern/libmv/third_party/glog/src/config_linux.h
+index ffd4e77..faf0329 100644
+--- a/extern/libmv/third_party/glog/src/config_linux.h
++++ b/extern/libmv/third_party/glog/src/config_linux.h
+@@ -133,8 +133,10 @@
+ /* How to access the PC from a struct ucontext */
+ #if defined(_M_X64) || defined(__amd64__) || defined(__x86_64__)
+   #define PC_FROM_UCONTEXT uc_mcontext.gregs[REG_RIP]
+-#else
++#elif defined(_M_IX86) || defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
+   #define PC_FROM_UCONTEXT uc_mcontext.gregs[REG_EIP]
++#else
++  #undef PC_FROM_UCONTEXT
+ #endif
+ 
+ /* Define to necessary symbol if this constant uses a non-standard name on
+-- 
