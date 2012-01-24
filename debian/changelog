@@ -5,10 +5,13 @@ blender (2.61-2~1.gbpdf511c) UNRELEASED; urgency=low
   [ Antonio Ospite ]
   * debian/patches: refresh 0008-update_manpages.patch.
   * debian/patches: don't use version number in the system_path.
-    Thanks to Luka Frelih <luka@ljudmila.org> (Closes: #654395)
+    Thanks to Luka Frelih (Closes: #654395)
 
   [ Kevin Roy ]
   * debian/patches: fix_FTBFS_with_libmv + cleanup (Closes: #654428)
+  * debian/control: description cleanup
+  * debian/control: drop libsamplerate and libftgl.
+    Thanks to Campbell Barton (upstream developer)
 
   [ Matteo F. Vescovi ]
   * debian/copyright: DEP-5 compliance
@@ -16,11 +19,6 @@ blender (2.61-2~1.gbpdf511c) UNRELEASED; urgency=low
   * New patch to resolve libav's API changes
   * Updated patch 0009 to fix FTBFS.
     Thanks to Thomas Preud'homme for both these patches
-
-  [ Kevin Roy ]
-  * debian/control: drop libsamplerate and libftgl.
-    Thanks to Campbell Barton
-  * debian/control: description cleanup
 
  -- Kevin Roy <kiniou@gmail.com>  Tue, 24 Jan 2012 12:37:06 +0100
 
