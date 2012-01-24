@@ -1,3 +1,22 @@
+blender (2.61-2) UNRELEASED; urgency=low
+
+  [ Antonio Ospite ]
+  * debian/patches: refresh 0008-update_manpages.patch.
+  * debian/patches: don't use version number in the system_path.
+    Thanks to Luka Frelih <luka@ljudmila.org> (Closes: #654395)
+
+  [ Kevin Roy ]
+  * debian/patches: fix_FTBFS_with_libmv + cleanup (Closes: #654428)
+
+  [ Matteo F. Vescovi ]
+  * debian/copyright: DEP-5 compliance
+  * debian/patches: patches set re-worked (Closes: #656502)
+  * New patch to resolve libav's API changes
+  * Updated patch 0009 to fix FTBFS.
+    Thanks to Thomas Preud'homme for both these patches
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Tue, 24 Jan 2012 11:12:58 +0100
+
 blender (2.61-1) unstable; urgency=low
 
   [ Alessio Treglia ]
