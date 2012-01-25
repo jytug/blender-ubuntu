@@ -44,7 +44,7 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-multimedia/blender.git
 Package: blender
 Architecture: any
 Depends: python3.2,
-         ttf-dejavu,
+         fonts-droid,
          ${misc:Depends},
          ${shlibs:Depends}
 Suggests: libtiff4,
