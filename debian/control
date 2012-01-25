@@ -32,6 +32,7 @@ Build-Depends: autotools-dev,
                libvorbis-dev,
                libxi-dev,
                libz-dev,
+               libfontconfig-dev,
                pkg-config,
                python-support,
                python3.2-dev
