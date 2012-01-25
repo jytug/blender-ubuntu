@@ -9,3 +9,4 @@
 0009-fix_FTBFS_with_ffmpeg_from_debian.patch
 0010-do_not_use_version_number_in_the_system_path.patch
 0011-fix_FTBFS_with_libmv.patch
+0012-look_for_droid_ttf_with_fontconfig.patch
