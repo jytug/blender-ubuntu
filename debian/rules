@@ -33,7 +33,8 @@ override_dh_auto_configure:
 		-DWITH_PYTHON_INSTALL=OFF \
 		-DWITH_CODEC_FFMPEG=ON \
 		-DWITH_CODEC_SNDFILE=ON \
-		-DWITH_BUILTIN_GLEW=OFF
+		-DWITH_BUILTIN_GLEW=OFF \
+		-DWITH_FONTCONFIG=ON
 
 override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
