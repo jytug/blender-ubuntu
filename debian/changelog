@@ -15,8 +15,7 @@ blender (2.61-2~1.gbpdf511c) UNRELEASED; urgency=low
 
   [ Matteo F. Vescovi ]
   * debian/copyright: DEP-5 compliance
-  * debian/patches: patches set re-worked (Closes: #656502)
-  * New patch to resolve libav's API changes
+  * New patch to resolve libav's API changes (Closes: #656502)
   * Updated patch 0009 to fix FTBFS.
     Thanks to Thomas Preud'homme for both these patches
 
