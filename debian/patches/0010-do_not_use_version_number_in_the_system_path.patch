@@ -9,12 +9,12 @@ Global installation expects system patch to be something like
  1 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index e79d850..bc6f6e6 100644
+index 980e26b..bc42cec 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
 @@ -89,7 +89,7 @@
  #  else /* new XDG ~/blender/.config/ */
- #    define BLENDER_USER_FORMAT			"%s/blender/%s"
+ #	 define BLENDER_USER_FORMAT			"%s/blender/%s"
  #  endif // WITH_XDG_USER_DIRS
 -#  define BLENDER_SYSTEM_FORMAT			"%s/blender/%s"
 +#  define BLENDER_SYSTEM_FORMAT			"%s/blender"
