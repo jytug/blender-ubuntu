@@ -9,3 +9,5 @@
 0009-do_not_use_version_number_in_the_system_path.patch
 0010-fix_FTBFS_with_libmv.patch
 0011-look_for_droid_ttf_with_fontconfig.patch
+0012-fix_implicit_declaration_of_av_rescale_q.patch
+0013-fix_implicit_declaration_of_guardealloc.patch
