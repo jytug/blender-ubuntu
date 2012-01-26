@@ -1,0 +1,21 @@
+From: Kevin Roy <kiniou@gmail.com>
+Date: Thu, 26 Jan 2012 23:54:09 +0100
+Subject: fix_implicit_declaration_of_av_rescale_q
+
+---
+ intern/ffmpeg/ffmpeg_compat.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/intern/ffmpeg/ffmpeg_compat.h b/intern/ffmpeg/ffmpeg_compat.h
+index bb07576..156073f 100644
+--- a/intern/ffmpeg/ffmpeg_compat.h
++++ b/intern/ffmpeg/ffmpeg_compat.h
+@@ -36,6 +36,7 @@
+ #include <libavcodec/avcodec.h>
+ #include <libavutil/rational.h>
+ #include <libavutil/mathematics.h>
++#include <libavutil/opt.h>
+ 
+ #if (LIBAVFORMAT_VERSION_MAJOR > 52) || ((LIBAVFORMAT_VERSION_MAJOR >= 52) && (LIBAVFORMAT_VERSION_MINOR >= 101))
+ #define FFMPEG_HAVE_PARSE_UTILS 1
+-- 
