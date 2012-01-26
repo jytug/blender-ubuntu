@@ -47,7 +47,7 @@ index 4874085..925f283 100644
  		if(NOT FFTW3_FOUND)
 diff --git a/build_files/cmake/Modules/FindFontconfig.cmake b/build_files/cmake/Modules/FindFontconfig.cmake
 new file mode 100644
-index 0000000..308c482
+index 0000000..337ece9
 --- /dev/null
 +++ b/build_files/cmake/Modules/FindFontconfig.cmake
 @@ -0,0 +1,49 @@
@@ -96,12 +96,12 @@ index 0000000..308c482
 +
 +  include(FindPackageHandleStandardArgs)
 +  FIND_PACKAGE_HANDLE_STANDARD_ARGS(Fontconfig DEFAULT_MSG FONTCONFIG_LIBRARIES FONTCONFIG_INCLUDE_DIR )
-+  
++
 +  mark_as_advanced(FONTCONFIG_LIBRARIES FONTCONFIG_INCLUDE_DIR)
 +
 +endif (FONTCONFIG_LIBRARIES AND FONTCONFIG_INCLUDE_DIR)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index c6a8340..581351f 100644
+index c6a8340..6a06c58 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
 @@ -244,6 +244,11 @@ macro(setup_liblinks
@@ -111,7 +111,7 @@ index c6a8340..581351f 100644
 +	if(WITH_FONTCONFIG)
 +		target_link_libraries(${target} ${FONTCONFIG_LIBRARIES})
 +	endif()
-+        
++
 +
  	if(WITH_OPENAL)
  		target_link_libraries(${target} ${OPENAL_LIBRARY})
@@ -134,7 +134,7 @@ index d928297..1fce891 100644
  blender_add_lib(bf_blenfont "${SRC}" "${INC}" "${INC_SYS}")
  
 diff --git a/source/blender/blenfont/intern/blf_translation.c b/source/blender/blenfont/intern/blf_translation.c
-index fe14f5d..eeca08a 100644
+index fe14f5d..8f89c8b 100644
 --- a/source/blender/blenfont/intern/blf_translation.c
 +++ b/source/blender/blenfont/intern/blf_translation.c
 @@ -47,13 +47,35 @@
@@ -162,7 +162,7 @@ index fe14f5d..eeca08a 100644
 +			FcPatternGet(fontset->fonts[0], FC_FILE, 0, &v);
 +			//load the file stored in the union of FcValue into memory
 +			unifont_ttf = (unsigned char*)BLI_file_to_mem(
-+				(const char *)v.u.s, 
++				(const char *)v.u.s,
 +				&unifont_size
 +			);
 +		}
@@ -194,7 +194,7 @@ index 2e8f1a5..0e66218 100644
  size_t BLI_file_descriptor_size(int file);
  size_t BLI_file_size(const char *file);
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index 95b6a97..54743fd 100644
+index 95b6a97..57f45dd 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
 @@ -148,6 +148,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
@@ -222,19 +222,19 @@ index 95b6a97..54743fd 100644
 +        } else {
 +            mem= MEM_reallocN(mem, size+chunk_size);
 +            alloc_size+= chunk_size;
-+        }   
++        }
 +
 +        readsize= fread(mem+size, chunk_size,1,file);
 +        if(readsize>0) {
 +            size+= readsize;
-+        }   
++        }
 +        else break;
-+    }   
++    }
 +
 +    if(size==0) {
 +        MEM_freeN(mem);
 +        mem= NULL;
-+    }   
++    }
 +    else if(alloc_size!=size)
 +        mem= MEM_reallocN(mem, size);
 +

@@ -6,9 +6,9 @@ Change where locales are installed
 ---
  source/blender/blenfont/intern/blf_lang.c |    2 +-
  source/blender/blenlib/BLI_path_util.h    |    1 +
- source/blender/blenlib/intern/path_util.c |   29 ++++++++++++++++-------------
+ source/blender/blenlib/intern/path_util.c |    3 +++
  source/creator/CMakeLists.txt             |    4 ++--
- 4 files changed, 20 insertions(+), 16 deletions(-)
+ 4 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
 index 2ba23e5..ec585af 100644
@@ -36,78 +36,9 @@ index 68bb1a7..ba1852e 100644
  /* for BLI_get_folder_version only */
  #define BLENDER_RESOURCE_PATH_USER		0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index e79d850..980e26b 100644
+index e79d850..383e0e8 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -28,7 +28,7 @@
-  */
- 
- /** \file blender/blenlib/intern/path_util.c
-- *  \ingroup bli
-+ *	\ingroup bli
-  */
- 
- 
-@@ -56,7 +56,7 @@
- #  include "BLI_fnmatch.h" /* use fnmatch included in blenlib */
- #else
- #  ifndef _GNU_SOURCE
--#    define _GNU_SOURCE
-+#	 define _GNU_SOURCE
- #  endif
- #  include <fnmatch.h>
- #endif
-@@ -64,7 +64,7 @@
- #ifdef WIN32
- #  include <io.h>
- #  ifdef _WIN32_IE
--#    undef _WIN32_IE
-+#	 undef _WIN32_IE
- #  endif
- #  define _WIN32_IE 0x0501
- #  include <windows.h>
-@@ -72,7 +72,7 @@
- #  include "BLI_winstuff.h"
- #else /* non windows */
- #  ifdef WITH_BINRELOC
--#    include "binreloc.h"
-+#	 include "binreloc.h"
- #  endif
- #endif /* WIN32 */
- 
-@@ -85,9 +85,9 @@
- #  define BLENDER_SYSTEM_FORMAT			"%s/Blender/%s"
- #else /* UNIX */
- #  ifndef WITH_XDG_USER_DIRS /* oldschool unix ~/.blender/ */
--#    define BLENDER_USER_FORMAT			"%s/.blender/%s"
-+#	 define BLENDER_USER_FORMAT			"%s/.blender/%s"
- #  else /* new XDG ~/blender/.config/ */
--#    define BLENDER_USER_FORMAT			"%s/blender/%s"
-+#	 define BLENDER_USER_FORMAT			"%s/blender/%s"
- #  endif // WITH_XDG_USER_DIRS
- #  define BLENDER_SYSTEM_FORMAT			"%s/blender/%s"
- #endif
-@@ -261,7 +261,7 @@ int BLI_uniquename_cb(int (*unique_check)(void *, const char *), void *arg, cons
-  * 
-  * For places where this is used, see constraint.c for example...
-  *
-- * 	name_offs: should be calculated using offsetof(structname, membername) macro from stddef.h
-+ *	name_offs: should be calculated using offsetof(structname, membername) macro from stddef.h
-  *	len: maximum length of string (to prevent overflows, etc.)
-  *	defname: the name that should be used by default if none is specified already
-  *	delim: the character which acts as a delimeter between parts of the name
-@@ -331,9 +331,9 @@ void BLI_cleanup_path(const char *relabase, char *dir)
- 	}
- 	
- 	/* Note
--	 *   memmove( start, eind, strlen(eind)+1 );
-+	 *	 memmove( start, eind, strlen(eind)+1 );
- 	 * is the same as
--	 *   strcpy( start, eind ); 
-+	 *	 strcpy( start, eind ); 
- 	 * except strcpy should not be used because there is overlap,
- 	  * so use memmove's slightly more obscure syntax - Campbell
- 	 */
 @@ -1088,6 +1088,9 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
  			if (get_path_local(path, "python", subfolder, ver)) break;
  			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
@@ -118,35 +49,6 @@ index e79d850..980e26b 100644
  	}
  	
  	return path;
-@@ -1383,7 +1386,7 @@ int BLI_testextensie_array(const char *str, const char **ext_array)
- }
- 
- /* semicolon separated wildcards, eg:
-- *  '*.zip;*.py;*.exe' */
-+ *	'*.zip;*.py;*.exe' */
- int BLI_testextensie_glob(const char *str, const char *ext_fnmatch)
- {
- 	const char *ext_step= ext_fnmatch;
-@@ -1443,8 +1446,8 @@ int BLI_ensure_extension(char *path, size_t maxlen, const char *ext)
- 	size_t a;
- 
- 	/* first check the extension is alread there */
--	if (    (ext_len <= path_len) &&
--	        (strcmp(path + (path_len - ext_len), ext) == 0))
-+	if (	(ext_len <= path_len) &&
-+			(strcmp(path + (path_len - ext_len), ext) == 0))
- 	{
- 		return 1;
- 	}
-@@ -1524,7 +1527,7 @@ void BLI_join_dirfile(char *dst, const size_t maxlen, const char *dir, const cha
- 	/* inline BLI_add_slash */
- 	if (dst[dirlen - 1] != SEP) {
- 		dst[dirlen++]= SEP;
--		dst[dirlen  ]= '\0';
-+		dst[dirlen	]= '\0';
- 	}
- 
- 	if (dirlen >= maxlen) {
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
 index 033cbf0..4f84792 100644
 --- a/source/creator/CMakeLists.txt
