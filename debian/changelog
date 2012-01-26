@@ -1,6 +1,4 @@
-blender (2.61-2~2.gbp8d639a) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @8d639a3f0e1cc586ee572cf40048c774729dd28e **
+blender (2.61-2) unstable; urgency=low
 
   [ Antonio Ospite ]
   * debian/patches: refresh 0008-update_manpages.patch.
@@ -29,7 +27,9 @@ blender (2.61-2~2.gbp8d639a) UNRELEASED; urgency=low
   * Updated patch 0009 to fix FTBFS.
     Thanks to Thomas Preud'homme for both these patches
 
- -- Kevin Roy <kiniou@gmail.com>  Fri, 27 Jan 2012 00:07:47 +0100
+  [ Kevin Roy ]
+
+ -- Kevin Roy <kiniou@gmail.com>  Fri, 27 Jan 2012 00:39:28 +0100
 
 blender (2.61-1) unstable; urgency=low
 
