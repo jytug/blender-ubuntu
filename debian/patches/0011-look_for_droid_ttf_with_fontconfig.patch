@@ -18,7 +18,7 @@ use fontconfig to get it
  create mode 100644 build_files/cmake/Modules/FindFontconfig.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 4874085..925f283 100644
+index eaa75dd..2ede279 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -117,6 +117,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
