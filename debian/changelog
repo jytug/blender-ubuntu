@@ -17,17 +17,15 @@ blender (2.61-2) unstable; urgency=low
   * debian/patches: fix locales lookup
   * debian/patches: drop inactive use_systemwide_libraries.patch
   * debian/patches: fix implicit declaration of av_rescale_q.
-    Thanks to Sergey Sharybin(upstream dev)
   * debian/patches: fix implicit declaration of guardealloc.
-    Thanks to Sergey Sharybin(upstream dev)
+    Thanks to Sergey Sharybin (upstream developer)
+    for both these patches
 
   [ Matteo F. Vescovi ]
   * debian/copyright: DEP-5 compliance
   * New patch to resolve libav's API changes (Closes: #656502)
   * Updated patch 0009 to fix FTBFS.
     Thanks to Thomas Preud'homme for both these patches
-
-  [ Kevin Roy ]
 
  -- Kevin Roy <kiniou@gmail.com>  Fri, 27 Jan 2012 00:39:28 +0100
 
