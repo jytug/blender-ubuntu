@@ -273,7 +273,6 @@ static void sky_texture_precompute(KernelSunSky *ksunsky, float3 dir, float turb
 
 	ksunsky->theta = theta;
 	ksunsky->phi = phi;
-	ksunsky->dir = dir;
 
 	float theta2 = theta*theta;
 	float theta3 = theta*theta*theta;
@@ -713,6 +712,89 @@ void MagicTextureNode::compile(OSLCompiler& compiler)
 	compiler.add(this, "node_magic_texture");
 }
 
+/* Checker Texture */
+
+CheckerTextureNode::CheckerTextureNode()
+: TextureNode("checker_texture")
+{
+	add_input("Vector", SHADER_SOCKET_POINT, ShaderInput::TEXTURE_GENERATED);
+	add_input("Color1", SHADER_SOCKET_COLOR);
+	add_input("Color2", SHADER_SOCKET_COLOR);
+	add_input("Scale", SHADER_SOCKET_FLOAT, 1.0f);
+
+	add_output("Color", SHADER_SOCKET_COLOR);
+	add_output("Fac", SHADER_SOCKET_FLOAT);
+}
+
+void CheckerTextureNode::compile(SVMCompiler& compiler)
+{
+	ShaderInput *vector_in = input("Vector");
+	ShaderInput *color1_in = input("Color1");
+	ShaderInput *color2_in = input("Color2");
+	ShaderInput *scale_in = input("Scale");
+	
+	ShaderOutput *color_out = output("Color");
+	ShaderOutput *fac_out = output("Fac");
+
+	compiler.stack_assign(vector_in);
+	compiler.stack_assign(color1_in);
+	compiler.stack_assign(color2_in);
+	if(scale_in->link) compiler.stack_assign(scale_in);
+
+	if(!tex_mapping.skip())
+		tex_mapping.compile(compiler, vector_in->stack_offset, vector_in->stack_offset);
+
+	if(!color_out->links.empty())
+		compiler.stack_assign(color_out);
+	if(!fac_out->links.empty())
+		compiler.stack_assign(fac_out);
+
+	compiler.add_node(NODE_TEX_CHECKER,
+		compiler.encode_uchar4(vector_in->stack_offset, color1_in->stack_offset, color2_in->stack_offset, scale_in->stack_offset),
+		compiler.encode_uchar4(color_out->stack_offset, fac_out->stack_offset),
+		__float_as_int(scale_in->value.x));
+}
+
+void CheckerTextureNode::compile(OSLCompiler& compiler)
+{
+	compiler.add(this, "node_checker_texture");
+}
+
+/* Normal */
+
+NormalNode::NormalNode()
+: ShaderNode("normal")
+{
+	direction = make_float3(0.0f, 0.0f, 1.0f);
+
+	add_input("Normal", SHADER_SOCKET_NORMAL);
+	add_output("Normal", SHADER_SOCKET_NORMAL);
+	add_output("Dot",  SHADER_SOCKET_FLOAT);
+}
+
+void NormalNode::compile(SVMCompiler& compiler)
+{
+	ShaderInput *normal_in = input("Normal");
+	ShaderOutput *normal_out = output("Normal");
+	ShaderOutput *dot_out = output("Dot");
+
+	compiler.stack_assign(normal_in);
+	compiler.stack_assign(normal_out);
+	compiler.stack_assign(dot_out);
+
+	compiler.add_node(NODE_NORMAL, normal_in->stack_offset, normal_out->stack_offset, dot_out->stack_offset);
+	compiler.add_node(
+		__float_as_int(direction.x),
+		__float_as_int(direction.y),
+		__float_as_int(direction.z));
+}
+
+void NormalNode::compile(OSLCompiler& compiler)
+{
+	compiler.parameter_vector("Direction", direction);
+	compiler.add(this, "node_normal");
+}
+
 /* Mapping */
 
 MappingNode::MappingNode()
@@ -832,6 +914,26 @@ void ConvertNode::compile(OSLCompiler& compiler)
 		compiler.add(this, "node_convert_from_normal");
 	else
 		assert(0);
+}
+
+/* Proxy */
+
+ProxyNode::ProxyNode(ShaderSocketType from_, ShaderSocketType to_)
+: ShaderNode("proxy")
+{
+	from = from_;
+	to = to_;
+
+	add_input("Input", from);
+	add_output("Output", to);
+}
+
+void ProxyNode::compile(SVMCompiler& compiler)
+{
+}
+
+void ProxyNode::compile(OSLCompiler& compiler)
+{
 }
 
 /* BSDF Closure */
@@ -1689,6 +1791,65 @@ void CombineRGBNode::compile(SVMCompiler& compiler)
 void CombineRGBNode::compile(OSLCompiler& compiler)
 {
 	compiler.add(this, "node_combine_rgb");
+}
+
+/* Gamma */
+GammaNode::GammaNode()
+: ShaderNode("gamma")
+{
+	add_input("Color", SHADER_SOCKET_COLOR);
+	add_input("Gamma", SHADER_SOCKET_FLOAT);
+	add_output("Color", SHADER_SOCKET_COLOR);
+}
+
+void GammaNode::compile(SVMCompiler& compiler)
+{
+	ShaderInput *color_in = input("Color");
+	ShaderInput *gamma_in = input("Gamma");
+	ShaderOutput *color_out = output("Color");
+
+	compiler.stack_assign(color_in);
+	compiler.stack_assign(gamma_in);
+	compiler.stack_assign(color_out);
+
+	compiler.add_node(NODE_GAMMA, gamma_in->stack_offset, color_in->stack_offset, color_out->stack_offset);
+}
+
+void GammaNode::compile(OSLCompiler& compiler)
+{
+	compiler.add(this, "node_gamma");
+}
+
+/* Bright Contrast */
+BrightContrastNode::BrightContrastNode()
+: ShaderNode("brightness")
+{
+	add_input("Color", SHADER_SOCKET_COLOR);
+	add_input("Bright", SHADER_SOCKET_FLOAT);
+	add_input("Contrast", SHADER_SOCKET_FLOAT);
+	add_output("Color", SHADER_SOCKET_COLOR);
+}
+
+void BrightContrastNode::compile(SVMCompiler& compiler)
+{
+	ShaderInput *color_in = input("Color");
+	ShaderInput *bright_in = input("Bright");
+	ShaderInput *contrast_in = input("Contrast");
+	ShaderOutput *color_out = output("Color");
+
+	compiler.stack_assign(color_in);
+	compiler.stack_assign(bright_in);
+	compiler.stack_assign(contrast_in);
+	compiler.stack_assign(color_out);
+
+	compiler.add_node(NODE_BRIGHTCONTRAST,
+		color_in->stack_offset, color_out->stack_offset,
+		compiler.encode_uchar4(bright_in->stack_offset, contrast_in->stack_offset));
+}
+
+void BrightContrastNode::compile(OSLCompiler& compiler)
+{
+	compiler.add(this, "node_brightness");
 }
 
 /* Separate RGB */

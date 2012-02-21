@@ -137,11 +137,14 @@ class PHYSICS_PT_dp_advanced_canvas(PhysicButtonsPanel, Panel):
         # dissolve
         if surface_type == 'PAINT':
             split = layout.split(percentage=0.35)
-            split.label(text="Wetmap drying:")
+            split.prop(surface, "use_drying", text="Dry:")
 
             col = split.column()
+            col.active = surface.use_drying
             split = col.split(percentage=0.7)
-            split.prop(surface, "dry_speed", text="Time")
+            col = split.column(align=True)
+            col.prop(surface, "dry_speed", text="Time")
+            col.prop(surface, "color_dry_threshold")
             split.prop(surface, "use_dry_log", text="Slow")
 
         if surface_type != 'WAVE':
@@ -179,7 +182,10 @@ class PHYSICS_PT_dp_advanced_canvas(PhysicButtonsPanel, Panel):
             col.prop(surface, "wave_spring")
 
         layout.separator()
-        layout.prop(surface, "brush_group", text="Brush Group")
+        layout.prop(surface, "brush_group")
+        row = layout.row()
+        row.prop(surface, "brush_influence_scale")
+        row.prop(surface, "brush_radius_scale")
 
 
 class PHYSICS_PT_dp_canvas_output(PhysicButtonsPanel, Panel):
@@ -209,7 +215,7 @@ class PHYSICS_PT_dp_canvas_output(PhysicButtonsPanel, Panel):
                  # toggle active preview
                 layout.prop(surface, "preview_id")
 
-                # paintmap output
+                # paint-map output
                 row = layout.row()
                 row.prop_search(surface, "output_name_a", ob.data, "vertex_colors", text="Paintmap layer: ")
                 if surface.output_exists(object=ob, index=0):
@@ -219,7 +225,7 @@ class PHYSICS_PT_dp_canvas_output(PhysicButtonsPanel, Panel):
 
                 row.operator("dpaint.output_toggle", icon=ic, text="").output = 'A'
 
-                # wetmap output
+                # wet-map output
                 row = layout.row()
                 row.prop_search(surface, "output_name_b", ob.data, "vertex_colors", text="Wetmap layer: ")
                 if surface.output_exists(object=ob, index=1):
@@ -406,14 +412,14 @@ class PHYSICS_PT_dp_brush_source(PhysicButtonsPanel, Panel):
             col.prop(brush, "paint_distance", text="Paint Distance")
             split = layout.row().split(percentage=0.4)
             sub = split.column()
-            if brush.paint_source == 'DISTANCE':
+            if brush.paint_source in {'DISTANCE', 'VOLUME_DISTANCE'}:
                 sub.prop(brush, "use_proximity_project")
-            elif brush.paint_source == 'VOLUME_DISTANCE':
+            if brush.paint_source == 'VOLUME_DISTANCE':
                 sub.prop(brush, "invert_proximity")
                 sub.prop(brush, "use_negative_volume")
 
             sub = split.column()
-            if brush.paint_source == 'DISTANCE':
+            if brush.paint_source in {'DISTANCE', 'VOLUME_DISTANCE'}:
                 column = sub.column()
                 column.active = brush.use_proximity_project
                 column.prop(brush, "ray_direction")

@@ -24,12 +24,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_VIEW3D_TYPES_H
-#define DNA_VIEW3D_TYPES_H
 
 /** \file DNA_view3d_types.h
  *  \ingroup DNA
  */
+
+#ifndef DNA_VIEW3D_TYPES_H
+#define DNA_VIEW3D_TYPES_H
 
 struct ViewDepths;
 struct Object;
@@ -172,7 +173,7 @@ typedef struct View3D {
 
 	struct View3D *localvd; /* allocated backup of its self while in localview */
 	
-	char ob_centre_bone[32];		/* optional string for armature bone to define center */
+	char ob_centre_bone[64];		/* optional string for armature bone to define center, MAXBONENAME */
 	
 	unsigned int lay;
 	int layact;

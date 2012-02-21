@@ -24,7 +24,6 @@ bl_info = {
     'author': 'Phil Cote, cotejrp1, (http://www.blenderaddons.com)',
     'version': (0, 3),
     "blender": (2, 5, 8),
-    "api": 37702,
     'location': 'View3D > Add > Mesh',
     'description': 'Create an egyption-style step pyramid',
     'warning': '',  # used for warning icon and text in addons panel
@@ -113,7 +112,7 @@ class AddPyramid(bpy.types.Operator, AddObjectHelper):
     """Add a Mesh Object"""
     bl_idname = "mesh.primitive_steppyramid_add"
     bl_label = "Pyramid"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
 
     initial_size = FloatProperty(name="Initial Size", default=2.0,
                                 min=0.0, max=20.0,

@@ -165,7 +165,10 @@ if(WITH_PYTHON_MODULE)
 	add_definitions(-DWITH_PYTHON_MODULE)
 
 	# creates ./bin/bpy.so which can be imported as a python module.
-	add_library(blender SHARED ${SRC})
+	#
+	# note that 'SHARED' works on Linux and Windows,
+	# but not OSX which _must_ be 'MODULE'
+	add_library(blender MODULE ${SRC})
 	set_target_properties(
 		blender
 		PROPERTIES
@@ -174,6 +177,15 @@ if(WITH_PYTHON_MODULE)
 			LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin  # only needed on windows
 	)
+
+	if(APPLE)
+		set_target_properties(
+			blender
+			PROPERTIES
+				LINK_FLAGS_RELEASE "${PLATFORM_LINKFLAGS}"
+				LINK_FLAGS_DEBUG "${PLATFORM_LINKFLAGS_DEBUG}"
+		)
+	endif()
 
 	if(WIN32)
 		# python modules use this
@@ -231,7 +243,11 @@ elseif(WIN32)
 	set(TARGETDIR_VER ${TARGETDIR}/${BLENDER_VERSION})
 
 elseif(APPLE)
-	set(TARGETDIR_VER ${TARGETDIR}/blender.app/Contents/MacOS/${BLENDER_VERSION})
+	if(WITH_PYTHON_MODULE)
+		set(TARGETDIR_VER ${TARGETDIR}/${BLENDER_VERSION})
+	else()
+		set(TARGETDIR_VER ${TARGETDIR}/blender.app/Contents/MacOS/${BLENDER_VERSION})
+	endif()
 
 endif()
 
@@ -382,12 +398,21 @@ if(UNIX AND NOT APPLE)
 
 	if(WITH_PYTHON)
 		if(WITH_PYTHON_INSTALL)
+			# on some platforms (like openSUSE) Python is linked
+			# to be used from lib64 folder.
+			# determine this from Python's libraries path
+			if(${PYTHON_LIBPATH} MATCHES "lib64$")
+				set(_target_LIB "lib64")
+			else()
+				set(_target_LIB "lib")
+			endif()
+
 			# Copy the systems python into the install directory
 			# Scons copy in tools/Blender.py
 			# install(CODE "message(\"copying a subset of the systems python...\")")
 			install(
 				DIRECTORY ${PYTHON_LIBPATH}/python${PYTHON_VERSION}
-				DESTINATION ${TARGETDIR_VER}/python/lib
+				DESTINATION ${TARGETDIR_VER}/python/${_target_LIB}
 				PATTERN ".svn" EXCLUDE
 				PATTERN "__pycache__" EXCLUDE               # * any cache *
 				PATTERN "distutils" EXCLUDE                 # ./distutils
@@ -405,6 +430,7 @@ if(UNIX AND NOT APPLE)
 
 			# # doesnt work, todo
 			# install(CODE "execute_process(COMMAND find ${TARGETDIR}/${BLENDER_VERSION}/python/lib/ -name '*.so' -exec strip -s {} '\;')")
+			unset(_target_LIB)
 		endif()
 	endif()
 elseif(WIN32)
@@ -437,15 +463,15 @@ elseif(WIN32)
 	# )
 
 	if(WITH_PYTHON)
-
+		set_lib_path(PYLIB "python/lib")
 		install(
-			FILES ${LIBDIR}/python/lib/python32.dll
+			FILES ${PYLIB}/python32.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
 		)
 
 		install(
-			FILES ${LIBDIR}/python/lib/python32_d.dll
+			FILES ${PYLIB}/python32_d.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Debug
 		)
@@ -491,7 +517,6 @@ elseif(WIN32)
 	else()
 		install(
 			FILES
-				${LIBDIR}/png/lib/libpng.dll
 				${LIBDIR}/zlib/lib/zlib.dll
 			DESTINATION ${TARGETDIR}
 		)
@@ -533,7 +558,6 @@ elseif(WIN32)
 		install(
 			FILES
 				${LIBDIR}/openal/lib/OpenAL32.dll
-				${LIBDIR}/openal/lib/wrap_oal.dll
 			DESTINATION ${TARGETDIR}
 		)
 	endif()
@@ -560,9 +584,10 @@ elseif(WIN32)
 	)	
 
 	if(WITH_OPENIMAGEIO)
+		set_lib_path(OIIOBIN "openimageio/bin")
 		install(
 			FILES
-				${LIBDIR}/openimageio/bin/OpenImageIO.dll
+				${OIIOBIN}/OpenImageIO.dll
 			DESTINATION ${TARGETDIR}
 		)
 	endif()
@@ -614,10 +639,11 @@ elseif(APPLE)
 	)
 
 	# python
-	if(WITH_PYTHON)
+	if(WITH_PYTHON AND NOT WITH_PYTHON_MODULE)
 		# the python zip is first extract as part of the build process,
 		# and then later installed as part of make install. this is much
 		# quicker, and means we can easily exclude files on copy
+		# Not needed for PYTHON_MODULE or WEB_PLUGIN due uses  Pyhon framework
 		add_custom_target(
 			extractpyzip
 			DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python)
@@ -776,11 +802,11 @@ endif()
 		bf_nodes
 		bf_gpu
 		bf_blenloader
+		bf_imbuf
 		bf_blenlib
 		bf_intern_ghost
 		bf_intern_string
 		bf_blenpluginapi
-		bf_imbuf
 		bf_avi
 		bf_imbuf_cineon
 		bf_imbuf_openexr
@@ -823,6 +849,7 @@ endif()
 		bf_blenfont
 		bf_intern_audaspace
 		bf_intern_mikktspace
+		bf_intern_dualcon
 		bf_intern_cycles
 		cycles_render
 		cycles_bvh
@@ -858,6 +885,10 @@ endif()
 
 	if(WITH_CODEC_QUICKTIME)
 		list(APPEND BLENDER_SORTED_LIBS bf_quicktime)
+	endif()
+
+	if(WITH_CARVE)
+		list(APPEND BLENDER_SORTED_LIBS extern_carve)
 	endif()
 
 	foreach(SORTLIB ${BLENDER_SORTED_LIBS})

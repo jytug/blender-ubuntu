@@ -24,12 +24,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_SMOKE_TYPES_H
-#define DNA_SMOKE_TYPES_H
 
 /** \file DNA_smoke_types.h
  *  \ingroup DNA
  */
+
+#ifndef DNA_SMOKE_TYPES_H
+#define DNA_SMOKE_TYPES_H
 
 /* flags */
 #define MOD_SMOKE_HIGHRES (1<<1) /* enable high resolution */
@@ -137,7 +138,8 @@ typedef struct SmokeFlowSettings {
 typedef struct SmokeCollSettings {
 	struct SmokeModifierData *smd; /* for fast RNA access */
 	struct BVHTree *bvhtree; /* bounding volume hierarchy for this cloth object */
-	struct DerivedMesh *dm;
+
+//	struct DerivedMesh *dm; // UNUSED, ifdef'd in code for now.
 	float *points;
 	float *points_old;
 	float *vel;

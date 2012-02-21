@@ -143,6 +143,11 @@ public:
 	int depth;
 };
 
+class CheckerTextureNode : public TextureNode {
+public:
+	SHADER_NODE_CLASS(CheckerTextureNode)
+};
+
 class MappingNode : public ShaderNode {
 public:
 	SHADER_NODE_CLASS(MappingNode)
@@ -154,6 +159,14 @@ class ConvertNode : public ShaderNode {
 public:
 	ConvertNode(ShaderSocketType from, ShaderSocketType to);
 	SHADER_NODE_BASE_CLASS(ConvertNode)
+
+	ShaderSocketType from, to;
+};
+
+class ProxyNode : public ShaderNode {
+public:
+	ProxyNode(ShaderSocketType from, ShaderSocketType to);
+	SHADER_NODE_BASE_CLASS(ProxyNode)
 
 	ShaderSocketType from, to;
 };
@@ -302,6 +315,16 @@ public:
 	SHADER_NODE_CLASS(CombineRGBNode)
 };
 
+class GammaNode : public ShaderNode {
+public:
+	SHADER_NODE_CLASS(GammaNode)
+};
+
+class BrightContrastNode : public ShaderNode {
+public:
+	SHADER_NODE_CLASS(BrightContrastNode)
+};
+
 class SeparateRGBNode : public ShaderNode {
 public:
 	SHADER_NODE_CLASS(SeparateRGBNode)
@@ -341,6 +364,13 @@ public:
 
 	ustring type;
 	static ShaderEnum type_enum;
+};
+
+class NormalNode : public ShaderNode {
+public:
+	SHADER_NODE_CLASS(NormalNode)
+
+	float3 direction;
 };
 
 class VectorMathNode : public ShaderNode {

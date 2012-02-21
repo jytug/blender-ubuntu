@@ -158,7 +158,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
             row = layout.row()
             row.prop(group, "name")
 
-        if ob.mode == 'EDIT' and len(ob.vertex_groups) > 0:
+        if ob.vertex_groups and (ob.mode == 'EDIT' or (ob.mode == 'WEIGHT_PAINT' and ob.type == 'MESH' and ob.data.use_paint_mask_vertex)):
             row = layout.row()
 
             sub = row.row(align=True)
@@ -226,10 +226,10 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
             row.alignment = 'RIGHT'
 
             sub = row.row(align=True)
+            sub.label()  # XXX, for alignment only
             subsub = sub.row(align=True)
             subsub.active = enable_edit_value
             subsub.prop(ob, "show_only_shape_key", text="")
-            subsub.prop(kb, "mute", text="")
             sub.prop(ob, "use_shape_key_edit_mode", text="")
 
             sub = row.row()

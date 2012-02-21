@@ -142,7 +142,7 @@ void swap_m4m4(float m1[][4], float m2[][4])
 
 /******************************** Arithmetic *********************************/
 
-void mul_m4_m4m4(float m1[][4], float m2_[][4], float m3_[][4])
+void mult_m4_m4m4(float m1[][4], float m3_[][4], float m2_[][4])
 {
 	float m2[4][4], m3[4][4];
 
@@ -195,8 +195,14 @@ void mul_m3_m3m3(float m1[][3], float m3_[][3], float m2_[][3])
 	m1[2][2]= m2[2][0]*m3[0][2] + m2[2][1]*m3[1][2] + m2[2][2]*m3[2][2]; 
 }
 
-void mul_m4_m4m3(float (*m1)[4], float (*m3)[4], float (*m2)[3])
+void mul_m4_m4m3(float (*m1)[4], float (*m3_)[4], float (*m2_)[3])
 {
+	float m2[3][3], m3[4][4];
+
+	/* copy so it works when m1 is the same pointer as m2 or m3 */
+	copy_m3_m3(m2, m2_);
+	copy_m4_m4(m3, m3_);
+
 	m1[0][0]= m2[0][0]*m3[0][0] + m2[0][1]*m3[1][0] + m2[0][2]*m3[2][0];
 	m1[0][1]= m2[0][0]*m3[0][1] + m2[0][1]*m3[1][1] + m2[0][2]*m3[2][1];
 	m1[0][2]= m2[0][0]*m3[0][2] + m2[0][1]*m3[1][2] + m2[0][2]*m3[2][2];
@@ -209,7 +215,7 @@ void mul_m4_m4m3(float (*m1)[4], float (*m3)[4], float (*m2)[3])
 }
 
 /* m1 = m2 * m3, ignore the elements on the 4th row/column of m3*/
-void mul_m3_m3m4(float m1[][3], float m2[][3], float m3[][4])
+void mult_m3_m3m4(float m1[][3], float m3[][4], float m2[][3])
 {
 	/* m1[i][j] = m2[i][k] * m3[k][j] */
 	m1[0][0] = m2[0][0] * m3[0][0] + m2[0][1] * m3[1][0] +m2[0][2] * m3[2][0];
@@ -280,19 +286,19 @@ void mul_serie_m4(float answ[][4], float m1[][4],
 	
 	if(m1==NULL || m2==NULL) return;
 	
-	mul_m4_m4m4(answ, m2, m1);
+	mult_m4_m4m4(answ, m1, m2);
 	if(m3) {
-		mul_m4_m4m4(temp, m3, answ);
+		mult_m4_m4m4(temp, answ, m3);
 		if(m4) {
-			mul_m4_m4m4(answ, m4, temp);
+			mult_m4_m4m4(answ, temp, m4);
 			if(m5) {
-				mul_m4_m4m4(temp, m5, answ);
+				mult_m4_m4m4(temp, answ, m5);
 				if(m6) {
-					mul_m4_m4m4(answ, m6, temp);
+					mult_m4_m4m4(answ, temp, m6);
 					if(m7) {
-						mul_m4_m4m4(temp, m7, answ);
+						mult_m4_m4m4(temp, answ, m7);
 						if(m8) {
-							mul_m4_m4m4(answ, m8, temp);
+							mult_m4_m4m4(answ, temp, m8);
 						}
 						else copy_m4_m4(answ, temp);
 					}
@@ -772,32 +778,38 @@ void orthogonalize_m4(float mat[][4], int axis)
 	mul_v3_fl(mat[2], size[2]);
 }
 
-int is_orthogonal_m3(float mat[][3])
+int is_orthogonal_m3(float m[][3])
 {
-	if (fabsf(dot_v3v3(mat[0], mat[1])) > 1.5f * FLT_EPSILON)
-		return 0;
+    int i, j;
 
-	if (fabsf(dot_v3v3(mat[1], mat[2])) > 1.5f * FLT_EPSILON)
-		return 0;
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < i; j++) {
+            if (fabsf(dot_v3v3(m[i], m[j])) > 1.5f * FLT_EPSILON)
+                return 0;
+        }
 
-	if (fabsf(dot_v3v3(mat[0], mat[2])) > 1.5f * FLT_EPSILON)
-		return 0;
-	
-	return 1;
+        if (fabsf(dot_v3v3(m[i], m[i]) - 1) > 1.5f * FLT_EPSILON)
+            return 0;
+    }
+
+    return 1;
 }
 
-int is_orthogonal_m4(float mat[][4])
+int is_orthogonal_m4(float m[][4])
 {
-	if (fabsf(dot_v3v3(mat[0], mat[1])) > 1.5f * FLT_EPSILON)
-		return 0;
+    int i, j;
 
-	if (fabsf(dot_v3v3(mat[1], mat[2])) > 1.5f * FLT_EPSILON)
-		return 0;
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < i; j++) {
+            if (fabsf(dot_vn_vn(m[i], m[j], 4)) > 1.5f * FLT_EPSILON)
+                return 0;
+        }
 
-	if (fabsf(dot_v3v3(mat[0], mat[2])) > 1.5f * FLT_EPSILON)
-		return 0;
-	
-	return 1;
+        if (fabsf(dot_vn_vn(m[i], m[i], 4) - 1) > 1.5f * FLT_EPSILON)
+            return 0;
+    }
+
+    return 1;
 }
 
 void normalize_m3(float mat[][3])

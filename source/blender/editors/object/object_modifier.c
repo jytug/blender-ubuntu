@@ -452,7 +452,7 @@ static int modifier_apply_shape(ReportList *reports, Scene *scene, Object *ob, M
 		Key *key=me->key;
 		KeyBlock *kb;
 		
-		if(!modifier_sameTopology(md)) {
+		if(!modifier_sameTopology(md) || mti->type == eModifierTypeType_NonGeometrical) {
 			BKE_report(reports, RPT_ERROR, "Only deforming modifiers can be applied to Shapes");
 			return 0;
 		}
@@ -500,7 +500,7 @@ static int modifier_apply_obdata(ReportList *reports, Scene *scene, Object *ob, 
 		Mesh *me = ob->data;
 		MultiresModifierData *mmd= find_multires_modifier_before(scene, md);
 
-		if( me->key) {
+		if(me->key && mti->type != eModifierTypeType_NonGeometrical) {
 			BKE_report(reports, RPT_ERROR, "Modifier cannot be applied to Mesh with Shape Keys");
 			return 0;
 		}
@@ -536,7 +536,7 @@ static int modifier_apply_obdata(ReportList *reports, Scene *scene, Object *ob, 
 		int numVerts;
 		float (*vertexCos)[3];
 
-		if (mti->type==eModifierTypeType_Constructive) {
+		if (ELEM(mti->type, eModifierTypeType_Constructive, eModifierTypeType_Nonconstructive)) {
 			BKE_report(reports, RPT_ERROR, "Cannot apply constructive modifiers on curve");
 			return 0;
 		}
@@ -643,7 +643,7 @@ static int modifier_add_exec(bContext *C, wmOperator *op)
 static EnumPropertyItem *modifier_add_itemf(bContext *C, PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), int *free)
 {	
 	Object *ob= ED_object_active_context(C);
-	EnumPropertyItem *item= NULL, *md_item;
+	EnumPropertyItem *item= NULL, *md_item, *group_item= NULL;
 	ModifierTypeInfo *mti;
 	int totitem= 0, a;
 	
@@ -662,6 +662,17 @@ static EnumPropertyItem *modifier_add_itemf(bContext *C, PointerRNA *UNUSED(ptr)
 			if(!((mti->flags & eModifierTypeFlag_AcceptsCVs) ||
 			   (ob->type==OB_MESH && (mti->flags & eModifierTypeFlag_AcceptsMesh))))
 				continue;
+		}
+		else {
+			group_item= md_item;
+			md_item= NULL;
+
+			continue;
+		}
+
+		if(group_item) {
+			RNA_enum_item_add(&item, &totitem, group_item);
+			group_item= NULL;
 		}
 
 		RNA_enum_item_add(&item, &totitem, md_item);
@@ -717,7 +728,7 @@ static int edit_modifier_poll(bContext *C)
 
 static void edit_modifier_properties(wmOperatorType *ot)
 {
-	RNA_def_string(ot->srna, "modifier", "", 32, "Modifier", "Name of the modifier to edit");
+	RNA_def_string(ot->srna, "modifier", "", MAX_NAME, "Modifier", "Name of the modifier to edit");
 }
 
 static int edit_modifier_invoke_properties(bContext *C, wmOperator *op)
@@ -725,7 +736,7 @@ static int edit_modifier_invoke_properties(bContext *C, wmOperator *op)
 	PointerRNA ptr= CTX_data_pointer_get_type(C, "modifier", &RNA_Modifier);
 	ModifierData *md;
 	
-	if (RNA_property_is_set(op->ptr, "modifier"))
+	if (RNA_struct_property_is_set(op->ptr, "modifier"))
 		return 1;
 	
 	if (ptr.data) {
@@ -739,7 +750,7 @@ static int edit_modifier_invoke_properties(bContext *C, wmOperator *op)
 
 static ModifierData *edit_modifier_property_get(wmOperator *op, Object *ob, int type)
 {
-	char modifier_name[32];
+	char modifier_name[MAX_NAME];
 	ModifierData *md;
 	RNA_string_get(op->ptr, "modifier", modifier_name);
 	
@@ -1198,7 +1209,7 @@ static int multires_external_save_invoke(bContext *C, wmOperator *op, wmEvent *U
 	if(CustomData_external_test(&me->fdata, CD_MDISPS))
 		return OPERATOR_CANCELLED;
 
-	if(RNA_property_is_set(op->ptr, "filepath"))
+	if(RNA_struct_property_is_set(op->ptr, "filepath"))
 		return multires_external_save_exec(C, op);
 	
 	op->customdata= me;
@@ -1225,7 +1236,7 @@ void OBJECT_OT_multires_external_save(wmOperatorType *ot)
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
-	WM_operator_properties_filesel(ot, FOLDERFILE|BTXFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH|WM_FILESEL_RELPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|BTXFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH|WM_FILESEL_RELPATH, FILE_DEFAULTDISPLAY);
 	edit_modifier_properties(ot);
 }
 

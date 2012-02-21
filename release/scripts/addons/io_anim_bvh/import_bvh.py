@@ -94,7 +94,7 @@ def read_bvh(context, file_path, rotate_mode='XYZ', global_scale=1.0):
     # Split by whitespace.
     file_lines = [ll for ll in [l.split() for l in file_lines] if ll]
 
-    # Create Hirachy as empties
+    # Create hierarchy as empties
     if file_lines[0][0].lower() == 'hierarchy':
         #print 'Importing the BVH Hierarchy for:', file_path
         pass
@@ -409,10 +409,10 @@ def bvh_node_dict2armature(context,
             bvh_node.temp.parent = bvh_node.parent.temp
 
             # Set the connection state
-            if not bvh_node.has_loc and\
-            bvh_node.parent and\
-            bvh_node.parent.temp.name not in ZERO_AREA_BONES and\
-            bvh_node.parent.rest_tail_local == bvh_node.rest_head_local:
+            if((not bvh_node.has_loc) and
+               (bvh_node.parent.temp.name not in ZERO_AREA_BONES) and
+               (bvh_node.parent.rest_tail_local == bvh_node.rest_head_local)):
+
                 bvh_node.temp.use_connect = True
 
     # Replace the editbone with the editbone name,

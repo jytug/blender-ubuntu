@@ -21,6 +21,10 @@
 
 #include "device_memory.h"
 
+#include "film.h"
+
+#include "kernel_types.h"
+
 #include "util_string.h"
 #include "util_thread.h"
 #include "util_types.h"
@@ -30,14 +34,41 @@ CCL_NAMESPACE_BEGIN
 class Device;
 struct float4;
 
+/* Buffer Parameters
+   Size of render buffer and how it fits in the full image (border render). */
+
+class BufferParams {
+public:
+	/* width/height of the physical buffer */
+	int width;
+	int height;
+
+	/* offset into and width/height of the full buffer */
+	int full_x;
+	int full_y;
+	int full_width;
+	int full_height;
+
+	/* passes */
+	vector<Pass> passes;
+
+	/* functions */
+	BufferParams();
+
+	void get_offset_stride(int& offset, int& stride);
+	bool modified(const BufferParams& params);
+	void add_pass(PassType type);
+	int get_passes_size();
+};
+
 /* Render Buffers */
 
 class RenderBuffers {
 public:
-	/* buffer dimensions */
-	int width, height;
+	/* buffer parameters */
+	BufferParams params;
 	/* float buffer */
-	device_vector<float4> buffer;
+	device_vector<float> buffer;
 	/* random number generator state */
 	device_vector<uint> rng_state;
 	/* mutex, must be locked manually by callers */
@@ -46,8 +77,10 @@ public:
 	RenderBuffers(Device *device);
 	~RenderBuffers();
 
-	void reset(Device *device, int width, int height);
-	float4 *copy_from_device(float exposure, int sample);
+	void reset(Device *device, BufferParams& params);
+
+	bool copy_from_device();
+	bool get_pass(PassType type, float exposure, int sample, int components, float *pixels);
 
 protected:
 	void device_free();
@@ -62,8 +95,8 @@ protected:
 
 class DisplayBuffer {
 public:
-	/* buffer dimensions */
-	int width, height;
+	/* buffer parameters */
+	BufferParams params;
 	/* dimensions for how much of the buffer is actually ready for display.
 	   with progressive render we can be using only a subset of the buffer.
 	   if these are zero, it means nothing can be drawn yet */
@@ -78,7 +111,7 @@ public:
 	DisplayBuffer(Device *device);
 	~DisplayBuffer();
 
-	void reset(Device *device, int width, int height);
+	void reset(Device *device, BufferParams& params);
 	void write(Device *device, const string& filename);
 
 	void draw_set(int width, int height);

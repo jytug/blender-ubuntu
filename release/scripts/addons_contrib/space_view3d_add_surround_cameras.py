@@ -24,7 +24,6 @@ bl_info = {
     'wiki_url': "http://wiki.blender.org/index.php/Extensions:2.5/Py/Scripts/3D_interaction/Surround_Projection_Tools",
     'version': (0,1,2),
     'blender': (2, 6, 0),
-    'api': 41769,
     'category': '3D View'
 }
 
@@ -33,6 +32,8 @@ from bpy.props import IntProperty
 from bpy.props import BoolProperty
 from math import pi
 import re
+
+CAMERA_ORIGIN_NAME = "CameraOrigin"
 
 # property for how many screens to add
 bpy.types.WindowManager.num_surround_screens = IntProperty(
@@ -98,22 +99,16 @@ class AddSurroundCamerasOperator(bpy.types.Operator):
 
     def execute(self, context):
 
+        scene = context.scene
         numScreens = context.window_manager.num_surround_screens
 
         # add an empty for the camera origin if not already present
-        originExists = False
-        for object in bpy.data.objects:
-            if object.name == "CameraOrigin":
-                bpy.ops.object.select_name(name="CameraOrigin")
-                origin = context.active_object
-                originExists = True
-                break
-
-        if not originExists:
+        obj_origin = scene.objects.get(CAMERA_ORIGIN_NAME)
+        if not obj_origin:
             bpy.ops.object.add()
-            origin = context.active_object
-            origin.name = "CameraOrigin"
-            origin.location = context.scene.cursor_location
+            obj_origin = context.active_object
+            obj_origin.name = CAMERA_ORIGIN_NAME
+            obj_origin.location = scene.cursor_location
 
         for i in range(0,numScreens):
 
@@ -136,9 +131,13 @@ class AddSurroundCamerasOperator(bpy.types.Operator):
             cam.data.angle = (2*pi)/numScreens
 
             # make the parent of the camera the origin
-            cam.parent = origin
+            cam.parent = obj_origin
 
-        bpy.ops.object.select_name(name="CameraOrigin")
+        # sel/activate origin
+        bpy.ops.object.select_all(action='DESELECT')
+        obj_origin.select = True
+        scene.objects.active = obj_origin
+
         context.window_manager.previous_num_surround_screens = numScreens
         return {'FINISHED'}
 
@@ -220,12 +219,14 @@ class RemoveSurroundCamerasOperator(bpy.types.Operator):
         return False
 
     def execute(self, context):
-        numScreens = context.window_manager.previous_num_surround_screens
 
-        for object in bpy.data.objects:
-            if object.type == 'CAMERA':
-                bpy.ops.object.select_name(name=object.name)
-                bpy.ops.object.delete()
+        scene = context.scene
+
+        # XXX. shouldnt there be some less general way to do this?
+        # like check if they are the child of origin? - campbell
+        for obj in scene.objects[:]:
+            if obj.type == 'CAMERA':
+                scene.objects.unlink(obj)
 
         context.window_manager.previous_num_surround_screens = -1
         return {'FINISHED'}

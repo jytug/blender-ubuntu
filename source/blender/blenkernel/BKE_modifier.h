@@ -65,6 +65,11 @@ typedef enum {
 	 * unless it's a mesh and can be exploded -> curve can also emit particles
 	 */
 	eModifierTypeType_DeformOrConstruct,
+
+	/* Like eModifierTypeType_Nonconstructive, but does not affect the geometry
+	 * of the object, rather some of its CustomData layers.
+	 * E.g. UVProject and WeightVG modifiers. */
+	eModifierTypeType_NonGeometrical,
 } ModifierTypeType;
 
 typedef enum {
@@ -94,7 +99,10 @@ typedef enum {
 	eModifierTypeFlag_Single = (1<<7),
 
 	/* Some modifier can't be added manually by user */
-	eModifierTypeFlag_NoUserAdd = (1<<8)
+	eModifierTypeFlag_NoUserAdd = (1<<8),
+
+	/* For modifiers that use CD_WEIGHT_MCOL for preview. */
+	eModifierTypeFlag_UsesPreview = (1<<9)
 } ModifierTypeFlag;
 
 typedef void (*ObjectWalkFunc)(void *userData, struct Object *ob, struct Object **obpoin);
@@ -311,12 +319,14 @@ int           modifier_supportsMapping(struct ModifierData *md);
 int           modifier_couldBeCage(struct Scene *scene, struct ModifierData *md);
 int           modifier_isCorrectableDeformed(struct ModifierData *md);
 int			  modifier_sameTopology(ModifierData *md);
+int           modifier_nonGeometrical(ModifierData *md);
 int           modifier_isEnabled(struct Scene *scene, struct ModifierData *md, int required_mode);
 void          modifier_setError(struct ModifierData *md, const char *format, ...)
 #ifdef __GNUC__
 __attribute__ ((format (printf, 2, 3)))
 #endif
 ;
+int           modifier_isPreview(struct ModifierData *md);
 
 void          modifiers_foreachObjectLink(struct Object *ob,
 										  ObjectWalkFunc walk,
@@ -343,6 +353,7 @@ struct Object *modifiers_isDeformedByLattice(struct Object *ob);
 int           modifiers_usesArmature(struct Object *ob, struct bArmature *arm);
 int           modifiers_isCorrectableDeformed(struct Object *ob);
 void          modifier_freeTemporaryData(struct ModifierData *md);
+int           modifiers_isPreview(struct Object *ob);
 
 int           modifiers_indexInObject(struct Object *ob, struct ModifierData *md);
 
@@ -356,6 +367,9 @@ struct LinkNode *modifiers_calcDataMasks(struct Scene *scene,
 										 struct ModifierData *md,
 										 CustomDataMask dataMask,
 										 int required_mode);
+struct ModifierData *modifiers_getLastPreview(struct Scene *scene,
+                                              struct ModifierData *md,
+                                              int required_mode);
 struct ModifierData  *modifiers_getVirtualModifierList(struct Object *ob);
 
 /* ensure modifier correctness when changing ob->data */

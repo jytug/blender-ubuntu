@@ -24,13 +24,14 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_OBJECT_TYPES_H
-#define DNA_OBJECT_TYPES_H
 
 /** \file DNA_object_types.h
  *  \ingroup DNA
  *  \brief Object is a sort of wrapper for general info.
  */
+
+#ifndef DNA_OBJECT_TYPES_H
+#define DNA_OBJECT_TYPES_H
 
 #include "DNA_defs.h"
 #include "DNA_listBase.h"
@@ -60,11 +61,11 @@ struct bGPdata;
 /* Vertex Groups - Name Info */
 typedef struct bDeformGroup {
 	struct bDeformGroup *next, *prev;
-	char name[32];
+	char name[64];	/* MAX_VGROUP_NAME */
 	/* need this flag for locking weights */
 	char flag, pad[7];
 } bDeformGroup;
-#define MAX_VGROUP_NAME 32
+#define MAX_VGROUP_NAME 64
 
 /* bDeformGroup->flag */
 #define DG_LOCK_WEIGHT 1
@@ -106,7 +107,7 @@ typedef struct Object {
 	
 	short type, partype;
 	int par1, par2, par3;	/* can be vertexnrs */
-	char parsubstr[32];	/* String describing subobject info */
+	char parsubstr[64];	/* String describing subobject info, MAX_ID_NAME-2 */
 	struct Object *parent, *track;
 	/* if ob->proxy (or proxy_group), this object is proxy for object ob->proxy */
 	/* proxy_from is set in target back to the proxy. */
@@ -250,8 +251,8 @@ typedef struct Object {
 	struct FluidsimSettings *fluidsimSettings; /* if fluidsim enabled, store additional settings */
 
 	struct DerivedMesh *derivedDeform, *derivedFinal;
-	unsigned int lastDataMask;   /* the custom data layer mask that was last used to calculate derivedDeform and derivedFinal */
-	unsigned int customdata_mask; /* (extra) custom data layer mask to use for creating derivedmesh, set by depsgraph */
+	uint64_t lastDataMask;   /* the custom data layer mask that was last used to calculate derivedDeform and derivedFinal */
+	uint64_t customdata_mask; /* (extra) custom data layer mask to use for creating derivedmesh, set by depsgraph */
 	unsigned int state;			/* bit masks of game controllers that are active */
 	unsigned int init_state;	/* bit masks of initial state as recorded by the users */
 
@@ -272,7 +273,7 @@ typedef struct ObHook {
 	float cent[3];			/* visualization of hook */
 	float falloff;			/* if not zero, falloff is distance where influence zero */
 	
-	char name[32];
+	char name[64];	/* MAX_NAME */
 
 	int *indexar;
 	int totindex, curindex; /* curindex is cache for fast lookup */

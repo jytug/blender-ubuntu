@@ -19,12 +19,12 @@
 bl_info = {
     'name': 'Import Autocad DXF Format (.dxf)',
     'author': 'Thomas Larsson, Remigiusz Fiedler',
-    'version': (0, 1, 5),
-    "blender": (2, 6, 0),
-    "api": 40791,
+    'version': (0, 1, 6),
+    "blender": (2, 6, 1),
     'location': 'File > Import > Autocad (.dxf)',
     'description': 'Import files in the Autocad DXF format (.dxf)',
-    'warning': 'Only subset of DXF specification is supported, work in progress.',
+    'warning': 'Only a subset of DXF specification is supported now.'\
+        ' Please support further development!',
     'wiki_url': 'http://wiki.blender.org/index.php/Extensions:2.5/Py/'\
         'Scripts/Import-Export/DXF_Importer',
     'tracker_url': 'https://projects.blender.org/tracker/index.php?'\
@@ -48,16 +48,18 @@ Script supports only a small part of DXF specification:
 - ignores COLOR, LINEWIDTH, LINESTYLE
 
 This script is a temporary solution.
-Probably no more improvements will be done to this script.
-The full-feature importer script from 2.49 will be back in 2.6 release.
+No functionality improvements are planed for this version.
+The advanced importer from 2.49 will replace it in the future.
 
 Installation:
 Place this file to Blender addons directory
   (on Windows it is %Blender_directory%\2.53\scripts\addons\)
-You must activate the script in the "Addons" tab (user preferences).
+The script must be activated in "Addons" tab (user preferences).
 Access it from File > Import menu.
 
 History:
+ver 0.1.6 - 2012.01.03 by migius and trumanblending for r.42615
+- modified for recent changes to matrix indexing
 ver 0.1.5 - 2011.02.05 by migius for r.34661
 - changed support level to OFFICIAL
 - fixed missing last point at building Mesh-ARCs (by pildanovak)
@@ -1402,7 +1404,7 @@ def getOCS(az):  #--------------------------------------------------------------
         if az.z > 0.0:
             return False
         elif az.z < 0.0:
-            return Matrix((-WORLDX, WORLDY*1, -WORLDZ))
+            return Matrix((-WORLDX, WORLDY*1, -WORLDZ)).transposed()
 
     cap = 0.015625 # square polar cap value (1/64.0)
     if abs(az.x) < cap and abs(az.y) < cap:
@@ -1412,27 +1414,27 @@ def getOCS(az):  #--------------------------------------------------------------
     ax.normalize()
     ay = az.cross(ax)
     ay.normalize()
-    return Matrix((ax, ay, az))
+    # Matrices are now constructed from rows, transpose to make the rows into cols
+    return Matrix((ax, ay, az)).transposed()
 
 
 
 def transform(normal, rotation, obj):  #--------------------------------------------
     """Use the calculated ocs to determine the objects location/orientation in space.
     """
-    ma = Matrix(((1,0,0,0),(0,1,0,0),(0,0,1,0),(0,0,0,1)))
+    ma = Matrix()
     o = Vector(obj.location)
     ma_new = getOCS(normal)
     if ma_new:
+        ma_new.resize_4x4()
         ma = ma_new
-        ma.resize_4x4()
         o = ma * o
 
     if rotation != 0:
-        g = radians(-rotation)
-        rmat = Matrix(((cos(g), -sin(g), 0), (sin(g), cos(g), 0), (0, 0, 1)))
-        ma = ma * rmat.to_4x4()
+        rmat = Matrix.Rotation(radians(rotation), 4, 'Z')
+        ma = ma * rmat
 
-    obj.matrix_world = ma #must be matrix4x4
+    obj.matrix_world = ma
     obj.location = o
 
 

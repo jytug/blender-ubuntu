@@ -556,10 +556,11 @@ static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm)
 	int *vertpa = MEM_callocN(sizeof(int)*totvert,"explode_vertpa2");
 	int *facepa = emd->facepa;
 	int *fs, totesplit=0,totfsplit=0,curdupface=0;
-	int i,j,v1,v2,v3,v4,esplit,
+	int i, v1, v2, v3, v4, esplit,
 	    v[4]  = {0, 0, 0, 0}, /* To quite gcc barking... */
 	    uv[4] = {0, 0, 0, 0}; /* To quite gcc barking... */
 	int numlayer;
+	unsigned int ed_v1, ed_v2;
 
 	edgehash= BLI_edgehash_new();
 
@@ -650,16 +651,16 @@ static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm)
 	/* create new verts */
 	ehi= BLI_edgehashIterator_new(edgehash);
 	for(; !BLI_edgehashIterator_isDone(ehi); BLI_edgehashIterator_step(ehi)) {
-		BLI_edgehashIterator_getKey(ehi, &i, &j);
+		BLI_edgehashIterator_getKey(ehi, &ed_v1, &ed_v2);
 		esplit= GET_INT_FROM_POINTER(BLI_edgehashIterator_getValue(ehi));
-		mv=CDDM_get_vert(splitdm,j);
+		mv=CDDM_get_vert(splitdm, ed_v2);
 		dupve=CDDM_get_vert(splitdm,esplit);
 
-		DM_copy_vert_data(splitdm,splitdm,j,esplit,1);
+		DM_copy_vert_data(splitdm,splitdm, ed_v2, esplit,1);
 
 		*dupve=*mv;
 
-		mv=CDDM_get_vert(splitdm,i);
+		mv=CDDM_get_vert(splitdm, ed_v1);
 
 		add_v3_v3(dupve->co, mv->co);
 		mul_v3_fl(dupve->co, 0.5f);
@@ -788,8 +789,9 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	float cfra;
 	/* float timestep; */
 	int *facepa=emd->facepa;
-	int totdup=0,totvert=0,totface=0,totpart=0;
-	int i, j, v, mindex=0;
+	int totdup=0,totvert=0,totface=0,totpart=0,delface=0;
+	int i, v, u;
+	unsigned int ed_v1, ed_v2, mindex=0;
 	MTFace *mtface = NULL, *mtf;
 
 	totface= dm->getNumFaces(dm);
@@ -810,6 +812,18 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	vertpahash= BLI_edgehash_new();
 
 	for (i=0; i<totface; i++) {
+		if(facepa[i]!=totpart)
+		{
+			pa=pars+facepa[i];
+
+			if((pa->alive==PARS_UNBORN && (emd->flag&eExplodeFlag_Unborn)==0)
+				|| (pa->alive==PARS_ALIVE && (emd->flag&eExplodeFlag_Alive)==0)
+				|| (pa->alive==PARS_DEAD && (emd->flag&eExplodeFlag_Dead)==0)) {
+				delface++;
+				continue;
+			}
+		}
+
 		/* do mindex + totvert to ensure the vertex index to be the first
 		 * with BLI_edgehashIterator_getKey */
 		if(facepa[i]==totpart || cfra < (pars+facepa[i])->time)
@@ -836,7 +850,7 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	BLI_edgehashIterator_free(ehi);
 
 	/* the final duplicated vertices */
-	explode= CDDM_from_template(dm, totdup, 0,totface);
+	explode= CDDM_from_template(dm, totdup, 0,totface-delface);
 	mtface = CustomData_get_layer_named(&explode->faceData, CD_MTFACE, emd->uvname);
 	/*dupvert= CDDM_get_verts(explode);*/
 
@@ -852,24 +866,24 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 		MVert *dest;
 
 		/* get particle + vertex from hash */
-		BLI_edgehashIterator_getKey(ehi, &j, &i);
-		i -= totvert;
+		BLI_edgehashIterator_getKey(ehi, &ed_v1, &ed_v2);
+		ed_v2 -= totvert;
 		v= GET_INT_FROM_POINTER(BLI_edgehashIterator_getValue(ehi));
 
-		dm->getVert(dm, j, &source);
+		dm->getVert(dm, ed_v1, &source);
 		dest = CDDM_get_vert(explode,v);
 
-		DM_copy_vert_data(dm,explode,j,v,1);
+		DM_copy_vert_data(dm, explode, ed_v1, v, 1);
 		*dest = source;
 
-		if(i!=totpart) {
+		if(ed_v2 != totpart) {
 			/* get particle */
-			pa= pars+i;
+			pa= pars + ed_v2;
 
 			psys_get_birth_coordinates(&sim, pa, &birth, 0, 0);
 
 			state.time=cfra;
-			psys_get_particle_state(&sim, i, &state, 1);
+			psys_get_particle_state(&sim, ed_v2, &state, 1);
 
 			vertco=CDDM_get_vert(explode,v)->co;
 			mul_m4_v3(ob->obmat,vertco);
@@ -891,7 +905,7 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	BLI_edgehashIterator_free(ehi);
 
 	/*map new vertices to faces*/
-	for (i=0; i<totface; i++) {
+	for (i=0,u=0; i<totface; i++) {
 		MFace source;
 		int orig_v4;
 
@@ -905,7 +919,7 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 		}
 
 		dm->getFace(dm,i,&source);
-		mf=CDDM_get_face(explode,i);
+		mf=CDDM_get_face(explode,u);
 		
 		orig_v4 = source.v4;
 
@@ -920,7 +934,7 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 		if(source.v4)
 			source.v4 = edgecut_get(vertpahash, source.v4, mindex);
 
-		DM_copy_face_data(dm,explode,i,i,1);
+		DM_copy_face_data(dm,explode,i,u,1);
 
 		*mf = source;
 
@@ -930,13 +944,14 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 			/* Clamp to this range to avoid flipping to the other side of the coordinates. */
 			CLAMP(age, 0.001f, 0.999f);
 
-			mtf = mtface + i;
+			mtf = mtface + u;
 
 			mtf->uv[0][0] = mtf->uv[1][0] = mtf->uv[2][0] = mtf->uv[3][0] = age;
 			mtf->uv[0][1] = mtf->uv[1][1] = mtf->uv[2][1] = mtf->uv[3][1] = 0.5f;
 		}
 
-		test_index_face(mf, &explode->faceData, i, (orig_v4 ? 4 : 3));
+		test_index_face(mf, &explode->faceData, u, (orig_v4 ? 4 : 3));
+		u++;
 	}
 
 	/* cleanup */

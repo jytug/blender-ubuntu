@@ -26,14 +26,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef DNA_TRACKING_TYPES_H
-#define DNA_TRACKING_TYPES_H
-
 /** \file DNA_tracking_types.h
  *  \ingroup DNA
  *  \since may-2011
  *  \author Sergey Sharybin
  */
+
+#ifndef DNA_TRACKING_TYPES_H
+#define DNA_TRACKING_TYPES_H
 
 #include "DNA_listBase.h"
 
@@ -75,7 +75,7 @@ typedef struct MovieTrackingMarker {
 typedef struct MovieTrackingTrack {
 	struct MovieTrackingTrack *next, *prev;
 
-	char name[24];
+	char name[64];	/* MAX_NAME */
 
 	/* ** setings ** */
 	float pat_min[2], pat_max[2];		/* positions of left-bottom and right-top corners of pattern (in unified 0..1 space) */
@@ -91,12 +91,8 @@ typedef struct MovieTrackingTrack {
 	float bundle_pos[3];			/* reconstructed position */
 	float error;					/* average track reprojection error */
 
-	int pad;
-
 	/* ** UI editing ** */
 	int flag, pat_flag, search_flag;	/* flags (selection, ...) */
-	short transflag;					/* transform flags */
-	char pad3[2];
 	float color[3];						/* custom color for track */
 
 	/* tracking algorithm to use; can be KLT or SAD */
@@ -125,6 +121,9 @@ typedef struct MovieTrackingSettings {
 	short default_frames_limit;			/* number of frames to be tarcked during single tracking session (if TRACKING_FRAMES_LIMIT is set) */
 	short default_margin;				/* margin from frame boundaries */
 	short default_pattern_match;		/* re-adjust every N frames */
+	short default_flag;					/* default flags like color channels used by default */
+
+	short pod;
 
 	/* ** common tracker settings ** */
 	short speed;			/* speed of tracking */
@@ -133,7 +132,7 @@ typedef struct MovieTrackingSettings {
 	int keyframe1, keyframe2;	/* two keyframes for reconstrution initialization */
 
 	/* ** which camera intrinsics to refine. uses on the REFINE_* flags */
-	short refine_camera_intrinsics, pad2;
+	short refine_camera_intrinsics, pad23;
 
 	/* ** tool settings ** */
 
@@ -142,7 +141,12 @@ typedef struct MovieTrackingSettings {
 
 	/* cleanup */
 	int clean_frames, clean_action;
-	float clean_error, pad;
+	float clean_error;
+
+	/* set object scale */
+	float object_distance;		/* distance between two bundles used for object scaling */
+
+	int pad3;
 } MovieTrackingSettings;
 
 typedef struct MovieTrackingStabilization {
@@ -172,6 +176,17 @@ typedef struct MovieTrackingReconstruction {
 	struct MovieReconstructedCamera *cameras;	/* reconstructed cameras */
 } MovieTrackingReconstruction;
 
+typedef struct MovieTrackingObject {
+	struct MovieTrackingObject *next, *prev;
+
+	char name[64];			/* Name of tracking object, MAX_NAME */
+	int flag;
+	float scale;			/* scale of object solution in amera space */
+
+	ListBase tracks;		/* list of tracks use to tracking this object */
+	MovieTrackingReconstruction reconstruction;	/* reconstruction data for this object */
+} MovieTrackingObject;
+
 typedef struct MovieTrackingStats {
 	char message[256];
 } MovieTrackingStats;
@@ -179,10 +194,13 @@ typedef struct MovieTrackingStats {
 typedef struct MovieTracking {
 	MovieTrackingSettings settings;	/* different tracking-related settings */
 	MovieTrackingCamera camera;		/* camera intrinsics */
-	ListBase tracks;				/* all tracks */
-	MovieTrackingReconstruction reconstruction;	/* reconstruction data */
+	ListBase tracks;				/* list of tracks used for camera object */
+	MovieTrackingReconstruction reconstruction;	/* reconstruction data for camera object */
 	MovieTrackingStabilization stabilization;	/* stabilization data */
 	MovieTrackingTrack *act_track;		/* active track */
+
+	ListBase objects;
+	int objectnr, tot_object;		/* index of active object and total number of objects */
 
 	MovieTrackingStats *stats;		/* statistics displaying in clip editor */
 } MovieTracking;
@@ -196,7 +214,8 @@ enum {
 /* MovieTrackingMarker->flag */
 #define MARKER_DISABLED	(1<<0)
 #define MARKER_TRACKED	(1<<1)
-#define MARKER_GRAPH_SEL (1<<2)
+#define MARKER_GRAPH_SEL_X (1<<2)
+#define MARKER_GRAPH_SEL_Y (1<<3)
 
 /* MovieTrackingTrack->flag */
 #define TRACK_HAS_BUNDLE	(1<<1)
@@ -207,6 +226,7 @@ enum {
 #define TRACK_LOCKED		(1<<6)
 #define TRACK_CUSTOMCOLOR	(1<<7)
 #define TRACK_USE_2D_STAB	(1<<8)
+#define TRACK_PREVIEW_GRAYSCALE	(1<<9)
 
 /* MovieTrackingTrack->tracker */
 #define TRACKER_KLT		0
@@ -240,6 +260,9 @@ enum {
 
 /* MovieTrackingReconstruction->flag */
 #define TRACKING_RECONSTRUCTED	(1<<0)
+
+/* MovieTrackingObject->flag */
+#define TRACKING_OBJECT_CAMERA		(1<<0)
 
 #define TRACKING_CLEAN_SELECT			0
 #define TRACKING_CLEAN_DELETE_TRACK		1

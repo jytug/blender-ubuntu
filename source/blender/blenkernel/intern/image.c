@@ -285,6 +285,10 @@ static void image_assign_ibuf(Image *ima, ImBuf *ibuf, int index, int frame)
 				break;
 
 		ibuf->index= index;
+		if(ima->flag & IMA_CM_PREDIVIDE)
+			ibuf->flags |= IB_cm_predivide;
+		else
+			ibuf->flags &= ~IB_cm_predivide;
 
 		/* this function accepts link==NULL */
 		BLI_insertlinkbefore(&ima->ibufs, link, ibuf);
@@ -946,6 +950,7 @@ char BKE_imtype_valid_channels(const char imtype)
 	case R_IMF_IMTYPE_MULTILAYER:
 	case R_IMF_IMTYPE_DDS:
 	case R_IMF_IMTYPE_JP2:
+	case R_IMF_IMTYPE_QUICKTIME:
 			chan_flag |= IMA_CHAN_FLAG_ALPHA;
 	}
 
@@ -1106,9 +1111,9 @@ int BKE_add_image_extension(char *string, const char imtype)
 		if(BLI_testextensie_array(string, imb_ext_image)
 				  || (G.have_quicktime && BLI_testextensie_array(string, imb_ext_image_qt))) {
 			return BLI_replace_extension(string, FILE_MAX, extension);
-		} else {
+		}
+		else {
 			return BLI_ensure_extension(string, FILE_MAX, extension);
-			return TRUE;
 		}
 		
 	}
@@ -1164,7 +1169,7 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 		char *name = scene_find_last_marker_name(scene, CFRA);
 
 		if (name)	BLI_strncpy(text, name, sizeof(text));
-		else 		strcpy(text, "<none>");
+		else 		BLI_strncpy(text, "<none>", sizeof(text));
 
 		BLI_snprintf(stamp_data->marker, sizeof(stamp_data->marker), do_prefix ? "Marker %s":"%s", text);
 	} else {
@@ -1198,14 +1203,14 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 	}
 	
 	if (scene->r.stamp & R_STAMP_FRAME) {
-		char format[32];
+		char fmtstr[32];
 		int digits= 1;
 		
 		if(scene->r.efra>9)
 			digits= 1 + (int) log10(scene->r.efra);
 
-		BLI_snprintf(format, sizeof(format), do_prefix ? "Frame %%0%di":"%%0%di", digits);
-		BLI_snprintf (stamp_data->frame, sizeof(stamp_data->frame), format, scene->r.cfra);
+		BLI_snprintf(fmtstr, sizeof(fmtstr), do_prefix ? "Frame %%0%di":"%%0%di", digits);
+		BLI_snprintf (stamp_data->frame, sizeof(stamp_data->frame), fmtstr, scene->r.cfra);
 	} else {
 		stamp_data->frame[0] = '\0';
 	}
@@ -1220,7 +1225,7 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 		if (camera && camera->type == OB_CAMERA) {
 			BLI_snprintf(text, sizeof(text), "%.2f", ((Camera *)camera->data)->lens);
 		}
-		else 		strcpy(text, "<none>");
+		else 		BLI_strncpy(text, "<none>", sizeof(text));
 
 		BLI_snprintf(stamp_data->cameralens, sizeof(stamp_data->cameralens), do_prefix ? "Lens %s":"%s", text);
 	} else {
@@ -1237,7 +1242,7 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 		Sequence *seq= seq_foreground_frame_get(scene, scene->r.cfra);
 	
 		if (seq)	BLI_strncpy(text, seq->name+2, sizeof(text));
-		else 		strcpy(text, "<none>");
+		else 		BLI_strncpy(text, "<none>", sizeof(text));
 
 		BLI_snprintf(stamp_data->strip, sizeof(stamp_data->strip), do_prefix ? "Strip %s":"%s", text);
 	} else {
@@ -1508,10 +1513,7 @@ int BKE_write_ibuf(ImBuf *ibuf, const char *name, ImageFormatData *imf)
 
 	int ok;
 
-	if(imtype == -1) {
-		/* use whatever existing image type is set by 'ibuf' */
-	}
-	else if(imtype== R_IMF_IMTYPE_IRIS) {
+	if(imtype== R_IMF_IMTYPE_IRIS) {
 		ibuf->ftype= IMAGIC;
 	}
 #ifdef WITH_HDR
@@ -1547,7 +1549,7 @@ int BKE_write_ibuf(ImBuf *ibuf, const char *name, ImageFormatData *imf)
 		ibuf->ftype= OPENEXR;
 		if(imf->depth == R_IMF_CHAN_DEPTH_16)
 			ibuf->ftype |= OPENEXR_HALF;
-		ibuf->ftype |= (quality & OPENEXR_COMPRESS);
+		ibuf->ftype |= (imf->exr_codec & OPENEXR_COMPRESS);
 		
 		if(!(imf->flag & R_IMF_FLAG_ZBUF))
 			ibuf->zbuf_float = NULL;	/* signal for exr saving */
@@ -1606,7 +1608,7 @@ int BKE_write_ibuf(ImBuf *ibuf, const char *name, ImageFormatData *imf)
 	return(ok);
 }
 
-/* same as BKE_write_ibuf_as but crappy workaround not to perminantly modify
+/* same as BKE_write_ibuf() but crappy workaround not to perminantly modify
  * _some_, values in the imbuf */
 int BKE_write_ibuf_as(ImBuf *ibuf, const char *name, ImageFormatData *imf,
                       const short save_copy)
@@ -2277,7 +2279,10 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	ibuf->x= rres.rectx;
 	ibuf->y= rres.recty;
 	
-	if(ibuf->rect_float!=rectf || rect) /* ensure correct redraw */
+	/* free rect buffer if float buffer changes, so it can be recreated with
+	   the updated result, and also in case we got byte buffer from sequencer,
+	   so we don't keep reference to freed buffer */
+	if(ibuf->rect_float!=rectf || rect || !rectf)
 		imb_freerectImBuf(ibuf);
 
 	if(rect)
@@ -2304,8 +2309,16 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 
 	/* since its possible to access the buffer from the image directly, set the profile [#25073] */
 	ibuf->profile= (iuser->scene->r.color_mgt_flag & R_COLOR_MANAGEMENT) ? IB_PROFILE_LINEAR_RGB : IB_PROFILE_NONE;
-
 	ibuf->dither= dither;
+
+	if(iuser->scene->r.color_mgt_flag & R_COLOR_MANAGEMENT_PREDIVIDE) {
+		ibuf->flags |= IB_cm_predivide;
+		ima->flag |= IMA_CM_PREDIVIDE;
+	}
+	else {
+		ibuf->flags &= ~IB_cm_predivide;
+		ima->flag &= ~IMA_CM_PREDIVIDE;
+	}
 
 	ima->ok= IMA_OK_LOADED;
 

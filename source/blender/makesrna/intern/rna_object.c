@@ -174,7 +174,7 @@ static void rna_Object_matrix_local_get(PointerRNA *ptr, float values[16])
 	if(ob->parent) {
 		float invmat[4][4]; /* for inverse of parent's matrix */
 		invert_m4_m4(invmat, ob->parent->obmat);
-		mul_m4_m4m4((float(*)[4])values, ob->obmat, invmat);
+		mult_m4_m4m4((float(*)[4])values, invmat, ob->obmat);
 	}
 	else {
 		copy_m4_m4((float(*)[4])values, ob->obmat);
@@ -191,7 +191,7 @@ static void rna_Object_matrix_local_set(PointerRNA *ptr, const float values[16])
 	if(ob->parent) {
 		float invmat[4][4];
 		invert_m4_m4(invmat, ob->parentinv);
-		mul_m4_m4m4(ob->obmat, (float(*)[4])values, invmat);
+		mult_m4_m4m4(ob->obmat, invmat, (float(*)[4])values);
 	}
 	else {
 		copy_m4_m4(ob->obmat, (float(*)[4])values);
@@ -809,11 +809,11 @@ static void rna_MaterialSlot_link_set(PointerRNA *ptr, int value)
 	
 	if(value) {
 		ob->matbits[index]= 1;
-		ob->colbits |= (1<<index);
+		/* ob->colbits |= (1<<index); */ /* DEPRECATED */
 	}
 	else {
 		ob->matbits[index]= 0;
-		ob->colbits &= ~(1<<index);
+		/* ob->colbits &= ~(1<<index); */ /* DEPRECATED */
 	}
 }
 
@@ -2447,14 +2447,19 @@ static void rna_def_dupli_object(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "matrix_original", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "omat");
 	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE|PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Object Matrix", "The original matrix of this object before it was duplicated");
 
 	prop= RNA_def_property(srna, "matrix", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "mat");
 	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE|PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Object Duplicate Matrix", "Object duplicate transformation matrix");
+
+	prop= RNA_def_property(srna, "hide", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "no_draw", 0);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE|PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Hide", "Don't show dupli object in viewport or render");
 
 	/* TODO: DupliObject has more properties that can be wrapped */
 }

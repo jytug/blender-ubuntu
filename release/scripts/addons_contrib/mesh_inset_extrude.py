@@ -4,7 +4,6 @@ bl_info = {
     'author': "Jon Sandstrom",
     'version': (0, 6),
     'blender': (2, 5, 9),
-    'api': 39514,
     'location': 'Search for Inset Extrude, map a key to the operator "mesh.inset_extrude", or use the default "I-key"',
     'warning': "",
     'category': 'Mesh',
@@ -577,7 +576,7 @@ class MESH_OT_inset_extrude(bpy.types.Operator):
             self.run_modal = False
             return {'FINISHED'}
 
-        elif event.type in ('RIGHTMOUSE', 'ESC'):
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
             context.area.header_text_set()
             context.region.callback_remove(self._handle)
             self.run_modal = False

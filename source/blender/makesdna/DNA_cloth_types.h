@@ -24,12 +24,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_CLOTH_TYPES_H
-#define DNA_CLOTH_TYPES_H
 
 /** \file DNA_cloth_types.h
  *  \ingroup DNA
  */
+
+#ifndef DNA_CLOTH_TYPES_H
+#define DNA_CLOTH_TYPES_H
 
 /**
 * This struct contains all the global data required to run a simulation.
@@ -69,6 +70,7 @@ typedef struct ClothSimSettings
 	float	goalfrict;
 	float	velocity_smooth; /* smoothing of velocities for hair */
 	float	collider_friction; /* friction with colliders */
+	float	vel_damping; /* damp the velocity to speed up getting to the resting position */
 
 	int 	stepsPerFrame;	/* Number of time steps per frame.		*/
 	int	flags;		/* flags, see CSIMSETT_FLAGS enum above.	*/
@@ -81,7 +83,7 @@ typedef struct ClothSimSettings
 	short	shapekey_rest;  /* vertex group for scaling structural stiffness */
 	short	presets; /* used for presets on GUI */
 	short 	reset;
-	short	pad[3];
+	short	pad;
 
 	struct EffectorWeights *effector_weights;
 } ClothSimSettings;

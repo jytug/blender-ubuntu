@@ -496,7 +496,7 @@ void ANIM_flush_setting_anim_channels (bAnimContext *ac, ListBase *anim_data, bA
 				break;
 			
 			/* store this level as the 'old' level now */
-			prevLevel= level; // XXX: prevLevel is unused
+			// prevLevel= level; // XXX: prevLevel is unused
 		}
 	}
 }
@@ -1529,7 +1529,7 @@ static int animchannels_setflag_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-
+/* duplicate of 'ANIM_OT_channels_setting_toggle' for menu title only, weak! */
 static void ANIM_OT_channels_setting_enable (wmOperatorType *ot)
 {
 	/* identifiers */
@@ -1551,7 +1551,7 @@ static void ANIM_OT_channels_setting_enable (wmOperatorType *ot)
 		/* setting to set */
 	ot->prop= RNA_def_enum(ot->srna, "type", prop_animchannel_settings_types, 0, "Type", "");
 }
-
+/* duplicate of 'ANIM_OT_channels_setting_toggle' for menu title only, weak! */
 static void ANIM_OT_channels_setting_disable (wmOperatorType *ot)
 {
 	/* identifiers */
@@ -1570,28 +1570,6 @@ static void ANIM_OT_channels_setting_disable (wmOperatorType *ot)
 	/* props */
 		/* flag-setting mode */
 	RNA_def_enum(ot->srna, "mode", prop_animchannel_setflag_types, ACHANNEL_SETFLAG_CLEAR, "Mode", "");
-		/* setting to set */
-	ot->prop= RNA_def_enum(ot->srna, "type", prop_animchannel_settings_types, 0, "Type", "");
-}
-
-static void ANIM_OT_channels_setting_invert (wmOperatorType *ot)
-{
-	/* identifiers */
-	ot->name= "Invert Channel Setting";
-	ot->idname= "ANIM_OT_channels_setting_toggle";
-	ot->description= "Invert specified setting on all selected animation channels";
-	
-	/* api callbacks */
-	ot->invoke= WM_menu_invoke;
-	ot->exec= animchannels_setflag_exec;
-	ot->poll= animedit_poll_channels_active;
-	
-	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-	
-	/* props */
-		/* flag-setting mode */
-	RNA_def_enum(ot->srna, "mode", prop_animchannel_setflag_types, ACHANNEL_SETFLAG_INVERT, "Mode", "");
 		/* setting to set */
 	ot->prop= RNA_def_enum(ot->srna, "type", prop_animchannel_settings_types, 0, "Type", "");
 }
@@ -2401,7 +2379,6 @@ void ED_operatortypes_animchannels(void)
 	
 	WM_operatortype_append(ANIM_OT_channels_setting_enable);
 	WM_operatortype_append(ANIM_OT_channels_setting_disable);
-	WM_operatortype_append(ANIM_OT_channels_setting_invert);
 	WM_operatortype_append(ANIM_OT_channels_setting_toggle);
 	
 	WM_operatortype_append(ANIM_OT_channels_delete);
@@ -2424,20 +2401,21 @@ void ED_operatortypes_animchannels(void)
 void ED_keymap_animchannels(wmKeyConfig *keyconf)
 {
 	wmKeyMap *keymap = WM_keymap_find(keyconf, "Animation Channels", 0, 0);
-	
+	wmKeyMapItem *kmi;
+
 	/* selection */
 		/* click-select */
 		// XXX for now, only leftmouse.... 
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, 0, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, KM_SHIFT, 0)->ptr, "extend", 1);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "children_only", 1);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, KM_SHIFT, 0)->ptr, "extend", TRUE);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "children_only", TRUE);
 	
 		/* rename */
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_rename", LEFTMOUSE, KM_PRESS, KM_CTRL, 0);
 	
 		/* deselect all */
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_select_all_toggle", AKEY, KM_PRESS, 0, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_select_all_toggle", IKEY, KM_PRESS, KM_CTRL, 0)->ptr, "invert", 1);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_select_all_toggle", IKEY, KM_PRESS, KM_CTRL, 0)->ptr, "invert", TRUE);
 	
 		/* borderselect */
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_select_border", BKEY, KM_PRESS, 0, 0);
@@ -2459,9 +2437,11 @@ void ED_keymap_animchannels(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_expand", PADPLUSKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_collapse", PADMINUS, KM_PRESS, 0, 0);
 	
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_expand", PADPLUSKEY, KM_PRESS, KM_CTRL, 0)->ptr, "all", 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_collapse", PADMINUS, KM_PRESS, KM_CTRL, 0)->ptr, "all", 0);
-	
+	kmi = WM_keymap_add_item(keymap, "ANIM_OT_channels_expand", PADPLUSKEY, KM_PRESS, KM_CTRL, 0);
+	RNA_boolean_set(kmi->ptr, "all", FALSE);
+	kmi = WM_keymap_add_item(keymap, "ANIM_OT_channels_collapse", PADMINUS, KM_PRESS, KM_CTRL, 0);
+	RNA_boolean_set(kmi->ptr, "all", FALSE);
+
 	/* rearranging */
 	RNA_enum_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_move", PAGEUPKEY, KM_PRESS, 0, 0)->ptr, "direction", REARRANGE_ANIMCHAN_UP);
 	RNA_enum_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_move", PAGEDOWNKEY, KM_PRESS, 0, 0)->ptr, "direction", REARRANGE_ANIMCHAN_DOWN);

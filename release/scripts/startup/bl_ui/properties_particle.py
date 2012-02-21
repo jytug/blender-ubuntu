@@ -76,7 +76,7 @@ class ParticleButtonsPanel():
 class PARTICLE_PT_context_particles(ParticleButtonsPanel, Panel):
     bl_label = ""
     bl_options = {'HIDE_HEADER'}
-    COMPAT_ENGINES = {'BLENDER_RENDER'}
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
     def poll(cls, context):
@@ -85,6 +85,10 @@ class PARTICLE_PT_context_particles(ParticleButtonsPanel, Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        if context.scene.render.engine == "BLENDER_GAME":
+            layout.label("Not available in the Game Engine")
+            return
 
         ob = context.object
         psys = context.particle_system
@@ -907,7 +911,7 @@ class PARTICLE_PT_render(ParticleButtonsPanel, Panel):
                 col.prop_search(psys, "billboard_time_index_uv", ob.data, "uv_textures")
 
             split = layout.split(percentage=0.33)
-            split.label(text="Split uv's:")
+            split.label(text="Split UVs:")
             split.prop(part, "billboard_uv_split", text="Number of splits")
 
             if psys:

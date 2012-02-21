@@ -61,6 +61,8 @@ int GPU_print_error(const char *str);
 int GPU_glsl_support(void);
 int GPU_non_power_of_two_support(void);
 int GPU_color_depth(void);
+void GPU_code_generate_glsl_lib(void);
+int GPU_bicubic_bump_support(void);
 
 /* GPU Types */
 
@@ -165,7 +167,7 @@ void GPU_shader_uniform_vector(GPUShader *shader, int location, int length,
 	int arraysize, float *value);
 void GPU_shader_uniform_texture(GPUShader *shader, int location, GPUTexture *tex);
 
-int GPU_shader_get_attribute(GPUShader *shader, char *name);
+int GPU_shader_get_attribute(GPUShader *shader, const char *name);
 
 /* Vertex attributes for shaders */
 
@@ -177,7 +179,7 @@ typedef struct GPUVertexAttribs {
 		int glindex;
 		int gltexco;
 		int attribid;
-		char name[32];
+		char name[64];	/* MAX_CUSTOMDATA_LAYER_NAME */
 	} layer[GPU_MAX_ATTRIB];
 
 	int totlayer;

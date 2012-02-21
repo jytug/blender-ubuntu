@@ -21,7 +21,6 @@ bl_info = {
     "author": "Andrew Hale (TrumanBlending)",
     "version": (0, 2, 5),
     "blender": (2, 5, 9),
-    "api": 39307,
     "location": "View3D > Add > Curve",
     "description": ("Adds a parametric tree. The method is presented by "
     "Jason Weber & Joseph Penn in their paper 'Creation and Rendering of "
@@ -153,7 +152,7 @@ class PresetMenu(bpy.types.Menu):
 
 class AddTree(bpy.types.Operator):
     bl_idname = "curve.tree_add"
-    bl_label = "Sapling"
+    bl_label = "Sapling: Add Tree"
     bl_options = {'REGISTER', 'UNDO'}
 
 

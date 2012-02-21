@@ -63,6 +63,7 @@
 #include "BKE_font.h"
 #include "BKE_mball.h"
 #include "BKE_modifier.h"
+#include "BKE_cdderivedmesh.h"
 
 #include "DNA_mesh_types.h"
 #include "DNA_scene_types.h"
@@ -79,7 +80,7 @@
 Mesh *rna_Object_to_mesh(Object *ob, ReportList *reports, Scene *sce, int apply_modifiers, int settings)
 {
 	Mesh *tmpmesh;
-	Curve *tmpcu = NULL;
+	Curve *tmpcu = NULL, *copycu;
 	Object *tmpobj = NULL;
 	int render = settings == eModifierMode_Render, i;
 	int cage = !apply_modifiers;
@@ -100,22 +101,20 @@ Mesh *rna_Object_to_mesh(Object *ob, ReportList *reports, Scene *sce, int apply_
 			object_free_modifiers(tmpobj);
 
 		/* copies the data */
-		tmpobj->data = copy_curve( (Curve *) ob->data );
+		copycu = tmpobj->data = copy_curve( (Curve *) ob->data );
 
-#if 0
-		/* copy_curve() sets disp.first null, so currently not need */
-		{
-			Curve *cu;
-			cu = (Curve *)tmpobj->data;
-			if( cu->disp.first )
-				MEM_freeN( cu->disp.first );
-			cu->disp.first = NULL;
-		}
-	
-#endif
+		/* temporarily set edit so we get updates from edit mode, but
+		   also because for text datablocks copying it while in edit
+		   mode gives invalid data structures */
+		copycu->editfont = tmpcu->editfont;
+		copycu->editnurb = tmpcu->editnurb;
 
 		/* get updated display list, and convert to a mesh */
 		makeDispListCurveTypes( sce, tmpobj, 0 );
+
+		copycu->editfont = NULL;
+		copycu->editnurb = NULL;
+
 		nurbs_to_mesh( tmpobj );
 		
 		/* nurbs_to_mesh changes the type to a mesh, check it worked */
@@ -191,13 +190,12 @@ Mesh *rna_Object_to_mesh(Object *ob, ReportList *reports, Scene *sce, int apply_
 		if( tmpcu->mat ) {
 			for( i = tmpcu->totcol; i-- > 0; ) {
 				/* are we an object material or data based? */
-				if (ob->colbits & 1<<i) 
-					tmpmesh->mat[i] = ob->mat[i];
-				else 
-					tmpmesh->mat[i] = tmpcu->mat[i];
 
-				if (tmpmesh->mat[i]) 
+				tmpmesh->mat[i] = ob->matbits[i] ? ob->mat[i] : tmpcu->mat[i];
+
+				if (tmpmesh->mat[i]) {
 					tmpmesh->mat[i]->id.us++;
+				}
 			}
 		}
 		break;
@@ -230,12 +228,11 @@ Mesh *rna_Object_to_mesh(Object *ob, ReportList *reports, Scene *sce, int apply_
 			if( origmesh->mat ) {
 				for( i = origmesh->totcol; i-- > 0; ) {
 					/* are we an object material or data based? */
-					if (ob->colbits & 1<<i)
-						tmpmesh->mat[i] = ob->mat[i];
-					else
-						tmpmesh->mat[i] = origmesh->mat[i];
-					if (tmpmesh->mat[i])
+					tmpmesh->mat[i] = ob->matbits[i] ? ob->mat[i] : origmesh->mat[i];
+
+					if (tmpmesh->mat[i]) {
 						tmpmesh->mat[i]->id.us++;
+					}
 				}
 			}
 		}
@@ -359,7 +356,7 @@ static void rna_Mesh_assign_verts_to_group(Object *ob, bDeformGroup *group, int 
 	}
 
 	Mesh *me = (Mesh*)ob->data;
-	int group_index = defgroup_find_index(ob, group);
+	int group_index = BLI_findlink(&ob->defbase, group);
 	if (group_index == -1) {
 		BKE_report(reports, RPT_ERROR, "No deform groups assigned to mesh");
 		return;
@@ -472,6 +469,44 @@ int rna_Object_is_modified(Object *ob, Scene *scene, int settings)
 	return object_is_modified(scene, ob) & settings;
 }
 
+#ifndef NDEBUG
+void rna_Object_dm_info(struct Object *ob, int type, char *result)
+{
+	DerivedMesh *dm = NULL;
+	int dm_release = FALSE;
+	char *ret = NULL;
+
+	result[0] = '\0';
+
+	switch(type) {
+		case 0:
+			if (ob->type == OB_MESH) {
+				dm = CDDM_from_mesh(ob->data, ob);
+				ret = DM_debug_info(dm);
+				dm_release = TRUE;
+			}
+			break;
+		case 1:
+			dm = ob->derivedDeform;
+			break;
+		case 2:
+			dm = ob->derivedFinal;
+			break;
+	}
+
+	if (dm) {
+		ret = DM_debug_info(dm);
+		if (dm_release) {
+			dm->release(dm);
+		}
+		if (ret) {
+			strcpy(result, ret);
+			MEM_freeN(ret);
+		}
+	}
+}
+#endif /* NDEBUG */
+
 #else
 
 void RNA_api_object(StructRNA *srna)
@@ -484,6 +519,15 @@ void RNA_api_object(StructRNA *srna)
 		{eModifierMode_Render, "RENDER", 0, "Render", "Apply modifier render settings"},
 		{0, NULL, 0, NULL, NULL}
 	};
+
+#ifndef NDEBUG
+	static EnumPropertyItem mesh_dm_info_items[] = {
+		{0, "SOURCE", 0, "Source", "Source mesh"},
+		{1, "DEFORM", 0, "Deform", "Objects deform mesh"},
+	    {2, "FINAL", 0, "Final", "Objects final mesh"},
+		{0, NULL, 0, NULL, NULL}
+	};
+#endif
 
 	/* mesh */
 	func= RNA_def_function(srna, "to_mesh", "rna_Object_to_mesh");
@@ -587,6 +631,20 @@ void RNA_api_object(StructRNA *srna)
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	parm= RNA_def_boolean(func, "result", 0, "", "Object visibility");
 	RNA_def_function_return(func, parm);
+
+
+#ifndef NDEBUG
+	/* mesh */
+	func= RNA_def_function(srna, "dm_info", "rna_Object_dm_info");
+	RNA_def_function_ui_description(func, "Returns a string for derived mesh data");
+
+	parm= RNA_def_enum(func, "type", mesh_dm_info_items, 0, "", "Modifier settings to apply");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	/* weak!, no way to return dynamic string type */
+	parm= RNA_def_string(func, "result", "", 16384, "result", "");
+	RNA_def_property_flag(parm, PROP_THICK_WRAP); /* needed for string return value */
+	RNA_def_function_output(func, parm);
+#endif /* NDEBUG */
 }
 
 

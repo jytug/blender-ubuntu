@@ -408,14 +408,33 @@ static void test_constraints (Object *owner, bPoseChannel *pchan)
 
 				if((data->flag&CAMERASOLVER_ACTIVECLIP)==0) {
 					if(data->clip != NULL && data->track[0]) {
-						if (!BKE_tracking_named_track(&data->clip->tracking, data->track))
+						MovieTracking *tracking= &data->clip->tracking;
+						MovieTrackingObject *tracking_object;
+
+						if(data->object[0])
+							tracking_object= BKE_tracking_named_object(tracking, data->object);
+						else
+							tracking_object= BKE_tracking_get_camera_object(tracking);
+
+						if(!tracking_object) {
 							curcon->flag |= CONSTRAINT_DISABLE;
+						}
+						else {
+							if (!BKE_tracking_named_track(tracking, tracking_object, data->track))
+								curcon->flag |= CONSTRAINT_DISABLE;
+						}
 					}
 					else curcon->flag |= CONSTRAINT_DISABLE;
 				}
 			}
 			else if (curcon->type == CONSTRAINT_TYPE_CAMERASOLVER) {
 				bCameraSolverConstraint *data = curcon->data;
+
+				if((data->flag&CAMERASOLVER_ACTIVECLIP)==0 && data->clip == NULL)
+					curcon->flag |= CONSTRAINT_DISABLE;
+			}
+			else if (curcon->type == CONSTRAINT_TYPE_OBJECTSOLVER) {
+				bObjectSolverConstraint *data = curcon->data;
 
 				if((data->flag&CAMERASOLVER_ACTIVECLIP)==0 && data->clip == NULL)
 					curcon->flag |= CONSTRAINT_DISABLE;
@@ -523,7 +542,7 @@ static int edit_constraint_poll(bContext *C)
 
 static void edit_constraint_properties(wmOperatorType *ot)
 {
-	RNA_def_string(ot->srna, "constraint", "", 32, "Constraint", "Name of the constraint to edit");
+	RNA_def_string(ot->srna, "constraint", "", MAX_NAME, "Constraint", "Name of the constraint to edit");
 	RNA_def_enum(ot->srna, "owner", constraint_owner_items, 0, "Owner", "The owner of this constraint");
 }
 
@@ -534,7 +553,7 @@ static int edit_constraint_invoke_properties(bContext *C, wmOperator *op)
 	bConstraint *con;
 	ListBase *list;
 	
-	if (RNA_property_is_set(op->ptr, "constraint") && RNA_property_is_set(op->ptr, "owner"))
+	if (RNA_struct_property_is_set(op->ptr, "constraint") && RNA_struct_property_is_set(op->ptr, "owner"))
 		return 1;
 	
 	if (ptr.data) {
@@ -556,7 +575,7 @@ static int edit_constraint_invoke_properties(bContext *C, wmOperator *op)
 
 static bConstraint *edit_constraint_property_get(wmOperator *op, Object *ob, int type)
 {
-	char constraint_name[32];
+	char constraint_name[MAX_NAME];
 	int owner = RNA_enum_get(op->ptr, "owner");
 	bConstraint *con;
 	ListBase *list=NULL;
@@ -684,25 +703,13 @@ void CONSTRAINT_OT_limitdistance_reset (wmOperatorType *ot)
 
 /* ------------- Child-Of Constraint ------------------ */
 
-/* ChildOf Constraint - set inverse callback */
-static int childof_set_inverse_exec (bContext *C, wmOperator *op)
+static void child_get_inverse_matrix (Scene *scene, Object *ob, bConstraint *con, float invmat[4][4])
 {
-	Scene *scene= CTX_data_scene(C);
-	Object *ob = ED_object_active_context(C);
-	bConstraint *con = edit_constraint_property_get(op, ob, CONSTRAINT_TYPE_CHILDOF);
-	bChildOfConstraint *data= (con) ? (bChildOfConstraint *)con->data : NULL;
 	bConstraint *lastcon = NULL;
 	bPoseChannel *pchan= NULL;
 	
-	/* despite 3 layers of checks, we may still not be able to find a constraint */
-	if (data == NULL) {
-		printf("DEBUG: Child-Of Set Inverse - object = '%s'\n", (ob)? ob->id.name+2 : "<None>");
-		BKE_report(op->reports, RPT_ERROR, "Couldn't find constraint data for Child-Of Set Inverse");
-		return OPERATOR_CANCELLED;
-	}
-	
 	/* nullify inverse matrix first */
-	unit_m4(data->invmat);
+	unit_m4(invmat);
 	
 	/* try to find a pose channel - assume that this is the constraint owner */
 	// TODO: get from context instead?
@@ -747,8 +754,8 @@ static int childof_set_inverse_exec (bContext *C, wmOperator *op)
 		 * the effect of the constraint
 		 */
 		invert_m4_m4(imat, pchan->pose_mat);
-		mul_m4_m4m4(tmat, imat, pmat);
-		invert_m4_m4(data->invmat, tmat);
+		mult_m4_m4m4(tmat, pmat, imat);
+		invert_m4_m4(invmat, tmat);
 		
 		/* 5. restore constraints */
 		pchan->constraints.last = lastcon;
@@ -770,9 +777,27 @@ static int childof_set_inverse_exec (bContext *C, wmOperator *op)
 		
 		/* use what_does_parent to find inverse - just like for normal parenting */
 		what_does_parent(scene, ob, &workob);
-		invert_m4_m4(data->invmat, workob.obmat);
+		invert_m4_m4(invmat, workob.obmat);
+	}
+}
+
+/* ChildOf Constraint - set inverse callback */
+static int childof_set_inverse_exec (bContext *C, wmOperator *op)
+{
+	Scene *scene= CTX_data_scene(C);
+	Object *ob = ED_object_active_context(C);
+	bConstraint *con = edit_constraint_property_get(op, ob, CONSTRAINT_TYPE_CHILDOF);
+	bChildOfConstraint *data= (con) ? (bChildOfConstraint *)con->data : NULL;
+
+	/* despite 3 layers of checks, we may still not be able to find a constraint */
+	if (data == NULL) {
+		printf("DEBUG: Child-Of Set Inverse - object = '%s'\n", (ob)? ob->id.name+2 : "<None>");
+		BKE_report(op->reports, RPT_ERROR, "Couldn't find constraint data for Child-Of Set Inverse");
+		return OPERATOR_CANCELLED;
 	}
 	
+	child_get_inverse_matrix(scene, ob, con, data->invmat);
+
 	WM_event_add_notifier(C, NC_OBJECT|ND_CONSTRAINT, ob);
 	
 	return OPERATOR_FINISHED;
@@ -841,6 +866,96 @@ void CONSTRAINT_OT_childof_clear_inverse (wmOperatorType *ot)
 	ot->invoke= childof_clear_inverse_invoke;
 	ot->poll= edit_constraint_poll;
 	
+	/* flags */
+	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	edit_constraint_properties(ot);
+}
+
+/* ------------- Object Solver Constraint ------------------ */
+
+static int objectsolver_set_inverse_exec (bContext *C, wmOperator *op)
+{
+	Scene *scene= CTX_data_scene(C);
+	Object *ob = ED_object_active_context(C);
+	bConstraint *con = edit_constraint_property_get(op, ob, CONSTRAINT_TYPE_OBJECTSOLVER);
+	bObjectSolverConstraint *data= (con) ? (bObjectSolverConstraint *)con->data : NULL;
+
+	/* despite 3 layers of checks, we may still not be able to find a constraint */
+	if (data == NULL) {
+		printf("DEBUG: Child-Of Set Inverse - object = '%s'\n", (ob)? ob->id.name+2 : "<None>");
+		BKE_report(op->reports, RPT_ERROR, "Couldn't find constraint data for Child-Of Set Inverse");
+		return OPERATOR_CANCELLED;
+	}
+
+	child_get_inverse_matrix(scene, ob, con, data->invmat);
+
+	WM_event_add_notifier(C, NC_OBJECT|ND_CONSTRAINT, ob);
+
+	return OPERATOR_FINISHED;
+}
+
+static int objectsolver_set_inverse_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+{
+	if (edit_constraint_invoke_properties(C, op))
+		return objectsolver_set_inverse_exec(C, op);
+	else
+		return OPERATOR_CANCELLED;
+}
+
+void CONSTRAINT_OT_objectsolver_set_inverse (wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "Set Inverse";
+	ot->idname= "CONSTRAINT_OT_objectsolver_set_inverse";
+	ot->description= "Set inverse correction for ObjectSolver constraint";
+
+	ot->exec= objectsolver_set_inverse_exec;
+	ot->invoke= objectsolver_set_inverse_invoke;
+	ot->poll= edit_constraint_poll;
+
+	/* flags */
+	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	edit_constraint_properties(ot);
+}
+
+static int objectsolver_clear_inverse_exec (bContext *C, wmOperator *op)
+{
+	Object *ob = ED_object_active_context(C);
+	bConstraint *con = edit_constraint_property_get(op, ob, CONSTRAINT_TYPE_OBJECTSOLVER);
+	bObjectSolverConstraint *data= (con) ? (bObjectSolverConstraint *)con->data : NULL;
+
+	if(data==NULL) {
+		BKE_report(op->reports, RPT_ERROR, "Childof constraint not found");
+		return OPERATOR_CANCELLED;
+	}
+
+	/* simply clear the matrix */
+	unit_m4(data->invmat);
+
+	WM_event_add_notifier(C, NC_OBJECT|ND_CONSTRAINT, ob);
+
+	return OPERATOR_FINISHED;
+}
+
+static int objectsolver_clear_inverse_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+{
+	if (edit_constraint_invoke_properties(C, op))
+		return objectsolver_clear_inverse_exec(C, op);
+	else
+		return OPERATOR_CANCELLED;
+}
+
+void CONSTRAINT_OT_objectsolver_clear_inverse (wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "Clear Inverse";
+	ot->idname= "CONSTRAINT_OT_objectsolver_clear_inverse";
+	ot->description= "Clear inverse correction for ObjectSolver constraint";
+
+	ot->exec= objectsolver_clear_inverse_exec;
+	ot->invoke= objectsolver_clear_inverse_invoke;
+	ot->poll= edit_constraint_poll;
+
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	edit_constraint_properties(ot);

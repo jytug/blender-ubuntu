@@ -195,18 +195,18 @@ static void node_scaling_widget(int color_id, float aspect, float xmin, float ym
 static void node_uiblocks_init(const bContext *C, bNodeTree *ntree)
 {
 	bNode *node;
-	char str[32];
+	char uiblockstr[32];
 	
 	/* add node uiBlocks in drawing order - prevents events going to overlapping nodes */
 	
-	for(node= ntree->nodes.first; node; node=node->next) {
-			/* ui block */
-			sprintf(str, "node buttons %p", (void *)node);
-			node->block= uiBeginBlock(C, CTX_wm_region(C), str, UI_EMBOSS);
-			uiBlockSetHandleFunc(node->block, do_node_internal_buttons, node);
-			
-			/* this cancels events for background nodes */
-			uiBlockSetFlag(node->block, UI_BLOCK_CLIP_EVENTS);
+	for (node= ntree->nodes.first; node; node= node->next) {
+		/* ui block */
+		BLI_snprintf(uiblockstr, sizeof(uiblockstr), "node buttons %p", (void *)node);
+		node->block= uiBeginBlock(C, CTX_wm_region(C), uiblockstr, UI_EMBOSS);
+		uiBlockSetHandleFunc(node->block, do_node_internal_buttons, node);
+
+		/* this cancels events for background nodes */
+		uiBlockSetFlag(node->block, UI_BLOCK_CLIP_EVENTS);
 	}
 }
 
@@ -233,7 +233,7 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 
 	/* output sockets */
 	for(nsock= node->outputs.first; nsock; nsock= nsock->next) {
-		if(!(nsock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL))) {
+		if(!nodeSocketIsHidden(nsock)) {
 			nsock->locx= locx + node->width;
 			nsock->locy= dy - NODE_DYS;
 			dy-= NODE_DY;
@@ -312,7 +312,7 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 
 	/* input sockets */
 	for(nsock= node->inputs.first; nsock; nsock= nsock->next) {
-		if(!(nsock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL))) {
+		if(!nodeSocketIsHidden(nsock)) {
 			nsock->locx= locx;
 			nsock->locy= dy - NODE_DYS;
 			dy-= NODE_DY;
@@ -351,10 +351,10 @@ static void node_update_hidden(bNode *node)
 
 	/* calculate minimal radius */
 	for(nsock= node->inputs.first; nsock; nsock= nsock->next)
-		if(!(nsock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL)))
+		if(!nodeSocketIsHidden(nsock))
 			totin++;
 	for(nsock= node->outputs.first; nsock; nsock= nsock->next)
-		if(!(nsock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL)))
+		if(!nodeSocketIsHidden(nsock))
 			totout++;
 	
 	tot= MAX2(totin, totout);
@@ -371,7 +371,7 @@ static void node_update_hidden(bNode *node)
 	rad=drad= (float)M_PI/(1.0f + (float)totout);
 	
 	for(nsock= node->outputs.first; nsock; nsock= nsock->next) {
-		if(!(nsock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL))) {
+		if(!nodeSocketIsHidden(nsock)) {
 			nsock->locx= node->totr.xmax - hiddenrad + (float)sin(rad)*hiddenrad;
 			nsock->locy= node->totr.ymin + hiddenrad + (float)cos(rad)*hiddenrad;
 			rad+= drad;
@@ -382,7 +382,7 @@ static void node_update_hidden(bNode *node)
 	rad=drad= - (float)M_PI/(1.0f + (float)totin);
 	
 	for(nsock= node->inputs.first; nsock; nsock= nsock->next) {
-		if(!(nsock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL))) {
+		if(!nodeSocketIsHidden(nsock)) {
 			nsock->locx= node->totr.xmin + hiddenrad + (float)sin(rad)*hiddenrad;
 			nsock->locy= node->totr.ymin + hiddenrad + (float)cos(rad)*hiddenrad;
 			rad+= drad;
@@ -562,6 +562,18 @@ static void node_draw_preview(bNodePreview *preview, rctf *prv)
 	
 }
 
+/* common handle function for operator buttons that need to select the node first */
+static void node_toggle_button_cb(struct bContext *C, void *node_argv, void *op_argv)
+{
+	bNode *node = (bNode*)node_argv;
+	const char *opname = (const char *)op_argv;
+	
+	/* select & activate only the button's node */
+	node_select_single(C, node);
+	
+	WM_operator_name_call(C, opname, WM_OP_INVOKE_DEFAULT, NULL);
+}
+
 static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bNodeTree *ntree, bNode *node)
 {
 	bNodeSocket *sock;
@@ -601,39 +613,34 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 	uiSetRoundBox(UI_CNR_TOP_LEFT | UI_CNR_TOP_RIGHT);
 	uiRoundBox(rct->xmin, rct->ymax-NODE_DY, rct->xmax, rct->ymax, BASIS_RAD);
 	
-	/* show/hide icons, note this sequence is copied in do_header_node() node_state.c */
+	/* show/hide icons */
 	iconofs= rct->xmax - 7.0f;
 	
+	/* preview */
 	if(node->typeinfo->flag & NODE_PREVIEW) {
-		float alpha = (node->flag & (NODE_ACTIVE_ID|NODE_DO_OUTPUT))? 1.0f: 0.5f;
-		
+		uiBut *but;
 		iconofs-=iconbutw;
-		uiDefIconBut(node->block, LABEL, B_REDR, ICON_MATERIAL, iconofs, rct->ymax-NODE_DY,
-					 iconbutw, UI_UNIT_Y, NULL, 0.0, 0.0, 1.0, alpha, "");
+		uiBlockSetEmboss(node->block, UI_EMBOSSN);
+		but = uiDefIconBut(node->block, TOGBUT, B_REDR, ICON_MATERIAL,
+						   iconofs, rct->ymax-NODE_DY, iconbutw, UI_UNIT_Y, NULL, 0, 0, 0, 0, "");
+		uiButSetFunc(but, node_toggle_button_cb, node, (void*)"NODE_OT_preview_toggle");
+		/* XXX this does not work when node is activated and the operator called right afterwards,
+		 * since active ID is not updated yet (needs to process the notifier).
+		 * This can only work as visual indicator!
+		 */
+//		if (!(node->flag & (NODE_ACTIVE_ID|NODE_DO_OUTPUT)))
+//			uiButSetFlag(but, UI_BUT_DISABLED);
+		uiBlockSetEmboss(node->block, UI_EMBOSS);
 	}
+	/* group edit */
 	if(node->type == NODE_GROUP) {
-		
+		uiBut *but;
 		iconofs-=iconbutw;
-		uiDefIconBut(node->block, LABEL, B_REDR, ICON_NODETREE, iconofs, rct->ymax-NODE_DY,
-					 iconbutw, UI_UNIT_Y, NULL, 0.0, 0.0, 1.0, 0.5, "");
-	}
-	if(node->typeinfo->flag & NODE_OPTIONS) {
-		iconofs-=iconbutw;
-		uiDefIconBut(node->block, LABEL, B_REDR, ICON_BUTS, iconofs, rct->ymax-NODE_DY,
-					 iconbutw, UI_UNIT_Y, NULL, 0.0, 0.0, 1.0, 0.5, "");
-	}
-	{	/* always hide/reveal unused sockets */ 
-		// XXX re-enable
-		/* int shade;
-		if(node_has_hidden_sockets(node))
-			shade= -40;
-		else
-			shade= -90; */
-
-		iconofs-=iconbutw;
-
-		uiDefIconBut(node->block, LABEL, B_REDR, ICON_PLUS, iconofs, rct->ymax-NODE_DY,
-						  iconbutw, UI_UNIT_Y, NULL, 0.0, 0.0, 1.0, 0.5, "");
+		uiBlockSetEmboss(node->block, UI_EMBOSSN);
+		but = uiDefIconBut(node->block, TOGBUT, B_REDR, ICON_NODETREE,
+						   iconofs, rct->ymax-NODE_DY, iconbutw, UI_UNIT_Y, NULL, 0, 0, 0, 0, "");
+		uiButSetFunc(but, node_toggle_button_cb, node, (void*)"NODE_OT_group_edit");
+		uiBlockSetEmboss(node->block, UI_EMBOSS);
 	}
 	
 	/* title */
@@ -643,7 +650,19 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 		UI_ThemeColorBlendShade(TH_TEXT, color_id, 0.4f, 10);
 	
 	/* open/close entirely? */
-	UI_DrawTriIcon(rct->xmin+10.0f, rct->ymax-NODE_DY/2.0f, 'v');
+	{
+		uiBut *but;
+		int but_size = UI_UNIT_X *0.6f;
+		/* XXX button uses a custom triangle draw below, so make it invisible without icon */
+		uiBlockSetEmboss(node->block, UI_EMBOSSN);
+		but = uiDefBut(node->block, TOGBUT, B_REDR, "",
+					   rct->xmin+10.0f-but_size/2, rct->ymax-NODE_DY/2.0f-but_size/2, but_size, but_size, NULL, 0, 0, 0, 0, "");
+		uiButSetFunc(but, node_toggle_button_cb, node, (void*)"NODE_OT_hide_toggle");
+		uiBlockSetEmboss(node->block, UI_EMBOSS);
+		
+		/* custom draw function for this button */
+		UI_DrawTriIcon(rct->xmin+10.0f, rct->ymax-NODE_DY/2.0f, 'v');
+	}
 	
 	/* this isn't doing anything for the label, so commenting out
 	if(node->flag & SELECT) 
@@ -654,7 +673,7 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 	BLI_strncpy(showname, nodeLabel(node), sizeof(showname));
 	
 	//if(node->flag & NODE_MUTED)
-	//	sprintf(showname, "[%s]", showname);
+	//	BLI_snprintf(showname, sizeof(showname), "[%s]", showname); // XXX - dont print into self!
 	
 	uiDefBut(node->block, LABEL, 0, showname, (short)(rct->xmin+15), (short)(rct->ymax-NODE_DY), 
 			 (int)(iconofs - rct->xmin-18.0f), NODE_DY,  NULL, 0, 0, 0, 0, "");
@@ -694,7 +713,7 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 	for(sock= node->inputs.first; sock; sock= sock->next) {
 		bNodeSocketType *stype= ntreeGetSocketType(sock->type);
 		
-		if(sock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL))
+		if(nodeSocketIsHidden(sock))
 			continue;
 		
 		node_socket_circle_draw(ntree, sock, NODE_SOCKSIZE);
@@ -717,7 +736,7 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 		
 		RNA_pointer_create((ID*)ntree, &RNA_NodeSocket, sock, &sockptr);
 		
-		if(sock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL))
+		if(nodeSocketIsHidden(sock))
 			continue;
 		
 		node_socket_circle_draw(ntree, sock, NODE_SOCKSIZE);
@@ -789,7 +808,19 @@ static void node_draw_hidden(const bContext *C, ARegion *ar, SpaceNode *snode, b
 		UI_ThemeColorBlendShade(TH_TEXT, color_id, 0.4f, 10);
 	
 	/* open entirely icon */
-	UI_DrawTriIcon(rct->xmin+10.0f, centy, 'h');	
+	{
+		uiBut *but;
+		int but_size = UI_UNIT_X *0.6f;
+		/* XXX button uses a custom triangle draw below, so make it invisible without icon */
+		uiBlockSetEmboss(node->block, UI_EMBOSSN);
+		but = uiDefBut(node->block, TOGBUT, B_REDR, "",
+					   rct->xmin+10.0f-but_size/2, centy-but_size/2, but_size, but_size, NULL, 0, 0, 0, 0, "");
+		uiButSetFunc(but, node_toggle_button_cb, node, (void*)"NODE_OT_hide_toggle");
+		uiBlockSetEmboss(node->block, UI_EMBOSS);
+		
+		/* custom draw function for this button */
+		UI_DrawTriIcon(rct->xmin+10.0f, centy, 'h');
+	}
 	
 	/* disable lines */
 	if(node->flag & NODE_MUTED)
@@ -804,7 +835,7 @@ static void node_draw_hidden(const bContext *C, ARegion *ar, SpaceNode *snode, b
 		BLI_strncpy(showname, nodeLabel(node), sizeof(showname));
 		
 		//if(node->flag & NODE_MUTED)
-		//	sprintf(showname, "[%s]", showname);
+		//	BLI_snprintf(showname, sizeof(showname), "[%s]", showname); // XXX - dont print into self!
 
 		uiDefBut(node->block, LABEL, 0, showname, (short)(rct->xmin+15), (short)(centy-10), 
 				 (int)(rct->xmax - rct->xmin-18.0f -12.0f), NODE_DY,  NULL, 0, 0, 0, 0, "");
@@ -823,12 +854,12 @@ static void node_draw_hidden(const bContext *C, ARegion *ar, SpaceNode *snode, b
 	
 	/* sockets */
 	for(sock= node->inputs.first; sock; sock= sock->next) {
-		if(!(sock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL)))
+		if(!nodeSocketIsHidden(sock))
 			node_socket_circle_draw(snode->nodetree, sock, socket_size);
 	}
 	
 	for(sock= node->outputs.first; sock; sock= sock->next) {
-		if(!(sock->flag & (SOCK_HIDDEN|SOCK_UNAVAIL)))
+		if(!nodeSocketIsHidden(sock))
 			node_socket_circle_draw(snode->nodetree, sock, socket_size);
 	}
 	

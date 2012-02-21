@@ -16,7 +16,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# <pep8 compliant>
+# <pep8-80 compliant>
 
 
 bl_info = {
@@ -24,14 +24,13 @@ bl_info = {
     "author": "Anthony D,Agostino (Scorpius), Aurel Wildfellner",
     "version": (0, 2),
     "blender": (2, 5, 7),
-    "api": 36103,
     "location": "File > Import-Export > Raw Faces (.raw) ",
     "description": "Import-Export Raw Faces",
     "warning": "",
-    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
-        "Scripts/Import-Export/Raw_Mesh_IO",
-    "tracker_url": "https://projects.blender.org/tracker/index.php?"\
-        "func=detail&aid=25692",
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"
+                "Scripts/Import-Export/Raw_Mesh_IO",
+    "tracker_url": "https://projects.blender.org/tracker/index.php?"
+                   "func=detail&aid=25692",
     "category": "Import-Export"}
 
 if "bpy" in locals():

@@ -186,7 +186,7 @@ void wm_event_do_notifiers(bContext *C)
 	wmWindowManager *wm= CTX_wm_manager(C);
 	wmNotifier *note, *next;
 	wmWindow *win;
-	unsigned int win_combine_v3d_datamask= 0;
+	uint64_t win_combine_v3d_datamask= 0;
 	
 	if(wm==NULL)
 		return;
@@ -225,20 +225,8 @@ void wm_event_do_notifiers(bContext *C)
 
 			if(note->window==win || (note->window == NULL && (note->reference == NULL || note->reference == CTX_data_scene(C)))) {
 				if(note->category==NC_SCENE) {
-					if(note->data==ND_SCENEBROWSE) {
-						ED_screen_set_scene(C, note->reference);	// XXX hrms, think this over!
-						if(G.f & G_DEBUG)
-							printf("scene set %p\n", note->reference);
-					}
-					else if(note->data==ND_FRAME)
+					if(note->data==ND_FRAME)
 						do_anim= 1;
-					
-					if(note->action == NA_REMOVED) {
-						ED_screen_delete_scene(C, note->reference);	// XXX hrms, think this over!
-						if(G.f & G_DEBUG)
-							printf("scene delete %p\n", note->reference);
-					}
-						
 				}
 			}
 			if(ELEM5(note->category, NC_SCENE, NC_OBJECT, NC_GEOM, NC_SCENE, NC_WM)) {
@@ -294,7 +282,7 @@ void wm_event_do_notifiers(bContext *C)
 	
 	/* combine datamasks so 1 win doesn't disable UV's in another [#26448] */
 	for(win= wm->windows.first; win; win= win->next) {
-		win_combine_v3d_datamask |= ED_viewedit_datamask(win->screen);
+		win_combine_v3d_datamask |= ED_view3d_screen_datamask(win->screen);
 	}
 
 	/* cached: editor refresh callbacks now, they get context */
@@ -469,9 +457,10 @@ void WM_event_print(wmEvent *event)
 
 #endif /* NDEBUG */
 
-static void wm_operator_reports(bContext *C, wmOperator *op, int retval, int popup)
+/* (caller_owns_reports == TRUE) when called from python */
+static void wm_operator_reports(bContext *C, wmOperator *op, int retval, int caller_owns_reports)
 {
-	if(popup) {
+	if (caller_owns_reports == FALSE) { /* popup */
 		if(op->reports->list.first) {
 			/* FIXME, temp setting window, see other call to uiPupMenuReports for why */
 			wmWindow *win_prev= CTX_wm_window(C);
@@ -490,10 +479,15 @@ static void wm_operator_reports(bContext *C, wmOperator *op, int retval, int pop
 	}
 	
 	if(retval & OPERATOR_FINISHED) {
-		if(G.f & G_DEBUG)
-			wm_operator_print(C, op); /* todo - this print may double up, might want to check more flags then the FINISHED */
-		
-		BKE_reports_print(op->reports, RPT_DEBUG); /* print out reports to console. */
+		if(G.f & G_DEBUG) {
+			/* todo - this print may double up, might want to check more flags then the FINISHED */
+			wm_operator_print(C, op);
+		}
+
+		if (caller_owns_reports == FALSE) {
+			BKE_reports_print(op->reports, RPT_DEBUG); /* print out reports to console. */
+		}
+
 		if (op->type->flag & OPTYPE_REGISTER) {
 			if(G.background == 0) { /* ends up printing these in the terminal, gets annoying */
 				/* Report the python string representation of the operator */
@@ -504,7 +498,7 @@ static void wm_operator_reports(bContext *C, wmOperator *op, int retval, int pop
 		}
 	}
 
-	/* if the caller owns them them handle this */
+	/* if the caller owns them, handle this */
 	if (op->reports->list.first && (op->reports->flag & RPT_OP_HOLD) == 0) {
 
 		wmWindowManager *wm = CTX_wm_manager(C);
@@ -586,7 +580,7 @@ static int wm_operator_exec(bContext *C, wmOperator *op, int repeat)
 	}
 	
 	if (retval & (OPERATOR_FINISHED|OPERATOR_CANCELLED) && repeat == 0)
-		wm_operator_reports(C, op, retval, 0);
+		wm_operator_reports(C, op, retval, FALSE);
 	
 	if(retval & OPERATOR_FINISHED)
 		wm_operator_finished(C, op, repeat);
@@ -741,6 +735,47 @@ static void wm_region_mouse_co(bContext *C, wmEvent *event)
 	}
 }
 
+static int wm_operator_init_from_last(wmWindowManager *wm, wmOperator *op)
+{
+	int change= FALSE;
+	wmOperator *lastop;
+
+	for(lastop= wm->operators.last; lastop; lastop= lastop->prev) {
+		/* equality check is a bit paranoid but just incase */
+		if((op != lastop) && (op->type == (lastop->type))) {
+			break;
+		}
+	}
+
+	if (lastop && op != lastop) {
+		PropertyRNA *iterprop;
+		iterprop= RNA_struct_iterator_property(op->type->srna);
+
+		RNA_PROP_BEGIN(op->ptr, itemptr, iterprop) {
+			PropertyRNA *prop= itemptr.data;
+			if((RNA_property_flag(prop) & PROP_SKIP_SAVE) == 0) {
+				if (!RNA_property_is_set(op->ptr, prop)) { /* don't override a setting already set */
+					const char *identifier= RNA_property_identifier(prop);
+					IDProperty *idp_src= IDP_GetPropertyFromGroup(lastop->properties, identifier);
+					if(idp_src) {
+						IDProperty *idp_dst = IDP_CopyProperty(idp_src);
+
+						/* note - in the future this may need to be done recursively,
+						 * but for now RNA doesn't access nested operators */
+						idp_dst->flag |= IDP_FLAG_GHOST;
+
+						IDP_ReplaceInGroup(op->properties, idp_dst);
+						change= TRUE;
+					}
+				}
+			}
+		}
+		RNA_PROP_END;
+	}
+
+	return change;
+}
+
 static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event, PointerRNA *properties, ReportList *reports, short poll_only)
 {
 	wmWindowManager *wm= CTX_wm_manager(C);
@@ -753,6 +788,11 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event, P
 	if(WM_operator_poll(C, ot)) {
 		wmOperator *op= wm_operator_create(wm, ot, properties, reports); /* if reports==NULL, theyll be initialized */
 		
+		/* initialize setting from previous run */
+		if(wm->op_undo_depth == 0 && (ot->flag & OPTYPE_REGISTER)) { /* not called by py script */
+			wm_operator_init_from_last(wm, op);
+		}
+
 		if((G.f & G_DEBUG) && event && event->type!=MOUSEMOVE)
 			printf("handle evt %d win %d op %s\n", event?event->type:0, CTX_wm_screen(C)->subwinactive, ot->idname); 
 		
@@ -783,10 +823,11 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event, P
 		
 		/* Note, if the report is given as an argument then assume the caller will deal with displaying them
 		 * currently python only uses this */
-		if (!(retval & OPERATOR_HANDLED) && retval & (OPERATOR_FINISHED|OPERATOR_CANCELLED))
+		if (!(retval & OPERATOR_HANDLED) && (retval & (OPERATOR_FINISHED|OPERATOR_CANCELLED))) {
 			/* only show the report if the report list was not given in the function */
-			wm_operator_reports(C, op, retval, (reports==NULL));
-		
+			wm_operator_reports(C, op, retval, (reports != NULL));
+		}
+
 		if(retval & OPERATOR_HANDLED)
 			; /* do nothing, wm_operator_exec() has been called somewhere */
 		else if(retval & OPERATOR_FINISHED) {
@@ -795,7 +836,7 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event, P
 		else if(retval & OPERATOR_RUNNING_MODAL) {
 			/* grab cursor during blocking modal ops (X11)
 			 * Also check for macro
-			 * */
+			 */
 			if(ot->flag & OPTYPE_BLOCKING || (op->opm && op->opm->type->flag & OPTYPE_BLOCKING)) {
 				int bounds[4] = {-1,-1,-1,-1};
 				int wrap;
@@ -1301,7 +1342,7 @@ static int wm_handler_operator_call(bContext *C, ListBase *handlers, wmEventHand
 				}
 
 				if(retval & (OPERATOR_CANCELLED|OPERATOR_FINISHED))
-					wm_operator_reports(C, op, retval, 0);
+					wm_operator_reports(C, op, retval, FALSE);
 
 				if(retval & OPERATOR_FINISHED) {
 					wm_operator_finished(C, op, 0);
@@ -2650,9 +2691,11 @@ void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, int U
 				}
 				event.utf8_buf[0]= '\0';
 			}
-			else if (event.ascii<32 && event.ascii > 0) {
-				event.ascii= '\0';
-				/* TODO. should this also zero utf8?, dont for now, campbell */
+			else {
+				if (event.ascii<32 && event.ascii > 0)
+					event.ascii= '\0';
+				if (event.utf8_buf[0]<32 && event.utf8_buf[0] > 0)
+					event.utf8_buf[0]= '\0';
 			}
 
 			if (event.utf8_buf[0]) {

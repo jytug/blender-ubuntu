@@ -2555,12 +2555,12 @@ void SEQUENCER_OT_rendersize(wmOperatorType *ot)
 	/* properties */
 }
 
-static void seq_del_sound(Scene *scene, Sequence *seq)
+static void seq_copy_del_sound(Scene *scene, Sequence *seq)
 {
 	if(seq->type == SEQ_META) {
 		Sequence *iseq;
 		for(iseq= seq->seqbase.first; iseq; iseq= iseq->next) {
-			seq_del_sound(scene, iseq);
+			seq_copy_del_sound(scene, iseq);
 		}
 	}
 	else if(seq->scene_sound) {
@@ -2611,7 +2611,7 @@ static int sequencer_copy_exec(bContext *C, wmOperator *op)
 
 	/* Need to remove anything that references the current scene */
 	for(seq= seqbase_clipboard.first; seq; seq= seq->next) {
-		seq_del_sound(scene, seq);
+		seq_copy_del_sound(scene, seq);
 	}
 
 	return OPERATOR_FINISHED;
@@ -2632,6 +2632,19 @@ void SEQUENCER_OT_copy(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER;
 
 	/* properties */
+}
+
+static void seq_paste_add_sound(Scene *scene, Sequence *seq)
+{
+	if(seq->type == SEQ_META) {
+		Sequence *iseq;
+		for(iseq= seq->seqbase.first; iseq; iseq= iseq->next) {
+			seq_paste_add_sound(scene, iseq);
+		}
+	}
+	else if(seq->type == SEQ_SOUND) {
+		seq->scene_sound = sound_add_scene_sound_defaults(scene, seq);
+	}
 }
 
 static int sequencer_paste_exec(bContext *C, wmOperator *UNUSED(op))
@@ -2660,8 +2673,12 @@ static int sequencer_paste_exec(bContext *C, wmOperator *UNUSED(op))
 	BLI_movelisttolist(ed->seqbasep, &nseqbase);
 
 	/* make sure the pasted strips have unique names between them */
-	for(; iseq; iseq=iseq->next)
+	for(; iseq; iseq=iseq->next) {
 		seq_recursive_apply(iseq, apply_unique_name_cb, scene);
+
+		/* restore valid sound_scene for newly added strips */
+		seq_paste_add_sound(scene, iseq);
+	}
 
 	WM_event_add_notifier(C, NC_SCENE|ND_SEQUENCER, scene);
 
@@ -2711,8 +2728,8 @@ static int sequencer_swap_data_exec(bContext *C, wmOperator *op)
 	calc_sequence(scene, seq_act);
 	calc_sequence(scene, seq_other);
 
-	if(seq_act->sound)		sound_add_scene_sound(scene, seq_act, seq_act->startdisp, seq_act->enddisp, seq_act->startofs + seq_act->anim_startofs);
-	if(seq_other->sound)	sound_add_scene_sound(scene, seq_other, seq_other->startdisp, seq_other->enddisp, seq_other->startofs + seq_other->anim_startofs);
+	if(seq_act->sound)		sound_add_scene_sound_defaults(scene, seq_act);
+	if(seq_other->sound)	sound_add_scene_sound_defaults(scene, seq_other);
 
 	WM_event_add_notifier(C, NC_SCENE|ND_SEQUENCER, scene);
 
@@ -3034,10 +3051,10 @@ static int sequencer_change_path_invoke(bContext *C, wmOperator *op, wmEvent *UN
 
 	/* set default display depending on seq type */
 	if(seq->type == SEQ_IMAGE) {
-		RNA_boolean_set(op->ptr, "filter_movie", 0);
+		RNA_boolean_set(op->ptr, "filter_movie", FALSE);
 	}
 	else {
-		RNA_boolean_set(op->ptr, "filter_image", 0);
+		RNA_boolean_set(op->ptr, "filter_image", FALSE);
 	}
 
 	WM_event_add_fileselect(C, op);
@@ -3060,5 +3077,5 @@ void SEQUENCER_OT_change_path(struct wmOperatorType *ot)
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
-	WM_operator_properties_filesel(ot, FOLDERFILE|IMAGEFILE|MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_DIRECTORY|WM_FILESEL_RELPATH|WM_FILESEL_FILEPATH|WM_FILESEL_FILES);
+	WM_operator_properties_filesel(ot, FOLDERFILE|IMAGEFILE|MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_DIRECTORY|WM_FILESEL_RELPATH|WM_FILESEL_FILEPATH|WM_FILESEL_FILES, FILE_DEFAULTDISPLAY);
 }

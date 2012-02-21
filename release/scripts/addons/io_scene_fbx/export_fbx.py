@@ -128,7 +128,12 @@ def sane_groupname(data):
 
 
 def mat4x4str(mat):
-    return '%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f,%.15f' % tuple([f for v in mat for f in v])
+    # blender matrix is row major, fbx is col major so transpose on write
+    return ("%.15f,%.15f,%.15f,%.15f,"
+            "%.15f,%.15f,%.15f,%.15f,"
+            "%.15f,%.15f,%.15f,%.15f,"
+            "%.15f,%.15f,%.15f,%.15f" %
+            tuple([f for v in mat.transposed() for f in v]))
 
 
 def action_bone_names(obj, action):
@@ -1000,7 +1005,7 @@ def save_single(operator, scene, filepath="",
             do_shadow = False
         else:
             do_light = not (light.use_only_shadow or (not light.use_diffuse and not light.use_specular))
-            do_shadow = (light.shadow_method in ('RAY_SHADOW', 'BUFFER_SHADOW'))
+            do_shadow = (light.shadow_method in {'RAY_SHADOW', 'BUFFER_SHADOW'})
 
         # scale = abs(global_matrix.to_scale()[0])  # scale is always uniform in this case  #  UNUSED
 

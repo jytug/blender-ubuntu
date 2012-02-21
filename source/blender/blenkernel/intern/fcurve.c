@@ -1283,7 +1283,7 @@ static float dvar_eval_transChan (ChannelDriver *driver, DriverVar *dvar)
 		}
 		else {
 			/* worldspace matrix */
-			mul_m4_m4m4(mat, pchan->pose_mat, ob->obmat);
+			mult_m4_m4m4(mat, ob->obmat, pchan->pose_mat);
 		}
 	}
 	else {
@@ -1414,10 +1414,7 @@ void driver_free_variable (ChannelDriver *driver, DriverVar *dvar)
 	DRIVER_TARGETS_LOOPER_END
 	
 	/* remove the variable from the driver */
-	if (driver)
-		BLI_freelinkN(&driver->variables, dvar);
-	else
-		MEM_freeN(dvar);
+	BLI_freelinkN(&driver->variables, dvar);
 
 #ifdef WITH_PYTHON
 	/* since driver variables are cached, the expression needs re-compiling too */
@@ -1990,7 +1987,7 @@ static float fcurve_eval_keyframes (FCurve *fcu, BezTriple *bezts, float evaltim
 		for (a=0; prevbezt && bezt && (a < fcu->totvert-1); a++, prevbezt=bezt, bezt++) 
 		{
 			/* use if the key is directly on the frame, rare cases this is needed else we get 0.0 instead. */
-			if(fabs(bezt->vec[1][0] - evaltime) < SMALL_NUMBER) {
+			if(fabsf(bezt->vec[1][0] - evaltime) < SMALL_NUMBER) {
 				cvalue= bezt->vec[1][1];
 			}
 			/* evaltime occurs within the interval defined by these two keyframes */

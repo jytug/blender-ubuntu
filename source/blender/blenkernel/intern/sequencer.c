@@ -523,31 +523,12 @@ void build_seqar_cb(ListBase *seqbase, Sequence  ***seqar, int *totseq,
 }
 
 
-void calc_sequence_disp(Scene *scene, Sequence *seq)
-{
-	if(seq->startofs && seq->startstill) seq->startstill= 0;
-	if(seq->endofs && seq->endstill) seq->endstill= 0;
-	
-	seq->startdisp= seq->start + seq->startofs - seq->startstill;
-	seq->enddisp= seq->start+seq->len - seq->endofs + seq->endstill;
-	
-	seq->handsize= 10.0;	/* 10 frames */
-	if( seq->enddisp-seq->startdisp < 10 ) {
-		seq->handsize= (float)(0.5*(seq->enddisp-seq->startdisp));
-	}
-	else if(seq->enddisp-seq->startdisp > 250) {
-		seq->handsize= (float)((seq->enddisp-seq->startdisp)/25);
-	}
-
-	seq_update_sound_bounds(scene, seq);
-}
-
 static void seq_update_sound_bounds_recursive(Scene *scene, Sequence *metaseq)
 {
 	Sequence *seq;
 
 	/* for sound we go over full meta tree to update bounds of the sound strips,
-	   since sound is played outside of evaluating the imbufs, */
+	 * since sound is played outside of evaluating the imbufs, */
 	for(seq=metaseq->seqbase.first; seq; seq=seq->next) {
 		if(seq->type == SEQ_META) {
 			seq_update_sound_bounds_recursive(scene, seq);
@@ -565,6 +546,29 @@ static void seq_update_sound_bounds_recursive(Scene *scene, Sequence *metaseq)
 			}
 		}
 	}
+}
+
+void calc_sequence_disp(Scene *scene, Sequence *seq)
+{
+	if(seq->startofs && seq->startstill) seq->startstill= 0;
+	if(seq->endofs && seq->endstill) seq->endstill= 0;
+	
+	seq->startdisp= seq->start + seq->startofs - seq->startstill;
+	seq->enddisp= seq->start+seq->len - seq->endofs + seq->endstill;
+	
+	seq->handsize= 10.0;	/* 10 frames */
+	if( seq->enddisp-seq->startdisp < 10 ) {
+		seq->handsize= (float)(0.5*(seq->enddisp-seq->startdisp));
+	}
+	else if(seq->enddisp-seq->startdisp > 250) {
+		seq->handsize= (float)((seq->enddisp-seq->startdisp)/25);
+	}
+
+	if(ELEM(seq->type, SEQ_SOUND, SEQ_SCENE)) {
+		seq_update_sound_bounds(scene, seq);
+	}
+	else if(seq->type == SEQ_META)
+		seq_update_sound_bounds_recursive(scene, seq);
 }
 
 void calc_sequence(Scene *scene, Sequence *seq)
@@ -745,7 +749,7 @@ void reload_sequence_new_file(Scene *scene, Sequence * seq, int lock_range)
 			seq->scene = sce;
 		}
 
-		seq->len= seq->scene->r.efra - seq->scene->r.sfra + 1;
+		seq->len= (seq->scene)? seq->scene->r.efra - seq->scene->r.sfra + 1: 0;
 		seq->len -= seq->anim_startofs;
 		seq->len -= seq->anim_endofs;
 		if (seq->len < 0) {
@@ -833,8 +837,8 @@ void clear_scene_in_allseqs(Main *bmain, Scene *scene)
 
 typedef struct SeqUniqueInfo {
 	Sequence *seq;
-	char name_src[32];
-	char name_dest[32];
+	char name_src[SEQ_NAME_MAXSTR];
+	char name_dest[SEQ_NAME_MAXSTR];
 	int count;
 	int match;
 } SeqUniqueInfo;
@@ -850,7 +854,8 @@ static void seqbase_unique_name(ListBase *seqbasep, SeqUniqueInfo *sui)
 	Sequence *seq;
 	for(seq=seqbasep->first; seq; seq= seq->next) {
 		if (sui->seq != seq && strcmp(sui->name_dest, seq->name+2)==0) {
-			sprintf(sui->name_dest, "%.17s.%03d",  sui->name_src, sui->count++); /*24 - 2 for prefix, -1 for \0 */
+			/* SEQ_NAME_MAXSTR - 2 for prefix, -1 for \0, -4 for the number */
+			BLI_snprintf(sui->name_dest, sizeof(sui->name_dest), "%.59s.%03d",  sui->name_src, sui->count++);
 			sui->match= 1; /* be sure to re-scan */
 		}
 	}
@@ -1689,10 +1694,10 @@ static ImBuf * input_preprocess(
 		if(rct) {
 			float rgb[3];
 			for (i = ibuf->x * ibuf->y; i > 0; i--, rct+=4) {
-				rgb_byte_to_float(rct, rgb);
+				rgb_uchar_to_float(rgb, rct);
 				rgb_to_hsv(rgb[0], rgb[1], rgb[2], hsv, hsv+1, hsv+2);
 				hsv_to_rgb(hsv[0], hsv[1] * sat, hsv[2], rgb, rgb+1, rgb+2);
-				rgb_float_to_byte(rgb, rct);
+				rgb_float_to_uchar(rct, rgb);
 			}
 		}
 
@@ -2025,7 +2030,10 @@ static ImBuf * seq_render_scene_strip_impl(
 			}
 
 			/* float buffers in the sequencer are not linear */
-			ibuf->profile= IB_PROFILE_LINEAR_RGB;
+			if(scene->r.color_mgt_flag & R_COLOR_MANAGEMENT)
+				ibuf->profile= IB_PROFILE_LINEAR_RGB;
+			else
+				ibuf->profile= IB_PROFILE_NONE;
 			IMB_convert_profile(ibuf, IB_PROFILE_SRGB);			
 		}
 		else if (rres.rect32) {
@@ -2572,8 +2580,8 @@ static void seq_stop_threads()
 
 	seq_thread_shutdown = TRUE;
 
-		pthread_cond_broadcast(&wakeup_cond);
-		pthread_mutex_unlock(&wakeup_lock);
+	pthread_cond_broadcast(&wakeup_cond);
+	pthread_mutex_unlock(&wakeup_lock);
 
 	for(tslot = running_threads.first; tslot; tslot= tslot->next) {
 		pthread_join(tslot->pthread, NULL);
@@ -3067,10 +3075,10 @@ void seq_sound_init(Scene *scene, Sequence *seq)
 	}
 	else {
 		if(seq->sound) {
-			seq->scene_sound = sound_add_scene_sound(scene, seq, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
+			seq->scene_sound = sound_add_scene_sound_defaults(scene, seq);
 		}
 		if(seq->scene) {
-			sound_scene_add_scene_sound(scene, seq, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
+			sound_scene_add_scene_sound_defaults(scene, seq);
 		}
 	}
 }
@@ -3224,10 +3232,8 @@ void seq_update_sound_bounds_all(Scene *scene)
 
 void seq_update_sound_bounds(Scene* scene, Sequence *seq)
 {
-	if(seq->scene_sound) {
-		sound_move_scene_sound(scene, seq->scene_sound, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
-		/* mute is set in seq_update_muting_recursive */
-	}
+	sound_move_scene_sound_defaults(scene, seq);
+	/* mute is set in seq_update_muting_recursive */
 }
 
 static void seq_update_muting_recursive(ListBase *seqbasep, Sequence *metaseq, int mute)
@@ -3387,13 +3393,13 @@ int seq_swap(Sequence *seq_a, Sequence *seq_b, const char **error_str)
 /* XXX - hackish function needed for transforming strips! TODO - have some better solution */
 void seq_offset_animdata(Scene *scene, Sequence *seq, int ofs)
 {
-	char str[32];
+	char str[SEQ_NAME_MAXSTR+3];
 	FCurve *fcu;
 
 	if(scene->adt==NULL || ofs==0 || scene->adt->action==NULL)
 		return;
 
-	sprintf(str, "[\"%s\"]", seq->name+2);
+	BLI_snprintf(str, sizeof(str), "[\"%s\"]", seq->name+2);
 
 	for (fcu= scene->adt->action->curves.first; fcu; fcu= fcu->next) {
 		if(strstr(fcu->rna_path, "sequence_editor.sequences_all[") && strstr(fcu->rna_path, str)) {
@@ -3410,7 +3416,7 @@ void seq_offset_animdata(Scene *scene, Sequence *seq, int ofs)
 
 void seq_dupe_animdata(Scene *scene, const char *name_src, const char *name_dst)
 {
-	char str_from[32];
+	char str_from[SEQ_NAME_MAXSTR+3];
 	FCurve *fcu;
 	FCurve *fcu_last;
 	FCurve *fcu_cpy;
@@ -3419,7 +3425,7 @@ void seq_dupe_animdata(Scene *scene, const char *name_src, const char *name_dst)
 	if(scene->adt==NULL || scene->adt->action==NULL)
 		return;
 
-	sprintf(str_from, "[\"%s\"]", name_src);
+	BLI_snprintf(str_from, sizeof(str_from), "[\"%s\"]", name_src);
 
 	fcu_last= scene->adt->action->curves.last;
 
@@ -3440,13 +3446,13 @@ void seq_dupe_animdata(Scene *scene, const char *name_src, const char *name_dst)
 /* XXX - hackish function needed to remove all fcurves belonging to a sequencer strip */
 static void seq_free_animdata(Scene *scene, Sequence *seq)
 {
-	char str[32];
+	char str[SEQ_NAME_MAXSTR+3];
 	FCurve *fcu;
 
 	if(scene->adt==NULL || scene->adt->action==NULL)
 		return;
 
-	sprintf(str, "[\"%s\"]", seq->name+2);
+	BLI_snprintf(str, sizeof(str), "[\"%s\"]", seq->name+2);
 
 	fcu= scene->adt->action->curves.first; 
 
@@ -3769,7 +3775,7 @@ static Sequence *seq_dupli(struct Scene *scene, struct Scene *scene_to, Sequence
 	} else if(seq->type == SEQ_SCENE) {
 		seqn->strip->stripdata = NULL;
 		if(seq->scene_sound)
-			seqn->scene_sound = sound_scene_add_scene_sound(sce_audio, seqn, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
+			seqn->scene_sound = sound_scene_add_scene_sound_defaults(sce_audio, seqn);
 	} else if(seq->type == SEQ_MOVIE) {
 		seqn->strip->stripdata =
 				MEM_dupallocN(seq->strip->stripdata);
@@ -3778,7 +3784,7 @@ static Sequence *seq_dupli(struct Scene *scene, struct Scene *scene_to, Sequence
 		seqn->strip->stripdata =
 				MEM_dupallocN(seq->strip->stripdata);
 		if(seq->scene_sound)
-			seqn->scene_sound = sound_add_scene_sound(sce_audio, seqn, seq->startdisp, seq->enddisp, seq->startofs + seq->anim_startofs);
+			seqn->scene_sound = sound_add_scene_sound_defaults(sce_audio, seqn);
 
 		seqn->sound->id.us++;
 	} else if(seq->type == SEQ_IMAGE) {

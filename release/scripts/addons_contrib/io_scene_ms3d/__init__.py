@@ -16,11 +16,27 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+# <pep8 compliant>
+
+bl_info = {
+        "name": "MilkShape3D MS3D format (.ms3d)",
+        "description": "Import / Export MilkShape3D MS3D files"
+                " (conform with v1.8.4)",
+        "author": "Alexander Nussbaumer",
+        "version": (0, 3, 8),
+        "blender": (2, 60, 0),
+        "location": "File > Import-Export",
+        "warning": "[2012-01-17] side-by-side implementation for Matrix handling around rev.42816",
+        "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"\
+                "Scripts/Import-Export/MilkShape3D_MS3D",
+        "tracker_url": "http://projects.blender.org/tracker/index.php"\
+                "?func=detail&aid=29404",
+        "category": 'Import-Export',
+        }
 
 ###############################################################################
 #234567890123456789012345678901234567890123456789012345678901234567890123456789
 #--------1---------2---------3---------4---------5---------6---------7---------
-# <pep8 compliant>
 
 
 # ##### BEGIN COPYRIGHT BLOCK #####
@@ -34,6 +50,8 @@
 # if it's there, reload everything
 if ("bpy" in locals()):
     import imp
+    if "ms3d_utils" in locals():
+        imp.reload(ms3d_utils)
     if "ms3d_export" in locals():
         imp.reload(ms3d_export)
     if "ms3d_import" in locals():
@@ -41,6 +59,7 @@ if ("bpy" in locals()):
     pass
 
 else:
+    from . import ms3d_utils
     from . import ms3d_export
     from . import ms3d_import
     pass
@@ -49,25 +68,6 @@ else:
 #import blender stuff
 import bpy
 import bpy_extras
-
-
-bl_info = {
-        "name": "MilkShape3D MS3D format (.ms3d)",
-        "description":  "Import / Export MilkShape3D MS3D files"
-                " (conform with v1.8.4)",
-        "author": "Alexander Nussbaumer",
-        "version": (0, 3, 6),
-        "blender": (2, 60, 0),
-        "api": 41226,
-        "location": "File > Import-Export",
-        "warning": "imports and exports only geometry and material of ms3d"\
-                " file. (poor performance)",
-        "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"\
-                "Scripts/Import-Export/MilkShape3D_MS3D",
-        "tracker_url": "http://projects.blender.org/tracker/index.php"\
-                "?func=detail&aid=29404",
-        "category": 'Import-Export',
-        }
 
 
 ###############################################################################

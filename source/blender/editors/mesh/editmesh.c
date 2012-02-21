@@ -564,8 +564,6 @@ void free_editMesh(EditMesh *em)
 
 	em->totvert= em->totedge= em->totface= 0;
 
-// XXX	if(em->retopo_paint_data) retopo_free_paint_data(em->retopo_paint_data);
-	em->retopo_paint_data= NULL;
 	em->act_face = NULL;
 }
 
@@ -922,7 +920,10 @@ void make_editMesh(Scene *scene, Object *ob)
 		
 		for(a=0; a<me->totselect; a++, mselect++){
 			/*check if recorded selection is still valid, if so copy into editmesh*/
-			if( (mselect->type == EDITVERT && me->mvert[mselect->index].flag & SELECT) || (mselect->type == EDITEDGE && me->medge[mselect->index].flag & SELECT) || (mselect->type == EDITFACE && me->mface[mselect->index].flag & ME_FACE_SEL) ){
+			if ( (mselect->type == EDITVERT && me->mvert[mselect->index].flag & SELECT) ||
+			     (mselect->type == EDITEDGE && me->medge[mselect->index].flag & SELECT) ||
+			     (mselect->type == EDITFACE && me->mface[mselect->index].flag & ME_FACE_SEL) )
+			{
 				ese = MEM_callocN(sizeof(EditSelection), "Edit Selection");
 				ese->type = mselect->type;	
 				if(ese->type == EDITVERT) ese->data = EM_get_vert_for_index(mselect->index); else
@@ -1626,7 +1627,6 @@ typedef struct UndoMesh {
 	EditSelectionC *selected;
 	int totvert, totedge, totface, totsel;
 	int selectmode, shapenr;
-	char retopo_mode;
 	CustomData vdata, edata, fdata;
 } UndoMesh;
 
@@ -1640,7 +1640,6 @@ static void free_undoMesh(void *umv)
 	if(um->edges) MEM_freeN(um->edges);
 	if(um->faces) MEM_freeN(um->faces);
 	if(um->selected) MEM_freeN(um->selected);
-// XXX	if(um->retopo_paint_data) retopo_free_paint_data(um->retopo_paint_data);
 	CustomData_free(&um->vdata, um->totvert);
 	CustomData_free(&um->edata, um->totedge);
 	CustomData_free(&um->fdata, um->totface);
@@ -1741,9 +1740,6 @@ static void *editMesh_to_undoMesh(void *emv)
 		else if(ese->type == EDITFACE) a = esec->index = ((EditFace*)ese->data)->tmp.l;
 	}
 
-// XXX	um->retopo_paint_data= retopo_paint_data_copy(em->retopo_paint_data);
-//	um->retopo_mode= scene->toolsettings->retopo_mode;
-	
 	return um;
 }
 
@@ -1849,16 +1845,6 @@ static void undoMesh_to_editMesh(void *umv, void *emv)
 	EM_nvertices_selected(em);
 	EM_nedges_selected(em);
 	EM_nfaces_selected(em);
-
-// XXX	retopo_free_paint();
-//	em->retopo_paint_data= retopo_paint_data_copy(um->retopo_paint_data);
-//	scene->toolsettings->retopo_mode= um->retopo_mode;
-//	if(scene->toolsettings->retopo_mode) {
-// XXX		if(G.vd->depths) G.vd->depths->damaged= 1;
-//		retopo_queue_updates(G.vd);
-//		retopo_paint_view_update(G.vd);
-//	}
-	
 }
 
 static void *getEditMesh(bContext *C)

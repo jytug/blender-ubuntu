@@ -89,6 +89,9 @@ Any case: direct data is ALWAYS after the lib block
 #include "BLI_winstuff.h"
 #endif
 
+/* allow writefile to use deprecated functionality (for forward compatibility code) */
+#define DNA_DEPRECATED_ALLOW
+
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_actuator_types.h"
@@ -174,6 +177,10 @@ typedef struct {
 	MemFile *compare, *current;
 	
 	int tot, count, error, memsize;
+
+#ifdef USE_BMESH_SAVE_AS_COMPAT
+	char use_mesh_compat; /* option to save with older mesh format */
+#endif
 } WriteData;
 
 static WriteData *writedata_new(int file)
@@ -649,7 +656,7 @@ static void write_node_socket(WriteData *wd, bNodeSocket *sock)
 
 	/* forward compatibility code, so older blenders still open */
 	sock->stack_type = 1;
-
+	
 	if(sock->default_value) {
 		bNodeSocketValueFloat *valfloat;
 		bNodeSocketValueVector *valvector;
@@ -1959,6 +1966,9 @@ static void write_scenes(WriteData *wd, ListBase *scebase)
 		if(tos->sculpt) {
 			writestruct(wd, DATA, "Sculpt", 1, tos->sculpt);
 		}
+		if(tos->uvsculpt) {
+			writestruct(wd, DATA, "UvSculpt", 1, tos->uvsculpt);
+		}
 
 		// write_paint(wd, &tos->imapaint.paint);
 
@@ -2522,6 +2532,27 @@ static void write_scripts(WriteData *wd, ListBase *idbase)
 	}
 }
 
+static void write_movieTracks(WriteData *wd, ListBase *tracks)
+{
+	MovieTrackingTrack *track;
+
+	track= tracks->first;
+	while(track) {
+		writestruct(wd, DATA, "MovieTrackingTrack", 1, track);
+
+		if(track->markers)
+			writestruct(wd, DATA, "MovieTrackingMarker", track->markersnr, track->markers);
+
+		track= track->next;
+	}
+}
+
+static void write_movieReconstruction(WriteData *wd, MovieTrackingReconstruction *reconstruction)
+{
+	if(reconstruction->camnr)
+		writestruct(wd, DATA, "MovieReconstructedCamera", reconstruction->camnr, reconstruction->cameras);
+}
+
 static void write_movieclips(WriteData *wd, ListBase *idbase)
 {
 	MovieClip *clip;
@@ -2530,20 +2561,20 @@ static void write_movieclips(WriteData *wd, ListBase *idbase)
 	while(clip) {
 		if(clip->id.us>0 || wd->current) {
 			MovieTracking *tracking= &clip->tracking;
-			MovieTrackingTrack *track;
+			MovieTrackingObject *object;
 			writestruct(wd, ID_MC, "MovieClip", 1, clip);
 
-			if(tracking->reconstruction.camnr)
-				writestruct(wd, DATA, "MovieReconstructedCamera", tracking->reconstruction.camnr, tracking->reconstruction.cameras);
+			write_movieTracks(wd, &tracking->tracks);
+			write_movieReconstruction(wd, &tracking->reconstruction);
 
-			track= tracking->tracks.first;
-			while(track) {
-				writestruct(wd, DATA, "MovieTrackingTrack", 1, track);
+			object= tracking->objects.first;
+			while(object) {
+				writestruct(wd, DATA, "MovieTrackingObject", 1, object);
 
-				if(track->markers)
-					writestruct(wd, DATA, "MovieTrackingMarker", track->markersnr, track->markers);
+				write_movieTracks(wd, &object->tracks);
+				write_movieReconstruction(wd, &object->reconstruction);
 
-				track= track->next;
+				object= object->next;
 			}
 		}
 
@@ -2574,7 +2605,10 @@ static void write_global(WriteData *wd, int fileflags, Main *mainvar)
 	fg.curscene= screen->scene;
 	fg.displaymode= G.displaymode;
 	fg.winpos= G.winpos;
-	fg.fileflags= (fileflags & ~(G_FILE_NO_UI|G_FILE_RELATIVE_REMAP));	// prevent to save this, is not good convention, and feature with concerns...
+
+	/* prevent to save this, is not good convention, and feature with concerns... */
+	fg.fileflags= (fileflags & ~(G_FILE_NO_UI|G_FILE_RELATIVE_REMAP|G_FILE_MESH_COMPAT));
+
 	fg.globalf= G.f;
 	BLI_strncpy(fg.filename, mainvar->name, sizeof(fg.filename));
 
@@ -2617,7 +2651,11 @@ static int write_file_handle(Main *mainvar, int handle, MemFile *compare, MemFil
 	blo_split_main(&mainlist, mainvar);
 
 	wd= bgnwrite(handle, compare, current);
-	
+
+#ifdef USE_BMESH_SAVE_AS_COMPAT
+	wd->use_mesh_compat = (write_flags & G_FILE_MESH_COMPAT) != 0;
+#endif
+
 	sprintf(buf, "BLENDER%c%c%.3d", (sizeof(void*)==8)?'-':'_', (ENDIAN_ORDER==B_ENDIAN)?'V':'v', BLENDER_VERSION);
 	mywrite(wd, buf, 12);
 

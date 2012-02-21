@@ -162,7 +162,7 @@ static int sound_open_exec(bContext *UNUSED(C), wmOperator *op)
 
 static int sound_open_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
-	if(RNA_property_is_set(op->ptr, "filepath"))
+	if(RNA_struct_property_is_set(op->ptr, "filepath"))
 		return sound_open_exec(C, op);
 
 	sound_open_init(C, op);
@@ -186,7 +186,7 @@ static void SOUND_OT_open(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	WM_operator_properties_filesel(ot, FOLDERFILE|SOUNDFILE|MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|SOUNDFILE|MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH, FILE_DEFAULTDISPLAY);
 	RNA_def_boolean(ot->srna, "cache", FALSE, "Cache", "Cache the sound in memory");
 	RNA_def_boolean(ot->srna, "mono", FALSE, "Mono", "Mixdown the sound to mono");
 }
@@ -207,10 +207,108 @@ static void SOUND_OT_open_mono(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	WM_operator_properties_filesel(ot, FOLDERFILE|SOUNDFILE|MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|SOUNDFILE|MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH, FILE_DEFAULTDISPLAY);
 	RNA_def_boolean(ot->srna, "cache", FALSE, "Cache", "Cache the sound in memory");
 	RNA_def_boolean(ot->srna, "mono", TRUE, "Mono", "Mixdown the sound to mono");
 }
+
+/* ******************************************************* */
+
+static int sound_update_animation_flags_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Sequence* seq;
+	Scene* scene = CTX_data_scene(C);
+	struct FCurve* fcu;
+	char driven;
+
+	SEQ_BEGIN(scene->ed, seq) {
+		fcu = id_data_find_fcurve(&scene->id, seq, &RNA_Sequence, "volume", 0, &driven);
+		if(fcu || driven)
+			seq->flag |= SEQ_AUDIO_VOLUME_ANIMATED;
+		else
+			seq->flag &= ~SEQ_AUDIO_VOLUME_ANIMATED;
+
+		fcu = id_data_find_fcurve(&scene->id, seq, &RNA_Sequence, "pitch", 0, &driven);
+		if(fcu || driven)
+			seq->flag |= SEQ_AUDIO_PITCH_ANIMATED;
+		else
+			seq->flag &= ~SEQ_AUDIO_PITCH_ANIMATED;
+
+		fcu = id_data_find_fcurve(&scene->id, seq, &RNA_Sequence, "pan", 0, &driven);
+		if(fcu || driven)
+			seq->flag |= SEQ_AUDIO_PAN_ANIMATED;
+		else
+			seq->flag &= ~SEQ_AUDIO_PAN_ANIMATED;
+	}
+	SEQ_END
+
+	fcu = id_data_find_fcurve(&scene->id, scene, &RNA_Scene, "audio_volume", 0, &driven);
+	if(fcu || driven)
+		scene->audio.flag |= AUDIO_VOLUME_ANIMATED;
+	else
+		scene->audio.flag &= ~AUDIO_VOLUME_ANIMATED;
+
+	return OPERATOR_FINISHED;
+}
+
+static void SOUND_OT_update_animation_flags(wmOperatorType *ot)
+{
+	/*
+	  This operator is needed to set a correct state of the sound animation
+	  System. Unfortunately there's no really correct place to call the exec
+	  function, that's why I made it an operator that's only visible in the
+	  search menu. Apart from that the bake animation operator calls it too.
+	*/
+
+	/* identifiers */
+	ot->name= "Update animation";
+	ot->description= "Update animation flags";
+	ot->idname= "SOUND_OT_update_animation_flags";
+
+	/* api callbacks */
+	ot->exec= sound_update_animation_flags_exec;
+
+	/* flags */
+	ot->flag= OPTYPE_REGISTER;
+}
+
+/* ******************************************************* */
+
+static int sound_bake_animation_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Main* bmain = CTX_data_main(C);
+	Scene* scene = CTX_data_scene(C);
+	int oldfra = scene->r.cfra;
+	int cfra;
+
+	sound_update_animation_flags_exec(C, NULL);
+
+	for(cfra = scene->r.sfra > 0 ? scene->r.sfra - 1 : 0; cfra <= scene->r.efra + 1; cfra++)
+	{
+		scene->r.cfra = cfra;
+		scene_update_for_newframe(bmain, scene, scene->lay);
+	}
+
+	scene->r.cfra = oldfra;
+	scene_update_for_newframe(bmain, scene, scene->lay);
+
+	return OPERATOR_FINISHED;
+}
+
+static void SOUND_OT_bake_animation(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "Update animation cache";
+	ot->description= "Updates the audio animation cache so that it's up to date";
+	ot->idname= "SOUND_OT_bake_animation";
+
+	/* api callbacks */
+	ot->exec= sound_bake_animation_exec;
+
+	/* flags */
+	ot->flag= OPTYPE_REGISTER;
+}
+
 
 /******************** mixdown operator ********************/
 
@@ -227,6 +325,8 @@ static int sound_mixdown_exec(bContext *C, wmOperator *op)
 	AUD_Container container;
 	AUD_Codec codec;
 	const char* result;
+
+	sound_bake_animation_exec(C, op);
 
 	RNA_string_get(op->ptr, "filepath", path);
 	bitrate = RNA_int_get(op->ptr, "bitrate") * 1000;
@@ -259,11 +359,13 @@ static int sound_mixdown_exec(bContext *C, wmOperator *op)
 
 static int sound_mixdown_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
-	if(RNA_property_is_set(op->ptr, "filepath"))
+	if(RNA_struct_property_is_set(op->ptr, "filepath"))
 		return sound_mixdown_exec(C, op);
 
 	return WM_operator_filesel(C, op, event);
 }
+
+#ifdef WITH_AUDASPACE
 
 static int sound_mixdown_draw_check_prop(PointerRNA *UNUSED(ptr), PropertyRNA *prop)
 {
@@ -274,7 +376,6 @@ static int sound_mixdown_draw_check_prop(PointerRNA *UNUSED(ptr), PropertyRNA *p
 	);
 }
 
-#ifdef WITH_AUDASPACE
 static void sound_mixdown_draw(bContext *C, wmOperator *op)
 {
 	static EnumPropertyItem pcm_format_items[] = {
@@ -486,7 +587,7 @@ static void SOUND_OT_mixdown(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER;
 
 	/* properties */
-	WM_operator_properties_filesel(ot, FOLDERFILE|SOUNDFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|SOUNDFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH, FILE_DEFAULTDISPLAY);
 #ifdef WITH_AUDASPACE
 	RNA_def_int(ot->srna, "accuracy", 1024, 1, 16777216, "Accuracy", "Sample accuracy, important for animation data (the lower the value, the more accurate)", 1, 16777216);
 	RNA_def_enum(ot->srna, "container", container_items, AUD_CONTAINER_FLAC, "Container", "File format");
@@ -552,7 +653,7 @@ static int sound_unpack_exec(bContext *C, wmOperator *op)
 	bSound* sound= NULL;
 
 	/* find the suppplied image by name */
-	if (RNA_property_is_set(op->ptr, "id")) {
+	if (RNA_struct_property_is_set(op->ptr, "id")) {
 		char sndname[MAX_ID_NAME-2];
 		RNA_string_get(op->ptr, "id", sndname);
 		sound = BLI_findstring(&CTX_data_main(C)->sound, sndname, offsetof(ID, name) + 2);
@@ -574,7 +675,7 @@ static int sound_unpack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(even
 	Editing* ed = CTX_data_scene(C)->ed;
 	bSound* sound;
 
-	if(RNA_property_is_set(op->ptr, "id"))
+	if(RNA_struct_property_is_set(op->ptr, "id"))
 		return sound_unpack_exec(C, op);
 
 	if(!ed || !ed->act_seq || ed->act_seq->type != SEQ_SOUND)
@@ -612,104 +713,6 @@ static void SOUND_OT_unpack(wmOperatorType *ot)
 	RNA_def_enum(ot->srna, "method", unpack_method_items, PF_USE_LOCAL, "Method", "How to unpack");
 	RNA_def_string(ot->srna, "id", "", MAX_ID_NAME-2, "Sound Name", "Sound datablock name to unpack"); /* XXX, weark!, will fail with library, name collisions */
 }
-
-/* ******************************************************* */
-
-static int sound_update_animation_flags_exec(bContext *C, wmOperator *UNUSED(op))
-{
-	Sequence* seq;
-	Scene* scene = CTX_data_scene(C);
-	struct FCurve* fcu;
-	char driven;
-
-	SEQ_BEGIN(scene->ed, seq) {
-		fcu = id_data_find_fcurve(&scene->id, seq, &RNA_Sequence, "volume", 0, &driven);
-		if(fcu || driven)
-			seq->flag |= SEQ_AUDIO_VOLUME_ANIMATED;
-		else
-			seq->flag &= ~SEQ_AUDIO_VOLUME_ANIMATED;
-
-		fcu = id_data_find_fcurve(&scene->id, seq, &RNA_Sequence, "pitch", 0, &driven);
-		if(fcu || driven)
-			seq->flag |= SEQ_AUDIO_PITCH_ANIMATED;
-		else
-			seq->flag &= ~SEQ_AUDIO_PITCH_ANIMATED;
-
-		fcu = id_data_find_fcurve(&scene->id, seq, &RNA_Sequence, "pan", 0, &driven);
-		if(fcu || driven)
-			seq->flag |= SEQ_AUDIO_PAN_ANIMATED;
-		else
-			seq->flag &= ~SEQ_AUDIO_PAN_ANIMATED;
-	}
-	SEQ_END
-
-	fcu = id_data_find_fcurve(&scene->id, scene, &RNA_Scene, "audio_volume", 0, &driven);
-	if(fcu || driven)
-		scene->audio.flag |= AUDIO_VOLUME_ANIMATED;
-	else
-		scene->audio.flag &= ~AUDIO_VOLUME_ANIMATED;
-
-	return OPERATOR_FINISHED;
-}
-
-static void SOUND_OT_update_animation_flags(wmOperatorType *ot)
-{
-	/*
-	  This operator is needed to set a correct state of the sound animation
-	  System. Unfortunately there's no really correct place to call the exec
-	  function, that's why I made it an operator that's only visible in the
-	  search menu. Apart from that the bake animation operator calls it too.
-	*/
-
-	/* identifiers */
-	ot->name= "Update animation";
-	ot->description= "Update animation flags";
-	ot->idname= "SOUND_OT_update_animation_flags";
-
-	/* api callbacks */
-	ot->exec= sound_update_animation_flags_exec;
-
-	/* flags */
-	ot->flag= OPTYPE_REGISTER;
-}
-
-/* ******************************************************* */
-
-static int sound_bake_animation_exec(bContext *C, wmOperator *UNUSED(op))
-{
-	Main* bmain = CTX_data_main(C);
-	Scene* scene = CTX_data_scene(C);
-	int oldfra = scene->r.cfra;
-	int cfra;
-
-	sound_update_animation_flags_exec(C, NULL);
-
-	for(cfra = scene->r.sfra > 0 ? scene->r.sfra - 1 : 0; cfra <= scene->r.efra + 1; cfra++)
-	{
-		scene->r.cfra = cfra;
-		scene_update_for_newframe(bmain, scene, scene->lay);
-	}
-
-	scene->r.cfra = oldfra;
-	scene_update_for_newframe(bmain, scene, scene->lay);
-
-	return OPERATOR_FINISHED;
-}
-
-static void SOUND_OT_bake_animation(wmOperatorType *ot)
-{
-	/* identifiers */
-	ot->name= "Update animation cache";
-	ot->description= "Updates the audio animation cache so that it's up to date";
-	ot->idname= "SOUND_OT_bake_animation";
-
-	/* api callbacks */
-	ot->exec= sound_bake_animation_exec;
-
-	/* flags */
-	ot->flag= OPTYPE_REGISTER;
-}
-
 
 /* ******************************************************* */
 

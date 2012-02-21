@@ -135,19 +135,31 @@ __device_inline void path_rng_init(KernelGlobals *kg, __global uint *rng_state, 
 
 	*rng ^= kernel_data.integrator.seed;
 
-	*fx = size * (float)px * (1.0f/(float)0xFFFFFFFF) - x;
-	*fy = size * (float)py * (1.0f/(float)0xFFFFFFFF) - y;
+	if(sample == 0) {
+		*fx = 0.5f;
+		*fy = 0.5f;
+	}
+	else {
+		*fx = size * (float)px * (1.0f/(float)0xFFFFFFFF) - x;
+		*fy = size * (float)py * (1.0f/(float)0xFFFFFFFF) - y;
+	}
 #else
-	*rng = rng_state[x + y*kernel_data.cam.width];
+	*rng = *rng_state;
 
 	*rng ^= kernel_data.integrator.seed;
 
-	*fx = path_rng(kg, rng, sample, PRNG_FILTER_U);
-	*fy = path_rng(kg, rng, sample, PRNG_FILTER_V);
+	if(sample == 0) {
+		*fx = 0.5f;
+		*fy = 0.5f;
+	}
+	else {
+		*fx = path_rng(kg, rng, sample, PRNG_FILTER_U);
+		*fy = path_rng(kg, rng, sample, PRNG_FILTER_V);
+	}
 #endif
 }
 
-__device void path_rng_end(KernelGlobals *kg, __global uint *rng_state, RNG rng, int x, int y)
+__device void path_rng_end(KernelGlobals *kg, __global uint *rng_state, RNG rng)
 {
 	/* nothing to do */
 }
@@ -166,18 +178,24 @@ __device float path_rng(KernelGlobals *kg, RNG *rng, int sample, int dimension)
 __device void path_rng_init(KernelGlobals *kg, __global uint *rng_state, int sample, RNG *rng, int x, int y, float *fx, float *fy)
 {
 	/* load state */
-	*rng = rng_state[x + y*kernel_data.cam.width];
+	*rng = *rng_state;
 
 	*rng ^= kernel_data.integrator.seed;
 
-	*fx = path_rng(kg, rng, sample, PRNG_FILTER_U);
-	*fy = path_rng(kg, rng, sample, PRNG_FILTER_V);
+	if(sample == 0) {
+		*fx = 0.5f;
+		*fy = 0.5f;
+	}
+	else {
+		*fx = path_rng(kg, rng, sample, PRNG_FILTER_U);
+		*fy = path_rng(kg, rng, sample, PRNG_FILTER_V);
+	}
 }
 
-__device void path_rng_end(KernelGlobals *kg, __global uint *rng_state, RNG rng, int x, int y)
+__device void path_rng_end(KernelGlobals *kg, __global uint *rng_state, RNG rng)
 {
 	/* store state for next sample */
-	rng_state[x + y*kernel_data.cam.width] = rng;
+	*rng_state = rng;
 }
 
 #endif
