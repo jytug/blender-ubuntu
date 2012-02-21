@@ -24,12 +24,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_WORLD_TYPES_H
-#define DNA_WORLD_TYPES_H
 
 /** \file DNA_world_types.h
  *  \ingroup DNA
  */
+
+#ifndef DNA_WORLD_TYPES_H
+#define DNA_WORLD_TYPES_H
 
 #include "DNA_defs.h"
 #include "DNA_ID.h"
@@ -181,6 +182,7 @@ typedef struct World {
 #define TEXCO_ANGMAP	64
 #define TEXCO_H_SPHEREMAP	256
 #define TEXCO_H_TUBEMAP	1024
+#define TEXCO_EQUIRECTMAP 2048
 
 /* mapto */
 #define WOMAP_BLEND		1

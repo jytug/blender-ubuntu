@@ -70,6 +70,8 @@ CCL_NAMESPACE_BEGIN
 #ifdef __KERNEL_ADV_SHADING__
 #define __MULTI_CLOSURE__
 #define __TRANSPARENT_SHADOWS__
+#define __PASSES__
+#define __BACKGROUND_MIS__
 #endif
 
 //#define __MULTI_LIGHT__
@@ -77,6 +79,13 @@ CCL_NAMESPACE_BEGIN
 //#define __SOBOL_FULL_SCREEN__
 //#define __MODIFY_TP__
 //#define __QBVH__
+
+/* Shader Evaluation */
+
+enum ShaderEvalType {
+	SHADER_EVAL_DISPLACE,
+	SHADER_EVAL_BACKGROUND
+};
 
 /* Path Tracing */
 
@@ -100,7 +109,10 @@ enum PathTraceDimension {
 
 /* these flag values correspond exactly to OSL defaults, so be careful not to
  * change this, or if you do, set the "raytypes" shading system attribute with
- * your own new ray types and bitflag values */
+ * your own new ray types and bitflag values.
+ *
+ * for ray visibility tests in BVH traversal, the upper 20 bits are used for
+ * layer visibility tests. */
 
 enum PathRayFlag {
 	PATH_RAY_CAMERA = 1,
@@ -117,7 +129,9 @@ enum PathRayFlag {
 
 	PATH_RAY_MIS_SKIP = 512,
 
-	PATH_RAY_ALL = (1|2|4|8|16|32|64|128|256|512)
+	PATH_RAY_ALL = (1|2|4|8|16|32|64|128|256|512),
+
+	PATH_RAY_LAYER_SHIFT = (32-20)
 };
 
 /* Closure Label */
@@ -138,6 +152,75 @@ typedef enum ClosureLabel {
 	LABEL_STOP = 2048
 } ClosureLabel;
 
+/* Render Passes */
+
+typedef enum PassType {
+	PASS_NONE = 0,
+	PASS_COMBINED = 1,
+	PASS_DEPTH = 2,
+	PASS_NORMAL = 8,
+	PASS_UV = 16,
+	PASS_OBJECT_ID = 32,
+	PASS_MATERIAL_ID = 64,
+	PASS_DIFFUSE_COLOR = 128,
+	PASS_GLOSSY_COLOR = 256,
+	PASS_TRANSMISSION_COLOR = 512,
+	PASS_DIFFUSE_INDIRECT = 1024,
+	PASS_GLOSSY_INDIRECT = 2048,
+	PASS_TRANSMISSION_INDIRECT = 4096,
+	PASS_DIFFUSE_DIRECT = 8192,
+	PASS_GLOSSY_DIRECT = 16384,
+	PASS_TRANSMISSION_DIRECT = 32768,
+	PASS_EMISSION = 65536,
+	PASS_BACKGROUND = 131072
+} PassType;
+
+#define PASS_ALL (~0)
+
+#ifdef __PASSES__
+
+typedef float3 PathThroughput;
+
+struct PathRadiance {
+	int use_light_pass;
+
+	float3 emission;
+	float3 background;
+
+	float3 indirect;
+	float3 direct_throughput;
+	float3 direct_emission;
+
+	float3 color_diffuse;
+	float3 color_glossy;
+	float3 color_transmission;
+
+	float3 direct_diffuse;
+	float3 direct_glossy;
+	float3 direct_transmission;
+
+	float3 indirect_diffuse;
+	float3 indirect_glossy;
+	float3 indirect_transmission;
+};
+
+struct BsdfEval {
+	int use_light_pass;
+
+	float3 diffuse;
+	float3 glossy;
+	float3 transmission;
+	float3 transparent;
+};
+
+#else
+
+typedef float3 PathThroughput;
+typedef float3 PathRadiance;
+typedef float3 BsdfEval;
+
+#endif
+
 /* Shader Flag */
 
 typedef enum ShaderFlag {
@@ -153,6 +236,7 @@ typedef enum ShaderFlag {
 typedef enum LightType {
 	LIGHT_POINT,
 	LIGHT_DISTANT,
+	LIGHT_BACKGROUND,
 	LIGHT_AREA
 } LightType;
 
@@ -295,29 +379,24 @@ typedef struct ShaderData {
 #endif
 } ShaderData;
 
-/* Constrant Kernel Data */
+/* Constrant Kernel Data
+ *
+ * These structs are passed from CPU to various devices, and the struct layout
+ * must match exactly. Structs are padded to ensure 16 byte alignment, and we
+ * do not use float3 because its size may not be the same on all devices. */
 
 typedef struct KernelCamera {
 	/* type */
 	int ortho;
-	int pad;
-
-	/* size */
-	int width, height;
+	int pad1, pad2, pad3;
 
 	/* matrices */
 	Transform cameratoworld;
 	Transform rastertocamera;
 
 	/* differentials */
-	float3 dx;
-#ifndef WITH_OPENCL
-	float pad1;
-#endif
-	float3 dy;
-#ifndef WITH_OPENCL
-	float pad2;
-#endif
+	float4 dx;
+	float4 dy;
 
 	/* depth of field */
 	float aperturesize;
@@ -345,7 +424,34 @@ typedef struct KernelCamera {
 
 typedef struct KernelFilm {
 	float exposure;
-	int pad1, pad2, pad3;
+	int pass_flag;
+	int pass_stride;
+	int use_light_pass;
+
+	int pass_combined;
+	int pass_depth;
+	int pass_normal;
+	int pass_pad;
+
+	int pass_uv;
+	int pass_object_id;
+	int pass_material_id;
+	int pass_diffuse_color;
+
+	int pass_glossy_color;
+	int pass_transmission_color;
+	int pass_diffuse_indirect;
+	int pass_glossy_indirect;
+
+	int pass_transmission_indirect;
+	int pass_diffuse_direct;
+	int pass_glossy_direct;
+	int pass_transmission_direct;
+
+	int pass_emission;
+	int pass_background;
+	int pass_pad1;
+	int pass_pad2;
 } KernelFilm;
 
 typedef struct KernelBackground {
@@ -358,10 +464,6 @@ typedef struct KernelBackground {
 typedef struct KernelSunSky {
 	/* sun direction in spherical and cartesian */
 	float theta, phi, pad3, pad4;
-	float3 dir;
-#ifndef WITH_OPENCL
-	float pad;
-#endif
 
 	/* perez function parameters */
 	float zenith_Y, zenith_x, zenith_y, pad2;
@@ -376,26 +478,30 @@ typedef struct KernelIntegrator {
 	int num_all_lights;
 	float pdf_triangles;
 	float pdf_lights;
+	int pdf_background_res;
 
 	/* bounces */
 	int min_bounce;
 	int max_bounce;
 
-    int max_diffuse_bounce;
-    int max_glossy_bounce;
-    int max_transmission_bounce;
+	int max_diffuse_bounce;
+	int max_glossy_bounce;
+	int max_transmission_bounce;
 
 	/* transparent */
-    int transparent_min_bounce;
-    int transparent_max_bounce;
+	int transparent_min_bounce;
+	int transparent_max_bounce;
 	int transparent_shadows;
 
 	/* caustics */
 	int no_caustics;
-	float blur_caustics;
 
 	/* seed */
 	int seed;
+
+	/* render layer */
+	int layer_flag;
+	int pad1, pad2, pad3;
 } KernelIntegrator;
 
 typedef struct KernelBVH {

@@ -55,9 +55,13 @@ void clip_draw_curfra_label(struct SpaceClip *sc, float x, float y);
 void clip_draw_graph(struct SpaceClip *sc, struct ARegion *ar, struct Scene *scene);
 
 /* clip_graph_ops.c */
+void ED_clip_graph_center_current_frame(struct Scene *scene, struct ARegion *ar);
+
 void CLIP_OT_graph_select(struct wmOperatorType *ot);
 void CLIP_OT_graph_delete_curve(struct wmOperatorType *ot);
 void CLIP_OT_graph_delete_knot(struct wmOperatorType *ot);
+void CLIP_OT_graph_view_all(struct wmOperatorType *ot);
+void CLIP_OT_graph_center_current_frame(struct wmOperatorType *ot);
 
 /* clip_ops.c */
 void CLIP_OT_open(struct wmOperatorType *ot);
@@ -92,8 +96,8 @@ void clip_graph_tracking_values_iterate(struct SpaceClip *sc, void *userdata,
 void clip_graph_tracking_iterate(struct SpaceClip *sc, void *userdata,
 			void (*func) (void *userdata, struct MovieTrackingMarker *marker));
 
-void clip_delete_track(struct bContext *C, struct MovieClip *clip, struct MovieTrackingTrack *track);
-void clip_delete_marker(struct bContext *C, struct MovieClip *clip, struct MovieTrackingTrack *track, struct MovieTrackingMarker *marker);
+void clip_delete_track(struct bContext *C, struct MovieClip *clip, struct ListBase *tracksbase, struct MovieTrackingTrack *track);
+void clip_delete_marker(struct bContext *C, struct MovieClip *clip, struct ListBase *tracksbase, struct MovieTrackingTrack *track, struct MovieTrackingMarker *marker);
 
 void clip_view_center_to_point(struct SpaceClip *sc, float x, float y);
 
@@ -124,6 +128,7 @@ void CLIP_OT_set_origin(struct wmOperatorType *ot);
 void CLIP_OT_set_floor(struct wmOperatorType *ot);
 void CLIP_OT_set_axis(struct wmOperatorType *ot);
 void CLIP_OT_set_scale(struct wmOperatorType *ot);
+void CLIP_OT_set_solution_scale(struct wmOperatorType *ot);
 
 void CLIP_OT_set_center_principal(struct wmOperatorType *ot);
 
@@ -139,6 +144,12 @@ void CLIP_OT_stabilize_2d_remove(struct wmOperatorType *ot);
 void CLIP_OT_stabilize_2d_select(struct wmOperatorType *ot);
 void CLIP_OT_stabilize_2d_set_rotation(struct wmOperatorType *ot);
 
-void CLIP_OT_clean_tracks(wmOperatorType *ot);
+void CLIP_OT_clean_tracks(struct wmOperatorType *ot);
+
+void CLIP_OT_tracking_object_new(struct wmOperatorType *ot);
+void CLIP_OT_tracking_object_remove(struct wmOperatorType *ot);
+
+void CLIP_OT_copy_tracks(struct wmOperatorType *ot);
+void CLIP_OT_paste_tracks(struct wmOperatorType *ot);
 
 #endif /* ED_CLIP_INTERN_H */

@@ -330,7 +330,6 @@ static void uiPanelPop(uiBlock *UNUSED(block))
 #endif
 
 /* triangle 'icon' for panel header */
-/* NOTE - this seems to be only used for hiding nodes now */
 void UI_DrawTriIcon(float x, float y, char dir)
 {
 	if(dir=='h') {
@@ -773,8 +772,9 @@ static int uiAlignPanelStep(ScrArea *sa, ARegion *ar, float fac, int drag)
 			ui_panel_copy_offset(pa, pa->paneltab);
 
 	/* free panelsort array */
-	for(ps= panelsort, a=0; a<tot; a++, ps++)
+	for (ps = panelsort, a = 0; a < tot; a++, ps++) {
 		MEM_freeN(ps->pa);
+	}
 	MEM_freeN(panelsort);
 	
 	return done;

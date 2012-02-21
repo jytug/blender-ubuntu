@@ -24,9 +24,8 @@
 bl_info = {
     "name": "WallFactory",
     "author": "Jambay, Brikbot",
-    "version": (0, 59),
-    "blender": (2, 5, 9),
-    "api": 40077,
+    "version": (0, 6, 0),
+    "blender": (2, 6, 1),
     "location": "View3D > Add > Mesh",
     "description": "Adds a block/rock wall.",
     "warning": "WIP - updates pending and API not final for Blender",

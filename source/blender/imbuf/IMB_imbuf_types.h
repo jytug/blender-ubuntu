@@ -50,7 +50,7 @@
 struct ImMetaData;
 
 #define IB_MIPMAP_LEVELS	20
-#define IB_FILENAME_SIZE	1023
+#define IB_FILENAME_SIZE	1024
 
 /**
  * \ingroup imbuf
@@ -158,6 +158,7 @@ typedef struct ImBuf {
 #define IB_tiles			(1 << 10)
 #define IB_tilecache		(1 << 11)
 #define IB_premul			(1 << 12)
+#define IB_cm_predivide		(1 << 13)
 
 /*
  * The bit flag is stored in the ImBuf.ftype variable.

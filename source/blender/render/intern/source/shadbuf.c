@@ -640,7 +640,7 @@ static void shadowbuf_autoclip(Render *re, LampRen *lar)
 		obr= obi->obr;
 
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(obviewmat, obi->mat, viewmat);
+			mult_m4_m4m4(obviewmat, viewmat, obi->mat);
 		else
 			copy_m4_m4(obviewmat, viewmat);
 
@@ -777,7 +777,7 @@ void makeshadowbuf(Render *re, LampRen *lar)
 	wsize= shb->pixsize*(shb->size/2.0f);
 	
 	perspective_m4( shb->winmat,-wsize, wsize, -wsize, wsize, shb->d, shb->clipend);
-	mul_m4_m4m4(shb->persmat, shb->viewmat, shb->winmat);
+	mult_m4_m4m4(shb->persmat, shb->winmat, shb->viewmat);
 
 	if(ELEM3(lar->buftype, LA_SHADBUF_REGULAR, LA_SHADBUF_HALFWAY, LA_SHADBUF_DEEP)) {
 		shb->totbuf= lar->buffers;
@@ -1987,7 +1987,7 @@ static void isb_bsp_fillfaces(Render *re, LampRen *lar, ISBBranch *root)
 		obr= obi->obr;
 
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(winmat, obi->mat, shb->persmat);
+			mult_m4_m4m4(winmat, shb->persmat, obi->mat);
 		else
 			copy_m4_m4(winmat, shb->persmat);
 
@@ -2068,7 +2068,7 @@ static int viewpixel_to_lampbuf(ShadBuf *shb, ObjectInstanceRen *obi, VlakRen *v
 		mul_m4_v3(obi->mat, v1);
 
 	/* from shadepixel() */
-	dface= v1[0]*nor[0] + v1[1]*nor[1] + v1[2]*nor[2];
+	dface = dot_v3v3(v1, nor);
 	hoco[3]= 1.0f;
 	
 	/* ortho viewplane cannot intersect using view vector originating in (0,0,0) */
@@ -2091,7 +2091,7 @@ static int viewpixel_to_lampbuf(ShadBuf *shb, ObjectInstanceRen *obi, VlakRen *v
 		
 		calc_view_vector(view, x, y);
 		
-		div= nor[0]*view[0] + nor[1]*view[1] + nor[2]*view[2];
+		div = dot_v3v3(nor, view);
 		if (div==0.0f) 
 			return 0;
 		

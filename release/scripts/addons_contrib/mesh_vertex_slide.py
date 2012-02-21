@@ -23,7 +23,6 @@ bl_info = {
     "author": "Valter Battioli (ValterVB) and PKHG",
     "version": (1, 1, 6),
     "blender": (2, 6, 0),
-    "api": 41099,
     "location": "View3D > Mesh > Vertices (CTRL V-key)",
     "description": "Slide a vertex along an edge or a line",
     "warning": "",
@@ -359,7 +358,7 @@ class VertexSlideOperator(bpy.types.Operator):
             context.region.callback_remove(self._handle)
             return {'FINISHED'}
 
-        elif event.type in ('RIGHTMOUSE', 'ESC'):  # Restore and exit
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:  # Restore and exit
             Vertices = bpy.context.object.data.vertices
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')

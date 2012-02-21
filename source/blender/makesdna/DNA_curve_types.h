@@ -24,12 +24,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_CURVE_TYPES_H
-#define DNA_CURVE_TYPES_H
 
 /** \file DNA_curve_types.h
  *  \ingroup DNA
  */
+
+#ifndef DNA_CURVE_TYPES_H
+#define DNA_CURVE_TYPES_H
 
 #include "DNA_defs.h"
 #include "DNA_listBase.h"
@@ -259,6 +260,7 @@ typedef struct Curve {
 #define CU_DS_EXPAND	2048
 #define CU_PATH_RADIUS	4096 /* make use of the path radius if this is enabled (default for new curves) */
 #define CU_DEFORM_FILL	8192 /* fill 2d curve after deformation */
+#define CU_FILL_CAPS	16384 /* fill bevel caps */
 
 /* twist mode */
 #define CU_TWIST_Z_UP			0

@@ -20,17 +20,15 @@ bl_info = {
     "name": "PDB Atomic Blender",
     "description": "Loading and manipulating atoms from PDB files",
     "author": "Clemens Barth",
-    "version": (1,0),
+    "version": (1,2),
     "blender": (2,6),
-    "api": 31236,
     "location": "File -> Import -> PDB (.pdb), Panel: View 3D - Tools",
     "warning": "",
-    "wiki_url": "http://development.root-1.de/Atomic_Blender.php",
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Import-Export/PDB",
     "tracker_url": "http://projects.blender.org/tracker/"
-                   "index.php?func=detail&aid=29226&group_id=153&atid=468",
+                   "index.php?func=detail&aid=29226",
     "category": "Import-Export"
 }
-
 
 import bpy
 from bpy.types import Operator, Panel
@@ -45,6 +43,8 @@ from bpy.props import (StringProperty,
 # TODO, allow reload
 from . import import_pdb
 
+ATOM_PDB_ERROR = ""
+
 # -----------------------------------------------------------------------------
 #                                                                           GUI
 
@@ -57,24 +57,9 @@ class CLASS_atom_pdb_panel(Panel):
     #bl_context     = "physics"
     # This could be also an option ... :
     bl_space_type  = "VIEW_3D"
+    #bl_region_type = "TOOLS"
     bl_region_type = "TOOL_PROPS"
 
-    # This 'poll thing' has taken 3 hours of a hard search and understanding.
-    # I explain it in the following from my point of view:
-    #
-    # Before this class is entirely treaten (here: drawing the panel) the
-    # poll method is called first. Basically, some conditions are
-    # checked before other things in the class are done afterwards. If a
-    # condition is not valid, one returns 'False' such that nothing further
-    # is done. 'True' means: 'Go on'
-    #
-    # In the case here, it is verified if the ATOM_PDB_FILEPATH variable contains
-    # a name. If not - and this is the case directly after having started the
-    # script - the panel does not appear because 'False' is returned. However,
-    # as soon as a file has been chosen, the panel appears because
-    # ATOM_PDB_FILEPATH contains a name.
-    #
-    # Please, correct me if I'm wrong.
     @classmethod
     def poll(self, context):
         if import_pdb.ATOM_PDB_FILEPATH == "":
@@ -87,85 +72,105 @@ class CLASS_atom_pdb_panel(Panel):
         scn    = bpy.context.scene
 
         row = layout.row()
+        row.label(text="Outputs and custom data file")
+
+        box = layout.box()
+        row = box.row()
         row.label(text="Custom data file")
-        row = layout.row()
+        row = box.row()
         col = row.column()
         col.prop(scn, "atom_pdb_datafile")
         col.operator("atom_pdb.datafile_apply")
-        row = layout.row()
+        row = box.row()
         col = row.column(align=True)
         col.prop(scn, "atom_pdb_PDB_file")
 
-        layout.separator()
-
         row = layout.row()
-        col = row.column(align=True)
+        row.label(text="Reload structure")
+
+        box = layout.box()
+        row = box.row()
+        col = row.column()
         col.prop(scn, "use_atom_pdb_mesh")
+        col = row.column()
+        col.label(text="Scaling factors")
+        row = box.row()
+        col = row.column(align=True)  
+        col.active = scn.use_atom_pdb_mesh   
         col.prop(scn, "atom_pdb_mesh_azimuth")
         col.prop(scn, "atom_pdb_mesh_zenith")
-
-
         col = row.column(align=True)
-        col.label(text="Scaling factors")
         col.prop(scn, "atom_pdb_scale_ballradius")
         col.prop(scn, "atom_pdb_scale_distances")
-        row = layout.row()
-        col = row.column()
+        row = box.row()
+        col = row.column()  
         col.prop(scn, "use_atom_pdb_sticks")
+        row = box.row()        
+        row.active = scn.use_atom_pdb_sticks
         col = row.column(align=True)
         col.prop(scn, "atom_pdb_sticks_sectors")
         col.prop(scn, "atom_pdb_sticks_radius")
-
-        row = layout.row()
+        col = row.column(align=True)        
+        col.prop(scn, "use_atom_pdb_sticks_color")        
+        col.prop(scn, "use_atom_pdb_sticks_smooth")
+        col.prop(scn, "use_atom_pdb_sticks_bonds")
+        row = box.row()        
+        row.active = scn.use_atom_pdb_sticks
+        col = row.column(align=True)
+        col = row.column(align=True)
+        col.active = scn.use_atom_pdb_sticks and scn.use_atom_pdb_sticks_bonds 
+        col.prop(scn, "atom_pdb_sticks_dist")        
+        row = box.row()
         row.prop(scn, "use_atom_pdb_center")
-
-        row = layout.row()
+        row = box.row()
         col = row.column()
         col.prop(scn, "use_atom_pdb_cam")
         col.prop(scn, "use_atom_pdb_lamp")
         col = row.column()
         col.operator("atom_pdb.button_reload")
-
-        # TODO, use lanel() instead
         col.prop(scn, "atom_pdb_number_atoms")
-
-        layout.separator()
-
-        row = layout.row()
+        row = box.row()
         row.operator("atom_pdb.button_distance")
         row.prop(scn, "atom_pdb_distance")
-        layout.separator()
 
         row = layout.row()
+        row.label(text="Modify atom radii")
+        
+        box = layout.box()
+        row = box.row()
         row.label(text="All changes concern:")
-        row = layout.row()
+        row = box.row()
         row.prop(scn, "atom_pdb_radius_how")
-
-        row = layout.row()
+        row = box.row()
         row.label(text="1. Change type of radii")
-        row = layout.row()
+        row = box.row()
         row.prop(scn, "atom_pdb_radius_type")
-
-        row = layout.row()
+        row = box.row()
         row.label(text="2. Change atom radii in pm")
-        row = layout.row()
+        row = box.row()
         row.prop(scn, "atom_pdb_radius_pm_name")
-        row = layout.row()
+        row = box.row()
         row.prop(scn, "atom_pdb_radius_pm")
-
-        row = layout.row()
+        row = box.row()
         row.label(text="3. Change atom radii by scale")
-        row = layout.row()
+        row = box.row()
         col = row.column()
         col.prop(scn, "atom_pdb_radius_all")
         col = row.column(align=True)
         col.operator( "atom_pdb.radius_all_bigger" )
         col.operator( "atom_pdb.radius_all_smaller" )
+        row = box.row()
+        row.label(text="4. Show sticks only")
+        row = box.row()
+        col = row.column()
+        col.operator( "atom_pdb.radius_sticks" )
 
         if bpy.context.mode == 'EDIT_MESH':
 
-            layout.separator()
             row = layout.row()
+            row.label(text="Separate atom")
+            box = layout.box()
+            row = box.row()
             row.operator( "atom_pdb.separate_atom" )
 
 
@@ -196,7 +201,7 @@ class CLASS_atom_pdb_IO(bpy.types.PropertyGroup):
         description = "Do you need a lamp?")
     scn.use_atom_pdb_mesh = BoolProperty(
         name = "Mesh balls", default=False,
-        description = "Do you want to use mesh balls instead of NURBS?")
+        description = "Use mesh balls instead of NURBS")
     scn.atom_pdb_mesh_azimuth = IntProperty(
         name = "Azimuth", default=32, min=0,
         description = "Number of sectors (azimuth)")
@@ -211,17 +216,28 @@ class CLASS_atom_pdb_IO(bpy.types.PropertyGroup):
         description = "Scale factor for all distances")
     scn.use_atom_pdb_center = BoolProperty(
         name = "Object to origin", default=True,
-        description = "Shall the object first put into the global origin "
-        "before applying the offsets on the left?")
+        description = "Put the object into the global origin")
     scn.use_atom_pdb_sticks = BoolProperty(
-        name="Use sticks", default=False,
-        description="Do you want to display also the sticks?")
+        name="Use sticks", default=True,
+        description="Do you want to display the sticks?")
     scn.atom_pdb_sticks_sectors = IntProperty(
         name = "Sector", default=20, min=0,
         description="Number of sectors of a stick")
     scn.atom_pdb_sticks_radius = FloatProperty(
         name = "Radius", default=0.1, min=0.0,
         description ="Radius of a stick")
+    scn.use_atom_pdb_sticks_color = BoolProperty(
+        name="Color", default=True,
+        description="The sticks appear in the color of the atoms")
+    scn.use_atom_pdb_sticks_smooth = BoolProperty(
+        name="Smooth", default=False,
+        description="The sticks are round (sectors are not visible)")     
+    scn.use_atom_pdb_sticks_bonds = BoolProperty(
+        name="Bonds", default=False,
+        description="Show double and tripple bonds")
+    scn.atom_pdb_sticks_dist = FloatProperty(
+        name="Distance", default = 1.1, min=1.0, max=3.0,
+        description="Distance between sticks measured in stick diameter")        
     scn.atom_pdb_atomradius = EnumProperty(
         name="Type of radius",
         description="Choose type of atom radius",
@@ -235,9 +251,8 @@ class CLASS_atom_pdb_IO(bpy.types.PropertyGroup):
         name = "", description="Path to your custom data file",
         maxlen = 256, default = "", subtype='FILE_PATH')
     scn.atom_pdb_PDB_file = StringProperty(
-        name = "Path to file", default="",
+        name = "PDB file", default="",
         description = "Path of the PDB file")
-    # TODO, remove this property, its used for display only!
     scn.atom_pdb_number_atoms = StringProperty(name="",
         default="Number", description = "This output shows "
         "the number of atoms which have been loaded")
@@ -273,7 +288,7 @@ class CLASS_atom_pdb_IO(bpy.types.PropertyGroup):
 class CLASS_atom_pdb_datafile_apply(Operator):
     bl_idname = "atom_pdb.datafile_apply"
     bl_label = "Apply"
-    bl_description = "Use color and radii values stored in a custom file"
+    bl_description = "Use color and radii values stored in the custom file"
 
     def execute(self, context):
         scn    = bpy.context.scene
@@ -302,7 +317,7 @@ class CLASS_atom_pdb_datafile_apply(Operator):
         return {'FINISHED'}
 
 
-# Button for measuring the distance of the active objects
+# Button for separating single objects from a atom mesh
 class CLASS_atom_pdb_separate_atom(Operator):
     bl_idname = "atom_pdb.separate_atom"
     bl_label = "Separate atom"
@@ -378,7 +393,7 @@ class CLASS_atom_pdb_separate_atom(Operator):
 class CLASS_atom_pdb_distance_button(Operator):
     bl_idname = "atom_pdb.button_distance"
     bl_label = "Measure ..."
-    bl_description = "Measure the distance between two objects"
+    bl_description = "Measure the distance between two objects (only in Object Mode)"
 
     def execute(self, context):
         scn    = bpy.context.scene
@@ -427,7 +442,31 @@ class CLASS_atom_pdb_radius_all_smaller_button(Operator):
         return {'FINISHED'}
 
 
-# The button for loading the atoms and creating the scene
+# Button for showing the sticks only - the radii of the atoms downscaled onto
+# 90% of the stick radius
+class CLASS_atom_pdb_radius_sticks_button(Operator):
+    bl_idname = "atom_pdb.radius_sticks"
+    bl_label = "Show sticks"
+    bl_description = "Show only the sticks (atom radii = stick radii)"
+
+    def execute(self, context):
+        global ATOM_PDB_ERROR
+        
+        scn = bpy.context.scene
+                
+        result = import_pdb.DEF_atom_pdb_radius_sticks(
+                     scn.atom_pdb_sticks_radius * 0.9,
+                     scn.atom_pdb_radius_how,
+                     )
+                     
+        if result == False:
+            ATOM_PDB_ERROR = "No sticks => no changes"
+            bpy.ops.atom_pdb.error_dialog('INVOKE_DEFAULT')
+                                          
+        return {'FINISHED'}
+
+
+# The button for reloading the atoms and creating the scene
 class CLASS_atom_pdb_load_button(Operator):
     bl_idname = "atom_pdb.button_reload"
     bl_label = "RELOAD"
@@ -443,19 +482,23 @@ class CLASS_atom_pdb_load_button(Operator):
         radiustype = scn.atom_pdb_atomradius
         center     = scn.use_atom_pdb_center
         sticks     = scn.use_atom_pdb_sticks
+        sticks_col = scn.use_atom_pdb_sticks_color
+        sticks_sm  = scn.use_atom_pdb_sticks_smooth
         ssector    = scn.atom_pdb_sticks_sectors
         sradius    = scn.atom_pdb_sticks_radius
+        stick_bond = scn.use_atom_pdb_sticks_bonds
+        stick_dist = scn.atom_pdb_sticks_dist
+        
         cam        = scn.use_atom_pdb_cam
         lamp       = scn.use_atom_pdb_lamp
         mesh       = scn.use_atom_pdb_mesh
         datafile   = scn.atom_pdb_datafile
-
+        
         # Execute main routine an other time ... from the panel
         atom_number = import_pdb.DEF_atom_pdb_main(
-                mesh, azimuth, zenith, bradius,
-                radiustype, bdistance, sticks,
-                ssector, sradius, center, cam, lamp, datafile,
-                )
+                mesh, azimuth, zenith, bradius, radiustype, bdistance, 
+                sticks, sticks_col, sticks_sm, stick_bond,
+                stick_dist, ssector, sradius, center, cam, lamp, datafile)
         scn.atom_pdb_number_atoms = str(atom_number) + " atoms"
 
         return {'FINISHED'}
@@ -464,7 +507,7 @@ class CLASS_atom_pdb_load_button(Operator):
 # This is the class for the file dialog.
 class ImportPDB(Operator, ImportHelper):
     bl_idname = "import_mesh.pdb"
-    bl_label  = "Import Protein Data Bank (*.pdb)"
+    bl_label  = "Import Protein Data Bank(*.pdb)"
 
     filename_ext = ".pdb"
     filter_glob  = StringProperty(default="*.pdb", options={'HIDDEN'},)
@@ -480,6 +523,7 @@ class ImportPDB(Operator, ImportHelper):
         col = row.column()
         col.prop(scn, "use_atom_pdb_mesh")
         col = row.column(align=True)
+        col.active = scn.use_atom_pdb_mesh
         col.prop(scn, "atom_pdb_mesh_azimuth")
         col.prop(scn, "atom_pdb_mesh_zenith")
 
@@ -492,9 +536,21 @@ class ImportPDB(Operator, ImportHelper):
         row = layout.row()
         col = row.column()
         col.prop(scn, "use_atom_pdb_sticks")
+        row = layout.row()        
+        row.active = scn.use_atom_pdb_sticks
         col = row.column(align=True)
         col.prop(scn, "atom_pdb_sticks_sectors")
         col.prop(scn, "atom_pdb_sticks_radius")
+        col = row.column(align=True)        
+        col.prop(scn, "use_atom_pdb_sticks_color")        
+        col.prop(scn, "use_atom_pdb_sticks_smooth")
+        col.prop(scn, "use_atom_pdb_sticks_bonds")
+        row = layout.row()        
+        row.active = scn.use_atom_pdb_sticks
+        col = row.column(align=True)
+        col = row.column(align=True)
+        col.active = scn.use_atom_pdb_sticks and scn.use_atom_pdb_sticks_bonds 
+        col.prop(scn, "atom_pdb_sticks_dist")
 
         row = layout.row()
         row.prop(scn, "use_atom_pdb_center")
@@ -517,22 +573,42 @@ class ImportPDB(Operator, ImportHelper):
         radiustype = scn.atom_pdb_atomradius
         center     = scn.use_atom_pdb_center
         sticks     = scn.use_atom_pdb_sticks
+        sticks_col = scn.use_atom_pdb_sticks_color
+        sticks_sm  = scn.use_atom_pdb_sticks_smooth
         ssector    = scn.atom_pdb_sticks_sectors
         sradius    = scn.atom_pdb_sticks_radius
+        stick_bond = scn.use_atom_pdb_sticks_bonds
+        stick_dist = scn.atom_pdb_sticks_dist
+                
         cam        = scn.use_atom_pdb_cam
         lamp       = scn.use_atom_pdb_lamp
         mesh       = scn.use_atom_pdb_mesh
         datafile   = scn.atom_pdb_datafile
-
+        
         # Execute main routine
         atom_number = import_pdb.DEF_atom_pdb_main(
-                mesh, azimuth, zenith, bradius,
-                radiustype, bdistance, sticks,
-                ssector, sradius, center, cam, lamp, datafile)
+                mesh, azimuth, zenith, bradius, radiustype, bdistance, 
+                sticks, sticks_col, sticks_sm, stick_bond,
+                stick_dist, ssector, sradius, center, cam, lamp, datafile)
 
         scn.atom_pdb_number_atoms = str(atom_number) + " atoms"
 
         return {'FINISHED'}
+
+
+class CLASS_atom_pdb_error_dialog(bpy.types.Operator):
+    bl_idname = "atom_pdb.error_dialog"
+    bl_label = "Attention !"
+    
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.label(text="                          "+ATOM_PDB_ERROR) 
+    def execute(self, context):
+        print("Atomic Blender - Error: "+ATOM_PDB_ERROR+"\n")
+        return {'FINISHED'}
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
 
 
 # The entry into the menu 'file -> import'

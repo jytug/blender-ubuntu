@@ -134,8 +134,8 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 				char c= RNA_property_array_item_char(prop, fcu->array_index);
 				
 				/* we need to write the index to a temp buffer (in py syntax) */
-				if (c) sprintf(arrayindbuf, "%c ", c);
-				else sprintf(arrayindbuf, "[%d]", fcu->array_index);
+				if (c) BLI_snprintf(arrayindbuf, sizeof(arrayindbuf), "%c ", c);
+				else BLI_snprintf(arrayindbuf, sizeof(arrayindbuf), "[%d]", fcu->array_index);
 				
 				arrayname= &arrayindbuf[0];
 			}
@@ -161,6 +161,11 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 			 *	use the struct's icon if it is set
 			 */
 			icon= RNA_struct_ui_icon(ptr.type);
+			
+			/* valid path - remove the invalid tag since we now know how to use it saving
+			 * users manual effort to reenable using "Revive Disabled FCurves" [#29629]
+			 */
+			fcu->flag &= ~FCURVE_DISABLED;
 		}
 		else {
 			/* invalid path */

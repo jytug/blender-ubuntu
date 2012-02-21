@@ -103,7 +103,8 @@ static int eyedropper_cancel(bContext *C, wmOperator *op)
 static void eyedropper_sample(bContext *C, Eyedropper *eye, int mx, int my)
 {
 	if(RNA_property_type(eye->prop) == PROP_FLOAT) {
-		const int color_manage = CTX_data_scene(C)->r.color_mgt_flag & R_COLOR_MANAGEMENT;
+		Scene *scene = CTX_data_scene(C);
+		const int color_manage = scene->r.color_mgt_flag & R_COLOR_MANAGEMENT;
 		float col[4];
 	
 		RNA_property_float_get_array(&eye->ptr, eye->prop, col);
@@ -494,7 +495,7 @@ struct uiEditSourceStore {
 } uiEditSourceStore;
 
 struct uiEditSourceButStore {
-	char py_dbg_fn[240];
+	char py_dbg_fn[FILE_MAX];
 	int py_dbg_ln;
 } uiEditSourceButStore;
 
@@ -584,7 +585,7 @@ void UI_editsource_active_but_test(uiBut *but)
 /* editsource operator component */
 
 static int editsource_text_edit(bContext *C, wmOperator *op,
-                                char filepath[240], int line)
+                                char filepath[FILE_MAX], int line)
 {
 	struct Main *bmain= CTX_data_main(C);
 	Text *text;

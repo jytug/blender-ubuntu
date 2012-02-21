@@ -239,6 +239,20 @@ void angle_quad_v3(float angles[4], const float v1[3], const float v2[3], const 
 	angles[3]= (float)M_PI - angle_normalized_v3v3(ed4, ed1);
 }
 
+void angle_poly_v3(float *angles, const float *verts[3], int len)
+{
+	int i;
+	float vec[3][3];
+
+	sub_v3_v3v3(vec[2], verts[len-1], verts[0]);
+	normalize_v3(vec[2]);
+	for (i = 0; i < len; i++) {
+		sub_v3_v3v3(vec[i%3], verts[i%len], verts[(i+1)%len]);
+		normalize_v3(vec[i%3]);
+		angles[i] = (float)M_PI - angle_normalized_v3v3(vec[(i+2)%3], vec[i%3]);
+	}
+}
+
 /********************************* Geometry **********************************/
 
 /* Project v1 on v2 */
@@ -414,6 +428,15 @@ void range_vn_i(int *array_tar, const int size, const int start)
 	int j= start + (size-1);
 	int i= size;
 	while(i--) { *(array_pt--) = j--; }
+}
+
+void range_vn_fl(float *array_tar, const int size, const float start, const float step)
+{
+	float *array_pt= array_tar + (size-1);
+	int i= size;
+	while(i--) {
+		*(array_pt--) = start + step * (float)(i);
+	}
 }
 
 void negate_vn(float *array_tar, const int size)

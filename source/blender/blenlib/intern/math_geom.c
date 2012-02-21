@@ -209,33 +209,54 @@ float dist_to_line_segment_v2(const float v1[2], const float v2[2], const float 
 }
 
 /* point closest to v1 on line v2-v3 in 2D */
-void closest_to_line_segment_v2(float closest[2], const float p[2], const float l1[2], const float l2[2])
+void closest_to_line_segment_v2(float close_r[2], const float p[2], const float l1[2], const float l2[2])
 {
 	float lambda, cp[2];
 
 	lambda= closest_to_line_v2(cp,p, l1, l2);
 
 	if(lambda <= 0.0f)
-		copy_v2_v2(closest, l1);
+		copy_v2_v2(close_r, l1);
 	else if(lambda >= 1.0f)
-		copy_v2_v2(closest, l2);
+		copy_v2_v2(close_r, l2);
 	else
-		copy_v2_v2(closest, cp);
+		copy_v2_v2(close_r, cp);
 }
 
 /* point closest to v1 on line v2-v3 in 3D */
-void closest_to_line_segment_v3(float closest[3], const float v1[3], const float v2[3], const float v3[3])
+void closest_to_line_segment_v3(float close_r[3], const float v1[3], const float v2[3], const float v3[3])
 {
 	float lambda, cp[3];
 
 	lambda= closest_to_line_v3(cp,v1, v2, v3);
 
 	if(lambda <= 0.0f)
-		copy_v3_v3(closest, v2);
+		copy_v3_v3(close_r, v2);
 	else if(lambda >= 1.0f)
-		copy_v3_v3(closest, v3);
+		copy_v3_v3(close_r, v3);
 	else
-		copy_v3_v3(closest, cp);
+		copy_v3_v3(close_r, cp);
+}
+
+/* find the closest point on a plane to another point and store it in close_r
+ * close_r:       return coordinate
+ * plane_co:      a point on the plane
+ * plane_no_unit: the plane's normal, and d is the last number in the plane equation 0 = ax + by + cz + d
+ * pt:            the point that you want the nearest of
+ */
+
+// const float norm[3], const float coord[3], const float point[3], float dst_r[3]
+void closest_to_plane_v3(float close_r[3], const float plane_co[3], const float plane_no_unit[3], const float pt[3])
+{
+	float temp[3];
+	float dotprod;
+
+	sub_v3_v3v3(temp, pt, plane_co);
+	dotprod= dot_v3v3(temp, plane_no_unit);
+
+	close_r[0] = pt[0] - (plane_no_unit[0] * dotprod);
+	close_r[1] = pt[1] - (plane_no_unit[1] * dotprod);
+	close_r[2] = pt[2] - (plane_no_unit[2] * dotprod);
 }
 
 /* signed distance from the point to the plane in 3D */
@@ -2361,6 +2382,38 @@ void accumulate_vertex_normals(float n1[3], float n2[3], float n3[3],
 	}
 }
 
+/* Add weighted face normal component into normals of the face vertices.
+   Caller must pass pre-allocated vdiffs of nverts length. */
+void accumulate_vertex_normals_poly(float **vertnos, float polyno[3],
+	float **vertcos, float vdiffs[][3], int nverts)
+{
+	int i;
+
+	/* calculate normalized edge directions for each edge in the poly */
+	for (i = 0; i < nverts; i++) {
+		sub_v3_v3v3(vdiffs[i], vertcos[(i+1) % nverts], vertcos[i]);
+		normalize_v3(vdiffs[i]);
+	}
+
+	/* accumulate angle weighted face normal */
+	{
+		const float *prev_edge = vdiffs[nverts-1];
+		int i;
+
+		for(i=0; i<nverts; i++) {
+			const float *cur_edge = vdiffs[i];
+			
+			/* calculate angle between the two poly edges incident on
+			   this vertex */
+			const float fac= saacos(-dot_v3v3(cur_edge, prev_edge));
+
+			/* accumulate */
+			madd_v3_v3fl(vertnos[i], polyno, fac);
+			prev_edge = cur_edge;
+		}
+	}
+}
+
 /********************************* Tangents **********************************/
 
 /* For normal map tangents we need to detect uv boundaries, and only average
@@ -2432,8 +2485,9 @@ void tangent_from_uv(float uv1[2], float uv2[2], float uv3[3], float co1[3], flo
 		cross_v3_v3v3(ct, tang, tangv);
 	
 		/* check flip */
-		if ((ct[0]*n[0] + ct[1]*n[1] + ct[2]*n[2]) < 0.0f)
+		if (dot_v3v3(ct, n) < 0.0f) {
 			negate_v3(tang);
+		}
 	}
 	else {
 		tang[0]= tang[1]= tang[2]=  0.0;
@@ -3016,4 +3070,27 @@ float form_factor_hemi_poly(float p[3], float n[3], float v1[3], float v2[3], fl
 		contrib += ff_quad_form_factor(p, n, q0, q1, q2, q3);
 
 	return contrib;
+}
+
+/* evaluate if entire quad is a proper convex quad */
+ int is_quad_convex_v3(const float *v1, const float *v2, const float *v3, const float *v4)
+ {
+	float nor[3], nor1[3], nor2[3], vec[4][2];
+	int axis_a, axis_b;
+	
+	/* define projection, do both trias apart, quad is undefined! */
+	normal_tri_v3(nor1, v1, v2, v3);
+	normal_tri_v3(nor2, v1, v3, v4);
+	add_v3_v3v3(nor, nor1, nor2);
+
+	axis_dominant_v3(&axis_a, &axis_b, nor);
+
+	vec[0][0]= v1[axis_a]; vec[0][1]= v1[axis_b];
+	vec[1][0]= v2[axis_a]; vec[1][1]= v2[axis_b];
+
+	vec[2][0]= v3[axis_a]; vec[2][1]= v3[axis_b];
+	vec[3][0]= v4[axis_a]; vec[3][1]= v4[axis_b];
+	
+	/* linetests, the 2 diagonals have to instersect to be convex */
+	return (isect_line_line_v2(vec[0], vec[2], vec[1], vec[3]) > 0) ? 1 : 0;
 }

@@ -22,7 +22,6 @@ bl_info = {
     "name": "Demo Mode",
     "author": "Campbell Barton",
     "blender": (2, 5, 7),
-    "api": 35622,
     "location": "Demo Menu",
     "description": "Demo mode lets you select multiple blend files and loop over them.",
     "warning": "",
@@ -174,7 +173,7 @@ class DemoModeSetup(bpy.types.Operator):
 
         layout.separator()
         sub = layout.column()
-        sub.active = (mode in ('AUTO', 'PLAY'))
+        sub.active = (mode in {'AUTO', 'PLAY'})
         sub.label("Animate Settings:")
         sub.prop(self, "anim_cycles")
         sub.prop(self, "anim_time_min")
@@ -183,7 +182,7 @@ class DemoModeSetup(bpy.types.Operator):
 
         layout.separator()
         sub = layout.column()
-        sub.active = (mode in ('AUTO', 'RENDER'))
+        sub.active = (mode in {'AUTO', 'RENDER'})
         sub.label("Render Settings:")
         sub.prop(self, "display_render")
 

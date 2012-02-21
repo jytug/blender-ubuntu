@@ -53,7 +53,7 @@ typedef struct Global {
 	struct Main *main;
 	
 	/* strings: lastsaved */
-	char ima[256], lib[256];
+	char ima[1024], lib[1024]; /* 1024 = FILE_MAX */
 
 	/* flag: if != 0 G.main->name contains valid relative base path */
 	int relbase_valid;
@@ -141,6 +141,7 @@ typedef struct Global {
 #define G_FILE_RECOVER			 (1 << 23)
 #define G_FILE_RELATIVE_REMAP	 (1 << 24)
 #define G_FILE_HISTORY			 (1 << 25)
+#define G_FILE_MESH_COMPAT		 (1 << 26)				/* BMesh option to save as older mesh format */
 
 /* G.windowstate */
 #define G_WINDOWSTATE_USERDEF		0

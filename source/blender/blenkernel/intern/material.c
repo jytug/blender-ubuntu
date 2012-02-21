@@ -51,6 +51,7 @@
 #include "BLI_listbase.h"		
 #include "BLI_utildefines.h"
 #include "BLI_bpath.h"
+#include "BLI_string.h"
 
 #include "BKE_animsys.h"
 #include "BKE_displist.h"
@@ -903,7 +904,7 @@ static void do_init_render_material(Material *ma, int r_mode, float *amb)
 
 			/* always get derivatives for these textures */
 			if ELEM3(mtex->tex->type, TEX_IMAGE, TEX_PLUGIN, TEX_ENVMAP) ma->texco |= TEXCO_OSA;
-			else if(mtex->texflag & (MTEX_COMPAT_BUMP|MTEX_3TAP_BUMP|MTEX_5TAP_BUMP)) ma->texco |= TEXCO_OSA;
+			else if(mtex->texflag & (MTEX_COMPAT_BUMP|MTEX_3TAP_BUMP|MTEX_5TAP_BUMP|MTEX_BICUBIC_BUMP)) ma->texco |= TEXCO_OSA;
 			
 			if(ma->texco & (TEXCO_ORCO|TEXCO_REFL|TEXCO_NORM|TEXCO_STRAND|TEXCO_STRESS)) needuv= 1;
 			else if(ma->texco & (TEXCO_GLOB|TEXCO_UV|TEXCO_OBJECT|TEXCO_SPEED)) needuv= 1;
@@ -1614,7 +1615,7 @@ static void calculate_tface_materialname(char *matname, char *newname, int flag)
 	int digits = integer_getdigits(flag);
 	/* clamp the old name, remove the MA prefix and add the .TF.flag suffix
 	e.g. matname = "MALoooooooooooooongName"; newname = "Loooooooooooooon.TF.2" */
-	sprintf(newname, "%.*s.TF.%0*d", MAX_ID_NAME-(digits+5), matname, digits, flag);
+	BLI_snprintf(newname, MAX_ID_NAME, "%.*s.TF.%0*d", MAX_ID_NAME-(digits+5), matname, digits, flag);
 }
 
 /* returns -1 if no match */
@@ -1661,8 +1662,8 @@ static short convert_tfacenomaterial(Main *main, Mesh *me, MTFace *tf, int flag)
 	short mat_nr= -1;
 	
 	/* new material, the name uses the flag*/
-	sprintf(idname, "MAMaterial.TF.%0*d", integer_getdigits(flag), flag);
-	
+	BLI_snprintf(idname, sizeof(idname), "MAMaterial.TF.%0*d", integer_getdigits(flag), flag);
+
 	if ((ma= BLI_findstring(&main->mat, idname+2, offsetof(ID, name)+2))) {
 		mat_nr= mesh_getmaterialnumber(me, ma);
 		/* assign the material to the mesh */

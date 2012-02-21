@@ -52,7 +52,7 @@
 
 #include "GHOST_Path-api.h"
 
-#if defined WIN32 && !defined _LIBC
+#if defined WIN32 && !defined _LIBC  || defined __sun
 #  include "BLI_fnmatch.h" /* use fnmatch included in blenlib */
 #else
 #  ifndef _GNU_SOURCE
@@ -317,7 +317,7 @@ void BLI_uniquename(ListBase *list, void *vlink, const char defname[], char deli
 
 void BLI_cleanup_path(const char *relabase, char *dir)
 {
-	short a;
+	ptrdiff_t a;
 	char *start, *eind;
 	if (relabase) {
 		BLI_path_abs(dir, relabase);
@@ -627,8 +627,10 @@ int BLI_path_frame_range(char *path, int sta, int end, int digits)
 
 	if (stringframe_chars(path, &ch_sta, &ch_end)) { /* warning, ch_end is the last # +1 */
 		char tmp[FILE_MAX];
-		sprintf(tmp, "%.*s%.*d-%.*d%s", ch_sta, path, ch_end-ch_sta, sta, ch_end-ch_sta, end, path+ch_end);
-		strcpy(path, tmp);
+		BLI_snprintf(tmp, sizeof(tmp),
+		             "%.*s%.*d-%.*d%s",
+		             ch_sta, path, ch_end-ch_sta, sta, ch_end-ch_sta, end, path+ch_end);
+		BLI_strncpy(path, tmp, FILE_MAX);
 		return 1;
 	}
 	return 0;
@@ -1416,7 +1418,7 @@ int BLI_replace_extension(char *path, size_t maxlen, const char *ext)
 {
 	size_t path_len= strlen(path);
 	size_t ext_len= strlen(ext);
-	size_t a;
+	ssize_t a;
 
 	for(a= path_len - 1; a >= 0; a--) {
 		if (ELEM3(path[a], '.', '/', '\\')) {
@@ -1424,7 +1426,7 @@ int BLI_replace_extension(char *path, size_t maxlen, const char *ext)
 		}
 	}
 
-	if (path[a] != '.') {
+	if ((a < 0) || (path[a] != '.')) {
 		a= path_len;
 	}
 
@@ -1440,7 +1442,7 @@ int BLI_ensure_extension(char *path, size_t maxlen, const char *ext)
 {
 	size_t path_len= strlen(path);
 	size_t ext_len= strlen(ext);
-	size_t a;
+	ssize_t a;
 
 	/* first check the extension is alread there */
 	if (    (ext_len <= path_len) &&

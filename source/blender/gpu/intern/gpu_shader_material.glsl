@@ -306,7 +306,7 @@ void vec_math_negate(vec3 v, out vec3 outv)
 
 void normal(vec3 dir, vec3 nor, out vec3 outnor, out float outdot)
 {
-	outnor = dir;
+	outnor = nor;
 	outdot = -dot(dir, nor);
 }
 
@@ -1152,8 +1152,8 @@ void mtex_bump_init_objspace( vec3 surf_pos, vec3 surf_norm,
 							  out float fPrevMagnitude_out, out vec3 vNacc_out, 
 							  out vec3 vR1, out vec3 vR2, out float fDet ) 
 {
-	mat3 obj2view = to_mat3(mView * mObj);
-	mat3 view2obj = to_mat3(mObjInv * mViewInv);
+	mat3 obj2view = to_mat3(gl_ModelViewMatrix);
+	mat3 view2obj = to_mat3(gl_ModelViewMatrixInverse);
 	
 	vec3 vSigmaS = view2obj * dFdx( surf_pos );
 	vec3 vSigmaT = view2obj * dFdy( surf_pos );
@@ -1224,6 +1224,100 @@ void mtex_bump_tap3( vec3 texco, sampler2D ima, float hScale,
 	dBs = hScale * (Hlr - Hll);
 	dBt = hScale * (Hul - Hll);
 }
+
+#ifdef BUMP_BICUBIC
+
+void mtex_bump_bicubic( vec3 texco, sampler2D ima, float hScale, 
+                     out float dBs, out float dBt ) 
+{
+	float Hl;
+	float Hr;
+	float Hd;
+	float Hu;
+	
+	vec2 TexDx = dFdx(texco.xy);
+	vec2 TexDy = dFdy(texco.xy);
+ 
+	vec2 STl = texco.xy - 0.5 * TexDx ;
+	vec2 STr = texco.xy + 0.5 * TexDx ;
+	vec2 STd = texco.xy - 0.5 * TexDy ;
+	vec2 STu = texco.xy + 0.5 * TexDy ;
+	
+	rgbtobw(texture2D(ima, STl), Hl);
+	rgbtobw(texture2D(ima, STr), Hr);
+	rgbtobw(texture2D(ima, STd), Hd);
+	rgbtobw(texture2D(ima, STu), Hu);
+	
+	vec2 dHdxy = vec2(Hr - Hl, Hu - Hd);
+	float fBlend = clamp(1.0-textureQueryLOD(ima, texco.xy).x, 0.0, 1.0);
+	if(fBlend!=0.0)
+	{
+		// the derivative of the bicubic sampling of level 0
+		ivec2 vDim;
+		vDim = textureSize(ima, 0);
+
+		// taking the fract part of the texture coordinate is a hardcoded wrap mode.
+		// this is acceptable as textures use wrap mode exclusively in 3D view elsewhere in blender. 
+		// this is done so that we can still get a valid texel with uvs outside the 0,1 range
+		// by texelFetch below, as coordinates are clamped when using this function.
+		vec2 fTexLoc = vDim*fract(texco.xy) - vec2(0.5, 0.5);
+		ivec2 iTexLoc = ivec2(floor(fTexLoc));
+		vec2 t = clamp(fTexLoc - iTexLoc, 0.0, 1.0);		// sat just to be pedantic
+
+/*******************************************************************************************
+ * This block will replace the one below when one channel textures are properly supported. *
+ *******************************************************************************************
+		vec4 vSamplesUL = textureGather(ima, (iTexLoc+ivec2(-1,-1) + vec2(0.5,0.5))/vDim );
+		vec4 vSamplesUR = textureGather(ima, (iTexLoc+ivec2(1,-1) + vec2(0.5,0.5))/vDim );
+		vec4 vSamplesLL = textureGather(ima, (iTexLoc+ivec2(-1,1) + vec2(0.5,0.5))/vDim );
+		vec4 vSamplesLR = textureGather(ima, (iTexLoc+ivec2(1,1) + vec2(0.5,0.5))/vDim );
+
+		mat4 H = mat4(vSamplesUL.w, vSamplesUL.x, vSamplesLL.w, vSamplesLL.x,
+					vSamplesUL.z, vSamplesUL.y, vSamplesLL.z, vSamplesLL.y,
+					vSamplesUR.w, vSamplesUR.x, vSamplesLR.w, vSamplesLR.x,
+					vSamplesUR.z, vSamplesUR.y, vSamplesLR.z, vSamplesLR.y);
+*/	
+		ivec2 iTexLocMod = iTexLoc + ivec2(-1, -1);
+
+		mat4 H;
+		
+		for(int i = 0; i < 4; i++){
+			for(int j = 0; j < 4; j++){
+				ivec2 iTexTmp = iTexLocMod + ivec2(i,j);
+				
+				// wrap texture coordinates manually for texelFetch to work on uvs oitside the 0,1 range.
+				// this is guaranteed to work since we take the fractional part of the uv above.
+				iTexTmp.x = (iTexTmp.x < 0)? iTexTmp.x + vDim.x : ((iTexTmp.x >= vDim.x)? iTexTmp.x - vDim.x : iTexTmp.x);
+				iTexTmp.y = (iTexTmp.y < 0)? iTexTmp.y + vDim.y : ((iTexTmp.y >= vDim.y)? iTexTmp.y - vDim.y : iTexTmp.y);
+
+				rgbtobw(texelFetch(ima, iTexTmp, 0), H[i][j]);
+			}
+		}
+		
+		float x = t.x, y = t.y;
+		float x2 = x * x, x3 = x2 * x, y2 = y * y, y3 = y2 * y;
+
+		vec4 X = vec4(-0.5*(x3+x)+x2,		1.5*x3-2.5*x2+1,	-1.5*x3+2*x2+0.5*x,		0.5*(x3-x2));
+		vec4 Y = vec4(-0.5*(y3+y)+y2,		1.5*y3-2.5*y2+1,	-1.5*y3+2*y2+0.5*y,		0.5*(y3-y2));
+		vec4 dX = vec4(-1.5*x2+2*x-0.5,		4.5*x2-5*x,			-4.5*x2+4*x+0.5,		1.5*x2-x);
+		vec4 dY = vec4(-1.5*y2+2*y-0.5,		4.5*y2-5*y,			-4.5*y2+4*y+0.5,		1.5*y2-y);
+	
+		// complete derivative in normalized coordinates (mul by vDim)
+		vec2 dHdST = vDim * vec2(dot(Y, H * dX), dot(dY, H * X));
+
+		// transform derivative to screen-space
+		vec2 dHdxy_bicubic = vec2( dHdST.x * TexDx.x + dHdST.y * TexDx.y,
+								   dHdST.x * TexDy.x + dHdST.y * TexDy.y );
+
+		// blend between the two
+		dHdxy = dHdxy*(1-fBlend) + dHdxy_bicubic*fBlend;
+	}
+
+	dBs = hScale * dHdxy.x;
+	dBt = hScale * dHdxy.y;
+}
+
+#endif
 
 void mtex_bump_tap5( vec3 texco, sampler2D ima, float hScale, 
                      out float dBs, out float dBt ) 
@@ -1983,19 +2077,21 @@ void node_tex_coord(vec3 I, vec3 N, mat4 toworld,
 
 /* textures */
 
-void node_tex_blend(vec3 co, out float fac)
+void node_tex_gradient(vec3 co, out vec4 color, out float fac)
 {
+	color = vec4(1.0);
+	fac = 1.0;
+}
+
+void node_tex_checker(vec3 co, vec4 color1, vec4 color2, float scale, out vec4 color, out float fac)
+{
+	color = vec4(1.0);
 	fac = 1.0;
 }
 
 void node_tex_clouds(vec3 co, float size, out vec4 color, out float fac)
 {
 	color = vec4(1.0);
-	fac = 1.0;
-}
-
-void node_tex_distnoise(vec3 co, float size, float distortion, out float fac)
-{
 	fac = 1.0;
 }
 
@@ -2012,88 +2108,19 @@ void node_tex_image(vec3 co, sampler2D ima, out vec4 color)
 	color = texture2D(ima, co.xy);
 }
 
-void node_tex_magic(vec3 p, float turbulence, float n, out vec4 color)
+void node_tex_magic(vec3 p, float scale, float distortion, out vec4 color, out float fac)
 {
-	float turb = turbulence/5.0;
-
-	float x = sin((p.x + p.y + p.z)*5.0);
-	float y = cos((-p.x + p.y - p.z)*5.0);
-	float z = -cos((-p.x - p.y + p.z)*5.0);
-
-	if(n > 0.0) {
-		x *= turb;
-		y *= turb;
-		z *= turb;
-		y = -cos(x-y+z);
-		y *= turb;
-
-		if(n > 1.0) {
-			x= cos(x-y-z);
-			x *= turb;
-
-			if(n > 2.0) {
-				z= sin(-x-y-z);
-				z *= turb;
-
-				if(n > 3.0) {
-					x= -cos(-x+y-z);
-					x *= turb;
-
-					if(n > 4.0) {
-						y= -sin(-x+y+z);
-						y *= turb;
-
-						if(n > 5.0) {
-							y= -cos(-x+y+z);
-							y *= turb;
-
-							if(n > 6.0) {
-								x= cos(x+y+z);
-								x *= turb;
-
-								if(n > 7.0) {
-									z= sin(x+y-z);
-									z *= turb;
-
-									if(n > 8.0) {
-										x= -cos(-x-y+z);
-										x *= turb;
-
-										if(n > 9.0) {
-											y= -sin(x-y+z);
-											y *= turb;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if(turb != 0.0) {
-		turb *= 2.0;
-		x /= turb;
-		y /= turb;
-		z /= turb;
-	}
-
-	color = vec4(0.5 - x, 0.5 - y, 0.5 - z, 1.0);
-}
-
-void node_tex_marble(vec3 co, float size, float turbulence, out float fac)
-{
+	color = vec4(1.0);
 	fac = 1.0;
 }
 
-void node_tex_musgrave(vec3 co, float size, float dimension, float lacunarity, float octaves, float offset, float gain, out float fac)
+void node_tex_musgrave(vec3 co, float scale, float detail, float dimension, float lacunarity, float offset, float gain, out vec4 color, out float fac)
 {
+	color = vec4(1.0);
 	fac = 1.0;
 }
 
-void node_tex_noise(vec3 co, out vec4 color, out float fac)
+void node_tex_noise(vec3 co, float scale, float detail, float distortion, out vec4 color, out float fac)
 {
 	color = vec4(1.0);
 	fac = 1.0;
@@ -2104,19 +2131,15 @@ void node_tex_sky(vec3 co, out vec4 color)
 	color = vec4(1.0);
 }
 
-void node_tex_stucci(vec3 co, float size, float turbulence, out float fac)
-{
-	fac = 1.0;
-}
-
-void node_tex_voronoi(vec3 co, float size, float weight1, float weight2, float weight3, float weight4, float exponent, out vec4 color, out float fac)
+void node_tex_voronoi(vec3 co, float scale, out vec4 color, out float fac)
 {
 	color = vec4(1.0);
 	fac = 1.0;
 }
 
-void node_tex_wood(vec3 co, float size, float turbulence, out float fac)
+void node_tex_wave(vec3 co, float scale, float distortion, float detail, float detail_scale, out vec4 color, out float fac)
 {
+	color = vec4(1.0);
 	fac = 1.0;
 }
 

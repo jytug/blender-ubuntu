@@ -24,12 +24,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_FILEGLOBAL_TYPES_H
-#define DNA_FILEGLOBAL_TYPES_H
 
 /** \file DNA_fileglobal_types.h
  *  \ingroup DNA
  */
+
+#ifndef DNA_FILEGLOBAL_TYPES_H
+#define DNA_FILEGLOBAL_TYPES_H
 
 struct bScreen;
 struct Scene;
@@ -50,7 +51,7 @@ typedef struct FileGlobal {
 	int revision;		/* svn revision from buildinfo */
 	int pad;
 	/* file path where this was saved, for recover */
-	char filename[240]; /* 240 = FILE_MAX */
+	char filename[1024]; /* 1024 = FILE_MAX */
 } FileGlobal;
 
 

@@ -41,9 +41,11 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
+#include "BLI_math_base.h"
 
 #include "GPU_draw.h"
 #include "GPU_extensions.h"
+#include "gpu_codegen.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -84,6 +86,8 @@ int GPU_type_matches(GPUDeviceType device, GPUOSType os, GPUDriverType driver)
 
 /* GPU Extensions */
 
+static int gpu_extensions_init = 0;
+
 void GPU_extensions_disable(void)
 {
 	GG.extdisabled = 1;
@@ -95,11 +99,11 @@ void GPU_extensions_init(void)
 	const char *vendor, *renderer;
 
 	/* can't avoid calling this multiple times, see wm_window_add_ghostwindow */
-	static char init= 0;
-	if(init) return;
-	init= 1;
+	if(gpu_extensions_init) return;
+	gpu_extensions_init= 1;
 
 	glewInit();
+	GPU_codegen_init();
 
 	/* glewIsSupported("GL_VERSION_2_0") */
 
@@ -122,12 +126,6 @@ void GPU_extensions_init(void)
 	if(strstr(vendor, "ATI")) {
 		GG.device = GPU_DEVICE_ATI;
 		GG.driver = GPU_DRIVER_OFFICIAL;
-
-		/* ATI X1xxx cards (R500 chipset) lack full support for npot textures
-		 * although they report the GLEW_ARB_texture_non_power_of_two extension.
-		 */
-		if(strstr(renderer, "X1"))
-			GG.npotdisabled = 1;
 	}
 	else if(strstr(vendor, "NVIDIA")) {
 		GG.device = GPU_DEVICE_NVIDIA;
@@ -143,17 +141,6 @@ void GPU_extensions_init(void)
 	else if(strstr(renderer, "Mesa DRI R") || (strstr(renderer, "Gallium ") && strstr(renderer, " on ATI "))) {
 		GG.device = GPU_DEVICE_ATI;
 		GG.driver = GPU_DRIVER_OPENSOURCE;
-		/* ATI 9500 to X2300 cards support NPoT textures poorly
-		 * Incomplete list http://dri.freedesktop.org/wiki/ATIRadeon
-		 * New IDs from MESA's src/gallium/drivers/r300/r300_screen.c
-		 */
-		if(strstr(renderer, "R3") || strstr(renderer, "RV3") ||
-		   strstr(renderer, "R4") || strstr(renderer, "RV4") ||
-		   strstr(renderer, "RS4") || strstr(renderer, "RC4") ||
-		   strstr(renderer, "R5") || strstr(renderer, "RV5") ||
-		   strstr(renderer, "RS600") || strstr(renderer, "RS690") ||
-		   strstr(renderer, "RS740"))
-			GG.npotdisabled = 1;
 	}
 	else if(strstr(renderer, "Nouveau") || strstr(vendor, "nouveau")) {
 		GG.device = GPU_DEVICE_NVIDIA;
@@ -176,6 +163,22 @@ void GPU_extensions_init(void)
 		GG.driver = GPU_DRIVER_ANY;
 	}
 
+	if(GG.device == GPU_DEVICE_ATI) {
+		/* ATI 9500 to X2300 cards support NPoT textures poorly
+		 * Incomplete list http://dri.freedesktop.org/wiki/ATIRadeon
+		 * New IDs from MESA's src/gallium/drivers/r300/r300_screen.c
+		 */
+		if(strstr(renderer, "R3") || strstr(renderer, "RV3") ||
+		   strstr(renderer, "R4") || strstr(renderer, "RV4") ||
+		   strstr(renderer, "RS4") || strstr(renderer, "RC4") ||
+		   strstr(renderer, "R5") || strstr(renderer, "RV5") ||
+		   strstr(renderer, "RS600") || strstr(renderer, "RS690") ||
+		   strstr(renderer, "RS740") || strstr(renderer, "X1") ||
+		   strstr(renderer, "X2") || strstr(renderer, "Radeon 9") ||
+		   strstr(renderer, "RADEON 9"))
+			GG.npotdisabled = 1;
+	}
+
 	GG.os = GPU_OS_UNIX;
 #ifdef _WIN32
 	GG.os = GPU_OS_WIN;
@@ -185,6 +188,12 @@ void GPU_extensions_init(void)
 #endif
 }
 
+void GPU_extensions_exit(void)
+{
+	gpu_extensions_init = 0;
+	GPU_codegen_exit();
+}
+
 int GPU_glsl_support(void)
 {
 	return !GG.extdisabled && GG.glslsupport;
@@ -192,11 +201,6 @@ int GPU_glsl_support(void)
 
 int GPU_non_power_of_two_support(void)
 {
-	/* Exception for buggy ATI/Apple driver in Mac OS X 10.5/10.6,
-	 * they claim to support this but can cause system freeze */
-	if(GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_MAC, GPU_DRIVER_OFFICIAL))
-		return 0;
-
 	if(GG.npotdisabled)
 		return 0;
 
@@ -292,22 +296,6 @@ static unsigned char *GPU_texture_convert_pixels(int length, float *fpixels)
 	return pixels;
 }
 
-static int is_pow2(int n)
-{
-	return ((n)&(n-1))==0;
-}
-
-static int larger_pow2(int n)
-{
-	if (is_pow2(n))
-		return n;
-
-	while(!is_pow2(n))
-		n= n&(n-1);
-
-	return n*2;
-}
-
 static void GPU_glTexSubImageEmpty(GLenum target, GLenum format, int x, int y, int w, int h)
 {
 	void *pixels = MEM_callocN(sizeof(char)*4*w*h, "GPUTextureEmptyPixels");
@@ -353,8 +341,8 @@ static GPUTexture *GPU_texture_create_nD(int w, int h, int n, float *fpixels, in
 	}
 
 	if (!GPU_non_power_of_two_support()) {
-		tex->w = larger_pow2(tex->w);
-		tex->h = larger_pow2(tex->h);
+		tex->w = power_of_2_max_i(tex->w);
+		tex->h = power_of_2_max_i(tex->h);
 	}
 
 	tex->number = 0;
@@ -462,9 +450,9 @@ GPUTexture *GPU_texture_create_3D(int w, int h, int depth, float *fpixels)
 	}
 
 	if (!GPU_non_power_of_two_support()) {
-		tex->w = larger_pow2(tex->w);
-		tex->h = larger_pow2(tex->h);
-		tex->depth = larger_pow2(tex->depth);
+		tex->w = power_of_2_max_i(tex->w);
+		tex->h = power_of_2_max_i(tex->h);
+		tex->depth = power_of_2_max_i(tex->depth);
 	}
 
 	tex->number = 0;
@@ -1162,7 +1150,7 @@ void GPU_shader_uniform_texture(GPUShader *UNUSED(shader), int location, GPUText
 	GPU_print_error("Post Uniform Texture");
 }
 
-int GPU_shader_get_attribute(GPUShader *shader, char *name)
+int GPU_shader_get_attribute(GPUShader *shader, const char *name)
 {
 	int index;
 	

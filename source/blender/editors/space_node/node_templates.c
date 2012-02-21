@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -50,6 +48,8 @@
 #include "BKE_scene.h"
 
 #include "RNA_access.h"
+
+#include "NOD_socket.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -207,12 +207,9 @@ static void node_socket_add_replace(Main *bmain, bNodeTree *ntree, bNode *node_t
 						nodeRemLink(ntree, link);
 					}
 
-					if(sock_prev->default_value) {
-						if(sock_from->default_value)
-							MEM_freeN(sock_from->default_value);
-
-						sock_from->default_value = MEM_dupallocN(sock_prev->default_value);
-					}
+					node_socket_free_default_value(sock_from->type, sock_from->default_value);
+					sock_from->default_value = node_socket_make_default_value(sock_from->type);
+					node_socket_copy_default_value(sock_from->type, sock_from->default_value, sock_prev->default_value);
 				}
 			}
 		}

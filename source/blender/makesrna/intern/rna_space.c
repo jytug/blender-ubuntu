@@ -35,6 +35,7 @@
 #include "rna_internal.h"
 
 #include "BKE_key.h"
+#include "BKE_movieclip.h"
 
 #include "DNA_action_types.h"
 #include "DNA_key_types.h"
@@ -1975,6 +1976,11 @@ static void rna_def_space_sequencer(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Use Grease Pencil", "Display and edit the grease pencil freehand annotations overlay");
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_SEQUENCER, NULL);
 	
+	prop= RNA_def_property(srna, "show_seconds", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", SEQ_DRAWFRAMES);
+	RNA_def_property_ui_text(prop, "Show Seconds", "Show timing in seconds not frames");
+	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_SEQUENCER, NULL);
+
 	/* grease pencil */
 	prop= RNA_def_property(srna, "grease_pencil", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "gpd");
@@ -1999,23 +2005,6 @@ static void rna_def_space_sequencer(BlenderRNA *brna)
 	RNA_def_property_enum_sdna(prop, NULL, "render_size");
 	RNA_def_property_enum_items(prop, proxy_render_size_items);
 	RNA_def_property_ui_text(prop, "Proxy render size", "Draw preview using full resolution or different proxy resolutions");
-	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_SEQUENCER, NULL);
-	
-	
-	/* not sure we need rna access to these but adding anyway */
-	prop= RNA_def_property(srna, "offset_x", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "xof");
-	RNA_def_property_ui_text(prop, "X Offset", "Offset image horizontally from the view center");
-	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_SEQUENCER, NULL);
-
-	prop= RNA_def_property(srna, "offset_y", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "yof");
-	RNA_def_property_ui_text(prop, "Y Offset", "Offset image vertically from the view center");
-	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_SEQUENCER, NULL);
-	
-	prop= RNA_def_property(srna, "zoom", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "zoom");
-	RNA_def_property_ui_text(prop, "Zoom", "Display zoom level");	
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_SEQUENCER, NULL);
 }
 
@@ -2156,7 +2145,6 @@ static void rna_def_space_dopesheet(BlenderRNA *brna)
 	/* display */
 	prop= RNA_def_property(srna, "show_seconds", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SACTION_DRAWTIME);
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE); // XXX for now, only set with operator
 	RNA_def_property_ui_text(prop, "Show Seconds", "Show timing in seconds not frames");
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_DOPESHEET, NULL);
 	
@@ -2241,7 +2229,6 @@ static void rna_def_space_graph(BlenderRNA *brna)
 	/* display */
 	prop= RNA_def_property(srna, "show_seconds", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SIPO_DRAWTIME);
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE); // XXX for now, only set with operator
 	RNA_def_property_ui_text(prop, "Show Seconds", "Show timing in seconds not frames");
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_GRAPH, NULL);
 	
@@ -2339,7 +2326,6 @@ static void rna_def_space_nla(BlenderRNA *brna)
 	/* display */
 	prop= RNA_def_property(srna, "show_seconds", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SNLA_DRAWTIME);
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE); // XXX for now, only set with operator
 	RNA_def_property_ui_text(prop, "Show Seconds", "Show timing in seconds not frames");
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_NLA, NULL);
 	
@@ -2392,6 +2378,11 @@ static void rna_def_space_time(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "show_frame_indicator", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TIME_CFRA_NUM);
 	RNA_def_property_ui_text(prop, "Show Frame Number Indicator", "Show frame number beside the current frame indicator line");
+	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_TIME, NULL);
+	
+	prop= RNA_def_property(srna, "show_seconds", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", TIME_DRAWFRAMES);
+	RNA_def_property_ui_text(prop, "Show Seconds", "Show timing in seconds not frames");
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_TIME, NULL);
 	
 	/* displaying cache status */
@@ -2902,17 +2893,17 @@ static void rna_def_space_clip(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SC_SHOW_MARKER_SEARCH);
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
 
-	/* show pyramid */
-	prop= RNA_def_property(srna, "show_pyramid_levels", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_ui_text(prop, "Show Pyramid ", "Show patterns for each pyramid level for markers (KLT only)");
-	RNA_def_property_boolean_sdna(prop, NULL, "flag", SC_SHOW_PYRAMID_LEVELS);
-	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
-
 	/* lock to selection */
 	prop= RNA_def_property(srna, "lock_selection", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Lock to Selection", "Lock viewport to selected markers during playback");
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SC_LOCK_SELECTION);
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, "rna_SpaceClipEditor_lock_selection_update");
+
+	/* lock to time cursor */
+	prop= RNA_def_property(srna, "lock_time_cursor", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_ui_text(prop, "Lock to Time Cursor", "Lock curves view to time cursor during playback and tracking");
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", SC_LOCK_TIMECURSOR);
+	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
 
 	/* show markers pathes */
 	prop= RNA_def_property(srna, "show_track_path", PROP_BOOLEAN, PROP_NONE);
@@ -2981,12 +2972,6 @@ static void rna_def_space_clip(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Manual Calibration", "Use manual calibration helpers");
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
 
-	/* show stable */
-	prop= RNA_def_property(srna, "show_grease_pencil", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "flag", SC_SHOW_GPENCIL);
-	RNA_def_property_ui_text(prop, "Show Grease Pencil", "Show grease pencil strokes over the footage");
-	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
-
 	/* show filters */
 	prop= RNA_def_property(srna, "show_filters", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SC_SHOW_FILTERS);
@@ -3004,6 +2989,32 @@ static void rna_def_space_clip(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SC_SHOW_GRAPH_TRACKS);
 	RNA_def_property_ui_text(prop, "Show Tracks", "Display the speed curves (in \"x\" direction red, in \"y\" direction green) for the selected tracks");
 	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
+
+	/* ** channels ** */
+
+	/* show_red_channel */
+	prop= RNA_def_property(srna, "show_red_channel", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_negative_sdna(prop, NULL, "postproc_flag", MOVIECLIP_DISABLE_RED);
+	RNA_def_property_ui_text(prop, "Show Red Channel", "Show red channel in the frame");
+	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
+
+	/* show_green_channel */
+	prop= RNA_def_property(srna, "show_green_channel", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_negative_sdna(prop, NULL, "postproc_flag", MOVIECLIP_DISABLE_GREEN);
+	RNA_def_property_ui_text(prop, "Show Green Channel", "Show green channel in the frame");
+	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
+
+	/* show_blue_channel */
+	prop= RNA_def_property(srna, "show_blue_channel", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_negative_sdna(prop, NULL, "postproc_flag", MOVIECLIP_DISABLE_BLUE);
+	RNA_def_property_ui_text(prop, "Show Blue Channel", "Show blue channel in the frame");
+	RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CLIP, NULL);
+
+	/* preview_grayscale */
+	prop= RNA_def_property(srna, "use_grayscale_preview", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "postproc_flag", MOVIECLIP_PREVIEW_GRAYSCALE);
+	RNA_def_property_ui_text(prop, "Grayscale", "Display frame in grayscale mode");
+	RNA_def_property_update(prop, NC_MOVIECLIP|ND_DISPLAY, NULL);
 }
 
 

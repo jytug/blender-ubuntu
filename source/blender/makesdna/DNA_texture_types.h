@@ -24,14 +24,15 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_TEXTURE_TYPES_H
-#define DNA_TEXTURE_TYPES_H
 
 /** \file DNA_texture_types.h
  *  \ingroup DNA
  *  \since mar-2001
  *  \author nzc
  */
+
+#ifndef DNA_TEXTURE_TYPES_H
+#define DNA_TEXTURE_TYPES_H
 
 #include "DNA_defs.h"
 #include "DNA_ID.h"
@@ -59,7 +60,7 @@ typedef struct MTex {
 	short texco, mapto, maptoneg, blendtype;
 	struct Object *object;
 	struct Tex *tex;
-	char uvname[32];
+	char uvname[64];	/* MAX_CUSTOMDATA_LAYER_NAME */
 	
 	char projx, projy, projz, mapping;
 	float ofs[3], size[3], rot;
@@ -104,7 +105,7 @@ typedef unsigned short dna_ushort_fix;
 #endif
 
 typedef struct PluginTex {
-	char name[160];
+	char name[1024];
 	void *handle;
 	
 	char *pname;
@@ -199,7 +200,7 @@ typedef struct VoxelData {
 	struct Object *object; /* for rendering smoke sims */
 	float int_multiplier;	
 	int still_frame;
-	char source_path[240];
+	char source_path[1024];  /* 1024 = FILE_MAX */
 
 	/* temporary data */
 	float *dataset;
@@ -494,6 +495,7 @@ typedef struct ColorMapping {
 #define MTEX_BUMP_OBJECTSPACE	1024
 #define MTEX_BUMP_TEXTURESPACE	2048
 /* #define MTEX_BUMP_FLIPPED 	4096 */ /* UNUSED */
+#define MTEX_BICUBIC_BUMP		8192
 
 /* blendtype */
 #define MTEX_BLEND		0

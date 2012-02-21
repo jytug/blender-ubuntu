@@ -1,6 +1,8 @@
 # find library directory
 import platform
 import os
+from Modules.FindPython import FindPython
+
 bitness = platform.architecture()[0]
 if bitness == '64bit':
     LCGDIR = '../lib/linux64'
@@ -8,10 +10,12 @@ else:
     LCGDIR = '../lib/linux'
 LIBDIR = "#${LCGDIR}"
 
-BF_PYTHON_ABI_FLAGS = 'm'  # Most common for linux distros
-BF_PYTHON = '/usr'
-BF_PYTHON_LIBPATH = '${BF_PYTHON}/lib'
-BF_PYTHON_VERSION = '3.2'
+py = FindPython()
+
+BF_PYTHON_ABI_FLAGS = py['ABI_FLAGS']
+BF_PYTHON = py['PYTHON']
+BF_PYTHON_LIBPATH = py['LIBPATH']
+BF_PYTHON_VERSION = py['VERSION']
 WITH_BF_STATICPYTHON = False
 BF_PYTHON_INC = '${BF_PYTHON}/include/python${BF_PYTHON_VERSION}${BF_PYTHON_ABI_FLAGS}'
 BF_PYTHON_BINARY = '${BF_PYTHON}/bin/python${BF_PYTHON_VERSION}'
@@ -140,7 +144,7 @@ BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
 #BF_FFMPEG_LIB_STATIC = '${BF_FFMPEG_LIBPATH}/libavformat.a ${BF_FFMPEG_LIBPATH/libavcodec.a ${BF_FFMPEG_LIBPATH}/libswscale.a ${BF_FFMPEG_LIBPATH}/libavutil.a ${BF_FFMPEG_LIBPATH}/libavdevice.a'
 
 # enable ogg, vorbis and theora in ffmpeg
-WITH_BF_OGG = False  # -DWITH_OGG 
+WITH_BF_OGG = False
 BF_OGG = '/usr'
 BF_OGG_INC = '${BF_OGG}/include'
 BF_OGG_LIB = 'ogg vorbis vorbisenc theoraenc theoradec'

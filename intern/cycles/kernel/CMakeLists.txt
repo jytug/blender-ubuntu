@@ -15,6 +15,7 @@ set(SRC
 
 set(SRC_HEADERS
 	kernel.h
+	kernel_accumulate.h
 	kernel_bvh.h
 	kernel_camera.h
 	kernel_compat_cpu.h
@@ -30,6 +31,7 @@ set(SRC_HEADERS
 	kernel_mbvh.h
 	kernel_montecarlo.h
 	kernel_object.h
+	kernel_passes.h
 	kernel_path.h
 	kernel_qbvh.h
 	kernel_random.h
@@ -57,8 +59,11 @@ set(SRC_SVM_HEADERS
 	svm/svm_camera.h
 	svm/svm_closure.h
 	svm/svm_convert.h
+	svm/svm_checker.h
 	svm/svm_displace.h
 	svm/svm_fresnel.h
+	svm/svm_gamma.h
+	svm/svm_brightness.h
 	svm/svm_geometry.h
 	svm/svm_gradient.h
 	svm/svm_hsv.h
@@ -72,6 +77,7 @@ set(SRC_SVM_HEADERS
 	svm/svm_musgrave.h
 	svm/svm_noise.h
 	svm/svm_noisetex.h
+	svm/svm_normal.h
 	svm/svm_sepcomb_rgb.h
 	svm/svm_sky.h
 	svm/svm_tex_coord.h
@@ -141,7 +147,7 @@ endif()
 #set(KERNEL_PREPROCESSED ${CMAKE_CURRENT_BINARY_DIR}/kernel_preprocessed.cl)
 #add_custom_command(
 #	OUTPUT ${KERNEL_PREPROCESSED}
-#	COMMAND gcc -x c++ -E ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cl -I ${CMAKE_CURRENT_SOURCE_DIR}/../util/ -DCCL_NAMESPACE_BEGIN= -DCCL_NAMESPACE_END= -DWITH_OPENCL -o ${KERNEL_PREPROCESSED}
+#	COMMAND gcc -x c++ -E ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cl -I ${CMAKE_CURRENT_SOURCE_DIR}/../util/ -DCCL_NAMESPACE_BEGIN= -DCCL_NAMESPACE_END= -o ${KERNEL_PREPROCESSED}
 #	DEPENDS ${SRC_KERNEL} ${SRC_UTIL_HEADERS})
 #add_custom_target(cycles_kernel_preprocess ALL DEPENDS ${KERNEL_PREPROCESSED})
 #delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${KERNEL_PREPROCESSED}" ${CYCLES_INSTALL_PATH}/kernel)

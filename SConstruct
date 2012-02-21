@@ -147,9 +147,8 @@ if toolset:
         env.Tool('mstoolkit', [toolpath])
     else:
         env = BlenderEnvironment(tools=[toolset], ENV = os.environ)
-        # xxx commented out, as was supressing warnings under mingw..
-        #if env:
-        #    btools.SetupSpawn(env)
+        if env:
+            btools.SetupSpawn(env)
 else:
     if bitness==64 and platform=='win32':
         env = BlenderEnvironment(ENV = os.environ, MSVS_ARCH='amd64')
@@ -264,6 +263,7 @@ if 'blenderlite' in B.targets:
     target_env_defs['WITH_BF_OCEANSIM'] = False
     target_env_defs['WITH_BF_DECIMATE'] = False
     target_env_defs['WITH_BF_BOOLEAN'] = False
+    target_env_defs['WITH_BF_REMESH'] = False
     target_env_defs['WITH_BF_PYTHON'] = False
     target_env_defs['WITH_BF_3DMOUSE'] = False
     
@@ -726,10 +726,6 @@ if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
         # For MinGW and linuxcross static linking will be used
         dllsources += ['${LCGDIR}/gettext/lib/gnu_gettext.dll']
 
-    #currently win64-vc doesn't appear to have libpng.dll
-    if env['OURPLATFORM'] != 'win64-vc':
-        dllsources += ['${BF_PNG_LIBPATH}/libpng.dll']
-
     dllsources += ['${BF_ZLIB_LIBPATH}/zlib.dll']
     # Used when linking to libtiff was dynamic
     # keep it here until compilation on all platform would be ok
@@ -760,7 +756,6 @@ if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
 
     if env['WITH_BF_OPENAL']:
         dllsources.append('${LCGDIR}/openal/lib/OpenAL32.dll')
-        dllsources.append('${LCGDIR}/openal/lib/wrap_oal.dll')
 
     if env['WITH_BF_SNDFILE']:
         dllsources.append('${LCGDIR}/sndfile/lib/libsndfile-1.dll')

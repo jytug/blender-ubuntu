@@ -430,7 +430,8 @@ void unlink_object(Object *ob)
 				if(pchan->custom==ob)
 					pchan->custom= NULL;
 			}
-		} else if(ELEM(OB_MBALL, ob->type, obt->type)) {
+		} 
+		else if(ELEM(OB_MBALL, ob->type, obt->type)) {
 			if(is_mball_basis_for(obt, ob))
 				obt->recalc|= OB_RECALC_DATA;
 		}
@@ -607,21 +608,6 @@ void unlink_object(Object *ob)
 
 		sce= sce->id.next;
 	}
-	
-#if 0 // XXX old animation system
-	/* ipos */
-	ipo= bmain->ipo.first;
-	while(ipo) {
-		if(ipo->id.lib==NULL) {
-			IpoCurve *icu;
-			for(icu= ipo->curve.first; icu; icu= icu->next) {
-				if(icu->driver && icu->driver->ob==ob)
-					icu->driver->ob= NULL;
-			}
-		}
-		ipo= ipo->id.next;
-	}
-#endif // XXX old animation system
 	
 	/* screens */
 	sc= bmain->screen.first;
@@ -844,7 +830,7 @@ Object *add_object(struct Scene *scene, int type)
 {
 	Object *ob;
 	Base *base;
-	char name[32];
+	char name[MAX_ID_NAME];
 
 	BLI_strncpy(name, get_obdata_defname(type), sizeof(name));
 	ob = add_only_object(type, name);
@@ -990,7 +976,7 @@ void copy_object_particlesystems(Object *obn, Object *ob)
 			}
 			else if (md->type==eModifierType_Smoke) {
 				SmokeModifierData *smd = (SmokeModifierData*) md;
-
+				
 				if(smd->type==MOD_SMOKE_TYPE_FLOW) {
 					if (smd->flow) {
 						if (smd->flow->psys == psys)
@@ -1026,22 +1012,6 @@ static void copy_object_pose(Object *obn, Object *ob)
 			ListBase targets = {NULL, NULL};
 			bConstraintTarget *ct;
 			
-#if 0 // XXX old animation system
-			/* note that we can't change lib linked ipo blocks. for making
-			 * proxies this still works correct however because the object
-			 * is changed to object->proxy_from when evaluating the driver. */
-			if(con->ipo && !con->ipo->id.lib) {
-				IpoCurve *icu;
-				
-				con->ipo= copy_ipo(con->ipo);
-				
-				for(icu= con->ipo->curve.first; icu; icu= icu->next) {
-					if(icu->driver && icu->driver->ob==ob)
-						icu->driver->ob= obn;
-				}
-			}
-#endif // XXX old animation system
-			
 			if (cti && cti->get_constraint_targets) {
 				cti->get_constraint_targets(con, &targets);
 				
@@ -1071,8 +1041,7 @@ static int object_pose_context(Object *ob)
 	}
 }
 
-//Object *object_pose_armature_get(Object *ob)
-Object *object_pose_armature_get(struct Object *ob)
+Object *object_pose_armature_get(Object *ob)
 {
 	if(ob==NULL)
 		return NULL;
@@ -1178,13 +1147,8 @@ Object *copy_object(Object *ob)
 
 static void extern_local_object(Object *ob)
 {
-	//bActionStrip *strip;
 	ParticleSystem *psys;
 
-#if 0 // XXX old animation system
-	id_lib_extern((ID *)ob->action);
-	id_lib_extern((ID *)ob->ipo);
-#endif // XXX old animation system
 	id_lib_extern((ID *)ob->data);
 	id_lib_extern((ID *)ob->dup_group);
 	id_lib_extern((ID *)ob->poselib);
@@ -1192,11 +1156,6 @@ static void extern_local_object(Object *ob)
 
 	extern_local_matarar(ob->mat, ob->totcol);
 
-#if 0 // XXX old animation system
-	for (strip=ob->nlastrips.first; strip; strip=strip->next) {
-		id_lib_extern((ID *)strip->act);
-	}
-#endif // XXX old animation system
 	for(psys=ob->particlesystem.first; psys; psys=psys->next)
 		id_lib_extern((ID *)psys->part);
 }
@@ -1363,7 +1322,7 @@ void object_make_proxy(Object *ob, Object *target, Object *gob)
 	 *   this is closer to making a copy of the object - in-place. */
 	if(gob) {
 		ob->rotmode= target->rotmode;
-		mul_m4_m4m4(ob->obmat, target->obmat, gob->obmat);
+		mult_m4_m4m4(ob->obmat, gob->obmat, target->obmat);
 		if(gob->dup_group) { /* should always be true */
 			float tvec[3];
 			copy_v3_v3(tvec, gob->dup_group->dupli_ofs);
@@ -1589,9 +1548,9 @@ void object_apply_mat4(Object *ob, float mat[][4], const short use_compat, const
 
 	if(use_parent && ob->parent) {
 		float rmat[4][4], diff_mat[4][4], imat[4][4];
-		mul_m4_m4m4(diff_mat, ob->parentinv, ob->parent->obmat);
+		mult_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
 		invert_m4_m4(imat, diff_mat);
-		mul_m4_m4m4(rmat, mat, imat); /* get the parent relative matrix */
+		mult_m4_m4m4(rmat, imat, mat); /* get the parent relative matrix */
 		object_apply_mat4(ob, rmat, use_compat, FALSE);
 		
 		/* same as below, use rmat rather than mat */
@@ -1715,7 +1674,7 @@ static void ob_parcurve(Scene *scene, Object *ob, Object *par, float mat[][4])
 		if(cu->flag & CU_PATH_RADIUS) {
 			float tmat[4][4], rmat[4][4];
 			scale_m4_fl(tmat, radius);
-			mul_m4_m4m4(rmat, mat, tmat);
+			mult_m4_m4m4(rmat, tmat, mat);
 			copy_m4_m4(mat, rmat);
 		}
 
@@ -2473,6 +2432,14 @@ void object_tfm_restore(Object *ob, void *obtfm_pt)
 	copy_m4_m4(ob->imat, obtfm->imat);
 }
 
+int BKE_object_parent_loop_check(const Object *par, const Object *ob)
+{
+	/* test if 'ob' is a parent somewhere in par's parents */
+	if(par == NULL) return 0;
+	if(ob == par) return 1;
+	return BKE_object_parent_loop_check(par->parent, ob);
+}
+
 /* proxy rule: lib_object->proxy_from == the one we borrow from, only set temporal and cleared here */
 /*           local_object->proxy      == pointer to library object, saved in files and read */
 
@@ -2512,7 +2479,7 @@ void object_handle_update(Scene *scene, Object *ob)
 				if(ob->proxy_from->proxy_group) {/* transform proxy into group space */
 					Object *obg= ob->proxy_from->proxy_group;
 					invert_m4_m4(obg->imat, obg->obmat);
-					mul_m4_m4m4(ob->obmat, ob->proxy_from->obmat, obg->imat);
+					mult_m4_m4m4(ob->obmat, obg->imat, ob->proxy_from->obmat);
 					if(obg->dup_group) { /* should always be true */
 						add_v3_v3(ob->obmat[3], obg->dup_group->dupli_ofs);
 					}
@@ -2555,7 +2522,7 @@ void object_handle_update(Scene *scene, Object *ob)
 
 #else				/* ensure CD_MASK_BAREMESH for now */
 					EditMesh *em = (ob == scene->obedit)? BKE_mesh_get_editmesh(ob->data): NULL;
-					unsigned int data_mask= scene->customdata_mask | ob->customdata_mask | CD_MASK_BAREMESH;
+					uint64_t data_mask= scene->customdata_mask | ob->customdata_mask | CD_MASK_BAREMESH;
 					if(em) {
 						makeDerivedMesh(scene, ob, em,  data_mask); /* was CD_MASK_BAREMESH */
 						BKE_mesh_end_editmesh(ob->data, em);

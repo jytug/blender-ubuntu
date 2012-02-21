@@ -592,7 +592,7 @@ static void calc_vertexnormals(Render *UNUSED(re), ObjectRen *obr, int do_tangen
 {
 	MemArena *arena= NULL;
 	VertexTangent **vtangents= NULL;
-	int a, iCalcNewMethod;
+	int a;
 
 	if(do_nmap_tangent) {
 		arena= BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, "nmap tangent arena");
@@ -671,7 +671,7 @@ static void calc_vertexnormals(Render *UNUSED(re), ObjectRen *obr, int do_tangen
 			float *tav= RE_vertren_get_tangent(obr, ver, 0);
 			if (tav) {
 				/* orthonorm. */
-				float tdn = tav[0]*ver->n[0] + tav[1]*ver->n[1] + tav[2]*ver->n[2];
+				const float tdn = dot_v3v3(tav, ver->n);
 				tav[0] -= ver->n[0]*tdn;
 				tav[1] -= ver->n[1]*tdn;
 				tav[2] -= ver->n[2]*tdn;
@@ -680,8 +680,7 @@ static void calc_vertexnormals(Render *UNUSED(re), ObjectRen *obr, int do_tangen
 		}
 	}
 
-	iCalcNewMethod = 1;
-	if(iCalcNewMethod!=0 && do_nmap_tangent!=0)
+	if(do_nmap_tangent!=0)
 	{
 		SRenderMeshToTangent mesh2tangent;
 		SMikkTSpaceContext sContext;
@@ -701,10 +700,8 @@ static void calc_vertexnormals(Render *UNUSED(re), ObjectRen *obr, int do_tangen
 		sInterface.m_getNormal = GetNormal;
 		sInterface.m_setTSpaceBasic = SetTSpace;
 
-		// 0 if failed
-		iCalcNewMethod = genTangSpaceDefault(&sContext);
+		genTangSpaceDefault(&sContext);
 	}
-
 
 	if(arena)
 		BLI_memarena_free(arena);
@@ -770,7 +767,7 @@ static int as_testvertex(VlakRen *vlr, VertRen *UNUSED(ver), ASvert *asv, float 
 	while(asf) {
 		for(a=0; a<4; a++) {
 			if(asf->vlr[a] && asf->vlr[a]!=vlr) {
-				inp= fabs( vlr->n[0]*asf->vlr[a]->n[0] + vlr->n[1]*asf->vlr[a]->n[1] + vlr->n[2]*asf->vlr[a]->n[2] );
+				inp = fabsf(dot_v3v3(vlr->n, asf->vlr[a]->n));
 				if(inp < thresh) return 1;
 			}
 		}
@@ -793,7 +790,7 @@ static VertRen *as_findvertex(VlakRen *vlr, VertRen *UNUSED(ver), ASvert *asv, f
 			if(asf->vlr[a] && asf->vlr[a]!=vlr) {
 				/* this face already made a copy for this vertex! */
 				if(asf->nver[a]) {
-					inp= fabs( vlr->n[0]*asf->vlr[a]->n[0] + vlr->n[1]*asf->vlr[a]->n[1] + vlr->n[2]*asf->vlr[a]->n[2] );
+					inp = fabsf(dot_v3v3(vlr->n, asf->vlr[a]->n));
 					if(inp >= thresh) {
 						return asf->nver[a];
 					}
@@ -1068,7 +1065,6 @@ static void static_particle_strand(Render *re, ObjectRen *obr, Material *ma, Par
 
 		mul_v3_fl(cross, width);
 	}
-	else width= 1.0f;
 	
 	if(ma->mode & MA_TANGENT_STR)
 		flag= R_SMOOTH|R_TANGENT;
@@ -1690,14 +1686,14 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 	}
 	
 /* 2.5 setup matrices */
-	mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+	mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 	invert_m4_m4(ob->imat, mat);	/* need to be that way, for imat texture */
 	copy_m3_m4(nmat, ob->imat);
 	transpose_m3(nmat);
 
 	if(psys->flag & PSYS_USE_IMAT) {
 		/* psys->imat is the original emitter's inverse matrix, ob->obmat is the duplicated object's matrix */
-		mul_m4_m4m4(duplimat, psys->imat, ob->obmat);
+		mult_m4_m4m4(duplimat, ob->obmat, psys->imat);
 		use_duplimat = 1;
 	}
 
@@ -2134,7 +2130,7 @@ static void make_render_halos(Render *re, ObjectRen *obr, Mesh *UNUSED(me), int 
 	float vec[3], hasize, mat[4][4], imat[3][3];
 	int a, ok, seed= ma->seed1;
 
-	mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+	mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 	copy_m3_m4(imat, ob->imat);
 
 	re->flag |= R_HALO;
@@ -2162,7 +2158,7 @@ static void make_render_halos(Render *re, ObjectRen *obr, Mesh *UNUSED(me), int 
 				copy_v3_v3(view, vec);
 				normalize_v3(view);
 
-				zn= nor[0]*view[0]+nor[1]*view[1]+nor[2]*view[2];
+				zn = dot_v3v3(nor, view);
 				if(zn>=0.0f) hasize= 0.0f;
 				else hasize*= zn*zn*zn*zn;
 			}
@@ -2244,9 +2240,9 @@ static void displace_render_vert(Render *re, ObjectRen *obr, ShadeInput *shi, Ve
 		mul_m4_v3(mat, shi->co);
 
 	if(imat) {
-		shi->vn[0]= imat[0][0]*vr->n[0]+imat[0][1]*vr->n[1]+imat[0][2]*vr->n[2];
-		shi->vn[1]= imat[1][0]*vr->n[0]+imat[1][1]*vr->n[1]+imat[1][2]*vr->n[2];
-		shi->vn[2]= imat[2][0]*vr->n[0]+imat[2][1]*vr->n[1]+imat[2][2]*vr->n[2];
+		shi->vn[0] = dot_v3v3(imat[0], vr->n);
+		shi->vn[1] = dot_v3v3(imat[1], vr->n);
+		shi->vn[2] = dot_v3v3(imat[2], vr->n);
 	}
 
 	if (texco & TEXCO_UV) {
@@ -2287,7 +2283,18 @@ static void displace_render_vert(Render *re, ObjectRen *obr, ShadeInput *shi, Ve
 	if(texco & TEXCO_REFL) {
 		/* not (yet?) */
 	}
-	
+	if(texco & TEXCO_STRESS) {
+		float *s= RE_vertren_get_stress(obr, vr, 0);
+
+		if(s) {
+			shi->stress= *s;
+			if(shi->stress<1.0f) shi->stress-= 1.0f;
+			else shi->stress= (shi->stress-1.0f)/shi->stress;
+		}
+		else
+			shi->stress= 0.0f;
+	}
+
 	shi->displace[0]= shi->displace[1]= shi->displace[2]= 0.0;
 	
 	do_material_tex(shi, re);
@@ -2429,7 +2436,7 @@ static void init_render_mball(Render *re, ObjectRen *obr)
 	if (ob!=find_basis_mball(re->scene, ob))
 		return;
 
-	mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+	mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 	invert_m4_m4(ob->imat, mat);
 	copy_m3_m4(imat, ob->imat);
 
@@ -2802,7 +2809,7 @@ static void init_render_surf(Render *re, ObjectRen *obr, int timeoffset)
 	nu= cu->nurb.first;
 	if(nu==0) return;
 
-	mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+	mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 	invert_m4_m4(ob->imat, mat);
 
 	/* material array */
@@ -2871,7 +2878,7 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 	dl= disp.first;
 	if(dl==NULL) return;
 	
-	mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+	mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 	invert_m4_m4(ob->imat, mat);
 
 	/* material array */
@@ -3060,17 +3067,19 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 /* ------------------------------------------------------------------------- */
 
 struct edgesort {
-	int v1, v2;
+	unsigned int v1, v2;
 	int f;
-	int i1, i2;
+	unsigned int i1, i2;
 };
 
 /* edges have to be added with lowest index first for sorting */
-static void to_edgesort(struct edgesort *ed, int i1, int i2, int v1, int v2, int f)
+static void to_edgesort(struct edgesort *ed,
+                        unsigned int i1, unsigned int i2,
+                        unsigned int v1, unsigned int v2, int f)
 {
-	if(v1>v2) {
-		SWAP(int, v1, v2);
-		SWAP(int, i1, i2);
+	if (v1 > v2) {
+		SWAP(unsigned int, v1, v2);
+		SWAP(unsigned int, i1, i2);
 	}
 
 	ed->v1= v1;
@@ -3256,7 +3265,7 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 
 	me= ob->data;
 
-	mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+	mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 	invert_m4_m4(ob->imat, mat);
 	copy_m3_m4(imat, ob->imat);
 	negative_scale= is_negative_m4(mat);
@@ -3538,6 +3547,9 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 	}
 	
 	if(!timeoffset) {
+		if(need_stress)
+			calc_edge_stress(re, obr, me);
+
 		if (test_for_displace(re, ob ) ) {
 			recalc_normals= 1;
 			calc_vertexnormals(re, obr, 0, 0);
@@ -3554,9 +3566,6 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 
 		if(recalc_normals!=0 || need_tangent!=0)
 			calc_vertexnormals(re, obr, need_tangent, need_nmap_tangent);
-		
-		if(need_stress)
-			calc_edge_stress(re, obr, me);
 	}
 
 	dm->release(dm);
@@ -3599,7 +3608,7 @@ static void initshadowbuf(Render *re, LampRen *lar, float mat[][4])
 	/* matrix: combination of inverse view and lampmat */
 	/* calculate again: the ortho-render has no correct viewinv */
 	invert_m4_m4(viewinv, re->viewmat);
-	mul_m4_m4m4(shb->viewmat, viewinv, shb->winmat);
+	mult_m4_m4m4(shb->viewmat, shb->winmat, viewinv);
 	
 	/* projection */
 	shb->d= lar->clipsta;
@@ -3677,7 +3686,7 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 	BLI_addtail(&re->lampren, lar);
 	go->lampren= lar;
 
-	mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+	mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 	invert_m4_m4(ob->imat, mat);
 
 	copy_m3_m4(lar->mat, mat);
@@ -4232,7 +4241,7 @@ static void check_non_flat_quads(ObjectRen *obr)
 				flen= normal_tri_v3( nor,vlr->v4->co, vlr->v3->co, vlr->v1->co);
 				if(flen==0.0f) normal_tri_v3( nor,vlr->v4->co, vlr->v2->co, vlr->v1->co);
 				
-				xn= nor[0]*vlr->n[0] + nor[1]*vlr->n[1] + nor[2]*vlr->n[2];
+				xn = dot_v3v3(nor, vlr->n);
 
 				if(ABS(xn) < 0.999995f ) {	// checked on noisy fractal grid
 					
@@ -4243,11 +4252,11 @@ static void check_non_flat_quads(ObjectRen *obr)
 					
 					/* split direction based on vnorms */
 					normal_tri_v3( nor,vlr->v1->co, vlr->v2->co, vlr->v3->co);
-					d1= nor[0]*vlr->v1->n[0] + nor[1]*vlr->v1->n[1] + nor[2]*vlr->v1->n[2];
+					d1 = dot_v3v3(nor, vlr->v1->n);
 
 					normal_tri_v3( nor,vlr->v2->co, vlr->v3->co, vlr->v4->co);
-					d2= nor[0]*vlr->v2->n[0] + nor[1]*vlr->v2->n[1] + nor[2]*vlr->v2->n[2];
-				
+					d2 = dot_v3v3(nor, vlr->v2->n);
+
 					if( fabs(d1) < fabs(d2) ) vlr->flag |= R_DIVIDE_24;
 					else vlr->flag &= ~R_DIVIDE_24;
 
@@ -4372,7 +4381,7 @@ static void find_dupli_instances(Render *re, ObjectRen *obr)
 	float imat[4][4], obmat[4][4], obimat[4][4], nmat[3][3];
 	int first = 1;
 
-	mul_m4_m4m4(obmat, obr->obmat, re->viewmat);
+	mult_m4_m4m4(obmat, re->viewmat, obr->obmat);
 	invert_m4_m4(imat, obmat);
 
 	/* for objects instanced by dupliverts/faces/particles, we go over the
@@ -4385,7 +4394,7 @@ static void find_dupli_instances(Render *re, ObjectRen *obr)
 			/* compute difference between object matrix and
 			 * object matrix with dupli transform, in viewspace */
 			copy_m4_m4(obimat, obi->mat);
-			mul_m4_m4m4(obi->mat, imat, obimat);
+			mult_m4_m4m4(obi->mat, obimat, imat);
 
 			copy_m3_m4(nmat, obi->mat);
 			invert_m3_m3(obi->nmat, nmat);
@@ -4407,7 +4416,7 @@ static void assign_dupligroup_dupli(Render *re, ObjectInstanceRen *obi, ObjectRe
 {
 	float imat[4][4], obmat[4][4], obimat[4][4], nmat[3][3];
 
-	mul_m4_m4m4(obmat, obr->obmat, re->viewmat);
+	mult_m4_m4m4(obmat, re->viewmat, obr->obmat);
 	invert_m4_m4(imat, obmat);
 
 	obi->obr= obr;
@@ -4415,7 +4424,7 @@ static void assign_dupligroup_dupli(Render *re, ObjectInstanceRen *obi, ObjectRe
 	/* compute difference between object matrix and
 	 * object matrix with dupli transform, in viewspace */
 	copy_m4_m4(obimat, obi->mat);
-	mul_m4_m4m4(obi->mat, imat, obimat);
+	mult_m4_m4m4(obi->mat, obimat, imat);
 
 	copy_m3_m4(nmat, obi->mat);
 	invert_m3_m3(obi->nmat, nmat);
@@ -4612,7 +4621,7 @@ static void init_render_object(Render *re, Object *ob, Object *par, DupliObject 
 	else if(render_object_type(ob->type))
 		add_render_object(re, ob, par, dob, timeoffset);
 	else {
-		mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+		mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 		invert_m4_m4(ob->imat, mat);
 	}
 	
@@ -4858,7 +4867,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 	* See bug: [#28744] - campbell */
 	for(ob= re->main->object.first; ob; ob= ob->id.next) {
 		/* imat objects has to be done here, since displace can have texture using Object map-input */
-		mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+		mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 		invert_m4_m4(ob->imat_ren, mat);
 		copy_m4_m4(ob->imat, ob->imat_ren);
 		/* each object should only be rendered once */
@@ -4930,7 +4939,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 						 * this is a duplivert/face/particle, or it is a non-animated object in
 						 * a dupligroup that has already been created before */
 						if(dob->type != OB_DUPLIGROUP || (obr=find_dupligroup_dupli(re, obd, 0))) {
-							mul_m4_m4m4(mat, dob->mat, re->viewmat);
+							mult_m4_m4m4(mat, re->viewmat, dob->mat);
 							obi= RE_addRenderInstance(re, NULL, obd, ob, dob->index, 0, mat, obd->lay);
 
 							/* fill in instance variables for texturing */
@@ -4957,7 +4966,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 						for(psys=obd->particlesystem.first; psys; psys=psys->next) {
 							if(dob->type != OB_DUPLIGROUP || (obr=find_dupligroup_dupli(re, obd, psysindex))) {
 								if(obi == NULL)
-									mul_m4_m4m4(mat, dob->mat, re->viewmat);
+									mult_m4_m4m4(mat, re->viewmat, dob->mat);
 								obi= RE_addRenderInstance(re, NULL, obd, ob, dob->index, psysindex++, mat, obd->lay);
 
 								set_dupli_tex_mat(re, obi, dob);
@@ -5258,7 +5267,7 @@ static void speedvector_project(Render *re, float zco[2], const float co[3], con
 		if(vec[0]<0.0f) ang= -ang;
 		zco[0]= ang/pixelphix + zmulx;
 		
-		ang= 0.5f*(float)M_PI - saacos(vec[1]/sqrtf(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]));
+		ang= 0.5f*(float)M_PI - saacos(vec[1] / len_v3(vec));
 		zco[1]= ang/pixelphiy + zmuly;
 		
 	}
@@ -5312,7 +5321,7 @@ static float *calculate_strandsurface_speedvectors(Render *re, ObjectInstanceRen
 		int a;
 
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(winmat, obi->mat, re->winmat);
+			mult_m4_m4m4(winmat, re->winmat, obi->mat);
 		else
 			copy_m4_m4(winmat, re->winmat);
 
@@ -5349,7 +5358,7 @@ static void calculate_speedvectors(Render *re, ObjectInstanceRen *obi, float *ve
 	int a, *face, *index;
 
 	if(obi->flag & R_TRANSFORMED)
-		mul_m4_m4m4(winmat, obi->mat, re->winmat);
+		mult_m4_m4m4(winmat, re->winmat, obi->mat);
 	else
 		copy_m4_m4(winmat, re->winmat);
 
@@ -5443,7 +5452,7 @@ static int load_fluidsimspeedvectors(Render *re, ObjectInstanceRen *obi, float *
 	velarray = fss->meshVelocities;
 
 	if(obi->flag & R_TRANSFORMED)
-		mul_m4_m4m4(winmat, obi->mat, re->winmat);
+		mult_m4_m4m4(winmat, re->winmat, obi->mat);
 	else
 		copy_m4_m4(winmat, re->winmat);
 	
@@ -5478,9 +5487,9 @@ static int load_fluidsimspeedvectors(Render *re, ObjectInstanceRen *obi, float *
 		}
 		
 		// transform (=rotate) to cam space
-		camco[0]= imat[0][0]*fsvec[0] + imat[0][1]*fsvec[1] + imat[0][2]*fsvec[2];
-		camco[1]= imat[1][0]*fsvec[0] + imat[1][1]*fsvec[1] + imat[1][2]*fsvec[2];
-		camco[2]= imat[2][0]*fsvec[0] + imat[2][1]*fsvec[1] + imat[2][2]*fsvec[2];
+		camco[0] = dot_v3v3(imat[0], fsvec);
+		camco[1] = dot_v3v3(imat[1], fsvec);
+		camco[2] = dot_v3v3(imat[2], fsvec);
 
 		// get homogenous coordinates
 		projectvert(camco, winmat, hoco);
@@ -5533,7 +5542,7 @@ static void copy_dbase_object_vectors(Render *re, ListBase *lb)
 			vec= obilb->vectors= MEM_mallocN(2*sizeof(float)*totvector, "vector array");
 
 			if(obi->flag & R_TRANSFORMED)
-				mul_m4_m4m4(winmat, obi->mat, re->winmat);
+				mult_m4_m4m4(winmat, re->winmat, obi->mat);
 			else
 				copy_m4_m4(winmat, re->winmat);
 
@@ -5861,7 +5870,7 @@ void RE_make_sticky(Scene *scene, View3D *v3d)
 					CD_CALLOC, NULL, me->totvert);
 				
 				where_is_object(scene, ob);
-				mul_m4_m4m4(mat, ob->obmat, re->viewmat);
+				mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 				
 				ms= me->msticky;
 				for(a=0; a<me->totvert; a++, ms++, mvert++) {

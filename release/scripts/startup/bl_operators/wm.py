@@ -29,6 +29,9 @@ from bpy.props import (StringProperty,
 
 from rna_prop_ui import rna_idprop_ui_prop_get, rna_idprop_ui_prop_clear
 
+import subprocess
+import os
+
 
 class MESH_OT_delete_edgeloop(Operator):
     '''Delete an edge loop by merging the faces on each side to a single face loop'''
@@ -163,9 +166,10 @@ class BRUSH_OT_active_index_set(Operator):
         if attr is None:
             return {'CANCELLED'}
 
+        toolsettings = context.tool_settings
         for i, brush in enumerate((cur for cur in bpy.data.brushes if getattr(cur, attr))):
             if i == self.index:
-                getattr(context.tool_settings, self.mode).brush = brush
+                getattr(toolsettings, self.mode).brush = brush
                 return {'FINISHED'}
 
         return {'CANCELLED'}
@@ -393,7 +397,7 @@ class WM_OT_context_cycle_int(Operator):
         exec("context.%s = value" % data_path)
 
         if value != eval("context.%s" % data_path):
-            # relies on rna clamping int's out of the range
+            # relies on rna clamping integers out of the range
             if self.reverse:
                 value = (1 << 31) - 1
             else:
@@ -499,9 +503,9 @@ class WM_MT_context_menu_enum(Menu):
         values = [(i.name, i.identifier) for i in value_base.bl_rna.properties[prop_string].enum_items]
 
         for name, identifier in values:
-            prop = self.layout.operator("wm.context_set_enum", text=name)
-            prop.data_path = data_path
-            prop.value = identifier
+            props = self.layout.operator("wm.context_set_enum", text=name)
+            props.data_path = data_path
+            props.value = identifier
 
 
 class WM_OT_context_menu_enum(Operator):
@@ -727,7 +731,7 @@ class WM_OT_context_modal_mouse(Operator):
 
 
 class WM_OT_url_open(Operator):
-    "Open a website in the Webbrowser"
+    "Open a website in the web-browser"
     bl_idname = "wm.url_open"
     bl_label = ""
 
@@ -764,12 +768,12 @@ class WM_OT_path_open(Operator):
             return {'CANCELLED'}
 
         if sys.platform[:3] == "win":
-            subprocess.Popen(['start', filepath], shell=True)
-        elif sys.platform == 'darwin':
-            subprocess.Popen(['open', filepath])
+            subprocess.Popen(["start", filepath], shell=True)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", filepath])
         else:
             try:
-                subprocess.Popen(['xdg-open', filepath])
+                subprocess.Popen(["xdg-open", filepath])
             except OSError:
                 # xdg-open *should* be supported by recent Gnome, KDE, Xfce
                 pass
@@ -845,8 +849,8 @@ class WM_OT_doc_edit(Operator):
         print("sending data:", data_dict)
 
         import xmlrpc.client
-        user = 'blenderuser'
-        pwd = 'blender>user'
+        user = "blenderuser"
+        pwd = "blender>user"
 
         docblog = xmlrpc.client.ServerProxy(self._url)
         docblog.metaWeblog.newPost(1, user, pwd, data_dict, 1)
@@ -984,9 +988,8 @@ class WM_OT_properties_edit(Operator):
         prop_ui = rna_idprop_ui_prop_get(item, prop)
 
         if prop_type in {float, int}:
-
-            prop_ui['soft_min'] = prop_ui['min'] = prop_type(self.min)
-            prop_ui['soft_max'] = prop_ui['max'] = prop_type(self.max)
+            prop_ui["soft_min"] = prop_ui["min"] = prop_type(self.min)
+            prop_ui["soft_max"] = prop_ui["max"] = prop_type(self.max)
 
         prop_ui['description'] = self.description
 
@@ -1033,7 +1036,7 @@ class WM_OT_properties_add(Operator):
         item = eval("context.%s" % data_path)
 
         def unique_name(names):
-            prop = 'prop'
+            prop = "prop"
             prop_new = prop
             i = 1
             while prop_new in names:
@@ -1161,10 +1164,10 @@ class WM_OT_copy_prev_settings(Operator):
 
             # in 2.57 and earlier windows installers, system scripts were copied
             # into the configuration directory, don't want to copy those
-            system_script = os.path.join(path_dst, 'scripts/modules/bpy_types.py')
+            system_script = os.path.join(path_dst, "scripts/modules/bpy_types.py")
             if os.path.isfile(system_script):
-                shutil.rmtree(os.path.join(path_dst, 'scripts'))
-                shutil.rmtree(os.path.join(path_dst, 'plugins'))
+                shutil.rmtree(os.path.join(path_dst, "scripts"))
+                shutil.rmtree(os.path.join(path_dst, "plugins"))
 
             # don't loose users work if they open the splash later.
             if bpy.data.is_saved is bpy.data.is_dirty is False:
@@ -1176,8 +1179,30 @@ class WM_OT_copy_prev_settings(Operator):
         return {'CANCELLED'}
 
 
+class WM_OT_blenderplayer_start(Operator):
+    '''Launch the blender-player with the current blend-file'''
+    bl_idname = "wm.blenderplayer_start"
+    bl_label = "Start"
+
+    blender_bin_path = bpy.app.binary_path
+    blender_bin_dir = os.path.dirname(blender_bin_path)
+    ext = os.path.splitext(blender_bin_path)[-1]
+    player_path = os.path.join(blender_bin_dir, "blenderplayer" + ext)
+
+    def execute(self, context):
+        import sys
+
+        if sys.platform == "darwin":
+            self.player_path = os.path.join(self.blender_bin_dir, "../../../blenderplayer.app/Contents/MacOS/blenderplayer")
+
+        filepath = bpy.app.tempdir + "game.blend"
+        bpy.ops.wm.save_as_mainfile(filepath=filepath, check_existing=False, copy=True)
+        subprocess.call([self.player_path, filepath])
+        return {'FINISHED'}
+
+
 class WM_OT_keyconfig_test(Operator):
-    "Test keyconfig for conflicts"
+    "Test key-config for conflicts"
     bl_idname = "wm.keyconfig_test"
     bl_label = "Test Key Configuration for Conflicts"
 
@@ -1429,7 +1454,7 @@ class WM_OT_operator_cheat_sheet(Operator):
             for op_submodule_name in dir(op_module):
                 op = getattr(op_module, op_submodule_name)
                 text = repr(op)
-                if text.split("\n")[-1].startswith('bpy.ops.'):
+                if text.split("\n")[-1].startswith("bpy.ops."):
                     op_strings.append(text)
                     tot += 1
 
@@ -1441,6 +1466,9 @@ class WM_OT_operator_cheat_sheet(Operator):
         self.report({'INFO'}, "See OperatorList.txt textblock")
         return {'FINISHED'}
 
+
+# -----------------------------------------------------------------------------
+# Addon Operators
 
 class WM_OT_addon_enable(Operator):
     "Enable an addon"

@@ -169,6 +169,7 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 	/* note, ED_area_tag_refresh will re-execute compositor */
 	SpaceNode *snode= sa->spacedata.first;
 	int type= snode->treetype;
+	short shader_type = snode->shaderfrom;
 	
 	/* preview renders */
 	switch(wmn->category) {
@@ -214,6 +215,11 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 					ED_area_tag_refresh(sa);
 			}
 			break;
+		case NC_WORLD:
+			if(type==NTREE_SHADER && shader_type==SNODE_SHADER_WORLD) {
+				ED_area_tag_refresh(sa);	
+			}
+			break;
 		case NC_OBJECT:
 			if(type==NTREE_SHADER) {
 				if(wmn->data==ND_OB_SHADING)
@@ -248,12 +254,10 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 		case NC_IMAGE:
 			if (wmn->action == NA_EDITED) {
 				if(type==NTREE_COMPOSIT) {
-					Scene *scene= wmn->window->screen->scene;
-					
 					/* note that nodeUpdateID is already called by BKE_image_signal() on all
 					 * scenes so really this is just to know if the images is used in the compo else
 					 * painting on images could become very slow when the compositor is open. */
-					if(nodeUpdateID(scene->nodetree, wmn->reference))
+					if(nodeUpdateID(snode->nodetree, wmn->reference))
 						ED_area_tag_refresh(sa);
 				}
 			}

@@ -230,7 +230,9 @@ static int view3d_layers_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		return OPERATOR_PASS_THROUGH;
 	
 	if(event->shift)
-		RNA_boolean_set(op->ptr, "extend", 1);
+		RNA_boolean_set(op->ptr, "extend", TRUE);
+	else
+		RNA_boolean_set(op->ptr, "extend", FALSE);
 	
 	if(event->alt) {
 		int nr= RNA_int_get(op->ptr, "nr") + 10;
@@ -276,7 +278,7 @@ static int modeselect_addmode(char *str, const char *title, int id, int icon)
 static char *view3d_modeselect_pup(Scene *scene)
 {
 	Object *ob= OBACT;
-	static char string[256];
+	static char string[512];
 	const char *title= IFACE_("Mode: %t");
 	char *str = string;
 
@@ -316,7 +318,10 @@ static char *view3d_modeselect_pup(Scene *scene)
 		str += modeselect_addmode(str, N_("Pose Mode"), OB_MODE_POSE, ICON_POSE_HLT);
 	}
 
-	if (ob->particlesystem.first || modifiers_findByType(ob, eModifierType_Cloth) || modifiers_findByType(ob, eModifierType_Softbody)) {
+	if ( ob->particlesystem.first ||
+	     modifiers_findByType(ob, eModifierType_Cloth) ||
+	     modifiers_findByType(ob, eModifierType_Softbody))
+	{
 		str += modeselect_addmode(str, N_("Particle Mode"), OB_MODE_PARTICLE_EDIT, ICON_PARTICLEMODE);
 	}
 	(void)str;

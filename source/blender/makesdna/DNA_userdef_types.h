@@ -25,14 +25,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef DNA_USERDEF_TYPES_H
-#define DNA_USERDEF_TYPES_H
 /** \file DNA_userdef_types.h
  *  \ingroup DNA
  *  \since mar-2001
  *  \author nzc
- *
  */
+
+#ifndef DNA_USERDEF_TYPES_H
+#define DNA_USERDEF_TYPES_H
 
 #include "DNA_listBase.h"
 #include "DNA_texture_types.h" /* ColorBand */
@@ -60,7 +60,7 @@ struct ColorBand;
 /* first font is the default (index 0), others optional */
 typedef struct uiFont {
 	struct uiFont *next, *prev;
-	char filename[256];
+	char filename[1024];/* 1024 = FILE_MAX */
 	short blf_id;		/* from blfont lib */
 	short uifont_id;	/* own id */
 	short r_to_l;		/* fonts that read from left to right */
@@ -158,7 +158,7 @@ typedef struct ThemeUI {
 
 	uiPanelColors panel;
 
-	char iconfile[80];	// FILE_MAXFILE length
+	char iconfile[256];	// FILE_MAXFILE length
 	float icon_alpha;
 
 	float pad;
@@ -252,7 +252,15 @@ typedef struct ThemeSpace {
 	char hpad[7];
 	
 	char preview_back[4];
+	char preview_stitch_face[4];
+	char preview_stitch_edge[4];
+	char preview_stitch_vert[4];
+	char preview_stitch_stitchable[4];
+	char preview_stitch_unstitchable[4];
+	char preview_stitch_active[4];
 	
+	char match[4];				/* outliner - filter match */
+	char selected_highlight[4];	/* outliner - selected item */
 } ThemeSpace;
 
 
@@ -318,16 +326,16 @@ typedef struct SolidLight {
 typedef struct UserDef {
 	int flag, dupflag;
 	int savetime;
-	char tempdir[160];	// FILE_MAXDIR length
-	char fontdir[160];
-	char renderdir[240]; // FILE_MAX length
-	char textudir[160];
-	char plugtexdir[160];
-	char plugseqdir[160];
-	char pythondir[160];
-	char sounddir[160];
-	char image_editor[240];	// FILE_MAX length
-	char anim_player[240];	// FILE_MAX length
+	char tempdir[768];	/* FILE_MAXDIR length */
+	char fontdir[768];
+	char renderdir[1024]; /* FILE_MAX length */
+	char textudir[768];
+	char plugtexdir[768];
+	char plugseqdir[768];
+	char pythondir[768];
+	char sounddir[768];
+	char image_editor[1024];	/* 1024 = FILE_MAX */
+	char anim_player[1024];	/* 1024 = FILE_MAX */
 	int anim_player_preset;
 	
 	short v2d_min_gridsize;		/* minimum spacing between gridlines in View2D grids */
@@ -391,19 +399,17 @@ typedef struct UserDef {
 	
 	short widget_unit;		/* defaults to 20 for 72 DPI setting */
 	short anisotropic_filter;
-	/*short pad[3];			*/
+	short use_16bit_textures, pad8;
 
 	float ndof_sensitivity;	/* overall sensitivity of 3D mouse */
 	int ndof_flag;			/* flags for 3D mouse */
 
-	char versemaster[160];
-	char verseuser[160];
 	float glalphaclip;
 	
 	short autokey_mode;		/* autokeying mode */
 	short autokey_flag;		/* flags for autokeying */
 	
-	short text_render, pad9[3];		/*options for text rendering*/
+	short text_render, pad9;		/*options for text rendering*/
 
 	struct ColorBand coba_weight;	/* from texture.h */
 
@@ -413,6 +419,9 @@ typedef struct UserDef {
 	short pad3;
 
 	char author[80];	/* author name for file formats supporting it */
+
+	int compute_device_type;
+	int compute_device_id;
 } UserDef;
 
 extern UserDef U; /* from blenkernel blender.c */
@@ -603,20 +612,20 @@ extern UserDef U; /* from blenkernel blender.c */
 #define NDOF_FLY_HELICOPTER (1 << 1)
 #define NDOF_LOCK_HORIZON   (1 << 2)
 /* the following might not need to be saved between sessions,
-   but they do need to live somewhere accessible... */
+ * but they do need to live somewhere accessible... */
 #define NDOF_SHOULD_PAN     (1 << 3)
 #define NDOF_SHOULD_ZOOM    (1 << 4)
 #define NDOF_SHOULD_ROTATE  (1 << 5)
 /* orbit navigation modes
-   only two options, so it's sort of a hyrbrid bool/enum
-   if ((U.ndof_flag & NDOF_ORBIT_MODE) == NDOF_OM_OBJECT)... */
+ * only two options, so it's sort of a hyrbrid bool/enum
+ * if ((U.ndof_flag & NDOF_ORBIT_MODE) == NDOF_OM_OBJECT)... */
 /*
 #define NDOF_ORBIT_MODE     (1 << 6)
 #define NDOF_OM_TARGETCAMERA 0
 #define NDOF_OM_OBJECT      NDOF_ORBIT_MODE
 */
 /* actually... users probably don't care about what the mode
-   is called, just that it feels right */
+ * is called, just that it feels right */
 /* zoom is up/down if this flag is set (otherwise forward/backward) */
 #define NDOF_ZOOM_UPDOWN (1 << 7)
 #define NDOF_ZOOM_INVERT (1 << 8)
@@ -627,6 +636,10 @@ extern UserDef U; /* from blenkernel blender.c */
 #define NDOF_PANY_INVERT_AXIS (1 << 13)
 #define NDOF_PANZ_INVERT_AXIS (1 << 14)
 
+/* compute_device_type */
+#define USER_COMPUTE_DEVICE_NONE	0
+#define USER_COMPUTE_DEVICE_OPENCL	1
+#define USER_COMPUTE_DEVICE_CUDA	2
 
 #ifdef __cplusplus
 }

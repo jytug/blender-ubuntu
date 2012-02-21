@@ -36,25 +36,34 @@
 /* **************** IMAGE (and RenderResult, multilayer image) ******************** */
 
 static bNodeSocketTemplate cmp_node_rlayers_out[]= {
-	{	SOCK_RGBA, 0, "Image",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_FLOAT, 0, "Alpha",		1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_FLOAT, 0, "Z",			1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_VECTOR, 0, "Normal",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_VECTOR, 0, "UV",		1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_VECTOR, 0, "Speed",	1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Color",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Diffuse",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Specular",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Shadow",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "AO",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Reflect",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Refract",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Indirect",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_FLOAT, 0, "IndexOB",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_FLOAT, 0, "IndexMA",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_FLOAT, 0, "Mist",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Emit",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 0, "Environment",0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Image",					0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, "Alpha",					1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, "Z",						1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, "Normal",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, "UV",					1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, "Speed",				1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Color",					0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Diffuse",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Specular",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Shadow",					0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "AO",						0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Reflect",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Refract",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Indirect",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, "IndexOB",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, "IndexMA",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, "Mist",					0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Emit",					0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Environment",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Diffuse Direct",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Diffuse Indirect",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Diffuse Color",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Glossy Direct",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Glossy Indirect",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Glossy Color",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Transmission Direct",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Transmission Indirect",	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, "Transmission Color",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
@@ -62,6 +71,7 @@ static bNodeSocketTemplate cmp_node_rlayers_out[]= {
 float *node_composit_get_float_buffer(RenderData *rd, ImBuf *ibuf, int *alloc)
 {
 	float *rect;
+	int predivide= (ibuf->flags & IB_cm_predivide);
 
 	*alloc= FALSE;
 
@@ -71,7 +81,11 @@ float *node_composit_get_float_buffer(RenderData *rd, ImBuf *ibuf, int *alloc)
 		}
 		else {
 			rect= MEM_mapallocN(sizeof(float) * 4 * ibuf->x * ibuf->y, "node_composit_get_image");
-			srgb_to_linearrgb_rgba_rgba_buf(rect, ibuf->rect_float, ibuf->x * ibuf->y);
+
+			IMB_buffer_float_from_float(rect, ibuf->rect_float,
+				4, IB_PROFILE_LINEAR_RGB, IB_PROFILE_SRGB, predivide,
+				ibuf->x, ibuf->y, ibuf->x, ibuf->x);
+
 			*alloc= TRUE;
 		}
 	}
@@ -81,7 +95,11 @@ float *node_composit_get_float_buffer(RenderData *rd, ImBuf *ibuf, int *alloc)
 		}
 		else {
 			rect= MEM_mapallocN(sizeof(float) * 4 * ibuf->x * ibuf->y, "node_composit_get_image");
-			linearrgb_to_srgb_rgba_rgba_buf(rect, ibuf->rect_float, ibuf->x * ibuf->y);
+
+			IMB_buffer_float_from_float(rect, ibuf->rect_float,
+				4, IB_PROFILE_SRGB, IB_PROFILE_LINEAR_RGB, predivide,
+				ibuf->x, ibuf->y, ibuf->x, ibuf->x);
+
 			*alloc= TRUE;
 		}
 	}
@@ -229,6 +247,24 @@ static void outputs_multilayer_get(RenderData *rd, RenderLayer *rl, bNodeStack *
 		out[RRES_OUT_EMIT]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_EMIT);
 	if(out[RRES_OUT_ENV]->hasoutput)
 		out[RRES_OUT_ENV]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_ENVIRONMENT);
+	if(out[RRES_OUT_DIFF_DIRECT]->hasoutput)
+		out[RRES_OUT_DIFF_DIRECT]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_DIFFUSE_DIRECT);
+	if(out[RRES_OUT_DIFF_INDIRECT]->hasoutput)
+		out[RRES_OUT_DIFF_INDIRECT]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_DIFFUSE_INDIRECT);
+	if(out[RRES_OUT_DIFF_COLOR]->hasoutput)
+		out[RRES_OUT_DIFF_COLOR]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_DIFFUSE_COLOR);
+	if(out[RRES_OUT_GLOSSY_DIRECT]->hasoutput)
+		out[RRES_OUT_GLOSSY_DIRECT]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_GLOSSY_DIRECT);
+	if(out[RRES_OUT_GLOSSY_INDIRECT]->hasoutput)
+		out[RRES_OUT_GLOSSY_INDIRECT]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_GLOSSY_INDIRECT);
+	if(out[RRES_OUT_GLOSSY_COLOR]->hasoutput)
+		out[RRES_OUT_GLOSSY_COLOR]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_GLOSSY_COLOR);
+	if(out[RRES_OUT_TRANSM_DIRECT]->hasoutput)
+		out[RRES_OUT_TRANSM_DIRECT]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_TRANSM_DIRECT);
+	if(out[RRES_OUT_TRANSM_INDIRECT]->hasoutput)
+		out[RRES_OUT_TRANSM_INDIRECT]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_TRANSM_INDIRECT);
+	if(out[RRES_OUT_TRANSM_COLOR]->hasoutput)
+		out[RRES_OUT_TRANSM_COLOR]->data= compbuf_multilayer_get(rd, rl, ima, iuser, SCE_PASS_TRANSM_COLOR);
 }
 
 
@@ -393,6 +429,24 @@ static void node_composit_rlayers_out(RenderData *rd, RenderLayer *rl, bNodeStac
 		out[RRES_OUT_EMIT]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_EMIT);
 	if(out[RRES_OUT_ENV]->hasoutput)
 		out[RRES_OUT_ENV]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_ENVIRONMENT);
+	if(out[RRES_OUT_DIFF_DIRECT]->hasoutput)
+		out[RRES_OUT_DIFF_DIRECT]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_DIFFUSE_DIRECT);
+	if(out[RRES_OUT_DIFF_INDIRECT]->hasoutput)
+		out[RRES_OUT_DIFF_INDIRECT]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_DIFFUSE_INDIRECT);
+	if(out[RRES_OUT_DIFF_COLOR]->hasoutput)
+		out[RRES_OUT_DIFF_COLOR]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_DIFFUSE_COLOR);
+	if(out[RRES_OUT_GLOSSY_DIRECT]->hasoutput)
+		out[RRES_OUT_GLOSSY_DIRECT]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_GLOSSY_DIRECT);
+	if(out[RRES_OUT_GLOSSY_INDIRECT]->hasoutput)
+		out[RRES_OUT_GLOSSY_INDIRECT]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_GLOSSY_INDIRECT);
+	if(out[RRES_OUT_GLOSSY_COLOR]->hasoutput)
+		out[RRES_OUT_GLOSSY_COLOR]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_GLOSSY_COLOR);
+	if(out[RRES_OUT_TRANSM_DIRECT]->hasoutput)
+		out[RRES_OUT_TRANSM_DIRECT]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_TRANSM_DIRECT);
+	if(out[RRES_OUT_TRANSM_INDIRECT]->hasoutput)
+		out[RRES_OUT_TRANSM_INDIRECT]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_TRANSM_INDIRECT);
+	if(out[RRES_OUT_TRANSM_COLOR]->hasoutput)
+		out[RRES_OUT_TRANSM_COLOR]->data= compbuf_from_pass(rd, rl, rectx, recty, SCE_PASS_TRANSM_COLOR);
 }
 
 static void node_composit_exec_rlayers(void *data, bNode *node, bNodeStack **UNUSED(in), bNodeStack **out)

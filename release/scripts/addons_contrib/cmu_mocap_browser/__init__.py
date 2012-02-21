@@ -27,7 +27,6 @@ bl_info = {
     'author': "Daniel Monteiro Basso <daniel@basso.inf.br>",
     'version': (2011, 10, 30, 1),
     'blender': (2, 6, 0),
-    'api': 41226,
     'location': "View3D > Tools",
     'description': "Assistant for using CMU Motion Capture data",
     'warning': '',
@@ -296,11 +295,12 @@ class CMUMocapSubjectBrowser(bpy.types.Panel):
                 label = "Download and Import Selected"
             else:
                 label = "Download Selected"
-            op = layout.operator("mocap.download_import",
-                text=label, icon='ARMATURE_DATA')
-            op.remote_file = remote_fname
-            op.local_file = local_fname
-            op.do_import = do_import
+
+            props = layout.operator("mocap.download_import",
+                                    text=label, icon='ARMATURE_DATA')
+            props.remote_file = remote_fname
+            props.local_file = local_fname
+            props.do_import = do_import
 
 
 class CMUMocapMotionBrowser(bpy.types.Panel):
@@ -351,10 +351,10 @@ class CMUMocapMotionBrowser(bpy.types.Panel):
             else:
                 label = "Download {0}".format(target)
             row = layout.row()
-            op = row.operator("mocap.download_import", text=label, icon=icon)
-            op.remote_file = remote_fname + ext
-            op.local_file = local_fname
-            op.do_import = do_import
+            props = row.operator("mocap.download_import", text=label, icon=icon)
+            props.remote_file = remote_fname + ext
+            props.local_file = local_fname
+            props.do_import = do_import
             row.active = ext in motion['files']
 
 

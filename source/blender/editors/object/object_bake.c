@@ -807,10 +807,8 @@ static void apply_tangmat_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm,
 
 		ibuf->userflags= IB_RECT_INVALID;
 	} else {
-		char *rrgb= (char*)ibuf->rect + pixel*4;
-		rrgb[0]= FTOCHAR(vec[0]);
-		rrgb[1]= FTOCHAR(vec[1]);
-		rrgb[2]= FTOCHAR(vec[2]);
+		unsigned char *rrgb= (unsigned char *)ibuf->rect + pixel*4;
+		rgb_float_to_uchar(rrgb, vec);
 		rrgb[3]= 255;
 	}
 }
@@ -997,14 +995,13 @@ static DerivedMesh *multiresbake_create_loresdm(Scene *scene, Object *ob, int *l
 	*lvl= mmd->lvl;
 
 	if(*lvl==0) {
-		DerivedMesh *tmp_dm= CDDM_from_mesh(me, ob);
-		dm= CDDM_copy(tmp_dm);
-		tmp_dm->release(tmp_dm);
+		return NULL;
 	} else {
 		MultiresModifierData tmp_mmd= *mmd;
 		DerivedMesh *cddm= CDDM_from_mesh(me, ob);
 
 		tmp_mmd.lvl= *lvl;
+		tmp_mmd.sculptlvl= *lvl;
 		dm= multires_dm_create_from_derived(&tmp_mmd, 1, cddm, ob, 0, 0);
 		cddm->release(cddm);
 	}
@@ -1059,6 +1056,7 @@ static int multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 {
 	Object *ob;
 	Scene *scene= CTX_data_scene(C);
+	int objects_baked= 0;
 
 	if(!multiresbake_check(C, op))
 		return OPERATOR_CANCELLED;
@@ -1089,6 +1087,10 @@ static int multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 
 		/* create low-resolution DM (to bake to) and hi-resolution DM (to bake from) */
 		bkr.lores_dm= multiresbake_create_loresdm(scene, ob, &bkr.lvl);
+
+		if(!bkr.lores_dm)
+			continue;
+
 		bkr.hires_dm= multiresbake_create_hiresdm(scene, ob, &bkr.tot_lvl, &bkr.simple);
 
 		multiresbake_start(&bkr);
@@ -1097,8 +1099,13 @@ static int multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 
 		bkr.lores_dm->release(bkr.lores_dm);
 		bkr.hires_dm->release(bkr.hires_dm);
+
+		objects_baked++;
 	}
 	CTX_DATA_END;
+
+	if(!objects_baked)
+		BKE_report(op->reports, RPT_ERROR, "No objects found to bake from");
 
 	return OPERATOR_FINISHED;
 }
@@ -1117,13 +1124,21 @@ static void init_multiresbake_job(bContext *C, MultiresBakeJob *bkj)
 
 	CTX_DATA_BEGIN(C, Base*, base, selected_editable_bases) {
 		MultiresBakerJobData *data;
+		DerivedMesh *lores_dm;
+		int lvl;
 		ob= base->object;
 
 		multires_force_update(ob);
 
+		lores_dm = multiresbake_create_loresdm(scene, ob, &lvl);
+		if(!lores_dm)
+			continue;
+
 		data= MEM_callocN(sizeof(MultiresBakerJobData), "multiresBaker derivedMesh_data");
-		data->lores_dm = multiresbake_create_loresdm(scene, ob, &data->lvl);
+		data->lores_dm = lores_dm;
+		data->lvl = lvl;
 		data->hires_dm = multiresbake_create_hiresdm(scene, ob, &data->tot_lvl, &data->simple);
+
 		BLI_addtail(&bkj->data, data);
 	}
 	CTX_DATA_END;
@@ -1206,6 +1221,11 @@ static int multiresbake_image_exec(bContext *C, wmOperator *op)
 	bkr= MEM_callocN(sizeof(MultiresBakeJob), "MultiresBakeJob data");
 	init_multiresbake_job(C, bkr);
 
+	if(!bkr->data.first) {
+		BKE_report(op->reports, RPT_ERROR, "No objects found to bake from");
+		return OPERATOR_CANCELLED;
+	}
+
 	/* setup job */
 	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), scene, "Multires Bake", WM_JOB_EXCL_RENDER|WM_JOB_PRIORITY|WM_JOB_PROGRESS);
 	WM_jobs_customdata(steve, bkr, multiresbake_freejob);
@@ -1236,7 +1256,7 @@ typedef struct BakeRender {
 	Main *main;
 	Scene *scene;
 	struct Object *actob;
-	int tot, ready;
+	int result, ready;
 
 	ReportList *reports;
 
@@ -1309,7 +1329,7 @@ static void finish_bake_internal(BakeRender *bkr)
 		if(bkr->prev_r_raytrace == 0)
 			bkr->scene->r.mode &= ~R_RAYTRACE;
 
-	if(bkr->tot) {
+	if(bkr->result==BAKE_RESULT_OK) {
 		Image *ima;
 		/* force OpenGL reload and mipmap recalc */
 		for(ima= G.main->image.first; ima; ima= ima->id.next) {
@@ -1336,7 +1356,7 @@ static void *do_bake_render(void *bake_v)
 {
 	BakeRender *bkr= bake_v;
 
-	bkr->tot= RE_bake_shade_all_selected(bkr->re, bkr->scene->r.bake_mode, bkr->actob, NULL, bkr->progress);
+	bkr->result= RE_bake_shade_all_selected(bkr->re, bkr->scene->r.bake_mode, bkr->actob, NULL, bkr->progress);
 	bkr->ready= 1;
 
 	return NULL;
@@ -1358,7 +1378,7 @@ static void bake_startjob(void *bkv, short *stop, short *do_update, float *progr
 	RE_Database_Baking(bkr->re, bmain, scene, scene->lay, scene->r.bake_mode, bkr->actob);
 
 	/* baking itself is threaded, cannot use test_break in threads. we also update optional imagewindow */
-	bkr->tot= RE_bake_shade_all_selected(bkr->re, scene->r.bake_mode, bkr->actob, bkr->do_update, bkr->progress);
+	bkr->result= RE_bake_shade_all_selected(bkr->re, scene->r.bake_mode, bkr->actob, bkr->do_update, bkr->progress);
 }
 
 static void bake_update(void *bkv)
@@ -1377,7 +1397,11 @@ static void bake_freejob(void *bkv)
 	BakeRender *bkr= bkv;
 	finish_bake_internal(bkr);
 
-	if(bkr->tot==0) BKE_report(bkr->reports, RPT_ERROR, "No objects or images found to bake to");
+	if(bkr->result==BAKE_RESULT_NO_OBJECTS)
+		BKE_report(bkr->reports, RPT_ERROR, "No objects or images found to bake to");
+	else if(bkr->result==BAKE_RESULT_FEEDBACK_LOOP)
+		BKE_report(bkr->reports, RPT_WARNING, "Feedback loop detected");
+
 	MEM_freeN(bkr);
 	G.rendering = 0;
 }
@@ -1494,7 +1518,10 @@ static int bake_image_exec(bContext *C, wmOperator *op)
 			}
 			BLI_end_threads(&threads);
 
-			if(bkr.tot==0) BKE_report(op->reports, RPT_ERROR, "No valid images found to bake to");
+			if(bkr.result==BAKE_RESULT_NO_OBJECTS)
+				BKE_report(op->reports, RPT_ERROR, "No valid images found to bake to");
+			else if(bkr.result==BAKE_RESULT_FEEDBACK_LOOP)
+				BKE_report(op->reports, RPT_ERROR, "Feedback loop detected");
 
 			finish_bake_internal(&bkr);
 

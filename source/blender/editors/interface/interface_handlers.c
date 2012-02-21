@@ -114,6 +114,17 @@ typedef enum uiButtonJumpType {
 	BUTTON_EDIT_JUMP_ALL
 } uiButtonJumpType;
 
+typedef enum uiButtonDelimType {
+	BUTTON_DELIM_NONE,
+	BUTTON_DELIM_ALPHA,
+	BUTTON_DELIM_PUNCT,
+	BUTTON_DELIM_BRACE,
+	BUTTON_DELIM_OPERATOR,
+	BUTTON_DELIM_QUOTE,
+	BUTTON_DELIM_WHITESPACE,
+	BUTTON_DELIM_OTHER
+} uiButtonDelimType;
+
 typedef struct uiHandleButtonData {
 	wmWindowManager *wm;
 	wmWindow *window;
@@ -1104,8 +1115,7 @@ static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data,
 {
 	static ColorBand but_copypaste_coba = {0};
 	char buf[UI_MAX_DRAW_STR+1]= {0};
-	double val;
-	
+
 	if(mode=='v' && but->lock)
 		return;
 
@@ -1129,17 +1139,16 @@ static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data,
 		
 		if(but->poin==NULL && but->rnapoin.data==NULL);
 		else if(mode=='c') {
-			if(ui_is_but_float(but))
-				BLI_snprintf(buf, sizeof(buf), "%f", ui_get_but_val(but));
-			else
-				BLI_snprintf(buf, sizeof(buf), "%d", (int)ui_get_but_val(but));
-
+			ui_get_but_string(but, buf, sizeof(buf));
 			WM_clipboard_text_set(buf, 0);
 		}
 		else {
-			if (sscanf(buf, " %lf ", &val) == 1) {
+			double val;
+
+			if (ui_set_but_string_eval_num(C, but, buf, &val)) {
 				button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
 				data->value= val;
+				ui_set_but_string(C, but, buf);
 				button_activate_state(C, but, BUTTON_STATE_EXIT);
 			}
 		}
@@ -1230,46 +1239,60 @@ static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data,
 /* ************* in-button text selection/editing ************* */
 
 /* return 1 if char ch is special character, otherwise return 0 */
-static short test_special_char(char ch)
+static uiButtonDelimType test_special_char(const char ch)
 {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+		return BUTTON_DELIM_ALPHA;
+	}
+
 	switch(ch) {
-		case '\\':
-		case '/':
-		case '~':
-		case '!':
-		case '@':
-		case '#':
-		case '$':
-		case '%':
-		case '^':
-		case '&':
-		case '*':
-		case '(':
-		case ')':
-		case '+':
-		case '=':
+		case ',':
+		case '.':
+			return BUTTON_DELIM_PUNCT;
+
 		case '{':
 		case '}':
 		case '[':
 		case ']':
-		case ':':
-		case ';':
-		case '\'':
-		case '\"': // " - an extra closing one for Aligorith's text editor
+		case '(':
+		case ')':
+			return BUTTON_DELIM_BRACE;
+
+		case '+':
+		case '-':
+		case '=':
+		case '~':
+		case '%':
+		case '/':
 		case '<':
 		case '>':
-		case ',':
-		case '.':
+		case '^':
+		case '*':
+		case '&':
+			return BUTTON_DELIM_OPERATOR;
+
+		case '\'':
+		case '\"': // " - an extra closing one for Aligorith's text editor
+			return BUTTON_DELIM_QUOTE;
+
+		case ' ':
+			return BUTTON_DELIM_WHITESPACE;
+
+		case '\\':
+		case '!':
+		case '@':
+		case '#':
+		case '$':
+		case ':':
+		case ';':
 		case '?':
 		case '_':
-		case '-':
-		case ' ':
-			return 1;
-			break;
+			return BUTTON_DELIM_OTHER;
+
 		default:
 			break;
 	}
-	return 0;
+	return BUTTON_DELIM_NONE;
 }
 
 static int ui_textedit_step_next_utf8(const char *str, size_t maxlen, short *pos)
@@ -1308,12 +1331,13 @@ static void ui_textedit_step_utf8(const char *str, size_t maxlen,
 
 	if(direction) { /* right*/
 		if(jump != BUTTON_EDIT_JUMP_NONE) {
+			const uiButtonDelimType is_special= (*pos) < maxlen ? test_special_char(str[(*pos)]) : BUTTON_DELIM_NONE;
 			/* jump between special characters (/,\,_,-, etc.),
 			 * look at function test_special_char() for complete
 			 * list of special character, ctr -> */
 			while((*pos) < maxlen) {
 				if (ui_textedit_step_next_utf8(str, maxlen, pos)) {
-					if((jump != BUTTON_EDIT_JUMP_ALL) && test_special_char(str[(*pos)])) break;
+					if((jump != BUTTON_EDIT_JUMP_ALL) && (is_special != test_special_char(str[(*pos)]))) break;
 				}
 				else {
 					break; /* unlikely but just incase */
@@ -1326,6 +1350,7 @@ static void ui_textedit_step_utf8(const char *str, size_t maxlen,
 	}
 	else { /* left */
 		if(jump != BUTTON_EDIT_JUMP_NONE) {
+			const uiButtonDelimType is_special= (*pos) > 1 ? test_special_char(str[(*pos) - 1]) : BUTTON_DELIM_NONE;
 			/* left only: compensate for index/change in direction */
 			ui_textedit_step_prev_utf8(str, maxlen, pos);
 
@@ -1334,7 +1359,7 @@ static void ui_textedit_step_utf8(const char *str, size_t maxlen,
 			 * list of special character, ctr -> */
 			while ((*pos) > 0) {
 				if (ui_textedit_step_prev_utf8(str, maxlen, pos)) {
-					if((jump != BUTTON_EDIT_JUMP_ALL) && test_special_char(str[(*pos)])) break;
+					if((jump != BUTTON_EDIT_JUMP_ALL) && (is_special != test_special_char(str[(*pos)]))) break;
 				}
 				else {
 					break;
@@ -1501,6 +1526,8 @@ static void ui_textedit_move(uiBut *but, uiHandleButtonData *data, int direction
 	const int len= strlen(str);
 	const int pos_prev= but->pos;
 	const int has_sel= (but->selend - but->selsta) > 0;
+
+	ui_check_but(but);
 
 	/* special case, quit selection and set cursor */
 	if (has_sel && !select) {
@@ -1676,8 +1703,9 @@ static int ui_textedit_copypaste(uiBut *but, uiHandleButtonData *data, int paste
 			changed= 1;
 		}
 
-		if(pbuf)
+		if (pbuf) {
 			MEM_freeN(pbuf);
+		}
 	}
 	/* cut & copy */
 	else if (copy || cut) {
@@ -3004,12 +3032,28 @@ static int ui_do_but_BLOCK(bContext *C, uiBut *but, uiHandleButtonData *data, wm
 				data->value= ui_step_name_menu(but, -1);
 				button_activate_state(C, but, BUTTON_STATE_EXIT);
 				ui_apply_button(C, but->block, but, data, 1);
+
+				/* button's state need to be changed to EXIT so moving mouse away from this mouse wouldn't lead
+				 * to cancel changes made to this button, but shanging state to EXIT also makes no button active for
+				 * a while which leads to triggering operator when doing fast scrolling mouse wheel.
+				 * using post activate stuff from button allows to make button be active again after checking for all
+				 * all that mouse leave and cancel stuff, so wuick scrool wouldnt't be an issue anumore.
+				 * same goes for scrolling wheel in another direction below (sergey)
+				 */
+				data->postbut= but;
+				data->posttype= BUTTON_ACTIVATE_OVER;
+
 				return WM_UI_HANDLER_BREAK;
 			}
 			else if(event->type == WHEELUPMOUSE && event->alt) {
 				data->value= ui_step_name_menu(but, 1);
 				button_activate_state(C, but, BUTTON_STATE_EXIT);
 				ui_apply_button(C, but->block, but, data, 1);
+
+				/* why this is needed described above */
+				data->postbut= but;
+				data->posttype= BUTTON_ACTIVATE_OVER;
+
 				return WM_UI_HANDLER_BREAK;
 			}
 		}
@@ -3563,31 +3607,6 @@ static int ui_do_but_HSVCIRCLE(bContext *C, uiBlock *block, uiBut *but, uiHandle
 }
 
 
-static int verg_colorband(const void *a1, const void *a2)
-{
-	const CBData *x1=a1, *x2=a2;
-	
-	if( x1->pos > x2->pos ) return 1;
-	else if( x1->pos < x2->pos) return -1;
-	return WM_UI_HANDLER_CONTINUE;
-}
-
-static void ui_colorband_update(ColorBand *coba)
-{
-	int a;
-	
-	if(coba->tot<2) return;
-	
-	for(a=0; a<coba->tot; a++) coba->data[a].cur= a;
-		qsort(coba->data, coba->tot, sizeof(CBData), verg_colorband);
-	for(a=0; a<coba->tot; a++) {
-		if(coba->data[a].cur==coba->cur) {
-			coba->cur= a;
-			break;
-		}
-	}
-}
-
 static int ui_numedit_but_COLORBAND(uiBut *but, uiHandleButtonData *data, int mx)
 {
 	float dx;
@@ -3600,7 +3619,7 @@ static int ui_numedit_but_COLORBAND(uiBut *but, uiHandleButtonData *data, int mx
 	data->dragcbd->pos += dx;
 	CLAMP(data->dragcbd->pos, 0.0f, 1.0f);
 	
-	ui_colorband_update(data->coba);
+	colorband_update_sort(data->coba);
 	data->dragcbd= data->coba->data + data->coba->cur;	/* because qsort */
 	
 	data->draglastx= mx;
@@ -4356,29 +4375,19 @@ static void but_shortcut_name_func(bContext *C, void *arg1, int UNUSED(event))
 	uiBut *but = (uiBut *)arg1;
 
 	if (but->optype) {
-		char buf[512], *cpoin;
+		char shortcut_str[128];
 
 		IDProperty *prop= (but->opptr)? but->opptr->data: NULL;
 		
 		/* complex code to change name of button */
-		if(WM_key_event_operator_string(C, but->optype->idname, but->opcontext, prop, TRUE, buf, sizeof(buf))) {
-			char *butstr_orig;
-
-			// XXX but->str changed... should not, remove the hotkey from it
-			cpoin= strchr(but->str, '|');
-			if(cpoin) *cpoin= 0;		
-
-			butstr_orig= BLI_strdup(but->str);
-			BLI_snprintf(but->strdata, sizeof(but->strdata), "%s|%s", butstr_orig, buf);
-			MEM_freeN(butstr_orig);
-			but->str= but->strdata;
-
-			ui_check_but(but);
+		if(WM_key_event_operator_string(C, but->optype->idname, but->opcontext, prop, TRUE,
+		                                shortcut_str, sizeof(shortcut_str)))
+		{
+			ui_but_add_shortcut(but, shortcut_str, TRUE);
 		}
 		else {
-			/* shortcut was removed */
-			cpoin= strchr(but->str, '|');
-			if(cpoin) *cpoin= 0;
+			/* simply strip the shortcut */
+			ui_but_add_shortcut(but, NULL, TRUE);
 		}
 	}
 }
@@ -5247,7 +5256,7 @@ static void button_activate_state(bContext *C, uiBut *but, uiHandleButtonState s
 		   highlight when not in a popup menu, we remove because data used in
 		   button below popup might have been removed by action of popup. Needs
 		   a more reliable solution... */
-		if(state != BUTTON_STATE_HIGHLIGHT || but->block->handle)
+		if(state != BUTTON_STATE_HIGHLIGHT || (but->block->flag & UI_BLOCK_LOOP))
 			ui_check_but(but);
 	}
 
@@ -5850,15 +5859,17 @@ static int ui_handle_list_event(bContext *C, wmEvent *event, ARegion *ar)
 			retval= WM_UI_HANDLER_BREAK;
 		}
 		else if(ELEM(event->type, WHEELUPMOUSE, WHEELDOWNMOUSE)) {
-			/* list template will clamp */
-			if(event->type == WHEELUPMOUSE)
-				pa->list_scroll--;
-			else
-				pa->list_scroll++;
+			if(pa->list_last_len > pa->list_size) {
+				/* list template will clamp */
+				if(event->type == WHEELUPMOUSE)
+					pa->list_scroll--;
+				else
+					pa->list_scroll++;
 
-			ED_region_tag_redraw(ar);
+				ED_region_tag_redraw(ar);
 
-			retval= WM_UI_HANDLER_BREAK;
+				retval= WM_UI_HANDLER_BREAK;
+			}
 		}
 	}
 

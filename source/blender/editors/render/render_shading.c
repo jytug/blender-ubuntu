@@ -73,6 +73,7 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+#include "ED_object.h"
 #include "ED_curve.h"
 #include "ED_mesh.h"
 #include "ED_node.h"
@@ -91,7 +92,7 @@
 
 static int material_slot_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 
 	if(!ob)
 		return OPERATOR_CANCELLED;
@@ -120,7 +121,7 @@ void OBJECT_OT_material_slot_add(wmOperatorType *ot)
 
 static int material_slot_remove_exec(bContext *C, wmOperator *op)
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 
 	if(!ob)
 		return OPERATOR_CANCELLED;
@@ -156,7 +157,7 @@ void OBJECT_OT_material_slot_remove(wmOperatorType *ot)
 
 static int material_slot_assign_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 
 	if(!ob)
 		return OPERATOR_CANCELLED;
@@ -216,7 +217,7 @@ void OBJECT_OT_material_slot_assign(wmOperatorType *ot)
 
 static int material_slot_de_select(bContext *C, int select)
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 
 	if(!ob)
 		return OPERATOR_CANCELLED;
@@ -322,7 +323,7 @@ void OBJECT_OT_material_slot_deselect(wmOperatorType *ot)
 
 static int material_slot_copy_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 	Material ***matar;
 
 	if(!ob || !(matar= give_matarar(ob)))
@@ -704,7 +705,7 @@ static int envmap_save_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event
 {
 	//Scene *scene= CTX_data_scene(C);
 	
-	if(RNA_property_is_set(op->ptr, "filepath"))
+	if(RNA_struct_property_is_set(op->ptr, "filepath"))
 		return envmap_save_exec(C, op);
 
 	//RNA_enum_set(op->ptr, "file_type", scene->r.im_format.imtype);
@@ -748,7 +749,7 @@ void TEXTURE_OT_envmap_save(wmOperatorType *ot)
 	prop= RNA_def_float_array(ot->srna, "layout", 12, default_envmap_layout, 0.0f, 0.0f, "File layout", "Flat array describing the X,Y position of each cube face in the output image, where 1 is the size of a face - order is [+Z -Z +Y -X -Y +X] (use -1 to skip a face)", 0.0f, 0.0f);
 	RNA_def_property_flag(prop, PROP_HIDDEN);
 
-	WM_operator_properties_filesel(ot, FOLDERFILE|IMAGEFILE|MOVIEFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|IMAGEFILE|MOVIEFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH, FILE_DEFAULTDISPLAY);
 }
 
 static int envmap_clear_exec(bContext *C, wmOperator *UNUSED(op))

@@ -45,6 +45,7 @@
 EnumPropertyItem constraint_type_items[] ={
 	{0, "", 0, "Motion Tracking", ""},
 	{CONSTRAINT_TYPE_CAMERASOLVER, "CAMERA_SOLVER", ICON_CONSTRAINT_DATA, "Camera Solver", ""},
+	{CONSTRAINT_TYPE_OBJECTSOLVER, "OBJECT_SOLVER", ICON_CONSTRAINT_DATA, "Object Solver", ""},
 	{CONSTRAINT_TYPE_FOLLOWTRACK, "FOLLOW_TRACK", ICON_CONSTRAINT_DATA, "Follow Track", ""},
 	{0, "", 0, "Transform", ""},
 	{CONSTRAINT_TYPE_LOCLIKE, "COPY_LOCATION", ICON_CONSTRAINT_DATA, "Copy Location", ""},
@@ -77,24 +78,24 @@ EnumPropertyItem constraint_type_items[] ={
 	{0, NULL, 0, NULL, NULL}};
 
 static EnumPropertyItem target_space_pchan_items[] = {
-	{0, "WORLD", 0, "World Space", "The transformation of the target is evaluated relative to the world coordinate system"},
-	{2, "POSE", 0, "Pose Space", "The transformation of the target is only evaluated in the Pose Space, the target armature object transformation is ignored"},
-	{3, "LOCAL_WITH_PARENT", 0, "Local With Parent", "The transformation of the target bone is evaluated relative its local coordinate system, with the parent transformation added"},
-	{1, "LOCAL", 0, "Local Space", "The transformation of the target is evaluated relative to its local coordinate system"},
+	{CONSTRAINT_SPACE_WORLD,    "WORLD", 0, "World Space", "The transformation of the target is evaluated relative to the world coordinate system"},
+	{CONSTRAINT_SPACE_POSE,     "POSE", 0, "Pose Space", "The transformation of the target is only evaluated in the Pose Space, the target armature object transformation is ignored"},
+	{CONSTRAINT_SPACE_PARLOCAL, "LOCAL_WITH_PARENT", 0, "Local With Parent", "The transformation of the target bone is evaluated relative its local coordinate system, with the parent transformation added"},
+	{CONSTRAINT_SPACE_LOCAL,    "LOCAL", 0, "Local Space", "The transformation of the target is evaluated relative to its local coordinate system"},
 	{0, NULL, 0, NULL, NULL}};
 
 static EnumPropertyItem owner_space_pchan_items[] = {
-	{0, "WORLD", 0, "World Space", "The constraint is applied relative to the world coordinate system"},
-	{2, "POSE", 0, "Pose Space", "The constraint is applied in Pose Space, the object transformation is ignored"},
-	{3, "LOCAL_WITH_PARENT", 0, "Local With Parent", "The constraint is applied relative to the local coordinate system of the object, with the parent transformation added"},
-	{1, "LOCAL", 0, "Local Space", "The constraint is applied relative to the local coordinate sytem of the object"},
+	{CONSTRAINT_SPACE_WORLD,    "WORLD", 0, "World Space", "The constraint is applied relative to the world coordinate system"},
+	{CONSTRAINT_SPACE_POSE,     "POSE", 0, "Pose Space", "The constraint is applied in Pose Space, the object transformation is ignored"},
+	{CONSTRAINT_SPACE_PARLOCAL, "LOCAL_WITH_PARENT", 0, "Local With Parent", "The constraint is applied relative to the local coordinate system of the object, with the parent transformation added"},
+	{CONSTRAINT_SPACE_LOCAL,    "LOCAL", 0, "Local Space", "The constraint is applied relative to the local coordinate sytem of the object"},
 	{0, NULL, 0, NULL, NULL}};
 
 #ifdef RNA_RUNTIME
 
 static EnumPropertyItem space_object_items[] = {
-	{0, "WORLD", 0, "World Space", "The transformation of the target is evaluated relative to the world coordinate system"},
-	{1, "LOCAL", 0, "Local Space", "The transformation of the target is evaluated relative to its local coordinate system"},
+	{CONSTRAINT_SPACE_WORLD, "WORLD", 0, "World Space", "The transformation of the target is evaluated relative to the world coordinate system"},
+	{CONSTRAINT_SPACE_LOCAL, "LOCAL", 0, "Local Space", "The transformation of the target is evaluated relative to its local coordinate system"},
 	{0, NULL, 0, NULL, NULL}};
 
 #include "BKE_animsys.h"
@@ -163,6 +164,8 @@ static StructRNA *rna_ConstraintType_refine(struct PointerRNA *ptr)
 			return &RNA_FollowTrackConstraint;
 		case CONSTRAINT_TYPE_CAMERASOLVER:
 			return &RNA_CameraSolverConstraint;
+		case CONSTRAINT_TYPE_OBJECTSOLVER:
+			return &RNA_ObjectSolverConstraint;
 		default:
 			return &RNA_UnknownType;
 	}
@@ -290,8 +293,8 @@ static void rna_ActionConstraint_minmax_range(PointerRNA *ptr, float *min, float
 
 	/* 0, 1, 2 = magic numbers for rotX, rotY, rotZ */
 	if (ELEM3(acon->type, 0, 1, 2)) {
-		*min= -90.f;
-		*max= 90.f;
+		*min= -180.0f;
+		*max= 180.0f;
 	} else {
 		*min= -1000.f;
 		*max= 1000.f;
@@ -325,6 +328,77 @@ static void rna_SplineIKConstraint_joint_bindings_set(PointerRNA *ptr, const flo
 	bSplineIKConstraint *ikData= (bSplineIKConstraint *)con->data;
 	
 	memcpy(ikData->points, values, ikData->numpoints * sizeof(float));
+}
+
+static int rna_Constraint_cameraObject_poll(PointerRNA *ptr, PointerRNA value)
+{
+	Object *ob= (Object*)value.data;
+
+	if (ob) {
+		if (ob->type == OB_CAMERA && ob != (Object*)ptr->id.data) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void rna_Constraint_followTrack_camera_set(PointerRNA *ptr, PointerRNA value)
+{
+	bConstraint *con= (bConstraint*)ptr->data;
+	bFollowTrackConstraint *data= (bFollowTrackConstraint*)con->data;
+	Object *ob= (Object*)value.data;
+
+	if (ob) {
+		if (ob->type == OB_CAMERA && ob != (Object*)ptr->id.data) {
+			data->camera= ob;
+		}
+	} else {
+		data->camera= NULL;
+	}
+}
+
+static void rna_Constraint_followTrack_depthObject_set(PointerRNA *ptr, PointerRNA value)
+{
+	bConstraint *con= (bConstraint*)ptr->data;
+	bFollowTrackConstraint *data= (bFollowTrackConstraint*)con->data;
+	Object *ob= (Object*)value.data;
+
+	if (ob) {
+		if (ob->type == OB_MESH && ob != (Object*)ptr->id.data) {
+			data->depth_ob= ob;
+		}
+	} else {
+		data->depth_ob= NULL;
+	}
+}
+
+static int rna_Constraint_followTrack_depthObject_poll(PointerRNA *ptr, PointerRNA value)
+{
+	Object *ob= (Object*)value.data;
+
+	if(ob) {
+		if (ob->type == OB_MESH && ob != (Object*)ptr->id.data) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void rna_Constraint_objectSolver_camera_set(PointerRNA *ptr, PointerRNA value)
+{
+	bConstraint *con= (bConstraint*)ptr->data;
+	bObjectSolverConstraint *data= (bObjectSolverConstraint*)con->data;
+	Object *ob= (Object*)value.data;
+
+	if (ob) {
+		if (ob->type == OB_CAMERA && ob != (Object*)ptr->id.data) {
+			data->camera= ob;
+		}
+	} else {
+		data->camera= NULL;
+	}
 }
 
 #else
@@ -952,15 +1026,15 @@ static void rna_def_constraint_action(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	static EnumPropertyItem transform_channel_items[] = {
-		{20, "LOCATION_X", 0, "Location X", ""},
-		{21, "LOCATION_Y", 0, "Location Y", ""},
-		{22, "LOCATION_Z", 0, "Location Z", ""},
-		{00, "ROTATION_X", 0, "Rotation X", ""},
-		{01, "ROTATION_Y", 0, "Rotation Y", ""},
-		{02, "ROTATION_Z", 0, "Rotation Z", ""},
-		{10, "SCALE_X", 0, "Scale X", ""},
-		{11, "SCALE_Y", 0, "Scale Y", ""},
-		{12, "SCALE_Z", 0, "Scale Z", ""},
+		{20, "LOCATION_X", 0, "X Location", ""},
+		{21, "LOCATION_Y", 0, "Y Location", ""},
+		{22, "LOCATION_Z", 0, "Z Location", ""},
+		{00, "ROTATION_X", 0, "X Rotation", ""},
+		{01, "ROTATION_Y", 0, "Y Rotation", ""},
+		{02, "ROTATION_Z", 0, "Z Rotation", ""},
+		{10, "SCALE_X", 0, "X Scale", ""},
+		{11, "SCALE_Y", 0, "Y Scale", ""},
+		{12, "SCALE_Z", 0, "Z Scale", ""},
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "ActionConstraint", "Constraint");
@@ -1937,12 +2011,12 @@ static void rna_def_constraint_spline_ik(BlenderRNA *brna)
 	RNA_def_property_int_sdna(prop, NULL, "chainlen");
 	RNA_def_property_range(prop, 1, 255); // TODO: this should really check the max length of the chain the constraint is attached to
 	RNA_def_property_ui_text(prop, "Chain Length", "How many bones are included in the chain");
-	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_dependency_update");
+	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_dependency_update"); // XXX: this update goes wrong... needs extra flush?
 	
 	/* direct access to bindings */
 	// NOTE: only to be used by experienced users
 	prop= RNA_def_property(srna, "joint_bindings", PROP_FLOAT, PROP_FACTOR);
-	RNA_def_property_array(prop, 32); // XXX this is the maximum value allowed
+	RNA_def_property_array(prop, 32); // XXX this is the maximum value allowed - why? 
 	RNA_def_property_flag(prop, PROP_DYNAMIC);
 	RNA_def_property_dynamic_array_funcs(prop, "rna_SplineIKConstraint_joint_bindings_get_length");
 	RNA_def_property_float_funcs(prop, "rna_SplineIKConstraint_joint_bindings_get", "rna_SplineIKConstraint_joint_bindings_set", NULL);
@@ -2066,6 +2140,28 @@ static void rna_def_constraint_follow_track(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", FOLLOWTRACK_USE_3D_POSITION);
 	RNA_def_property_ui_text(prop, "3D Position", "Use 3D position of track to parent to");
 	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_update");
+
+	/* object */
+	prop= RNA_def_property(srna, "object", PROP_STRING, PROP_NONE);
+	RNA_def_property_string_sdna(prop, NULL, "object");
+	RNA_def_property_ui_text(prop, "Object", "Movie tracking object to follow (if empty, camera object is used)");
+	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_dependency_update");
+
+	/* camera */
+	prop= RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "camera");
+	RNA_def_property_ui_text(prop, "Camera", "Camera to which motion is parented (if empty active scene camera is used)");
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_dependency_update");
+	RNA_def_property_pointer_funcs(prop, NULL, "rna_Constraint_followTrack_camera_set", NULL, "rna_Constraint_cameraObject_poll");
+
+	/* depth object */
+	prop= RNA_def_property(srna, "depth_object", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "depth_ob");
+	RNA_def_property_ui_text(prop, "Depth Object", "Object used to define depth in camera space by projecting onto surface of this object");
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_dependency_update");
+	RNA_def_property_pointer_funcs(prop, NULL, "rna_Constraint_followTrack_depthObject_set", NULL, "rna_Constraint_followTrack_depthObject_poll");
 }
 
 static void rna_def_constraint_camera_solver(BlenderRNA *brna)
@@ -2074,7 +2170,7 @@ static void rna_def_constraint_camera_solver(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "CameraSolverConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Follow Track Constraint", "Lock motion to the reconstructed camera movement");
+	RNA_def_struct_ui_text(srna, "Camera Solver Constraint", "Lock motion to the reconstructed camera movement");
 	RNA_def_struct_sdna_from(srna, "bCameraSolverConstraint", "data");
 
 	/* movie clip */
@@ -2089,6 +2185,43 @@ static void rna_def_constraint_camera_solver(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", CAMERASOLVER_ACTIVECLIP);
 	RNA_def_property_ui_text(prop, "Active Clip", "Use active clip defined in scene");
 	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_update");
+}
+
+static void rna_def_constraint_object_solver(BlenderRNA *brna)
+{
+	StructRNA *srna;
+	PropertyRNA *prop;
+
+	srna= RNA_def_struct(brna, "ObjectSolverConstraint", "Constraint");
+	RNA_def_struct_ui_text(srna, "Object Solver Constraint", "Lock motion to the reconstructed object movement");
+	RNA_def_struct_sdna_from(srna, "bObjectSolverConstraint", "data");
+
+	/* movie clip */
+	prop= RNA_def_property(srna, "clip", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "clip");
+	RNA_def_property_ui_text(prop, "Movie Clip", "Movie Clip to get tracking data from");
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_dependency_update");
+
+	/* use default clip */
+	prop= RNA_def_property(srna, "use_active_clip", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", CAMERASOLVER_ACTIVECLIP);
+	RNA_def_property_ui_text(prop, "Active Clip", "Use active clip defined in scene");
+	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_update");
+
+	/* object */
+	prop= RNA_def_property(srna, "object", PROP_STRING, PROP_NONE);
+	RNA_def_property_string_sdna(prop, NULL, "object");
+	RNA_def_property_ui_text(prop, "Object", "Movie tracking object to follow");
+	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_dependency_update");
+
+	/* camera */
+	prop= RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "camera");
+	RNA_def_property_ui_text(prop, "Camera", "Camera to which motion is parented (if empty active scene camera is used)");
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_update(prop, NC_OBJECT|ND_CONSTRAINT, "rna_Constraint_dependency_update");
+	RNA_def_property_pointer_funcs(prop, NULL, "rna_Constraint_objectSolver_camera_set", NULL, "rna_Constraint_cameraObject_poll");
 }
 
 /* base struct for constraints */
@@ -2203,6 +2336,7 @@ void RNA_def_constraint(BlenderRNA *brna)
 	rna_def_constraint_pivot(brna);
 	rna_def_constraint_follow_track(brna);
 	rna_def_constraint_camera_solver(brna);
+	rna_def_constraint_object_solver(brna);
 }
 
 #endif

@@ -16,10 +16,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include "graph.h"
 #include "light.h"
 #include "mesh.h"
 #include "object.h"
 #include "scene.h"
+#include "nodes.h"
+#include "shader.h"
 
 #include "blender_sync.h"
 #include "blender_util.h"
@@ -152,9 +155,40 @@ void BlenderSync::sync_light(BL::Object b_parent, int b_index, BL::Object b_ob, 
 	light->tag_update(scene);
 }
 
+void BlenderSync::sync_background_light()
+{
+	BL::World b_world = b_scene.world();
+
+	if(b_world) {
+		PointerRNA cworld = RNA_pointer_get(&b_world.ptr, "cycles");
+		bool sample_as_light = get_boolean(cworld, "sample_as_light");
+
+		if(sample_as_light) {
+			/* test if we need to sync */
+			Light *light;
+			ObjectKey key(b_world, 0, b_world);
+
+			if(light_map.sync(&light, b_world, b_world, key) ||
+			   world_recalc ||
+			   b_world.ptr.data != world_map)
+			{
+				light->type = LIGHT_BACKGROUND;
+				light->map_resolution  = get_int(cworld, "sample_map_resolution");
+				light->shader = scene->default_background;
+
+				light->tag_update(scene);
+				light_map.set_recalc(b_world);
+			}
+		}
+	}
+
+	world_map = b_world.ptr.data;
+	world_recalc = false;
+}
+
 /* Object */
 
-void BlenderSync::sync_object(BL::Object b_parent, int b_index, BL::Object b_ob, Transform& tfm, uint visibility)
+void BlenderSync::sync_object(BL::Object b_parent, int b_index, BL::Object b_ob, Transform& tfm, uint layer_flag)
 {
 	/* light is handled separately */
 	if(object_is_light(b_ob)) {
@@ -180,11 +214,20 @@ void BlenderSync::sync_object(BL::Object b_parent, int b_index, BL::Object b_ob,
 	/* object sync */
 	if(object_updated || (object->mesh && object->mesh->need_update)) {
 		object->name = b_ob.name().c_str();
+		object->pass_id = b_ob.pass_index();
 		object->tfm = tfm;
-		
-		object->visibility = object_ray_visibility(b_ob) & visibility;
+
+		/* visibility flags for both parent */
+		object->visibility = object_ray_visibility(b_ob) & PATH_RAY_ALL;
 		if(b_parent.ptr.data != b_ob.ptr.data)
 			object->visibility &= object_ray_visibility(b_parent);
+
+		/* camera flag is not actually used, instead is tested
+		   against render layer flags */
+		if(object->visibility & PATH_RAY_CAMERA) {
+			object->visibility |= layer_flag << PATH_RAY_LAYER_SHIFT;
+			object->visibility &= ~PATH_RAY_CAMERA;
+		}
 
 		object->tag_update(scene);
 	}
@@ -195,8 +238,7 @@ void BlenderSync::sync_object(BL::Object b_parent, int b_index, BL::Object b_ob,
 void BlenderSync::sync_objects(BL::SpaceView3D b_v3d)
 {
 	/* layer data */
-	uint scene_layer = render_layer.scene_layer;
-	uint layer = render_layer.layer;
+	uint scene_layer = render_layers.front().scene_layer;
 	
 	/* prepare for sync */
 	light_map.pre_sync();
@@ -212,11 +254,6 @@ void BlenderSync::sync_objects(BL::SpaceView3D b_v3d)
 		uint ob_layer = get_layer(b_ob->layers());
 
 		if(!hide && (ob_layer & scene_layer)) {
-			uint visibility = PATH_RAY_ALL;
-			
-			if(!(ob_layer & layer))
-				visibility &= ~PATH_RAY_CAMERA;
-
 			if(b_ob->is_duplicator()) {
 				/* dupli objects */
 				object_create_duplilist(*b_ob, b_scene);
@@ -226,28 +263,42 @@ void BlenderSync::sync_objects(BL::SpaceView3D b_v3d)
 
 				for(b_ob->dupli_list.begin(b_dup); b_dup != b_ob->dupli_list.end(); ++b_dup) {
 					Transform tfm = get_transform(b_dup->matrix());
-					sync_object(*b_ob, b_index, b_dup->object(), tfm, visibility);
+					BL::Object b_dup_ob = b_dup->object();
+					bool dup_hide = (b_v3d)? b_dup_ob.hide(): b_dup_ob.hide_render();
+
+					if(!(b_dup->hide() || dup_hide))
+						sync_object(*b_ob, b_index, b_dup_ob, tfm, ob_layer);
+
 					b_index++;
 				}
 
 				object_free_duplilist(*b_ob);
 
-				/* check if we should render duplicator */
 				hide = true;
-				BL::Object::particle_systems_iterator b_psys;
+			}
 
-				for(b_ob->particle_systems.begin(b_psys); b_psys != b_ob->particle_systems.end(); ++b_psys)
-					if(b_psys->settings().use_render_emitter())
-						hide = false;
+			/* check if we should render or hide particle emitter */
+			BL::Object::particle_systems_iterator b_psys;
+			bool render_emitter = false;
+
+			for(b_ob->particle_systems.begin(b_psys); b_psys != b_ob->particle_systems.end(); ++b_psys) {
+				if(b_psys->settings().use_render_emitter()) {
+					hide = false;
+					render_emitter = true;
+				}
+				else if(!render_emitter)
+					hide = true;
 			}
 
 			if(!hide) {
 				/* object itself */
 				Transform tfm = get_transform(b_ob->matrix_world());
-				sync_object(*b_ob, 0, *b_ob, tfm, visibility);
+				sync_object(*b_ob, 0, *b_ob, tfm, ob_layer);
 			}
 		}
 	}
+
+	sync_background_light();
 
 	/* handle removed data and modified pointers */
 	if(light_map.post_sync())

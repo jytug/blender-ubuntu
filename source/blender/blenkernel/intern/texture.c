@@ -168,7 +168,7 @@ PluginTex *add_plugin_tex(char *str)
 	
 	pit= MEM_callocN(sizeof(PluginTex), "plugintex");
 	
-	strcpy(pit->name, str);
+	BLI_strncpy(pit->name, str, sizeof(pit->name));
 	open_plugin_tex(pit);
 	
 	if(pit->doit==NULL) {
@@ -349,9 +349,9 @@ ColorBand *add_colorband(int rangetype)
 
 /* ------------------------------------------------------------------------- */
 
-int do_colorband(ColorBand *coba, float in, float out[4])
+int do_colorband(const ColorBand *coba, float in, float out[4])
 {
-	CBData *cbd1, *cbd2, *cbd0, *cbd3;
+	const CBData *cbd1, *cbd2, *cbd0, *cbd3;
 	float fac, mfac, t[4];
 	int a;
 	
@@ -478,10 +478,28 @@ int vergcband(const void *a1, const void *a2)
 	return 0;
 }
 
-CBData *colorband_element_add(struct ColorBand *coba, float position)
+void colorband_update_sort(ColorBand *coba)
 {
 	int a;
+	
+	if(coba->tot<2)
+		return;
+	
+	for(a=0; a<coba->tot; a++)
+		coba->data[a].cur= a;
 
+	qsort(coba->data, coba->tot, sizeof(CBData), vergcband);
+
+	for(a=0; a<coba->tot; a++) {
+		if(coba->data[a].cur==coba->cur) {
+			coba->cur= a;
+			break;
+		}
+	}
+}
+
+CBData *colorband_element_add(struct ColorBand *coba, float position)
+{
 	if(coba->tot==MAXCOLORBAND) {
 		return NULL;
 	}
@@ -503,17 +521,7 @@ CBData *colorband_element_add(struct ColorBand *coba, float position)
 	coba->tot++;
 	coba->cur = coba->tot-1;
 
-	for(a = 0; a < coba->tot; a++)
-		coba->data[a].cur = a;
-
-	qsort(coba->data, coba->tot, sizeof(CBData), vergcband);
-
-	for(a = 0; a < coba->tot; a++) {
-		if(coba->data[a].cur == coba->cur) {
-			coba->cur = a;
-			break;
-		}
-	}
+	colorband_update_sort(coba);
 
 	return coba->data + coba->cur;
 }

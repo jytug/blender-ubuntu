@@ -106,11 +106,6 @@ public:
 		}
 	}
 
-	static int cuda_align_up(int& offset, int alignment)
-	{
-		return (offset + alignment - 1) & ~(alignment - 1);
-	}
-
 #ifdef NDEBUG
 #define cuda_abort()
 #else
@@ -159,11 +154,11 @@ public:
 		cuda_assert(cuCtxSetCurrent(NULL));
 	}
 
-	CUDADevice(bool background_)
+	CUDADevice(DeviceInfo& info, bool background_)
 	{
 		background = background_;
 
-		cuDevId = 0;
+		cuDevId = info.num;
 		cuDevice = 0;
 		cuContext = 0;
 
@@ -194,26 +189,6 @@ public:
 		cuda_assert(cuCtxDetach(cuContext))
 	}
 
-	bool support_full_kernel()
-	{
-		int major, minor;
-		cuDeviceComputeCapability(&major, &minor, cuDevId);
-
-		return (major >= 2);
-	}
-
-	string description()
-	{
-		/* print device information */
-		char deviceName[100];
-
-		cuda_push_context();
-		cuDeviceGetName(deviceName, 256, cuDevId);
-		cuda_pop_context();
-
-		return string("CUDA ") + deviceName;
-	}
-
 	bool support_device(bool experimental)
 	{
 		if(!experimental) {
@@ -221,7 +196,7 @@ public:
 			cuDeviceComputeCapability(&major, &minor, cuDevId);
 
 			if(major <= 1 && minor <= 2) {
-				cuda_error(string_printf("CUDA device supported only with shader model 1.3 or up, found %d.%d.", major, minor));
+				cuda_error(string_printf("CUDA device supported only with compute capability 1.3 or up, found %d.%d.", major, minor));
 				return false;
 			}
 		}
@@ -253,9 +228,9 @@ public:
 
 #if defined(WITH_CUDA_BINARIES) && defined(_WIN32)
 		if(major <= 1 && minor <= 2)
-			cuda_error(string_printf("CUDA device supported only with shader model 1.3 or up, found %d.%d.", major, minor));
+			cuda_error(string_printf("CUDA device supported only compute capability 1.3 or up, found %d.%d.", major, minor));
 		else
-			cuda_error(string_printf("CUDA binary kernel for this graphics card shader model (%d.%d) not found.", major, minor));
+			cuda_error(string_printf("CUDA binary kernel for this graphics card compute capability (%d.%d) not found.", major, minor));
 		return "";
 #else
 		/* if not, find CUDA compiler */
@@ -341,9 +316,11 @@ public:
 		cuda_pop_context();
 	}
 
-	void mem_copy_from(device_memory& mem, size_t offset, size_t size)
+	void mem_copy_from(device_memory& mem, int y, int w, int h, int elem)
 	{
-		/* todo: offset is ignored */
+		size_t offset = elem*y*w;
+		size_t size = elem*w*h;
+
 		cuda_push_context();
 		cuda_assert(cuMemcpyDtoH((uchar*)mem.data_pointer + offset,
 			(CUdeviceptr)((uchar*)mem.device_pointer + offset), size))
@@ -503,7 +480,7 @@ public:
 		offset += sizeof(d_rng_state);
 
 		int sample = task.sample;
-		offset = cuda_align_up(offset, __alignof(sample));
+		offset = align_up(offset, __alignof(sample));
 
 		cuda_assert(cuParamSeti(cuPathTrace, offset, task.sample))
 		offset += sizeof(task.sample);
@@ -519,6 +496,12 @@ public:
 
 		cuda_assert(cuParamSeti(cuPathTrace, offset, task.h))
 		offset += sizeof(task.h);
+
+		cuda_assert(cuParamSeti(cuPathTrace, offset, task.offset))
+		offset += sizeof(task.offset);
+
+		cuda_assert(cuParamSeti(cuPathTrace, offset, task.stride))
+		offset += sizeof(task.stride);
 
 		cuda_assert(cuParamSetSize(cuPathTrace, offset))
 
@@ -561,7 +544,7 @@ public:
 		offset += sizeof(d_buffer);
 
 		int sample = task.sample;
-		offset = cuda_align_up(offset, __alignof(sample));
+		offset = align_up(offset, __alignof(sample));
 
 		cuda_assert(cuParamSeti(cuFilmConvert, offset, task.sample))
 		offset += sizeof(task.sample);
@@ -580,6 +563,12 @@ public:
 
 		cuda_assert(cuParamSeti(cuFilmConvert, offset, task.h))
 		offset += sizeof(task.h);
+
+		cuda_assert(cuParamSeti(cuFilmConvert, offset, task.offset))
+		offset += sizeof(task.offset);
+
+		cuda_assert(cuParamSeti(cuFilmConvert, offset, task.stride))
+		offset += sizeof(task.stride);
 
 		cuda_assert(cuParamSetSize(cuFilmConvert, offset))
 
@@ -603,16 +592,16 @@ public:
 		cuda_pop_context();
 	}
 
-	void displace(DeviceTask& task)
+	void shader(DeviceTask& task)
 	{
 		cuda_push_context();
 
 		CUfunction cuDisplace;
-		CUdeviceptr d_input = cuda_device_ptr(task.displace_input);
-		CUdeviceptr d_offset = cuda_device_ptr(task.displace_offset);
+		CUdeviceptr d_input = cuda_device_ptr(task.shader_input);
+		CUdeviceptr d_offset = cuda_device_ptr(task.shader_output);
 
 		/* get kernel function */
-		cuda_assert(cuModuleGetFunction(&cuDisplace, cuModule, "kernel_cuda_displace"))
+		cuda_assert(cuModuleGetFunction(&cuDisplace, cuModule, "kernel_cuda_shader"))
 		
 		/* pass in parameters */
 		int offset = 0;
@@ -623,11 +612,14 @@ public:
 		cuda_assert(cuParamSetv(cuDisplace, offset, &d_offset, sizeof(d_offset)))
 		offset += sizeof(d_offset);
 
-		int displace_x = task.displace_x;
-		offset = cuda_align_up(offset, __alignof(displace_x));
+		int shader_eval_type = task.shader_eval_type;
+		offset = align_up(offset, __alignof(shader_eval_type));
 
-		cuda_assert(cuParamSeti(cuDisplace, offset, task.displace_x))
-		offset += sizeof(task.displace_x);
+		cuda_assert(cuParamSeti(cuDisplace, offset, task.shader_eval_type))
+		offset += sizeof(task.shader_eval_type);
+
+		cuda_assert(cuParamSeti(cuDisplace, offset, task.shader_x))
+		offset += sizeof(task.shader_x);
 
 		cuda_assert(cuParamSetSize(cuDisplace, offset))
 
@@ -637,7 +629,7 @@ public:
 #else
 		int xthreads = 8;
 #endif
-		int xblocks = (task.displace_w + xthreads - 1)/xthreads;
+		int xblocks = (task.shader_w + xthreads - 1)/xthreads;
 
 		cuda_assert(cuFuncSetCacheConfig(cuDisplace, CU_FUNC_CACHE_PREFER_L1))
 		cuda_assert(cuFuncSetBlockShape(cuDisplace, xthreads, 1, 1))
@@ -753,7 +745,7 @@ public:
 		}
 	}
 
-	void draw_pixels(device_memory& mem, int y, int w, int h, int width, int height, bool transparent)
+	void draw_pixels(device_memory& mem, int y, int w, int h, int dy, int width, int height, bool transparent)
 	{
 		if(!background) {
 			PixelMem pmem = pixel_mem_map[mem.device_pointer];
@@ -779,7 +771,7 @@ public:
 			glColor3f(1.0f, 1.0f, 1.0f);
 
 			glPushMatrix();
-			glTranslatef(0.0f, (float)y, 0.0f);
+			glTranslatef(0.0f, (float)dy, 0.0f);
 				
 			glBegin(GL_QUADS);
 			
@@ -807,7 +799,7 @@ public:
 			return;
 		}
 
-		Device::draw_pixels(mem, y, w, h, width, height, transparent);
+		Device::draw_pixels(mem, y, w, h, dy, width, height, transparent);
 	}
 
 	void task_add(DeviceTask& task)
@@ -816,8 +808,8 @@ public:
 			tonemap(task);
 		else if(task.type == DeviceTask::PATH_TRACE)
 			path_trace(task);
-		else if(task.type == DeviceTask::DISPLACE)
-			displace(task);
+		else if(task.type == DeviceTask::SHADER)
+			shader(task);
 	}
 
 	void task_wait()
@@ -834,9 +826,51 @@ public:
 	}
 };
 
-Device *device_cuda_create(bool background)
+Device *device_cuda_create(DeviceInfo& info, bool background)
 {
-	return new CUDADevice(background);
+	return new CUDADevice(info, background);
+}
+
+void device_cuda_info(vector<DeviceInfo>& devices)
+{
+	int count = 0;
+
+	if(cuInit(0) != CUDA_SUCCESS)
+		return;
+	if(cuDeviceGetCount(&count) != CUDA_SUCCESS)
+		return;
+	
+	vector<DeviceInfo> display_devices;
+	
+	for(int num = 0; num < count; num++) {
+		char name[256];
+		int attr;
+		
+		if(cuDeviceGetName(name, 256, num) != CUDA_SUCCESS)
+			continue;
+
+		DeviceInfo info;
+
+		info.type = DEVICE_CUDA;
+		info.description = string(name);
+		info.id = string_printf("CUDA_%d", num);
+		info.num = num;
+
+		int major, minor;
+		cuDeviceComputeCapability(&major, &minor, num);
+		info.advanced_shading = (major >= 2);
+
+		/* if device has a kernel timeout, assume it is used for display */
+		if(cuDeviceGetAttribute(&attr, CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT, num) == CUDA_SUCCESS && attr == 1) {
+			info.display_device = true;
+			display_devices.push_back(info);
+		}
+		else
+			devices.push_back(info);
+	}
+
+	if(!display_devices.empty())
+		devices.insert(devices.end(), display_devices.begin(), display_devices.end());
 }
 
 CCL_NAMESPACE_END

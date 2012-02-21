@@ -47,6 +47,7 @@
 #include "ED_clip.h"
 
 #include "BIF_gl.h"
+#include "BIF_glutil.h"
 
 #include "WM_types.h"
 
@@ -120,6 +121,26 @@ static void draw_graph_cfra(SpaceClip *sc, ARegion *ar, Scene *scene)
 	glScalef(xscale, 1.0, 1.0);
 }
 
+static void draw_graph_sfra_efra(Scene *scene, View2D *v2d)
+{
+	UI_view2d_view_ortho(v2d);
+
+	/* currently clip editor supposes that editing clip length is equal to scene frame range */
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+		glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
+
+		glRectf(v2d->cur.xmin, v2d->cur.ymin, (float)SFRA, v2d->cur.ymax);
+		glRectf((float)EFRA, v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
+	glDisable(GL_BLEND);
+
+	UI_ThemeColorShade(TH_BACK, -60);
+
+	/* thin lines where the actual frames are */
+	fdrawline((float)SFRA, v2d->cur.ymin, (float)SFRA, v2d->cur.ymax);
+	fdrawline((float)EFRA, v2d->cur.ymin, (float)EFRA, v2d->cur.ymax);
+}
+
 static void tracking_segment_point_cb(void *UNUSED(userdata), MovieTrackingTrack *UNUSED(track),
 			MovieTrackingMarker *marker, int UNUSED(coord), float val)
 {
@@ -155,15 +176,16 @@ void tracking_segment_end_cb(void *UNUSED(userdata))
 }
 
 static void tracking_segment_knot_cb(void *userdata, MovieTrackingTrack *track,
-			MovieTrackingMarker *marker, int UNUSED(coord), float val)
+			MovieTrackingMarker *marker, int coord, float val)
 {
 	struct { MovieTrackingTrack *act_track; int sel; float xscale, yscale, hsize; } *data = userdata;
-	int sel= 0;
+	int sel= 0, sel_flag;
 
 	if(track!=data->act_track)
 		return;
 
-	sel= (marker->flag&MARKER_GRAPH_SEL) ? 1 : 0;
+	sel_flag= coord == 0 ? MARKER_GRAPH_SEL_X : MARKER_GRAPH_SEL_Y;
+	sel= (marker->flag & sel_flag) ? 1 : 0;
 
 	if(sel == data->sel) {
 		if(sel) UI_ThemeColor(TH_HANDLE_VERTEX_SELECT);
@@ -177,6 +199,7 @@ static void draw_tracks_curves(View2D *v2d, SpaceClip *sc)
 {
 	MovieClip *clip= ED_space_clip(sc);
 	MovieTracking *tracking= &clip->tracking;
+	MovieTrackingTrack *act_track= BKE_tracking_active_track(tracking);
 	int width, height;
 	struct { MovieTrackingTrack *act_track; int sel; float xscale, yscale, hsize; } userdata;
 
@@ -188,13 +211,13 @@ static void draw_tracks_curves(View2D *v2d, SpaceClip *sc)
 	/* non-selected knot handles */
 	userdata.hsize= UI_GetThemeValuef(TH_HANDLE_VERTEX_SIZE);
 	userdata.sel= 0;
-	userdata.act_track= clip->tracking.act_track;
+	userdata.act_track= act_track;
 	UI_view2d_getscale(v2d, &userdata.xscale, &userdata.yscale);
 	clip_graph_tracking_values_iterate(sc, &userdata, tracking_segment_knot_cb, NULL, NULL);
 
 	/* draw graph lines */
 	glEnable(GL_BLEND);
-	clip_graph_tracking_values_iterate(sc, tracking->act_track, tracking_segment_point_cb, tracking_segment_start_cb, tracking_segment_end_cb);
+	clip_graph_tracking_values_iterate(sc, act_track, tracking_segment_point_cb, tracking_segment_start_cb, tracking_segment_end_cb);
 	glDisable(GL_BLEND);
 
 	/* selected knot handles on top of curves */
@@ -206,7 +229,7 @@ static void draw_frame_curves(SpaceClip *sc)
 {
 	MovieClip *clip= ED_space_clip(sc);
 	MovieTracking *tracking= &clip->tracking;
-	MovieTrackingReconstruction *reconstruction= &tracking->reconstruction;
+	MovieTrackingReconstruction *reconstruction= BKE_tracking_get_reconstruction(tracking);
 	int i, lines= 0, prevfra= 0;
 
 	glColor3f(0.0f, 0.0f, 1.0f);
@@ -252,6 +275,9 @@ void clip_draw_graph(SpaceClip *sc, ARegion *ar, Scene *scene)
 		if(sc->flag&SC_SHOW_GRAPH_FRAMES)
 			draw_frame_curves(sc);
 	}
+
+	/* frame range */
+	draw_graph_sfra_efra(scene, v2d);
 
 	/* current frame */
 	draw_graph_cfra(sc, ar, scene);

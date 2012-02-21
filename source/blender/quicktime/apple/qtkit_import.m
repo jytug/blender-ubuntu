@@ -86,6 +86,9 @@ int anim_is_quicktime (const char *name)
 		BLI_testextensie(name, ".txt") ||
 		BLI_testextensie(name, ".mpg") ||
 		BLI_testextensie(name, ".avi") ||	// wouldnt be appropriate ;)
+		BLI_testextensie(name, ".mov") ||	// disabled, suboptimal decoding speed   
+		BLI_testextensie(name, ".mp4") ||	// disabled, suboptimal decoding speed
+		BLI_testextensie(name, ".m4v") ||	// disabled, suboptimal decoding speed
 		BLI_testextensie(name, ".tga") ||
 		BLI_testextensie(name, ".png") ||
 		BLI_testextensie(name, ".bmp") ||
@@ -112,7 +115,8 @@ int anim_is_quicktime (const char *name)
 }
 
 
-void free_anim_quicktime (struct anim *anim) {
+void free_anim_quicktime (struct anim *anim)
+{
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
 	if (anim == NULL) return;
