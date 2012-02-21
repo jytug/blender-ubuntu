@@ -19,4 +19,3 @@ index 529aaac..eb1f32a 100644
 +if(WITH_TESTS)
 +	add_subdirectory(tests)
 +endif()
--- 

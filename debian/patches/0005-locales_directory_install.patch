@@ -1,4 +1,4 @@
-From: Matteo F. Vescovi <m.vescovi@revese.it>
+From: "Matteo F. Vescovi" <m.vescovi@revese.it>
 Date: Thu, 22 Dec 2011 18:17:18 +0100
 Subject: locales_directory_install
 
@@ -11,10 +11,10 @@ Change where locales are installed
  4 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 2ba23e5..ec585af 100644
+index d96011f..67d02dc 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
-@@ -101,7 +101,7 @@ static const char *locales[] = {
+@@ -109,7 +109,7 @@ static const char *locales[] = {
  
  void BLF_lang_init(void)
  {
@@ -36,10 +36,10 @@ index 68bb1a7..ba1852e 100644
  /* for BLI_get_folder_version only */
  #define BLENDER_RESOURCE_PATH_USER		0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index e79d850..383e0e8 100644
+index bbdb9bc..06043a5 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -1088,6 +1088,9 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
+@@ -1090,6 +1090,9 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
  			if (get_path_local(path, "python", subfolder, ver)) break;
  			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
  			return NULL;
@@ -50,10 +50,10 @@ index e79d850..383e0e8 100644
  	
  	return path;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 033cbf0..4f84792 100644
+index 7480ab8..b0469e6 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -269,9 +269,9 @@ endif()
+@@ -285,9 +285,9 @@ endif()
  if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY
@@ -65,4 +65,3 @@ index 033cbf0..4f84792 100644
  		PATTERN ".svn" EXCLUDE
  	)
  endif()
--- 

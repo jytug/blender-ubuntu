@@ -9,7 +9,7 @@ Global installation expects system patch to be something like
  1 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 383e0e8..ebe4e2a 100644
+index 06043a5..c5e1146 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
 @@ -89,7 +89,7 @@
@@ -21,7 +21,7 @@ index 383e0e8..ebe4e2a 100644
  #endif
  
  /* local */
-@@ -1025,7 +1025,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
+@@ -1027,7 +1027,7 @@ static int get_path_system(char *targetpath, const char *folder_name, const char
  
  	system_base_path = (const char *)GHOST_getSystemDir();
  	if (system_base_path) {
@@ -30,4 +30,3 @@ index 383e0e8..ebe4e2a 100644
  	}
  	
  	if(!system_path[0])
--- 

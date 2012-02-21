@@ -1,4 +1,4 @@
-From: Matteo F. Vescovi <mfv.debian@gmail.com>
+From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
 Date: Thu, 5 Jan 2012 09:50:48 +0100
 Subject: install_in_usr_lib
 
@@ -23,10 +23,10 @@ index 7261491..30ff1da 100644
  static const char *static_path= NULL;
  #endif
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 27c13d7..e09fe05 100644
+index 8bd89d6..7a6a581 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -257,8 +257,8 @@ if(WITH_PYTHON)
+@@ -273,8 +273,8 @@ if(WITH_PYTHON)
  	endif()
  
  	install(
@@ -37,4 +37,3 @@ index 27c13d7..e09fe05 100644
  		PATTERN ".svn" EXCLUDE
  		PATTERN "__pycache__" EXCLUDE
  		PATTERN "${ADDON_EXCLUDE_CONDITIONAL}" EXCLUDE
--- 

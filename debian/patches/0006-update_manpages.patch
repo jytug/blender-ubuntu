@@ -1,9 +1,11 @@
-From: Matteo F. Vescovi <m.vescovi@revese.it>
-Date: Thu, 22 Dec 2011 18:24:53 +0100
+From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+Date: Tue, 21 Feb 2012 21:34:30 +0100
 Subject: update_manpages
 
  * Update blender manpage with current version
  * Add blenderplayer manpage
+
+Signed-off-by: Kevin Roy <kiniou@gmail.com>
 ---
  doc/manpage/blenderplayer.1   |  131 +++++++++++++++++++++++++++++++++++++++++
  source/creator/CMakeLists.txt |    5 +-
@@ -148,10 +150,10 @@ index 0000000..d15b0c9
 +.SH AUTHORS
 +This manpage was written for a Debian GNU/Linux by Kevin Roy <kiniou@gmail.com>.
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 4f84792..1987aa7 100644
+index b0469e6..46b8fe3 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -298,6 +298,7 @@ if(UNIX AND NOT APPLE)
+@@ -314,6 +314,7 @@ if(UNIX AND NOT APPLE)
  				${CMAKE_SOURCE_DIR}/release/freedesktop/blender.desktop
  				${CMAKE_SOURCE_DIR}/release/freedesktop/icons/scalable/apps/blender.svg
  				${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
@@ -159,15 +161,14 @@ index 4f84792..1987aa7 100644
  			DESTINATION ${TARGETDIR}
  		)
  
-@@ -361,7 +362,9 @@ if(UNIX AND NOT APPLE)
+@@ -377,7 +378,9 @@ if(UNIX AND NOT APPLE)
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/blender/scripts
  		)
  		install(
 -			FILES ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
 +			FILES
-+                ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
-+                ${CMAKE_SOURCE_DIR}/doc/manpage/blenderplayer.1
++				${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
++				${CMAKE_SOURCE_DIR}/doc/manpage/blenderplayer.1
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1
  		)
  		install(
--- 
