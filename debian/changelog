@@ -1,3 +1,14 @@
+blender (2.62-1) UNRELEASED; urgency=low
+
+  * Imported Upstream version 2.62
+  * debian/patches: #0002 dropped (applied upstream)
+  * debian/patches: #0010 dropped (applied upstream)
+  * debian/patches: #0012 dropped (applied upstream)
+  * debian/patches: #0013 dropped (applied upstream)
+  * debian/control: libglew-dev b-deps fixed
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 22 Feb 2012 16:57:19 +0100
+
 blender (2.61-2) unstable; urgency=low
 
   [ Antonio Ospite ]
