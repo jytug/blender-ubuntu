@@ -6,7 +6,8 @@ blender (2.62-1) UNRELEASED; urgency=low
   * debian/patches: #0013 dropped (applied upstream)
   * debian/control: libglew-dev b-deps fixed
   * debian/control: libboost-dev added to b-deps
-  * debian/rules: Cycles and Ocean Sim support added (Closes: #658075, #659442)
+  * debian/control: Standards-Version bumped to 3.9.3
+  * debian/rules: Ocean Sim support added (Closes: #659442)
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 22 Feb 2012 16:57:19 +0100
 
