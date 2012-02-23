@@ -1,4 +1,4 @@
-Format: http://anonscm.debian.org/viewvc/dep/web/deps/dep5.mdwn?revision=240
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: blender
 Upstream-Author: Blender Foundation
 Source: http://download.blender.org/source/
@@ -28,6 +28,6 @@ License: GPL-2+
  You should have received a copy of the GNU General Public License along
  with this program; if not, write to the Free Software Foundation, Inc.,
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-Comment:
+ .
  On Debian systems, the complete text of the GNU General Public License
  version 2 can be found in "/usr/share/common-licenses/GPL-2".
