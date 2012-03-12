@@ -1,4 +1,4 @@
-blender (2.62-1) UNRELEASED; urgency=low
+blender (2.62-1) unstable; urgency=low
 
   * New upstream release (Closes: #661063)
     + debian/patches: #0002 dropped (applied upstream)
@@ -10,7 +10,7 @@ blender (2.62-1) UNRELEASED; urgency=low
   * debian/control: Standards-Version bumped to 3.9.3
   * debian/rules: Ocean Sim support added (Closes: #659442)
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 12 Mar 2012 15:57:22 +0100
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 12 Mar 2012 19:04:53 +0100
 
 blender (2.61-2) unstable; urgency=low
 
