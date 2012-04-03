@@ -1,3 +1,9 @@
+blender (2.62-1~cycles) unstable; urgency=low
+
+  * debian/: Cycles support added (Closes: #658075)
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 02 Apr 2012 17:04:49 +0200
+
 blender (2.62-1) unstable; urgency=low
 
   * New upstream release (Closes: #661063)
