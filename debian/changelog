@@ -1,3 +1,10 @@
+blender (2.62-2) UNRELEASED; urgency=low
+
+  * debian/patches/: #0010 added to fix typo.
+    Thanks to Ronny Standtke for the patch (Closes: #667458)
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 04 Apr 2012 11:05:29 +0200
+
 blender (2.62-1) unstable; urgency=low
 
   * New upstream release (Closes: #661063)
