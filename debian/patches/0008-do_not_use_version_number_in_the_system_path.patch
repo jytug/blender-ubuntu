@@ -6,7 +6,7 @@ Global installation expects system patch to be something like
 /usr/lib/blender/scripts/ without version numbers.
 ---
  source/blender/blenlib/intern/path_util.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
 index 06043a5..c5e1146 100644
