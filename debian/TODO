@@ -16,17 +16,8 @@ TODO for blender:
     plugins aren't built. The build fails on the dh_install call anyway
     but it might be better to have it fail before build-stamp is
     touched.
-  * Document the divergences between the original and the debianized
-    config/linux2-config.py so that the patch stays maintainable.
-    At the moment:
-     - Build in ., not in ..
-     - Use ffmpeg, but use pkg-config. Conditionally enable libdc1394.
-     - Enable the gameengine.
-     - Use CXX to link, rather than -lstdc++.
   * Possible improvements (regarding the build system options):
-     - Maybe add libode0-dev to the B-D (not needed?).
      - Maybe add libalut-dev to the B-D (not needed?).
-     - Maybe add libquicktime-dev to the B-D (FBTFS).
   * More items have been mentioned on the list, see the thread
     beginning at:
     http://lists.alioth.debian.org/pipermail/pkg-blender-maintainers/2007-April/000229.html

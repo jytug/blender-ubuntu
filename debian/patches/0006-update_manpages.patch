@@ -9,7 +9,7 @@ Signed-off-by: Kevin Roy <kiniou@gmail.com>
 ---
  doc/manpage/blenderplayer.1   |  131 +++++++++++++++++++++++++++++++++++++++++
  source/creator/CMakeLists.txt |    5 +-
- 2 files changed, 135 insertions(+), 1 deletions(-)
+ 2 files changed, 135 insertions(+), 1 deletion(-)
  create mode 100644 doc/manpage/blenderplayer.1
 
 diff --git a/doc/manpage/blenderplayer.1 b/doc/manpage/blenderplayer.1

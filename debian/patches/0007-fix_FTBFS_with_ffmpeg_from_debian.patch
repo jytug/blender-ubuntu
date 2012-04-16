@@ -10,10 +10,10 @@ Signed-off-by: Antonio Ospite <ospite@studenti.unina.it>
 ---
  intern/ffmpeg/ffmpeg_compat.h                  |   62 ++++++++++++++++++++++++
  source/blender/blenkernel/intern/writeffmpeg.c |    1 +
- 2 files changed, 63 insertions(+), 0 deletions(-)
+ 2 files changed, 63 insertions(+)
 
 diff --git a/intern/ffmpeg/ffmpeg_compat.h b/intern/ffmpeg/ffmpeg_compat.h
-index 582086d..156073f 100644
+index 582086d..9852fd7 100644
 --- a/intern/ffmpeg/ffmpeg_compat.h
 +++ b/intern/ffmpeg/ffmpeg_compat.h
 @@ -35,6 +35,7 @@

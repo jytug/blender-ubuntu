@@ -8,10 +8,10 @@ Subject: look_for_droid_ttf_with_fontconfig
 
 Signed-off-by: Kevin Roy <kiniou@gmail.com>
 ---
- CMakeLists.txt                                   |   10 ++++
+ CMakeLists.txt                                   |   10 +++++
  build_files/cmake/Modules/FindFontconfig.cmake   |   49 ++++++++++++++++++++++
  build_files/cmake/macros.cmake                   |    6 ++-
- source/blender/blenfont/CMakeLists.txt           |    7 +++
+ source/blender/blenfont/CMakeLists.txt           |    7 ++++
  source/blender/blenfont/intern/blf_translation.c |   23 ++++++++++
  source/blender/blenlib/BLI_fileops.h             |    1 +
  source/blender/blenlib/intern/fileops.c          |   43 +++++++++++++++++++

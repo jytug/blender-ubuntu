@@ -5,7 +5,7 @@ Subject: filter_docs_to_install
 Install relevant documentation
 ---
  source/creator/CMakeLists.txt |    2 --
- 1 files changed, 0 insertions(+), 2 deletions(-)
+ 1 file changed, 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
 index 7a6a581..7480ab8 100644
