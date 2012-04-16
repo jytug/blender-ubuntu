@@ -3,13 +3,6 @@ Upgrading to a newer upstream release:
 
  * Repack according to the last lines in debian/copyright.
 
- * Update portability/platform detection patch:
-    - Finding SConscript files is a good start.
-    - Patch where sys.platform is used, not where env['OURPLATFORM']
-      is, since it's already substituted as seen in SConstruct file.
-    - Also to be checked, scripts under release/scripts, grepping for
-      both sys.platform and linux2 might be sufficient.
-
  * Some other C/C++ files need patching too, in particular to support
    GNU/kFreeBSD. Trying a build on {io,asdfasdf}.debian.net and
    patching accordingly is the way to go.
