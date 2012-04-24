@@ -1,5 +1,6 @@
 blender (2.62-2) unstable; urgency=low
 
+  [ Matteo F. Vescovi ]
   * debian/patches/: #0010 added to fix typo.
     Thanks to Ronny Standtke for the patch (Closes: #667458)
   * debian/: README.source and TODO files updated.
@@ -7,6 +8,9 @@ blender (2.62-2) unstable; urgency=low
     Thanks to Campbell Barton for both these entries
   * debian/patches/: #0011 added to fix openjpeg transition.
     Thanks to Mathieu Malaterre (malat) for the patch (Closes: #670219)
+
+  [ Alessio Treglia ]
+  * Set DM-Upload-Allowed: yes.
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Tue, 24 Apr 2012 11:02:59 +0200
 
