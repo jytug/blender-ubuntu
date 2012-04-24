@@ -21,7 +21,7 @@ index f8082c9..2e7a65a 100644
  static void cinema_parameters(opj_cparameters_t *parameters)
  {
 -	parameters->tile_size_on = false;
-+	parameters->tile_size_on = OPJ_FALSE;
++	parameters->tile_size_on = 0;
  	parameters->cp_tdx=1;
  	parameters->cp_tdy=1;
  	
