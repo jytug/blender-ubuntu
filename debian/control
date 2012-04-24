@@ -5,6 +5,7 @@ Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alio
 Uploaders: Alessio Treglia <alessio@debian.org>,
            Kevin Roy <kiniou@gmail.com>,
            Matteo F. Vescovi <mfv.debian@gmail.com>
+DM-Upload-Allowed: yes
 Build-Depends: autotools-dev,
                cmake,
                debhelper (>= 7.0.50~),
