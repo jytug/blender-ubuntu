@@ -1,3 +1,12 @@
+blender (2.63-1) UNRELEASED; urgency=low
+
+  * New upstream release
+  * debian/patches/:
+    + patchset re-worked since source code changed
+    + #0010 and #0011 dropped (applied upstream)
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 28 Apr 2012 12:11:12 +0200
+
 blender (2.62-2) unstable; urgency=low
 
   [ Matteo F. Vescovi ]
