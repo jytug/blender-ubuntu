@@ -1,5 +1,5 @@
 From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
-Date: Thu, 5 Jan 2012 09:50:48 +0100
+Date: Sat, 28 Apr 2012 10:50:34 +0200
 Subject: install_in_usr_lib
 
  * Arch-specific files go to /usr/lib rather than /usr/share
@@ -10,23 +10,23 @@ Subject: install_in_usr_lib
  2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/intern/ghost/intern/GHOST_SystemPathsX11.cpp b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
-index 7261491..30ff1da 100644
+index 6dad366..f91b645 100644
 --- a/intern/ghost/intern/GHOST_SystemPathsX11.cpp
 +++ b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
 @@ -47,7 +47,7 @@
  #endif
  
  #ifdef PREFIX
--static const char *static_path= PREFIX "/share" ;
-+static const char *static_path= PREFIX "/lib" ;
+-static const char *static_path= PREFIX "/share";
++static const char *static_path= PREFIX "/lib";
  #else
  static const char *static_path= NULL;
  #endif
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 8bd89d6..7a6a581 100644
+index caf990f..7b61535 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -273,8 +273,8 @@ if(WITH_PYTHON)
+@@ -281,8 +281,8 @@ if(WITH_PYTHON)
  	endif()
  
  	install(

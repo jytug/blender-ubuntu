@@ -7,5 +7,3 @@
 0007-fix_FTBFS_with_ffmpeg_from_debian.patch
 0008-do_not_use_version_number_in_the_system_path.patch
 0009-look_for_droid_ttf_with_fontconfig.patch
-0010-Fix_german_translation_of_desktop_file.patch
-0011-Fix_FTBFS_on_openjpeg_transition.patch
