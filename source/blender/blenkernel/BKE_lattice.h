@@ -25,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BKE_LATTICE_H
-#define BKE_LATTICE_H
+#ifndef __BKE_LATTICE_H__
+#define __BKE_LATTICE_H__
 
 /** \file BKE_lattice.h
  *  \ingroup bke
@@ -63,7 +63,7 @@ void curve_deform_vector(struct Scene *scene, struct Object *cuOb, struct Object
 
 void lattice_deform_verts(struct Object *laOb, struct Object *target,
                           struct DerivedMesh *dm, float (*vertexCos)[3],
-                          int numVerts, const char *vgroup);
+                          int numVerts, const char *vgroup, float influence);
 void armature_deform_verts(struct Object *armOb, struct Object *target,
                            struct DerivedMesh *dm, float (*vertexCos)[3],
                            float (*defMats)[3][3], int numVerts, int deformflag,

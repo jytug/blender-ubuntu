@@ -28,7 +28,7 @@ bl_info = {
     "blender": (2, 5, 7),
     "location": "View3D > Specials > Normal Smooth ",
     "description": "Smooth the vertex position based on the normals",
-    "warning": "",
+    "warning": "Broken",
     "wiki_url": "",
     "tracker_url": "",
     "category": "Mesh"}
@@ -65,10 +65,10 @@ def smoothVert(v1, v1in, me):
     newCo = []
     
     # Make sure there's faces, otherwise we do nothing
-    if len(me.faces):
+    if len(me.polygons):
         
         # Check every face
-        for f in me.faces:
+        for f in me.polygons:
             
             # Only check faces that this vert is in
             if v1in in f.vertices:

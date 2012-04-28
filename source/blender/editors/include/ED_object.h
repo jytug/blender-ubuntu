@@ -28,8 +28,8 @@
  *  \ingroup editors
  */
 
-#ifndef ED_OBJECT_H
-#define ED_OBJECT_H
+#ifndef __ED_OBJECT_H__
+#define __ED_OBJECT_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,7 +84,7 @@ typedef enum eParentType {
 extern struct EnumPropertyItem prop_clear_parent_types[];
 extern struct EnumPropertyItem prop_make_parent_types[];
 
-int ED_object_parent_set(struct bContext *C, struct wmOperator *op, struct Object *par, int partype);
+int ED_object_parent_set(struct ReportList *reports, struct Main *bmain, struct Scene *scene, struct Object *ob, struct Object *par, int partype);
 void ED_object_parent_clear(struct bContext *C, int type);
 
 
@@ -127,8 +127,8 @@ float ED_object_new_primitive_matrix(struct bContext *C, struct Object *editob, 
 
 void ED_object_add_generic_props(struct wmOperatorType *ot, int do_editmode);
 int ED_object_add_generic_invoke(struct bContext *C, struct wmOperator *op, struct wmEvent *event);
-int ED_object_add_generic_get_opts(struct bContext *C, struct wmOperator *op,
-	float *loc, float *rot, int *enter_editmode, unsigned int *layer);
+int ED_object_add_generic_get_opts(struct bContext *C, struct wmOperator *op, 
+	float *loc, float *rot, int *enter_editmode, unsigned int *layer, int *is_view_aligned);
 
 struct Object *ED_object_add_type(struct bContext *C, int type, float *loc,
 	float *rot, int enter_editmode, unsigned int layer);
@@ -178,5 +178,5 @@ int ED_object_modifier_copy(struct ReportList *reports, struct Object *ob, struc
 }
 #endif
 
-#endif /* ED_OBJECT_H */
+#endif /* __ED_OBJECT_H__ */
 

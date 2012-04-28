@@ -19,8 +19,8 @@
 bl_info = {
     "name": "Import Images as Planes",
     "author": "Florian Meyer (tstscr)",
-    "version": (1, 0),
-    "blender": (2, 6, 1),
+    "version": (1, 1),
+    "blender": (2, 6, 3),
     "location": "File > Import > Images as Planes",
     "description": "Imports images and creates planes with the appropriate "
                    "aspect ratio. The images are mapped to the planes.",
@@ -42,7 +42,7 @@ from bpy.props import (BoolProperty,
                        FloatProperty,
                        )
 
-from add_utils import AddObjectHelper, add_object_data
+from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from bpy_extras.io_utils import ImportHelper
 from bpy_extras.image_utils import load_image
 
@@ -126,6 +126,7 @@ def create_material_for_texture(self, texture):
             material.use_transparency = self.use_transparency
             material.transparency_method = self.transparency_method
             material.use_shadeless = self.use_shadeless
+            material.use_transparent_shadows = self.use_transparent_shadows
             return material
 
     # if no material found: create one
@@ -145,6 +146,7 @@ def create_material_for_texture(self, texture):
     material.use_transparency = self.use_transparency
     material.transparency_method = self.transparency_method
     material.use_shadeless = self.use_shadeless
+    material.use_transparent_shadows = self.use_transparent_shadows
 
     return material
 
@@ -174,7 +176,7 @@ def create_image_plane(self, context, material):
     mesh_data = bpy.data.meshes.new(img.name)
     mesh_data.from_pydata(verts, [], faces)
     mesh_data.update()
-    add_object_data(context, mesh_data, operator=self)
+    object_data_add(context, mesh_data, operator=self)
     plane = context.scene.objects.active
     plane.data.uv_textures.new()
     plane.data.materials.append(material)
@@ -347,6 +349,11 @@ class IMPORT_OT_image_to_plane(Operator, ImportHelper, AddObjectHelper):
             'Raytrace',
             'Use raytracing for transparent refraction rendering.')),
             )
+    use_transparent_shadows = BoolProperty(
+            name="Receive Transparent",
+            description="Set material to receive transparent shadows",
+            default=False,
+            )
 
     # -------------
     # Image Options
@@ -380,6 +387,7 @@ class IMPORT_OT_image_to_plane(Operator, ImportHelper, AddObjectHelper):
         box.prop(self, "use_transparency")
         box.prop(self, "use_premultiply")
         box.prop(self, "transparency_method", expand=True)
+        box.prop(self, "use_transparent_shadows")
 
         box = layout.box()
         box.label("Plane dimensions:", icon='ARROW_LEFTRIGHT')

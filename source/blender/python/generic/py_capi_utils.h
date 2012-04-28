@@ -25,8 +25,8 @@
  */
 
  
-#ifndef PY_CAPI_UTILS_H
-#define PY_CAPI_UTILS_H
+#ifndef __PY_CAPI_UTILS_H__
+#define __PY_CAPI_UTILS_H__
 
 void			PyC_ObSpit(const char *name, PyObject *var);
 void			PyC_LineSpit(void);
@@ -54,4 +54,18 @@ void PyC_SetHomePath(const char *py_path_bundle);
 
 #define PYC_INTERPRETER_ACTIVE (((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current)) != NULL)
 
-#endif // PY_CAPI_UTILS_H
+void *PyC_RNA_AsPointer(PyObject *value, const char *type_name);
+
+/* flag / set --- interchange */
+typedef struct PyC_FlagSet {
+	int value;
+	const char *identifier;
+} PyC_FlagSet;
+
+char     *PyC_FlagSet_AsString(PyC_FlagSet *item);
+int       PyC_FlagSet_ValueFromID_int(PyC_FlagSet *item, const char *identifier, int *value);
+int       PyC_FlagSet_ValueFromID(PyC_FlagSet *item, const char *identifier, int *value, const char *error_prefix);
+int       PyC_FlagSet_ToBitfield(PyC_FlagSet *items, PyObject *value, int *r_value, const char *error_prefix);
+PyObject *PyC_FlagSet_FromBitfield(PyC_FlagSet *items, int flag);
+
+#endif // __PY_CAPI_UTILS_H__

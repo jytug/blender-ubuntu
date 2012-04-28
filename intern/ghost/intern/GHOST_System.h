@@ -30,8 +30,8 @@
  * Declaration of GHOST_System class.
  */
 
-#ifndef _GHOST_SYSTEM_H_
-#define _GHOST_SYSTEM_H_
+#ifndef __GHOST_SYSTEM_H__
+#define __GHOST_SYSTEM_H__
 
 #include "GHOST_ISystem.h"
 
@@ -297,6 +297,13 @@ public:
 	   */
 	  virtual void putClipboard(GHOST_TInt8 *buffer, bool selection) const = 0;
 
+	 /**
+	 * Confirms quitting he program when there is just one window left open
+	 * in the application
+	 */
+	virtual int confirmQuit(GHOST_IWindow * window) const;
+
+
 	
 protected:
 	/**
@@ -367,5 +374,5 @@ inline GHOST_NDOFManager* GHOST_System::getNDOFManager() const
 }
 #endif
 
-#endif // _GHOST_SYSTEM_H_
+#endif // __GHOST_SYSTEM_H__
 

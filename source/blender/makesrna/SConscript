@@ -12,6 +12,9 @@ incs += ' ../render/extern/include #/intern/cycles/blender'
 incs += ' ../nodes'
 incs += ' #/extern/glew/include'
 
+incs += ' ../bmesh'
+
+
 defs = []
 
 if env['WITH_BF_OPENEXR']:
@@ -31,6 +34,9 @@ if env['WITH_BF_CINEON']:
 
 if env['WITH_BF_HDR']:
     defs.append('WITH_HDR')
+
+if env['WITH_BF_FRAMESERVER']:
+    defs.append('WITH_FRAMESERVER')
 
 if env['WITH_BF_FFMPEG']:
     defs.append('WITH_FFMPEG')
@@ -62,7 +68,7 @@ if env['OURPLATFORM'] == 'linux':
     cflags='-pthread'
     incs += ' ../../../extern/binreloc/include'
 
-if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc'):
+if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
     incs += ' ' + env['BF_PTHREADS_INC']
 
 if env['WITH_BF_INTERNATIONAL']:

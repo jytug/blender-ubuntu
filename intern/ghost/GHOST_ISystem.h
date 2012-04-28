@@ -32,8 +32,8 @@
  * Contains the doxygen documentation main page.
  */
 
-#ifndef _GHOST_ISYSTEM_H_
-#define _GHOST_ISYSTEM_H_
+#ifndef __GHOST_ISYSTEM_H__
+#define __GHOST_ISYSTEM_H__
 
 #include "GHOST_Types.h"
 #include "GHOST_ITimerTask.h"
@@ -82,7 +82,7 @@ class GHOST_IEventConsumer;
  * <li> OSX Carbon.</li>
  * <li> Windows.</li>
  * <li> X11.</li>
- * <li> SDL1.3 (experemental).</li>
+ * <li> SDL1.3 (experimental).</li>
  * <li> NULL (headless mode).</li>
  * </ul>
  *
@@ -392,7 +392,11 @@ public:
 	 */
 	virtual void putClipboard(GHOST_TInt8 *buffer, bool selection) const = 0;
 
-	
+	/**
+	 * Confirms quitting he program when there is just one window left open
+	 * in the application
+	 */
+	virtual int confirmQuit(GHOST_IWindow * window) const = 0;
 protected:
 	/**
 	 * Initialize the system.
@@ -416,5 +420,5 @@ public:
 #endif
 };
 
-#endif // _GHOST_ISYSTEM_H_
+#endif // __GHOST_ISYSTEM_H__
 

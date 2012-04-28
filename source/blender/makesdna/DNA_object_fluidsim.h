@@ -31,10 +31,11 @@
  *  \ingroup DNA
  */
 
-#ifndef DNA_OBJECT_FLUIDSIM_H
-#define DNA_OBJECT_FLUIDSIM_H
+#ifndef __DNA_OBJECT_FLUIDSIM_H__
+#define __DNA_OBJECT_FLUIDSIM_H__
 
 #include "DNA_ID.h"
+#include "DNA_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,7 +67,7 @@ typedef struct FluidsimSettings {
 
 	/* fluid properties */
 	float viscosityValue;
-	short viscosityMode;
+	short viscosityMode DNA_DEPRECATED;
 	short viscosityExponent;
 	/* gravity strength */
 	float grav[3];

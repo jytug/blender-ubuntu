@@ -96,7 +96,10 @@ class ExportPLY(bpy.types.Operator, ExportHelper):
             )
     use_normals = BoolProperty(
             name="Normals",
-            description="Export Normals for smooth and hard shaded faces",
+            description="Export Normals for smooth and "
+                        "hard shaded faces "
+                        "(hard shaded faces will be exported "
+                        "as individual faces)",
             default=True,
             )
     use_uv_coords = BoolProperty(
@@ -106,7 +109,7 @@ class ExportPLY(bpy.types.Operator, ExportHelper):
             )
     use_colors = BoolProperty(
             name="Vertex Colors",
-            description="Exort the active vertex color layer",
+            description="Export the active vertex color layer",
             default=True)
 
     @classmethod
