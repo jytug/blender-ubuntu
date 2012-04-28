@@ -170,7 +170,7 @@ if sys.platform=='win32':
     if env['CC'] in ['cl', 'cl.exe']:
         platform = 'win64-vc' if bitness == 64 else 'win32-vc'
     elif env['CC'] in ['gcc']:
-        platform = 'win32-mingw'
+        platform = 'win64-mingw' if bitness == 64 else 'win32-mingw'
 
 env.SConscriptChdir(0)
 
@@ -251,6 +251,7 @@ if 'blenderlite' in B.targets:
     target_env_defs['WITH_BF_REDCODE'] = False
     target_env_defs['WITH_BF_DDS'] = False
     target_env_defs['WITH_BF_CINEON'] = False
+    target_env_defs['WITH_BF_FRAMESERVER'] = False
     target_env_defs['WITH_BF_HDR'] = False
     target_env_defs['WITH_BF_ZLIB'] = False
     target_env_defs['WITH_BF_SDL'] = False
@@ -261,11 +262,13 @@ if 'blenderlite' in B.targets:
     target_env_defs['BF_BUILDINFO'] = False
     target_env_defs['WITH_BF_FLUID'] = False
     target_env_defs['WITH_BF_OCEANSIM'] = False
+    target_env_defs['WITH_BF_SMOKE'] = False
     target_env_defs['WITH_BF_DECIMATE'] = False
     target_env_defs['WITH_BF_BOOLEAN'] = False
     target_env_defs['WITH_BF_REMESH'] = False
     target_env_defs['WITH_BF_PYTHON'] = False
     target_env_defs['WITH_BF_3DMOUSE'] = False
+    target_env_defs['WITH_BF_LIBMV'] = False
     
     # Merge blenderlite, let command line to override
     for k,v in target_env_defs.iteritems():
@@ -274,7 +277,7 @@ if 'blenderlite' in B.targets:
 
 # Extended OSX_SDK and 3D_CONNEXION_CLIENT_LIBRARY and JAckOSX detection for OSX
 if env['OURPLATFORM']=='darwin':
-    print B.bc.OKGREEN + "Detected Xcode version: -- " + B.bc.ENDC + env['XCODE_CUR_VER'][:9] + " --"
+    print B.bc.OKGREEN + "Detected Xcode version: -- " + B.bc.ENDC + env['XCODE_CUR_VER'] + " --"
     print "Available " + env['MACOSX_SDK_CHECK']
     if not 'Mac OS X 10.5' in env['MACOSX_SDK_CHECK']:
         print  B.bc.OKGREEN + "MacOSX10.5.sdk not available:" + B.bc.ENDC + " using MacOSX10.6.sdk"
@@ -756,6 +759,7 @@ if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
 
     if env['WITH_BF_OPENAL']:
         dllsources.append('${LCGDIR}/openal/lib/OpenAL32.dll')
+        dllsources.append('${LCGDIR}/openal/lib/wrap_oal.dll')
 
     if env['WITH_BF_SNDFILE']:
         dllsources.append('${LCGDIR}/sndfile/lib/libsndfile-1.dll')
@@ -770,9 +774,37 @@ if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
         dllsources.append('${LCGDIR}/thumbhandler/lib/BlendThumb.dll')	
     dllsources.append('${LCGDIR}/thumbhandler/lib/BlendThumb64.dll')
 
-    if env['WITH_BF_OIIO']:
+    if env['WITH_BF_OIIO'] and env['OURPLATFORM'] != 'win32-mingw':
         dllsources.append('${LCGDIR}/openimageio/bin/OpenImageIO.dll')
 
+    dllsources.append('#source/icons/blender.exe.manifest')
+
+    windlls = env.Install(dir=env['BF_INSTALLDIR'], source = dllsources)
+    allinstall += windlls
+
+if env['OURPLATFORM'] == 'win64-mingw':
+    dllsources = []
+    
+    if env['WITH_BF_PYTHON']:
+        if env['BF_DEBUG']:
+            dllsources.append('${BF_PYTHON_LIBPATH}/${BF_PYTHON_DLL}_d.dll')
+        else:
+            dllsources.append('${BF_PYTHON_LIBPATH}/${BF_PYTHON_DLL}.dll')
+
+    if env['WITH_BF_FFMPEG']:
+        dllsources += env['BF_FFMPEG_DLL'].split()
+
+    if env['WITH_BF_OPENAL']:
+        dllsources.append('${LCGDIR}/openal/lib/OpenAL32.dll')
+        dllsources.append('${LCGDIR}/openal/lib/wrap_oal.dll')
+
+    if env['WITH_BF_SNDFILE']:
+        dllsources.append('${LCGDIR}/sndfile/lib/libsndfile-1.dll')
+
+    if env['WITH_BF_SDL']:
+        dllsources.append('${LCGDIR}/sdl/lib/SDL.dll')
+	
+    dllsources.append('${LCGDIR}/thumbhandler/lib/BlendThumb64.dll')
     dllsources.append('#source/icons/blender.exe.manifest')
 
     windlls = env.Install(dir=env['BF_INSTALLDIR'], source = dllsources)

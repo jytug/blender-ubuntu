@@ -206,8 +206,7 @@ static int handle_request(RenderData *rd, char * req)
 
 	*p = 0;
 
-	if (strcmp(path, "/index.html") == 0
-		|| strcmp(path, "/") == 0) {
+	if (strcmp(path, "/index.html") == 0 || strcmp(path, "/") == 0) {
 		safe_puts(index_page);
 		return -1;
 	}
@@ -301,9 +300,11 @@ int frameserver_loop(RenderData *rd, ReportList *UNUSED(reports))
 			rval = select(connsock + 1, &readfds, NULL, NULL, &tv);
 		if (rval > 0) {
 			break;
-		} else if (rval == 0) {
+		}
+		else if (rval == 0) {
 			return -1;
-		} else if (rval < 0) {
+		}
+		else if (rval < 0) {
 			if (!select_was_interrupted_by_signal()) {
 				return -1;
 			}

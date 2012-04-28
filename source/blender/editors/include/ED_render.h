@@ -25,8 +25,8 @@
  *  \ingroup editors
  */
 
-#ifndef ED_RENDER_H
-#define ED_RENDER_H
+#ifndef __ED_RENDER_H__
+#define __ED_RENDER_H__
 
 #include "DNA_vec_types.h"
 
@@ -37,6 +37,7 @@ struct MTex;
 struct Render;
 struct RenderInfo;
 struct Scene;
+struct ScrArea;
 
 /* render_ops.c */
 
@@ -46,6 +47,7 @@ void ED_operatortypes_render(void);
 
 void ED_render_id_flush_update(struct Main *bmain, struct ID *id);
 void ED_render_engine_changed(struct Main *bmain);
+void ED_render_engine_area_exit(struct ScrArea *sa);
 void ED_render_scene_update(struct Main *bmain, struct Scene *scene, int updated);
 
 /* render_preview.c */
@@ -67,12 +69,12 @@ typedef struct RenderInfo {
 #define PR_ROTATED			8
 
 /* Render the preview
-
-pr_method:
-- PR_BUTS_RENDER: preview is rendered for buttons window
-- PR_ICON_RENDER: preview is rendered for icons. hopefully fast enough for at least 32x32 
-- PR_NODE_RENDER: preview is rendered for node editor.
-*/
+ *
+ * pr_method:
+ * - PR_BUTS_RENDER: preview is rendered for buttons window
+ * - PR_ICON_RENDER: preview is rendered for icons. hopefully fast enough for at least 32x32
+ * - PR_NODE_RENDER: preview is rendered for node editor
+ */
 
 #define PR_BUTS_RENDER	0
 #define PR_ICON_RENDER	1

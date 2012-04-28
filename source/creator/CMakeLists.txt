@@ -40,9 +40,17 @@ blender_include_dirs(
 	../blender/windowmanager
 )
 
+if(WIN32)
+	blender_include_dirs(../../intern/utfconv)
+endif()
+
 if(WITH_LIBMV)
 	blender_include_dirs(../../extern/libmv)
 	add_definitions(-DWITH_LIBMV)
+endif()
+
+if(WITH_CODEC_FFMPEG)
+	add_definitions(-DWITH_FFMPEG)
 endif()
 
 if(WITH_PYTHON)
@@ -226,7 +234,7 @@ set(BLENDER_TEXT_FILES
 
 
 # -----------------------------------------------------------------------------
-# Platform Spesific Var: TARGETDIR_VER
+# Platform Specific Var: TARGETDIR_VER
 
 if(UNIX AND NOT APPLE)
 	if(WITH_INSTALL_PORTABLE)
@@ -388,7 +396,7 @@ if(UNIX AND NOT APPLE)
 		)
 	endif()
 
-		# plugins in blender 2.5 don't work at the moment.
+		# plugins in blender 2.6 don't work at the moment.
 		#
 		# install(
 		# 	DIRECTORY ${CMAKE_SOURCE_DIR}/release/plugins
@@ -440,7 +448,7 @@ elseif(WIN32)
 		DESTINATION ${TARGETDIR}
 	)
 
-	if(WITH_INTERNATIONAL)
+	if(WITH_INTERNATIONAL AND (NOT WITH_MINGW64))
 		install(
 			FILES ${LIBDIR}/gettext/lib/gnu_gettext.dll
 			DESTINATION ${TARGETDIR}
@@ -454,7 +462,7 @@ elseif(WIN32)
 		endif()
 	endif()
 
-	# plugins in blender 2.5 don't work at the moment.
+	# plugins in blender 2.6 don't work at the moment.
 	#
 	# install(
 	# 	DIRECTORY ${CMAKE_SOURCE_DIR}/release/plugins
@@ -515,11 +523,14 @@ elseif(WIN32)
 			DESTINATION ${TARGETDIR}
 		)
 	else()
-		install(
-			FILES
-				${LIBDIR}/zlib/lib/zlib.dll
-			DESTINATION ${TARGETDIR}
-		)
+		#not needed since we link statically, maybe also unneeded for MinGW?
+		if(NOT WITH_MINGW64)
+			install(
+				FILES
+					${LIBDIR}/zlib/lib/zlib.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 	endif()
 
 	if(MSVC)
@@ -528,10 +539,13 @@ elseif(WIN32)
 			DESTINATION ${TARGETDIR}
 		)
 	else()
-		install(
-			FILES ${LIBDIR}/pthreads/lib/pthreadGC2.dll
-			DESTINATION ${TARGETDIR}
-		)
+		#MinGW64 comes with own version. For portable builds it will probaly have to be copied to work
+		if(NOT WITH_MINGW64)
+			install(
+				FILES ${LIBDIR}/pthreads/lib/pthreadGC2.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 	endif()
 
 	if(WITH_CODEC_FFMPEG)
@@ -558,6 +572,7 @@ elseif(WIN32)
 		install(
 			FILES
 				${LIBDIR}/openal/lib/OpenAL32.dll
+				${LIBDIR}/openal/lib/wrap_oal.dll
 			DESTINATION ${TARGETDIR}
 		)
 	endif()
@@ -584,12 +599,14 @@ elseif(WIN32)
 	)	
 
 	if(WITH_OPENIMAGEIO)
-		set_lib_path(OIIOBIN "openimageio/bin")
-		install(
-			FILES
-				${OIIOBIN}/OpenImageIO.dll
-			DESTINATION ${TARGETDIR}
-		)
+		if(NOT MINGW)
+			set_lib_path(OIIOBIN "openimageio/bin")
+			install(
+				FILES
+					${OIIOBIN}/OpenImageIO.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 	endif()
 
 elseif(APPLE)
@@ -796,8 +813,10 @@ endif()
 		bf_python
 		bf_python_ext
 		bf_python_mathutils
+		bf_python_bmesh
 		bf_ikplugin
 		bf_modifiers
+		bf_bmesh
 		bf_blenkernel
 		bf_nodes
 		bf_gpu
@@ -820,6 +839,7 @@ endif()
 		bf_intern_memutil
 		bf_intern_guardedalloc
 		bf_intern_ctr
+		bf_intern_utfconv
 		ge_blen_routines
 		ge_converter
 		ge_phys_dummy
@@ -889,6 +909,10 @@ endif()
 
 	if(WITH_CARVE)
 		list(APPEND BLENDER_SORTED_LIBS extern_carve)
+	endif()
+
+	if(WITH_GHOST_XDND)
+		list(APPEND BLENDER_SORTED_LIBS extern_xdnd)
 	endif()
 
 	foreach(SORTLIB ${BLENDER_SORTED_LIBS})

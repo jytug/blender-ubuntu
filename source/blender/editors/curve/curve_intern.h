@@ -29,8 +29,8 @@
  */
 
 
-#ifndef ED_CURVE_INTERN_H
-#define ED_CURVE_INTERN_H
+#ifndef __CURVE_INTERN_H__
+#define __CURVE_INTERN_H__
 
 /* internal exports only */
 struct wmOperatorType;
@@ -123,8 +123,6 @@ void CURVE_OT_spin(struct wmOperatorType *ot);
 void CURVE_OT_vertex_add(struct wmOperatorType *ot);
 void CURVE_OT_extrude(struct wmOperatorType *ot);
 void CURVE_OT_cyclic_toggle(struct wmOperatorType *ot);
-
-void CURVE_OT_specials_menu(struct wmOperatorType *ot);
 
 #endif /* ED_UTIL_INTERN_H */
 

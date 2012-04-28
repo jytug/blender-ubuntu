@@ -29,8 +29,8 @@
  *  \ingroup editorui
  */
 
-#ifndef UI_INTERFACE_H
-#define UI_INTERFACE_H
+#ifndef __UI_INTERFACE_H__
+#define __UI_INTERFACE_H__
 
 #include "BLO_sys_types.h" /* size_t */
 #include "RNA_types.h"
@@ -48,6 +48,7 @@ struct wmWindowManager;
 struct wmOperator;
 struct AutoComplete;
 struct bContext;
+struct bContextStore;
 struct Panel;
 struct PanelType;
 struct PointerRNA;
@@ -178,11 +179,11 @@ typedef struct uiLayout uiLayout;
 #define UI_DPI_ICON_SIZE ((float)16 * UI_DPI_ICON_FAC)
 
 /* Button types, bits stored in 1 value... and a short even!
-- bits 0-4:  bitnr (0-31)
-- bits 5-7:  pointer type
-- bit  8:    for 'bit'
-- bit  9-15: button type (now 6 bits, 64 types)
-*/
+ * - bits 0-4:  bitnr (0-31)
+ * - bits 5-7:  pointer type
+ * - bit  8:    for 'bit'
+ * - bit  9-15: button type (now 6 bits, 64 types)
+ * */
 
 #define CHA	32
 #define SHO	64
@@ -268,7 +269,6 @@ void uiRoundBox(float minx, float miny, float maxx, float maxy, float rad);
 void uiSetRoundBox(int type);
 int uiGetRoundBox(void);
 void uiRoundRect(float minx, float miny, float maxx, float maxy, float rad);
-void uiDrawMenuBox(float minx, float miny, float maxx, float maxy, short flag, short direction);
 void uiDrawBoxShadow(unsigned char alpha, float minx, float miny, float maxx, float maxy);
 void uiDrawBox(int mode, float minx, float miny, float maxx, float maxy, float rad);
 void uiDrawBoxShade(int mode, float minx, float miny, float maxx, float maxy, float rad, float shadetop, float shadedown);
@@ -322,10 +322,22 @@ uiPopupMenu *uiPupMenuBegin(struct bContext *C, const char *title, int icon);
 void uiPupMenuEnd(struct bContext *C, struct uiPopupMenu *head);
 struct uiLayout *uiPupMenuLayout(uiPopupMenu *head);
 
-void uiPupMenuOkee(struct bContext *C, const char *opname, const char *str, ...);
+void uiPupMenuOkee(struct bContext *C, const char *opname, const char *str, ...)
+#ifdef __GNUC__
+__attribute__ ((format (printf, 3, 4)))
+#endif
+;
 void uiPupMenuSaveOver(struct bContext *C, struct wmOperator *op, const char *filename);
-void uiPupMenuNotice(struct bContext *C, const char *str, ...);
-void uiPupMenuError(struct bContext *C, const char *str, ...);
+void uiPupMenuNotice(struct bContext *C, const char *str, ...)
+#ifdef __GNUC__
+__attribute__ ((format (printf, 2, 3)))
+#endif
+;
+void uiPupMenuError(struct bContext *C, const char *str, ...)
+#ifdef __GNUC__
+__attribute__ ((format (printf, 2, 3)))
+#endif
+;
 void uiPupMenuReports(struct bContext *C, struct ReportList *reports);
 void uiPupMenuInvoke(struct bContext *C, const char *idname); /* popup registered menu */
 
@@ -498,7 +510,7 @@ int uiButGetUnitType(uiBut *but);
 
 /* Special Buttons
  *
- * Butons with a more specific purpose:
+ * Buttons with a more specific purpose:
  * - IDPoinBut: for creating buttons that work on a pointer to an ID block.
  * - MenuBut: buttons that popup a menu (in headers usually).
  * - PulldownBut: like MenuBut, but creating a uiBlock (for compatibility).
@@ -612,7 +624,6 @@ void uiEndPanel(uiBlock *block, int width, int height);
  * as screen/ if ED_KEYMAP_UI is set, or internally in popup functions. */
 
 void UI_add_region_handlers(struct ListBase *handlers);
-void UI_add_area_handlers(struct ListBase *handlers);
 void UI_add_popup_handlers(struct bContext *C, struct ListBase *handlers, uiPopupBlockHandle *popup);
 void UI_remove_popup_handlers(struct ListBase *handlers, uiPopupBlockHandle *popup);
 
@@ -694,6 +705,7 @@ uiBlock *uiLayoutGetBlock(uiLayout *layout);
 
 void uiLayoutSetFunc(uiLayout *layout, uiMenuHandleFunc handlefunc, void *argv);
 void uiLayoutSetContextPointer(uiLayout *layout, const char *name, struct PointerRNA *ptr);
+void uiLayoutContextCopy(uiLayout *layout, struct bContextStore *context);
 const char *uiLayoutIntrospect(uiLayout *layout); // XXX - testing
 void uiLayoutOperatorButs(const struct bContext *C, struct uiLayout *layout, struct wmOperator *op, int (*check_prop)(struct PointerRNA *, struct PropertyRNA *), const char label_align, const short flag);
 struct MenuType *uiButGetMenuType(uiBut *but);
@@ -838,5 +850,5 @@ void UI_template_fix_linking(void);
 int  UI_editsource_enable_check(void);
 void UI_editsource_active_but_test(uiBut *but);
 
-#endif /*  UI_INTERFACE_H */
+#endif /*  __UI_INTERFACE_H__ */
 

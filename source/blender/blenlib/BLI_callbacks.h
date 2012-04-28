@@ -29,8 +29,8 @@
  *  \ingroup bli
  */
 
-#ifndef BLI_CALLBACKS_H
-#define BLI_CALLBACKS_H
+#ifndef __BLI_CALLBACKS_H__
+#define __BLI_CALLBACKS_H__
 
 struct bContext;
 struct Main;
@@ -42,6 +42,8 @@ typedef enum {
 	BLI_CB_EVT_RENDER_PRE,
 	BLI_CB_EVT_RENDER_POST,
 	BLI_CB_EVT_RENDER_STATS,
+	BLI_CB_EVT_RENDER_COMPLETE,
+	BLI_CB_EVT_RENDER_CANCEL,
 	BLI_CB_EVT_LOAD_PRE,
 	BLI_CB_EVT_LOAD_POST,
 	BLI_CB_EVT_SAVE_PRE,
@@ -70,4 +72,4 @@ void BLI_cb_finalize(void);
 /* This is blenlib internal only, unrelated to above */
 void callLocalErrorCallBack(const char* msg);
 
-#endif /* BLI_CALLBACKS_H */
+#endif /* __BLI_CALLBACKS_H__ */

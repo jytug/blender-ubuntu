@@ -42,13 +42,13 @@ def write_mtl(scene, filepath, path_mode, copy_set, mtl_dict):
     else:
         world_amb = Color((0.0, 0.0, 0.0))
 
-    source_dir = bpy.data.filepath
+    source_dir = os.path.dirname(bpy.data.filepath)
     dest_dir = os.path.dirname(filepath)
 
     file = open(filepath, "w", encoding="utf8", newline="\n")
     fw = file.write
 
-    fw('# Blender MTL File: %r\n' % os.path.basename(bpy.data.filepath))
+    fw('# Blender MTL File: %r\n' % (os.path.basename(bpy.data.filepath) or "None"))
     fw('# Material Count: %i\n' % len(mtl_dict))
 
     mtl_dict_values = list(mtl_dict.values())
@@ -338,15 +338,15 @@ def write_file(filepath, objects, scene,
             if EXPORT_UV:
                 faceuv = len(me.uv_textures) > 0
                 if faceuv:
-                    uv_layer = me.uv_textures.active.data[:]
+                    uv_layer = me.tessface_uv_textures.active.data[:]
             else:
                 faceuv = False
 
             me_verts = me.vertices[:]
 
             # Make our own list so it can be sorted to reduce context switching
-            face_index_pairs = [(face, index) for index, face in enumerate(me.faces)]
-            # faces = [ f for f in me.faces ]
+            face_index_pairs = [(face, index) for index, face in enumerate(me.tessfaces)]
+            # faces = [ f for f in me.tessfaces ]
 
             if EXPORT_EDGES:
                 edges = me.edges
@@ -412,7 +412,7 @@ def write_file(filepath, objects, scene,
                 uv_face_mapping = [[0, 0, 0, 0] for i in range(len(face_index_pairs))]  # a bit of a waste for tri's :/
 
                 uv_dict = {}  # could use a set() here
-                uv_layer = me.uv_textures.active.data
+                uv_layer = me.tessface_uv_textures.active.data
                 for f, f_index in face_index_pairs:
                     for uv_index, uv in enumerate(uv_layer[f_index].uv):
                         uvkey = veckey2d(uv)

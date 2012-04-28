@@ -45,9 +45,8 @@ static void dump_background_pixels(Device *device, DeviceScene *dscene, int res,
 		for(int x = 0; x < width; x++) {
 			float u = x/(float)width;
 			float v = y/(float)height;
-			float3 D = -equirectangular_to_direction(u, v);
 
-			uint4 in = make_uint4(__float_as_int(D.x), __float_as_int(D.y), __float_as_int(D.z), 0);
+			uint4 in = make_uint4(__float_as_int(u), __float_as_int(v), 0, 0);
 			d_input_data[x + y*width] = in;
 		}
 	}
@@ -214,9 +213,9 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 					offset++;
 
 					Mesh::Triangle t = mesh->triangles[i];
-					float3 p1 = transform(&tfm, mesh->verts[t.v[0]]);
-					float3 p2 = transform(&tfm, mesh->verts[t.v[1]]);
-					float3 p3 = transform(&tfm, mesh->verts[t.v[2]]);
+					float3 p1 = transform_point(&tfm, mesh->verts[t.v[0]]);
+					float3 p2 = transform_point(&tfm, mesh->verts[t.v[1]]);
+					float3 p3 = transform_point(&tfm, mesh->verts[t.v[2]]);
 
 					totarea += triangle_area(p1, p2, p3);
 				}

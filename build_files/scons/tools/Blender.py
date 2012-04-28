@@ -182,12 +182,12 @@ def setup_staticlibs(lenv):
     if lenv['WITH_BF_SNDFILE'] and lenv['WITH_BF_STATICSNDFILE']:
         statlibs += Split(lenv['BF_SNDFILE_LIB_STATIC'])
 
-    if lenv['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc'):
+    if lenv['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
         libincs += Split(lenv['BF_PTHREADS_LIBPATH'])
 
     if lenv['WITH_BF_COLLADA']:
         libincs += Split(lenv['BF_OPENCOLLADA_LIBPATH'])
-        if lenv['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc'):
+        if lenv['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
             libincs += Split(lenv['BF_PCRE_LIBPATH'])
             libincs += Split(lenv['BF_EXPAT_LIBPATH'])
 
@@ -206,7 +206,7 @@ def setup_staticlibs(lenv):
             statlibs += Split(lenv['BF_BOOST_LIB_STATIC'])
 
     # setting this last so any overriding of manually libs could be handled
-    if lenv['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
+    if lenv['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross', 'win64-mingw'):
         libincs.append('/usr/lib')
 
     if lenv['WITH_BF_JEMALLOC']:
@@ -228,7 +228,7 @@ def setup_syslibs(lenv):
     if not lenv['WITH_BF_FREETYPE_STATIC']:
         syslibs += Split(lenv['BF_FREETYPE_LIB'])
     if lenv['WITH_BF_PYTHON'] and not lenv['WITH_BF_STATICPYTHON']:
-        if lenv['BF_DEBUG'] and lenv['OURPLATFORM'] in ('win32-vc', 'win64-vc', 'win32-mingw'):
+        if lenv['BF_DEBUG'] and lenv['OURPLATFORM'] in ('win32-vc', 'win64-vc', 'win32-mingw', 'win64-mingw'):
             syslibs.append(lenv['BF_PYTHON_LIB']+'_d')
         else:
             syslibs.append(lenv['BF_PYTHON_LIB'])
@@ -268,7 +268,7 @@ def setup_syslibs(lenv):
         syslibs += Split(lenv['BF_SDL_LIB'])
     if not lenv['WITH_BF_STATICOPENGL']:
         syslibs += Split(lenv['BF_OPENGL_LIB'])
-    if lenv['OURPLATFORM'] in ('win32-vc', 'win32-mingw','linuxcross', 'win64-vc'):
+    if lenv['OURPLATFORM'] in ('win32-vc', 'win32-mingw','linuxcross', 'win64-vc', 'win64-mingw'):
         syslibs += Split(lenv['BF_PTHREADS_LIB'])
     if lenv['WITH_BF_COLLADA']:
         syslibs.append(lenv['BF_PCRE_LIB'])
@@ -332,14 +332,18 @@ def creator(env):
         incs.append('#/extern/libmv')
         defs.append('WITH_LIBMV')
 
+    if env['WITH_BF_FFMPEG']:
+        defs.append('WITH_FFMPEG')
+
     if env['WITH_BF_PYTHON']:
         incs.append('#/source/blender/python')
         defs.append('WITH_PYTHON')
         if env['BF_DEBUG']:
             defs.append('_DEBUG')
 
-    if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc'):
+    if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
         incs.append(env['BF_PTHREADS_INC'])
+        incs.append('#/intern/utfconv')
 
     env.Append(CPPDEFINES=defs)
     env.Append(CPPPATH=incs)
@@ -508,13 +512,12 @@ def WinPyBundle(target=None, source=None, env=None):
             print str(func) + ' failed on ' + str(path)
     print "Trying to remove existing py bundle."
     shutil.rmtree(py_target, False, printexception)
-    exclude_re=[re.compile('.*/test/.*'),
-                re.compile('^config/.*'),
-                re.compile('^config-*/.*'),
-                re.compile('^distutils/.*'),
-                re.compile('^idlelib/.*'),
-                re.compile('^lib2to3/.*'),
-                re.compile('^tkinter/.*'),
+    exclude_re=[re.compile('.*/test'),
+                re.compile('^test'),
+                re.compile('^distutils'),
+                re.compile('^idlelib'),
+                re.compile('^lib2to3'),
+                re.compile('^tkinter'),
                 re.compile('^_tkinter_d.pyd'),
                 re.compile('^turtledemo'),
                 re.compile('^turtle.py'),
@@ -617,7 +620,7 @@ def AppIt(target=None, source=None, env=None):
     commands.getoutput(cmd)
     cmd = 'find %s/%s.app -name __MACOSX -exec rm -rf {} \;'%(installdir, binary)
     commands.getoutput(cmd)
-    if env['CC'].endswith('4.6.1'): # for correct errorhandling with gcc 4.6.1 we need the gcc.dylib to link, thus distribute in app-bundle
+    if env['CC'][:-2].endswith('4.6'): # for correct errorhandling with gcc 4.6.x we need the gcc.dylib to link, thus distribute in app-bundle
         cmd = 'mkdir %s/%s.app/Contents/MacOS/lib'%(installdir, binary)
         commands.getoutput(cmd)
         instname = env['BF_CXX']
@@ -728,7 +731,7 @@ class BlenderEnvironment(SConsEnvironment):
         if not self or not libname or not source:
             print bc.FAIL+'Cannot continue.  Missing argument for BlenderRes '+libname+bc.ENDC
             self.Exit()
-        if self['OURPLATFORM'] not in ('win32-vc','win32-mingw','linuxcross', 'win64-vc'):
+        if self['OURPLATFORM'] not in ('win32-vc','win32-mingw','linuxcross', 'win64-vc', 'win64-mingw'):
             print bc.FAIL+'BlenderRes is for windows only!'+bc.END
             self.Exit()
         

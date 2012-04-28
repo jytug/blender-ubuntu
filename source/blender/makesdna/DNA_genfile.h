@@ -30,8 +30,8 @@
  *  \brief blenloader genfile private function prototypes
  */
 
-#ifndef DNA_GENFILE_H
-#define DNA_GENFILE_H
+#ifndef __DNA_GENFILE_H__
+#define __DNA_GENFILE_H__
 
 struct SDNA;
 
@@ -70,4 +70,4 @@ int DNA_elem_offset(struct SDNA *sdna, const char *stype, const char *vartype, c
 
 int DNA_elem_type_size(const eSDNA_Type elem_nr);
 
-#endif
+#endif /* __DNA_GENFILE_H__ */

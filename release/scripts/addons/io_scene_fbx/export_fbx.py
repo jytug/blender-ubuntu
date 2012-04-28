@@ -216,6 +216,7 @@ def save_single(operator, scene, filepath="",
         object_types={'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH'},
         use_mesh_modifiers=True,
         mesh_smooth_type='FACE',
+        use_armature_deform_only=False,
         use_anim=True,
         use_anim_optimize=True,
         anim_optimize_precision=6,
@@ -1352,7 +1353,7 @@ def save_single(operator, scene, filepath="",
         # if there are non NULL materials on this mesh
         do_materials = bool(my_mesh.blenMaterials)
         do_textures = bool(my_mesh.blenTextures)
-        do_uvs = bool(me.uv_textures)
+        do_uvs = bool(me.tessface_uv_textures)
         do_shapekeys = (my_mesh.blenObject.type == 'MESH' and
                         my_mesh.blenObject.data.shape_keys and
                         len(my_mesh.blenObject.data.vertices) == len(me.vertices))
@@ -1363,7 +1364,7 @@ def save_single(operator, scene, filepath="",
         # convert into lists once.
         me_vertices = me.vertices[:]
         me_edges = me.edges[:] if use_mesh_edges else ()
-        me_faces = me.faces[:]
+        me_faces = me.tessfaces[:]
 
         poseMatrix = write_object_props(my_mesh.blenObject, None, my_mesh.parRelMatrix())[3]
         pose_items.append((my_mesh.fbxName, poseMatrix))
@@ -1524,8 +1525,8 @@ def save_single(operator, scene, filepath="",
         # Write VertexColor Layers
         # note, no programs seem to use this info :/
         collayers = []
-        if len(me.vertex_colors):
-            collayers = me.vertex_colors
+        if len(me.tessface_vertex_colors):
+            collayers = me.tessface_vertex_colors
             for colindex, collayer in enumerate(collayers):
                 fw('\n\t\tLayerElementColor: %i {' % colindex)
                 fw('\n\t\t\tVersion: 101')
@@ -1538,7 +1539,7 @@ def save_single(operator, scene, filepath="",
 
                 i = -1
                 ii = 0  # Count how many Colors we write
-
+                print(len(me_faces), len(collayer.data))
                 for fi, cf in enumerate(collayer.data):
                     if len(me_faces[fi].vertices) == 4:
                         colors = cf.color1[:], cf.color2[:], cf.color3[:], cf.color4[:]
@@ -1575,8 +1576,8 @@ def save_single(operator, scene, filepath="",
         # Write UV and texture layers.
         uvlayers = []
         if do_uvs:
-            uvlayers = me.uv_textures
-            for uvindex, uvlayer in enumerate(me.uv_textures):
+            uvlayers = me.tessface_uv_textures
+            for uvindex, uvlayer in enumerate(me.tessface_uv_textures):
                 fw('\n\t\tLayerElementUV: %i {' % uvindex)
                 fw('\n\t\t\tVersion: 101')
                 fw('\n\t\t\tName: "%s"' % uvlayer.name)
@@ -1696,8 +1697,8 @@ def save_single(operator, scene, filepath="",
 
                 mats = my_mesh.blenMaterialList
 
-                if me.uv_textures.active:
-                    uv_faces = me.uv_textures.active.data
+                if me.tessface_uv_textures.active:
+                    uv_faces = me.tessface_uv_textures.active.data
                 else:
                     uv_faces = [None] * len(me_faces)
 
@@ -1757,7 +1758,7 @@ def save_single(operator, scene, filepath="",
 				TypedIndex: 0
 			}''')
 
-        if me.vertex_colors:
+        if me.tessface_vertex_colors:
             fw('''
 			LayerElement:  {
 				Type: "LayerElementColor"
@@ -1863,17 +1864,6 @@ def save_single(operator, scene, filepath="",
                         fw(",0,0,0")
                     i += 1
                 fw('\n\t\t}')
-
-        for v in me_vertices:
-            if i == -1:
-                fw('%.6f,%.6f,%.6f' % v.co[:])
-                i = 0
-            else:
-                if i == 7:
-                    fw('\n\t\t')
-                    i = 0
-                fw(',%.6f,%.6f,%.6f' % v.co[:])
-            i += 1
 
         fw('\n\t}')
 
@@ -2002,9 +1992,9 @@ def save_single(operator, scene, filepath="",
 
                     texture_mapping_local = {}
                     material_mapping_local = {}
-                    if me.uv_textures:
-                        for uvlayer in me.uv_textures:
-                            for f, uf in zip(me.faces, uvlayer.data):
+                    if me.tessface_uv_textures:
+                        for uvlayer in me.tessface_uv_textures:
+                            for f, uf in zip(me.tessfaces, uvlayer.data):
                                 tex = uf.image
                                 textures[tex] = texture_mapping_local[tex] = None
 
@@ -2098,10 +2088,29 @@ def save_single(operator, scene, filepath="",
         # fbxName, blenderObject, my_bones, blenderActions
         #ob_arms[i] = fbxArmObName, ob, arm_my_bones, (ob.action, [])
 
+        if use_armature_deform_only:
+            # tag non deforming bones that have no deforming children
+            deform_map = dict.fromkeys(my_arm.blenData.bones, False)
+            for bone in my_arm.blenData.bones:
+                if bone.use_deform:
+                    deform_map[bone] = True
+                    # tag all parents, even ones that are not deform since their child _is_
+                    for parent in bone.parent_recursive:
+                        deform_map[parent] = True
+
         for bone in my_arm.blenData.bones:
+
+            if use_armature_deform_only:
+                # if this bone doesnt deform, and none of its children deform, skip it!
+                if not deform_map[bone]:
+                    continue
+
             my_bone = my_bone_class(bone, my_arm)
             my_arm.fbxBones.append(my_bone)
             ob_bones.append(my_bone)
+
+        if use_armature_deform_only:
+            del deform_map
 
     # add the meshes to the bones and replace the meshes armature with own armature class
     #for obname, ob, mtx, me, mats, arm, armname in ob_meshes:
@@ -2877,7 +2886,7 @@ Takes:  {''')
     fw('\n\t\tAmbientLightColor: %.1f,%.1f,%.1f,0' % tuple(world_amb))
     fw('\n\t}')
     fw('\n\tFogOptions:  {')
-    fw('\n\t\tFlogEnable: %i' % has_mist)
+    fw('\n\t\tFogEnable: %i' % has_mist)
     fw('\n\t\tFogMode: 0')
     fw('\n\t\tFogDensity: %.3f' % mist_intense)
     fw('\n\t\tFogStart: %.3f' % mist_start)
@@ -2932,6 +2941,7 @@ def defaults_unity3d():
                 use_selection=False,
                 object_types={'ARMATURE', 'EMPTY', 'MESH'},
                 use_mesh_modifiers=True,
+                use_armature_deform_only=True,
                 use_anim=True,
                 use_anim_optimize=False,
                 use_anim_action_all=True,

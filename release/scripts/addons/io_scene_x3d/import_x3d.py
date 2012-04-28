@@ -1386,6 +1386,8 @@ def x3d_parse(path):
     except:
         return None, 'Not a valid x3d document, cannot import'
 
+    bpy.ops.object.select_all(action='DESELECT')
+
     root = x3dNode(None, NODE_NORMAL, x3dnode)
     root.setRoot(path)  # so images and Inline's we load have a relative path
     root.parse()
@@ -1667,17 +1669,17 @@ def importMesh_IndexedFaceSet(geom, bpyima, ancestry):
     # print(len(ifs_points), faces, edges, ngons)
 
     try:
-        bpymesh.faces.add(len(faces))
-        bpymesh.faces.foreach_set("vertices_raw", [a for f in faces for a in (f + [0] if len(f) == 3 else f)])  # XXX25 speed
+        bpymesh.tessfaces.add(len(faces))
+        bpymesh.tessfaces.foreach_set("vertices_raw", [a for f in faces for a in (f + [0] if len(f) == 3 else f)])  # XXX25 speed
     except KeyError:
         print("one or more vert indices out of range. corrupt file?")
         #for f in faces:
-        #   bpymesh.faces.extend(faces, smooth=True)
+        #   bpymesh.tessfaces.extend(faces, smooth=True)
 
     bpymesh.validate()
-    bpymesh.update()
+    # bpymesh.update()  # cant call now, because it would convert tessface
 
-    if len(bpymesh.faces) != len(faces):
+    if len(bpymesh.tessfaces) != len(faces):
         print('\tWarning: adding faces did not work! file is invalid, not adding UVs or vcolors')
         return bpymesh, ccw
 
@@ -1687,7 +1689,7 @@ def importMesh_IndexedFaceSet(geom, bpyima, ancestry):
     if coords_tex:
         #print(ifs_texpoints)
         # print(geom)
-        uvlay = bpymesh.uv_textures.new()
+        uvlay = bpymesh.tessface_uv_textures.new()
 
         for i, f in enumerate(uvlay.data):
             f.image = bpyima
@@ -1700,7 +1702,7 @@ def importMesh_IndexedFaceSet(geom, bpyima, ancestry):
                     print('\tWarning: UV Index out of range')
                     f.uv[j] = ifs_texpoints[0]  # XXX25, speedup
 
-    elif bpyima and len(bpymesh.faces):
+    elif bpyima and len(bpymesh.tessfaces):
         # Oh Bugger! - we cant really use blenders ORCO for for texture space since texspace dosnt rotate.
         # we have to create VRML's coords as UVs instead.
 
@@ -1762,13 +1764,13 @@ def importMesh_IndexedFaceSet(geom, bpyima, ancestry):
             # This should be safe because when 2 axies have the same length, the lower index will be used.
             axis_v += 1
 
-        uvlay = bpymesh.uv_textures.new()
+        uvlay = bpymesh.tessface_uv_textures.new()
 
         # HACK !!! - seems to be compatible with Cosmo though.
         depth_v = depth_u = max(depth_v, depth_u)
 
         bpymesh_vertices = bpymesh.vertices[:]
-        bpymesh_faces = bpymesh.faces[:]
+        bpymesh_faces = bpymesh.tessfaces[:]
 
         for j, f in enumerate(uvlay.data):
             f.image = bpyima
@@ -1782,10 +1784,10 @@ def importMesh_IndexedFaceSet(geom, bpyima, ancestry):
     # Add vcote
     if vcolor:
         # print(ifs_vcol)
-        collay = bpymesh.vertex_colors.new()
+        collay = bpymesh.tessface_vertex_colors.new()
 
         for f_idx, f in enumerate(collay.data):
-            fv = bpymesh.faces[f_idx].vertices[:]
+            fv = bpymesh.tessfaces[f_idx].vertices[:]
             if len(fv) == 3:  # XXX speed
                 fcol = f.color1, f.color2, f.color3
             else:
@@ -1828,6 +1830,9 @@ def importMesh_IndexedFaceSet(geom, bpyima, ancestry):
 
     # XXX25
     # bpymesh.vertices.delete([0, ])  # EEKADOODLE
+
+    bpymesh.update()
+    bpymesh.validate()
 
     return bpymesh, ccw
 
@@ -1961,7 +1966,7 @@ def importMesh_Cylinder(geom, ancestry):
     if not side:
         # remove all quads
         # XXX25
-        # bpymesh.faces.delete(1, [f for f in bpymesh.faces if len(f) == 4])
+        # bpymesh.tessfaces.delete(1, [f for f in bpymesh.tessfaces if len(f) == 4])
         pass
 
     return bpymesh
@@ -2155,7 +2160,7 @@ def importShape(node, ancestry, global_matrix):
             bpydata.name = vrmlname
 
             bpyob = node.blendObject = bpy.data.objects.new(vrmlname, bpydata)
-            bpy.context.scene.objects.link(bpyob)
+            bpy.context.scene.objects.link(bpyob).select = True
 
             if type(bpydata) == bpy.types.Mesh:
                 is_solid = geom.getFieldAsBool('solid', True, ancestry)
@@ -2169,17 +2174,17 @@ def importShape(node, ancestry, global_matrix):
                 if bpymat:
                     bpydata.materials.append(bpymat)
 
-                if bpydata.uv_textures:
+                if bpydata.tessface_uv_textures:
 
                     if depth == 32:  # set the faces alpha flag?
                         transp = Mesh.FaceTranspModes.ALPHA
-                        for f in bpydata.uv_textures.active.data:
+                        for f in bpydata.tessface_uv_textures.active.data:
                             f.blend_type = 'ALPHA'
 
                     if texmtx:
                         # Apply texture transform?
                         uv_copy = Vector()
-                        for f in bpydata.uv_textures.active.data:
+                        for f in bpydata.tessface_uv_textures.active.data:
                             fuv = f.uv
                             for i, uv in enumerate(fuv):
                                 uv_copy.x = uv[0]
@@ -2296,7 +2301,7 @@ def importLamp(node, spec, ancestry, global_matrix):
         raise ValueError
 
     bpyob = node.blendObject = bpy.data.objects.new("TODO", bpylamp)
-    bpy.context.scene.objects.link(bpyob)
+    bpy.context.scene.objects.link(bpyob).select = True
 
     bpyob.matrix_world = getFinalMatrix(node, mtx, ancestry, global_matrix)
 
@@ -2319,7 +2324,7 @@ def importViewpoint(node, ancestry, global_matrix):
     mtx = Matrix.Translation(Vector(position)) * translateRotation(orientation)
 
     bpyob = node.blendObject = bpy.data.objects.new(name, bpycam)
-    bpy.context.scene.objects.link(bpyob)
+    bpy.context.scene.objects.link(bpyob).select = True
     bpyob.matrix_world = getFinalMatrix(node, mtx, ancestry, global_matrix)
 
 
@@ -2329,7 +2334,7 @@ def importTransform(node, ancestry, global_matrix):
         name = 'Transform'
 
     bpyob = node.blendObject = bpy.data.objects.new(name, None)
-    bpy.context.scene.objects.link(bpyob)
+    bpy.context.scene.objects.link(bpyob).select = True
 
     bpyob.matrix_world = getFinalMatrix(node, None, ancestry, global_matrix)
 
@@ -2588,7 +2593,7 @@ def load_web3d(path,
                 node = defDict[key]
                 if node.blendObject is None:  # Add an object if we need one for animation
                     node.blendObject = bpy.data.objects.new('AnimOb', None)  # , name)
-                    bpy.context.scene.objects.link(node.blendObject)
+                    bpy.context.scene.objects.link(node.blendObject).select = True
 
                 if node.blendObject.animation_data is None:
                     node.blendObject.animation_data_create()
