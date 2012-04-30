@@ -1,4 +1,4 @@
-blender (2.63-1) UNRELEASED; urgency=low
+blender (2.63-1) unstable; urgency=low
 
   * New upstream release
   * debian/patches/:
