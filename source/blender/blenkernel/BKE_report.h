@@ -23,8 +23,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BKE_REPORT_H
-#define BKE_REPORT_H
+#ifndef __BKE_REPORT_H__
+#define __BKE_REPORT_H__
 
 /** \file BKE_report.h
  *  \ingroup bke
@@ -54,7 +54,11 @@ __attribute__ ((format (printf, 3, 4)))
 ;
 
 void BKE_reports_prepend(ReportList *reports, const char *prepend);
-void BKE_reports_prependf(ReportList *reports, const char *prepend, ...);
+void BKE_reports_prependf(ReportList *reports, const char *prepend, ...)
+#ifdef __GNUC__
+__attribute__ ((format (printf, 2, 3)))
+#endif
+;
 
 ReportType BKE_report_print_level(ReportList *reports);
 void BKE_report_print_level_set(ReportList *reports, ReportType level);
@@ -66,6 +70,8 @@ char *BKE_reports_string(ReportList *reports, ReportType level);
 void BKE_reports_print(ReportList *reports, ReportType level);
 
 Report *BKE_reports_last_displayable(ReportList *reports);
+
+int BKE_reports_contain(ReportList *reports, ReportType level);
 	
 #ifdef __cplusplus
 }

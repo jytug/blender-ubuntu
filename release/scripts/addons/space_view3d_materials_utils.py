@@ -25,11 +25,11 @@
 bl_info = {
     "name": "Material Utils",
     "author": "michaelw",
-    "version": (1, 3),
-    "blender": (2, 5, 6),
+    "version": (1, 4),
+    "blender": (2, 6, 2),
     "location": "View3D > Q key",
     "description": "Menu of material tools (assign, select..)  in the 3D View",
-    "warning": "",
+    "warning": "Buggy, Broken in Cycles mode",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"
                 "Scripts/3D interaction/Materials Utils",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"
@@ -43,7 +43,7 @@ This script has several functions and operators... grouped for convenience
     additional "new" entry the chosen material will be assigned to all the
     selected objects in object mode.
 
-    in edit mode the selected faces get the selected material applied.
+    in edit mode the selected polygons get the selected material applied.
 
     if the user chose "new" the new material can be renamed using the
     "last operator" section of the toolbox.
@@ -58,12 +58,12 @@ This script has several functions and operators... grouped for convenience
     objects without the material will be removed from selection.
 
     in edit mode:  the menu offers only the materials attached to the current
-    object. It will select the faces that use the material and deselect those
+    object. It will select the polygons that use the material and deselect those
     that do not.
 
 * clean material slots
     for all selected objects any empty material slots or material slots with
-    materials that are not used by the mesh faces will be removed.
+    materials that are not used by the mesh polygons will be removed.
 
 * Any un-used materials and slots will be removed
 """
@@ -109,7 +109,7 @@ def replace_material(m1, m2, all_objects=False):
 
 def select_material_by_name(find_mat_name):
     #in object mode selects all objects with material find_mat_name
-    #in edit mode selects all faces with material find_mat_name
+    #in edit mode selects all polygons with material find_mat_name
 
     find_mat = bpy.data.materials.get(find_mat_name)
 
@@ -121,7 +121,7 @@ def select_material_by_name(find_mat_name):
 
     scn = bpy.context.scene
 
-    #set selection mode to faces
+    #set selection mode to polygons
     scn.tool_settings.mesh_select_mode = False, False, True
 
     actob = bpy.context.active_object
@@ -149,7 +149,7 @@ def select_material_by_name(find_mat_name):
                 ob.select = False
 
     else:
-        #it's editmode, so select the faces
+        #it's editmode, so select the polygons
         ob = actob
         ms = ob.material_slots.values()
 
@@ -163,7 +163,7 @@ def select_material_by_name(find_mat_name):
                 # found = True  # UNUSED
             i += 1
         me = ob.data
-        for f in me.faces:
+        for f in me.polygons:
             if f.material_index in slot_indeces:
                 f.select = True
             else:
@@ -174,7 +174,7 @@ def select_material_by_name(find_mat_name):
 
 
 def mat_to_texface():
-    # assigns the first image in each material to the faces in the active
+    # assigns the first image in each material to the polygons in the active
     # uvlayer for all selected objects
 
     #check for editmode
@@ -225,7 +225,7 @@ def mat_to_texface():
             for t in  me.uv_textures:
                 if t.active:
                     uvtex = t.data.values()
-                    for f in me.faces:
+                    for f in me.polygons:
                         #check that material had an image!
                         if images[f.material_index] != None:
                             uvtex[f.index].image = images[f.material_index]
@@ -276,11 +276,11 @@ def cleanmatslots():
         if ob.type == 'MESH':
             mats = ob.material_slots.keys()
 
-            #check the faces on the mesh to build a list of used materials
+            #check the polygons on the mesh to build a list of used materials
             usedMatIndex = []  # we'll store used materials indices here
             faceMats = []
             me = ob.data
-            for f in me.faces:
+            for f in me.polygons:
                 #get the material index for this face...
                 faceindex = f.material_index
 
@@ -311,7 +311,7 @@ def cleanmatslots():
 
             # restore face indices:
             i = 0
-            for f in me.faces:
+            for f in me.polygons:
                 matindex = mnames.index(faceMats[i])
                 f.material_index = matindex
                 i += 1
@@ -334,12 +334,12 @@ def assign_mat(matname="Default"):
     if not found:
         target = bpy.data.materials.new(matname)
 
-    # if objectmode then set all faces
+    # if objectmode then set all polygons
     editmode = False
-    allfaces = True
+    allpolygons = True
     if actob.mode == 'EDIT':
         editmode = True
-        allfaces = False
+        allpolygons = False
         bpy.ops.object.mode_set()
 
     objs = bpy.context.selected_editable_objects
@@ -384,11 +384,11 @@ def assign_mat(matname="Default"):
 
             #now assign the material:
             me = ob.data
-            if allfaces:
-                for f in me.faces:
+            if allpolygons:
+                for f in me.polygons:
                     f.material_index = index
-            elif allfaces == False:
-                for f in me.faces:
+            elif allpolygons == False:
+                for f in me.polygons:
                     if f.select:
                         f.material_index = index
             me.update()
@@ -476,7 +476,7 @@ def texface_to_mat():
         i = 0
         for f in faceindex:
             if f != None:
-                me.faces[i].material_index = f
+                me.polygons[i].material_index = f
             i += 1
     if editmode:
         bpy.ops.object.mode_set(mode='EDIT')
@@ -486,7 +486,7 @@ def texface_to_mat():
 # operator classes:
 
 class VIEW3D_OT_texface_to_material(bpy.types.Operator):
-    ''''''
+    '''Create texture materials for images assigned in UV editor'''
     bl_idname = "view3d.texface_to_material"
     bl_label = "MW Texface Images to Material/Texture"
     bl_options = {'REGISTER', 'UNDO'}
@@ -506,7 +506,7 @@ class VIEW3D_OT_texface_to_material(bpy.types.Operator):
 
 
 class VIEW3D_OT_assign_material(bpy.types.Operator):
-    '''assign a material to the selection'''
+    '''Assign a material to the selection'''
     bl_idname = "view3d.assign_material"
     bl_label = "MW Assign Material"
     bl_options = {'REGISTER', 'UNDO'}
@@ -515,7 +515,7 @@ class VIEW3D_OT_assign_material(bpy.types.Operator):
             name='Material Name',
             description='Name of Material to Assign',
             default="",
-            maxlen=21,
+            maxlen=63,
             )
 
     @classmethod
@@ -532,8 +532,8 @@ class VIEW3D_OT_assign_material(bpy.types.Operator):
 
 
 class VIEW3D_OT_clean_material_slots(bpy.types.Operator):
-    '''removes any material slots from the
-    selected objects that are not used by the mesh'''
+    '''Removes any material slots from selected objects '''\
+    '''that are not used by the mesh'''
     bl_idname = "view3d.clean_material_slots"
     bl_label = "MW Clean Material Slots"
     bl_options = {'REGISTER', 'UNDO'}
@@ -548,7 +548,7 @@ class VIEW3D_OT_clean_material_slots(bpy.types.Operator):
 
 
 class VIEW3D_OT_material_to_texface(bpy.types.Operator):
-    ''''''
+    '''Transfer material assignments to UV editor'''
     bl_idname = "view3d.material_to_texface"
     bl_label = "MW Material Images to Texface"
     bl_options = {'REGISTER', 'UNDO'}
@@ -563,14 +563,14 @@ class VIEW3D_OT_material_to_texface(bpy.types.Operator):
 
 
 class VIEW3D_OT_select_material_by_name(bpy.types.Operator):
-    ''''''
+    '''Select geometry with this material assigned to it'''
     bl_idname = "view3d.select_material_by_name"
     bl_label = "MW Select Material By Name"
     bl_options = {'REGISTER', 'UNDO'}
     matname = StringProperty(
             name='Material Name',
             description='Name of Material to Select',
-            maxlen=21,
+            maxlen=63,
             )
 
     @classmethod
@@ -584,7 +584,7 @@ class VIEW3D_OT_select_material_by_name(bpy.types.Operator):
 
 
 class VIEW3D_OT_replace_material(bpy.types.Operator):
-    '''assign a material to the selection'''
+    '''Replace a material by name'''
     bl_idname = "view3d.replace_material"
     bl_label = "MW Replace Material"
     bl_options = {'REGISTER', 'UNDO'}
@@ -592,15 +592,15 @@ class VIEW3D_OT_replace_material(bpy.types.Operator):
     matorg = StringProperty(
             name='Material to Replace',
             description="Name of Material to Assign",
-            maxlen=21,
+            maxlen=63,
             )
     matrep = StringProperty(name="Replacement material",
             description='Name of Material to Assign',
-            maxlen=21,
+            maxlen=63,
             )
     all_objects = BoolProperty(
-            name="all_objects",
-            description="replace for all objects in this blend file",
+            name="All objects",
+            description="Replace for all objects in this blend file",
             default=True,
             )
 
@@ -620,7 +620,7 @@ class VIEW3D_OT_replace_material(bpy.types.Operator):
 # menu classes
 
 class VIEW3D_MT_master_material(bpy.types.Menu):
-    bl_label = "Master Material Menu"
+    bl_label = "Material Utils Menu"
 
     def draw(self, context):
         layout = self.layout
@@ -634,10 +634,10 @@ class VIEW3D_MT_master_material(bpy.types.Menu):
                         icon='CANCEL')
         layout.operator("view3d.material_to_texface",
                         text='Material to Texface',
-                        icon='FACESEL_HLT')
+                        icon='polygonsEL_HLT')
         layout.operator("view3d.texface_to_material",
                         text="Texface to Material",
-                        icon='FACESEL_HLT')
+                        icon='polygonsEL_HLT')
 
         layout.separator()
         layout.operator("view3d.replace_material",

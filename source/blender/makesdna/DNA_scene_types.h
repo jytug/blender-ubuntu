@@ -29,8 +29,8 @@
  *  \ingroup DNA
  */
 
-#ifndef DNA_SCENE_TYPES_H
-#define DNA_SCENE_TYPES_H
+#ifndef __DNA_SCENE_TYPES_H__
+#define __DNA_SCENE_TYPES_H__
 
 #include "DNA_defs.h"
 
@@ -249,7 +249,7 @@ typedef struct ImageFormatData {
 	char depth;    /* bits per channel, R_IMF_CHAN_DEPTH_8 -> 32,
 	                * not a flag, only set 1 at a time */
 
-	char planes  ; /* - R_IMF_PLANES_BW, R_IMF_PLANES_RGB, R_IMF_PLANES_RGBA */
+	char planes;   /* - R_IMF_PLANES_BW, R_IMF_PLANES_RGB, R_IMF_PLANES_RGBA */
 	char flag;     /* generic options for all image types, alpha zbuffer */
 
 	char quality;  /* (0 - 100), eg: jpeg quality */
@@ -614,7 +614,7 @@ typedef struct GameData {
 	/*
 	 * bit 3: (gameengine): Activity culling is enabled.
 	 * bit 5: (gameengine) : enable Bullet DBVT tree for view frustrum culling
-	*/
+	 */
 	int flag;
 	short mode, matmode;
 	short occlusionRes;		/* resolution of occlusion Z buffer in pixel */
@@ -640,10 +640,6 @@ typedef struct GameData {
 
 /* physicsEngine */
 #define WOPHY_NONE		0
-#define WOPHY_ENJI		1
-#define WOPHY_SUMO		2
-#define WOPHY_DYNAMO	3
-#define WOPHY_ODE		4
 #define WOPHY_BULLET	5
 
 /* obstacleSimulation */
@@ -837,11 +833,12 @@ typedef struct TransformOrientation {
 } TransformOrientation;
 
 /* *************************************************************** */
-/* Unified Paint Settings */
+/* Unified Paint Settings
+ */
 
 /* These settings can override the equivalent fields in the active
-   Brush for any paint mode; the flag field controls whether these
-   values are used */
+ * Brush for any paint mode; the flag field controls whether these
+ * values are used */
 typedef struct UnifiedPaintSettings {
 	/* unified radius of brush in pixels */
 	int size;
@@ -861,12 +858,12 @@ typedef enum {
 	UNIFIED_PAINT_ALPHA = (1<<1),
 
 	/* only used if unified size is enabled, mirros the brush flags
-	   BRUSH_LOCK_SIZE and BRUSH_SIZE_PRESSURE */
+	 * BRUSH_LOCK_SIZE and BRUSH_SIZE_PRESSURE */
 	UNIFIED_PAINT_BRUSH_LOCK_SIZE = (1<<2),
 	UNIFIED_PAINT_BRUSH_SIZE_PRESSURE   = (1<<3),
 
 	/* only used if unified alpha is enabled, mirrors the brush flag
-	   BRUSH_ALPHA_PRESSURE */
+	 * BRUSH_ALPHA_PRESSURE */
 	UNIFIED_PAINT_BRUSH_ALPHA_PRESSURE  = (1<<4)
 } UnifiedPaintSettingsFlags;
 
@@ -884,7 +881,7 @@ typedef struct ToolSettings {
 
 	/* Subdivide Settings */
 	short cornertype;
-	short editbutflag;
+	short pad3;
 	/*Triangle to Quad conversion threshold*/
 	float jointrilimit;
 	/* Editmode Tools */
@@ -942,11 +939,11 @@ typedef struct ToolSettings {
 
 	/* Auto-Keying Mode */
 	short autokey_mode, autokey_flag;	/* defines in DNA_userdef_types.h */
-	
+
 	/* Multires */
 	char multires_subdiv_type;
 	char pad2[5];
-	
+
 	/* Skeleton generation */
 	short skgen_resolution;
 	float skgen_threshold_internal;
@@ -964,7 +961,7 @@ typedef struct ToolSettings {
 	char  skgen_postpro_passes;
 	char  skgen_subdivisions[3];
 	char  skgen_multi_level;
-	
+
 	/* Skeleton Sketching */
 	struct Object *skgen_template;
 	char bone_sketching;
@@ -995,7 +992,7 @@ typedef struct ToolSettings {
 	int uv_sculpt_tool;
 	int uv_relax_method;
 	/* XXX: these sculpt_paint_* fields are deprecated, use the
-	   unified_paint_settings field instead! */
+	 * unified_paint_settings field instead! */
 	short sculpt_paint_settings DNA_DEPRECATED;	short pad1;
 	int sculpt_paint_unified_size DNA_DEPRECATED;
 	float sculpt_paint_unified_unprojected_radius DNA_DEPRECATED;
@@ -1024,7 +1021,7 @@ typedef struct UnitSettings {
 	/* Display/Editing unit options for each scene */
 	float scale_length; /* maybe have other unit conversions? */
 	char system; /* imperial, metric etc */
-	char system_rotation; /* not implimented as a propper unit system yet */
+	char system_rotation; /* not implemented as a propper unit system yet */
 	short flag;
 } UnitSettings;
 
@@ -1086,7 +1083,7 @@ typedef struct Scene {
 	
 	void *fps_info;					/* (runtime) info/cache used for presenting playback framerate info to the user */
 	
-	/* none of the dependancy graph  vars is mean to be saved */
+	/* none of the dependency graph  vars is mean to be saved */
 	struct  DagForest *theDag;
 	short dagisvalid, dagflags;
 	short recalc;				/* recalc = counterpart of ob->recalc */

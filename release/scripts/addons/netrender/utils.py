@@ -30,33 +30,6 @@ except:
 
 VERSION = bytes(".".join((str(n) for n in netrender.bl_info["version"])), encoding='utf8')
 
-# Jobs status
-JOB_WAITING = 0 # before all data has been entered
-JOB_PAUSED = 1 # paused by user
-JOB_FINISHED = 2 # finished rendering
-JOB_QUEUED = 3 # ready to be dispatched
-
-JOB_STATUS_TEXT = {
-        JOB_WAITING: "Waiting",
-        JOB_PAUSED: "Paused",
-        JOB_FINISHED: "Finished",
-        JOB_QUEUED: "Queued"
-        }
-
-
-# Frames status
-FRAME_QUEUED = 0
-FRAME_DISPATCHED = 1
-FRAME_DONE = 2
-FRAME_ERROR = 3
-
-FRAME_STATUS_TEXT = {
-        FRAME_QUEUED: "Queued",
-        FRAME_DISPATCHED: "Dispatched",
-        FRAME_DONE: "Done",
-        FRAME_ERROR: "Error"
-        }
-
 try:
     system = platform.system()
 except UnicodeDecodeError:
@@ -269,6 +242,23 @@ def hashData(data):
     m.update(data)
     return m.hexdigest()
 
+def verifyCreateDir(directory_path):
+    original_path = directory_path
+    directory_path = os.path.expanduser(directory_path)
+    directory_path = os.path.expandvars(directory_path)
+    if not os.path.exists(directory_path):
+        try:
+            os.makedirs(directory_path)
+            print("Created directory:", directory_path)
+            if original_path != directory_path:
+                print("Expanded from the following path:", original_path)
+        except:
+            print("Couldn't create directory:", directory_path)
+            if original_path != directory_path:
+                print("Expanded from the following path:", original_path)
+            raise
+    
+
 def cacheName(ob, point_cache):
     name = point_cache.name
     if name == "":
@@ -332,9 +322,7 @@ def createLocalPath(rfile, prefixdirectory, prefixpath, forcelocal):
                     suffix = os.path.join(last, suffix)
 
                 directory = os.path.join(prefixdirectory, suffix)
-                
-                if not os.path.exists(directory):
-                    os.mkdir(directory)
+                verifyCreateDir(directory)
 
                 finalpath = os.path.join(directory, name)
             else:
@@ -350,8 +338,7 @@ def createLocalPath(rfile, prefixdirectory, prefixpath, forcelocal):
         directory = directory.replace("../")
         directory = os.path.join(prefixdirectory, directory)
 
-        if not os.path.exists(directory):
-            os.mkdir(directory)
+        verifyCreateDir(directory)
 
         finalpath = os.path.join(directory, name)
 

@@ -30,8 +30,8 @@
  *  \ingroup editorui
  */
 
-#ifndef UI_RESOURCES_H
-#define UI_RESOURCES_H
+#ifndef __UI_RESOURCES_H__
+#define __UI_RESOURCES_H__
 
 /* elubie: TODO: move the typedef for icons to UI_interface_icons.h */
 /* and add/replace include of UI_resources.h by UI_interface_icons.h */
@@ -133,8 +133,9 @@ enum {
 	TH_STRIP_SELECT,
 	
 	TH_LAMP,
-
 	TH_SPEAKER,
+	TH_CAMERA,
+	TH_EMPTY,
 	
 	TH_NODE,
 	TH_NODE_IN_OUT,
@@ -149,6 +150,7 @@ enum {
 	TH_CONSOLE_CURSOR,
 	
 	TH_SEQ_MOVIE,
+	TH_SEQ_MOVIECLIP,
 	TH_SEQ_IMAGE,
 	TH_SEQ_SCENE,
 	TH_SEQ_AUDIO,
@@ -156,6 +158,7 @@ enum {
 	TH_SEQ_PLUGIN,
 	TH_SEQ_TRANSITION,
 	TH_SEQ_META,
+	TH_SEQ_PREVIEW,
 	
 	TH_EDGE_SHARP,
 	TH_EDITMESH_ACTIVE,

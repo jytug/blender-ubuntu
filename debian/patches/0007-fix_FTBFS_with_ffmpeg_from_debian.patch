@@ -13,10 +13,10 @@ Signed-off-by: Antonio Ospite <ospite@studenti.unina.it>
  2 files changed, 63 insertions(+)
 
 diff --git a/intern/ffmpeg/ffmpeg_compat.h b/intern/ffmpeg/ffmpeg_compat.h
-index 582086d..9852fd7 100644
+index 9dbbb46..cbc510a 100644
 --- a/intern/ffmpeg/ffmpeg_compat.h
 +++ b/intern/ffmpeg/ffmpeg_compat.h
-@@ -35,6 +35,7 @@
+@@ -32,6 +32,7 @@
  
  #include <libavcodec/avcodec.h>
  #include <libavutil/rational.h>
@@ -24,7 +24,7 @@ index 582086d..9852fd7 100644
  #include <libavutil/opt.h>
  
  #if (LIBAVFORMAT_VERSION_MAJOR > 52) || ((LIBAVFORMAT_VERSION_MAJOR >= 52) && (LIBAVFORMAT_VERSION_MINOR >= 101))
-@@ -49,6 +50,67 @@
+@@ -46,6 +47,67 @@
  #define FFMPEG_HAVE_AVIO 1
  #endif
  
@@ -93,7 +93,7 @@ index 582086d..9852fd7 100644
  #define FFMPEG_HAVE_DEFAULT_VAL_UNION 1
  #endif
 diff --git a/source/blender/blenkernel/intern/writeffmpeg.c b/source/blender/blenkernel/intern/writeffmpeg.c
-index c4c3eb4..09ed61d 100644
+index 59c3811..9dff954 100644
 --- a/source/blender/blenkernel/intern/writeffmpeg.c
 +++ b/source/blender/blenkernel/intern/writeffmpeg.c
 @@ -36,6 +36,7 @@

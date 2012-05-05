@@ -25,7 +25,7 @@ bl_info = {
     "blender": (2, 5, 6),
     "category": "Mesh",
     "location": "View3D > EditMode > (w) Specials",
-    "warning": "Still under development, bug reports appreciated",
+    "warning": "Still under development",
     "wiki_url": "http://wiki.blender.org/index.php/"\
         "Extensions:2.5/Py/Scripts/Modeling/Edge_Slice",
     "tracker_url": "http://projects.blender.org/tracker/"\
@@ -216,7 +216,7 @@ def runCleanUp():
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='TOGGLE')
     bpy.ops.mesh.select_all(action='TOGGLE')
-    bpy.ops.mesh.remove_doubles(limit=VTX_PRECISION)
+    bpy.ops.mesh.remove_doubles(mergedist=VTX_PRECISION)
     bpy.ops.mesh.select_all(action='TOGGLE') #unselect all
 
 

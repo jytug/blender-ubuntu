@@ -288,9 +288,11 @@ static void xml_read_camera(const XMLReadState& state, pugi::xml_node node)
 	xml_read_float(&cam->shutterclose, node, "shutterclose");
 
 	if(xml_equal_string(node, "type", "orthographic"))
-		cam->ortho = true;
+		cam->type = CAMERA_ORTHOGRAPHIC;
 	else if(xml_equal_string(node, "type", "perspective"))
-		cam->ortho = false;
+		cam->type = CAMERA_PERSPECTIVE;
+	else if(xml_equal_string(node, "type", "environment"))
+		cam->type = CAMERA_ENVIRONMENT;
 
 	cam->matrix = state.tfm;
 
@@ -676,7 +678,7 @@ static void xml_read_mesh(const XMLReadState& state, pugi::xml_node node)
 		//dsplit.dicing_rate = 5.0f;
 		dsplit.dicing_rate = state.dicing_rate;
 		xml_read_float(&dsplit.dicing_rate, node, "dicing_rate");
-		sdmesh.tesselate(&dsplit, false, mesh, shader, smooth);
+		sdmesh.tessellate(&dsplit, false, mesh, shader, smooth);
 	}
 	else {
 		/* create vertices */
@@ -722,7 +724,7 @@ static void xml_read_patch(const XMLReadState& state, pugi::xml_node node)
 			LinearQuadPatch *bpatch = new LinearQuadPatch();
 
 			for(int i = 0; i < 4; i++)
-				P[i] = transform(&state.tfm, P[i]);
+				P[i] = transform_point(&state.tfm, P[i]);
 			memcpy(bpatch->hull, &P[0], sizeof(bpatch->hull));
 
 			patch = bpatch;
@@ -736,7 +738,7 @@ static void xml_read_patch(const XMLReadState& state, pugi::xml_node node)
 			BicubicPatch *bpatch = new BicubicPatch();
 
 			for(int i = 0; i < 16; i++)
-				P[i] = transform(&state.tfm, P[i]);
+				P[i] = transform_point(&state.tfm, P[i]);
 			memcpy(bpatch->hull, &P[0], sizeof(bpatch->hull));
 
 			patch = bpatch;
@@ -775,7 +777,7 @@ static void xml_read_light(const XMLReadState& state, pugi::xml_node node)
 	Light *light = new Light();
 	light->shader = state.shader;
 	xml_read_float3(&light->co, node, "P");
-	light->co = transform(&state.tfm, light->co);
+	light->co = transform_point(&state.tfm, light->co);
 
 	state.scene->lights.push_back(light);
 }

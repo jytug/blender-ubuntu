@@ -30,8 +30,8 @@
  *  \author nzc
  */
 
-#ifndef DNA_SEQUENCE_TYPES_H
-#define DNA_SEQUENCE_TYPES_H
+#ifndef __DNA_SEQUENCE_TYPES_H__
+#define __DNA_SEQUENCE_TYPES_H__
 
 #include "DNA_defs.h"
 #include "DNA_listBase.h"
@@ -40,6 +40,7 @@
 struct Ipo;
 struct Scene;
 struct bSound;
+struct MovieClip;
 
 /* strlens; 256= FILE_MAXFILE, 768= FILE_MAXDIR */
 
@@ -88,9 +89,11 @@ typedef struct StripProxy {
 
 typedef struct Strip {
 	struct Strip *next, *prev;
-	int rt, len, us, done;
+	int us, done;
 	int startstill, endstill;
-	StripElem *stripdata;
+	StripElem *stripdata;  /* only used as an array in IMAGE sequences(!),
+	                        * and as a 1-element array in MOVIE sequences,
+	                        * NULL for all other strip-types */
 	char dir[768];
 	StripProxy *proxy;
 	StripCrop *crop;
@@ -130,17 +133,18 @@ typedef struct Sequence {
 	char name[64]; /* SEQ_NAME_MAXSTR - name, set by default and needs to be unique, for RNA paths */
 
 	int flag, type;	/*flags bitmap (see below) and the type of sequence*/
-	int len; /* the length of the contense of this strip - before handles are applied */
+	int len; /* the length of the contents of this strip - before handles are applied */
 	int start, startofs, endofs;
 	int startstill, endstill;
 	int machine, depth; /*machine - the strip channel, depth - the depth in the sequence when dealing with metastrips */
 	int startdisp, enddisp;	/*starting and ending points in the sequence*/
 	float sat;
 	float mul, handsize;
-					/* is sfra needed anymore? - it looks like its only used in one place */
-	int sfra;		/* starting frame according to the timeline of the scene. */
-	int anim_preseek;
-	int streamindex;   /* streamindex for movie or sound files with several streams */
+
+	short anim_preseek;
+	short streamindex;   /* streamindex for movie or sound files with several streams */
+	int multicam_source;  /* for multicam source selection */
+	int clip_flag;          /* MOVIECLIP render flags */
 
 	Strip *strip;
 
@@ -148,7 +152,9 @@ typedef struct Sequence {
 	struct Scene *scene;
 	struct Object *scene_camera; /* override scene camera */
 
-	struct anim *anim;
+	struct anim *anim;      /* for MOVIE strips */
+	struct MovieClip *clip; /* for MOVIECLIP strips */
+
 	float effect_fader;
 	float speed_fader;
 
@@ -164,8 +170,6 @@ typedef struct Sequence {
 	float volume;
 
 	float pitch, pan;	/* pitch (-0.1..10), pan -2..2 */
-	int scenenr;          /* for scene selection */
-	int multicam_source;  /* for multicam source selection */
 	float strobe;
 
 	void *effectdata;	/* Struct pointer for effect settings */
@@ -173,9 +177,12 @@ typedef struct Sequence {
 	int anim_startofs;    /* only use part of animation file */
 	int anim_endofs;      /* is subtle different to startofs / endofs */
 
+
 	int blend_mode;
 	float blend_opacity;
 
+			/* is sfra needed anymore? - it looks like its only used in one place */
+	int sfra, pad;	/* starting frame according to the timeline of the scene. */
 } Sequence;
 
 typedef struct MetaStack {
@@ -292,7 +299,7 @@ typedef struct SpeedControlVars {
 /* convenience define for all selection flags */
 #define SEQ_ALLSEL	(SELECT+SEQ_LEFTSEL+SEQ_RIGHTSEL)
 
-/* deprecated, dont use a flag anymore*/
+/* deprecated, don't use a flag anymore*/
 /*#define SEQ_ACTIVE                            1048576*/
 
 #define SEQ_COLOR_BALANCE_INVERSE_GAIN 1
@@ -321,6 +328,7 @@ typedef struct SpeedControlVars {
 #define SEQ_RAM_SOUND		4
 #define SEQ_HD_SOUND            5
 #define SEQ_SOUND		4
+#define SEQ_MOVIECLIP           6
 
 #define SEQ_EFFECT		8
 #define SEQ_CROSS		8
@@ -345,6 +353,9 @@ typedef struct SpeedControlVars {
 #define STRIPELEM_OK           1
 
 #define STRIPELEM_PREVIEW_DONE  1
+
+#define SEQ_MOVIECLIP_RENDER_UNDISTORTED (1<<0)
+#define SEQ_MOVIECLIP_RENDER_STABILIZED  (1<<1)
 
 #define SEQ_BLEND_REPLACE      0
 /* all other BLEND_MODEs are simple SEQ_EFFECT ids and therefore identical

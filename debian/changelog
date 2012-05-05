@@ -1,18 +1,33 @@
-blender (2.62-2~cycles) UNRELEASED; urgency=low
+blender (2.63-1~cycles) UNRELEASED; urgency=low
 
   * debian/: Cycles support added (Closes: #658075)
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 16 Apr 2012 18:27:49 +0200
 
-blender (2.62-2) UNRELEASED; urgency=low
+blender (2.63-1) unstable; urgency=low
 
+  * New upstream release
+  * debian/patches/:
+    + patchset re-worked since source code changed
+    + #0010 and #0011 dropped (applied upstream)
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 28 Apr 2012 12:11:12 +0200
+
+blender (2.62-2) unstable; urgency=low
+
+  [ Matteo F. Vescovi ]
   * debian/patches/: #0010 added to fix typo.
     Thanks to Ronny Standtke for the patch (Closes: #667458)
   * debian/: README.source and TODO files updated.
   * debian/control: freeglut3-dev b-dep removed.
     Thanks to Campbell Barton for both these entries
+  * debian/patches/: #0011 added to fix openjpeg transition.
+    Thanks to Mathieu Malaterre (malat) for the patch (Closes: #670219)
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 04 Apr 2012 11:05:29 +0200
+  [ Alessio Treglia ]
+  * Set DM-Upload-Allowed: yes.
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Tue, 24 Apr 2012 11:02:59 +0200
 
 blender (2.62-1) unstable; urgency=low
 

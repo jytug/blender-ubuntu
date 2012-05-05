@@ -20,8 +20,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef RNA_ACCESS_H
-#define RNA_ACCESS_H
+#ifndef __RNA_ACCESS_H__
+#define __RNA_ACCESS_H__
 
 /** \file RNA_access.h
  *  \ingroup RNA
@@ -308,9 +308,12 @@ extern StructRNA RNA_Menu;
 extern StructRNA RNA_Mesh;
 extern StructRNA RNA_MeshColor;
 extern StructRNA RNA_MeshColorLayer;
+extern StructRNA RNA_MeshLoopColorLayer;
 extern StructRNA RNA_MeshDeformModifier;
 extern StructRNA RNA_MeshEdge;
-extern StructRNA RNA_MeshFace;
+extern StructRNA RNA_MeshPolygon;
+extern StructRNA RNA_MeshTessFace;
+extern StructRNA RNA_MeshLoop;
 extern StructRNA RNA_MeshFloatProperty;
 extern StructRNA RNA_MeshFloatPropertyLayer;
 extern StructRNA RNA_MeshIntProperty;
@@ -320,6 +323,8 @@ extern StructRNA RNA_MeshStringProperty;
 extern StructRNA RNA_MeshStringPropertyLayer;
 extern StructRNA RNA_MeshTextureFace;
 extern StructRNA RNA_MeshTextureFaceLayer;
+extern StructRNA RNA_MeshTexturePoly;
+extern StructRNA RNA_MeshTexturePolyLayer;
 extern StructRNA RNA_MeshVertex;
 extern StructRNA RNA_MessageSensor;
 extern StructRNA RNA_MetaBall;
@@ -331,6 +336,7 @@ extern StructRNA RNA_MotionPath;
 extern StructRNA RNA_MotionPathVert;
 extern StructRNA RNA_MouseSensor;
 extern StructRNA RNA_MovieSequence;
+extern StructRNA RNA_MovieClipSequence;
 extern StructRNA RNA_MovieTrackingObject;
 extern StructRNA RNA_MulticamSequence;
 extern StructRNA RNA_MultiresModifier;
@@ -342,6 +348,7 @@ extern StructRNA RNA_NlaTrack;
 extern StructRNA RNA_Node;
 extern StructRNA RNA_NodeForLoop;
 extern StructRNA RNA_NodeGroup;
+extern StructRNA RNA_NodeImageFileSocket;
 extern StructRNA RNA_NodeLink;
 extern StructRNA RNA_NodeSocket;
 extern StructRNA RNA_NodeSocketPanel;
@@ -895,11 +902,11 @@ void RNA_collection_clear(PointerRNA *ptr, const char *name);
 #define RNA_BEGIN(sptr, itemptr, propname)                                    \
 	{                                                                         \
 		CollectionPropertyIterator rna_macro_iter;                            \
-		for(RNA_collection_begin(sptr, propname, &rna_macro_iter);            \
-		    rna_macro_iter.valid;                                             \
-		    RNA_property_collection_next(&rna_macro_iter))                    \
+		for (RNA_collection_begin(sptr, propname, &rna_macro_iter);           \
+		     rna_macro_iter.valid;                                            \
+		     RNA_property_collection_next(&rna_macro_iter))                   \
 		{                                                                     \
-			PointerRNA itemptr= rna_macro_iter.ptr;
+			PointerRNA itemptr = rna_macro_iter.ptr;
 
 #define RNA_END                                                               \
 		}                                                                     \
@@ -909,11 +916,11 @@ void RNA_collection_clear(PointerRNA *ptr, const char *name);
 #define RNA_PROP_BEGIN(sptr, itemptr, prop)                                   \
 	{                                                                         \
 		CollectionPropertyIterator rna_macro_iter;                            \
-		for(RNA_property_collection_begin(sptr, prop, &rna_macro_iter);       \
-			rna_macro_iter.valid;                                             \
-			RNA_property_collection_next(&rna_macro_iter))                    \
+		for (RNA_property_collection_begin(sptr, prop, &rna_macro_iter);      \
+		     rna_macro_iter.valid;                                            \
+		     RNA_property_collection_next(&rna_macro_iter))                   \
 		{                                                                     \
-			PointerRNA itemptr= rna_macro_iter.ptr;
+			PointerRNA itemptr = rna_macro_iter.ptr;
 
 #define RNA_PROP_END                                                          \
 		}                                                                     \
@@ -923,14 +930,14 @@ void RNA_collection_clear(PointerRNA *ptr, const char *name);
 #define RNA_STRUCT_BEGIN(sptr, prop)                                          \
 	{                                                                         \
 		CollectionPropertyIterator rna_macro_iter;                            \
-		for(RNA_property_collection_begin(                                    \
-					sptr,                                                     \
-					RNA_struct_iterator_property(sptr->type),                 \
-					&rna_macro_iter);                                         \
-			rna_macro_iter.valid;                                             \
-			RNA_property_collection_next(&rna_macro_iter))                    \
+		for (RNA_property_collection_begin(                                   \
+		             sptr,                                                    \
+		             RNA_struct_iterator_property(sptr->type),                \
+		             &rna_macro_iter);                                        \
+		     rna_macro_iter.valid;                                            \
+		     RNA_property_collection_next(&rna_macro_iter))                   \
 		{                                                                     \
-			PropertyRNA *prop= rna_macro_iter.ptr.data;
+			PropertyRNA *prop = rna_macro_iter.ptr.data;
 
 #define RNA_STRUCT_END                                                        \
 		}                                                                     \
@@ -945,6 +952,13 @@ int RNA_property_is_idprop(PropertyRNA *prop);
 /* python compatible string representation of this property, (must be freed!) */
 char *RNA_property_as_string(struct bContext *C, PointerRNA *ptr, PropertyRNA *prop);
 char *RNA_pointer_as_string(struct bContext *C, PointerRNA *ptr);
+char *RNA_pointer_as_string_keywords_ex(struct bContext *C, PointerRNA *ptr, PointerRNA *ptr_default,
+                                        const short skip_optional_value, const short all_args,
+                                        PropertyRNA *iterprop);
+char *RNA_pointer_as_string_keywords(struct bContext *C, PointerRNA *ptr, PointerRNA *ptr_default,
+                                     const short skip_optional_value, const short all_args);
+char *RNA_function_as_string_keywords(struct bContext *C, FunctionRNA *func, PointerRNA *ptr_default,
+                                     const short as_function, const short all_args);
 
 /* Function */
 
@@ -1017,4 +1031,4 @@ __attribute__ ((format (printf, 1, 2)))
 }
 #endif
 
-#endif /* RNA_ACCESS_H */
+#endif /* __RNA_ACCESS_H__ */

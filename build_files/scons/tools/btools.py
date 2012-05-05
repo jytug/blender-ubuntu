@@ -107,6 +107,7 @@ def validate_arguments(args, bc):
             'WITH_BF_FFMPEG', 'BF_FFMPEG_LIB','BF_FFMPEG_EXTRA', 'BF_FFMPEG',  'BF_FFMPEG_INC', 'BF_FFMPEG_DLL',
             'WITH_BF_STATICFFMPEG', 'BF_FFMPEG_LIB_STATIC',
             'WITH_BF_OGG', 'BF_OGG', 'BF_OGG_LIB',
+            'WITH_BF_FRAMESERVER',
             'WITH_BF_JPEG', 'BF_JPEG', 'BF_JPEG_INC', 'BF_JPEG_LIB', 'BF_JPEG_LIBPATH',
             'WITH_BF_OPENJPEG', 'BF_OPENJPEG', 'BF_OPENJPEG_INC', 'BF_OPENJPEG_LIB', 'BF_OPENJPEG_LIBPATH',
             'WITH_BF_REDCODE', 'BF_REDCODE', 'BF_REDCODE_INC', 'BF_REDCODE_LIB', 'BF_REDCODE_LIBPATH',
@@ -138,6 +139,7 @@ def validate_arguments(args, bc):
             'WITH_BF_OPENMP', 'BF_OPENMP', 'BF_OPENMP_LIBPATH',
             'WITH_GHOST_COCOA',
             'WITH_GHOST_SDL',
+            'WITH_GHOST_XDND',
             'BF_GHOST_DEBUG',
             'USE_QTKIT',
             'BF_FANCY', 'BF_QUIET', 'BF_LINE_OVERWRITE',
@@ -146,7 +148,6 @@ def validate_arguments(args, bc):
             'WITH_BF_DOCS',
             'BF_NUMJOBS',
             'BF_MSVS',
-            'BF_VERSION',
             'WITH_BF_RAYOPTIMIZATION',
             'BF_RAYOPTIMIZATION_SSE_FLAGS',
             'WITH_BF_FLUID',
@@ -154,6 +155,7 @@ def validate_arguments(args, bc):
             'WITH_BF_BOOLEAN',
             'WITH_BF_REMESH',
             'WITH_BF_OCEANSIM',
+            'WITH_BF_SMOKE',
             'WITH_BF_CXX_GUARDEDALLOC',
             'WITH_BF_JEMALLOC', 'WITH_BF_STATICJEMALLOC', 'BF_JEMALLOC', 'BF_JEMALLOC_INC', 'BF_JEMALLOC_LIBPATH', 'BF_JEMALLOC_LIB', 'BF_JEMALLOC_LIB_STATIC',
             'BUILDBOT_BRANCH',
@@ -242,8 +244,8 @@ def SetupSpawn( env ):
 def read_opts(env, cfg, args):
     localopts = Variables.Variables(cfg, args)
     localopts.AddVariables(
-        ('LCGDIR', 'location of cvs lib dir'),
-        ('LIBDIR', 'root dir of libs'),
+        ('LCGDIR', 'Location of SVN lib dir'),
+        ('LIBDIR', 'Root dir of libs'),
         (BoolVariable('WITH_BF_PYTHON', 'Compile with python', True)),
         (BoolVariable('WITH_BF_PYTHON_SAFETY', 'Internal API error checking to track invalid data to prevent crash on access (at the expense of some effeciency)', False)),
         ('BF_PYTHON', 'Base path for python', ''),
@@ -264,6 +266,7 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_BOOLEAN', 'Build with boolean modifier', True)),
         (BoolVariable('WITH_BF_REMESH', 'Build with remesh modifier', True)),
         (BoolVariable('WITH_BF_OCEANSIM', 'Build with ocean simulation', False)),
+        (BoolVariable('WITH_BF_SMOKE', 'Build with smoke simulation', True)),
         ('BF_PROFILE_FLAGS', 'Profiling compiler flags', ''),
         (BoolVariable('WITH_BF_OPENAL', 'Use OpenAL if true', False)),
         ('BF_OPENAL', 'Base path for OpenAL', ''),
@@ -311,6 +314,8 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_CINEON', 'Support CINEON and DPX image formats if true', True)),
 
         (BoolVariable('WITH_BF_HDR', 'Support HDR image formats if true', True)),
+        
+        (BoolVariable('WITH_BF_FRAMESERVER', 'Support export to a frameserver', True)),
 
         (BoolVariable('WITH_BF_FFMPEG', 'Use FFMPEG if true', False)),
         ('BF_FFMPEG', 'FFMPEG base path', ''),
@@ -533,8 +538,6 @@ def read_opts(env, cfg, args):
         ('BF_NUMJOBS', 'Number of build processes to spawn', '1'),
         ('BF_MSVS', 'Generate MSVS project files and solution', False),
 
-        ('BF_VERSION', 'The root path for Unix (non-apple)', '2.5'),
-
         (BoolVariable('BF_UNIT_TEST', 'Build with unit test support.', False)),
         
         (BoolVariable('BF_GHOST_DEBUG', 'Make GHOST print events and info to stdout. (very verbose)', False)),
@@ -567,7 +570,9 @@ def read_opts(env, cfg, args):
         ('BF_BOOST_INC', 'Boost include path', ''),
         ('BF_BOOST_LIB', 'Boost library', ''),
         ('BF_BOOST_LIBPATH', 'Boost library path', ''),
-        ('BF_BOOST_LIB_STATIC', 'Boost static library', '')
+        ('BF_BOOST_LIB_STATIC', 'Boost static library', ''),
+
+        (BoolVariable('WITH_GHOST_XDND', 'Build with drag-n-drop support on Linux platforms using XDND protocol', True))
     ) # end of opts.AddOptions()
 
     return localopts
@@ -612,7 +617,7 @@ def buildslave(target=None, source=None, env=None):
     Builder for buildbot integration. Used by buildslaves of http://builder.blender.org only.
     """
 
-    if env['OURPLATFORM'] in ('win32-vc', 'win64-vc', 'win32-mingw', 'darwin'):
+    if env['OURPLATFORM'] in ('win32-vc', 'win64-vc', 'win32-mingw', 'darwin', 'win64-mingw'):
         extension = '.zip'
     else:
         extension = '.tar.bz2'
@@ -657,15 +662,13 @@ def NSIS_print(target, source, env):
 def NSIS_Installer(target=None, source=None, env=None):
     print "="*35
 
-    if env['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc'):
+    if env['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc', 'win64-mingw'):
         print "NSIS installer is only available on Windows."
         Exit()
-    if env['OURPLATFORM'] == 'win32-vc':
+    if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw'):
         bitness = '32'
-    elif env['OURPLATFORM'] == 'win64-vc':
+    elif env['OURPLATFORM'] in ('win64-vc', 'win64-mingw'):
         bitness = '64'
-    else:
-        bitness = '-mingw'
 
     start_dir = os.getcwd()
     rel_dir = os.path.join(start_dir,'release','windows','installer')
@@ -757,7 +760,7 @@ def NSIS_Installer(target=None, source=None, env=None):
     cmdline = "makensis " + "\""+tmpnsi+"\""
 
     startupinfo = subprocess.STARTUPINFO()
-    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    #startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     proc = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, startupinfo=startupinfo, shell = True)
     data, err = proc.communicate()

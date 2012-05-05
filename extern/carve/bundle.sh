@@ -47,7 +47,7 @@ cat > CMakeLists.txt << EOF
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
-# Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # The Original Code is Copyright (C) 2006, Blender Foundation
 # All rights reserved.
@@ -114,7 +114,7 @@ incs = ['include']
 if env['WITH_BF_BOOST']:
     if env['OURPLATFORM'] not in ('win32-vc', 'win64-vc'):
         # Boost is setting as preferred collections library in the Carve code when using MSVC compiler
-        if env['OURPLATFORM'] != 'win32-mingw':
+        if env['OURPLATFORM'] not in ('win32-mingw', 'win64-mingw'):
             defs.append('HAVE_BOOST_UNORDERED_COLLECTIONS')
 
     defs.append('CARVE_SYSTEM_BOOST')

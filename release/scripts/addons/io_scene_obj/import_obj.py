@@ -383,7 +383,7 @@ def split_mesh(verts_loc, faces, unique_materials, filepath, SPLIT_OB_OR_GROUP):
                 faces_split = []
                 verts_split = []
                 unique_materials_split = {}
-                vert_remap = [-1] * len(verts_loc)
+                vert_remap = {}
 
                 face_split_dict[key] = (verts_split, faces_split, unique_materials_split, vert_remap)
 
@@ -393,13 +393,13 @@ def split_mesh(verts_loc, faces, unique_materials, filepath, SPLIT_OB_OR_GROUP):
 
         # Remap verts to new vert list and add where needed
         for enum, i in enumerate(face_vert_loc_indices):
-            if vert_remap[i] == -1:
-                new_index = len(verts_split)
-                vert_remap[i] = new_index  # set the new remapped index so we only add once and can reference next time.
-                face_vert_loc_indices[enum] = new_index  # remap to the local index
+            map_index = vert_remap.get(i)
+            if map_index is None:
+                map_index = len(verts_split)
+                vert_remap[i] = map_index  # set the new remapped index so we only add once and can reference next time.
                 verts_split.append(verts_loc[i])  # add the vert to the local verts
-            else:
-                face_vert_loc_indices[enum] = vert_remap[i]  # remap to the local index
+
+            face_vert_loc_indices[enum] = map_index  # remap to the local index
 
             matname = face[2]
             if matname and matname not in unique_materials_split:
@@ -428,7 +428,7 @@ def create_mesh(new_objects,
     Takes all the data gathered and generates a mesh, adding the new object to new_objects
     deals with fgons, sharp edges and assigning materials
     '''
-    from bpy_extras.mesh_utils import ngon_tesselate
+    from bpy_extras.mesh_utils import ngon_tessellate
 
     if not has_ngons:
         use_ngons = False
@@ -490,7 +490,7 @@ def create_mesh(new_objects,
             # FGons into triangles
             if has_ngons and len_face_vert_loc_indices > 4:
 
-                ngon_face_indices = ngon_tesselate(verts_loc, face_vert_loc_indices)
+                ngon_face_indices = ngon_tessellate(verts_loc, face_vert_loc_indices)
                 faces.extend([([face_vert_loc_indices[ngon[0]],
                                 face_vert_loc_indices[ngon[1]],
                                 face_vert_loc_indices[ngon[2]],
@@ -550,7 +550,7 @@ def create_mesh(new_objects,
         me.materials.append(material)
 
     me.vertices.add(len(verts_loc))
-    me.faces.add(len(faces))
+    me.tessfaces.add(len(faces))
 
     # verts_loc is a list of (x, y, z) tuples
     me.vertices.foreach_set("co", unpack_list(verts_loc))
@@ -558,14 +558,14 @@ def create_mesh(new_objects,
     # faces is a list of (vert_indices, texco_indices, ...) tuples
     # XXX faces should contain either 3 or 4 verts
     # XXX no check for valid face indices
-    me.faces.foreach_set("vertices_raw", unpack_face_list([f[0] for f in faces]))
+    me.tessfaces.foreach_set("vertices_raw", unpack_face_list([f[0] for f in faces]))
 
-    if verts_tex and me.faces:
-        me.uv_textures.new()
+    if verts_tex and me.tessfaces:
+        me.tessface_uv_textures.new()
 
     context_material_old = -1  # avoid a dict lookup
     mat = 0  # rare case it may be un-initialized.
-    me_faces = me.faces
+    me_faces = me.tessfaces
 
     for i, face in enumerate(faces):
         if len(face[0]) < 2:
@@ -575,7 +575,7 @@ def create_mesh(new_objects,
                 edges.append(face[0])
         else:
 
-            blender_face = me.faces[i]
+            blender_face = me.tessfaces[i]
 
             (face_vert_loc_indices,
              face_vert_tex_indices,
@@ -597,7 +597,7 @@ def create_mesh(new_objects,
 
             if verts_tex:
 
-                blender_tface = me.uv_textures[0].data[i]
+                blender_tface = me.tessface_uv_textures[0].data[i]
 
                 if context_material:
                     image, has_data = unique_material_images[context_material]

@@ -11,7 +11,8 @@ try:
 except:
     pass    
 
-from add_utils import AddObjectHelper, add_object_data
+from bpy_extras.object_utils import AddObjectHelper, object_data_add
+
 from collections import Counter
 
 '''PKHG not needed?
@@ -41,8 +42,8 @@ def vefm_add_object(selfobj):
     m = bpy.data.meshes.new(name= selfobj.name)
     m.from_pydata(v, e, f )
     # useful for development when the mesh may be invalid.
-    m.validate(verbose = False)
-    add_object_data(bpy.context, m, operator = None)    
+#PKHG not needed, as ideasman_42 says    m.validate(verbose = False)
+    object_data_add(bpy.context, m, operator = None)
 #???ERROR PKHG in AddSelf    setMaterial(bpy.context.active_object,pkhg_red_color)
 
 #extra test phase
@@ -920,8 +921,8 @@ class importmesh(mesh):
             newedge = edge(tmp[0],tmp[1])
             newedge.index = e.index
             self.edges.append(newedge)            
-#PKHG faces
-        for f in impmesh.data.faces:
+#PKHG faces with out bmesh replace next line polygons by faces
+        for f in impmesh.data.polygons:
             temp=[]
             for vert in f.vertices:  #PKHG a list! of indices 
                 a = self.verts[vert] #PKHG verts contains already vertex objects

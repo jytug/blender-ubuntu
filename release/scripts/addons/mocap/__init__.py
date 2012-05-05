@@ -21,11 +21,11 @@
 bl_info = {
     "name": "Motion Capture Tools",
     "author": "Benjy Cook",
-    "blender": (2, 5, 9),
+    "blender": (2, 6, 2),
     "location": "Object UI -> Mocap tools",
     "description": "Various tools for working with motion capture animation",
     "warning": "",
-    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/Scripts/Animation/Motion_Capture_Tools",
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Animation/Motion_Capture_Tools",
     "tracker_url": "http://projects.blender.org/tracker/index.php?func=detail&aid=28321",
     "support": 'OFFICIAL',
     "category": "Animation"}
@@ -145,7 +145,7 @@ class AnimationStitchSettings(bpy.types.PropertyGroup):
     blend_frame = IntProperty(name="Stitch frame",
             description="Frame to locate stitch on")
     blend_amount = IntProperty(name="Blend amount",
-            description="Size of blending transitiion, on both sides of the stitch",
+            description="Size of blending transition, on both sides of the stitch",
             default=10)
     second_offset = IntProperty(name="Second offset",
             description="Frame offset for 2nd animation, where it should start",
@@ -312,7 +312,7 @@ class MocapPanel(bpy.types.Panel):
                     for bone in perf.bones:
                         footCol.prop(data=bone, property='foot', text='', icon='POSE_DATA')
                         nameCol.label(bone.name)
-                        mapCol.prop_search(bone, "map", enduser_arm, "bones")
+                        mapCol.prop_search(bone, "map", enduser_arm, "bones", text='')
                         selectCol.operator("mocap.selectmap", text='', icon='CURSOR').perf_bone = bone.name
                         label_mod = "FK"
                         if bone.map:
@@ -370,7 +370,7 @@ class MocapConstraintsPanel(bpy.types.Panel):
                         headerRow.operator("mocap.removeconstraint", text="", icon='X', emboss=False).constraint = i
                         if m_constraint.show_expanded:
                             box.separator()
-                            box.prop_search(m_constraint, 'constrained_bone', enduser_obj.pose, "bones", icon='BONE_DATA')
+                            box.prop_search(m_constraint, 'constrained_bone', enduser_obj.pose, "bones", icon='BONE_DATA',text='')
                             if m_constraint.type == "distance" or m_constraint.type == "point":
                                 box.prop_search(m_constraint, 'constrained_boneB', enduser_obj.pose, "bones", icon='CONSTRAINT_BONE')
                             frameRow = box.row()
@@ -564,7 +564,7 @@ class OBJECT_OT_LooperButton(bpy.types.Operator):
     #Operator to trim fcurves which contain a few loops to a single one on the selected object
     '''Trim active armature's animation to a single cycle, given a cyclic animation (such as a walk cycle)'''
     bl_idname = "mocap.looper"
-    bl_label = "loop animation / sampled mocap data"
+    bl_label = "Loop animation / sampled mocap data"
 
     def execute(self, context):
         mocap_tools.autoloop_anim()
@@ -648,7 +648,7 @@ class OBJECT_OT_RotateFixArmature(bpy.types.Operator):
 
 class OBJECT_OT_ScaleFixArmature(bpy.types.Operator):
     #Operator to scale down the selected armature to match the active one
-    '''Rescale selected armature to match the active animation, for convienence'''
+    '''Rescale selected armature to match the active animation, for convenience'''
     bl_idname = "mocap.scale_fix"
     bl_label = "Scale performer armature to match target armature"
 

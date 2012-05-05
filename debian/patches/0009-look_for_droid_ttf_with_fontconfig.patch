@@ -1,5 +1,5 @@
 From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
-Date: Tue, 21 Feb 2012 19:51:50 +0100
+Date: Sat, 28 Apr 2012 12:05:51 +0200
 Subject: look_for_droid_ttf_with_fontconfig
 
  * Remove bad installation of fonts directory into locales.
@@ -10,17 +10,17 @@ Signed-off-by: Kevin Roy <kiniou@gmail.com>
 ---
  CMakeLists.txt                                   |   10 +++++
  build_files/cmake/Modules/FindFontconfig.cmake   |   49 ++++++++++++++++++++++
- build_files/cmake/macros.cmake                   |    6 ++-
+ build_files/cmake/macros.cmake                   |    4 ++
  source/blender/blenfont/CMakeLists.txt           |    7 ++++
  source/blender/blenfont/intern/blf_translation.c |   23 ++++++++++
  source/blender/blenlib/BLI_fileops.h             |    1 +
  source/blender/blenlib/intern/fileops.c          |   43 +++++++++++++++++++
  source/creator/CMakeLists.txt                    |    1 -
- 8 files changed, 138 insertions(+), 2 deletions(-)
+ 8 files changed, 137 insertions(+), 1 deletion(-)
  create mode 100644 build_files/cmake/Modules/FindFontconfig.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index e0b14b7..139aed8 100644
+index 7e9e50f..c6e55db 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -117,6 +117,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
@@ -33,7 +33,7 @@ index e0b14b7..139aed8 100644
  
  option(WITH_PYTHON        "Enable Embedded Python API  (only disable for development)" ON)
  option(WITH_PYTHON_SECURITY "Disables execution of scripts within blend files by default (recommend to leave off)" OFF)
-@@ -510,6 +513,13 @@ if(UNIX AND NOT APPLE)
+@@ -581,6 +584,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -103,10 +103,10 @@ index 0000000..337ece9
 +
 +endif (FONTCONFIG_LIBRARIES AND FONTCONFIG_INCLUDE_DIR)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 406f253..ba88ea8 100644
+index eeefcf7..6de7fa8 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -244,6 +244,10 @@ macro(setup_liblinks
+@@ -242,6 +242,10 @@ macro(setup_liblinks
  		endif()
  	endif()
  
@@ -117,13 +117,6 @@ index 406f253..ba88ea8 100644
  	if(WITH_OPENAL)
  		target_link_libraries(${target} ${OPENAL_LIBRARY})
  	endif()
-@@ -677,4 +681,4 @@ macro(set_lib_path
- 	endif()
- 
- 
--endmacro()
-\ No newline at end of file
-+endmacro()
 diff --git a/source/blender/blenfont/CMakeLists.txt b/source/blender/blenfont/CMakeLists.txt
 index ebf9ff4..550aa0d 100644
 --- a/source/blender/blenfont/CMakeLists.txt
@@ -143,7 +136,7 @@ index ebf9ff4..550aa0d 100644
  
  blender_add_lib(bf_blenfont "${SRC}" "${INC}" "${INC_SYS}")
 diff --git a/source/blender/blenfont/intern/blf_translation.c b/source/blender/blenfont/intern/blf_translation.c
-index 0ddb654..83ed78b 100644
+index 12fa15a..8100fad 100644
 --- a/source/blender/blenfont/intern/blf_translation.c
 +++ b/source/blender/blenfont/intern/blf_translation.c
 @@ -57,13 +57,35 @@
@@ -153,14 +146,14 @@ index 0ddb654..83ed78b 100644
 +#ifdef WITH_FONTCONFIG
 +#include <fontconfig/fontconfig.h>
 +#else
- static const char unifont_filename[]="droidsans.ttf.gz";
+ static const char unifont_filename[] ="droidsans.ttf.gz";
 +#endif
- static unsigned char *unifont_ttf= NULL;
- static int unifont_size= 0;
+ static unsigned char *unifont_ttf = NULL;
+ static int unifont_size = 0;
  
  unsigned char *BLF_get_unifont(int *unifont_size_r)
  {
- 	if(unifont_ttf==NULL) {
+ 	if (unifont_ttf == NULL) {
 +#ifdef WITH_FONTCONFIG
 +		FcFontSet *fontset = NULL;
 +		FcValue v;
@@ -189,12 +182,12 @@ index 0ddb654..83ed78b 100644
 +#endif
  	}
  
- 	*unifont_size_r= unifont_size;
+ 	*unifont_size_r = unifont_size;
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index 2e8f1a5..0e66218 100644
+index 73220cb..30981d9 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
-@@ -70,6 +70,7 @@ int    BLI_file_touch(const char *file);
+@@ -79,6 +79,7 @@ int    BLI_file_touch(const char *file);
  
  int    BLI_file_gzip(const char *from, const char *to);
  char  *BLI_file_ungzip_to_mem(const char *from_file, int *size_r);
@@ -203,10 +196,10 @@ index 2e8f1a5..0e66218 100644
  size_t BLI_file_descriptor_size(int file);
  size_t BLI_file_size(const char *file);
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index ad04780..f902106 100644
+index 4b5ea44..2fa648b 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
-@@ -147,6 +147,49 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
+@@ -152,6 +152,49 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
  	return mem;
  }
  
@@ -257,10 +250,10 @@ index ad04780..f902106 100644
  /* return 1 when file can be written */
  int BLI_file_is_writable(const char *filename)
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 46b8fe3..f047426 100644
+index 2e7c1cd..3e34146 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -286,7 +286,6 @@ if(WITH_INTERNATIONAL)
+@@ -294,7 +294,6 @@ if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY
  			${CMAKE_SOURCE_DIR}/release/datafiles/locale/
