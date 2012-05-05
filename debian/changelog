@@ -2,7 +2,7 @@ blender (2.63-1~cycles) UNRELEASED; urgency=low
 
   * debian/: Cycles support added (Closes: #658075)
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 16 Apr 2012 18:27:49 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 05 May 2012 18:05:04 +0200
 
 blender (2.63-1) unstable; urgency=low
 
