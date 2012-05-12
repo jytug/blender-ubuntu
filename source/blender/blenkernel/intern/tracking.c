@@ -680,6 +680,8 @@ void BKE_tracking_clipboard_copy_tracks(MovieTracking *tracking, MovieTrackingOb
 	ListBase *tracksbase = BKE_tracking_object_tracks(tracking, object);
 	MovieTrackingTrack *track = tracksbase->first;
 
+	BKE_tracking_free_clipboard();
+
 	while (track) {
 		if (TRACK_SELECTED(track) && (track->flag & TRACK_HIDDEN) == 0) {
 			MovieTrackingTrack *new_track = duplicate_track(track);
@@ -1164,7 +1166,13 @@ static ImBuf *get_area_imbuf(ImBuf *ibuf, MovieTrackingTrack *track, MovieTracki
 	x1 = x-(int)(w * (-min[0] / (max[0] - min[0])));
 	y1 = y-(int)(h * (-min[1] / (max[1] - min[1])));
 
-	tmpibuf = IMB_allocImBuf(w+margin*2, h+margin*2, 32, IB_rect);
+	if (ibuf->rect_float)
+		tmpibuf = IMB_allocImBuf(w + margin * 2, h + margin * 2, 32, IB_rectfloat);
+	else
+		tmpibuf = IMB_allocImBuf(w + margin * 2, h + margin * 2, 32, IB_rect);
+
+	tmpibuf->profile = ibuf->profile;
+
 	IMB_rectcpy(tmpibuf, ibuf, 0, 0, x1 - margin, y1 - margin, w + margin * 2, h + margin * 2);
 
 	if (pos != NULL) {
