@@ -184,10 +184,10 @@ index 12fa15a..8100fad 100644
  
  	*unifont_size_r = unifont_size;
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index 73220cb..30981d9 100644
+index 1bf4efc..5e4db1a 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
-@@ -79,6 +79,7 @@ int    BLI_file_touch(const char *file);
+@@ -80,6 +80,7 @@ int    BLI_file_touch(const char *file);
  
  int    BLI_file_gzip(const char *from, const char *to);
  char  *BLI_file_ungzip_to_mem(const char *from_file, int *size_r);

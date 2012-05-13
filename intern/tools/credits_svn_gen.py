@@ -255,7 +255,6 @@ author_name_mapping = {
     "xglasyliax": "Peter Larabell",
     "lockal": "Sv. Lockal",
     "kupoman": "Daniel Stokes",
-    "xercesblue": "Francisco De La Cruz",
     # TODO, find remaining names
     "nlin": "",
     }
@@ -499,7 +498,6 @@ def main():
                (fn, now.year, now.month, now.day))
 
     file.close()
-    print("written: credits.html")
 
 if __name__ == "__main__":
     main()
