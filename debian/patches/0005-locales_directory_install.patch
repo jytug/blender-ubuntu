@@ -11,7 +11,7 @@ Change where locales are installed
  4 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 435ca87..8f48bae 100644
+index 435ca87..20cd74a 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
 @@ -110,7 +110,7 @@ static const char *locales[] = {
@@ -19,7 +19,7 @@ index 435ca87..8f48bae 100644
  void BLF_lang_init(void)
  {
 -	char *messagepath = BLI_get_folder(BLENDER_DATAFILES, "locale");
-+	char *messagepath= BLI_get_folder(BLENDER_SYSTEM_LOCALE, NULL);
++	char *messagepath = BLI_get_folder(BLENDER_SYSTEM_LOCALE, NULL);
  	
  	BLI_strncpy(global_encoding_name, SYSTEM_ENCODING_DEFAULT, sizeof(global_encoding_name));
  	
@@ -50,7 +50,7 @@ index 3c59ca8..4cf617f 100644
  	
  	return path;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index dadf1fc..857e3d4 100644
+index 3632b84..47b4853 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -293,9 +293,9 @@ endif()

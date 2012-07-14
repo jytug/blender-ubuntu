@@ -1,6 +1,6 @@
 0001-blender_thumbnailer.patch
 0002-disable_tests.patch
-0003-install_in_usr_lib.patch
+0003-install_in_usr_share.patch
 0004-filter_docs_to_install.patch
 0005-locales_directory_install.patch
 0006-update_manpages.patch

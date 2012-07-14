@@ -250,7 +250,7 @@ index 4b5ea44..2fa648b 100644
  /* return 1 when file can be written */
  int BLI_file_is_writable(const char *filename)
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 2e7c1cd..3e34146 100644
+index 712f608..0f86f85 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -294,7 +294,6 @@ if(WITH_INTERNATIONAL)
