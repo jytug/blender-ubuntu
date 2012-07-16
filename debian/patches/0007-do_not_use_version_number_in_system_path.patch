@@ -1,0 +1,23 @@
+From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+Date: Sun, 15 Jul 2012 16:10:09 +0200
+Subject: do_not_use_version_number_in_system_path
+
+Global installation expects system path to be something
+like /usr/share/blender/scripts/ without version numbers.
+---
+ source/creator/CMakeLists.txt |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
+index 946f143..c466a36 100644
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -241,7 +241,7 @@ if(UNIX AND NOT APPLE)
+ 		if(WITH_PYTHON_MODULE)
+ 			set(TARGETDIR_VER ${PYTHON_LIBPATH}/python${PYTHON_VERSION}/site-packages/${BLENDER_VERSION})
+ 		else()
+-			set(TARGETDIR_VER ${CMAKE_INSTALL_PREFIX}/share/blender/${BLENDER_VERSION})
++			set(TARGETDIR_VER ${CMAKE_INSTALL_PREFIX}/share/blender)
+ 		endif()
+ 	endif()
+ 
