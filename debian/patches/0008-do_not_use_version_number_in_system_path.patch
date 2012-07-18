@@ -1,6 +1,6 @@
 From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
 Date: Sun, 15 Jul 2012 16:10:09 +0200
-Subject: do_not_use_version_number_in_the_system_path
+Subject: do_not_use_version_number_in_system_path
 
 Global installation expects system patch to be something like
 /usr/share/blender/scripts/ without version numbers.
