@@ -55,7 +55,7 @@ Depends: python3.2,
          ${misc:Depends},
          ${shlibs:Depends}
 Suggests: libtiff4,
-          yafaray
+          yafaray-exporter
 Description: Very fast and versatile 3D modeller/renderer
  Blender is an integrated 3d suite for modelling, animation, rendering,
  post-production, interactive creation and playback (games). Blender has its
