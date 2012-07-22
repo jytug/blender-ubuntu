@@ -2,6 +2,7 @@ blender (2.63a-1+cycles) UNRELEASED; urgency=low
 
   * debian/: Cycles support added (Closes: #658075)
   * debian/patches/: patchset re-worked for path changing
+  * debian/control: "Breaks" field added on yafaray-exporter
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sun, 13 May 2012 15:45:05 +0200
 
