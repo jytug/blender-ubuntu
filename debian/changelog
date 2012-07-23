@@ -1,4 +1,4 @@
-blender (2.63a-2) UNRELEASED; urgency=low
+blender (2.63a-2) experimental; urgency=low
 
   * debian/: Cycles support added (Closes: #658075)
     For now, this top feature has been enabled only
@@ -9,7 +9,7 @@ blender (2.63a-2) UNRELEASED; urgency=low
     + debian/patches/: patchset re-worked for path changing
     + debian/control: "Breaks" field added on yafaray-exporter
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sun, 13 May 2012 15:45:05 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 23 Jul 2012 08:54:18 +0200
 
 blender (2.63a-1) unstable; urgency=low
 
