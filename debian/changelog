@@ -1,6 +1,9 @@
 blender (2.63a-2) UNRELEASED; urgency=low
 
   * debian/: Cycles support added (Closes: #658075)
+    For now, this top feature has been enabled only
+    on [any-amd64 any-i386] architectures because
+    of OpenImageIO failing on all others
   * debian/: scripts installation path changed
     from /usr/lib to /usr/share:
     + debian/patches/: patchset re-worked for path changing
