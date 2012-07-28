@@ -226,7 +226,7 @@ index 4b5ea44..2fa648b 100644
 +            alloc_size+= chunk_size;
 +        }
 +
-+        readsize= fread(mem+size, chunk_size,1,file);
++        readsize= fread(mem+size, 1, chunk_size, file);
 +        if(readsize>0) {
 +            size+= readsize;
 +        }
