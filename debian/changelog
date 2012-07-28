@@ -1,3 +1,10 @@
+blender (2.63a-3) UNRELEASED; urgency=low
+
+  * debian/patches/: #0009 changed to fix l10n issue.
+    Thanks to IRIE Shinsuke for pointing this out (Closes: #683078)
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 28 Jul 2012 17:49:14 +0200
+
 blender (2.63a-2) experimental; urgency=low
 
   * debian/: Cycles support added (Closes: #658075)
