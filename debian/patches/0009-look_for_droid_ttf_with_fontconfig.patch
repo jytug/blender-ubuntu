@@ -196,7 +196,7 @@ index 1bf4efc..5e4db1a 100644
  size_t BLI_file_descriptor_size(int file);
  size_t BLI_file_size(const char *file);
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index 4b5ea44..2fa648b 100644
+index 4b5ea44..7864a69 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
 @@ -152,6 +152,49 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
