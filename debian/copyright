@@ -1,7 +1,7 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: blender
 Upstream-Author: Blender Foundation
-Source: http://download.blender.org/source/
+Source: http://www.blender.org/
 
 Files: *
 Copyright: 2002-2010, Blender Foundation
