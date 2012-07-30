@@ -2,6 +2,8 @@ blender (2.63a-3) UNRELEASED; urgency=low
 
   * debian/patches/: #0009 changed to fix l10n issue.
     Thanks to IRIE Shinsuke for pointing this out (Closes: #683078)
+  * debian/patches/: #0001 updated to fix thumbnailer issue.
+    Thanks to IRIE Shinsuke for the hint (Closes: #683046)
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 28 Jul 2012 17:49:14 +0200
 
