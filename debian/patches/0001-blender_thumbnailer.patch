@@ -1,14 +1,27 @@
-From: Kevin Roy <kiniou@gmail.com>
-Date: Thu, 14 Apr 2011 14:55:23 +0200
+From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+Date: Mon, 30 Jul 2012 10:53:09 +0200
 Subject: blender_thumbnailer
 
 * Move thumbnailer script to an appropriate destination
+* Add blender.thumbnailer file
 * Change to python 3.2 since lintian is messing around with that
 ---
+ blender.thumbnailer                |    4 ++++
  release/bin/blender-thumbnailer.py |    4 ++--
  source/creator/CMakeLists.txt      |    2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ 3 files changed, 7 insertions(+), 3 deletions(-)
+ create mode 100644 blender.thumbnailer
 
+diff --git a/blender.thumbnailer b/blender.thumbnailer
+new file mode 100644
+index 0000000..05d4fae
+--- /dev/null
++++ b/blender.thumbnailer
+@@ -0,0 +1,4 @@
++[Thumbnailer Entry]
++TryExec=/usr/share/blender/scripts/blender-thumbnailer.py
++Exec=/usr/share/blender/scripts/blender-thumbnailer.py %i %o
++MimeType=application/x-blender;
 diff --git a/release/bin/blender-thumbnailer.py b/release/bin/blender-thumbnailer.py
 index 8b93eeb..44ffd48 100755
 --- a/release/bin/blender-thumbnailer.py
