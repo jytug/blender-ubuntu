@@ -4,6 +4,9 @@ blender (2.63a-3) UNRELEASED; urgency=low
     Thanks to IRIE Shinsuke for pointing this out (Closes: #683078)
   * debian/patches/: #0001 updated to fix thumbnailer issue.
     Thanks to IRIE Shinsuke for the hint (Closes: #683046)
+  * debian/copyright: upstream URL updated
+  * debian/control: libspnav-dev added to b-deps.
+    Thanks to Davide G. Borin for the hint (Closes: #685535)
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 28 Jul 2012 17:49:14 +0200
 
