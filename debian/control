@@ -42,7 +42,8 @@ Build-Depends: autotools-dev,
                libfontconfig-dev,
                pkg-config,
                python-support,
-               python3.2-dev
+               python3.2-dev,
+               subversion
 Build-Conflicts: nvidia-glx
 Standards-Version: 3.9.3
 Homepage: http://blender.org
