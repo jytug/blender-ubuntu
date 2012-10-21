@@ -138,8 +138,8 @@ void BPy_BM_init_types(void);
 PyObject *BPyInit_bmesh_types(void);
 
 enum {
-    BPY_BMFLAG_NOP = 0,       /* do nothing */
-    BPY_BMFLAG_IS_WRAPPED = 1 /* the mesh is owned by editmode */
+	BPY_BMFLAG_NOP = 0,       /* do nothing */
+	BPY_BMFLAG_IS_WRAPPED = 1 /* the mesh is owned by editmode */
 };
 
 PyObject *BPy_BMesh_CreatePyObject(BMesh *bm, int flag);
@@ -185,5 +185,14 @@ char     *BPy_BMElem_StringFromHType(const char htype);
 	                       );                                                 \
 	     ele;                                                                 \
 	     ele = BM_iter_step(iter))
+
+
+#ifdef __PY_CAPI_UTILS_H__
+struct PyC_FlagSet;
+extern struct PyC_FlagSet bpy_bm_scene_vert_edge_face_flags[];
+extern struct PyC_FlagSet bpy_bm_htype_vert_edge_face_flags[];
+extern struct PyC_FlagSet bpy_bm_htype_all_flags[];
+extern struct PyC_FlagSet bpy_bm_hflag_all_flags[];
+#endif
 
 #endif /* __BMESH_TYPES_H__ */

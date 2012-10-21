@@ -29,7 +29,6 @@
  *  \ingroup bke
  */
 
-
 #include <stddef.h>
 
 #include <math.h>
@@ -98,8 +97,6 @@
 #include <string.h>
 #endif // WITH_MOD_FLUID
 
-//XXX #include "BIF_screen.h"
-
 EffectorWeights *BKE_add_effector_weights(Group *group)
 {
 	EffectorWeights *weights = MEM_callocN(sizeof(EffectorWeights), "EffectorWeights");
@@ -129,7 +126,7 @@ PartDeflect *object_add_collision_fields(int type)
 	pd->f_damp = 1.0f;
 
 	/* set sensible defaults based on type */
-	switch(type) {
+	switch (type) {
 		case PFIELD_VORTEX:
 			pd->shape = PFIELD_SHAPE_PLANE;
 			break;
@@ -181,7 +178,7 @@ static void precalculate_effector(EffectorCache *eff)
 		Curve *cu= eff->ob->data;
 		if (cu->flag & CU_PATH) {
 			if (cu->path==NULL || cu->path->data==NULL)
-				makeDispListCurveTypes(eff->scene, eff->ob, 0);
+				BKE_displist_make_curveTypes(eff->scene, eff->ob, 0);
 
 			if (cu->path && cu->path->data) {
 				where_on_path(eff->ob, 0.0, eff->guide_loc, eff->guide_dir, NULL, &eff->guide_radius, NULL);
@@ -202,9 +199,9 @@ static void precalculate_effector(EffectorCache *eff)
 	if (eff->ob) {
 		float old_vel[3];
 
-		where_is_object_time(eff->scene, eff->ob, cfra - 1.0f);
+		BKE_object_where_is_calc_time(eff->scene, eff->ob, cfra - 1.0f);
 		copy_v3_v3(old_vel, eff->ob->obmat[3]);	
-		where_is_object_time(eff->scene, eff->ob, cfra);
+		BKE_object_where_is_calc_time(eff->scene, eff->ob, cfra);
 		sub_v3_v3v3(eff->velocity, eff->ob->obmat[3], old_vel);
 	}
 }
@@ -393,7 +390,7 @@ void pd_point_from_soft(Scene *scene, float *loc, float *vel, int index, Effecte
 // triangle - ray callback function
 static void eff_tri_ray_hit(void *UNUSED(userData), int UNUSED(index), const BVHTreeRay *UNUSED(ray), BVHTreeRayHit *hit)
 {	
-	// whenever we hit a bounding box, we don't check further
+	/* whenever we hit a bounding box, we don't check further */
 	hit->dist = -1;
 	hit->index = 1;
 }
@@ -418,25 +415,24 @@ static float eff_calc_visibility(ListBase *colliders, EffectorCache *eff, Effect
 	negate_v3_v3(norm, efd->vec_to_point);
 	len = normalize_v3(norm);
 	
-	// check all collision objects
-	for (col = colls->first; col; col = col->next)
-	{
+	/* check all collision objects */
+	for (col = colls->first; col; col = col->next) {
 		CollisionModifierData *collmd = col->collmd;
 
 		if (col->ob == eff->ob)
 			continue;
-		
+
 		if (collmd->bvhtree) {
 			BVHTreeRayHit hit;
-			
+
 			hit.index = -1;
 			hit.dist = len + FLT_EPSILON;
-			
-			// check if the way is blocked
+
+			/* check if the way is blocked */
 			if (BLI_bvhtree_ray_cast(collmd->bvhtree, point->loc, norm, 0.0f, &hit, eff_tri_ray_hit, NULL)>=0) {
 				absorption= col->ob->pd->absorption;
 
-				// visibility is only between 0 and 1, calculated from 1-absorption
+				/* visibility is only between 0 and 1, calculated from 1-absorption */
 				visibility *= CLAMPIS(1.0f-absorption, 0.0f, 1.0f);
 				
 				if (visibility <= 0.0f)
@@ -506,7 +502,8 @@ float effector_falloff(EffectorCache *eff, EffectorData *efd, EffectedPoint *UNU
 		falloff=0.0f;
 	else if (eff->pd->zdir == PFIELD_Z_NEG && fac > 0.0f)
 		falloff=0.0f;
-	else switch(eff->pd->falloff) {
+	else {
+		switch (eff->pd->falloff) {
 		case PFIELD_FALL_SPHERE:
 			falloff*= falloff_func_dist(eff->pd, efd->distance);
 			break;
@@ -529,6 +526,7 @@ float effector_falloff(EffectorCache *eff, EffectorData *efd, EffectedPoint *UNU
 			falloff*= falloff_func_rad(eff->pd, r_fac);
 
 			break;
+		}
 	}
 
 	return falloff;
@@ -755,7 +753,7 @@ static void do_texture_effector(EffectorCache *eff, EffectorData *efd, EffectedP
 
 	strength= eff->pd->f_strength * efd->falloff;
 
-	copy_v3_v3(tex_co,point->loc);
+	copy_v3_v3(tex_co, point->loc);
 
 	if (eff->pd->flag & PFIELD_TEX_2D) {
 		float fac=-dot_v3v3(tex_co, efd->nor);
@@ -766,7 +764,7 @@ static void do_texture_effector(EffectorCache *eff, EffectorData *efd, EffectedP
 		mul_m4_v3(eff->ob->imat, tex_co);
 	}
 
-	hasrgb = multitex_ext(eff->pd->tex, tex_co, NULL,NULL, 0, result);
+	hasrgb = multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result);
 
 	if (hasrgb && mode==PFIELD_TEX_RGB) {
 		force[0] = (0.5f - result->tr) * strength;
@@ -788,6 +786,12 @@ static void do_texture_effector(EffectorCache *eff, EffectorData *efd, EffectedP
 		multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result+3);
 
 		if (mode == PFIELD_TEX_GRAD || !hasrgb) { /* if we don't have rgb fall back to grad */
+			/* generate intensity if texture only has rgb value */
+			if (hasrgb & TEX_RGB) {
+				int i;
+				for (i=0; i<4; i++)
+					result[i].tin = (1.0f / 3.0f) * (result[i].tr + result[i].tg + result[i].tb);
+			}
 			force[0] = (result[0].tin - result[1].tin) * strength;
 			force[1] = (result[0].tin - result[2].tin) * strength;
 			force[2] = (result[0].tin - result[3].tin) * strength;
@@ -819,7 +823,7 @@ static void do_physical_effector(EffectorCache *eff, EffectorData *efd, Effected
 {
 	PartDeflect *pd = eff->pd;
 	RNG *rng = pd->rng;
-	float force[3]={0,0,0};
+	float force[3]={0, 0, 0};
 	float temp[3];
 	float fac;
 	float strength = pd->f_strength;
@@ -835,7 +839,7 @@ static void do_physical_effector(EffectorCache *eff, EffectorData *efd, Effected
 
 	copy_v3_v3(force, efd->vec_to_point);
 
-	switch(pd->forcefield) {
+	switch (pd->forcefield) {
 		case PFIELD_WIND:
 			copy_v3_v3(force, efd->nor);
 			mul_v3_fl(force, strength * efd->falloff);
@@ -904,9 +908,9 @@ static void do_physical_effector(EffectorCache *eff, EffectorData *efd, Effected
 			else {
 				add_v3_v3v3(temp, efd->vec_to_point2, efd->nor2);
 			}
-			force[0] = -1.0f + 2.0f * BLI_gTurbulence(pd->f_size, temp[0], temp[1], temp[2], 2,0,2);
-			force[1] = -1.0f + 2.0f * BLI_gTurbulence(pd->f_size, temp[1], temp[2], temp[0], 2,0,2);
-			force[2] = -1.0f + 2.0f * BLI_gTurbulence(pd->f_size, temp[2], temp[0], temp[1], 2,0,2);
+			force[0] = -1.0f + 2.0f * BLI_gTurbulence(pd->f_size, temp[0], temp[1], temp[2], 2, 0, 2);
+			force[1] = -1.0f + 2.0f * BLI_gTurbulence(pd->f_size, temp[1], temp[2], temp[0], 2, 0, 2);
+			force[2] = -1.0f + 2.0f * BLI_gTurbulence(pd->f_size, temp[2], temp[0], temp[1], 2, 0, 2);
 			mul_v3_fl(force, strength * efd->falloff);
 			break;
 		case PFIELD_DRAG:
@@ -928,6 +932,8 @@ static void do_physical_effector(EffectorCache *eff, EffectorData *efd, Effected
 		}
 	}
 
+	if (point->ave)
+		zero_v3(point->ave);
 	if (pd->flag & PFIELD_DO_ROTATION && point->ave && point->rot) {
 		float xvec[3] = {1.0f, 0.0f, 0.0f};
 		float dave[3];
@@ -992,12 +998,12 @@ void pdDoEffectors(ListBase *effectors, ListBase *colliders, EffectorWeights *we
 				else if (eff->pd->forcefield == PFIELD_TEXTURE)
 					do_texture_effector(eff, &efd, point, force);
 				else {
-					float temp1[3]={0,0,0}, temp2[3];
+					float temp1[3]={0, 0, 0}, temp2[3];
 					copy_v3_v3(temp1, force);
 
 					do_physical_effector(eff, &efd, point, force);
 					
-					// for softbody backward compatibility
+					/* for softbody backward compatibility */
 					if (point->flag & PE_WIND_AS_SPEED && impulse) {
 						sub_v3_v3v3(temp2, force, temp1);
 						sub_v3_v3v3(impulse, impulse, temp2);

@@ -27,12 +27,9 @@
 #ifndef __SUNSKY_H__
 #define __SUNSKY_H__
 
-#define SPECTRUM_MAX_COMPONENTS     100
-#define SPECTRUM_START              350.0
-#define SPECTRUM_END                800.0
+// #define SPECTRUM_MAX_COMPONENTS     100
 
-typedef struct SunSky
-{
+typedef struct SunSky {
 	short effect_type, skyblendtype, sky_colorspace;
 	float turbidity;
 	float theta, phi;
@@ -73,7 +70,7 @@ typedef struct SunSky
 } SunSky;
 
 void InitSunSky(struct SunSky *sunsky, float turb, float *toSun, float horizon_brightness, 
-                float spread,float sun_brightness, float sun_size, float back_scatter,
+                float spread, float sun_brightness, float sun_size, float back_scatter,
                 float skyblendfac, short skyblendtype, float sky_exposure, float sky_colorspace);
 
 void GetSkyXYZRadiance(struct SunSky *sunsky, float theta, float phi, float color_out[3]);

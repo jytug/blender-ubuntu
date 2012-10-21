@@ -103,7 +103,9 @@ static int wm_keymap_item_equals_result(wmKeyMapItem *a, wmKeyMapItem *b)
 	
 	if (!((a->ptr == NULL && b->ptr == NULL) ||
 	      (a->ptr && b->ptr && IDP_EqualsProperties(a->ptr->data, b->ptr->data))))
+	{
 		return 0;
+	}
 	
 	if ((a->flag & KMI_INACTIVE) != (b->flag & KMI_INACTIVE))
 		return 0;
@@ -327,7 +329,7 @@ static void keymap_item_set_id(wmKeyMap *keymap, wmKeyMapItem *kmi)
 		kmi->id = keymap->kmi_id;
 	}
 	else {
-		kmi->id = -keymap->kmi_id; // User defined keymap entries have negative ids
+		kmi->id = -keymap->kmi_id; /* User defined keymap entries have negative ids */
 	}
 }
 
@@ -783,8 +785,8 @@ char *WM_keymap_item_to_string(wmKeyMapItem *kmi, char *str, int len)
 	if (kmi->shift == KM_ANY &&
 	    kmi->ctrl == KM_ANY &&
 	    kmi->alt == KM_ANY &&
-	    kmi->oskey == KM_ANY) {
-
+	    kmi->oskey == KM_ANY)
+	{
 		strcat(buf, "Any ");
 	}
 	else {
@@ -813,8 +815,8 @@ char *WM_keymap_item_to_string(wmKeyMapItem *kmi, char *str, int len)
 }
 
 static wmKeyMapItem *wm_keymap_item_find_handlers(
-    const bContext *C, ListBase *handlers, const char *opname, int UNUSED(opcontext),
-    IDProperty *properties, int compare_props, int hotkey, wmKeyMap **keymap_r)
+        const bContext *C, ListBase *handlers, const char *opname, int UNUSED(opcontext),
+        IDProperty *properties, int compare_props, int hotkey, wmKeyMap **keymap_r)
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmEventHandler *handler;
@@ -854,8 +856,8 @@ static wmKeyMapItem *wm_keymap_item_find_handlers(
 }
 
 static wmKeyMapItem *wm_keymap_item_find_props(
-    const bContext *C, const char *opname, int opcontext,
-    IDProperty *properties, int compare_props, int hotkey, wmKeyMap **keymap_r)
+        const bContext *C, const char *opname, int opcontext,
+        IDProperty *properties, int compare_props, int hotkey, wmKeyMap **keymap_r)
 {
 	wmWindow *win = CTX_wm_window(C);
 	ScrArea *sa = CTX_wm_area(C);
@@ -865,7 +867,6 @@ static wmKeyMapItem *wm_keymap_item_find_props(
 	/* look into multiple handler lists to find the item */
 	if (win)
 		found = wm_keymap_item_find_handlers(C, &win->handlers, opname, opcontext, properties, compare_props, hotkey, keymap_r);
-	
 
 	if (sa && found == NULL)
 		found = wm_keymap_item_find_handlers(C, &sa->handlers, opname, opcontext, properties, compare_props, hotkey, keymap_r);
@@ -899,13 +900,13 @@ static wmKeyMapItem *wm_keymap_item_find_props(
 				found = wm_keymap_item_find_handlers(C, &ar->handlers, opname, opcontext, properties, compare_props, hotkey, keymap_r);
 		}
 	}
-	
+
 	return found;
 }
 
 static wmKeyMapItem *wm_keymap_item_find(
-    const bContext *C, const char *opname, int opcontext,
-    IDProperty *properties, const short hotkey, const short sloppy, wmKeyMap **keymap_r)
+        const bContext *C, const char *opname, int opcontext,
+        IDProperty *properties, const short hotkey, const short sloppy, wmKeyMap **keymap_r)
 {
 	wmKeyMapItem *found = wm_keymap_item_find_props(C, opname, opcontext, properties, 1, hotkey, keymap_r);
 
@@ -916,8 +917,8 @@ static wmKeyMapItem *wm_keymap_item_find(
 }
 
 char *WM_key_event_operator_string(
-    const bContext *C, const char *opname, int opcontext,
-    IDProperty *properties, const short sloppy, char *str, int len)
+        const bContext *C, const char *opname, int opcontext,
+        IDProperty *properties, const short sloppy, char *str, int len)
 {
 	wmKeyMapItem *kmi = wm_keymap_item_find(C, opname, opcontext, properties, 0, sloppy, NULL);
 	
@@ -930,8 +931,8 @@ char *WM_key_event_operator_string(
 }
 
 int WM_key_event_operator_id(
-    const bContext *C, const char *opname, int opcontext,
-    IDProperty *properties, int hotkey, wmKeyMap **keymap_r)
+        const bContext *C, const char *opname, int opcontext,
+        IDProperty *properties, int hotkey, wmKeyMap **keymap_r)
 {
 	wmKeyMapItem *kmi = wm_keymap_item_find(C, opname, opcontext, properties, hotkey, TRUE, keymap_r);
 	

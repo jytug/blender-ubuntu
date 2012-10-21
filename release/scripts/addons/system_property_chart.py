@@ -26,7 +26,7 @@ bl_info = {
     "location": "Tool Shelf",
     "description": "Edit arbitrary selected properties for objects of the same type",
     "warning": "",
-    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.5/Py/"\
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"\
         "Scripts/System/Object Property Chart",
     "tracker_url": "https://projects.blender.org/tracker/index.php?"\
         "func=detail&aid=22701",
@@ -54,9 +54,9 @@ def _property_chart_data_get(self, context):
 
 
 def _property_chart_draw(self, context):
-    '''
+    """
     This function can run for different types.
-    '''
+    """
     obj, selected_objects = _property_chart_data_get(self, context)
 
     if not obj:
@@ -101,7 +101,7 @@ def _property_chart_draw(self, context):
             prop_found = False
             for attr_string in strings:
                 prop_pairs.append(obj_prop_get(obj, attr_string))
-                if prop_found == False and prop_pairs[-1] != (None, None):
+                if prop_found is False and prop_pairs[-1] != (None, None):
                     prop_found = True
 
             if prop_found:

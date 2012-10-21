@@ -38,7 +38,6 @@
 #include "BLI_ghash.h"
 #include "BLI_memarena.h"
 
-#include "BKE_utildefines.h"
 #include "BKE_tessmesh.h"
 #include "BKE_bmesh.h"
 
@@ -67,12 +66,12 @@
 
 /* ------- Bevel code starts here -------- */
 
-BME_TransData_Head *BME_init_transdata(int bufsize)
+static BME_TransData_Head *BME_init_transdata(int bufsize)
 {
 	BME_TransData_Head *td;
 
 	td = MEM_callocN(sizeof(BME_TransData_Head), "BM transdata header");
-	td->gh = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, "BME_init_transdata gh");
+	td->gh = BLI_ghash_ptr_new("BME_init_transdata gh");
 	td->ma = BLI_memarena_new(bufsize, "BME_TransData arena");
 	BLI_memarena_use_calloc(td->ma);
 
@@ -86,9 +85,9 @@ void BME_free_transdata(BME_TransData_Head *td)
 	MEM_freeN(td);
 }
 
-BME_TransData *BME_assign_transdata(BME_TransData_Head *td, BMesh *bm, BMVert *v,
-                                    float *co, float *org, float *vec, float *loc,
-                                    float factor, float weight, float maxfactor, float *max)
+static BME_TransData *BME_assign_transdata(BME_TransData_Head *td, BMesh *bm, BMVert *v,
+                                           float *co, float *org, float *vec, float *loc,
+                                           float factor, float weight, float maxfactor, float *max)
 {
 	BME_TransData *vtd;
 	int is_new = 0;
@@ -141,7 +140,7 @@ BME_TransData *BME_get_transdata(BME_TransData_Head *td, BMVert *v)
 }
 
 /* a hack (?) to use the transdata memarena to allocate floats for use with the max limits */
-float *BME_new_transdata_float(BME_TransData_Head *td)
+static float *BME_new_transdata_float(BME_TransData_Head *td)
 {
 	return BLI_memarena_alloc(td->ma, sizeof(float));
 }
@@ -155,9 +154,9 @@ static void BME_Bevel_Dissolve_Disk(BMesh *bm, BMVert *v)
 	int done;
 
 	if (v->e) {
-		done = 0;
+		done = FALSE;
 		while (!done) {
-			done = 1;
+			done = TRUE;
 			e = v->e; /*loop the edge looking for a edge to dissolve*/
 			do {
 				f = NULL;
@@ -165,7 +164,7 @@ static void BME_Bevel_Dissolve_Disk(BMesh *bm, BMVert *v)
 					f = bmesh_jfke(bm, e->l->f, e->l->radial_next->f, e);
 				}
 				if (f) {
-					done = 0;
+					done = FALSE;
 					break;
 				}
 				e = bmesh_disk_edge_next(e, v);
@@ -195,7 +194,7 @@ static int BME_bevel_is_split_vert(BMesh *bm, BMLoop *l)
  * the bevel operation as a whole based on the relationship between v1 and v2
  * (won't necessarily be a vec from v1->co to v2->co, though it probably will be);
  * the return value is -1 for failure, 0 if we used vert co's, and 1 if we used transform origins */
-static int BME_bevel_get_vec(float *vec, BMVert *v1, BMVert *v2, BME_TransData_Head *td)
+static int BME_bevel_get_vec(float vec[3], BMVert *v1, BMVert *v2, BME_TransData_Head *td)
 {
 	BME_TransData *vtd1, *vtd2;
 
@@ -234,7 +233,8 @@ static int BME_bevel_get_vec(float *vec, BMVert *v1, BMVert *v2, BME_TransData_H
  * vec2 is the direction of projection (pointing away from vec1)
  * up_vec is used for orientation (expected to be normalized)
  * returns the length of the projected vector that lies along vec1 */
-static float BME_bevel_project_vec(float *vec1, float *vec2, float *up_vec, int is_forward, BME_TransData_Head *UNUSED(td))
+static float BME_bevel_project_vec(float *vec1, float *vec2, float *up_vec,
+                                   int is_forward, BME_TransData_Head *UNUSED(td))
 {
 	float factor, vec3[3], tmp[3], c1, c2;
 
@@ -264,7 +264,8 @@ static float BME_bevel_project_vec(float *vec1, float *vec2, float *up_vec, int 
  * using the vert and the loop passed, get or make the split vert, set its coordinates
  * and transform properties, and set the max limits.
  * Finally, return the split vert. */
-static BMVert *BME_bevel_split_edge(BMesh *bm, BMVert *v, BMVert *v1, BMLoop *l, float *up_vec, float value, BME_TransData_Head *td)
+static BMVert *BME_bevel_split_edge(BMesh *bm, BMVert *v, BMVert *v1, BMLoop *l,
+                                    float *up_vec, float value, BME_TransData_Head *td)
 {
 	BME_TransData *vtd, *vtd1, *vtd2;
 	BMVert *sv, *v2, *v3, *ov;
@@ -496,7 +497,8 @@ static BMVert *BME_bevel_wire(BMesh *bm, BMVert *v, float value, int res, int UN
 }
 #endif
 
-static BMLoop *BME_bevel_edge(BMesh *bm, BMLoop *l, float value, int UNUSED(options), float *up_vec, BME_TransData_Head *td)
+static BMLoop *BME_bevel_edge(BMesh *bm, BMLoop *l, float value, int UNUSED(options),
+                              float *up_vec, BME_TransData_Head *td)
 {
 	BMVert *v1, *v2, *kv;
 	BMLoop *kl = NULL, *nl;
@@ -617,7 +619,8 @@ static BMLoop *BME_bevel_edge(BMesh *bm, BMLoop *l, float value, int UNUSED(opti
 	return l;
 }
 
-static BMLoop *BME_bevel_vert(BMesh *bm, BMLoop *l, float value, int UNUSED(options), float *up_vec, BME_TransData_Head *td)
+static BMLoop *BME_bevel_vert(BMesh *bm, BMLoop *l, float value, int UNUSED(options),
+                              float up_vec[3], BME_TransData_Head *td)
 {
 	BMVert *v1, *v2;
 	/* BMFace *f; */ /* UNUSED */
@@ -810,7 +813,7 @@ static float BME_bevel_get_angle_vert(BMVert *v)
 	}
 
 	/* return cosf(angle_diff + 0.001f); */ /* compare with dot product */
-	return (angle_diff / tot_angle) * (M_PI / 2);
+	return (angle_diff / tot_angle) * (float)(M_PI / 2.0);
 }
 
 static void BME_bevel_add_vweight(BME_TransData_Head *td, BMesh *bm, BMVert *v, float weight, float factor, int options)
@@ -894,7 +897,7 @@ static void bevel_init_edges(BMesh *bm, int options, float angle, BME_TransData_
 	int count;
 	float weight;
 	BMIter iter;
-	const float threshold = (options & BME_BEVEL_ANGLE) ? cosf(angle + 0.001) : 0.0f;
+	const float threshold = (options & BME_BEVEL_ANGLE) ? cosf(angle + 0.001f) : 0.0f;
 
 	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
 		weight = 0.0f;
@@ -945,7 +948,8 @@ static void bevel_init_edges(BMesh *bm, int options, float angle, BME_TransData_
 	}
 }
 
-static BMesh *BME_bevel_initialize(BMesh *bm, int options, int UNUSED(defgrp_index), float angle, BME_TransData_Head *td)
+static BMesh *BME_bevel_initialize(BMesh *bm, int options,
+                                   int UNUSED(defgrp_index), float angle, BME_TransData_Head *td)
 {
 	BMVert *v /*, *v2 */;
 	BMEdge *e /*, *curedg */;
@@ -1024,20 +1028,20 @@ static BMesh *BME_bevel_reinitialize(BMesh *bm)
 #endif
 
 /**
- *			BME_bevel_mesh
+ * BME_bevel_mesh
  *
- *	Mesh beveling tool:
+ * Mesh beveling tool:
  *
- *	Bevels an entire mesh. It currently uses the flags of
- *	its vertices and edges to track topological changes.
- *  The parameter "value" is the distance to inset (should be negative).
- *  The parameter "options" is not currently used.
+ * Bevels an entire mesh. It currently uses the flags of
+ * its vertices and edges to track topological changes.
+ * The parameter "value" is the distance to inset (should be negative).
+ * The parameter "options" is not currently used.
  *
- *	Returns -
- *  A BMesh pointer to the BM passed as a parameter.
+ * \return A BMesh pointer to the BM passed as a parameter.
  */
 
-static BMesh *BME_bevel_mesh(BMesh *bm, float value, int UNUSED(res), int options, int UNUSED(defgrp_index), BME_TransData_Head *td)
+static BMesh *BME_bevel_mesh(BMesh *bm, float value, int UNUSED(res), int options,
+                             int UNUSED(defgrp_index), BME_TransData_Head *td)
 {
 	BMVert *v;
 	BMEdge *e, *curedge;
@@ -1102,14 +1106,14 @@ BMesh *BME_bevel(BMEditMesh *em, float value, int res, int options, int defgrp_i
 	BME_TransData_Head *td;
 	BME_TransData *vtd;
 	int i;
-	double fac = 1, d;
+	double fac = 1.0, d;
 
 	td = BME_init_transdata(BLI_MEMARENA_STD_BUFSIZE);
 	/* recursion math courtesy of Martin Poirier (theeth) */
 	for (i = 0; i < res - 1; i++) {
-		if (i == 0) fac += 1.0f / 3.0f; else fac += 1.0f / (3 * i * 2.0f);
+		if (i == 0) fac += 1.0 / 3.0; else fac += 1.0 / (3.0 * i * 2.0);
 	}
-	d = 1.0f / fac;
+	d = 1.0 / fac;
 
 	for (i = 0; i < res || (res == 0 && i == 0); i++) {
 		BMO_push(bm, NULL);
@@ -1123,7 +1127,7 @@ BMesh *BME_bevel(BMEditMesh *em, float value, int res, int options, int defgrp_i
 	}
 
 	/* possibly needed when running as a tool (which is no longer functional)
-	 * but keep as an optioin for now */
+	 * but keep as an option for now */
 	if (do_tessface) {
 		BMEdit_RecalcTessellation(em);
 	}
@@ -1143,7 +1147,7 @@ BMesh *BME_bevel(BMEditMesh *em, float value, int res, int options, int defgrp_i
 			else {
 				d = value;
 			}
-			madd_v3_v3v3fl(v->co, vtd->org, vtd->vec, vtd->factor * d);
+			madd_v3_v3v3fl(v->co, vtd->org, vtd->vec, vtd->factor * (float)d);
 		}
 	}
 

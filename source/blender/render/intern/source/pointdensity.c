@@ -106,7 +106,7 @@ static void pointdensity_cache_psys(Render *re, PointDensity *pd, Object *ob, Pa
 	ParticleKey state;
 	ParticleSimulationData sim= {NULL};
 	ParticleData *pa=NULL;
-	float cfra = BKE_curframe(re->scene);
+	float cfra = BKE_scene_frame_get(re->scene);
 	int i /*, childexists*/ /* UNUSED */;
 	int total_particles, offset=0;
 	int data_used = point_data_used(pd);
@@ -121,7 +121,7 @@ static void pointdensity_cache_psys(Render *re, PointDensity *pd, Object *ob, Pa
 	/* Just to create a valid rendering context for particles */
 	psys_render_set(ob, psys, re->viewmat, re->winmat, re->winx, re->winy, 0);
 	
-	dm = mesh_create_derived_render(re->scene, ob,CD_MASK_BAREMESH|CD_MASK_MTFACE|CD_MASK_MCOL);
+	dm = mesh_create_derived_render(re->scene, ob, CD_MASK_BAREMESH|CD_MASK_MTFACE|CD_MASK_MCOL);
 	
 	if ( !psys_check_enabled(ob, psys)) {
 		psys_render_restore(ob, psys);
@@ -221,7 +221,7 @@ static void pointdensity_cache_object(Render *re, PointDensity *pd, Object *ob)
 		
 		copy_v3_v3(co, mvert->co);
 
-		switch(pd->ob_cache_space) {
+		switch (pd->ob_cache_space) {
 			case TEX_PD_OBJECTSPACE:
 				break;
 			case TEX_PD_OBJECTLOC:
@@ -325,8 +325,7 @@ void free_pointdensities(Render *re)
 	}
 }
 
-typedef struct PointDensityRangeData
-{
+typedef struct PointDensityRangeData {
 	float *density;
 	float squared_radius;
 	float *point_data;
@@ -380,6 +379,7 @@ static void accum_density(void *userdata, int index, float squared_dist)
 	}
 	
 	if (pdr->density_curve && dist != 0.0f) {
+		curvemapping_initialize(pdr->density_curve);
 		density = curvemapping_evaluateF(pdr->density_curve, 0, density/dist)*dist;
 	}
 	
@@ -481,7 +481,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 		case TEX_PD_COLOR_PARTAGE:
 			if (pd->coba) {
 				if (do_colorband(pd->coba, age, col)) {
-					texres->talpha= 1;
+					texres->talpha = TRUE;
 					copy_v3_v3(&texres->tr, col);
 					texres->tin *= col[3];
 					texres->ta = texres->tin;
@@ -494,7 +494,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 			
 			if (pd->coba) {
 				if (do_colorband(pd->coba, speed, col)) {
-					texres->talpha= 1;	
+					texres->talpha = TRUE;
 					copy_v3_v3(&texres->tr, col);
 					texres->tin *= col[3];
 					texres->ta = texres->tin;
@@ -503,7 +503,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 			break;
 		}
 		case TEX_PD_COLOR_PARTVEL:
-			texres->talpha= 1;
+			texres->talpha = TRUE;
 			mul_v3_fl(vec, pd->speed_scale);
 			copy_v3_v3(&texres->tr, vec);
 			texres->ta = texres->tin;

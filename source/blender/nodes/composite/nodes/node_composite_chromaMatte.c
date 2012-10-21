@@ -1,53 +1,55 @@
 /*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version. 
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2006 Blender Foundation.
-* All rights reserved.
-*
-* The Original Code is: all of this file.
-*
-* Contributor(s): none yet.
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2006 Blender Foundation.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file blender/nodes/composite/nodes/node_composite_chromaMatte.c
-*  \ingroup cmpnodes
-*/
+ *  \ingroup cmpnodes
+ */
 
 
 #include "node_composite_util.h"
 
 /* ******************* Chroma Key ********************************************************** */
 static bNodeSocketTemplate cmp_node_chroma_in[]={
-	{SOCK_RGBA,1,"Image", 1.0f, 1.0f, 1.0f, 1.0f},
-	{SOCK_RGBA,1,"Key Color", 1.0f, 1.0f, 1.0f, 1.0f},
-	{-1,0,""}
+	{SOCK_RGBA, 1, N_("Image"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{SOCK_RGBA, 1, N_("Key Color"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{-1, 0, ""}
 };
 
 static bNodeSocketTemplate cmp_node_chroma_out[]={
-	{SOCK_RGBA,0,"Image"},
-	{SOCK_FLOAT,0,"Matte"},
-	{-1,0,""}
+	{SOCK_RGBA, 0, N_("Image")},
+	{SOCK_FLOAT, 0, N_("Matte")},
+	{-1, 0, ""}
 };
+
+#ifdef WITH_COMPOSITOR_LEGACY
 
 static void do_rgba_to_ycca_normalized(bNode *UNUSED(node), float *out, float *in)
 {
-	rgb_to_ycc(in[0],in[1],in[2], &out[0], &out[1], &out[2], BLI_YCC_ITU_BT601);
+	rgb_to_ycc(in[0], in[1], in[2], &out[0], &out[1], &out[2], BLI_YCC_ITU_BT601);
 
 	//normalize to 0..1.0
 	out[0]=out[0]/255.0f;
@@ -79,7 +81,7 @@ static void do_ycca_to_rgba_normalized(bNode *UNUSED(node), float *out, float *i
 	//	in[0]=(in[0]*255.0)+16;
 	//	in[1]=(in[1]*255.0)+128;
 	//	in[2]=(in[2]*255.0)+128;
-	ycc_to_rgb(in[0],in[1],in[2], &out[0], &out[1], &out[2], BLI_YCC_ITU_BT601);
+	ycc_to_rgb(in[0], in[1], in[2], &out[0], &out[1], &out[2], BLI_YCC_ITU_BT601);
 	out[3]=in[3];
 }
 
@@ -110,7 +112,7 @@ static void do_chroma_key(bNode *node, float *out, float *in)
 	copy_v3_v3(out, in);
 
 	if (kfg>0.0f) {  /* found a pixel that is within key color */
-		beta=atan2(z,x);
+		beta=atan2(z, x);
 		angle2=c->t2; /* t2 is radians. */
 
 		/* if beta is within the cutoff angle */
@@ -171,8 +173,9 @@ static void node_composit_exec_chroma_matte(void *data, bNode *node, bNodeStack 
 		free_compbuf(cbuf);
 }
 
+#endif  /* WITH_COMPOSITOR_LEGACY */
 
-static void node_composit_init_chroma_matte(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+static void node_composit_init_chroma_matte(bNodeTree *UNUSED(ntree), bNode *node, bNodeTemplate *UNUSED(ntemp))
 {
 	NodeChroma *c= MEM_callocN(sizeof(NodeChroma), "node chroma");
 	node->storage= c;
@@ -192,7 +195,9 @@ void register_node_type_cmp_chroma_matte(bNodeTreeType *ttype)
 	node_type_size(&ntype, 200, 80, 300);
 	node_type_init(&ntype, node_composit_init_chroma_matte);
 	node_type_storage(&ntype, "NodeChroma", node_free_standard_storage, node_copy_standard_storage);
+#ifdef WITH_COMPOSITOR_LEGACY
 	node_type_exec(&ntype, node_composit_exec_chroma_matte);
+#endif
 
 	nodeRegisterType(ttype, &ntype);
 }
