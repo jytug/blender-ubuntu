@@ -304,7 +304,7 @@ class EditBone(StructRNA, _GenericBone, metaclass=StructMetaPropGroup):
         Align this bone to another by moving its tail and settings its roll
         the length of the other bone is not used.
         """
-        vec = other.vector.normalize() * self.length
+        vec = other.vector.normalized() * self.length
         self.tail = self.head + vec
         self.roll = other.roll
 
@@ -689,10 +689,10 @@ class Menu(StructRNA, _GenericUI, metaclass=RNAMeta):
         files = []
         for directory in searchpaths:
             files.extend([(f, os.path.join(directory, f))
-                           for f in os.listdir(directory)
-                           if (not f.startswith("."))
-                           if ((filter_ext is None) or
-                               (filter_ext(os.path.splitext(f)[1])))
+                          for f in os.listdir(directory)
+                          if (not f.startswith("."))
+                          if ((filter_ext is None) or
+                              (filter_ext(os.path.splitext(f)[1])))
                           ])
 
         files.sort()

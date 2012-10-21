@@ -77,7 +77,7 @@ BL_ShapeDeformer::BL_ShapeDeformer(BL_DeformableGameObject *gameobj,
       m_lastShapeUpdate(-1)
 {
 	m_key = m_bmesh->key;
-	m_bmesh->key = copy_key(m_key);
+	m_bmesh->key = BKE_key_copy(m_key);
 };
 
 /* this second constructor is needed for making a mesh deformable on the fly. */
@@ -94,14 +94,14 @@ BL_ShapeDeformer::BL_ShapeDeformer(BL_DeformableGameObject *gameobj,
 					m_lastShapeUpdate(-1)
 {
 	m_key = m_bmesh->key;
-	m_bmesh->key = copy_key(m_key);
+	m_bmesh->key = BKE_key_copy(m_key);
 };
 
 BL_ShapeDeformer::~BL_ShapeDeformer()
 {
 	if (m_key && m_bmesh->key && m_key != m_bmesh->key)
 	{
-		free_key(m_bmesh->key);
+		BKE_key_free(m_bmesh->key);
 		BLI_remlink_safe(&G.main->key, m_bmesh->key);
 		MEM_freeN(m_bmesh->key);
 		m_bmesh->key = m_key;
@@ -173,7 +173,7 @@ bool BL_ShapeDeformer::Update(void)
 			/* store verts locally */
 			VerifyStorage();
 
-			do_rel_key(0, m_bmesh->totvert, m_bmesh->totvert, (char *)(float *)m_transverts, m_bmesh->key, NULL, 0); /* last arg is ignored */
+			BKE_key_evaluate_relative(0, m_bmesh->totvert, m_bmesh->totvert, (char *)(float *)m_transverts, m_bmesh->key, NULL, 0); /* last arg is ignored */
 			m_bDynamic = true;
 		}
 

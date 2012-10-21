@@ -37,6 +37,8 @@
 #include "bpy_rna.h"
 #include "bpy_app_handlers.h"
 
+#include "BPY_extern.h"
+
 void bpy_app_generic_callback(struct Main *main, struct ID *id, void *arg);
 
 static PyTypeObject BlenderAppCbType;
@@ -225,7 +227,7 @@ PyObject *BPY_app_handlers_struct(void)
 			funcstore->func = bpy_app_generic_callback;
 			funcstore->alloc = 0;
 			funcstore->arg = SET_INT_IN_POINTER(pos);
-			BLI_add_cb(funcstore, pos);
+			BLI_callback_add(funcstore, pos);
 		}
 	}
 

@@ -32,25 +32,13 @@ set(INC
 	third_party/ssba
 	third_party/ldl/Include
 	../colamd/Include
+	third_party/ceres/include
 )
 
 set(INC_SYS
 	${PNG_INCLUDE_DIR}
 	${ZLIB_INCLUDE_DIRS}
 )
-
-
-# XXX - FIXME
-# this is a momentary hack to find unwind.h in 10.6.sdk
-if(APPLE)
-	if(${CMAKE_OSX_DEPLOYMENT_TARGET} STREQUAL "10.6")
-		list(APPEND INC_SYS
-			${CMAKE_OSX_SYSROOT}/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin10/4.2.1/include
-		)
-	endif()
-endif()
-# XXX - END
-
 
 set(SRC
 	libmv-capi.cpp
@@ -61,6 +49,7 @@ set(SRC
 	libmv/multiview/fundamental.cc
 	libmv/multiview/projection.cc
 	libmv/multiview/triangulation.cc
+	libmv/multiview/homography.cc
 	libmv/numeric/numeric.cc
 	libmv/numeric/poly.cc
 	libmv/simple_pipeline/bundle.cc
@@ -69,6 +58,7 @@ set(SRC
 	libmv/simple_pipeline/detect.cc
 	libmv/simple_pipeline/initialize_reconstruction.cc
 	libmv/simple_pipeline/intersect.cc
+	libmv/simple_pipeline/modal_solver.cc
 	libmv/simple_pipeline/pipeline.cc
 	libmv/simple_pipeline/reconstruction.cc
 	libmv/simple_pipeline/resect.cc
@@ -82,6 +72,7 @@ set(SRC
 	libmv/tracking/pyramid_region_tracker.cc
 	libmv/tracking/retrack_region_tracker.cc
 	libmv/tracking/trklt_region_tracker.cc
+	libmv/tracking/track_region.cc
 
 	third_party/fast/fast_10.c
 	third_party/fast/fast_11.c
@@ -126,6 +117,7 @@ set(SRC
 	libmv/simple_pipeline/detect.h
 	libmv/simple_pipeline/initialize_reconstruction.h
 	libmv/simple_pipeline/intersect.h
+	libmv/simple_pipeline/modal_solver.h
 	libmv/simple_pipeline/pipeline.h
 	libmv/simple_pipeline/reconstruction.h
 	libmv/simple_pipeline/resect.h
@@ -248,3 +240,5 @@ add_definitions(
 )
 
 blender_add_lib(extern_libmv "${SRC}" "${INC}" "${INC_SYS}")
+
+add_subdirectory(third_party)

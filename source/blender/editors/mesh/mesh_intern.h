@@ -85,8 +85,6 @@ float labda_PdistVL2Dfl(const float v1[3], const float v2[3], const float v3[3])
 
 /* ******************** editface.c */
 
-void em_setup_viewcontext(struct bContext *C, struct ViewContext *vc);
-
 void MESH_OT_separate(struct wmOperatorType *ot);
 
 /* ******************* editmesh_add.c */
@@ -106,7 +104,7 @@ void MESH_OT_duplicate(struct wmOperatorType *ot);
 
 extern int EM_view3d_poll(struct bContext *C);
 
-struct wmKeyMap* knifetool_modal_keymap(struct wmKeyConfig *keyconf);
+struct wmKeyMap *knifetool_modal_keymap(struct wmKeyConfig *keyconf);
 
 /* ******************* knifetool.c */
 
@@ -147,8 +145,6 @@ extern struct EnumPropertyItem *corner_type_items;
 void MESH_OT_merge(struct wmOperatorType *ot);
 void MESH_OT_subdivide(struct wmOperatorType *ot);
 void MESH_OT_remove_doubles(struct wmOperatorType *ot);
-void MESH_OT_vertices_randomize(struct wmOperatorType *ot);
-void MESH_OT_vertices_sort(struct wmOperatorType *ot);
 void MESH_OT_spin(struct wmOperatorType *ot);
 void MESH_OT_screw(struct wmOperatorType *ot);
 
@@ -183,7 +179,7 @@ void MESH_OT_rip(struct wmOperatorType *ot);
 
 void MESH_OT_shape_propagate_to_all(struct wmOperatorType *ot);
 void MESH_OT_blend_from_shape(struct wmOperatorType *ot);
-void MESH_OT_sort_faces(struct wmOperatorType *ot);
+void MESH_OT_sort_elements(struct wmOperatorType *ot);
 
 /* ******************* mesh_data.c */
 
@@ -191,8 +187,10 @@ void MESH_OT_uv_texture_add(struct wmOperatorType *ot);
 void MESH_OT_uv_texture_remove(struct wmOperatorType *ot);
 void MESH_OT_vertex_color_add(struct wmOperatorType *ot);
 void MESH_OT_vertex_color_remove(struct wmOperatorType *ot);
-void MESH_OT_sticky_add(struct wmOperatorType *ot);
-void MESH_OT_sticky_remove(struct wmOperatorType *ot);
+/* no create_mask yet */
+void MESH_OT_customdata_clear_mask(struct wmOperatorType *ot);
+void MESH_OT_customdata_clear_skin(struct wmOperatorType *ot);
+
 void MESH_OT_drop_named_image(struct wmOperatorType *ot);
 
 /* ************* bmesh_tools.c ***********/
@@ -211,7 +209,10 @@ void MESH_OT_bevel(struct wmOperatorType *ot);
 
 void MESH_OT_bridge_edge_loops(struct wmOperatorType *ot);
 void MESH_OT_inset(struct wmOperatorType *ot);
+void MESH_OT_wireframe(struct wmOperatorType *ot);
 void MESH_OT_vert_slide(struct wmOperatorType *ot);
+
+void MESH_OT_convex_hull(struct wmOperatorType *ot);
 
 /* ******************* mesh_navmesh.c */
 void MESH_OT_navmesh_make(struct wmOperatorType *ot);
@@ -220,5 +221,4 @@ void MESH_OT_navmesh_face_add(struct wmOperatorType *ot);
 void MESH_OT_navmesh_reset(struct wmOperatorType *ot);
 void MESH_OT_navmesh_clear(struct wmOperatorType *ot);
 
-#endif // __MESH_INTERN_H__
-
+#endif  /* __MESH_INTERN_H__ */

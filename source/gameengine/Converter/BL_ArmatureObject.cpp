@@ -61,7 +61,7 @@
 /** 
  * Move here pose function for game engine so that we can mix with GE objects
  * Principle is as follow:
- * Use Blender structures so that where_is_pose can be used unchanged
+ * Use Blender structures so that BKE_pose_where_is can be used unchanged
  * Copy the constraint so that they can be enabled/disabled/added/removed at runtime
  * Don't copy the constraints for the pose used by the Action actuator, it does not need them.
  * Scan the constraint structures so that the KX equivalent of target objects are identified and 
@@ -84,7 +84,7 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 		return;
 	}
 	else if (*dst==src) {
-		printf("copy_pose source and target are the same\n");
+		printf("BKE_pose_copy_data source and target are the same\n");
 		*dst=NULL;
 		return;
 	}
@@ -129,7 +129,7 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 
 	BLI_ghash_free(ghash, NULL, NULL);
 	// set acceleration structure for channel lookup
-	make_pose_channels_hash(out);
+	BKE_pose_channels_hash_make(out);
 	*dst=out;
 }
 
@@ -200,7 +200,7 @@ void game_free_pose(bPose *pose)
 {
 	if (pose) {
 		/* free pose-channels and constraints */
-		free_pose_channels(pose);
+		BKE_pose_channels_free(pose);
 		
 		/* free IK solver state */
 		BIK_clear_data(pose);
@@ -225,7 +225,7 @@ BL_ArmatureObject::BL_ArmatureObject(
 	m_poseChannels(),
 	m_objArma(armature),
 	m_framePose(NULL),
-	m_scene(scene), // maybe remove later. needed for where_is_pose
+	m_scene(scene), // maybe remove later. needed for BKE_pose_where_is
 	m_lastframe(0.0),
 	m_timestep(0.040),
 	m_activeAct(NULL),
@@ -430,7 +430,7 @@ void BL_ArmatureObject::ProcessReplica()
 
 	m_pose = NULL;
 	m_framePose = NULL;
-	game_copy_pose(&m_pose, pose, 1);	
+	game_copy_pose(&m_pose, pose, 1);
 }
 
 void BL_ArmatureObject::ReParentLogic()
@@ -477,7 +477,7 @@ void BL_ArmatureObject::ApplyPose()
 		}
 		// update ourself
 		UpdateBlenderObjectMatrix(m_objArma);
-		where_is_pose(m_scene, m_objArma); // XXX
+		BKE_pose_where_is(m_scene, m_objArma); // XXX
 		// restore ourself
 		memcpy(m_objArma->obmat, m_obmat, sizeof(m_obmat));
 		// restore active targets
@@ -521,7 +521,7 @@ bool BL_ArmatureObject::SetActiveAction(BL_ActionActuator *act, short priority, 
 				SetPose(m_framePose);
 				if (m_activeAct && (m_activeAct!=act))
 					/* Reset the blend timer since this new action cancels the old one */
-					m_activeAct->SetBlendTime(0.0);	
+					m_activeAct->SetBlendTime(0.0);
 			}
 			m_activeAct = act;
 			m_activePriority = priority;
@@ -529,7 +529,7 @@ bool BL_ArmatureObject::SetActiveAction(BL_ActionActuator *act, short priority, 
 		
 			return true;
 		}
-		else{
+		else {
 			act->SetBlendTime(0.0);
 			return false;
 		}
@@ -590,7 +590,7 @@ bool BL_ArmatureObject::GetBoneMatrix(Bone* bone, MT_Matrix4x4& matrix)
 	bPoseChannel *pchan;
 
 	ApplyPose();
-	pchan = get_pose_channel(m_objArma->pose, bone->name);
+	pchan = BKE_pose_channel_find_name(m_objArma->pose, bone->name);
 	if (pchan)
 		matrix.setValue(&pchan->pose_mat[0][0]);
 	RestorePose();
@@ -648,12 +648,12 @@ PyAttributeDef BL_ArmatureObject::Attributes[] = {
 	{NULL} //Sentinel
 };
 
-PyObject* BL_ArmatureObject::pyattr_get_constraints(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *BL_ArmatureObject::pyattr_get_constraints(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	return KX_PythonSeq_CreatePyObject((static_cast<BL_ArmatureObject*>(self_v))->m_proxy, KX_PYGENSEQ_OB_TYPE_CONSTRAINTS);
 }
 
-PyObject* BL_ArmatureObject::pyattr_get_channels(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *BL_ArmatureObject::pyattr_get_channels(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	BL_ArmatureObject* self = static_cast<BL_ArmatureObject*>(self_v);
 	self->LoadChannels(); // make sure we have the channels

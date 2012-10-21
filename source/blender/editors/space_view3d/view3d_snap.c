@@ -101,12 +101,12 @@ static void special_transvert_update(Object *obedit)
 		DAG_id_tag_update(obedit->data, 0);
 		
 		if (obedit->type == OB_MESH) {
-			Mesh *me = obedit->data;
-			BM_mesh_normals_update(me->edit_btmesh->bm, TRUE);  // does face centers too
+			BMEditMesh *em = BMEdit_FromObject(obedit);
+			BM_mesh_normals_update(em->bm, TRUE);  /* does face centers too */
 		}
 		else if (ELEM(obedit->type, OB_CURVE, OB_SURF)) {
 			Curve *cu = obedit->data;
-			ListBase *nurbs = curve_editnurbs(cu);
+			ListBase *nurbs = BKE_curve_editNurbs_get(cu);
 			Nurb *nu = nurbs->first;
 
 			while (nu) {
@@ -141,8 +141,8 @@ static void special_transvert_update(Object *obedit)
 					}
 				}
 
-				test2DNurb(nu);
-				testhandlesNurb(nu); /* test for bezier too */
+				BKE_nurb_test2D(nu);
+				BKE_nurb_handles_test(nu); /* test for bezier too */
 				nu = nu->next;
 			}
 		}
@@ -211,7 +211,7 @@ static void set_mapped_co(void *vuserdata, int index, const float co[3],
 /* mode flags: */
 #define TM_ALL_JOINTS       1 /* all joints (for bones only) */
 #define TM_SKIP_HANDLES     2 /* skip handles when control point is selected (for curves only) */
-static void make_trans_verts(Object *obedit, float *min, float *max, int mode)
+static void make_trans_verts(Object *obedit, float min[3], float max[3], int mode)
 {
 	Nurb *nu;
 	BezTriple *bezt;
@@ -223,14 +223,13 @@ static void make_trans_verts(Object *obedit, float *min, float *max, int mode)
 	float total, center[3], centroid[3];
 	int a;
 
-	tottrans = 0; // global!
-	
+	tottrans = 0; /* global! */
+
 	INIT_MINMAX(min, max);
 	zero_v3(centroid);
 	
 	if (obedit->type == OB_MESH) {
-		Mesh *me = obedit->data;
-		BMEditMesh *em = me->edit_btmesh;
+		BMEditMesh *em = BMEdit_FromObject(obedit);
 		BMesh *bm = em->bm;
 		BMIter iter;
 		void *userdata[2] = {em, NULL};
@@ -239,7 +238,7 @@ static void make_trans_verts(Object *obedit, float *min, float *max, int mode)
 		/* abuses vertex index all over, set, just set dirty here,
 		 * perhaps this could use its own array instead? - campbell */
 
-		// transform now requires awareness for select mode, so we tag the f1 flags in verts
+		/* transform now requires awareness for select mode, so we tag the f1 flags in verts */
 		tottrans = 0;
 		if (em->selectmode & SCE_SELECT_VERTEX) {
 			BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
@@ -304,7 +303,7 @@ static void make_trans_verts(Object *obedit, float *min, float *max, int mode)
 					copy_v3_v3(tv->oldloc, eve->co);
 					tv->loc = eve->co;
 					if (eve->no[0] != 0.0f || eve->no[1] != 0.0f || eve->no[2] != 0.0f)
-						tv->nor = eve->no;  // note this is a hackish signal (ton)
+						tv->nor = eve->no;  /* note this is a hackish signal (ton) */
 					tv->flag = BM_elem_index_get(eve) & SELECT;
 					tv++;
 					a++;
@@ -375,7 +374,7 @@ static void make_trans_verts(Object *obedit, float *min, float *max, int mode)
 	else if (ELEM(obedit->type, OB_CURVE, OB_SURF)) {
 		Curve *cu = obedit->data;
 		int totmalloc = 0;
-		ListBase *nurbs = curve_editnurbs(cu);
+		ListBase *nurbs = BKE_curve_editNurbs_get(cu);
 
 		for (nu = nurbs->first; nu; nu = nu->next) {
 			if (nu->type == CU_BEZIER)
@@ -501,7 +500,7 @@ static void make_trans_verts(Object *obedit, float *min, float *max, int mode)
 		if (tv->flag & SELECT) {
 			add_v3_v3(centroid, tv->oldloc);
 			total += 1.0f;
-			DO_MINMAX(tv->oldloc, min, max);
+			minmax_v3v3_v3(min, max, tv->oldloc);
 		}
 	}
 	if (total != 0.0f) {
@@ -557,7 +556,8 @@ static int snap_sel_to_grid(bContext *C, wmOperator *UNUSED(op))
 	else {
 		struct KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
 
-		CTX_DATA_BEGIN(C, Object *, ob, selected_editable_objects) {
+		CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
+		{
 			if (ob->mode & OB_MODE_POSE) {
 				bPoseChannel *pchan;
 				bArmature *arm = ob->data;
@@ -581,7 +581,7 @@ static int snap_sel_to_grid(bContext *C, wmOperator *UNUSED(op))
 								mul_m4_v3(ob->imat, vec);
 								
 								/* Get location of grid point in pose space. */
-								armature_loc_pose_to_bone(pchan, vec, vec);
+								BKE_armature_loc_pose_to_bone(pchan, vec, vec);
 								
 								/* adjust location */
 								if ((pchan->protectflag & OB_LOCK_LOCX) == 0)
@@ -607,12 +607,12 @@ static int snap_sel_to_grid(bContext *C, wmOperator *UNUSED(op))
 			else {
 				ob->recalc |= OB_RECALC_OB;
 				
-				vec[0] = -ob->obmat[3][0] + gridf *floorf(0.5f + ob->obmat[3][0] / gridf);
-				vec[1] = -ob->obmat[3][1] + gridf *floorf(0.5f + ob->obmat[3][1] / gridf);
-				vec[2] = -ob->obmat[3][2] + gridf *floorf(0.5f + ob->obmat[3][2] / gridf);
+				vec[0] = -ob->obmat[3][0] + gridf * floorf(0.5f + ob->obmat[3][0] / gridf);
+				vec[1] = -ob->obmat[3][1] + gridf * floorf(0.5f + ob->obmat[3][1] / gridf);
+				vec[2] = -ob->obmat[3][2] + gridf * floorf(0.5f + ob->obmat[3][2] / gridf);
 				
 				if (ob->parent) {
-					where_is_object(scene, ob);
+					BKE_object_where_is_calc(scene, ob);
 					
 					invert_m3_m3(imat, originmat);
 					mul_m3_v3(imat, vec);
@@ -691,7 +691,8 @@ static int snap_sel_to_curs(bContext *C, wmOperator *UNUSED(op))
 	else {
 		struct KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
 
-		CTX_DATA_BEGIN(C, Object *, ob, selected_editable_objects) {
+		CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
+		{
 			if (ob->mode & OB_MODE_POSE) {
 				bPoseChannel *pchan;
 				bArmature *arm = ob->data;
@@ -705,7 +706,7 @@ static int snap_sel_to_curs(bContext *C, wmOperator *UNUSED(op))
 						if (pchan->bone->layer & arm->layer) {
 							if ((pchan->bone->flag & BONE_CONNECTED) == 0) {
 								/* Get position in pchan (pose) space. */
-								armature_loc_pose_to_bone(pchan, vec, vec);
+								BKE_armature_loc_pose_to_bone(pchan, vec, vec);
 
 								/* copy new position */
 								if ((pchan->protectflag & OB_LOCK_LOCX) == 0)
@@ -736,7 +737,7 @@ static int snap_sel_to_curs(bContext *C, wmOperator *UNUSED(op))
 				vec[2] = -ob->obmat[3][2] + curs[2];
 				
 				if (ob->parent) {
-					where_is_object(scene, ob);
+					BKE_object_where_is_calc(scene, ob);
 					
 					invert_m3_m3(imat, originmat);
 					mul_m3_v3(imat, vec);
@@ -792,8 +793,8 @@ static int snap_curs_to_grid(bContext *C, wmOperator *UNUSED(op))
 	curs[1] = gridf * floorf(0.5f + curs[1] / gridf);
 	curs[2] = gridf * floorf(0.5f + curs[2] / gridf);
 	
-	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);    // hrm
-	
+	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);  /* hrm */
+
 	return OPERATOR_FINISHED;
 }
 
@@ -816,7 +817,7 @@ void VIEW3D_OT_snap_cursor_to_grid(wmOperatorType *ot)
 
 static void bundle_midpoint(Scene *scene, Object *ob, float vec[3])
 {
-	MovieClip *clip = object_get_movieclip(scene, ob, 0);
+	MovieClip *clip = BKE_object_movieclip_get(scene, ob, 0);
 	MovieTracking *tracking;
 	MovieTrackingObject *object;
 	int ok = 0;
@@ -829,12 +830,12 @@ static void bundle_midpoint(Scene *scene, Object *ob, float vec[3])
 
 	copy_m4_m4(cammat, ob->obmat);
 
-	BKE_get_tracking_mat(scene, ob, mat);
+	BKE_tracking_get_camera_object_matrix(scene, ob, mat);
 
 	INIT_MINMAX(min, max);
 
 	for (object = tracking->objects.first; object; object = object->next) {
-		ListBase *tracksbase = BKE_tracking_object_tracks(tracking, object);
+		ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, object);
 		MovieTrackingTrack *track = tracksbase->first;
 		float obmat[4][4];
 
@@ -844,7 +845,7 @@ static void bundle_midpoint(Scene *scene, Object *ob, float vec[3])
 		else {
 			float imat[4][4];
 
-			BKE_tracking_get_interpolated_camera(tracking, object, scene->r.cfra, imat);
+			BKE_tracking_camera_get_reconstructed_interpolate(tracking, object, scene->r.cfra, imat);
 			invert_m4(imat);
 
 			mult_m4_m4m4(obmat, cammat, imat);
@@ -854,7 +855,7 @@ static void bundle_midpoint(Scene *scene, Object *ob, float vec[3])
 			if ((track->flag & TRACK_HAS_BUNDLE) && TRACK_SELECTED(track)) {
 				ok = 1;
 				mul_v3_m4v3(pos, obmat, track->bundle_pos);
-				DO_MINMAX(pos, min, max);
+				minmax_v3v3_v3(min, max, pos);
 			}
 
 			track = track->next;
@@ -896,7 +897,7 @@ static int snap_curs_to_sel(bContext *C, wmOperator *UNUSED(op))
 			mul_m3_v3(bmat, vec);
 			add_v3_v3(vec, obedit->obmat[3]);
 			add_v3_v3(centroid, vec);
-			DO_MINMAX(vec, min, max);
+			minmax_v3v3_v3(min, max, vec);
 		}
 		
 		if (v3d->around == V3D_CENTROID) {
@@ -921,14 +922,15 @@ static int snap_curs_to_sel(bContext *C, wmOperator *UNUSED(op))
 						copy_v3_v3(vec, pchan->pose_head);
 						mul_m4_v3(obact->obmat, vec);
 						add_v3_v3(centroid, vec);
-						DO_MINMAX(vec, min, max);
+						minmax_v3v3_v3(min, max, vec);
 						count++;
 					}
 				}
 			}
 		}
 		else {
-			CTX_DATA_BEGIN(C, Object *, ob, selected_objects) {
+			CTX_DATA_BEGIN (C, Object *, ob, selected_objects)
+			{
 				copy_v3_v3(vec, ob->obmat[3]);
 
 				/* special case for camera -- snap to bundles */
@@ -940,7 +942,7 @@ static int snap_curs_to_sel(bContext *C, wmOperator *UNUSED(op))
 				}
 
 				add_v3_v3(centroid, vec);
-				DO_MINMAX(vec, min, max);
+				minmax_v3v3_v3(min, max, vec);
 				count++;
 			}
 			CTX_DATA_END;
@@ -989,11 +991,11 @@ static int snap_curs_to_active(bContext *C, wmOperator *UNUSED(op))
 
 	if (obedit) {
 		if (obedit->type == OB_MESH) {
+			BMEditMesh *em = BMEdit_FromObject(obedit);
 			/* check active */
-			Mesh *me = obedit->data;
 			BMEditSelection ese;
 			
-			if (BM_select_history_active_get(me->edit_btmesh->bm, &ese)) {
+			if (BM_select_history_active_get(em->bm, &ese)) {
 				BM_editselection_center(&ese, curs);
 			}
 			
@@ -1059,7 +1061,7 @@ void VIEW3D_OT_snap_cursor_to_center(wmOperatorType *ot)
 /* **************************************************** */
 
 
-int minmax_verts(Object *obedit, float *min, float *max)
+int ED_view3d_minmax_verts(Object *obedit, float min[3], float max[3])
 {
 	TransVert *tv;
 	float centroid[3], vec[3], bmat[3][3];
@@ -1079,7 +1081,7 @@ int minmax_verts(Object *obedit, float *min, float *max)
 		mul_m3_v3(bmat, vec);
 		add_v3_v3(vec, obedit->obmat[3]);
 		add_v3_v3(centroid, vec);
-		DO_MINMAX(vec, min, max);
+		minmax_v3v3_v3(min, max, vec);
 	}
 	
 	MEM_freeN(transvmain);

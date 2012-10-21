@@ -1,57 +1,59 @@
 /*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version. 
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2006 Blender Foundation.
-* All rights reserved.
-*
-* The Original Code is: all of this file.
-*
-* Contributor(s): Bob Holcomb
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2006 Blender Foundation.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): Bob Holcomb
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file blender/nodes/composite/nodes/node_composite_diffMatte.c
-*  \ingroup cmpnodes
-*/
+ *  \ingroup cmpnodes
+ */
 
 
 #include "node_composite_util.h"
 
 /* ******************* channel Difference Matte ********************************* */
 static bNodeSocketTemplate cmp_node_diff_matte_in[]={
-	{SOCK_RGBA,1,"Image 1", 1.0f, 1.0f, 1.0f, 1.0f},
-	{SOCK_RGBA,1,"Image 2", 1.0f, 1.0f, 1.0f, 1.0f},
-	{-1,0,""}
+	{SOCK_RGBA, 1, N_("Image 1"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{SOCK_RGBA, 1, N_("Image 2"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{-1, 0, ""}
 };
 
 static bNodeSocketTemplate cmp_node_diff_matte_out[]={
-	{SOCK_RGBA,0,"Image"},
-	{SOCK_FLOAT,0,"Matte"},
-	{-1,0,""}
+	{SOCK_RGBA, 0, N_("Image")},
+	{SOCK_FLOAT, 0, N_("Matte")},
+	{-1, 0, ""}
 };
+
+#ifdef WITH_COMPOSITOR_LEGACY
 
 static void do_diff_matte(bNode *node, float *outColor, float *inColor1, float *inColor2)
 {
 	NodeChroma *c= (NodeChroma *)node->storage;
-	float tolerence=c->t1;
+	float tolerance=c->t1;
 	float fper=c->t2;
-	/* get falloff amount over tolerence size */
-	float falloff=(1.0f-fper) * tolerence;
+	/* get falloff amount over tolerance size */
+	float falloff=(1.0f-fper) * tolerance;
 	float difference;
 	float alpha;
 	float maxInputAlpha;
@@ -64,22 +66,22 @@ static void do_diff_matte(bNode *node, float *outColor, float *inColor1, float *
 
 	copy_v3_v3(outColor, inColor1);
 
-	if (difference <= tolerence) {
-		if(difference<=falloff) {
-			alpha=0.0f;
+	if (difference <= tolerance) {
+		if (difference <= falloff) {
+			alpha = 0.0f;
 		}
-		else{
+		else {
 			/* alpha as percent (distance / tolerance), each modified by falloff amount (in pixels)*/
-			alpha=(difference-falloff)/(tolerence-falloff);
+			alpha=(difference-falloff)/(tolerance-falloff);
 		}
 
 		/*only change if more transparent than either image */
 		maxInputAlpha=maxf(inColor1[3], inColor2[3]);
 		if (alpha < maxInputAlpha) {
 			/*clamp*/
-			if(alpha<0.0f) alpha=0.0f;
-			if(alpha>1.0f) alpha=1.0f;
-			outColor[3]=alpha;
+			if (alpha < 0.0f) alpha = 0.0f;
+			if (alpha > 1.0f) alpha = 1.0f;
+			outColor[3] = alpha;
 		}
 		else { /* leave as before */
 			outColor[3]=maxInputAlpha;
@@ -126,7 +128,9 @@ static void node_composit_exec_diff_matte(void *data, bNode *node, bNodeStack **
 		free_compbuf(imbuf2);
 }
 
-static void node_composit_init_diff_matte(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+#endif  /* WITH_COMPOSITOR_LEGACY */
+
+static void node_composit_init_diff_matte(bNodeTree *UNUSED(ntree), bNode *node, bNodeTemplate *UNUSED(ntemp))
 {
 	NodeChroma *c= MEM_callocN(sizeof(NodeChroma), "node chroma");
 	node->storage= c;
@@ -143,7 +147,9 @@ void register_node_type_cmp_diff_matte(bNodeTreeType *ttype)
 	node_type_size(&ntype, 200, 80, 250);
 	node_type_init(&ntype, node_composit_init_diff_matte);
 	node_type_storage(&ntype, "NodeChroma", node_free_standard_storage, node_copy_standard_storage);
+#ifdef WITH_COMPOSITOR_LEGACY
 	node_type_exec(&ntype, node_composit_exec_diff_matte);
+#endif
 
 	nodeRegisterType(ttype, &ntype);
 }

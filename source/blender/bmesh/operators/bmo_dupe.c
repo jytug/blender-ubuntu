@@ -37,7 +37,7 @@
 #define DUPE_INPUT      1 /* input from operator */
 #define DUPE_NEW        2
 #define DUPE_DONE       4
-#define DUPE_MAPPED     8
+// #define DUPE_MAPPED     8 // UNUSED
 
 /**
  * COPY VERTEX
@@ -181,7 +181,7 @@ static BMFace *copy_face(BMOperator *op, BMesh *source_mesh,
  * Internal Copy function.
  */
 
-static void copy_mesh(BMOperator *op, BMesh *source, BMesh *target)
+static void BKE_mesh_copy(BMOperator *op, BMesh *source, BMesh *target)
 {
 
 	BMVert *v = NULL, *v2;
@@ -197,8 +197,8 @@ static void copy_mesh(BMOperator *op, BMesh *source, BMesh *target)
 	GHash *vhash, *ehash;
 
 	/* initialize pointer hashes */
-	vhash = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, "bmesh dupeops v");
-	ehash = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, "bmesh dupeops e");
+	vhash = BLI_ghash_ptr_new("bmesh dupeops v");
+	ehash = BLI_ghash_ptr_new("bmesh dupeops e");
 
 	/* duplicate flagged vertices */
 	BM_ITER_MESH (v, &viter, source, BM_VERTS_OF_MESH) {
@@ -277,8 +277,8 @@ static void copy_mesh(BMOperator *op, BMesh *source, BMesh *target)
 			BLI_array_empty(vtar);
 			BLI_array_empty(edar);
 
-			BLI_array_growitems(vtar, f->len);
-			BLI_array_growitems(edar, f->len);
+			BLI_array_grow_items(vtar, f->len);
+			BLI_array_grow_items(edar, f->len);
 
 			copy_face(op, source, f, target, vtar, edar, vhash, ehash);
 			BMO_elem_flag_enable(source, f, DUPE_DONE);
@@ -314,7 +314,7 @@ static void copy_mesh(BMOperator *op, BMesh *source, BMesh *target)
  * BMOP_DUPE_FNEW: Buffer containing pointers to the new mesh faces
  */
 
-void bmo_dupe_exec(BMesh *bm, BMOperator *op)
+void bmo_duplicate_exec(BMesh *bm, BMOperator *op)
 {
 	BMOperator *dupeop = op;
 	BMesh *bm2 = BMO_slot_ptr_get(op, "dest");
@@ -326,7 +326,7 @@ void bmo_dupe_exec(BMesh *bm, BMOperator *op)
 	BMO_slot_buffer_flag_enable(bm, dupeop, "geom", BM_ALL, DUPE_INPUT);
 
 	/* use the internal copy function */
-	copy_mesh(dupeop, bm, bm2);
+	BKE_mesh_copy(dupeop, bm, bm2);
 	
 	/* Output */
 	/* First copy the input buffers to output buffers - original data */
@@ -345,7 +345,7 @@ void BMO_dupe_from_flag(BMesh *bm, int htype, const char hflag)
 {
 	BMOperator dupeop;
 
-	BMO_op_init(bm, &dupeop, "dupe");
+	BMO_op_init(bm, &dupeop, "duplicate");
 	BMO_slot_buffer_from_enabled_hflag(bm, &dupeop, "geom", htype, hflag);
 
 	BMO_op_exec(bm, &dupeop);
@@ -381,8 +381,8 @@ void bmo_split_exec(BMesh *bm, BMOperator *op)
 	const short use_only_faces = BMO_slot_bool_get(op, "use_only_faces");
 
 	/* initialize our sub-operator */
-	BMO_op_init(bm, &dupeop, "dupe");
-	BMO_op_init(bm, &delop, "del");
+	BMO_op_init(bm, &dupeop, op->flag, "duplicate");
+	BMO_op_init(bm, &delop, op->flag, "delete");
 	
 	BMO_slot_copy(splitop, &dupeop, "geom", "geom");
 	BMO_op_exec(bm, &dupeop);
@@ -443,7 +443,7 @@ void bmo_split_exec(BMesh *bm, BMOperator *op)
 }
 
 
-void bmo_del_exec(BMesh *bm, BMOperator *op)
+void bmo_delete_exec(BMesh *bm, BMOperator *op)
 {
 #define DEL_INPUT 1
 
@@ -487,24 +487,30 @@ void bmo_spin_exec(BMesh *bm, BMOperator *op)
 	BMO_slot_copy(op, op, "geom", "lastout");
 	for (a = 0; a < steps; a++) {
 		if (do_dupli) {
-			BMO_op_initf(bm, &dupop, "dupe geom=%s", op, "lastout");
+			BMO_op_initf(bm, &dupop, op->flag, "duplicate geom=%s", op, "lastout");
 			BMO_op_exec(bm, &dupop);
-			BMO_op_callf(bm, "rotate cent=%v mat=%m3 verts=%s",
+			BMO_op_callf(bm, op->flag,
+			             "rotate cent=%v mat=%m3 verts=%s",
 			             cent, rmat, &dupop, "newout");
 			BMO_slot_copy(&dupop, op, "newout", "lastout");
 			BMO_op_finish(bm, &dupop);
 		}
 		else {
-			BMO_op_initf(bm, &extop, "extrude_face_region edgefacein=%s",
+			BMO_op_initf(bm, &extop, op->flag, "extrude_face_region edgefacein=%s",
 			             op, "lastout");
 			BMO_op_exec(bm, &extop);
-			BMO_op_callf(bm, "rotate cent=%v mat=%m3 verts=%s",
+			BMO_op_callf(bm, op->flag,
+			             "rotate cent=%v mat=%m3 verts=%s",
 			             cent, rmat, &extop, "geomout");
 			BMO_slot_copy(&extop, op, "geomout", "lastout");
 			BMO_op_finish(bm, &extop);
 		}
 
-		if (usedvec)
-			BMO_op_callf(bm, "translate vec=%v verts=%s", dvec, op, "lastout");
+		if (usedvec) {
+			mul_m3_v3(rmat, dvec);
+			BMO_op_callf(bm, op->flag,
+			             "translate vec=%v verts=%s",
+			             dvec, op, "lastout");
+		}
 	}
 }

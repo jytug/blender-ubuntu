@@ -1,59 +1,61 @@
 /*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version. 
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2006 Blender Foundation.
-* All rights reserved.
-*
-* The Original Code is: all of this file.
-*
-* Contributor(s): Bob Holcomb
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2006 Blender Foundation.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): Bob Holcomb
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file blender/nodes/composite/nodes/node_composite_distanceMatte.c
-*  \ingroup cmpnodes
-*/
+ *  \ingroup cmpnodes
+ */
 
 
 #include "node_composite_util.h"
 
 /* ******************* channel Distance Matte ********************************* */
 static bNodeSocketTemplate cmp_node_distance_matte_in[]={
-	{SOCK_RGBA,1,"Image", 1.0f, 1.0f, 1.0f, 1.0f},
-	{SOCK_RGBA,1,"Key Color", 1.0f, 1.0f, 1.0f, 1.0f},
-	{-1,0,""}
+	{SOCK_RGBA, 1, N_("Image"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{SOCK_RGBA, 1, N_("Key Color"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{-1, 0, ""}
 };
 
 static bNodeSocketTemplate cmp_node_distance_matte_out[]={
-	{SOCK_RGBA,0,"Image"},
-	{SOCK_FLOAT,0,"Matte"},
-	{-1,0,""}
+	{SOCK_RGBA, 0, N_("Image")},
+	{SOCK_FLOAT, 0, N_("Matte")},
+	{-1, 0, ""}
 };
+
+#ifdef WITH_COMPOSITOR_LEGACY
 
 /* note, keyvals is passed on from caller as stack array */
 /* might have been nicer as temp struct though... */
 static void do_distance_matte(bNode *node, float *out, float *in)
 {
 	NodeChroma *c= (NodeChroma *)node->storage;
-	float tolerence=c->t1;
+	float tolerance=c->t1;
 	float fper=c->t2;
-	/* get falloff amount over tolerence size */
-	float falloff=(1.0f-fper) * tolerence;
+	/* get falloff amount over tolerance size */
+	float falloff=(1.0f-fper) * tolerance;
 	float distance;
 	float alpha;
 
@@ -63,20 +65,20 @@ static void do_distance_matte(bNode *node, float *out, float *in)
 
 	copy_v3_v3(out, in);
 
-	if (distance <= tolerence) {
-		if(distance<=falloff) {
-			alpha=0.0f;
+	if (distance <= tolerance) {
+		if (distance <= falloff) {
+			alpha = 0.0f;
 		}
-		else{
+		else {
 			/* alpha as percent (distance / tolerance), each modified by falloff amount (in pixels)*/
-			alpha=(distance-falloff)/(tolerence-falloff);
+			alpha=(distance-falloff)/(tolerance-falloff);
 		}
 
 		/*only change if more transparent than before */
 		if (alpha < in[3]) {
 			/*clamp*/
-			if(alpha<0.0f) alpha=0.0f;
-			if(alpha>1.0f) alpha=1.0f;
+			if (alpha < 0.0f) alpha = 0.0f;
+			if (alpha > 1.0f) alpha = 1.0f;
 			out[3]=alpha;
 		}
 		else { /* leave as before */
@@ -88,10 +90,10 @@ static void do_distance_matte(bNode *node, float *out, float *in)
 static void do_chroma_distance_matte(bNode *node, float *out, float *in)
 {
 	NodeChroma *c= (NodeChroma *)node->storage;
-	float tolerence=c->t1;
+	float tolerance=c->t1;
 	float fper=c->t2;
-	/* get falloff amount over tolerence size */
-	float falloff=(1.0f-fper) * tolerence;
+	/* get falloff amount over tolerance size */
+	float falloff=(1.0f-fper) * tolerance;
 	float y_key, cb_key, cr_key;
 	float y_pix, cb_pix, cr_pix;
 	float distance;
@@ -114,20 +116,20 @@ static void do_chroma_distance_matte(bNode *node, float *out, float *in)
 
 	copy_v3_v3(out, in);
 
-	if (distance <= tolerence) {
-		if(distance<=falloff) {
-			alpha=0.0f;
+	if (distance <= tolerance) {
+		if (distance <= falloff) {
+			alpha = 0.0f;
 		}
-		else{
+		else {
 			/* alpha as percent (distance / tolerance), each modified by falloff amount (in pixels)*/
-			alpha=(distance-falloff)/(tolerence-falloff);
+			alpha=(distance-falloff)/(tolerance-falloff);
 		}
 
 		/*only change if more transparent than before */
 		if (alpha < in[3]) {
 			/*clamp*/
-			if(alpha<0.0f) alpha=0.0f;
-			if(alpha>1.0f) alpha=1.0f;
+			if (alpha < 0.0f) alpha = 0.0f;
+			if (alpha > 1.0f) alpha = 1.0f;
 			out[3]=alpha;
 		}
 		else { /* leave as before */
@@ -139,9 +141,9 @@ static void do_chroma_distance_matte(bNode *node, float *out, float *in)
 static void node_composit_exec_distance_matte(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
 {
 	/*
-	Loosely based on the Sequencer chroma key plug-in, but enhanced to work in other color spaces and
-	uses a different difference function (suggested in forums of vfxtalk.com).
-	*/
+	 * Loosely based on the Sequencer chroma key plug-in, but enhanced to work in other color spaces and
+	 * uses a different difference function (suggested in forums of vfxtalk.com).
+	 */
 	CompBuf *workbuf;
 	CompBuf *inbuf;
 	NodeChroma *c;
@@ -162,7 +164,7 @@ static void node_composit_exec_distance_matte(void *data, bNode *node, bNodeStac
 	c->key[2]= in[1]->vec[2];
 
 	/* work in RGB color space */
-	if(c->channel==1) {
+	if (c->channel == 1) {
 		/* note, processor gets a keyvals array passed on as buffer constant */
 		composit1_pixel_processor(node, workbuf, workbuf, in[0]->vec, do_distance_matte, CB_RGBA);
 	}
@@ -182,7 +184,9 @@ static void node_composit_exec_distance_matte(void *data, bNode *node, bNodeStac
 		free_compbuf(inbuf);
 }
 
-static void node_composit_init_distance_matte(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+#endif  /* WITH_COMPOSITOR_LEGACY */
+
+static void node_composit_init_distance_matte(bNodeTree *UNUSED(ntree), bNode *node, bNodeTemplate *UNUSED(ntemp))
 {
 	NodeChroma *c= MEM_callocN(sizeof(NodeChroma), "node chroma");
 	node->storage= c;
@@ -200,7 +204,9 @@ void register_node_type_cmp_distance_matte(bNodeTreeType *ttype)
 	node_type_size(&ntype, 200, 80, 250);
 	node_type_init(&ntype, node_composit_init_distance_matte);
 	node_type_storage(&ntype, "NodeChroma", node_free_standard_storage, node_copy_standard_storage);
+#ifdef WITH_COMPOSITOR_LEGACY
 	node_type_exec(&ntype, node_composit_exec_distance_matte);
+#endif
 
 	nodeRegisterType(ttype, &ntype);
 }

@@ -34,7 +34,7 @@
 
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786) // get rid of stupid stl-visual compiler debug warning
-#endif //WIN32
+#endif  /* WIN32 */
 
 #include "BL_ShapeDeformer.h"
 #include "BL_DeformableGameObject.h"
@@ -54,7 +54,7 @@ public:
 						Scene *scene,
 						Object *bmeshobj,
 						RAS_MeshObject *mesh)
-						:	
+						:
 						BL_ShapeDeformer(gameobj,bmeshobj, mesh),
 						m_lastModifierUpdate(-1),
 						m_scene(scene),
@@ -107,11 +107,8 @@ protected:
 
 
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
-	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:BL_ModifierDeformer"); }
-	void operator delete( void *mem ) { MEM_freeN(mem); }
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:BL_ModifierDeformer")
 #endif
 };
 
-#endif
-
+#endif  /* __BL_MODIFIERDEFORMER_H__ */
