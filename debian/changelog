@@ -1,5 +1,6 @@
-blender (2.63a-3) UNRELEASED; urgency=low
+blender (2.64a-1) UNRELEASED; urgency=low
 
+  * New upstream release
   * debian/patches/: #0009 changed to fix l10n issue.
     Thanks to IRIE Shinsuke for pointing this out (Closes: #683078)
   * debian/patches/: #0001 updated to fix thumbnailer issue.
@@ -7,8 +8,10 @@ blender (2.63a-3) UNRELEASED; urgency=low
   * debian/copyright: upstream URL updated
   * debian/control: libspnav-dev added to b-deps.
     Thanks to Davide G. Borin for the hint (Closes: #685535)
+  * debian/control: subversion added to b-deps
+  * debian/gbp.conf: bzip2 compression enabled
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 28 Jul 2012 17:49:14 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sun, 21 Oct 2012 16:15:51 +0200
 
 blender (2.63a-2) experimental; urgency=low
 
