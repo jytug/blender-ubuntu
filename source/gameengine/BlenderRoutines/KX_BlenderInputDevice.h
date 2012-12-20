@@ -32,8 +32,8 @@
 #ifndef __KX_BLENDERINPUTDEVICE_H__
 #define __KX_BLENDERINPUTDEVICE_H__
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning(disable : 4786)  // shut off 255 char limit debug template warning
+#ifdef _MSC_VER
+#  pragma warning(disable:4786)  // shut off 255 char limit debug template warning
 #endif
 
 #include <map>
@@ -48,8 +48,9 @@
 #endif
 
 /**
- Base Class for Blender specific inputdevices. Blender specific inputdevices are used when the gameengine is running in embedded mode instead of standalone mode.
-*/
+ * Base Class for Blender specific inputdevices.
+ * Blender specific inputdevices are used when the gameengine is running in embedded mode instead of standalone mode.
+ */
 class BL_BlenderInputDevice : public SCA_IInputDevice
 {
 public:

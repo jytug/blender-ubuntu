@@ -633,7 +633,7 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
 
         elif context.image_paint_object and brush:
             col = layout.column()
-            col.template_color_wheel(brush, "color", value_slider=True)
+            col.template_color_picker(brush, "color", value_slider=True)
             col.prop(brush, "color", text="")
 
             row = col.row(align=True)
@@ -681,7 +681,7 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
         # Vertex Paint Mode #
         elif context.vertex_paint_object and brush:
             col = layout.column()
-            col.template_color_wheel(brush, "color", value_slider=True)
+            col.template_color_picker(brush, "color", value_slider=True)
             col.prop(brush, "color", text="")
 
             row = col.row(align=True)
@@ -878,6 +878,7 @@ class VIEW3D_PT_sculpt_options(Panel, View3DPaintPanel):
         layout.prop(sculpt, "show_low_resolution")
         layout.prop(sculpt, "show_brush")
         layout.prop(sculpt, "use_deform_only")
+        layout.prop(sculpt, "show_diffuse_color")
 
         layout.prop(sculpt, "input_samples")
 
@@ -967,7 +968,7 @@ class VIEW3D_PT_tools_weightpaint(View3DPanel, Panel):
         col.operator("object.vertex_group_clean", text="Clean")
         col.operator("object.vertex_group_levels", text="Levels")
         col.operator("object.vertex_group_blend", text="Blend")
-        col.operator("object.vertex_group_transfer_weight", text="Transfer weight")
+        col.operator("object.vertex_group_transfer_weight", text="Transfer Weights")
         col.operator("object.vertex_group_limit_total", text="Limit Total")
         col.operator("object.vertex_group_fix", text="Fix Deforms")
 
@@ -1047,7 +1048,7 @@ class VIEW3D_PT_tools_projectpaint(View3DPanel, Panel):
     @classmethod
     def poll(cls, context):
         brush = context.tool_settings.image_paint.brush
-        return (brush and brush.image_tool != 'SOFTEN')
+        return (brush is not None)
 
     def draw_header(self, context):
         ipaint = context.tool_settings.image_paint

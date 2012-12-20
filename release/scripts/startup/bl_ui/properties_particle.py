@@ -148,7 +148,7 @@ class PARTICLE_PT_context_particles(ParticleButtonsPanel, Panel):
             #row.label(text="Render")
 
             if part.is_fluid:
-                layout.label(text="{} fluid particles for this frame".format(str(part.count)))
+                layout.label(text="%d fluid particles for this frame" % part.count)
                 return
 
             row = col.row()
@@ -1124,7 +1124,7 @@ class PARTICLE_PT_field_weights(ParticleButtonsPanel, Panel):
 
     def draw(self, context):
         part = particle_get_settings(context)
-        effector_weights_ui(self, context, part.effector_weights)
+        effector_weights_ui(self, context, part.effector_weights, 'PSYS')
 
         if part.type == 'HAIR':
             row = self.layout.row()
