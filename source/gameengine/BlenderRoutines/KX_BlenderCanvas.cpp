@@ -46,7 +46,7 @@ m_frame_rect(rect)
 	m_area_left = ar->winrct.xmin;
 	m_area_top = ar->winrct.ymax;
 
-	glGetIntegerv(GL_VIEWPORT, (GLint*)m_viewport);
+	glGetIntegerv(GL_VIEWPORT, (GLint *)m_viewport);
 }
 
 KX_BlenderCanvas::~KX_BlenderCanvas()
@@ -119,14 +119,14 @@ int KX_BlenderCanvas::GetHeight(
 
 int KX_BlenderCanvas::GetMouseX(int x)
 {
-	float left = GetWindowArea().GetLeft();
-	return float(x - (left - m_area_left));
+	int left = GetWindowArea().GetLeft();
+	return x - (left - m_area_left);
 }
 
 int KX_BlenderCanvas::GetMouseY(int y)
 {
-	float top = GetWindowArea().GetTop();
-	return float(y - (m_area_top - top));
+	int top = GetWindowArea().GetTop();
+	return y - (m_area_top - top);
 }
 
 float KX_BlenderCanvas::GetMouseNormalizedX(int x)

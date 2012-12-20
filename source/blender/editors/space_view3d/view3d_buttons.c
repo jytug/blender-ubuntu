@@ -158,7 +158,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 	TransformProperties *tfp;
 	float median[NBR_TRANSFORM_PROPERTIES], ve_median[NBR_TRANSFORM_PROPERTIES];
 	int tot, totedgedata, totcurvedata, totlattdata, totskinradius, totcurvebweight;
-	int meshdata = FALSE, i;
+	int meshdata = FALSE;
 	char defstr[320];
 	PointerRNA data_ptr;
 
@@ -439,7 +439,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			uiDefButR(block, NUM, 0, "Radius", 0, yi -= buth + but_margin, 200, buth,
 			          &data_ptr, "radius", 0, 0.0, 100.0, 1, 3, NULL);
 			uiDefButR(block, NUM, 0, "Tilt", 0, yi -= buth + but_margin, 200, buth,
-			          &data_ptr, "tilt", 0, -M_PI * 2.0f, M_PI * 2.0f, 1, 3, NULL);
+			          &data_ptr, "tilt", 0, -M_PI * 2.0, M_PI * 2.0, 1, 3, NULL);
 		}
 		else if (totcurvedata > 1) {
 			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Weight:"),
@@ -450,8 +450,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			          &(tfp->ve_median[C_RADIUS]), 0.0, 100.0, 1, 3, TIP_("Radius of curve control points"));
 			but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Tilt:"),
 			                0, yi -= buth + but_margin, 200, buth,
-			                &(tfp->ve_median[C_TILT]), -M_PI * 2.0f, M_PI * 2.0f, 1, 3,
-			                TIP_("Tilt (inclination) of curve control points"));
+			                &(tfp->ve_median[C_TILT]), -M_PI * 2.0, M_PI * 2.0, 1, 3,
+			                TIP_("Tilt of curve control points"));
 			uiButSetUnitType(but, PROP_UNIT_ROTATION);
 		}
 		/* Lattice... */
@@ -470,6 +470,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 
 	}
 	else { /* apply */
+		int i;
+
 		memcpy(ve_median, tfp->ve_median, sizeof(tfp->ve_median));
 
 		if (v3d->flag & V3D_GLOBAL_STATS) {
@@ -485,10 +487,10 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			Mesh *me = ob->data;
 			BMEditMesh *em = me->edit_btmesh;
 			BMesh *bm = em->bm;
-			BMVert *eve;
 			BMIter iter;
 
 			if (len_v3(&median[LOC_X]) > 0.000001f) {
+				BMVert *eve;
 
 				BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 					if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
@@ -1221,7 +1223,7 @@ static void view3d_panel_object(const bContext *C, Panel *pa)
 	if (ob == NULL)
 		return;
 
-	lim = 10000.0f * MAX2(1.0f, v3d->grid);
+	lim = 10000.0f * max_ff(1.0f, v3d->grid);
 
 	block = uiLayoutGetBlock(pa->layout);
 	uiBlockSetHandleFunc(block, do_view3d_region_buttons, NULL);

@@ -111,7 +111,6 @@ static SpaceLink *node_new(const bContext *UNUSED(C))
 	BLI_addtail(&snode->regionbase, ar);
 	ar->regiontype = RGN_TYPE_UI;
 	ar->alignment = RGN_ALIGN_RIGHT;
-	ar->flag = RGN_FLAG_HIDDEN;
 
 	/* main area */
 	ar = MEM_callocN(sizeof(ARegion), "main area for node");
@@ -194,6 +193,8 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 					ED_area_tag_refresh(sa);
 				else if (wmn->data == ND_SHADING_DRAW)
 					ED_area_tag_refresh(sa);
+				else if (wmn->data == ND_SHADING_LINKS)
+					ED_area_tag_refresh(sa);
 				else if (wmn->action == NA_ADDED && snode->edittree)
 					nodeSetActiveID(snode->edittree, ID_MA, wmn->reference);
 
@@ -249,6 +250,15 @@ static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
 					/* note that nodeUpdateID is already called by BKE_image_signal() on all
 					 * scenes so really this is just to know if the images is used in the compo else
 					 * painting on images could become very slow when the compositor is open. */
+					if (nodeUpdateID(snode->nodetree, wmn->reference))
+						ED_area_tag_refresh(sa);
+				}
+			}
+			break;
+
+		case NC_MOVIECLIP:
+			if (wmn->action == NA_EDITED) {
+				if (type == NTREE_COMPOSIT) {
 					if (nodeUpdateID(snode->nodetree, wmn->reference))
 						ED_area_tag_refresh(sa);
 				}
