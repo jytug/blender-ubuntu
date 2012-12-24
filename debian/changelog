@@ -1,4 +1,4 @@
-blender (2.64a-1) UNRELEASED; urgency=low
+blender (2.65-1) UNRELEASED; urgency=low
 
   * New upstream release
   * debian/patches/: #0009 changed to fix l10n issue.
@@ -11,7 +11,7 @@ blender (2.64a-1) UNRELEASED; urgency=low
   * debian/control: subversion added to b-deps
   * debian/gbp.conf: bzip2 compression enabled
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sun, 21 Oct 2012 16:15:51 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Thu, 20 Dec 2012 15:38:44 +0100
 
 blender (2.63a-2) experimental; urgency=low
 
