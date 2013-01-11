@@ -8,7 +8,7 @@ Uploaders: Alessio Treglia <alessio@debian.org>,
 DM-Upload-Allowed: yes
 Build-Depends: autotools-dev,
                cmake,
-               debhelper (>= 7.0.50~),
+               debhelper (>= 9),
                gettext,
                libalut-dev,
                libavdevice-dev,
