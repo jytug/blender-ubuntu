@@ -30,7 +30,7 @@ set(INC
 	../blenlib
 	../makesdna
 	../../../intern/guardedalloc
-	../../../extern/bullet2/src
+	../../../extern/rangetree
 	../../../intern/opennl/extern
 )
 
@@ -74,6 +74,8 @@ set(SRC
 	intern/bmesh_iterators.c
 	intern/bmesh_iterators.h
 	intern/bmesh_iterators_inline.h
+	intern/bmesh_log.c
+	intern/bmesh_log.h
 	intern/bmesh_marking.c
 	intern/bmesh_marking.h
 	intern/bmesh_mesh.c
@@ -111,6 +113,8 @@ set(SRC
 	tools/bmesh_decimate_dissolve.c
 	tools/bmesh_decimate_unsubdivide.c
 	tools/bmesh_decimate.h
+	tools/bmesh_edgesplit.c
+	tools/bmesh_edgesplit.h
 
 	bmesh.h
 	bmesh_class.h
@@ -122,6 +126,9 @@ endif()
 
 if(WITH_BULLET)
 	add_definitions(-DWITH_BULLET)
+	list(APPEND INC_SYS
+		${BULLET_INCLUDE_DIRS}
+	)
 endif()
 
 if(WITH_INTERNATIONAL)

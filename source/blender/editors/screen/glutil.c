@@ -33,11 +33,13 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "DNA_userdef_types.h"
 #include "DNA_vec_types.h"
 
 #include "BLI_rect.h"
 #include "BLI_utildefines.h"
 
+#include "BKE_blender.h"
 #include "BKE_colortools.h"
 
 #include "BLI_math.h"
@@ -54,7 +56,7 @@
 /* ******************************************** */
 
 /* defined in BIF_gl.h */
-GLubyte stipple_halftone[128] = {
+const GLubyte stipple_halftone[128] = {
 	0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55, 
 	0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55, 
 	0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,
@@ -81,7 +83,7 @@ GLubyte stipple_halftone[128] = {
  *     00000000 */
 
 
-GLubyte stipple_quarttone[128] = { 
+const GLubyte stipple_quarttone[128] = {
 	136, 136, 136, 136, 0, 0, 0, 0, 34, 34, 34, 34, 0, 0, 0, 0,
 	136, 136, 136, 136, 0, 0, 0, 0, 34, 34, 34, 34, 0, 0, 0, 0,
 	136, 136, 136, 136, 0, 0, 0, 0, 34, 34, 34, 34, 0, 0, 0, 0,
@@ -92,7 +94,7 @@ GLubyte stipple_quarttone[128] = {
 	136, 136, 136, 136, 0, 0, 0, 0, 34, 34, 34, 34, 0, 0, 0, 0};
 
 
-GLubyte stipple_diag_stripes_pos[128] = {
+const GLubyte stipple_diag_stripes_pos[128] = {
 	0x00, 0xff, 0x00, 0xff, 0x01, 0xfe, 0x01, 0xfe,
 	0x03, 0xfc, 0x03, 0xfc, 0x07, 0xf8, 0x07, 0xf8,
 	0x0f, 0xf0, 0x0f, 0xf0, 0x1f, 0xe0, 0x1f, 0xe0,
@@ -111,7 +113,7 @@ GLubyte stipple_diag_stripes_pos[128] = {
 	0xc0, 0x3f, 0xc0, 0x3f, 0x80, 0x7f, 0x80, 0x7f};
 
 
-GLubyte stipple_diag_stripes_neg[128] = {
+const GLubyte stipple_diag_stripes_neg[128] = {
 	0xff, 0x00, 0xff, 0x00, 0xfe, 0x01, 0xfe, 0x01,
 	0xfc, 0x03, 0xfc, 0x03, 0xf8, 0x07, 0xf8, 0x07,
 	0xf0, 0x0f, 0xf0, 0x0f, 0xe0, 0x1f, 0xe0, 0x1f,
@@ -292,7 +294,10 @@ void setlinestyle(int nr)
 	else {
 		
 		glEnable(GL_LINE_STIPPLE);
-		glLineStipple(nr, 0xAAAA);
+		if (U.pixelsize > 1.0f)
+			glLineStipple(nr, 0xCCCC);
+		else
+			glLineStipple(nr, 0xAAAA);
 	}
 }
 

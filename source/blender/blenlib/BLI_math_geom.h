@@ -53,6 +53,7 @@ float area_tri_signed_v2(const float v1[2], const float v2[2], const float v3[2]
 float area_tri_v3(const float a[3], const float b[3], const float c[3]);
 float area_quad_v3(const float a[3], const float b[3], const float c[3], const float d[3]);
 float area_poly_v3(int nr, float verts[][3], const float normal[3]);
+float area_poly_v2(int nr, float verts[][2]);
 
 int is_quad_convex_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3]);
 int is_quad_convex_v2(const float v1[2], const float v2[2], const float v3[2], const float v4[2]);
@@ -71,6 +72,9 @@ float closest_to_line_v3(float r[3], const float p[3], const float l1[3], const 
 float closest_to_line_v2(float r[2], const float p[2], const float l1[2], const float l2[2]);
 void closest_to_line_segment_v3(float r[3], const float p[3], const float l1[3], const float l2[3]);
 void closest_to_plane_v3(float r[3], const float plane_co[3], const float plane_no_unit[3], const float pt[3]);
+
+/* Set 'r' to the point in triangle (t1, t2, t3) closest to point 'p' */
+void closest_on_tri_to_point_v3(float r[3], const float p[3], const float t1[3], const float t2[3], const float t3[3]);
 
 
 float line_point_factor_v3(const float p[3], const float l1[3], const float l2[3]);
@@ -202,7 +206,7 @@ void perspective_m4(float mat[4][4], const float left, const float right,
                     const float bottom, const float top, const float nearClip, const float farClip);
 void orthographic_m4(float mat[4][4], const float left, const float right,
                      const float bottom, const float top, const float nearClip, const float farClip);
-void window_translate_m4(float winmat[][4], float perspmat[][4],
+void window_translate_m4(float winmat[4][4], float perspmat[4][4],
                          const float x, const float y);
 
 int box_clip_bounds_m4(float boundbox[2][3],
@@ -257,10 +261,17 @@ MINLINE void madd_sh_shfl(float r[9], const float sh[3], const float f);
 float form_factor_hemi_poly(float p[3], float n[3],
                             float v1[3], float v2[3], float v3[3], float v4[3]);
 
-void axis_dominant_v3(int *axis_a, int *axis_b, const float axis[3]);
+void  axis_dominant_v3(int *r_axis_a, int *r_axis_b, const float axis[3]);
+float axis_dominant_v3_max(int *r_axis_a, int *r_axis_b, const float axis[3])
+#ifdef __GNUC__
+__attribute__((warn_unused_result))
+#endif
+;
 
 MINLINE int max_axis_v3(const float vec[3]);
 MINLINE int min_axis_v3(const float vec[3]);
+
+MINLINE int poly_to_tri_count(const int poly_count, const int corner_count);
 
 #ifdef __cplusplus
 }

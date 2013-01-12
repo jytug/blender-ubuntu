@@ -35,18 +35,18 @@
 #include "RNA_types.h"
 #include "RNA_access.h"
 
-#include "bpy.h" 
-#include "bpy_util.h" 
+#include "BLI_path_util.h"
+#include "BLI_string.h"
+#include "BKE_bpath.h"
+#include "BLI_utildefines.h"
+
+#include "bpy.h"
+#include "bpy_util.h"
 #include "bpy_rna.h"
 #include "bpy_app.h"
 #include "bpy_props.h"
 #include "bpy_library.h"
 #include "bpy_operator.h"
-
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_bpath.h"
-#include "BLI_utildefines.h"
 
 #include "BKE_main.h"
 #include "BKE_global.h" /* XXX, G.main only */
@@ -94,7 +94,7 @@ static int bpy_blend_paths_visit_cb(void *userdata, char *UNUSED(path_dst), cons
 	PyObject *item = PyUnicode_DecodeFSDefault(path_src);
 	PyList_Append(list, item);
 	Py_DECREF(item);
-	return FALSE; /* never edits the path */
+	return false; /* never edits the path */
 }
 
 PyDoc_STRVAR(bpy_blend_paths_doc,
@@ -116,9 +116,9 @@ static PyObject *bpy_blend_paths(PyObject *UNUSED(self), PyObject *args, PyObjec
 	int flag = 0;
 	PyObject *list;
 
-	int absolute = FALSE;
-	int packed   = FALSE;
-	int local    = FALSE;
+	int absolute = false;
+	int packed   = false;
+	int local    = false;
 	static const char *kwlist[] = {"absolute", "packed", "local", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|iii:blend_paths",
@@ -127,13 +127,13 @@ static PyObject *bpy_blend_paths(PyObject *UNUSED(self), PyObject *args, PyObjec
 		return NULL;
 	}
 
-	if (absolute) flag |= BLI_BPATH_TRAVERSE_ABS;
-	if (!packed)  flag |= BLI_BPATH_TRAVERSE_SKIP_PACKED;
-	if (local)    flag |= BLI_BPATH_TRAVERSE_SKIP_LIBRARY;
+	if (absolute) flag |= BKE_BPATH_TRAVERSE_ABS;
+	if (!packed)  flag |= BKE_BPATH_TRAVERSE_SKIP_PACKED;
+	if (local)    flag |= BKE_BPATH_TRAVERSE_SKIP_LIBRARY;
 
 	list = PyList_New(0);
 
-	BLI_bpath_traverse_main(G.main, bpy_blend_paths_visit_cb, flag, (void *)list);
+	BKE_bpath_traverse_main(G.main, bpy_blend_paths_visit_cb, flag, (void *)list);
 
 	return list;
 }
@@ -205,7 +205,7 @@ static PyObject *bpy_resource_path(PyObject *UNUSED(self), PyObject *args, PyObj
 		return NULL;
 	}
 
-	path = BLI_get_folder_version(folder_id, (major * 100) + minor, FALSE);
+	path = BLI_get_folder_version(folder_id, (major * 100) + minor, false);
 
 	return PyUnicode_DecodeFSDefault(path ? path : "");
 }
@@ -233,6 +233,7 @@ static PyObject *bpy_import_test(const char *modname)
 
 	return mod;
 }
+
 
 /******************************************************************************
  * Description: Creates the bpy module and adds it to sys.modules for importing
@@ -292,6 +293,9 @@ void BPy_init_modules(void)
 	Py_INCREF(bpy_context_module);
 
 	PyModule_AddObject(mod, "context", (PyObject *)bpy_context_module);
+
+	/* register bpy/rna classmethod callbacks */
+	BPY_rna_register_cb();
 
 	/* utility func's that have nowhere else to go */
 	PyModule_AddObject(mod, meth_bpy_script_paths.ml_name, (PyObject *)PyCFunction_New(&meth_bpy_script_paths, NULL));

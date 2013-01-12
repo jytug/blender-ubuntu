@@ -44,7 +44,7 @@ class MESH_OT_delete_edgeloop(Operator):
         mesh = context.object.data
         use_mirror_x = mesh.use_mirror_x
         mesh.use_mirror_x = False
-        if 'FINISHED' in bpy.ops.transform.edge_slide(value=1.0):
+        if 'FINISHED' in bpy.ops.transform.edge_slide(value=1.0, correct_uv=True):
             bpy.ops.mesh.select_more()
             bpy.ops.mesh.remove_doubles()
             ret = {'FINISHED'}
@@ -1620,7 +1620,7 @@ class WM_OT_addon_disable(Operator):
 
 
 class WM_OT_theme_install(Operator):
-    "Install a theme"
+    "Load and apply a Blender XML theme file"
     bl_idname = "wm.theme_install"
     bl_label = "Install Theme..."
 

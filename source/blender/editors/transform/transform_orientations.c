@@ -438,7 +438,7 @@ int BIF_countTransformOrientation(const bContext *C)
 	return count;
 }
 
-void applyTransformOrientation(const bContext *C, float mat[3][3], char *name)
+void applyTransformOrientation(const bContext *C, float mat[3][3], char name[MAX_NAME])
 {
 	TransformOrientation *ts;
 	View3D *v3d = CTX_wm_view3d(C);
@@ -449,8 +449,9 @@ void applyTransformOrientation(const bContext *C, float mat[3][3], char *name)
 		for (i = 0, ts = CTX_data_scene(C)->transform_spaces.first; ts; ts = ts->next, i++) {
 			if (selected_index == i) {
 				
-				if (name)
-					strcpy(name, ts->name);
+				if (name) {
+					BLI_strncpy(name, ts->name, MAX_NAME);
+				}
 				
 				copy_m3_m3(mat, ts->mat);
 				break;
@@ -763,7 +764,7 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 			EditBone *ebone;
 			int ok = FALSE;
 			
-			/* grr,.but better then duplicate code */
+			/* grr. but better then duplicate code */
 #define EBONE_CALC_NORMAL_PLANE  { \
 			float tmat[3][3]; \
 			float vec[3]; \
@@ -881,7 +882,7 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 	return result;
 }
 
-void ED_getTransformOrientationMatrix(const bContext *C, float orientation_mat[][3], int activeOnly)
+void ED_getTransformOrientationMatrix(const bContext *C, float orientation_mat[3][3], int activeOnly)
 {
 	float normal[3] = {0.0, 0.0, 0.0};
 	float plane[3] = {0.0, 0.0, 0.0};

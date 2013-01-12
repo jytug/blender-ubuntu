@@ -129,6 +129,8 @@ option(WITH_IK_ITASC      "Enable ITASC IK solver (only disable for development 
 option(WITH_IK_SOLVER     "Enable Legacy IK solver (only disable for development)" ON)
 option(WITH_FFTW3         "Enable FFTW3 support (Used for smoke and audio effects)" ON)
 option(WITH_BULLET        "Enable Bullet (Physics Engine)" ON)
+option(WITH_SYSTEM_BULLET "Use the systems bullet library (currently unsupported due to missing features in upstream!)" )
+mark_as_advanced(WITH_SYSTEM_BULLET)
 option(WITH_GAMEENGINE    "Enable Game Engine" ON)
 option(WITH_PLAYER        "Build Player" OFF)
 option(WITH_OPENCOLORIO   "Enable OpenColorIO color management" ON)
@@ -148,6 +150,9 @@ mark_as_advanced(WITH_HEADLESS)
 
 option(WITH_AUDASPACE    "Build with blenders audio library (only disable if you know what you're doing!)" ON)
 mark_as_advanced(WITH_AUDASPACE)
+
+option(WITH_BOOL_COMPAT "Continue defining \"TRUE\" and \"FALSE\" until these can be replaced with \"true\" and \"false\" from stdbool.h" ON)
+mark_as_advanced(WITH_BOOL_COMPAT)
 
 
 # (unix defaults to OpenMP On)
@@ -263,7 +268,6 @@ mark_as_advanced(WITH_CXX_GUARDEDALLOC)
 
 option(WITH_ASSERT_ABORT "Call abort() when raising an assertion through BLI_assert()" OFF)
 mark_as_advanced(WITH_ASSERT_ABORT)
-
 
 if(APPLE)
 	cmake_minimum_required(VERSION 2.8.8)
@@ -423,6 +427,13 @@ endif()
 
 TEST_SSE_SUPPORT(COMPILER_SSE_FLAG COMPILER_SSE2_FLAG)
 
+TEST_STDBOOL_SUPPORT()
+if(HAVE_STDBOOL_H)
+	add_definitions(-DHAVE_STDBOOL_H)
+endif()
+if(WITH_BOOL_COMPAT)
+	add_definitions(-DWITH_BOOL_COMPAT)
+endif()
 
 #-----------------------------------------------------------------------------
 # Check for valid directories
@@ -644,20 +655,15 @@ if(UNIX AND NOT APPLE)
 	if(WITH_BOOST)
 		# uses in build instructions to override include and library variables
 		if(NOT BOOST_CUSTOM)
-			# XXX No more lib dir, is this multithread stuff still needed?
 			if(${WITH_STATIC_LIBS})
 				set(Boost_USE_STATIC_LIBS ON)
 			endif()
-			if(NOT BOOST_ROOT)
-				set(Boost_USE_MULTITHREADED OFF)
-			else()
-				set(Boost_USE_MULTITHREADED ON)
-			endif()
+			set(Boost_USE_MULTITHREADED ON)
 			set(__boost_packages filesystem regex system thread date_time)
 			if (WITH_INTERNATIONAL)
 				list(APPEND __boost_packages locale)
 			endif()
-			find_package(Boost 1.34 COMPONENTS ${__boost_packages})
+			find_package(Boost 1.48 COMPONENTS ${__boost_packages})
 			if(Boost_USE_STATIC_LIBS AND Boost_USE_ICU)
 				find_package(IcuLinux)
 			endif()
@@ -1092,14 +1098,16 @@ elseif(WIN32)
 		if(WITH_PYTHON)
 			# normally cached but not since we include them with blender
 			if(MSVC10)
-				set(PYTHON_VERSION 3.2) # CACHE STRING)
+				set(PYTHON_VERSION 3.3) # CACHE STRING)
 			else()
 				set(PYTHON_VERSION 3.3) # CACHE STRING)
 			endif()
 
 			set_lib_path(PYTHON "python")
 			STRING(REPLACE "." "" _PYTHON_VERSION_NO_DOTS ${PYTHON_VERSION})
-			set(PYTHON_LIBRARY ${PYTHON}/lib/python${_PYTHON_VERSION_NO_DOTS}.lib) #CACHE FILEPATH
+			# Use shared libs for vc2008 and vc2010 until we actually have vc2010 libs
+			set(PYTHON_LIBRARY ${LIBDIR}/python/lib/python${_PYTHON_VERSION_NO_DOTS}.lib)
+			# set(PYTHON_LIBRARY ${PYTHON}/lib/python${_PYTHON_VERSION_NO_DOTS}.lib) #CACHE FILEPATH
 			unset(_PYTHON_VERSION_NO_DOTS)
 
 			#Shared includes for both vc2008 and vc2010
@@ -1521,7 +1529,8 @@ elseif(APPLE)
 			endif()
 
 			if(WITH_INPUT_NDOF)
-				set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -weak_framework 3DconnexionClient")
+				set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -F/Library/Frameworks -weak_framework 3DconnexionClient")
+				set(NDOF_INCLUDE_DIRS /Library/Frameworks/3DconnexionClient.framework/Headers )
 			endif()
 		endif()
 
@@ -1837,6 +1846,20 @@ else()
 	set(GLEW_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/extern/glew/include")
 endif()
 
+
+#-----------------------------------------------------------------------------
+# Configure Bullet
+
+if(WITH_BULLET AND WITH_SYSTEM_BULLET)
+	find_package(Bullet)
+	if(NOT BULLET_FOUND)
+		set(WITH_BULLET OFF)
+	endif()
+else()
+	set(BULLET_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/extern/bullet2/src")
+	# set(BULLET_LIBRARIES "")
+endif()
+
 #-----------------------------------------------------------------------------
 # Configure Python.
 
@@ -2141,3 +2164,8 @@ if(FIRST_RUN)
 
 	message("${_config_msg}")
 endif()
+
+# debug
+message(
+    STATUS "HAVE_STDBOOL_H = ${HAVE_STDBOOL_H}"
+)

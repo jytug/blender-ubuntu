@@ -29,7 +29,8 @@
 CCL_NAMESPACE_BEGIN
 
 /* constants */
-#define OBJECT_SIZE 		18
+#define OBJECT_SIZE 		11
+#define OBJECT_VECTOR_SIZE	6
 #define LIGHT_SIZE			4
 #define FILTER_TABLE_SIZE	256
 #define RAMP_TABLE_SIZE		256
@@ -46,6 +47,8 @@ CCL_NAMESPACE_BEGIN
 #define __OSL__
 #endif
 #define __NON_PROGRESSIVE__
+#define __HAIR__
+#define __LAMP_MIS__
 #endif
 
 #ifdef __KERNEL_CUDA__
@@ -115,7 +118,6 @@ CCL_NAMESPACE_BEGIN
 #define __ANISOTROPIC__
 #define __OBJECT_MOTION__
 #endif
-
 //#define __SOBOL_FULL_SCREEN__
 
 /* Shader Evaluation */
@@ -291,7 +293,8 @@ typedef enum LightType {
 	LIGHT_BACKGROUND,
 	LIGHT_AREA,
 	LIGHT_AO,
-	LIGHT_SPOT
+	LIGHT_SPOT,
+	LIGHT_STRAND
 } LightType;
 
 /* Camera Type */
@@ -342,21 +345,47 @@ typedef struct Intersection {
 	float t, u, v;
 	int prim;
 	int object;
+	int segment;
 } Intersection;
 
 /* Attributes */
 
+#define ATTR_PRIM_TYPES		2
+#define ATTR_PRIM_CURVE		1
+
 typedef enum AttributeElement {
+	ATTR_ELEMENT_NONE,
+	ATTR_ELEMENT_VALUE,
 	ATTR_ELEMENT_FACE,
 	ATTR_ELEMENT_VERTEX,
 	ATTR_ELEMENT_CORNER,
-	ATTR_ELEMENT_VALUE,
-	ATTR_ELEMENT_NONE
+	ATTR_ELEMENT_CURVE,
+	ATTR_ELEMENT_CURVE_KEY
 } AttributeElement;
+
+typedef enum AttributeStandard {
+	ATTR_STD_NONE = 0,
+	ATTR_STD_VERTEX_NORMAL,
+	ATTR_STD_FACE_NORMAL,
+	ATTR_STD_UV,
+	ATTR_STD_UV_TANGENT,
+	ATTR_STD_UV_TANGENT_SIGN,
+	ATTR_STD_GENERATED,
+	ATTR_STD_POSITION_UNDEFORMED,
+	ATTR_STD_POSITION_UNDISPLACED,
+	ATTR_STD_MOTION_PRE,
+	ATTR_STD_MOTION_POST,
+	ATTR_STD_PARTICLE,
+	ATTR_STD_CURVE_TANGENT,
+	ATTR_STD_CURVE_INTERCEPT,
+	ATTR_STD_NUM,
+
+	ATTR_STD_NOT_FOUND = ~0
+} AttributeStandard;
 
 /* Closure data */
 
-#define MAX_CLOSURE 8
+#define MAX_CLOSURE 16
 
 typedef struct ShaderClosure {
 	ClosureType type;
@@ -378,6 +407,18 @@ typedef struct ShaderClosure {
 	void *prim;
 #endif
 } ShaderClosure;
+
+/* Shader Context
+ *
+ * For OSL we recycle a fixed number of contexts for speed */
+
+typedef enum ShaderContext {
+	SHADER_CONTEXT_MAIN = 0,
+	SHADER_CONTEXT_INDIRECT = 1,
+	SHADER_CONTEXT_EMISSION = 2,
+	SHADER_CONTEXT_SHADOW = 3,
+	SHADER_CONTEXT_NUM = 4
+} ShaderContext;
 
 /* Shader Data
  *
@@ -423,6 +464,11 @@ typedef struct ShaderData {
 
 	/* primitive id if there is one, ~0 otherwise */
 	int prim;
+
+#ifdef __HAIR__
+	/* for curves, segment number in curve, ~0 for triangles */
+	int segment;
+#endif
 	/* parametric coordinates
 	 * - barycentric weights for triangles */
 	float u, v;
@@ -465,11 +511,6 @@ typedef struct ShaderData {
 #else
 	/* Closure data, with a single sampled closure for low memory usage */
 	ShaderClosure closure;
-#endif
-
-#ifdef __OSL__
-	/* OSL context */
-	void *osl_ctx;
 #endif
 } ShaderData;
 
@@ -596,6 +637,7 @@ typedef struct KernelIntegrator {
 	int num_all_lights;
 	float pdf_triangles;
 	float pdf_lights;
+	float inv_pdf_lights;
 	int pdf_background_res;
 
 	/* bounces */
@@ -631,7 +673,7 @@ typedef struct KernelIntegrator {
 	int transmission_samples;
 	int ao_samples;
 	int mesh_light_samples;
-	int pad1, pad2;
+	int pad1;
 } KernelIntegrator;
 
 typedef struct KernelBVH {
@@ -642,6 +684,29 @@ typedef struct KernelBVH {
 	int pad2;
 } KernelBVH;
 
+typedef enum CurveFlag {
+	/* runtime flags */
+	CURVE_KN_BACKFACING = 1,				/* backside of cylinder? */
+	CURVE_KN_ENCLOSEFILTER = 2,				/* don't consider strands surrounding start point? */
+	CURVE_KN_CURVEDATA = 4,				/* curve data available? */
+	CURVE_KN_INTERPOLATE = 8,				/* render as a curve? - not supported yet */
+	CURVE_KN_ACCURATE = 16,				/* use accurate intersections test? */
+	CURVE_KN_INTERSECTCORRECTION = 32,		/* correct for width after determing closest midpoint? */
+	CURVE_KN_POSTINTERSECTCORRECTION = 64,	/* correct for width after intersect? */
+	CURVE_KN_NORMALCORRECTION = 128,		/* correct tangent normal for slope? */
+	CURVE_KN_TRUETANGENTGNORMAL = 256,		/* use tangent normal for geometry? */
+	CURVE_KN_TANGENTGNORMAL = 512,			/* use tangent normal for shader? */
+} CurveFlag;
+
+typedef struct KernelCurves {
+	/* strand intersect and normal parameters - many can be changed to flags*/
+	float normalmix;
+	float encasing_ratio;
+	int curveflags;
+	int pad;
+
+} KernelCurves;
+
 typedef struct KernelData {
 	KernelCamera cam;
 	KernelFilm film;
@@ -649,6 +714,7 @@ typedef struct KernelData {
 	KernelSunSky sunsky;
 	KernelIntegrator integrator;
 	KernelBVH bvh;
+	KernelCurves curve_kernel_data;
 } KernelData;
 
 CCL_NAMESPACE_END

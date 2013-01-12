@@ -161,7 +161,7 @@ static HaloRen *initstar(Render *re, ObjectRen *obr, const float vec[3], float h
  */
 
 void RE_make_stars(Render *re, Scene *scenev3d, void (*initfunc)(void),
-                   void (*vertexfunc)(float*),  void (*termfunc)(void))
+                   void (*vertexfunc)(float *),  void (*termfunc)(void))
 {
 	extern unsigned char hash[512];
 	ObjectRen *obr= NULL;
@@ -759,7 +759,7 @@ static VertRen *as_findvertex(VlakRen *vlr, VertRen *UNUSED(ver), ASvert *asv, f
 
 /* note; autosmooth happens in object space still, after applying autosmooth we rotate */
 /* note2; actually, when original mesh and displist are equal sized, face normals are from original mesh */
-static void autosmooth(Render *UNUSED(re), ObjectRen *obr, float mat[][4], int degr)
+static void autosmooth(Render *UNUSED(re), ObjectRen *obr, float mat[4][4], int degr)
 {
 	ASvert *asv, *asverts;
 	ASface *asf;
@@ -2186,7 +2186,7 @@ static short test_for_displace(Render *re, Object *ob)
 	return 0;
 }
 
-static void displace_render_vert(Render *re, ObjectRen *obr, ShadeInput *shi, VertRen *vr, int vindex, float *scale, float mat[][4], float imat[][3])
+static void displace_render_vert(Render *re, ObjectRen *obr, ShadeInput *shi, VertRen *vr, int vindex, float *scale, float mat[4][4], float imat[3][3])
 {
 	MTFace *tface;
 	short texco= shi->mat->texco;
@@ -2285,7 +2285,7 @@ static void displace_render_vert(Render *re, ObjectRen *obr, ShadeInput *shi, Ve
 	return;
 }
 
-static void displace_render_face(Render *re, ObjectRen *obr, VlakRen *vlr, float *scale, float mat[][4], float imat[][3])
+static void displace_render_face(Render *re, ObjectRen *obr, VlakRen *vlr, float *scale, float mat[4][4], float imat[3][3])
 {
 	ShadeInput shi;
 
@@ -2340,7 +2340,7 @@ static void displace_render_face(Render *re, ObjectRen *obr, VlakRen *vlr, float
 	}
 }
 
-static void do_displacement(Render *re, ObjectRen *obr, float mat[][4], float imat[][3])
+static void do_displacement(Render *re, ObjectRen *obr, float mat[4][4], float imat[3][3])
 {
 	VertRen *vr;
 	VlakRen *vlr;
@@ -2820,7 +2820,7 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 	ListBase disp={NULL, NULL};
 	Material **matar;
 	float *data, *fp, *orco=NULL;
-	float n[3], mat[4][4];
+	float n[3], mat[4][4], nmat[4][4];
 	int nr, startvert, a, b;
 	int need_orco=0, totmat;
 
@@ -2834,6 +2834,11 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 	
 	mult_m4_m4m4(mat, re->viewmat, ob->obmat);
 	invert_m4_m4(ob->imat, mat);
+
+	/* local object -> world space transform for normals */
+	copy_m4_m4(nmat, mat);
+	transpose_m4(nmat);
+	invert_m4(nmat);
 
 	/* material array */
 	totmat= ob->totcol+1;
@@ -2859,7 +2864,7 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 	}
 	else {
 		if (need_orco) {
-		  orco= get_object_orco(re, ob);
+			orco = get_object_orco(re, ob);
 		}
 
 		while (dl) {
@@ -2891,13 +2896,20 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 					zero_v3(n);
 					index= dl->index;
 					for (a=0; a<dl->parts; a++, index+=3) {
+						int v1 = index[0], v2 = index[1], v3 = index[2];
+						float *co1 = &dl->verts[v1 * 3],
+						      *co2 = &dl->verts[v2 * 3],
+						      *co3 = &dl->verts[v3 * 3];
+
 						vlr= RE_findOrAddVlak(obr, obr->totvlak++);
-						vlr->v1= RE_findOrAddVert(obr, startvert+index[0]);
-						vlr->v2= RE_findOrAddVert(obr, startvert+index[1]);
-						vlr->v3= RE_findOrAddVert(obr, startvert+index[2]);
+						vlr->v1= RE_findOrAddVert(obr, startvert + v1);
+						vlr->v2= RE_findOrAddVert(obr, startvert + v2);
+						vlr->v3= RE_findOrAddVert(obr, startvert + v3);
 						vlr->v4= NULL;
-						if (area_tri_v3(vlr->v3->co, vlr->v2->co, vlr->v1->co)>FLT_EPSILON10) {
-							normal_tri_v3(tmp, vlr->v3->co, vlr->v2->co, vlr->v1->co);
+
+						/* to prevent float accuracy issues, we calculate normal in local object space (not world) */
+						if (area_tri_v3(co3, co2, co1)>FLT_EPSILON10) {
+							normal_tri_v3(tmp, co3, co2, co1);
 							add_v3_v3(n, tmp);
 						}
 
@@ -2906,6 +2918,8 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 						vlr->ec= 0;
 					}
 
+					/* transform normal to world space */
+					mul_m4_v3(nmat, n);
 					normalize_v3(n);
 
 					/* vertex normals */
@@ -3217,7 +3231,7 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 	CustomDataMask mask;
 	float xn, yn, zn,  imat[3][3], mat[4][4];  //nor[3],
 	float *orco=0;
-	int need_orco=0, need_stress=0, need_nmap_tangent=0, need_tangent=0;
+	int need_orco=0, need_stress=0, need_nmap_tangent=0, need_tangent=0, need_origindex=0;
 	int a, a1, ok, vertofs;
 	int end, do_autosmooth = FALSE, totvert = 0;
 	int use_original_normals = FALSE;
@@ -3267,6 +3281,10 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 		need_nmap_tangent= 1;
 	}
 	
+	/* origindex currently only used when baking to vertex colors */
+	if(re->flag & R_BAKING && re->r.bake_flag & R_BAKE_VCOL)
+		need_origindex= 1;
+
 	/* check autosmooth and displacement, we then have to skip only-verts optimize */
 	do_autosmooth |= (me->flag & ME_AUTOSMOOTH);
 	if (do_autosmooth)
@@ -3304,6 +3322,15 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 		make_render_halos(re, obr, me, totvert, mvert, ma, orco);
 	}
 	else {
+		const int *index_vert_orig = NULL;
+		const int *index_mf_to_mpoly = NULL;
+		const int *index_mp_to_orig = NULL;
+		if (need_origindex) {
+			index_vert_orig = dm->getVertDataArray(dm, CD_ORIGINDEX);
+			/* double lookup for faces -> polys */
+			index_mf_to_mpoly = dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
+			index_mp_to_orig = dm->getPolyDataArray(dm, CD_ORIGINDEX);
+		}
 
 		for (a=0; a<totvert; a++, mvert++) {
 			ver= RE_findOrAddVert(obr, obr->totvert++);
@@ -3319,6 +3346,18 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 			if (orco) {
 				ver->orco= orco;
 				orco+=3;
+			}
+
+			if (need_origindex) {
+				int *origindex;
+				origindex = RE_vertren_get_origindex(obr, ver, 1);
+
+				/* Use orig index array if it's available (e.g. in the presence
+				 * of modifiers). */
+				if (index_vert_orig)
+					*origindex = index_vert_orig[a];
+				else
+					*origindex = a;
 			}
 		}
 		
@@ -3441,6 +3480,21 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 										}
 									}
 								}
+
+								if (need_origindex) {
+									/* Find original index of mpoly for this tessface. Options:
+									   - Modified mesh; two-step look up from tessface -> modified mpoly -> original mpoly
+									   - OR Tesselated mesh; look up from tessface -> mpoly
+									   - OR Failsafe; tessface == mpoly. Could probably assert(false) in this case? */
+									int *origindex;
+									origindex = RE_vlakren_get_origindex(obr, vlr, 1);
+									if (index_mf_to_mpoly && index_mp_to_orig)
+										*origindex = DM_origindex_mface_mpoly(index_mf_to_mpoly, index_mp_to_orig, a);
+									else if (index_mf_to_mpoly)
+										*origindex = index_mf_to_mpoly[a];
+									else
+										*origindex = a;
+								}
 							}
 						}
 					}
@@ -3525,7 +3579,7 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 /* Lamps and Shadowbuffers													 */
 /* ------------------------------------------------------------------------- */
 
-static void initshadowbuf(Render *re, LampRen *lar, float mat[][4])
+static void initshadowbuf(Render *re, LampRen *lar, float mat[4][4])
 {
 	struct ShadBuf *shb;
 	float viewinv[4][4];
@@ -5141,7 +5195,7 @@ void RE_DataBase_ApplyWindow(Render *re)
 	project_renderdata(re, projectverto, 0, 0, 0);
 }
 
-void RE_DataBase_GetView(Render *re, float mat[][4])
+void RE_DataBase_GetView(Render *re, float mat[4][4])
 {
 	copy_m4_m4(mat, re->viewmat);
 }

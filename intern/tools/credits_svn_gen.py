@@ -58,7 +58,7 @@ Example execution commands:
 # Generic Class and parsing code, could be useful for all sorts of cases
 
 
-class SvnCommit(object):
+class SvnCommit:
     """Just data store really"""
     __slots__ = ("revision",
                  "author",
@@ -125,7 +125,7 @@ contrib_companies = [
     "<b>Unity Technologies</b> - FBX Exporter",
     "<b>BioSkill GmbH</b> - H3D compatibility for X3D Exporter, "
     "OBJ Nurbs Import/Export",
-    "<b>AutoCRC</b> - Improvements to fluid particles",
+    "<b>AutoCRC</b> - Improvements to fluid particles, vertex color baking",
 ]
 
 # ignore commits containing these messages
@@ -166,6 +166,8 @@ author_name_mapping = {
     "campbellbarton": "Campbell Barton",
     "cessen": "Nathan Vegdahl",
     "cmccad": "Casey Corn",
+    "cyborgmuppet": "Ove Murberg Henriksen",
+    "dail": "Justin Dailey",
     "damien78": "Damien Plisson",
     "damir": "Damir Prebeg",
     "desoto": "Chris Burt",
@@ -282,7 +284,7 @@ author_name_mapping = {
     
     # --------------------
     # Extension Developers
-    "aurel": "Aurel W",  # TODO, full name?
+    "aurel": "Aurel Wildfellner",
     "axon_d": "Dany Lebel",
     "bartekskorupa": "Bartek Skorupa",
     "bassamk": "Bassam Kurdali",
@@ -315,6 +317,7 @@ author_name_mapping = {
     "michaelw": "Michael Williamson",
     "muraj": "Cory Perry",
     "paulo_gomes": "Paulo Gomes",
+    "plasmasolutions": "Thomas Beck",
     "pontiac": "Martin Buerbaum",
     "seminumerical": "Morgan Mörtsell",
     "spudmn": "Aaron Keith",
@@ -350,6 +353,8 @@ alert_users = set()
 author_overrides_bfb = {
     "farny": (43567, 44698),
     "damir": (37043, 40311, 44550, 45295),
+    "plasmasolutions": (52074, ),
+    "lichtwerk": (51650, 51850, 51861),
     }
 
 author_overrides_ext = {
@@ -514,7 +519,7 @@ def main_credits(min_rev_bfb=0, min_rev_ext=0):
     credits = {key: Credit() for key in author_name_mapping}
 
     def commit_to_credit(commits, author_overrides):
-        print(len(commits))
+        # print(len(commits))
         author_overrides_reverse = {
             revision: author
             for author, revisions in author_overrides.items()
@@ -574,7 +579,7 @@ def main_credits(min_rev_bfb=0, min_rev_ext=0):
     # write out the wiki page
     # sort by name
     is_main_credits = (min_rev_bfb == 0 and min_rev_ext == 0)
-    print(min_rev_bfb, min_rev_ext)
+    # print(min_rev_bfb, min_rev_ext)
     if is_main_credits:
         filename = "credits.html"
     else:
@@ -656,7 +661,7 @@ def main_credits(min_rev_bfb=0, min_rev_ext=0):
 
 def main():
     main_credits()
-    main_credits(min_rev_bfb=46461, min_rev_ext=3355)
+    main_credits(min_rev_bfb=51024, min_rev_ext=3808)
 
 if __name__ == "__main__":
     main()

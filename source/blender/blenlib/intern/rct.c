@@ -109,9 +109,9 @@ static int isect_segments_i(const int v1[2], const int v2[2], const int v3[2], c
 		return 1; /* co-linear */
 	}
 	else {
-		const double labda = (double)((v1[1] - v3[1]) * (v4[0] - v3[0]) - (v1[0] - v3[0]) * (v4[1] - v3[1])) / div;
+		const double lambda = (double)((v1[1] - v3[1]) * (v4[0] - v3[0]) - (v1[0] - v3[0]) * (v4[1] - v3[1])) / div;
 		const double mu    = (double)((v1[1] - v3[1]) * (v2[0] - v1[0]) - (v1[0] - v3[0]) * (v2[1] - v1[1])) / div;
-		return (labda >= 0.0 && labda <= 1.0 && mu >= 0.0 && mu <= 1.0);
+		return (lambda >= 0.0 && lambda <= 1.0 && mu >= 0.0 && mu <= 1.0);
 	}
 }
 static int isect_segments_fl(const float v1[2], const float v2[2], const float v3[2], const float v4[2])
@@ -121,9 +121,9 @@ static int isect_segments_fl(const float v1[2], const float v2[2], const float v
 		return 1; /* co-linear */
 	}
 	else {
-		const double labda = (double)((v1[1] - v3[1]) * (v4[0] - v3[0]) - (v1[0] - v3[0]) * (v4[1] - v3[1])) / div;
+		const double lambda = (double)((v1[1] - v3[1]) * (v4[0] - v3[0]) - (v1[0] - v3[0]) * (v4[1] - v3[1])) / div;
 		const double mu    = (double)((v1[1] - v3[1]) * (v2[0] - v1[0]) - (v1[0] - v3[0]) * (v2[1] - v1[1])) / div;
-		return (labda >= 0.0 && labda <= 1.0 && mu >= 0.0 && mu <= 1.0);
+		return (lambda >= 0.0 && lambda <= 1.0 && mu >= 0.0 && mu <= 1.0);
 	}
 }
 
@@ -315,6 +315,30 @@ void BLI_rctf_resize(rctf *rect, float x, float y)
 	rect->ymin -= y * 0.5f;
 	rect->xmax = rect->xmin + x;
 	rect->ymax = rect->ymin + y;
+}
+
+void BLI_rcti_scale(rcti *rect, const float scale)
+{
+	const int cent_x      = BLI_rcti_cent_x(rect);
+	const int cent_y      = BLI_rcti_cent_y(rect);
+	const int size_x_half = BLI_rcti_size_x(rect) * (scale * 0.5f);
+	const int size_y_half = BLI_rcti_size_y(rect) * (scale * 0.5f);
+	rect->xmin = cent_x - size_x_half;
+	rect->ymin = cent_y - size_y_half;
+	rect->xmax = cent_x + size_x_half;
+	rect->ymax = cent_y + size_y_half;
+}
+
+void BLI_rctf_scale(rctf *rect, const float scale)
+{
+	const float cent_x      = BLI_rctf_cent_x(rect);
+	const float cent_y      = BLI_rctf_cent_y(rect);
+	const float size_x_half = BLI_rctf_size_x(rect) * (scale * 0.5f);
+	const float size_y_half = BLI_rctf_size_y(rect) * (scale * 0.5f);
+	rect->xmin = cent_x - size_x_half;
+	rect->ymin = cent_y - size_y_half;
+	rect->xmax = cent_x + size_x_half;
+	rect->ymax = cent_y + size_y_half;
 }
 
 void BLI_rctf_interp(rctf *rect, const rctf *rect_a, const rctf *rect_b, const float fac)

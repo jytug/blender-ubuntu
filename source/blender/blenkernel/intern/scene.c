@@ -143,7 +143,8 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 	
 	if (type == SCE_COPY_EMPTY) {
 		ListBase lb;
-		scen = BKE_scene_add(sce->id.name + 2);
+		/* XXX. main should become an arg */
+		scen = BKE_scene_add(G.main, sce->id.name + 2);
 		
 		lb = scen->r.layers;
 		scen->r = sce->r;
@@ -372,9 +373,8 @@ void BKE_scene_free(Scene *sce)
 	BKE_color_managed_view_settings_free(&sce->view_settings);
 }
 
-Scene *BKE_scene_add(const char *name)
+static Scene *scene_add(Main *bmain, const char *name)
 {
-	Main *bmain = G.main;
 	Scene *sce;
 	ParticleEditSettings *pset;
 	int a;
@@ -400,6 +400,7 @@ Scene *BKE_scene_add(const char *name)
 
 	sce->r.im_format.planes = R_IMF_PLANES_RGB;
 	sce->r.im_format.imtype = R_IMF_IMTYPE_PNG;
+	sce->r.im_format.depth = R_IMF_CHAN_DEPTH_8;
 	sce->r.im_format.quality = 90;
 	sce->r.im_format.compress = 90;
 
@@ -432,6 +433,8 @@ Scene *BKE_scene_add(const char *name)
 	sce->r.bake_osa = 5;
 	sce->r.bake_flag = R_BAKE_CLEAR;
 	sce->r.bake_normal_space = R_BAKE_SPACE_TANGENT;
+	sce->r.bake_samples = 256;
+	sce->r.bake_biasdist = 0.001;
 	sce->r.scemode = R_DOCOMP | R_DOSEQ | R_EXTENSION;
 	sce->r.stamp = R_STAMP_TIME | R_STAMP_FRAME | R_STAMP_DATE | R_STAMP_CAMERA | R_STAMP_SCENE | R_STAMP_FILENAME | R_STAMP_RENDERTIME;
 	sce->r.stamp_font_id = 12;
@@ -603,6 +606,11 @@ Scene *BKE_scene_add(const char *name)
 	            sizeof(sce->sequencer_colorspace_settings.name));
 
 	return sce;
+}
+
+Scene *BKE_scene_add(Main *bmain, const char *name)
+{
+	return scene_add(bmain, name);
 }
 
 Base *BKE_scene_base_find(Scene *scene, Object *ob)
@@ -1023,6 +1031,47 @@ static void scene_update_drivers(Main *UNUSED(bmain), Scene *scene)
 	}
 }
 
+/* deps hack - do extra recalcs at end */
+static void scene_depsgraph_hack(Scene *scene, Scene *scene_parent)
+{
+	Base *base;
+		
+	scene->customdata_mask = scene_parent->customdata_mask;
+	
+	/* sets first, we allow per definition current scene to have
+	 * dependencies on sets, but not the other way around. */
+	if (scene->set)
+		scene_depsgraph_hack(scene->set, scene_parent);
+	
+	for (base = scene->base.first; base; base = base->next) {
+		Object *ob = base->object;
+		
+		if (ob->depsflag) {
+			int recalc = 0;
+			// printf("depshack %s\n", ob->id.name+2);
+			
+			if (ob->depsflag & OB_DEPS_EXTRA_OB_RECALC)
+				recalc |= OB_RECALC_OB;
+			if (ob->depsflag & OB_DEPS_EXTRA_DATA_RECALC)
+				recalc |= OB_RECALC_DATA;
+			
+			ob->recalc |= recalc;
+			BKE_object_handle_update(scene_parent, ob);
+			
+			if (ob->dup_group && (ob->transflag & OB_DUPLIGROUP)) {
+				GroupObject *go;
+				
+				for (go = ob->dup_group->gobject.first; go; go = go->next) {
+					if (go->ob)
+						go->ob->recalc |= recalc;
+				}
+				group_handle_recalc_and_update(scene_parent, ob, ob->dup_group);
+			}
+		}
+	}
+
+}
+
 static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scene_parent)
 {
 	Base *base;
@@ -1058,6 +1107,7 @@ static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scen
 
 	/* update masking curves */
 	BKE_mask_update_scene(bmain, scene, FALSE);
+	
 }
 
 /* this is called in main loop, doing tagged updates before redraw */
@@ -1149,6 +1199,8 @@ void BKE_scene_update_for_newframe(Main *bmain, Scene *sce, unsigned int lay)
 
 	/* BKE_object_handle_update() on all objects, groups and sets */
 	scene_update_tagged_recursive(bmain, sce, sce);
+
+	scene_depsgraph_hack(sce, sce);
 
 	/* notify editors and python about recalc */
 	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_SCENE_UPDATE_POST);
