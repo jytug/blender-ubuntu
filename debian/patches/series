@@ -4,6 +4,6 @@
 0004-filter_docs_to_install.patch
 0005-locales_directory_install.patch
 0006-update_manpages.patch
-0007-fix_FTBFS_with_ffmpeg_from_debian.patch
-0008-do_not_use_version_number_in_system_path.patch
-0009-look_for_droid_ttf_with_fontconfig.patch
+0007-do_not_use_version_number_in_system_path.patch
+0008-look_for_droid_ttf_with_fontconfig.patch
+0009-fix_FTBFS_against_libav9.patch

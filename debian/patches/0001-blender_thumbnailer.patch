@@ -6,9 +6,9 @@ Subject: blender_thumbnailer
 * Add blender.thumbnailer file
 * Change to python 3.2 since lintian is messing around with that
 ---
- blender.thumbnailer                |    4 ++++
- release/bin/blender-thumbnailer.py |    4 ++--
- source/creator/CMakeLists.txt      |    2 +-
+ blender.thumbnailer                | 4 ++++
+ release/bin/blender-thumbnailer.py | 4 ++--
+ source/creator/CMakeLists.txt      | 2 +-
  3 files changed, 7 insertions(+), 3 deletions(-)
  create mode 100644 blender.thumbnailer
 
@@ -42,10 +42,10 @@ index 8b93eeb..44ffd48 100755
  
  import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 0168c06..65682fb 100644
+index b66c000..5ea2892 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -384,7 +384,7 @@ if(UNIX AND NOT APPLE)
+@@ -392,7 +392,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py

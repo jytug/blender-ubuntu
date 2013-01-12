@@ -5,14 +5,14 @@ Subject: install_in_usr_share
  * Arch-specific files go to /usr/share
  * Make blender look for systemdir into /usr/share
 ---
- source/creator/CMakeLists.txt |    4 ++--
+ source/creator/CMakeLists.txt | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 65682fb..8371524 100644
+index 5ea2892..2f45c21 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -281,8 +281,8 @@ if(WITH_PYTHON)
+@@ -280,8 +280,8 @@ if(WITH_PYTHON)
  	endif()
  
  	install(

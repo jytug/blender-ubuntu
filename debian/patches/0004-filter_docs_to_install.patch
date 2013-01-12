@@ -4,14 +4,14 @@ Subject: filter_docs_to_install
 
 Install only relevant documentation
 ---
- source/creator/CMakeLists.txt |    2 --
+ source/creator/CMakeLists.txt | 2 --
  1 file changed, 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 8371524..3632b84 100644
+index 2f45c21..3d33654 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -226,8 +226,6 @@ else()
+@@ -225,8 +225,6 @@ else()
  endif()
  
  set(BLENDER_TEXT_FILES

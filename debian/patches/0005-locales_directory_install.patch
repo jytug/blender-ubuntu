@@ -1,45 +1,45 @@
 From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
-Date: Sat, 28 Apr 2012 10:58:56 +0200
+Date: Fri, 11 Jan 2013 15:29:45 +0100
 Subject: locales_directory_install
 
-Change where locales are installed
+Change where locales are installed.
 ---
- source/blender/blenfont/intern/blf_lang.c |    2 +-
- source/blender/blenlib/BLI_path_util.h    |    1 +
- source/blender/blenlib/intern/path_util.c |    3 +++
- source/creator/CMakeLists.txt             |    4 ++--
+ source/blender/blenfont/intern/blf_lang.c | 2 +-
+ source/blender/blenlib/BLI_path_util.h    | 1 +
+ source/blender/blenlib/intern/path_util.c | 3 +++
+ source/creator/CMakeLists.txt             | 4 ++--
  4 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 435ca87..20cd74a 100644
+index 0ed4862..dc11b92 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
-@@ -110,7 +110,7 @@ static const char *locales[] = {
+@@ -184,7 +184,7 @@ EnumPropertyItem *BLF_RNA_lang_enum_properties(void)
  
  void BLF_lang_init(void)
  {
 -	char *messagepath = BLI_get_folder(BLENDER_DATAFILES, "locale");
 +	char *messagepath = BLI_get_folder(BLENDER_SYSTEM_LOCALE, NULL);
- 	
- 	BLI_strncpy(global_encoding_name, SYSTEM_ENCODING_DEFAULT, sizeof(global_encoding_name));
- 	
+ 
+ 	if (messagepath) {
+ 		bl_locale_init(messagepath, TEXT_DOMAIN_NAME);
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index e02b48f..5c0ac22 100644
+index 5e47adf..7b71863 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
-@@ -62,6 +62,7 @@ char *BLI_get_folder_version(const int id, const int ver, const int do_check);
- #define BLENDER_SYSTEM_SCRIPTS		53
- #define BLENDER_SYSTEM_PLUGINS		54
- #define BLENDER_SYSTEM_PYTHON		54
-+#define BLENDER_SYSTEM_LOCALE		55
+@@ -60,6 +60,7 @@ char *BLI_get_folder_version(const int id, const int ver, const int do_check);
+ #define BLENDER_SYSTEM_DATAFILES    52
+ #define BLENDER_SYSTEM_SCRIPTS      53
+ #define BLENDER_SYSTEM_PYTHON       54
++#define BLENDER_SYSTEM_LOCALE       55
  
  /* for BLI_get_folder_version only */
- #define BLENDER_RESOURCE_PATH_USER		0
+ #define BLENDER_RESOURCE_PATH_USER      0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 3c59ca8..4cf617f 100644
+index 444daf8..039d750 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -1104,6 +1104,9 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
+@@ -1092,6 +1092,9 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
  			if (get_path_local(path, "python", subfolder, ver)) break;
  			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
  			return NULL;
@@ -50,10 +50,10 @@ index 3c59ca8..4cf617f 100644
  	
  	return path;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 3632b84..47b4853 100644
+index 3d33654..31bc525 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -293,9 +293,9 @@ endif()
+@@ -292,9 +292,9 @@ endif()
  if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY

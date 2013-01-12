@@ -7,8 +7,8 @@ Subject: update_manpages
 
 Signed-off-by: Kevin Roy <kiniou@gmail.com>
 ---
- doc/manpage/blenderplayer.1   |  131 +++++++++++++++++++++++++++++++++++++++++
- source/creator/CMakeLists.txt |    5 +-
+ doc/manpage/blenderplayer.1   | 131 ++++++++++++++++++++++++++++++++++++++++++
+ source/creator/CMakeLists.txt |   5 +-
  2 files changed, 135 insertions(+), 1 deletion(-)
  create mode 100644 doc/manpage/blenderplayer.1
 
@@ -150,10 +150,10 @@ index 0000000..d15b0c9
 +.SH AUTHORS
 +This manpage was written for a Debian GNU/Linux by Kevin Roy <kiniou@gmail.com>.
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 47b4853..712f608 100644
+index 31bc525..00f2dbe 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -322,6 +322,7 @@ if(UNIX AND NOT APPLE)
+@@ -330,6 +330,7 @@ if(UNIX AND NOT APPLE)
  				${CMAKE_SOURCE_DIR}/release/freedesktop/blender.desktop
  				${CMAKE_SOURCE_DIR}/release/freedesktop/icons/scalable/apps/blender.svg
  				${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
@@ -161,7 +161,7 @@ index 47b4853..712f608 100644
  			DESTINATION ${TARGETDIR}
  		)
  
-@@ -385,7 +386,9 @@ if(UNIX AND NOT APPLE)
+@@ -393,7 +394,9 @@ if(UNIX AND NOT APPLE)
  			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/blender/scripts
  		)
  		install(
