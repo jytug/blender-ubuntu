@@ -197,7 +197,7 @@ static int test_rotmode_euler(short rotmode)
 	return (ELEM(rotmode, ROT_MODE_AXISANGLE, ROT_MODE_QUAT)) ? 0 : 1;
 }
 
-int gimbal_axis(Object *ob, float gmat[][3])
+int gimbal_axis(Object *ob, float gmat[3][3])
 {
 	if (ob) {
 		if (ob->mode & OB_MODE_POSE) {
@@ -687,7 +687,7 @@ static void test_manipulator_axis(const bContext *C)
 
 /* ******************** DRAWING STUFFIES *********** */
 
-static float screen_aligned(RegionView3D *rv3d, float mat[][4])
+static float screen_aligned(RegionView3D *rv3d, float mat[4][4])
 {
 	glTranslatef(mat[3][0], mat[3][1], mat[3][2]);
 
@@ -734,8 +734,8 @@ static void partial_doughnut(float radring, float radhole, int start, int end, i
 				float cos_phi, sin_phi, dist;
 
 				phi += side_delta;
-				cos_phi = (float)cos(phi);
-				sin_phi = (float)sin(phi);
+				cos_phi = cosf(phi);
+				sin_phi = sinf(phi);
 				dist = radhole + radring * cos_phi;
 
 				glVertex3f(cos_theta1 * dist, -sin_theta1 * dist,  radring * sin_phi);
@@ -749,8 +749,8 @@ static void partial_doughnut(float radring, float radhole, int start, int end, i
 				float cos_phi, sin_phi, dist;
 
 				phi += side_delta;
-				cos_phi = (float)cos(phi);
-				sin_phi = (float)sin(phi);
+				cos_phi = cosf(phi);
+				sin_phi = sinf(phi);
 				dist = radhole + radring * cos_phi;
 
 				glVertex3f(cos_theta1 * dist, -sin_theta1 * dist, radring * sin_phi);
@@ -875,7 +875,7 @@ static void draw_manipulator_axes(View3D *v3d, RegionView3D *rv3d, int colcode, 
 	}
 }
 
-static void preOrthoFront(int ortho, float twmat[][4], int axis)
+static void preOrthoFront(int ortho, float twmat[4][4], int axis)
 {
 	if (ortho == 0) {
 		float omat[4][4];

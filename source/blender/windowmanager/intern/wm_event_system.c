@@ -66,6 +66,8 @@
 
 #include "RNA_access.h"
 
+#include "BIF_gl.h"
+
 #include "UI_interface.h"
 
 #include "PIL_time.h"
@@ -338,7 +340,7 @@ static int wm_handler_ui_call(bContext *C, wmEventHandler *handler, wmEvent *eve
 	ARegion *region = CTX_wm_region(C);
 	ARegion *menu = CTX_wm_menu(C);
 	static int do_wheel_ui = TRUE;
-	int is_wheel = ELEM(event->type, WHEELUPMOUSE, WHEELDOWNMOUSE);
+	int is_wheel = ELEM3(event->type, WHEELUPMOUSE, WHEELDOWNMOUSE, MOUSEPAN);
 	int retval;
 	
 	/* UI code doesn't handle return values - it just always returns break. 
@@ -1343,6 +1345,15 @@ static void wm_event_modalkeymap(const bContext *C, wmOperator *op, wmEvent *eve
 			}
 		}
 	}
+	else {
+		/* modal keymap checking returns handled events fine, but all hardcoded modal
+		   handling typically swallows all events (OPERATOR_RUNNING_MODAL).
+		   This bypass just disables support for double clicks in hardcoded modal handlers */
+		if (event->val == KM_DBL_CLICK) {
+			event->prevval = event->val;
+			event->val = KM_PRESS;
+		}
+	}
 }
 
 /* bad hacking event system... better restore event type for checking of KM_CLICK for example */
@@ -1355,6 +1366,8 @@ static void wm_event_modalmap_end(wmEvent *event)
 		event->val = event->prevval;
 		event->prevval = 0;
 	}
+	else if (event->prevval == KM_DBL_CLICK)
+		event->val = KM_DBL_CLICK;
 
 }
 
@@ -1640,9 +1653,9 @@ static int wm_action_not_handled(int action)
 static int wm_handlers_do_intern(bContext *C, wmEvent *event, ListBase *handlers)
 {
 #ifndef NDEBUG
-	const int do_debug_handler = (G.debug & G_DEBUG_HANDLERS)
+	const int do_debug_handler = (G.debug & G_DEBUG_HANDLERS) &&
 	        /* comment this out to flood the console! (if you really want to test) */
-	        && !ELEM(event->type, MOUSEMOVE, INBETWEEN_MOUSEMOVE)
+	        !ELEM(event->type, MOUSEMOVE, INBETWEEN_MOUSEMOVE)
 	        ;
 #endif
 	wmWindowManager *wm = CTX_wm_manager(C);
@@ -2180,6 +2193,13 @@ void wm_event_do_handlers(bContext *C)
 
 	/* update key configuration after handling events */
 	WM_keyconfig_update(wm);
+
+	if (G.debug) {
+		GLenum error = glGetError();
+		if (error != GL_NO_ERROR) {
+			printf("GL error: %s\n", gluErrorString(error));
+		}
+	}
 }
 
 /* ********** filesector handling ************ */
@@ -2689,8 +2709,10 @@ static wmWindow *wm_event_cursor_other_windows(wmWindowManager *wm, wmWindow *wi
 	if (wm->windows.first == wm->windows.last)
 		return NULL;
 	
-	/* top window bar... */
-	if (mx < 0 || my < 0 || mx > win->sizex || my > win->sizey + 30) {
+	/* in order to use window size and mouse position (pixels), we have to use a WM function */
+	
+	/* check if outside, include top window bar... */
+	if (mx < 0 || my < 0 || mx > WM_window_pixels_x(win) || my > WM_window_pixels_y(win) + 30) {
 		wmWindow *owin;
 		wmEventHandler *handler;
 		
@@ -2701,18 +2723,21 @@ static wmWindow *wm_event_cursor_other_windows(wmWindowManager *wm, wmWindow *wi
 				return NULL;
 		
 		/* to desktop space */
-		mx += (int)win->posx;
-		my += (int)win->posy;
+		mx += (int) (U.pixelsize * win->posx);
+		my += (int) (U.pixelsize * win->posy);
 		
 		/* check other windows to see if it has mouse inside */
 		for (owin = wm->windows.first; owin; owin = owin->next) {
 			
 			if (owin != win) {
-				if (mx - owin->posx >= 0 && my - owin->posy >= 0 &&
-				    mx - owin->posx <= owin->sizex && my - owin->posy <= owin->sizey)
+				int posx = (int) (U.pixelsize * owin->posx);
+				int posy = (int) (U.pixelsize * owin->posy);
+				
+				if (mx - posx >= 0 && owin->posy >= 0 &&
+				    mx - posx <= WM_window_pixels_x(owin) && my - posy <= WM_window_pixels_y(owin))
 				{
-					evt->x = mx - (int)owin->posx;
-					evt->y = my - (int)owin->posy;
+					evt->x = mx - (int)(U.pixelsize * owin->posx);
+					evt->y = my - (int)(U.pixelsize * owin->posy);
 					
 					return owin;
 				}
@@ -2738,11 +2763,9 @@ void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, int U
 		{
 			GHOST_TEventCursorData *cd = customdata;
 			wmEvent *lastevent = win->queue.last;
-			int cx, cy;
 			
-			GHOST_ScreenToClient(win->ghostwin, cd->x, cd->y, &cx, &cy);
-			evt->x = cx;
-			evt->y = (win->sizey - 1) - cy;
+			evt->x = cd->x;
+			evt->y = cd->y;
 			
 			event.x = evt->x;
 			event.y = evt->y;
@@ -2780,6 +2803,8 @@ void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, int U
 			switch (pd->subtype) {
 				case GHOST_kTrackpadEventMagnify:
 					event.type = MOUSEZOOM;
+					pd->deltaX = -pd->deltaX;
+					pd->deltaY = -pd->deltaY;
 					break;
 				case GHOST_kTrackpadEventRotate:
 					event.type = MOUSEROTATE;
@@ -2790,13 +2815,8 @@ void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, int U
 					break;
 			}
 
-			{
-				int cx, cy;
-				GHOST_ScreenToClient(win->ghostwin, pd->x, pd->y, &cx, &cy);
-				event.x = evt->x = cx;
-				event.y = evt->y = (win->sizey - 1) - cy;
-			}
-			
+			event.x = evt->x = pd->x;
+			event.y = evt->y = pd->y;
 			event.val = 0;
 			
 			/* Use prevx/prevy so we can calculate the delta later */

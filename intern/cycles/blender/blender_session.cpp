@@ -96,7 +96,7 @@ void BlenderSession::create_session()
 	session->set_pause(BlenderSync::get_session_pause(b_scene, background));
 
 	/* create sync */
-	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress);
+	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
 	sync->sync_data(b_v3d, b_engine.camera_override());
 
 	if(b_rv3d)
@@ -107,6 +107,13 @@ void BlenderSession::create_session()
 	/* set buffer parameters */
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, b_v3d, b_rv3d, scene->camera, width, height);
 	session->reset(buffer_params, session_params.samples);
+
+	b_engine.use_highlight_tiles(session_params.progressive_refine == false);
+
+	/* setup callbacks for builtin image support */
+	scene->image_manager->builtin_image_info_cb = function_bind(&BlenderSession::builtin_image_info, this, _1, _2, _3, _4, _5);
+	scene->image_manager->builtin_image_pixels_cb = function_bind(&BlenderSession::builtin_image_pixels, this, _1, _2);
+	scene->image_manager->builtin_image_float_pixels_cb = function_bind(&BlenderSession::builtin_image_float_pixels, this, _1, _2);
 }
 
 void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
@@ -137,18 +144,22 @@ void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
 	session->progress.reset();
 	scene->reset();
 
+	session->tile_manager.set_tile_order(session_params.tile_order);
+
 	/* peak memory usage should show current render peak, not peak for all renders
 	 * made by this render session
 	 */
 	session->stats.mem_peak = session->stats.mem_used;
 
 	/* sync object should be re-created */
-	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress);
+	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
 	sync->sync_data(b_v3d, b_engine.camera_override());
 	sync->sync_camera(b_engine.camera_override(), width, height);
 
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, PointerRNA_NULL, PointerRNA_NULL, scene->camera, width, height);
 	session->reset(buffer_params, session_params.samples);
+
+	b_engine.use_highlight_tiles(session_params.progressive_refine == false);
 }
 
 void BlenderSession::free_session()
@@ -252,7 +263,15 @@ void BlenderSession::do_write_update_render_tile(RenderTile& rtile, bool do_upda
 
 	if (do_update_only) {
 		/* update only needed */
-		update_render_result(b_rr, b_rlay, rtile);
+
+		if (rtile.sample != 0) {
+			/* sample would be zero at initial tile update, which is only needed
+			 * to tag tile form blender side as IN PROGRESS for proper highlight
+			 * no buffers should be sent to blender yet
+			 */
+			update_render_result(b_rr, b_rlay, rtile);
+		}
+
 		end_render_result(b_engine, b_rr, true);
 	}
 	else {
@@ -591,6 +610,70 @@ void BlenderSession::test_cancel()
 	if(background)
 		if(b_engine.test_break())
 			session->progress.set_cancel("Cancelled");
+}
+
+void BlenderSession::builtin_image_info(const string &name, bool &is_float, int &width, int &height, int &channels)
+{
+	BL::Image b_image = b_data.images[name];
+
+	if(b_image) {
+		is_float = b_image.is_float();
+		width = b_image.size()[0];
+		height = b_image.size()[1];
+		channels = b_image.channels();
+	}
+	else {
+		is_float = false;
+		width = 0;
+		height = 0;
+		channels = 0;
+	}
+}
+
+bool BlenderSession::builtin_image_pixels(const string &name, unsigned char *pixels)
+{
+	BL::Image b_image = b_data.images[name];
+
+	if(b_image) {
+		int width = b_image.size()[0];
+		int height = b_image.size()[1];
+		int channels = b_image.channels();
+
+		BL::DynamicArray<float> pixels_array = b_image.pixels();
+		float *float_pixels = pixels_array.data;
+
+		/* a bit of shame, but Py API currently only returns float array,
+		 * which need to be converted back to char buffer
+		 */
+		unsigned char *cp = pixels;
+		float *fp = float_pixels;
+		for(int i = 0; i < channels * width * height; i++, cp++, fp++) {
+			*cp = *fp * 255;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool BlenderSession::builtin_image_float_pixels(const string &name, float *pixels)
+{
+	BL::Image b_image = b_data.images[name];
+
+	if(b_image) {
+		int width = b_image.size()[0];
+		int height = b_image.size()[1];
+		int channels = b_image.channels();
+
+		BL::DynamicArray<float> pixels_array = b_image.pixels();
+
+		memcpy(pixels, pixels_array.data, width * height * channels * sizeof(float));
+
+		return true;
+	}
+
+	return false;
 }
 
 CCL_NAMESPACE_END

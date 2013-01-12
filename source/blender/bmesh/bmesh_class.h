@@ -184,11 +184,12 @@ typedef struct BMesh {
 	 * BM_LOOP isn't handled so far. */
 	char elem_index_dirty;
 
-	/*element pools*/
+	/* element pools */
 	struct BLI_mempool *vpool, *epool, *lpool, *fpool;
 
-	/*operator api stuff*/
-	struct BLI_mempool *toolflagpool;
+	/* operator api stuff (must be all NULL or all alloc'd) */
+	struct BLI_mempool *vtoolflagpool, *etoolflagpool, *ftoolflagpool;
+
 	int stackdepth;
 	struct BMOperator *currentop;
 	
@@ -204,7 +205,7 @@ typedef struct BMesh {
 	 * Only use when the edit mesh cant be accessed - campbell */
 	short selectmode;
 	
-	/*ID of the shape key this bmesh came from*/
+	/* ID of the shape key this bmesh came from */
 	int shapenr;
 	
 	int walkers, totflags;
@@ -253,6 +254,18 @@ enum {
 
 /* defines */
 
+#define BM_ELEM_CD_GET_VOID_P(ele, offset) \
+	((void)0, (void *)((char *)(ele)->head.data + (offset)))
+
+#define BM_ELEM_CD_SET_FLOAT(ele, offset, f) \
+	{ *((float *)((char *)(ele)->head.data + (offset))) = (f); } (void)0
+
+#define BM_ELEM_CD_GET_FLOAT(ele, offset) \
+	((void)0, *((float *)((char *)(ele)->head.data + (offset))))
+
+#define BM_ELEM_CD_GET_FLOAT_AS_UCHAR(ele, offset) \
+	(unsigned char)(BM_ELEM_CD_GET_FLOAT(ele, offset) * 255.0f)
+
 /*forward declarations*/
 
 #ifdef USE_BMESH_HOLES
@@ -276,5 +289,6 @@ enum {
  * but should not error on valid cases */
 #define BM_LOOP_RADIAL_MAX 10000
 #define BM_NGON_MAX 100000
+#define BM_OMP_LIMIT 0  /* setting zero so we can catch bugs in OpenMP/BMesh */
 
 #endif /* __BMESH_CLASS_H__ */

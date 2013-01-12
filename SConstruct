@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
-# Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # The Original Code is Copyright (C) 2006, Blender Foundation
 # All rights reserved.
@@ -275,6 +275,11 @@ if 'blenderlite' in B.targets:
         if k not in B.arguments:
             env[k] = v
 
+if 'cudakernels' in B.targets:
+    env['WITH_BF_CYCLES'] = True
+    env['WITH_BF_CYCLES_CUDA_BINARIES'] = True
+    env['WITH_BF_PYTHON'] = False
+
 # Extended OSX_SDK and 3D_CONNEXION_CLIENT_LIBRARY and JAckOSX detection for OSX
 if env['OURPLATFORM']=='darwin':
     print B.bc.OKGREEN + "Detected Xcode version: -- " + B.bc.ENDC + env['XCODE_CUR_VER'] + " --"
@@ -294,7 +299,8 @@ if env['OURPLATFORM']=='darwin':
             print "3D_CONNEXION_CLIENT_LIBRARY not found, disabling WITH_BF_3DMOUSE" # avoid build errors !
             env['WITH_BF_3DMOUSE'] = 0
         else:
-            env.Append(LINKFLAGS=['-Xlinker','-weak_framework','-Xlinker','3DconnexionClient'])
+            env.Append(LINKFLAGS=['-F/Library/Frameworks','-Xlinker','-weak_framework','-Xlinker','3DconnexionClient'])
+            env['BF_3DMOUSE_INC'] = '/Library/Frameworks/3DconnexionClient.framework/Headers'
 
     # for now, Mac builders must download and install the JackOSX framework 
     # necessary header file lives here when installed:
@@ -304,7 +310,7 @@ if env['OURPLATFORM']=='darwin':
             print "JackOSX install not found, disabling WITH_BF_JACK" # avoid build errors !
             env['WITH_BF_JACK'] = 0
         else:
-            env.Append(LINKFLAGS=['-Xlinker','-weak_framework','-Xlinker','Jackmp'])
+            env.Append(LINKFLAGS=['-L/Library/Frameworks','-Xlinker','-weak_framework','-Xlinker','Jackmp'])
 
     if env['WITH_BF_CYCLES_OSL'] == 1:	
         OSX_OSL_LIBPATH = Dir(env.subst(env['BF_OSL_LIBPATH'])).abspath
@@ -372,9 +378,10 @@ if btools.ENDIAN == "big":
 else:
     env['CPPFLAGS'].append('-D__LITTLE_ENDIAN__')
 
-# TODO, make optional
+# TODO, make optional (as with CMake)
 env['CPPFLAGS'].append('-DWITH_AUDASPACE')
 env['CPPFLAGS'].append('-DWITH_AVI')
+env['CPPFLAGS'].append('-DWITH_BOOL_COMPAT')
 
 # lastly we check for root_build_dir ( we should not do before, otherwise we might do wrong builddir
 B.root_build_dir = env['BF_BUILDDIR']
@@ -441,11 +448,12 @@ if env['WITH_BF_PYTHON']:
             found_pyconfig_h = True
 
     if not (found_python_h and found_pyconfig_h):
-        print("\nMissing: Python.h and/or pyconfig.h in\"" + env.subst('${BF_PYTHON_INC}') + "\",\n"
-              "  Set 'BF_PYTHON_INC' to point "
-              "to valid python include path(s).\n Containing "
-              "Python.h and pyconfig.h for python version \"" + env.subst('${BF_PYTHON_VERSION}') + "\"")
+        print("""\nMissing: Python.h and/or pyconfig.h in "%s"
+         Set 'BF_PYTHON_INC' to point to valid include path(s),
+         containing Python.h and pyconfig.h for Python version "%s".
 
+         Example: python scons/scons.py BF_PYTHON_INC=../Python/include
+              """ % (env.subst('${BF_PYTHON_INC}'), env.subst('${BF_PYTHON_VERSION}')))
         Exit()
 
 
@@ -531,7 +539,8 @@ data_to_c_simple("release/datafiles/bfont.ttf")
 data_to_c_simple("release/datafiles/bmonofont.ttf")
 
 data_to_c_simple("release/datafiles/splash.png")
-data_to_c_simple("release/datafiles/blender_icons.png")
+data_to_c_simple("release/datafiles/blender_icons16.png")
+data_to_c_simple("release/datafiles/blender_icons32.png")
 data_to_c_simple("release/datafiles/prvicons.png")
 
 data_to_c_simple("release/datafiles/brushicons/add.png")
@@ -647,6 +656,7 @@ datafileslist = []
 datafilestargetlist = []
 dottargetlist = []
 scriptinstall = []
+cubininstall = []
 
 if env['OURPLATFORM']!='darwin':
     dotblenderinstall = []
@@ -736,29 +746,30 @@ if env['OURPLATFORM']!='darwin':
             source=['intern/cycles/doc/license/'+s for s in source]
             scriptinstall.append(env.Install(dir=dir,source=source))
 
-            # cuda binaries
-            if env['WITH_BF_CYCLES_CUDA_BINARIES']:
-                dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles', 'lib')
-                for arch in env['BF_CYCLES_CUDA_BINARIES_ARCH']:
-                    kernel_build_dir = os.path.join(B.root_build_dir, 'intern/cycles/kernel')
-                    cubin_file = os.path.join(kernel_build_dir, "kernel_%s.cubin" % arch)
-                    scriptinstall.append(env.Install(dir=dir,source=cubin_file))
+    if env['WITH_BF_CYCLES']:
+        # cuda binaries
+        if env['WITH_BF_CYCLES_CUDA_BINARIES']:
+            dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles', 'lib')
+            for arch in env['BF_CYCLES_CUDA_BINARIES_ARCH']:
+                kernel_build_dir = os.path.join(B.root_build_dir, 'intern/cycles/kernel')
+                cubin_file = os.path.join(kernel_build_dir, "kernel_%s.cubin" % arch)
+                cubininstall.append(env.Install(dir=dir,source=cubin_file))
 
-            # osl shaders
-            if env['WITH_BF_CYCLES_OSL']:
-                dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles', 'shader')
+        # osl shaders
+        if env['WITH_BF_CYCLES_OSL']:
+            dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles', 'shader')
 
-                osl_source_dir = Dir('./intern/cycles/kernel/shaders').srcnode().path
-                oso_build_dir = os.path.join(B.root_build_dir, 'intern/cycles/kernel/shaders')
+            osl_source_dir = Dir('./intern/cycles/kernel/shaders').srcnode().path
+            oso_build_dir = os.path.join(B.root_build_dir, 'intern/cycles/kernel/shaders')
 
-                headers='node_color.h node_fresnel.h node_texture.h oslutil.h stdosl.h'.split()
-                source=['intern/cycles/kernel/shaders/'+s for s in headers]
-                scriptinstall.append(env.Install(dir=dir,source=source))
+            headers='node_color.h node_fresnel.h node_texture.h oslutil.h stdosl.h'.split()
+            source=['intern/cycles/kernel/shaders/'+s for s in headers]
+            scriptinstall.append(env.Install(dir=dir,source=source))
 
-                for f in os.listdir(osl_source_dir):
-                    if f.endswith('.osl'):
-                        oso_file = os.path.join(oso_build_dir, f.replace('.osl', '.oso'))
-                        scriptinstall.append(env.Install(dir=dir,source=oso_file))
+            for f in os.listdir(osl_source_dir):
+                if f.endswith('.osl'):
+                    oso_file = os.path.join(oso_build_dir, f.replace('.osl', '.oso'))
+                    scriptinstall.append(env.Install(dir=dir,source=oso_file))
 
     if env['WITH_BF_OCIO']:
         colormanagement = os.path.join('release', 'datafiles', 'colormanagement')
@@ -853,9 +864,9 @@ textinstall = env.Install(dir=env['BF_INSTALLDIR'], source=textlist)
 if  env['OURPLATFORM']=='darwin':
         allinstall = [blenderinstall, textinstall]
 elif env['OURPLATFORM']=='linux':
-        allinstall = [blenderinstall, dotblenderinstall, scriptinstall, textinstall, iconinstall]
+        allinstall = [blenderinstall, dotblenderinstall, scriptinstall, textinstall, iconinstall, cubininstall]
 else:
-        allinstall = [blenderinstall, dotblenderinstall, scriptinstall, textinstall]
+        allinstall = [blenderinstall, dotblenderinstall, scriptinstall, textinstall, cubininstall]
 
 if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
     dllsources = []
@@ -984,6 +995,20 @@ buildslave_cmd = env.Command('buildslave_exec', None, buildslave_action)
 buildslave_alias = env.Alias('buildslave', buildslave_cmd)
 
 Depends(buildslave_cmd, allinstall)
+
+cudakernels_action = env.Action(btools.cudakernels, btools.cudakernels_print)
+cudakernels_cmd = env.Command('cudakernels_exec', None, cudakernels_action)
+cudakernels_alias = env.Alias('cudakernels', cudakernels_cmd)
+
+cudakernel_dir = os.path.join(os.path.abspath(os.path.normpath(B.root_build_dir)), 'intern/cycles/kernel')
+cuda_kernels = []
+
+for x in env['BF_CYCLES_CUDA_BINARIES_ARCH']:
+    cubin = os.path.join(cudakernel_dir, 'kernel_' + x + '.cubin')
+    cuda_kernels.append(cubin)
+
+Depends(cudakernels_cmd, cuda_kernels)
+Depends(cudakernels_cmd, cubininstall)
 
 Default(B.program_list)
 

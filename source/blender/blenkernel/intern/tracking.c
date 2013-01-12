@@ -1660,7 +1660,7 @@ ImBuf *BKE_tracking_sample_pattern(int frame_width, int frame_height, ImBuf *sea
 	/* real sampling requires libmv, but areas are supposing pattern would be
 	 * sampled if search area does exists, so we'll need to create empty
 	 * pattern area here to prevent adding NULL-checks all over just to deal
-	 * with situation when lubmv is disabled
+	 * with situation when libmv is disabled
 	 */
 
 	(void) frame_width;
@@ -3462,15 +3462,15 @@ ImBuf *BKE_tracking_stabilize_frame(MovieTracking *tracking, int framenr, ImBuf 
 		BKE_tracking_stabilization_data_to_mat4(ibuf->x, ibuf->y, aspect, tloc, tscale, tangle, mat);
 		invert_m4(mat);
 
-		if (filter == TRACKING_FILTER_NEAREAST)
-			interpolation = neareast_interpolation;
+		if (filter == TRACKING_FILTER_NEAREST)
+			interpolation = nearest_interpolation;
 		else if (filter == TRACKING_FILTER_BILINEAR)
 			interpolation = bilinear_interpolation;
 		else if (filter == TRACKING_FILTER_BICUBIC)
 			interpolation = bicubic_interpolation;
 		else
 			/* fallback to default interpolation method */
-			interpolation = neareast_interpolation;
+			interpolation = nearest_interpolation;
 
 		for (j = 0; j < tmpibuf->y; j++) {
 			for (i = 0; i < tmpibuf->x; i++) {

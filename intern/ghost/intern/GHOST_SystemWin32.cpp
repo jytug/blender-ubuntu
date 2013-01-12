@@ -761,6 +761,7 @@ GHOST_Event *GHOST_SystemWin32::processWindowEvent(GHOST_TEventType type, GHOST_
 
 	if (type == GHOST_kEventWindowActivate) {
 		system->getWindowManager()->setActiveWindow(window);
+		((GHOST_WindowWin32*)window)->bringTabletContextToFront();
 	}
 
 	return new GHOST_Event(system->getMilliSeconds(), type, window);
@@ -782,8 +783,8 @@ GHOST_TSuccess GHOST_SystemWin32::pushDragDropEvent(GHOST_TEventType eventType,
 
 void GHOST_SystemWin32::processMinMaxInfo(MINMAXINFO *minmax)
 {
-	minmax->ptMinTrackSize.x = 320;
-	minmax->ptMinTrackSize.y = 240;
+	minmax->ptMinTrackSize.x = 640;
+	minmax->ptMinTrackSize.y = 480;
 }
 
 #ifdef WITH_INPUT_NDOF

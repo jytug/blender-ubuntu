@@ -83,7 +83,7 @@
 // not valid, skip rendering this frame.
 //#define NZC_GUARDED_OUTPUT
 #define DEFAULT_LOGIC_TIC_RATE 60.0
-#define DEFAULT_PHYSICS_TIC_RATE 60.0
+//#define DEFAULT_PHYSICS_TIC_RATE 60.0
 
 #ifdef FREE_WINDOWS /* XXX mingw64 (gcc 4.7.0) defines a macro for DrawText that translates to DrawTextA. Not good */
 #ifdef DrawText
@@ -592,6 +592,8 @@ bool KX_KetsjiEngine::NextFrame()
 
 		m_frameTime += framestep;
 		
+		m_sceneconverter->MergeAsyncLoads();
+
 		for (sceneit = m_scenes.begin();sceneit != m_scenes.end(); ++sceneit)
 		// for each scene, call the proceed functions
 		{
@@ -1165,7 +1167,7 @@ void KX_KetsjiEngine::RenderShadowBuffers(KX_Scene *scene)
 			m_rasterizer->SetDrawingMode(RAS_IRasterizer::KX_SHADOW);
 
 			/* binds framebuffer object, sets up camera .. */
-			light->BindShadowBuffer(m_rasterizer, cam, camtrans);
+			light->BindShadowBuffer(m_rasterizer, m_canvas, cam, camtrans);
 
 			/* update scene */
 			scene->CalculateVisibleMeshes(m_rasterizer, cam, light->GetShadowLayer());
@@ -1686,7 +1688,7 @@ void KX_KetsjiEngine::RemoveScheduledScenes()
 	}
 }
 
-KX_Scene* KX_KetsjiEngine::CreateScene(Scene *scene)
+KX_Scene* KX_KetsjiEngine::CreateScene(Scene *scene, bool libloading)
 {
 	KX_Scene* tmpscene = new KX_Scene(m_keyboarddevice,
 									  m_mousedevice,
@@ -1697,7 +1699,8 @@ KX_Scene* KX_KetsjiEngine::CreateScene(Scene *scene)
 
 	m_sceneconverter->ConvertScene(tmpscene,
 							  m_rendertools,
-							  m_canvas);
+							  m_canvas,
+							  libloading);
 
 	return tmpscene;
 }

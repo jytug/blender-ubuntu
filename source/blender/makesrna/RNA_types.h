@@ -269,7 +269,27 @@ typedef struct EnumPropertyItem {
 	const char *description;
 } EnumPropertyItem;
 
-/* this is a copy of 'PropEnumItemFunc' defined in rna_internal_types.h */
+/* extended versions with PropertyRNA argument */
+typedef int (*BooleanPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
+typedef void (*BooleanPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, int value);
+typedef void (*BooleanArrayPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, int *values);
+typedef void (*BooleanArrayPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, const int *values);
+typedef int (*IntPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
+typedef void (*IntPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, int value);
+typedef void (*IntArrayPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, int *values);
+typedef void (*IntArrayPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, const int *values);
+typedef void (*IntPropertyRangeFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, int *min, int *max, int *softmin, int *softmax);
+typedef float (*FloatPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
+typedef void (*FloatPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, float value);
+typedef void (*FloatArrayPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, float *values);
+typedef void (*FloatArrayPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, const float *values);
+typedef void (*FloatPropertyRangeFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, float *min, float *max, float *softmin, float *softmax);
+typedef void (*StringPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, char *value);
+typedef int (*StringPropertyLengthFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
+typedef void (*StringPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, const char *value);
+typedef int (*EnumPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
+typedef void (*EnumPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, int value);
+/* same as PropEnumItemFunc */
 typedef EnumPropertyItem *(*EnumPropertyItemFunc)(struct bContext *C, PointerRNA *ptr, struct PropertyRNA *prop, int *free);
 
 typedef struct PropertyRNA PropertyRNA;
@@ -309,9 +329,10 @@ typedef struct ParameterDynAlloc {
 
 typedef enum FunctionFlag {
 	FUNC_NO_SELF = 1, /* for static functions */
-	FUNC_USE_MAIN = 2,
-	FUNC_USE_CONTEXT = 4,
-	FUNC_USE_REPORTS = 8,
+	FUNC_USE_SELF_TYPE = 2, /* for class methods, only used when FUNC_NO_SELF is set */
+	FUNC_USE_MAIN = 4,
+	FUNC_USE_CONTEXT = 8,
+	FUNC_USE_REPORTS = 16,
 	FUNC_USE_SELF_ID = 2048,
 	FUNC_ALLOW_WRITE = 4096,
 

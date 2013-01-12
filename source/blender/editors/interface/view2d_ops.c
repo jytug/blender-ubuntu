@@ -937,7 +937,7 @@ static int view_zoomdrag_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	vzd = op->customdata;
 	v2d = vzd->v2d;
 	
-	if (event->type == MOUSEZOOM) {
+	if (event->type == MOUSEZOOM || event->type == MOUSEPAN) {
 		float dx, dy, fac;
 		
 		vzd->lastx = event->prevx;
@@ -946,10 +946,19 @@ static int view_zoomdrag_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		/* As we have only 1D information (magnify value), feed both axes
 		 * with magnify information that is stored in x axis 
 		 */
-		fac = 0.01f * (event->x - event->prevx);
+		fac = 0.01f * (event->prevx - event->x);
 		dx = fac * BLI_rctf_size_x(&v2d->cur) / 10.0f;
+		if (event->type == MOUSEPAN)
+			fac = 0.01f * (event->prevy - event->y);
 		dy = fac * BLI_rctf_size_y(&v2d->cur) / 10.0f;
 
+		/* support trackpad zoom to always zoom entirely - the v2d code uses portrait or landscape exceptions */
+		if (v2d->keepzoom & V2D_KEEPASPECT) {
+			if (fabsf(dx) > fabsf(dy))
+				dy = dx;
+			else
+				dx = dy;
+		}
 		RNA_float_set(op->ptr, "deltax", dx);
 		RNA_float_set(op->ptr, "deltay", dy);
 		
@@ -1015,12 +1024,12 @@ static int view_zoomdrag_modal(bContext *C, wmOperator *op, wmEvent *event)
 			
 			/* x-axis transform */
 			dist = BLI_rcti_size_x(&v2d->mask) / 2.0f;
-			dx = 1.0f - (fabsf(vzd->lastx - dist) + 2.0f) / (fabsf(event->x - dist) + 2.0f);
+			dx = 1.0f - (fabsf(vzd->lastx - vzd->ar->winrct.xmin - dist) + 2.0f) / (fabsf(event->mval[0] - dist) + 2.0f);
 			dx *= 0.5f * BLI_rctf_size_x(&v2d->cur);
 			
 			/* y-axis transform */
 			dist = BLI_rcti_size_y(&v2d->mask) / 2.0f;
-			dy = 1.0f - (fabsf(vzd->lasty - dist) + 2.0f) / (fabsf(event->y - dist) + 2.0f);
+			dy = 1.0f - (fabsf(vzd->lasty - vzd->ar->winrct.ymin - dist) + 2.0f) / (fabsf(event->mval[1] - dist) + 2.0f);
 			dy *= 0.5f * BLI_rctf_size_y(&v2d->cur);
 		}
 		else {
@@ -1034,18 +1043,15 @@ static int view_zoomdrag_modal(bContext *C, wmOperator *op, wmEvent *event)
 			/* y-axis transform */
 			fac = 0.01f * (event->y - vzd->lasty);
 			dy = fac * BLI_rctf_size_y(&v2d->cur);
-#if 0
-			/* continuous zoom shouldn't move that fast... */
-			if (U.viewzoom == USER_ZOOM_CONT) { // XXX store this setting as RNA prop?
-				double time = PIL_check_seconds_timer();
-				float time_step = (float)(time - vzd->timer_lastdraw);
-
-				dx /= (0.1f / time_step);
-				dy /= (0.1f / time_step);
-				
-				vzd->timer_lastdraw = time;
-			}
-#endif
+			
+		}
+		
+		/* support zoom to always zoom entirely - the v2d code uses portrait or landscape exceptions */
+		if (v2d->keepzoom & V2D_KEEPASPECT) {
+			if (fabsf(dx) > fabsf(dy))
+				dy = dx;
+			else
+				dx = dy;
 		}
 		
 		/* set transform amount, and add current deltas to stored total delta (for redo) */
@@ -1755,8 +1761,8 @@ static int scroller_activate_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		}
 		
 		/* zone is also inappropriate if scroller is not visible... */
-		if (((vsm->scroller == 'h') && (v2d->scroll & (V2D_SCROLL_HORIZONTAL_HIDE | V2D_SCROLL_HORIZONTAL_FULLR))) ||
-		    ((vsm->scroller == 'v') && (v2d->scroll & (V2D_SCROLL_VERTICAL_HIDE | V2D_SCROLL_VERTICAL_FULLR))) )
+		if (((vsm->scroller == 'h') && (v2d->scroll & (V2D_SCROLL_HORIZONTAL_FULLR))) ||
+		    ((vsm->scroller == 'v') && (v2d->scroll & (V2D_SCROLL_VERTICAL_FULLR))) )
 		{
 			/* free customdata initialized */
 			scroller_activate_exit(C, op);
@@ -1914,6 +1920,7 @@ void UI_view2d_keymap(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom_in", WHEELINMOUSE, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom_out", PADMINUS, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom_in", PADPLUSKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom", MOUSEPAN, 0, KM_CTRL, 0);
 	
 	WM_keymap_verify_item(keymap, "VIEW2D_OT_smoothview", TIMER1, KM_ANY, KM_ANY, 0);
 
@@ -1962,6 +1969,7 @@ void UI_view2d_keymap(wmKeyConfig *keyconf)
 	
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom", MIDDLEMOUSE, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom", MOUSEZOOM, 0, 0, 0);
+	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom", MOUSEPAN, 0, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom_out", PADMINUS, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_zoom_in", PADPLUSKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "VIEW2D_OT_reset", HOMEKEY, KM_PRESS, 0, 0);

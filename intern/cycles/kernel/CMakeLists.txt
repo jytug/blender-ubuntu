@@ -20,12 +20,12 @@ set(SRC
 set(SRC_HEADERS
 	kernel.h
 	kernel_accumulate.h
-	kernel_attribute.h
 	kernel_bvh.h
 	kernel_camera.h
 	kernel_compat_cpu.h
 	kernel_compat_cuda.h
 	kernel_compat_opencl.h
+	kernel_curve.h
 	kernel_differential.h
 	kernel_displace.h
 	kernel_emission.h
@@ -37,6 +37,7 @@ set(SRC_HEADERS
 	kernel_object.h
 	kernel_passes.h
 	kernel_path.h
+	kernel_primitive.h
 	kernel_projection.h
 	kernel_random.h
 	kernel_shader.h
@@ -49,12 +50,15 @@ set(SRC_CLOSURE_HEADERS
 	closure/bsdf.h
 	closure/bsdf_ashikhmin_velvet.h
 	closure/bsdf_diffuse.h
+	closure/bsdf_diffuse_ramp.h
 	closure/bsdf_microfacet.h
 	closure/bsdf_oren_nayar.h
 	closure/bsdf_phong_ramp.h
 	closure/bsdf_reflection.h
 	closure/bsdf_refraction.h
+	closure/bsdf_toon.h
 	closure/bsdf_transparent.h
+	closure/bsdf_util.h
 	closure/bsdf_ward.h
 	closure/bsdf_westin.h
 	closure/emissive.h
@@ -63,7 +67,6 @@ set(SRC_CLOSURE_HEADERS
 set(SRC_SVM_HEADERS
 	svm/svm.h
 	svm/svm_attribute.h
-	svm/svm_bsdf.h
 	svm/svm_camera.h
 	svm/svm_closure.h
 	svm/svm_convert.h
