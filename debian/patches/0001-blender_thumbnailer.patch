@@ -1,4 +1,4 @@
-From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+From: Kevin Roy <kiniou@gmail.com>
 Date: Mon, 30 Jul 2012 10:53:09 +0200
 Subject: blender_thumbnailer
 
@@ -42,7 +42,7 @@ index 8b93eeb..44ffd48 100755
  
  import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index b66c000..5ea2892 100644
+index 72f1132..1979cbf 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -392,7 +392,7 @@ if(UNIX AND NOT APPLE)

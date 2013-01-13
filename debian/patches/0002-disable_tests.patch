@@ -2,7 +2,7 @@ From: Kevin Roy <kiniou@gmail.com>
 Date: Fri, 15 Apr 2011 19:44:00 +0200
 Subject: disable_tests
 
-added WITH_TESTS condition to implicitly disable
+Added WITH_TESTS condition to implicitly disable.
 ---
  source/CMakeLists.txt | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)

@@ -10,7 +10,7 @@ without version numbers.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 00f2dbe..f69e066 100644
+index 1dfba9c..c2dec5a 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -240,7 +240,7 @@ if(UNIX AND NOT APPLE)

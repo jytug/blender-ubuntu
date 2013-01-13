@@ -1,11 +1,9 @@
-From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+From: Kevin Roy <kiniou@gmail.com>
 Date: Tue, 21 Feb 2012 21:34:30 +0100
 Subject: update_manpages
 
- * Update blender manpage with current version
- * Add blenderplayer manpage
-
-Signed-off-by: Kevin Roy <kiniou@gmail.com>
+ * Update blender manpage with current version.
+ * Add blenderplayer manpage.
 ---
  doc/manpage/blenderplayer.1   | 131 ++++++++++++++++++++++++++++++++++++++++++
  source/creator/CMakeLists.txt |   5 +-
@@ -150,7 +148,7 @@ index 0000000..d15b0c9
 +.SH AUTHORS
 +This manpage was written for a Debian GNU/Linux by Kevin Roy <kiniou@gmail.com>.
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 31bc525..00f2dbe 100644
+index 462b7e1..1dfba9c 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -330,6 +330,7 @@ if(UNIX AND NOT APPLE)

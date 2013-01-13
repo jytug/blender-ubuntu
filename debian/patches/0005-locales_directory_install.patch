@@ -1,4 +1,4 @@
-From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+From: Kevin Roy <kiniou@gmail.com>
 Date: Fri, 11 Jan 2013 15:29:45 +0100
 Subject: locales_directory_install
 
@@ -11,10 +11,10 @@ Change where locales are installed.
  4 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 0ed4862..dc11b92 100644
+index 9086799..f7c6303 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
-@@ -184,7 +184,7 @@ EnumPropertyItem *BLF_RNA_lang_enum_properties(void)
+@@ -185,7 +185,7 @@ EnumPropertyItem *BLF_RNA_lang_enum_properties(void)
  
  void BLF_lang_init(void)
  {
@@ -24,7 +24,7 @@ index 0ed4862..dc11b92 100644
  	if (messagepath) {
  		bl_locale_init(messagepath, TEXT_DOMAIN_NAME);
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index 5e47adf..7b71863 100644
+index 8c51c92..ee70094 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
 @@ -60,6 +60,7 @@ char *BLI_get_folder_version(const int id, const int ver, const int do_check);
@@ -36,7 +36,7 @@ index 5e47adf..7b71863 100644
  /* for BLI_get_folder_version only */
  #define BLENDER_RESOURCE_PATH_USER      0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 444daf8..039d750 100644
+index 06b1f1f..104dad3 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
 @@ -1092,6 +1092,9 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
@@ -50,7 +50,7 @@ index 444daf8..039d750 100644
  	
  	return path;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 3d33654..31bc525 100644
+index a6c911e..462b7e1 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -292,9 +292,9 @@ endif()

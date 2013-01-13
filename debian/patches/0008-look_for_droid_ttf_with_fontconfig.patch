@@ -1,26 +1,24 @@
-From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
-Date: Sat, 12 Jan 2013 10:26:00 +0100
+From: Kevin Roy <kiniou@gmail.com>
+Date: Sun, 13 Jan 2013 09:59:18 +0100
 Subject: look_for_droid_ttf_with_fontconfig
 
  * Remove bad installation of fonts directory into locales.
  * Avoid using the droid font shipped with upstream source
    and use fontconfig to get it.
-
-Signed-off-by: Kevin Roy <kiniou@gmail.com>
 ---
  CMakeLists.txt                                   | 10 +++++
  build_files/cmake/Modules/FindFontconfig.cmake   | 49 ++++++++++++++++++++++++
- build_files/cmake/macros.cmake                   |  4 ++
+ build_files/cmake/macros.cmake                   |  3 ++
  source/blender/blenfont/CMakeLists.txt           |  7 ++++
  source/blender/blenfont/intern/blf_translation.c | 23 +++++++++++
  source/blender/blenlib/BLI_fileops.h             |  1 +
  source/blender/blenlib/intern/fileops.c          | 43 +++++++++++++++++++++
  source/creator/CMakeLists.txt                    |  1 -
- 8 files changed, 137 insertions(+), 1 deletion(-)
+ 8 files changed, 136 insertions(+), 1 deletion(-)
  create mode 100644 build_files/cmake/Modules/FindFontconfig.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3e1c8fe..82c4f98 100644
+index ecc3f3e..54a4f1e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -116,6 +116,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
@@ -33,7 +31,7 @@ index 3e1c8fe..82c4f98 100644
  
  option(WITH_PYTHON        "Enable Embedded Python API  (only disable for development)" ON)
  option(WITH_PYTHON_SECURITY "Disables execution of scripts within blend files by default (recommend to leave off)" OFF)
-@@ -578,6 +581,13 @@ if(UNIX AND NOT APPLE)
+@@ -589,6 +592,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -103,19 +101,18 @@ index 0000000..337ece9
 +
 +endif (FONTCONFIG_LIBRARIES AND FONTCONFIG_INCLUDE_DIR)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index efa258a..2570607 100644
+index bdd82a4..7fdd862 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -283,6 +283,10 @@ macro(setup_liblinks
+@@ -282,6 +282,9 @@ macro(setup_liblinks
+ 	if(WITH_SYSTEM_GLEW)
  		target_link_libraries(${target} ${GLEW_LIBRARY})
  	endif()
- 
 +	if(WITH_FONTCONFIG)
 +		target_link_libraries(${target} ${FONTCONFIG_LIBRARIES})
 +	endif()
-+
- 	if(WITH_OPENAL)
- 		target_link_libraries(${target} ${OPENAL_LIBRARY})
+ 	if(WITH_BULLET AND WITH_SYSTEM_BULLET)
+ 		target_link_libraries(${target} ${BULLET_LIBRARIES})
  	endif()
 diff --git a/source/blender/blenfont/CMakeLists.txt b/source/blender/blenfont/CMakeLists.txt
 index 90baef1..fa03af7 100644
@@ -196,7 +193,7 @@ index c278370..c9789f1 100644
  size_t BLI_file_descriptor_size(int file);
  size_t BLI_file_size(const char *file);
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index 883cdfd..5528377 100644
+index 0f42fca..96e85c4 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
 @@ -155,6 +155,49 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
@@ -250,7 +247,7 @@ index 883cdfd..5528377 100644
  /* return 1 when file can be written */
  int BLI_file_is_writable(const char *filename)
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index f69e066..f4eb146 100644
+index c2dec5a..60096a8 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -293,7 +293,6 @@ if(WITH_INTERNATIONAL)

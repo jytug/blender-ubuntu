@@ -1,14 +1,14 @@
-From: "Matteo F. Vescovi" <m.vescovi@revese.it>
+From: Kevin Roy <kiniou@gmail.com>
 Date: Thu, 22 Dec 2011 18:13:03 +0100
 Subject: filter_docs_to_install
 
-Install only relevant documentation
+Install only relevant documentation.
 ---
  source/creator/CMakeLists.txt | 2 --
  1 file changed, 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 2f45c21..3d33654 100644
+index c93fc9f..a6c911e 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -225,8 +225,6 @@ else()
