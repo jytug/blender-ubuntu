@@ -20,6 +20,10 @@ blender (2.65a+svn53743-1) UNRELEASED; urgency=low
   * debian/control: libavcodec-dev (>> 6:9) b-dep added
   * debian/: fix FTBFS on Python 3.3.
     Thanks to Dmitrijs Ledkovs for the hint. (Closes: #692376)
+  * debian/control: libboost-locale-dev b-dep added
+  * debian/control: DMUA flag dropped
+  * debian/control: Kevin Roy (kiniou) removed from Uploaders
+  * debian/patches/: new #0009 added to fix format-security issue
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 12 Jan 2013 18:13:05 +0100
 
