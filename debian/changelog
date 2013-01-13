@@ -2,6 +2,8 @@ blender (2.65a+svn53743-1) UNRELEASED; urgency=low
 
   * New upstream trunk release
     - Based on Blender Foundation r53743 (Closes: #692810)
+    - debian/patches/: re-work against v2.65a+svn53743
+      Thanks: Campbell Burton for helping on this.
   * debian/patches/: #0009 changed to fix l10n issue.
     Thanks to IRIE Shinsuke for pointing this out (Closes: #683078)
   * debian/patches/: #0001 updated to fix thumbnailer issue.
