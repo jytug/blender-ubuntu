@@ -11,18 +11,20 @@ blender (2.65a+svn53743-1) UNRELEASED; urgency=low
   * debian/copyright: upstream URL updated
   * debian/control: libspnav-dev added to b-deps.
     Thanks to Davide G. Borin for the hint (Closes: #685535)
-  * debian/control: subversion added to b-deps
   * debian/gbp.conf: bzip2 compression enabled
   * debian/rules: deprecated cmake var about glew dropped
   * debian/compat: 7 => 9
+  * debian/control: subversion added to b-deps
   * debian/control: debhelper bump 7 => 9
   * debian/control: libtiff4-dev => libtiff-dev
   * debian/control: libavcodec-dev (>> 6:9) b-dep added
-  * debian/: fix FTBFS on Python 3.3.
-    Thanks to Dmitrijs Ledkovs for the hint. (Closes: #692376)
   * debian/control: libboost-locale-dev b-dep added
   * debian/control: DMUA flag dropped
   * debian/control: Kevin Roy (kiniou) removed from Uploaders
+  * debian/control: Homepage URL updated
+  * debian/control: S-V 3.9.3 => 3.9.4 (no changes needed)
+  * debian/: fix FTBFS on Python 3.3.
+    Thanks to Dmitrijs Ledkovs for the hint. (Closes: #692376)
   * debian/patches/: new #0009 added to fix format-security issue
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 12 Jan 2013 18:13:05 +0100
