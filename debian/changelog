@@ -1,4 +1,4 @@
-blender (2.65a+svn53743-1) UNRELEASED; urgency=low
+blender (2.65a+svn53743-1) experimental; urgency=low
 
   * New upstream trunk release
     - Based on Blender Foundation r53743 (Closes: #692810)
@@ -27,7 +27,7 @@ blender (2.65a+svn53743-1) UNRELEASED; urgency=low
     Thanks to Dmitrijs Ledkovs for the hint. (Closes: #692376)
   * debian/patches/: new #0009 added to fix format-security issue
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Sat, 12 Jan 2013 18:13:05 +0100
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 14 Jan 2013 09:01:41 +0100
 
 blender (2.63a-2) experimental; urgency=low
 
