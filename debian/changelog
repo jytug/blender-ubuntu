@@ -1,3 +1,10 @@
+blender (2.65a+svn53743-2) UNRELEASED; urgency=low
+
+  * debian/rules: purge useless processors finding
+  * debian/rules: fixing FTBFS due to OIIO on some arches
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Tue, 15 Jan 2013 11:41:07 +0100
+
 blender (2.65a+svn53743-1) experimental; urgency=low
 
   * New upstream trunk release
