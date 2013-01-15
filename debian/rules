@@ -1,7 +1,6 @@
 #!/usr/bin/make -f
 
 INSTDIR = debian/tmp
-PROCESSORS:= $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
 
 # Adapted from http://wiki.debian.org/SandroTosi/Svn_get-orig-source
 PACKAGE = blender
@@ -60,4 +59,4 @@ override_dh_strip:
 	dh_strip --dbg-package=blender-dbg
 
 %:
-	dh $@ --buildsystem=cmake --parallel=$(PROCESSORS) --with python3
+	dh $@ --buildsystem=cmake --parallel --with python3
