@@ -4,14 +4,15 @@ Upstream-Author: Blender Foundation
 Source: http://www.blender.org/
 
 Files: *
-Copyright: 2002-2010, Blender Foundation
+Copyright: 2002-2013, Blender Foundation
 License: GPL-2+
 
 Files: debian/*
 Copyright: 2004-2005, Masayuki Hatta <mhatta@debian.org>
            2005-2007, Florian Ernst <florian@debian.org>
            2007-2010, Cyril Brulebois <kibi@debian.org>
-           2010, Kevin Roy <kiniou@gmail.com>
+           2010-2012, Kevin Roy <kiniou@gmail.com>
+           2013, Matteo F. Vescovi <mfv.debian@gmail.com>
 License: GPL-2+
 
 License: GPL-2+
