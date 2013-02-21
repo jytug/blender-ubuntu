@@ -85,6 +85,9 @@ typedef struct uiLayout uiLayout;
 #define UI_MAX_DRAW_STR 400
 #define UI_MAX_NAME_STR 128
 
+/* use for clamping popups within the screen */
+#define UI_SCREEN_MARGIN 10
+
 /* uiBlock->dt */
 #define UI_EMBOSS       0   /* use widget style for drawing */
 #define UI_EMBOSSN      1   /* Nothing, only icon and/or text */
@@ -219,7 +222,7 @@ typedef enum {
 	NUMSLI        = (14 << 9),
 	COLOR         = (15 << 9),
 	IDPOIN        = (16 << 9),
-	HSVSLI        = (17 << 9),
+	HSVSLI        = (17 << 9),  /* UNUSED, but code still references */
 	SCROLL        = (18 << 9),
 	BLOCK         = (19 << 9),
 	BUTM          = (20 << 9),
@@ -358,7 +361,7 @@ void uiPupMenuInvoke(struct bContext *C, const char *idname); /* popup registere
  * but allow using all button types and creating an own layout. */
 
 typedef uiBlock * (*uiBlockCreateFunc)(struct bContext *C, struct ARegion *ar, void *arg1);
-typedef void (*uiBlockCancelFunc)(void *arg1);
+typedef void (*uiBlockCancelFunc)(struct bContext *C, void *arg1);
 
 void uiPupBlock(struct bContext *C, uiBlockCreateFunc func, void *arg);
 void uiPupBlockO(struct bContext *C, uiBlockCreateFunc func, void *arg, const char *opname, int opcontext);
@@ -807,6 +810,7 @@ uiLayout *uiTemplateModifier(uiLayout *layout, struct bContext *C, struct Pointe
 uiLayout *uiTemplateConstraint(uiLayout *layout, struct PointerRNA *ptr);
 void uiTemplatePreview(uiLayout *layout, struct ID *id, int show_buttons, struct ID *parent, struct MTex *slot);
 void uiTemplateColorRamp(uiLayout *layout, struct PointerRNA *ptr, const char *propname, int expand);
+void uiTemplateIconView(uiLayout *layout, struct PointerRNA *ptr, const char *propname);
 void uiTemplateHistogram(uiLayout *layout, struct PointerRNA *ptr, const char *propname);
 void uiTemplateWaveform(uiLayout *layout, struct PointerRNA *ptr, const char *propname);
 void uiTemplateVectorscope(uiLayout *layout, struct PointerRNA *ptr, const char *propname);
@@ -828,6 +832,8 @@ void uiTemplateTextureImage(uiLayout *layout, struct bContext *C, struct Tex *te
 void uiTemplateReportsBanner(uiLayout *layout, struct bContext *C);
 void uiTemplateKeymapItemProperties(uiLayout *layout, struct PointerRNA *ptr);
 
+/* Default UIList class name, keep in sync with its declaration in bl_ui/__init__.py */
+#define UI_UL_DEFAULT_CLASS_NAME "UI_UL_list"
 void uiTemplateList(uiLayout *layout, struct bContext *C, const char *listtype_name, const char *list_id,
                     struct PointerRNA *dataptr, const char *propname, struct PointerRNA *active_dataptr,
                     const char *active_propname, int rows, int maxrows, int layout_type);

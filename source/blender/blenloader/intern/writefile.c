@@ -118,6 +118,7 @@
 #include "DNA_packedFile_types.h"
 #include "DNA_particle_types.h"
 #include "DNA_property_types.h"
+#include "DNA_rigidbody_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_sdna_types.h"
 #include "DNA_sequence_types.h"
@@ -1487,6 +1488,14 @@ static void write_objects(WriteData *wd, ListBase *idbase)
 			}
 			writestruct(wd, DATA, "BulletSoftBody", 1, ob->bsoft);
 			
+			if (ob->rigidbody_object) {
+				// TODO: if any extra data is added to handle duplis, will need separate function then
+				writestruct(wd, DATA, "RigidBodyOb", 1, ob->rigidbody_object);
+			}
+			if (ob->rigidbody_constraint) {
+				writestruct(wd, DATA, "RigidBodyCon", 1, ob->rigidbody_constraint);
+			}
+
 			write_particlesystems(wd, &ob->particlesystem);
 			write_modifiers(wd, &ob->modifiers);
 		}
@@ -1512,7 +1521,7 @@ static void write_vfonts(WriteData *wd, ListBase *idbase)
 
 			/* direct data */
 
-			if (vf->packedfile && !wd->current) {
+			if (vf->packedfile) {
 				pf = vf->packedfile;
 				writestruct(wd, DATA, "PackedFile", 1, pf);
 				writedata(wd, DATA, pf->size, pf->data);
@@ -1962,7 +1971,7 @@ static void write_images(WriteData *wd, ListBase *idbase)
 			writestruct(wd, ID_IM, "Image", 1, ima);
 			if (ima->id.properties) IDP_WriteProperty(ima->id.properties, wd);
 
-			if (ima->packedfile && !wd->current) {
+			if (ima->packedfile) {
 				pf = ima->packedfile;
 				writestruct(wd, DATA, "PackedFile", 1, pf);
 				writedata(wd, DATA, pf->size, pf->data);
@@ -2296,7 +2305,14 @@ static void write_scenes(WriteData *wd, ListBase *scebase)
 		}
 
 		write_view_settings(wd, &sce->view_settings);
-
+		
+		/* writing RigidBodyWorld data to the blend file */
+		if (sce->rigidbody_world) {
+			writestruct(wd, DATA, "RigidBodyWorld", 1, sce->rigidbody_world);
+			writestruct(wd, DATA, "EffectorWeights", 1, sce->rigidbody_world->effector_weights);
+			write_pointcaches(wd, &(sce->rigidbody_world->ptcaches));
+		}
+		
 		sce= sce->id.next;
 	}
 	/* flush helps the compression for undo-save */
@@ -2554,14 +2570,18 @@ static void write_libraries(WriteData *wd, Main *main)
 			}
 		}
 		
+		/* to be able to restore quit.blend and temp saves, the packed blend has to be in undo buffers... */
+		/* XXX needs rethink, just like save UI in undo files now - would be nice to append things only for the]
+		   quit.blend and temp saves */
 		if (foundone) {
 			writestruct(wd, ID_LI, "Library", 1, main->curlib);
 
-			if (main->curlib->packedfile && !wd->current) {
+			if (main->curlib->packedfile) {
 				PackedFile *pf = main->curlib->packedfile;
 				writestruct(wd, DATA, "PackedFile", 1, pf);
 				writedata(wd, DATA, pf->size, pf->data);
-				printf("write packed .blend: %s\n", main->curlib->name);
+				if (wd->current == NULL)
+					printf("write packed .blend: %s\n", main->curlib->name);
 			}
 			
 			while (a--) {
@@ -2692,7 +2712,7 @@ static void write_sounds(WriteData *wd, ListBase *idbase)
 			writestruct(wd, ID_SO, "bSound", 1, sound);
 			if (sound->id.properties) IDP_WriteProperty(sound->id.properties, wd);
 
-			if (sound->packedfile && !wd->current) {
+			if (sound->packedfile) {
 				pf = sound->packedfile;
 				writestruct(wd, DATA, "PackedFile", 1, pf);
 				writedata(wd, DATA, pf->size, pf->data);

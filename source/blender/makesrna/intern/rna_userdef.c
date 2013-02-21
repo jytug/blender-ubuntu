@@ -325,6 +325,11 @@ static void rna_userdef_addon_remove(ReportList *reports, PointerRNA *bext_ptr)
 		return;
 	}
 
+	if (bext->prop) {
+		IDP_FreeProperty(bext->prop);
+		MEM_freeN(bext->prop);
+	}
+
 	BLI_freelinkN(&U.addons, bext);
 	RNA_POINTER_INVALIDATE(bext_ptr);
 }
@@ -603,22 +608,14 @@ static void rna_def_userdef_theme_ui_style(BlenderRNA *brna)
 	RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
 	RNA_def_struct_ui_text(srna, "Style", "Theme settings for style sets");
 	
-	/* (not used yet) */
-#if 0
-	prop = RNA_def_property(srna, "panelzoom", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_range(prop, 0.5, 2.0);
-	RNA_def_property_ui_text(prop, "Panel Zoom", "Default zoom level for panel areas");
-#endif
 
-	/*	(not used yet) */
-#if 0
-	prop = RNA_def_property(srna, "group_label", PROP_POINTER, PROP_NONE);
+	prop = RNA_def_property(srna, "panel_title", PROP_POINTER, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_NEVER_NULL);
-	RNA_def_property_pointer_sdna(prop, NULL, "grouplabel");
+	RNA_def_property_pointer_sdna(prop, NULL, "paneltitle");
 	RNA_def_property_struct_type(prop, "ThemeFontStyle");
-	RNA_def_property_ui_text(prop, "Group Label Font", "");
+	RNA_def_property_ui_text(prop, "Panel Title Font", "");
 	RNA_def_property_update(prop, 0, "rna_userdef_update");
-#endif
+
 	prop = RNA_def_property(srna, "widget_label", PROP_POINTER, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_NEVER_NULL);
 	RNA_def_property_pointer_sdna(prop, NULL, "widgetlabel");
@@ -1692,6 +1689,13 @@ static void rna_def_userdef_theme_space_console(BlenderRNA *brna)
 	RNA_def_property_array(prop, 3);
 	RNA_def_property_ui_text(prop, "Cursor", "");
 	RNA_def_property_update(prop, 0, "rna_userdef_update");
+
+	prop = RNA_def_property(srna, "select", PROP_FLOAT, PROP_COLOR_GAMMA);
+	RNA_def_property_float_sdna(prop, NULL, "console_select");
+	RNA_def_property_array(prop, 4);
+	RNA_def_property_ui_text(prop, "Selection", "");
+	RNA_def_property_update(prop, 0, "rna_userdef_update");
+
 }
 
 static void rna_def_userdef_theme_space_info(BlenderRNA *brna)
@@ -1878,6 +1882,18 @@ static void rna_def_userdef_theme_space_node(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "movie");
 	RNA_def_property_array(prop, 4);
 	RNA_def_property_ui_text(prop, "Frame Node", "");
+	RNA_def_property_update(prop, 0, "rna_userdef_update");
+	
+	prop = RNA_def_property(srna, "matte_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+	RNA_def_property_float_sdna(prop, NULL, "syntaxs");
+	RNA_def_property_array(prop, 3);
+	RNA_def_property_ui_text(prop, "Matte Node", "");
+	RNA_def_property_update(prop, 0, "rna_userdef_update");
+
+	prop = RNA_def_property(srna, "distor_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+	RNA_def_property_float_sdna(prop, NULL, "syntaxd");
+	RNA_def_property_array(prop, 3);
+	RNA_def_property_ui_text(prop, "Distort Node", "");
 	RNA_def_property_update(prop, 0, "rna_userdef_update");
 
 	prop = RNA_def_property(srna, "noodle_curving", PROP_INT, PROP_NONE);
@@ -3311,7 +3327,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "dpi", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "dpi");
-	RNA_def_property_range(prop, 48, 128);
+	RNA_def_property_range(prop, 48, 144);
 	RNA_def_property_ui_text(prop, "DPI", "Font size and resolution for display");
 	RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
 	
@@ -3540,7 +3556,6 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	                         "Draw tool/property regions over the main region, when using Triple Buffer");
 	RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
 	
-
 #ifdef WITH_CYCLES
 	prop = RNA_def_property(srna, "compute_device_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_ENUM_NO_CONTEXT);
@@ -3746,6 +3761,11 @@ static void rna_def_userdef_input(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0, 32);
 	RNA_def_property_ui_text(prop, "Wheel Scroll Lines", "Number of lines scrolled at a time with the mouse wheel");
 	
+	prop = RNA_def_property(srna, "use_trackpad_natural", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "uiflag2", USER_TRACKPAD_NATURAL);
+	RNA_def_property_ui_text(prop, "Trackpad Natural",
+	                         "If your system uses 'natural' scrolling, this option keeps consistent trackpad usage throughout the UI");
+
 	prop = RNA_def_property(srna, "active_keyconfig", PROP_STRING, PROP_DIRPATH);
 	RNA_def_property_string_sdna(prop, NULL, "keyconfigstr");
 	RNA_def_property_ui_text(prop, "Key Config", "The name of the active key configuration");

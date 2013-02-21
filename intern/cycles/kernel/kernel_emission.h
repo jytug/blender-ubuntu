@@ -20,7 +20,7 @@ CCL_NAMESPACE_BEGIN
 
 /* Direction Emission */
 
-__device float3 direct_emissive_eval(KernelGlobals *kg, float rando,
+__device_noinline float3 direct_emissive_eval(KernelGlobals *kg, float rando,
 	LightSample *ls, float u, float v, float3 I, float t, float time)
 {
 	/* setup shading at emitter */
@@ -74,9 +74,9 @@ __device float3 direct_emissive_eval(KernelGlobals *kg, float rando,
 	return eval;
 }
 
-__device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
+__device_noinline bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
 	float randt, float rando, float randu, float randv, Ray *ray, BsdfEval *eval,
-	int *lamp)
+	bool *is_lamp)
 {
 	LightSample ls;
 
@@ -91,12 +91,6 @@ __device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
 		/* sample a light and position on int */
 		light_sample(kg, randt, randu, randv, sd->time, sd->P, &ls);
 	}
-
-	/* return lamp index for MIS */
-	if(ls.use_mis)
-		*lamp = ls.lamp;
-	else
-		*lamp= ~0;
 
 	if(ls.pdf == 0.0f)
 		return false;
@@ -114,7 +108,7 @@ __device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
 
 	shader_bsdf_eval(kg, sd, ls.D, eval, &bsdf_pdf);
 
-	if(ls.use_mis) {
+	if(ls.shader & SHADER_USE_MIS) {
 		/* multiple importance sampling */
 		float mis_weight = power_heuristic(ls.pdf, bsdf_pdf);
 		light_eval *= mis_weight;
@@ -146,12 +140,15 @@ __device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
 		ray->t = 0.0f;
 	}
 
+	/* return if it's a lamp for shadow pass */
+	*is_lamp = (ls.prim == ~0 && ls.type != LIGHT_BACKGROUND);
+
 	return true;
 }
 
 /* Indirect Primitive Emission */
 
-__device float3 indirect_primitive_emission(KernelGlobals *kg, ShaderData *sd, float t, int path_flag, float bsdf_pdf)
+__device_noinline float3 indirect_primitive_emission(KernelGlobals *kg, ShaderData *sd, float t, int path_flag, float bsdf_pdf)
 {
 	/* evaluate emissive closure */
 	float3 L = shader_emissive_eval(kg, sd);
@@ -174,7 +171,7 @@ __device float3 indirect_primitive_emission(KernelGlobals *kg, ShaderData *sd, f
 
 /* Indirect Lamp Emission */
 
-__device bool indirect_lamp_emission(KernelGlobals *kg, Ray *ray, int path_flag, float bsdf_pdf, float randt, float3 *emission)
+__device_noinline bool indirect_lamp_emission(KernelGlobals *kg, Ray *ray, int path_flag, float bsdf_pdf, float randt, float3 *emission)
 {
 	LightSample ls;
 	int lamp = lamp_light_eval_sample(kg, randt);
@@ -203,7 +200,7 @@ __device bool indirect_lamp_emission(KernelGlobals *kg, Ray *ray, int path_flag,
 
 /* Indirect Background */
 
-__device float3 indirect_background(KernelGlobals *kg, Ray *ray, int path_flag, float bsdf_pdf)
+__device_noinline float3 indirect_background(KernelGlobals *kg, Ray *ray, int path_flag, float bsdf_pdf)
 {
 #ifdef __BACKGROUND__
 	/* evaluate background closure */

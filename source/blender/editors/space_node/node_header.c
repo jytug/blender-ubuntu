@@ -136,7 +136,7 @@ static void do_node_add_group(bContext *C, void *UNUSED(arg), int event)
 		ntemp.type = -event;
 		switch (ntemp.type) {
 			case NODE_GROUP:
-				ntemp.ngroup = ntreeAddTree("Group", snode->treetype, ntemp.type);
+				ntemp.ngroup = ntreeAddTree(bmain, "Group", snode->treetype, ntemp.type);
 				break;
 			default:
 				ntemp.ngroup = NULL;
@@ -234,7 +234,7 @@ static void node_menu_add(const bContext *C, Menu *menu)
 		uiLayoutSetActive(layout, FALSE);
 	
 	uiLayoutSetOperatorContext(layout, WM_OP_INVOKE_DEFAULT);
-	uiItemO(layout, "Search ...", 0, "NODE_OT_add_search");
+	uiItemO(layout, CTX_IFACE_(BLF_I18NCONTEXT_OPERATOR_DEFAULT, "Search ..."), 0, "NODE_OT_add_search");
 	
 	if (ntreetype && ntreetype->foreach_nodeclass)
 		ntreetype->foreach_nodeclass(scene, layout, node_menu_add_foreach_cb);

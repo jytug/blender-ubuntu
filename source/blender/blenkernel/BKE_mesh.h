@@ -39,6 +39,7 @@ struct DispList;
 struct ListBase;
 struct BMEditMesh;
 struct BMesh;
+struct Main;
 struct Mesh;
 struct MPoly;
 struct MLoop;
@@ -100,6 +101,16 @@ void BKE_mesh_calc_poly_center(struct MPoly *mpoly, struct MLoop *loopstart,
 float BKE_mesh_calc_poly_area(struct MPoly *mpoly, struct MLoop *loopstart,
                               struct MVert *mvarray, const float polynormal[3]);
 
+void BKE_mesh_calc_relative_deform(
+        const struct MPoly *mpoly, const int totpoly,
+        const struct MLoop *mloop, const int totvert,
+
+        const float (*vert_cos_src)[3],
+        const float (*vert_cos_dst)[3],
+
+        const float (*vert_cos_org)[3],
+              float (*vert_cos_new)[3]);
+
 /* Find the index of the loop in 'poly' which references vertex,
  * returns -1 if not found */
 int poly_find_loop_from_vert(const struct MPoly *poly,
@@ -136,7 +147,8 @@ void BKE_mesh_flush_select_from_verts(struct Mesh *me);
 
 void BKE_mesh_unlink(struct Mesh *me);
 void BKE_mesh_free(struct Mesh *me, int unlink);
-struct Mesh *BKE_mesh_add(const char *name);
+struct Mesh *BKE_mesh_add(struct Main *bmain, const char *name);
+struct Mesh *BKE_mesh_copy_ex(struct Main *bmain, struct Mesh *me);
 struct Mesh *BKE_mesh_copy(struct Mesh *me);
 void mesh_update_customdata_pointers(struct Mesh *me, const short do_ensure_tess_cd);
 

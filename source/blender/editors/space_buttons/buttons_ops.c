@@ -40,6 +40,8 @@
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
@@ -70,7 +72,7 @@ static int toolbox_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(e
 
 	RNA_pointer_create(&sc->id, &RNA_SpaceProperties, sbuts, &ptr);
 
-	pup = uiPupMenuBegin(C, "Align", ICON_NONE);
+	pup = uiPupMenuBegin(C, IFACE_("Align"), ICON_NONE);
 	layout = uiPupMenuLayout(pup);
 	uiItemsEnumR(layout, &ptr, "align");
 	uiPupMenuEnd(C, pup);
@@ -112,14 +114,22 @@ static int file_browse_exec(bContext *C, wmOperator *op)
 	/* add slash for directories, important for some properties */
 	if (RNA_property_subtype(fbo->prop) == PROP_DIRPATH) {
 		char name[FILE_MAX];
-		
+		int is_relative = RNA_boolean_get(op->ptr, "relative_path");
 		id = fbo->ptr.id.data;
 
 		BLI_strncpy(path, str, FILE_MAX);
 		BLI_path_abs(path, id ? ID_BLEND_PATH(G.main, id) : G.main->name);
 		
 		if (BLI_is_dir(path)) {
-			str = MEM_reallocN(str, strlen(str) + 2);
+			if (is_relative) {
+				BLI_strncpy(path, str, FILE_MAX);
+				BLI_path_rel(path, G.main->name);
+				str = MEM_reallocN(str, strlen(path) + 2);
+				BLI_strncpy(str, path, FILE_MAX);
+			}
+			else {
+				str = MEM_reallocN(str, strlen(str) + 2);
+			}
 			BLI_add_slash(str);
 		}
 		else

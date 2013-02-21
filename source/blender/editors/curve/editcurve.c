@@ -1279,8 +1279,24 @@ void CU_deselect_all(Object *obedit)
 	ListBase *editnurb = object_editcurve_get(obedit);
 
 	if (editnurb) {
-		selectend_nurb(obedit, FIRST, 0, DESELECT); /* set first control points as unselected */
-		select_adjacent_cp(editnurb, 1, 1, DESELECT); /* cascade selection */
+		Nurb *nu;
+		int a;
+		for (nu = editnurb->first; nu; nu = nu->next) {
+			if (nu->bezt) {
+				BezTriple *bezt;
+				for (bezt = nu->bezt, a = 0; a < nu->pntsu; a++, bezt++) {
+					bezt->f1 &= ~SELECT;
+					bezt->f2 &= ~SELECT;
+					bezt->f3 &= ~SELECT;
+				}
+			}
+			else if (nu->bp) {
+				BPoint *bp;
+				for (bp = nu->bp, a = 0; a < nu->pntsu * nu->pntsv; a++, bp++) {
+					bp->f1 &= ~SELECT;
+				}
+			}
+		}
 	}
 }
 
@@ -1289,8 +1305,27 @@ void CU_select_all(Object *obedit)
 	ListBase *editnurb = object_editcurve_get(obedit);
 
 	if (editnurb) {
-		selectend_nurb(obedit, FIRST, 0, SELECT); /* set first control points as unselected */
-		select_adjacent_cp(editnurb, 1, 1, SELECT); /* cascade selection */
+		Nurb *nu;
+		int a;
+		for (nu = editnurb->first; nu; nu = nu->next) {
+			if (nu->bezt) {
+				BezTriple *bezt;
+				for (bezt = nu->bezt, a = 0; a < nu->pntsu; a++, bezt++) {
+					if (bezt->hide == 0) {
+						bezt->f1 |= SELECT;
+						bezt->f2 |= SELECT;
+						bezt->f3 |= SELECT;
+					}
+				}
+			}
+			else if (nu->bp) {
+				BPoint *bp;
+				for (bp = nu->bp, a = 0; a < nu->pntsu * nu->pntsv; a++, bp++) {
+					if (bp->hide == 0)
+						bp->f1 |= SELECT;
+				}
+			}
+		}
 	}
 }
 
@@ -1999,11 +2034,12 @@ static int switch_direction_exec(bContext *C, wmOperator *UNUSED(op))
 	EditNurb *editnurb = cu->editnurb;
 	Nurb *nu;
 
-	for (nu = editnurb->nurbs.first; nu; nu = nu->next)
+	for (nu = editnurb->nurbs.first; nu; nu = nu->next) {
 		if (isNurbsel(nu)) {
 			BKE_nurb_direction_switch(nu);
 			keyData_switchDirectionNurb(cu, nu);
 		}
+	}
 
 	if (ED_curve_updateAnimPaths(obedit->data))
 		WM_event_add_notifier(C, NC_OBJECT | ND_KEYS, obedit);
@@ -2446,10 +2482,11 @@ static void select_adjacent_cp(ListBase *editnurb, short next, short cont, short
 
 /**************** select start/end operators **************/
 
-/* (de)selects first or last of visible part of each Nurb depending on selFirst     */
-/* selFirst: defines the end of which to select					    */
-/* doswap: defines if selection state of each first/last control point is swapped   */
-/* selstatus: selection status in case doswap is false				    */
+/* (de)selects first or last of visible part of each Nurb depending on selFirst
+ * selFirst: defines the end of which to select
+ * doswap: defines if selection state of each first/last control point is swapped
+ * selstatus: selection status in case doswap is false
+ */
 void selectend_nurb(Object *obedit, short selfirst, short doswap, short selstatus)
 {
 	ListBase *editnurb = object_editcurve_get(obedit);
@@ -2523,7 +2560,7 @@ void CURVE_OT_de_select_first(wmOperatorType *ot)
 	/* identifiers */
 	ot->name = "(De)select First";
 	ot->idname = "CURVE_OT_de_select_first";
-	ot->description = "(De)select first of visible part of each Nurb";
+	ot->description = "(De)select first of visible part of each NURBS";
 	
 	/* api cfirstbacks */
 	ot->exec = de_select_first_exec;
@@ -2548,7 +2585,7 @@ void CURVE_OT_de_select_last(wmOperatorType *ot)
 	/* identifiers */
 	ot->name = "(De)select Last";
 	ot->idname = "CURVE_OT_de_select_last";
-	ot->description = "(De)select last of visible part of each Nurb";
+	ot->description = "(De)select last of visible part of each NURBS";
 	
 	/* api clastbacks */
 	ot->exec = de_select_last_exec;

@@ -169,8 +169,9 @@ void BKE_tracking_settings_init(MovieTracking *tracking)
 
 	tracking->settings.default_motion_model = TRACK_MOTION_MODEL_TRANSLATION;
 	tracking->settings.default_minimum_correlation = 0.75;
-	tracking->settings.default_pattern_size = 11;
+	tracking->settings.default_pattern_size = 15;
 	tracking->settings.default_search_size = 61;
+	tracking->settings.default_algorithm_flag |= TRACK_ALGORITHM_FLAG_USE_BRUTE;
 	tracking->settings.dist = 1;
 	tracking->settings.object_distance = 1;
 	tracking->settings.reconstruction_success_threshold = 1e-3;
@@ -1602,6 +1603,67 @@ ImBuf *BKE_tracking_distort_frame(MovieTracking *tracking, ImBuf *ibuf, int cali
 
 	return BKE_tracking_distortion_exec(camera->intrinsics, tracking, ibuf, calibration_width,
 	                                    calibration_height, overscan, FALSE);
+}
+
+void BKE_tracking_max_undistortion_delta_across_bound(MovieTracking *tracking, rcti *rect, float delta[2])
+{
+	int a;
+	float pos[2], warped_pos[2];
+	const int coord_delta = 5;
+
+	delta[0] = delta[1] = -FLT_MAX;
+
+	for (a = rect->xmin; a <= rect->xmax + coord_delta; a += coord_delta) {
+		if (a > rect->xmax)
+			a = rect->xmax;
+
+		/* bottom edge */
+		pos[0] = a;
+		pos[1] = rect->ymin;
+
+		BKE_tracking_undistort_v2(tracking, pos, warped_pos);
+
+		delta[0] = max_ff(delta[0], fabs(pos[0] - warped_pos[0]));
+		delta[1] = max_ff(delta[1], fabs(pos[1] - warped_pos[1]));
+
+		/* top edge */
+		pos[0] = a;
+		pos[1] = rect->ymax;
+
+		BKE_tracking_undistort_v2(tracking, pos, warped_pos);
+
+		delta[0] = max_ff(delta[0], fabs(pos[0] - warped_pos[0]));
+		delta[1] = max_ff(delta[1], fabs(pos[1] - warped_pos[1]));
+
+		if (a >= rect->xmax)
+			break;
+	}
+
+	for (a = rect->ymin; a <= rect->ymax + coord_delta; a += coord_delta) {
+		if (a > rect->ymax)
+			a = rect->ymax;
+
+		/* left edge */
+		pos[0] = rect->xmin;
+		pos[1] = a;
+
+		BKE_tracking_undistort_v2(tracking, pos, warped_pos);
+
+		delta[0] = max_ff(delta[0], fabs(pos[0] - warped_pos[0]));
+		delta[1] = max_ff(delta[1], fabs(pos[1] - warped_pos[1]));
+
+		/* right edge */
+		pos[0] = rect->xmax;
+		pos[1] = a;
+
+		BKE_tracking_undistort_v2(tracking, pos, warped_pos);
+
+		delta[0] = max_ff(delta[0], fabs(pos[0] - warped_pos[0]));
+		delta[1] = max_ff(delta[1], fabs(pos[1] - warped_pos[1]));
+
+		if (a >= rect->ymax)
+			break;
+	}
 }
 
 /*********************** Image sampling *************************/

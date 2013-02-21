@@ -47,6 +47,8 @@
 #include "BLI_math.h"
 #include "BLI_rand.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_material.h"
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
@@ -387,7 +389,7 @@ static short edbm_extrude_edge(Object *obedit, BMEditMesh *em, const char hflag,
 		if (ele->head.htype == BM_FACE) {
 			f = (BMFace *)ele;
 			add_normal_aligned(nor, f->no);
-		};
+		}
 	}
 
 	normalize_v3(nor);
@@ -1744,9 +1746,9 @@ void MESH_OT_vertices_smooth_laplacian(wmOperatorType *ot)
 	              "Lambda factor", "", 0.0000001f, 1000.0f);
 	RNA_def_float(ot->srna, "lambda_border", 0.00005f, 0.0000001f, 1000.0f,
 	              "Lambda factor in border", "", 0.0000001f, 1000.0f);
-	RNA_def_boolean(ot->srna, "use_x", 1, "Smooth X Axis", "Smooth object along	X axis");
-	RNA_def_boolean(ot->srna, "use_y", 1, "Smooth Y Axis", "Smooth object along	Y axis");
-	RNA_def_boolean(ot->srna, "use_z", 1, "Smooth Z Axis", "Smooth object along	Z axis");
+	RNA_def_boolean(ot->srna, "use_x", 1, "Smooth X Axis", "Smooth object along X axis");
+	RNA_def_boolean(ot->srna, "use_y", 1, "Smooth Y Axis", "Smooth object along Y axis");
+	RNA_def_boolean(ot->srna, "use_z", 1, "Smooth Z Axis", "Smooth object along Z axis");
 	RNA_def_boolean(ot->srna, "preserve_volume", 1, "Preserve Volume", "Apply volume preservation after smooth");
 }
 
@@ -3190,8 +3192,7 @@ static int mesh_separate_loose(Main *bmain, Scene *scene, Base *base_old, BMesh 
 		         BMW_FLAG_NOP,
 		         BMW_NIL_LAY);
 
-		e = BMW_begin(&walker, v_seed);
-		for (; e; e = BMW_step(&walker)) {
+		for (e = BMW_begin(&walker, v_seed); e; e = BMW_step(&walker)) {
 			if (!BM_elem_flag_test(e->v1, BM_ELEM_TAG)) { BM_elem_flag_enable(e->v1, BM_ELEM_TAG); tot++; }
 			if (!BM_elem_flag_test(e->v2, BM_ELEM_TAG)) { BM_elem_flag_enable(e->v2, BM_ELEM_TAG); tot++; }
 		}
@@ -3315,9 +3316,12 @@ static int edbm_fill_exec(bContext *C, wmOperator *op)
 {
 	Object *obedit = CTX_data_edit_object(C);
 	BMEditMesh *em = BMEdit_FromObject(obedit);
+	int use_beauty = RNA_boolean_get(op->ptr, "use_beauty");
 	BMOperator bmop;
 	
-	if (!EDBM_op_init(em, &bmop, op, "triangle_fill edges=%he", BM_ELEM_SELECT)) {
+	if (!EDBM_op_init(em, &bmop, op,
+	                  "triangle_fill edges=%he use_beauty=%b",
+	                  BM_ELEM_SELECT, use_beauty)) {
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -3349,6 +3353,8 @@ void MESH_OT_fill(wmOperatorType *ot)
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+	RNA_def_boolean(ot->srna, "use_beauty", true, "Beauty", "Use best triangulation division");
 }
 
 static int edbm_beautify_fill_exec(bContext *C, wmOperator *op)
@@ -3356,7 +3362,7 @@ static int edbm_beautify_fill_exec(bContext *C, wmOperator *op)
 	Object *obedit = CTX_data_edit_object(C);
 	BMEditMesh *em = BMEdit_FromObject(obedit);
 
-	if (!EDBM_op_callf(em, op, "beautify_fill faces=%hf", BM_ELEM_SELECT))
+	if (!EDBM_op_callf(em, op, "beautify_fill faces=%hf edges=ae", BM_ELEM_SELECT))
 		return OPERATOR_CANCELLED;
 
 	EDBM_update_generic(em, TRUE, TRUE);
@@ -3385,10 +3391,22 @@ static int edbm_quads_convert_to_tris_exec(bContext *C, wmOperator *op)
 {
 	Object *obedit = CTX_data_edit_object(C);
 	BMEditMesh *em = BMEdit_FromObject(obedit);
+	BMOperator bmop;
 	int use_beauty = RNA_boolean_get(op->ptr, "use_beauty");
 
-	if (!EDBM_op_callf(em, op, "triangulate faces=%hf use_beauty=%b", BM_ELEM_SELECT, use_beauty))
+	EDBM_op_init(em, &bmop, op, "triangulate faces=%hf use_beauty=%b", BM_ELEM_SELECT, use_beauty);
+	BMO_op_exec(em->bm, &bmop);
+
+	/* now call beauty fill */
+	if (use_beauty) {
+		EDBM_op_callf(em, op,
+		              "beautify_fill faces=%S edges=%S",
+		              &bmop, "faces.out", &bmop, "edges.out");
+	}
+
+	if (!EDBM_op_finish(em, &bmop, op, TRUE)) {
 		return OPERATOR_CANCELLED;
+	}
 
 	EDBM_update_generic(em, TRUE, TRUE);
 
@@ -3409,7 +3427,7 @@ void MESH_OT_quads_convert_to_tris(wmOperatorType *ot)
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	RNA_def_boolean(ot->srna, "use_beauty", 1, "Beauty", "Use best triangulation division (currently quads only)");
+	RNA_def_boolean(ot->srna, "use_beauty", 1, "Beauty", "Use best triangulation division");
 }
 
 static int edbm_tris_convert_to_quads_exec(bContext *C, wmOperator *op)
@@ -3956,9 +3974,11 @@ static int edbm_select_mirror_exec(bContext *C, wmOperator *op)
 	BMEditMesh *em = BMEdit_FromObject(obedit);
 	int extend = RNA_boolean_get(op->ptr, "extend");
 
-	EDBM_select_mirrored(obedit, em, extend);
-	EDBM_selectmode_flush(em);
-	WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+	if (em->bm->totvert && em->bm->totvertsel) {
+		EDBM_select_mirrored(obedit, em, extend);
+		EDBM_selectmode_flush(em);
+		WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+	}
 
 	return OPERATOR_FINISHED;
 }
@@ -4603,7 +4623,7 @@ static int edbm_noise_exec(bContext *C, wmOperator *op)
 		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
 				float tin, dum;
-				externtex(ma->mtex[0], eve->co, &tin, &dum, &dum, &dum, &dum, 0);
+				externtex(ma->mtex[0], eve->co, &tin, &dum, &dum, &dum, &dum, 0, NULL);
 				eve->co[2] += fac * tin;
 			}
 		}
@@ -4655,9 +4675,10 @@ typedef struct {
 static void edbm_bevel_update_header(wmOperator *op, bContext *C)
 {
 #ifdef NEW_BEVEL
-	static char str[] = "Confirm: Enter/LClick, Cancel: (Esc/RMB), offset: %s, segments: %d";
+	const char *str = IFACE_("Confirm: Enter/LClick, Cancel: (Esc/RMB), Offset: %s, Segments: %d");
 #else
-	static char str[] = "Confirm: Enter/LClick, Cancel: (Esc/RMB), factor: %s, Use Dist (D): %s: Use Even (E): %s";
+	const char *str = IFACE_("Confirm: Enter/LClick, Cancel: (Esc/RMB), Factor: %s, Use Dist (D): %s, "
+	                         "Use Even (E): %s");
 	BevelData *opdata = op->customdata;
 #endif
 
@@ -4680,8 +4701,8 @@ static void edbm_bevel_update_header(wmOperator *op, bContext *C)
 			BLI_snprintf(factor_str, NUM_STR_REP_LEN, "%f", RNA_float_get(op->ptr, "percent"));
 		BLI_snprintf(msg, HEADER_LENGTH, str,
 		             factor_str,
-		             RNA_boolean_get(op->ptr, "use_dist") ? "On" : "Off",
-		             RNA_boolean_get(op->ptr, "use_even") ? "On" : "Off"
+		             RNA_boolean_get(op->ptr, "use_dist") ? IFACE_("On") : IFACE_("Off"),
+		             RNA_boolean_get(op->ptr, "use_even") ? IFACE_("On") : IFACE_("Off")
 		            );
 #endif
 
@@ -4959,7 +4980,7 @@ static float edbm_bevel_mval_factor(wmOperator *op, wmEvent *event)
 	if (event->shift) {
 		if (opdata->shift_factor < 0.0f) {
 #ifdef NEW_BEVEL
-			opdata->shift_factor = RNA_float_get(op->ptr, "percent");
+			opdata->shift_factor = RNA_float_get(op->ptr, "offset");
 #else
 			opdata->shift_factor = RNA_float_get(op->ptr, "factor");
 #endif
@@ -5194,12 +5215,8 @@ static void edbm_inset_update_header(wmOperator *op, bContext *C)
 {
 	InsetData *opdata = op->customdata;
 
-	static const char str[] = "Confirm: Enter/LClick, "
-	                          "Cancel: (Esc/RClick), "
-	                          "thickness: %s, "
-	                          "depth (Ctrl to tweak): %s (%s), "
-	                          "Outset (O): (%s), "
-	                          "Boundary (B): (%s)";
+	const char *str = IFACE_("Confirm: Enter/LClick, Cancel: (Esc/RClick), Thickness: %s, "
+	                         "Depth (Ctrl to tweak): %s (%s), Outset (O): (%s), Boundary (B): (%s)");
 
 	char msg[HEADER_LENGTH];
 	ScrArea *sa = CTX_wm_area(C);
@@ -5215,9 +5232,9 @@ static void edbm_inset_update_header(wmOperator *op, bContext *C)
 		BLI_snprintf(msg, HEADER_LENGTH, str,
 		             flts_str,
 		             flts_str + NUM_STR_REP_LEN,
-		             opdata->modify_depth ? "On" : "Off",
-		             RNA_boolean_get(op->ptr, "use_outset") ? "On" : "Off",
-		             RNA_boolean_get(op->ptr, "use_boundary") ? "On" : "Off"
+		             opdata->modify_depth ? IFACE_("On") : IFACE_("Off"),
+		             RNA_boolean_get(op->ptr, "use_outset") ? IFACE_("On") : IFACE_("Off"),
+		             RNA_boolean_get(op->ptr, "use_boundary") ? IFACE_("On") : IFACE_("Off")
 		            );
 
 		ED_area_headerprint(sa, msg);

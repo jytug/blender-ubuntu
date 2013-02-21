@@ -174,7 +174,8 @@ MINLINE void srgb_to_linearrgb_uchar4_predivide(float linear[4], const unsigned 
 }
 
 /* color macros for themes */
-#define rgba_char_args_set_fl(col, r, g, b, a)  rgba_char_args_set(col, r * 255, g * 255, b * 255, a * 255)
+#define rgba_char_args_set_fl(col, r, g, b, a) \
+	rgba_char_args_set(col, (r) * 255, (g) * 255, (b) * 255, (a) * 255)
 
 MINLINE void rgba_char_args_set(char col[4], const char r, const char g, const char b, const char a)
 {
@@ -270,7 +271,7 @@ MINLINE int compare_rgb_uchar(const unsigned char col_a[3], const unsigned char 
 
 /**************** Alpha Transformations *****************/
 
-MINLINE void premul_to_straight_v4(float straight[4], const float premul[4])
+MINLINE void premul_to_straight_v4_v4(float straight[4], const float premul[4])
 {
 	if (premul[3] == 0.0f || premul[3] == 1.0f) {
 		straight[0] = premul[0];
@@ -287,13 +288,23 @@ MINLINE void premul_to_straight_v4(float straight[4], const float premul[4])
 	}
 }
 
-MINLINE void straight_to_premul_v4(float premul[4], const float straight[4])
+MINLINE void premul_to_straight_v4(float color[4])
+{
+	premul_to_straight_v4_v4(color, color);
+}
+
+MINLINE void straight_to_premul_v4_v4(float premul[4], const float straight[4])
 {
 	float alpha = straight[3];
 	premul[0] = straight[0] * alpha;
 	premul[1] = straight[1] * alpha;
 	premul[2] = straight[2] * alpha;
 	premul[3] = straight[3];
+}
+
+MINLINE void straight_to_premul_v4(float color[4])
+{
+	straight_to_premul_v4_v4(color, color);
 }
 
 MINLINE void straight_uchar_to_premul_float(float result[4], const unsigned char color[4])

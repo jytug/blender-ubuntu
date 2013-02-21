@@ -59,7 +59,7 @@ typedef struct NearestHit {
 	struct BMFace *efa;
 	struct MTexPoly *tf;
 	struct BMLoop *l, *nextl;
-	struct MLoopUV *luv, *nextluv;
+	struct MLoopUV *luv, *luv_next;
 	int lindex; //index of loop within face
 	int vert1, vert2; //index in mesh of edge vertices
 } NearestHit;
@@ -79,7 +79,7 @@ void uvedit_get_aspect(struct Scene *scene, struct Object *ob, struct BMEditMesh
 void UV_OT_average_islands_scale(struct wmOperatorType *ot);
 void UV_OT_cube_project(struct wmOperatorType *ot);
 void UV_OT_cylinder_project(struct wmOperatorType *ot);
-void UV_OT_from_view(struct wmOperatorType *ot);
+void UV_OT_project_from_view(struct wmOperatorType *ot);
 void UV_OT_minimize_stretch(struct wmOperatorType *ot);
 void UV_OT_pack_islands(struct wmOperatorType *ot);
 void UV_OT_reset(struct wmOperatorType *ot);

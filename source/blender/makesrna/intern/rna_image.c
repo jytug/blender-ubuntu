@@ -88,11 +88,15 @@ static int rna_Image_dirty_get(PointerRNA *ptr)
 	return 0;
 }
 
-static void rna_Image_source_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void rna_Image_source_set(PointerRNA *ptr, int value)
 {
 	Image *ima = ptr->id.data;
-	BKE_image_signal(ima, NULL, IMA_SIGNAL_SRC_CHANGE);
-	DAG_id_tag_update(&ima->id, 0);
+
+	if (value != ima->source) {
+		ima->source = value;
+		BKE_image_signal(ima, NULL, IMA_SIGNAL_SRC_CHANGE);
+		DAG_id_tag_update(&ima->id, 0);
+	}
 }
 
 static void rna_Image_fields_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
@@ -427,6 +431,11 @@ static void rna_def_imageuser(BlenderRNA *brna)
 	RNA_def_property_update(prop, 0, "rna_ImageUser_update");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 
+	prop = RNA_def_property(srna, "frame_current", PROP_INT, PROP_TIME);
+	RNA_def_property_int_sdna(prop, NULL, "framenr");
+	RNA_def_property_range(prop, MINAFRAME, MAXFRAME);
+	RNA_def_property_ui_text(prop, "Current Frame", "Current frame number in image sequence or movie");
+
 	/* animation */
 	prop = RNA_def_property(srna, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "cycl", 0);
@@ -522,9 +531,9 @@ static void rna_def_image(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "source", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, image_source_items);
-	RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_Image_source_itemf");
+	RNA_def_property_enum_funcs(prop, NULL, "rna_Image_source_set", "rna_Image_source_itemf");
 	RNA_def_property_ui_text(prop, "Source", "Where the image comes from");
-	RNA_def_property_update(prop, NC_IMAGE | ND_DISPLAY, "rna_Image_source_update");
+	RNA_def_property_update(prop, NC_IMAGE | ND_DISPLAY, NULL);
 
 	prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, prop_type_items);
@@ -709,7 +718,7 @@ static void rna_def_image(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "channels", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_int_funcs(prop, "rna_Image_channels_get", NULL, NULL);
-	RNA_def_property_ui_text(prop, "Channels", "Number of channels in pixels nuffer");
+	RNA_def_property_ui_text(prop, "Channels", "Number of channels in pixels buffer");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 
 	prop = RNA_def_property(srna, "is_float", PROP_BOOLEAN, PROP_NONE);

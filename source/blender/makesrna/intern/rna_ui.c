@@ -791,7 +791,7 @@ static void rna_def_panel(BlenderRNA *brna)
 
 	func = RNA_def_function(srna, "draw_header", NULL);
 	RNA_def_function_ui_description(func, "Draw UI elements into the panel's header UI layout");
-	RNA_def_function_flag(func, FUNC_REGISTER);
+	RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
 	parm = RNA_def_pointer(func, "context", "Context", "", "");
 	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL);
 
@@ -813,9 +813,6 @@ static void rna_def_panel(BlenderRNA *brna)
 	                         "class name is \"OBJECT_PT_hello\", and bl_idname is not set by the "
 	                         "script, then bl_idname = \"OBJECT_PT_hello\"");
 
-	/* panel's label indeed doesn't need PROP_TRANSLATE flag: translation of label happens in runtime
-	 * when drawing panel and having this flag set will make runtime switching of language much more tricky
-	 * because label will be stored translated */
 	prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "type->label");
 	RNA_def_property_flag(prop, PROP_REGISTER);
@@ -866,7 +863,7 @@ static void rna_def_uilist(BlenderRNA *brna)
 	func = RNA_def_function(srna, "draw_item", NULL);
 	RNA_def_function_ui_description(func, "Draw an item in the list (NOTE: when you define your own draw_item "
 	                                      "function, you may want to check given 'item' is of the right type...)");
-	RNA_def_function_flag(func, FUNC_REGISTER);
+	RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
 	parm = RNA_def_pointer(func, "context", "Context", "", "");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	parm = RNA_def_pointer(func, "layout", "UILayout", "", "Layout to draw the item");
@@ -992,9 +989,6 @@ static void rna_def_menu(BlenderRNA *brna)
 	                         "class name is \"OBJECT_MT_hello\", and bl_idname is not set by the "
 	                         "script, then bl_idname = \"OBJECT_MT_hello\")");
 
-	/* menu's label indeed doesn't need PROP_TRANSLATE flag: translation of label happens in runtime
-	 * when drawing panel and having this flag set will make runtime switching of language much more tricky
-	 * because label will be stored translated */
 	prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "type->label");
 	RNA_def_property_flag(prop, PROP_REGISTER);

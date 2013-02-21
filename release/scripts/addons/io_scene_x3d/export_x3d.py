@@ -239,7 +239,7 @@ def h3d_is_object_view(scene, obj):
 def export(file,
            global_matrix,
            scene,
-           use_apply_modifiers=False,
+           use_mesh_modifiers=False,
            use_selection=True,
            use_triangulate=False,
            use_normals=False,
@@ -1399,12 +1399,17 @@ def export(file,
 
             ident = writeTransform_begin(ident, obj_main_matrix if obj_main_parent else global_matrix * obj_main_matrix, suffix_quoted_str(obj_main_id, _TRANSFORM))
 
+        # Set here just incase we dont enter the loop below.
+        is_dummy_tx = False
+
         for obj, obj_matrix in (() if derived is None else derived):
             obj_type = obj.type
 
             if use_hierarchy:
                 # make transform node relative
                 obj_matrix = obj_main_matrix_world_invert * obj_matrix
+            else:
+                obj_matrix = global_matrix * obj_matrix
 
             # H3D - use for writing a dummy transform parent
             is_dummy_tx = False
@@ -1423,9 +1428,9 @@ def export(file,
                     ident += '\t'
 
             elif obj_type in {'MESH', 'CURVE', 'SURFACE', 'FONT'}:
-                if (obj_type != 'MESH') or (use_apply_modifiers and obj.is_modified(scene, 'PREVIEW')):
+                if (obj_type != 'MESH') or (use_mesh_modifiers and obj.is_modified(scene, 'PREVIEW')):
                     try:
-                        me = obj.to_mesh(scene, use_apply_modifiers, 'PREVIEW')
+                        me = obj.to_mesh(scene, use_mesh_modifiers, 'PREVIEW')
                     except:
                         me = None
                     do_remove = True
@@ -1563,7 +1568,7 @@ def gzip_open_utf8(filepath, mode):
 
 def save(operator, context, filepath="",
          use_selection=True,
-         use_apply_modifiers=False,
+         use_mesh_modifiers=False,
          use_triangulate=False,
          use_normals=False,
          use_compress=False,
@@ -1590,7 +1595,7 @@ def save(operator, context, filepath="",
     export(file,
            global_matrix,
            context.scene,
-           use_apply_modifiers=use_apply_modifiers,
+           use_mesh_modifiers=use_mesh_modifiers,
            use_selection=use_selection,
            use_triangulate=use_triangulate,
            use_normals=use_normals,
