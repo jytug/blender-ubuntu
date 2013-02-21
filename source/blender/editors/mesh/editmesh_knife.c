@@ -41,6 +41,8 @@
 #include "BLI_smallhash.h"
 #include "BLI_memarena.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_DerivedMesh.h"
 #include "BKE_context.h"
 
@@ -212,15 +214,16 @@ static void knife_input_ray_segment(KnifeTool_OpData *kcd, const float mval[2], 
 
 static void knife_update_header(bContext *C, KnifeTool_OpData *kcd)
 {
-	#define HEADER_LENGTH 190
+	#define HEADER_LENGTH 256
 	char header[HEADER_LENGTH];
 
-	BLI_snprintf(header, HEADER_LENGTH, "LMB: define cut lines, Return/Spacebar: confirm, Esc or RMB: cancel, E: new cut, Ctrl: midpoint snap (%s), "
-	             "Shift: ignore snap (%s), C: angle constrain (%s), Z: cut through (%s)",
-	             kcd->snap_midpoints ? "On" : "Off",
-	             kcd->ignore_edge_snapping ?  "On" : "Off",
-	             kcd->angle_snapping ? "On" : "Off",
-	             kcd->cut_through ? "On" : "Off");
+	BLI_snprintf(header, HEADER_LENGTH, IFACE_("LMB: define cut lines, Return/Spacebar: confirm, Esc or RMB: cancel, "
+	                                           "E: new cut, Ctrl: midpoint snap (%s), Shift: ignore snap (%s), "
+	                                           "C: angle constrain (%s), Z: cut through (%s)"),
+	             kcd->snap_midpoints ? IFACE_("On") : IFACE_("Off"),
+	             kcd->ignore_edge_snapping ?  IFACE_("On") : IFACE_("Off"),
+	             kcd->angle_snapping ? IFACE_("On") : IFACE_("Off"),
+	             kcd->cut_through ? IFACE_("On") : IFACE_("Off"));
 
 	ED_area_headerprint(CTX_wm_area(C), header);
 }
@@ -645,6 +648,7 @@ static void knife_get_vert_faces(KnifeTool_OpData *kcd, KnifeVert *kfv, BMFace *
 {
 	BMIter bmiter;
 	BMFace *f;
+	Ref *r;
 
 	if (kfv->isface && facef) {
 		knife_append_list(kcd, lst, facef);
@@ -652,6 +656,11 @@ static void knife_get_vert_faces(KnifeTool_OpData *kcd, KnifeVert *kfv, BMFace *
 	else if (kfv->v) {
 		BM_ITER_ELEM (f, &bmiter, kfv->v, BM_FACES_OF_VERT) {
 			knife_append_list(kcd, lst, f);
+		}
+	}
+	else {
+		for (r = kfv->faces.first; r; r = r->next) {
+			knife_append_list(kcd, lst, r->ref);
 		}
 	}
 }
@@ -780,6 +789,7 @@ static void knife_cut_through(KnifeTool_OpData *kcd)
 	kcd->totlinehit = 0;
 
 	/* set up for next cut */
+	kcd->curr.vert = lastv;
 	kcd->prev = kcd->curr;
 }
 
@@ -1853,7 +1863,7 @@ static void remerge_faces(KnifeTool_OpData *kcd)
 	BMOperator bmop;
 	int idx;
 
-	BMO_op_initf(bm, &bmop, "beautify_fill faces=%ff constrain_edges=%fe", FACE_NEW, BOUNDARY);
+	BMO_op_initf(bm, &bmop, "beautify_fill faces=%ff edges=%Fe", FACE_NEW, BOUNDARY);
 
 	BMO_op_exec(bm, &bmop);
 	BMO_slot_buffer_flag_enable(bm, &bmop, "geom.out", BM_FACE, FACE_NEW);

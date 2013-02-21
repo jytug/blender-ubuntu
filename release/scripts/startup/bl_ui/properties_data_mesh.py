@@ -34,7 +34,8 @@ class MESH_MT_vertex_group_specials(Menu):
         layout.operator("object.vertex_group_copy_to_linked", icon='LINK_AREA')
         layout.operator("object.vertex_group_copy_to_selected", icon='LINK_AREA')
         layout.operator("object.vertex_group_mirror", icon='ARROW_LEFTRIGHT')
-        layout.operator("object.vertex_group_remove", icon='X', text="Delete All").all = True
+        layout.operator("object.vertex_group_remove", icon='X', text="Delete All Vertex Groups").all = True
+        layout.operator("object.vertex_group_remove_from", icon='X', text="Remove Selected from All Vertex Groups").all = True
         layout.separator()
         layout.operator("object.vertex_group_lock", icon='LOCKED', text="Lock All").action = 'LOCK'
         layout.operator("object.vertex_group_lock", icon='UNLOCKED', text="UnLock All").action = 'UNLOCK'
@@ -59,12 +60,12 @@ class MESH_UL_vgroups(UIList):
         # assert(isinstance(item, bpy.types.VertexGroup)
         vgroup = item
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(vgroup.name, icon_value=icon)
+            layout.label(text=vgroup.name, translate=False, icon_value=icon)
             icon = 'LOCKED' if vgroup.lock_weight else 'UNLOCKED'
             layout.prop(vgroup, "lock_weight", text="", icon=icon, emboss=False)
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
-            layout.label("", icon_value=icon)
+            layout.label(text="", icon_value=icon)
 
 
 class MESH_UL_shape_keys(UIList):
@@ -75,30 +76,30 @@ class MESH_UL_shape_keys(UIList):
         key_block = item
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             split = layout.split(0.66, False)
-            split.label(item.name, icon_value=icon)
+            split.label(text=item.name, translate=False, icon_value=icon)
             row = split.row(True)
             if key_block.mute or (obj.mode == 'EDIT' and not (obj.use_shape_key_edit_mode and obj.type == 'MESH')):
                 row.active = False
             if not item.relative_key or index > 0:
                 row.prop(key_block, "value", text="", emboss=False)
             else:
-                row.label("")
+                row.label(text="")
             row.prop(key_block, "mute", text="", emboss=False)
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
-            layout.label("", icon_value=icon)
+            layout.label(text="", icon_value=icon)
 
 
 class MESH_UL_uvmaps_vcols(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # assert(isinstance(item, (bpy.types.MeshTexturePolyLayer, bpy.types.MeshLoopColorLayer))
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(item.name, icon_value=icon)
+            layout.label(text=item.name, translate=False, icon_value=icon)
             icon = 'RESTRICT_RENDER_OFF' if item.active_render else 'RESTRICT_RENDER_ON'
             layout.prop(item, "active_render", text="", icon=icon, emboss=False)
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
-            layout.label("", icon_value=icon)
+            layout.label(text="", icon_value=icon)
 
 
 class MeshButtonsPanel():
@@ -192,7 +193,6 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 
         row = layout.row()
         row.template_list("MESH_UL_vgroups", "", ob, "vertex_groups", ob.vertex_groups, "active_index", rows=rows)
-
 
         col = row.column(align=True)
         col.operator("object.vertex_group_add", icon='ZOOMIN', text="")

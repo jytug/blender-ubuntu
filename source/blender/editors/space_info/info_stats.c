@@ -41,6 +41,8 @@
 #include "BLI_utildefines.h"
 #include "BLI_math.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_anim.h"
 #include "BKE_blender.h"
 #include "BKE_curve.h"
@@ -166,8 +168,11 @@ static void stats_object_edit(Object *obedit, SceneStats *stats)
 			if (ebo->flag & BONE_SELECTED) stats->totbonesel++;
 
 			/* if this is a connected child and it's parent is being moved, remove our root */
-			if ((ebo->flag & BONE_CONNECTED) && (ebo->flag & BONE_ROOTSEL) && ebo->parent && (ebo->parent->flag & BONE_TIPSEL))
+			if ((ebo->flag & BONE_CONNECTED) && (ebo->flag & BONE_ROOTSEL) &&
+			    ebo->parent && (ebo->parent->flag & BONE_TIPSEL))
+			{
 				stats->totvertsel--;
+			}
 
 			stats->totvert += 2;
 		}
@@ -376,10 +381,12 @@ static void stats_string(Scene *scene)
 
 		if (scene->obedit->type == OB_MESH) {
 			s += sprintf(s, "Verts:%d/%d | Edges:%d/%d | Faces:%d/%d | Tris:%d",
-		             stats->totvertsel, stats->totvert, stats->totedgesel, stats->totedge, stats->totfacesel, stats->totface, stats->tottri);
+		                 stats->totvertsel, stats->totvert, stats->totedgesel, stats->totedge, stats->totfacesel,
+		                 stats->totface, stats->tottri);
 		}
 		else if (scene->obedit->type == OB_ARMATURE) {
-			s += sprintf(s, "Verts:%d/%d | Bones:%d/%d", stats->totvertsel, stats->totvert, stats->totbonesel, stats->totbone);
+			s += sprintf(s, "Verts:%d/%d | Bones:%d/%d", stats->totvertsel, stats->totvert, stats->totbonesel,
+			             stats->totbone);
 		}
 		else {
 			s += sprintf(s, "Verts:%d/%d", stats->totvertsel, stats->totvert);
@@ -395,8 +402,9 @@ static void stats_string(Scene *scene)
 		s += sprintf(s, "Verts:%d | Tris:%d", stats->totvert, stats->tottri);
 	}
 	else {
-		s += sprintf(s, "Verts:%d | Faces:%d| Tris:%d | Objects:%d/%d | Lamps:%d/%d%s",
-		             stats->totvert, stats->totface, stats->tottri, stats->totobjsel, stats->totobj, stats->totlampsel, stats->totlamp, memstr);
+		s += sprintf(s, "Verts:%d | Faces:%d | Tris:%d | Objects:%d/%d | Lamps:%d/%d%s",
+		             stats->totvert, stats->totface, stats->tottri, stats->totobjsel, stats->totobj, stats->totlampsel,
+		             stats->totlamp, memstr);
 	}
 
 	if (ob)
@@ -419,4 +427,3 @@ const char *ED_info_stats_string(Scene *scene)
 
 	return scene->stats->infostr;
 }
-

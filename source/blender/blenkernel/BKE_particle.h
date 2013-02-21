@@ -96,7 +96,7 @@ typedef struct SPHData {
 	float *gravity;
 	float hfac;
 	/* Average distance to neighbours (other particles in the support domain),
-	   for calculating the Courant number (adaptive time step). */
+	 * for calculating the Courant number (adaptive time step). */
 	int pass;
 	float element_size;
 	float flow[3];
@@ -220,7 +220,10 @@ typedef struct ParticleCollision {
 
 	ParticleCollisionElement pce;
 
-	float total_time, inv_timestep;
+	/* total_time is the amount of time in this subframe
+	 * inv_total_time is the opposite
+	 * inv_timestep is the inverse of the amount of time in this frame */
+	float total_time, inv_total_time, inv_timestep;
 
 	float radius;
 	float co1[3], co2[3];
@@ -306,7 +309,7 @@ int psys_get_particle_state(struct ParticleSimulationData *sim, int p, struct Pa
 
 void psys_sph_init(struct ParticleSimulationData *sim, struct SPHData *sphdata);
 void psys_sph_finalise(struct SPHData *sphdata);
-void psys_sph_density(struct BVHTree *tree, struct SPHData* data, float co[3], float vars[2]);
+void psys_sph_density(struct BVHTree *tree, struct SPHData *data, float co[3], float vars[2]);
 
 /* for anim.c */
 void psys_get_dupli_texture(struct ParticleSystem *psys, struct ParticleSettings *part,

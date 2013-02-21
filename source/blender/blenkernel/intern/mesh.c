@@ -445,11 +445,11 @@ static void mesh_tessface_clear_intern(Mesh *mesh, int free_customdata)
 	mesh->totface = 0;
 }
 
-Mesh *BKE_mesh_add(const char *name)
+Mesh *BKE_mesh_add(Main *bmain, const char *name)
 {
 	Mesh *me;
 	
-	me = BKE_libblock_alloc(&G.main->mesh, ID_ME, name);
+	me = BKE_libblock_alloc(&bmain->mesh, ID_ME, name);
 	
 	me->size[0] = me->size[1] = me->size[2] = 1.0;
 	me->smoothresh = 30;
@@ -466,7 +466,7 @@ Mesh *BKE_mesh_add(const char *name)
 	return me;
 }
 
-Mesh *BKE_mesh_copy(Mesh *me)
+Mesh *BKE_mesh_copy_ex(Main *bmain, Mesh *me)
 {
 	Mesh *men;
 	MTFace *tface;
@@ -474,7 +474,7 @@ Mesh *BKE_mesh_copy(Mesh *me)
 	int a, i;
 	const int do_tessface = ((me->totface != 0) && (me->totpoly == 0)); /* only do tessface if we have no polys */
 	
-	men = BKE_libblock_copy(&me->id);
+	men = BKE_libblock_copy_ex(bmain, &me->id);
 	
 	men->mat = MEM_dupallocN(me->mat);
 	for (a = 0; a < men->totcol; a++) {
@@ -527,13 +527,18 @@ Mesh *BKE_mesh_copy(Mesh *me)
 	return men;
 }
 
+Mesh *BKE_mesh_copy(Mesh *me)
+{
+	return BKE_mesh_copy_ex(G.main, me);
+}
+
 BMesh *BKE_mesh_to_bmesh(Mesh *me, Object *ob)
 {
 	BMesh *bm;
 
 	bm = BM_mesh_create(&bm_mesh_allocsize_default);
 
-	BM_mesh_bm_from_me(bm, me, TRUE, ob->shapenr);
+	BM_mesh_bm_from_me(bm, me, true, ob->shapenr);
 
 	return bm;
 }
@@ -1489,7 +1494,7 @@ void BKE_mesh_from_nurbs_displist(Object *ob, ListBase *dispbase, int use_orco_u
 	if (dm == NULL) {
 		if (BKE_mesh_nurbs_displist_to_mdata(ob, dispbase, &allvert, &totvert,
 		                                     &alledge, &totedge, &allloop,
-		                                     &allpoly, (use_orco_uv)? &alluv: NULL,
+		                                     &allpoly, (use_orco_uv) ? &alluv : NULL,
 		                                     &totloop, &totpoly) != 0)
 		{
 			/* Error initializing */
@@ -1497,7 +1502,7 @@ void BKE_mesh_from_nurbs_displist(Object *ob, ListBase *dispbase, int use_orco_u
 		}
 
 		/* make mesh */
-		me = BKE_mesh_add("Mesh");
+		me = BKE_mesh_add(G.main, "Mesh");
 		me->totvert = totvert;
 		me->totedge = totedge;
 		me->totloop = totloop;
@@ -1519,7 +1524,7 @@ void BKE_mesh_from_nurbs_displist(Object *ob, ListBase *dispbase, int use_orco_u
 		BKE_mesh_calc_edges(me, TRUE);
 	}
 	else {
-		me = BKE_mesh_add("Mesh");
+		me = BKE_mesh_add(G.main, "Mesh");
 		DM_to_mesh(dm, me, ob);
 	}
 
@@ -1635,7 +1640,7 @@ void BKE_mesh_from_curve(Scene *scene, Object *ob)
 	BLI_edgehash_free(eh, NULL);
 
 	if (edges.first) {
-		Curve *cu = BKE_curve_add(ob->id.name + 2, OB_CURVE);
+		Curve *cu = BKE_curve_add(G.main, ob->id.name + 2, OB_CURVE);
 		cu->flag |= CU_3D;
 
 		while (edges.first) {
@@ -2574,6 +2579,7 @@ int BKE_mesh_recalc_tessellation(CustomData *fdata,
 			
 			totfilltri = BLI_scanfill_calc(&sf_ctx, 0);
 			BLI_assert(totfilltri <= mp->totloop - 2);
+			(void)totfilltri;
 
 			for (sf_tri = sf_ctx.fillfacebase.first; sf_tri; sf_tri = sf_tri->next, mf++) {
 				mface_to_poly_map[mface_index] = poly_index;
@@ -2993,6 +2999,98 @@ float BKE_mesh_calc_poly_area(MPoly *mpoly, MLoop *loopstart,
 	}
 }
 
+/* note, results won't be correct if polygon is non-planar */
+static float mesh_calc_poly_planar_area_centroid(MPoly *mpoly, MLoop *loopstart, MVert *mvarray, float cent[3])
+{
+	int i;
+	float tri_area;
+	float total_area = 0.0f;
+	float v1[3], v2[3], v3[3], normal[3], tri_cent[3];
+
+	BKE_mesh_calc_poly_normal(mpoly, loopstart, mvarray, normal);
+	copy_v3_v3(v1, mvarray[loopstart[0].v].co);
+	copy_v3_v3(v2, mvarray[loopstart[1].v].co);
+	zero_v3(cent);
+
+	for (i = 2; i < mpoly->totloop; i++) {
+		copy_v3_v3(v3, mvarray[loopstart[i].v].co);
+
+		tri_area = area_tri_signed_v3(v1, v2, v3, normal);
+		total_area += tri_area;
+
+		cent_tri_v3(tri_cent, v1, v2, v3);
+		madd_v3_v3fl(cent, tri_cent, tri_area);
+
+		copy_v3_v3(v2, v3);
+	}
+
+	mul_v3_fl(cent, 1.0f / total_area);
+
+	return total_area;
+}
+
+/**
+ * This function takes the difference between 2 vertex-coord-arrays
+ * (\a vert_cos_src, \a vert_cos_dst),
+ * and applies the difference to \a vert_cos_new relative to \a vert_cos_org.
+ *
+ * \param vert_cos_src reference deform source.
+ * \param vert_cos_dst reference deform destination.
+ *
+ * \param vert_cos_org reference for the output location.
+ * \param vert_cos_new resulting coords.
+ */
+void BKE_mesh_calc_relative_deform(
+        const MPoly *mpoly, const int totpoly,
+        const MLoop *mloop, const int totvert,
+
+        const float (*vert_cos_src)[3],
+        const float (*vert_cos_dst)[3],
+
+        const float (*vert_cos_org)[3],
+              float (*vert_cos_new)[3])
+{
+	const MPoly *mp;
+	int i;
+
+	int *vert_accum = MEM_callocN(sizeof(*vert_accum) * totvert, __func__);
+
+	memset(vert_cos_new, '\0', sizeof(*vert_cos_new) * totvert);
+
+	for (i = 0, mp = mpoly; i < totpoly; i++, mp++) {
+		const MLoop *loopstart = mloop + mp->loopstart;
+		int j;
+
+		for (j = 0; j < mp->totloop; j++) {
+			int v_prev = (loopstart + ((mp->totloop + (j - 1)) % mp->totloop))->v;
+			int v_curr = (loopstart + j)->v;
+			int v_next = (loopstart + ((j + 1) % mp->totloop))->v;
+
+			float tvec[3];
+
+			barycentric_transform(
+			            tvec, vert_cos_dst[v_curr],
+			            vert_cos_org[v_prev], vert_cos_org[v_curr], vert_cos_org[v_next],
+			            vert_cos_src[v_prev], vert_cos_src[v_curr], vert_cos_src[v_next]
+			            );
+
+			add_v3_v3(vert_cos_new[v_curr], tvec);
+			vert_accum[v_curr] += 1;
+		}
+	}
+
+	for (i = 0; i < totvert; i++) {
+		if (vert_accum[i]) {
+			mul_v3_fl(vert_cos_new[i], 1.0f / (float)vert_accum[i]);
+		}
+		else {
+			copy_v3_v3(vert_cos_new[i], vert_cos_org[i]);
+		}
+	}
+
+	MEM_freeN(vert_accum);
+}
+
 /* Find the index of the loop in 'poly' which references vertex,
  * returns -1 if not found */
 int poly_find_loop_from_vert(const MPoly *poly, const MLoop *loopstart,
@@ -3224,9 +3322,8 @@ int BKE_mesh_center_centroid(Mesh *me, float cent[3])
 	
 	/* calculate a weighted average of polygon centroids */
 	for (mpoly = me->mpoly; i--; mpoly++) {
-		BKE_mesh_calc_poly_center(mpoly, me->mloop + mpoly->loopstart, me->mvert, poly_cent);
-		poly_area = BKE_mesh_calc_poly_area(mpoly, me->mloop + mpoly->loopstart, me->mvert, NULL);
-		
+		poly_area = mesh_calc_poly_planar_area_centroid(mpoly, me->mloop + mpoly->loopstart, me->mvert, poly_cent);
+
 		madd_v3_v3fl(cent, poly_cent, poly_area);
 		total_area += poly_area;
 	}

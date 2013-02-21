@@ -236,8 +236,9 @@ static struct TextureDrawState {
 	Object *ob;
 	int is_lit, is_tex;
 	int color_profile;
+	bool use_backface_culling;
 	unsigned char obcol[4];
-} Gtexdraw = {NULL, 0, 0, 0, {0, 0, 0, 0}};
+} Gtexdraw = {NULL, 0, 0, 0, false, {0, 0, 0, 0}};
 
 static int set_draw_settings_cached(int clearcache, MTFace *texface, Material *ma, struct TextureDrawState gtexdraw)
 {
@@ -250,7 +251,7 @@ static int set_draw_settings_cached(int clearcache, MTFace *texface, Material *m
 	static int c_has_texface;
 
 	Object *litob = NULL;  /* to get mode to turn off mipmap in painting mode */
-	int backculled = GEMAT_BACKCULL;
+	int backculled = GEMAT_BACKCULL || gtexdraw.use_backface_culling;
 	int alphablend = 0;
 	int textured = 0;
 	int lit = 0;
@@ -274,7 +275,7 @@ static int set_draw_settings_cached(int clearcache, MTFace *texface, Material *m
 	if (ma) {
 		alphablend = ma->game.alpha_blend;
 		if (ma->mode & MA_SHLESS) lit = 0;
-		backculled = ma->game.flag & GEMAT_BACKCULL;
+		backculled = (ma->game.flag & GEMAT_BACKCULL) || gtexdraw.use_backface_culling;
 	}
 
 	if (texface) {
@@ -375,17 +376,12 @@ static void draw_textured_begin(Scene *scene, View3D *v3d, RegionView3D *rv3d, O
 	Gtexdraw.is_tex = is_tex;
 
 	Gtexdraw.color_profile = BKE_scene_check_color_management_enabled(scene);
+	Gtexdraw.use_backface_culling = (v3d->flag2 & V3D_BACKFACE_CULLING) != 0;
 
 	memcpy(Gtexdraw.obcol, obcol, sizeof(obcol));
 	set_draw_settings_cached(1, NULL, NULL, Gtexdraw);
 	glShadeModel(GL_SMOOTH);
-	if (v3d->flag2 & V3D_BACKFACE_CULLING) {
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-	}
-	else {
-		glDisable(GL_CULL_FACE);
-	}
+	glCullFace(GL_BACK);
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, (me->flag & ME_TWOSIDED) ? GL_TRUE : GL_FALSE);
 }
 
@@ -458,11 +454,14 @@ static DMDrawOption draw_mcol__set_draw_legacy(MTFace *UNUSED(tface), int has_mc
 		return DM_DRAW_OPTION_NO_MCOL;
 }
 
-static DMDrawOption draw_tface__set_draw(MTFace *UNUSED(tface), int UNUSED(has_mcol), int matnr)
+static DMDrawOption draw_tface__set_draw(MTFace *tface, int UNUSED(has_mcol), int matnr)
 {
 	Material *ma = give_current_material(Gtexdraw.ob, matnr + 1);
 
 	if (ma && (ma->game.flag & GEMAT_INVISIBLE)) return 0;
+
+	if (tface)
+		set_draw_settings_cached(0, tface, ma, Gtexdraw);
 
 	/* always use color from mcol, as set in update_tface_color_layer */
 	return DM_DRAW_OPTION_NORMAL;
@@ -937,7 +936,8 @@ static int tex_mat_set_face_editmesh_cb(void *userData, int index)
 void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d,
                         Object *ob, DerivedMesh *dm, const int draw_flags)
 {
-	if ((!BKE_scene_use_new_shading_nodes(scene)) || (draw_flags & DRAW_MODIFIERS_PREVIEW)) {
+	/* if not cycles, or preview-modifiers, or drawing matcaps */
+	if ((!BKE_scene_use_new_shading_nodes(scene)) || (draw_flags & DRAW_MODIFIERS_PREVIEW) || (v3d->flag2 & V3D_SHOW_SOLID_MATCAP)) {
 		draw_mesh_textured_old(scene, v3d, rv3d, ob, dm, draw_flags);
 		return;
 	}
@@ -1067,7 +1067,7 @@ void draw_mesh_paint(View3D *v3d, RegionView3D *rv3d,
 		draw_mesh_face_select(rv3d, me, dm);
 	}
 	else if ((do_light == FALSE) || (ob->dtx & OB_DRAWWIRE)) {
-		const int use_depth = (v3d->flag & V3D_ZBUF_SELECT);
+		const int use_depth = (v3d->flag & V3D_ZBUF_SELECT) || !(ob->mode & OB_MODE_WEIGHT_PAINT);
 
 		/* weight paint in solid mode, special case. focus on making the weights clear
 		 * rather than the shading, this is also forced in wire view */

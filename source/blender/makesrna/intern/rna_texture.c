@@ -44,6 +44,8 @@
 #include "DNA_particle_types.h"
 #include "DNA_scene_types.h" /* MAXFRAME only */
 
+#include "BLI_utildefines.h"
+
 #include "BKE_node.h"
 
 #include "WM_api.h"
@@ -563,7 +565,7 @@ static void rna_def_colormapping(BlenderRNA *brna)
 	RNA_def_property_update(prop, 0, "rna_Color_mapping_update");
 
 	prop = RNA_def_property(srna, "contrast", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_range(prop, 0.01, 5);
+	RNA_def_property_range(prop, 0.0, 5);
 	RNA_def_property_ui_text(prop, "Contrast", "Adjust the contrast of the texture");
 	RNA_def_property_update(prop, 0, "rna_Color_mapping_update");
 
@@ -1840,7 +1842,7 @@ static void rna_def_texture_voxeldata(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "file_format", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "file_format");
 	RNA_def_property_enum_items(prop, file_format_items);
-	RNA_def_property_ui_text(prop, "File Format", "Format of the source data set to render	");
+	RNA_def_property_ui_text(prop, "File Format", "Format of the source data set to render");
 	RNA_def_property_update(prop, 0, "rna_Texture_voxeldata_update");
 	
 	prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_FILEPATH);
@@ -1978,7 +1980,7 @@ static void rna_def_texture(BlenderRNA *brna)
 	RNA_def_property_update(prop, 0, "rna_Texture_update");
 
 	prop = RNA_def_property(srna, "contrast", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_range(prop, 0.01, 5);
+	RNA_def_property_range(prop, 0.0, 5);
 	RNA_def_property_ui_text(prop, "Contrast", "Adjust the contrast of the texture");
 	RNA_def_property_update(prop, 0, "rna_Texture_update");
 

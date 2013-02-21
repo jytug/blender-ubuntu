@@ -390,6 +390,17 @@ void set_rgba_zero(out vec4 outval)
 	outval = vec4(0.0);
 }
 
+void brightness_contrast(vec4 col, float brightness, float contrast, out vec4 outcol)
+{
+	float a = 1.0 + contrast;
+	float b = brightness - contrast*0.5;
+
+	outcol.r = max(a*col.r + b, 0.0);
+	outcol.g = max(a*col.g + b, 0.0);
+	outcol.b = max(a*col.b + b, 0.0);
+	outcol.a = col.a;
+}
+
 void mix_blend(float fac, vec4 col1, vec4 col2, out vec4 outcol)
 {
 	fac = clamp(fac, 0.0, 1.0);
@@ -2256,3 +2267,18 @@ void node_output_material(vec4 surface, vec4 volume, float displacement, out vec
 	result = surface;
 }
 
+/* ********************** matcap style render ******************** */
+
+void material_preview_matcap(vec4 color, sampler2D ima, vec3 N, out vec4 result)
+{
+	vec2 tex;
+
+	if (N.z < 0.0) {
+		N.z = 0.0;
+		N = normalize(N);
+	}
+
+	tex.x = 0.5 + 0.49 * N.x;
+	tex.y = 0.5 + 0.49 * N.y;
+	result = texture2D(ima, tex);
+}

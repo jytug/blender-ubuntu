@@ -95,6 +95,7 @@ endif()
 		bf_rna
 		bf_bmesh
 		bf_blenkernel
+		bf_intern_rigidbody
 		bf_blenloader
 		ge_blen_routines
 		bf_editor_datafiles
@@ -166,6 +167,7 @@ endif()
 
 	if(WITH_LIBMV)
 		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
+		list(APPEND BLENDER_SORTED_LIBS extern_ssba)
 		list(APPEND BLENDER_SORTED_LIBS extern_ceres)
 	endif()
 

@@ -56,6 +56,8 @@
 #include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "RNA_access.h"
 
 #include "BIF_gl.h"
@@ -129,6 +131,7 @@ void getViewVector(TransInfo *t, float coord[3], float vec[3])
 }
 
 /* ************************** GENERICS **************************** */
+
 
 static void clipMirrorModifier(TransInfo *t, Object *ob)
 {
@@ -377,6 +380,8 @@ static void recalcData_graphedit(TransInfo *t)
 	
 	bAnimListElem *ale;
 	int dosort = 0;
+
+	const bool use_local_center = checkUseLocalCenter_GraphEdit(t);
 	
 	
 	/* initialize relevant anim-context 'context' data from TransInfo data */
@@ -405,9 +410,10 @@ static void recalcData_graphedit(TransInfo *t)
 		/* ignore unselected fcurves */
 		if (!fcu_test_selected(fcu))
 			continue;
-		
-		// fixme: only do this for selected verts...
-		ANIM_unit_mapping_apply_fcurve(ac.scene, ale->id, ale->key_data, ANIM_UNITCONV_ONLYSEL | ANIM_UNITCONV_SELVERTS | ANIM_UNITCONV_RESTORE);
+
+		ANIM_unit_mapping_apply_fcurve(ac.scene, ale->id, ale->key_data,
+		                               ANIM_UNITCONV_ONLYSEL | ANIM_UNITCONV_SELVERTS | ANIM_UNITCONV_RESTORE |
+		                               (use_local_center ? ANIM_UNITCONV_SKIPKNOTS : 0));
 		
 		
 		/* watch it: if the time is wrong: do not correct handles yet */
@@ -550,9 +556,16 @@ static void recalcData_nla(TransInfo *t)
 				break;
 		}
 		
-		/* use RNA to write the values... */
-		// TODO: do we need to write in 2 passes to make sure that no truncation goes on?
+		/* Use RNA to write the values to ensure that constraints on these are obeyed
+		 * (e.g. for transition strips, the values are taken from the neighbours)
+		 * 
+		 * NOTE: we write these twice to avoid truncation errors which can arise when
+		 * moving the strips a large distance using numeric input [#33852] 
+		 */
 		RNA_pointer_create(NULL, &RNA_NlaStrip, strip, &strip_ptr);
+		
+		RNA_float_set(&strip_ptr, "frame_start", tdn->h1[0]);
+		RNA_float_set(&strip_ptr, "frame_end", tdn->h2[0]);
 		
 		RNA_float_set(&strip_ptr, "frame_start", tdn->h1[0]);
 		RNA_float_set(&strip_ptr, "frame_end", tdn->h2[0]);
@@ -798,6 +811,7 @@ static void recalcData_view3d(TransInfo *t)
 					if (td->extra) {
 						float vec[3], up_axis[3];
 						float qrot[4];
+						float roll;
 						
 						ebo = td->extra;
 						copy_v3_v3(up_axis, td->axismtx[2]);
@@ -812,7 +826,9 @@ static void recalcData_view3d(TransInfo *t)
 							mul_m3_v3(t->mat, up_axis);
 						}
 						
-						ebo->roll = ED_rollBoneToVector(ebo, up_axis, FALSE);
+						/* roll has a tendency to flip in certain orientations - [#34283], [#33974] */
+						roll = ED_rollBoneToVector(ebo, up_axis, false);
+						ebo->roll = angle_compat_rad(roll, ebo->roll);
 					}
 				}
 			}
@@ -1754,25 +1770,25 @@ void calculatePropRatio(TransInfo *t)
 		}
 		switch (t->prop_mode) {
 			case PROP_SHARP:
-				strcpy(t->proptext, "(Sharp)");
+				strcpy(t->proptext, IFACE_("(Sharp)"));
 				break;
 			case PROP_SMOOTH:
-				strcpy(t->proptext, "(Smooth)");
+				strcpy(t->proptext, IFACE_("(Smooth)"));
 				break;
 			case PROP_ROOT:
-				strcpy(t->proptext, "(Root)");
+				strcpy(t->proptext, IFACE_("(Root)"));
 				break;
 			case PROP_LIN:
-				strcpy(t->proptext, "(Linear)");
+				strcpy(t->proptext, IFACE_("(Linear)"));
 				break;
 			case PROP_CONST:
-				strcpy(t->proptext, "(Constant)");
+				strcpy(t->proptext, IFACE_("(Constant)"));
 				break;
 			case PROP_SPHERE:
-				strcpy(t->proptext, "(Sphere)");
+				strcpy(t->proptext, IFACE_("(Sphere)"));
 				break;
 			case PROP_RANDOM:
-				strcpy(t->proptext, "(Random)");
+				strcpy(t->proptext, IFACE_("(Random)"));
 				break;
 			default:
 				t->proptext[0] = '\0';

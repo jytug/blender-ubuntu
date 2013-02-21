@@ -82,12 +82,24 @@ url_manual_prefix = url_manual_prefix \
 
 url_manual_mapping = (
 
+    # *** User Prefs ***
+    ("bpy.types.UserPreferences.*",                "Preferences"),
+    ("bpy.types.UserPreferencesView.*",            "Preferences/Interface"),
+    ("bpy.types.UserPreferencesEdit.*",            "Preferences/Editing"),
+    ("bpy.types.UserPreferencesInput.*",           "Preferences/Input"),
+    ("bpy.ops.wm.addon_*",                         "Preferences/Addons"),
+    ("bpy.types.Theme.*",                          "Preferences/Themes"),
+    ("bpy.types.UserPreferencesFilePaths.*",       "Preferences/File"),
+    ("bpy.types.UserPreferencesSystem.*",          "Preferences/System"),
+    ("bpy.types.UserSolidLight.*",                 "Preferences/System"),
+
     # *** Modifiers ***
     # --- Intro ---
     ("bpy.types.Modifier.show_*", "Modifiers/The_Stack"),
     ("bpy.types.Modifier.*", "Modifiers"),  # catchall for various generic options
     # --- Modify Modifiers ---
     ("bpy.types.UVProjectModifier.*",              "Modifiers/Modify/UV_Project"),
+    ("bpy.types.UVWarpModifier.*",                 "Modifiers/Modify/UV_Warp"),
     ("bpy.types.VertexWeightMixModifier.*",        "Modifiers/Modify/Vertex_Weight"),
     ("bpy.types.VertexWeightEditModifier.*",       "Modifiers/Modify/Vertex_Weight"),
     ("bpy.types.VertexWeightProximityModifier.*",  "Modifiers/Modify/Vertex_Weight"),
@@ -112,7 +124,9 @@ url_manual_mapping = (
     ("bpy.types.DisplaceModifier.*",      "Modifiers/Deform/Displace"),
     ("bpy.types.DynamicPaintModifier.*",  "Physics/Dynamic_Paint"),
     ("bpy.types.HookModifier.*",          "Modifiers/Deform/Hooks"),
+    ("bpy.types.LaplacianSmoothModifier.*", "Modifiers/Deform/Laplacian_Smooth"),
     ("bpy.types.LatticeModifier.*",       "Modifiers/Deform/Lattice"),
+    ("bpy.types.MeshCacheModifier.*",     "Modifiers/Deform/Mesh_Cache"),
     ("bpy.types.MeshDeformModifier.*",    "Modifiers/Deform/Mesh_Deform"),
     ("bpy.types.RemeshModifier.*",        "Modifiers/Deform/"),
     ("bpy.types.ShrinkwrapModifier.*",    "Modifiers/Deform/Shrinkwrap"),

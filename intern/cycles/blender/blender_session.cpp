@@ -111,9 +111,9 @@ void BlenderSession::create_session()
 	b_engine.use_highlight_tiles(session_params.progressive_refine == false);
 
 	/* setup callbacks for builtin image support */
-	scene->image_manager->builtin_image_info_cb = function_bind(&BlenderSession::builtin_image_info, this, _1, _2, _3, _4, _5);
-	scene->image_manager->builtin_image_pixels_cb = function_bind(&BlenderSession::builtin_image_pixels, this, _1, _2);
-	scene->image_manager->builtin_image_float_pixels_cb = function_bind(&BlenderSession::builtin_image_float_pixels, this, _1, _2);
+	scene->image_manager->builtin_image_info_cb = function_bind(&BlenderSession::builtin_image_info, this, _1, _2, _3, _4, _5, _6);
+	scene->image_manager->builtin_image_pixels_cb = function_bind(&BlenderSession::builtin_image_pixels, this, _1, _2, _3);
+	scene->image_manager->builtin_image_float_pixels_cb = function_bind(&BlenderSession::builtin_image_float_pixels, this, _1, _2, _3);
 }
 
 void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
@@ -128,7 +128,8 @@ void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
 	height = b_engine.resolution_y();
 
 	if(scene->params.modified(scene_params) ||
-	   session->params.modified(session_params))
+	   session->params.modified(session_params) ||
+	   !scene_params.persistent_data)
 	{
 		/* if scene or session parameters changed, it's easier to simply re-create
 		 * them rather than trying to distinguish which settings need to be updated
@@ -288,7 +289,14 @@ void BlenderSession::write_render_tile(RenderTile& rtile)
 
 void BlenderSession::update_render_tile(RenderTile& rtile)
 {
-	do_write_update_render_tile(rtile, true);
+	/* use final write for preview renders, otherwise render result wouldn't be
+	 * be updated in blender side
+	 * would need to be investigated a bit further, but for now shall be fine
+	 */
+	if (!b_engine.is_preview())
+		do_write_update_render_tile(rtile, true);
+	else
+		do_write_update_render_tile(rtile, false);
 }
 
 void BlenderSession::render()
@@ -403,8 +411,10 @@ void BlenderSession::do_write_update_render_result(BL::RenderResult b_rr, BL::Re
 			int components = b_pass.channels();
 
 			/* copy pixels */
-			if(buffers->get_pass_rect(pass_type, exposure, rtile.sample, components, &pixels[0]))
-				b_pass.rect(&pixels[0]);
+			if(!buffers->get_pass_rect(pass_type, exposure, rtile.sample, components, &pixels[0]))
+				memset(&pixels[0], 0, pixels.size()*sizeof(float));
+
+			b_pass.rect(&pixels[0]);
 		}
 	}
 
@@ -486,11 +496,10 @@ bool BlenderSession::draw(int w, int h)
 		}
 		else {
 			/* update camera from 3d view */
-			bool need_update = scene->camera->need_update;
 
 			sync->sync_view(b_v3d, b_rv3d, w, h);
 
-			if(scene->camera->need_update && !need_update)
+			if(scene->camera->need_update)
 				reset = true;
 
 			session->scene->mutex.unlock();
@@ -510,6 +519,9 @@ bool BlenderSession::draw(int w, int h)
 
 			session->reset(buffer_params, session_params.samples);
 		}
+	}
+	else {
+		tag_update();
 	}
 
 	/* update status and progress for 3d view draw */
@@ -612,9 +624,22 @@ void BlenderSession::test_cancel()
 			session->progress.set_cancel("Cancelled");
 }
 
-void BlenderSession::builtin_image_info(const string &name, bool &is_float, int &width, int &height, int &channels)
+/* builtin image file name is actually an image datablock name with
+ * absolute sequence frame number concatenated via '@' character
+ *
+ * this function splits frame from builtin name
+ */
+int BlenderSession::builtin_image_frame(const string &builtin_name)
 {
-	BL::Image b_image = b_data.images[name];
+	int last = builtin_name.find_last_of('@');
+	return atoi(builtin_name.substr(last + 1, builtin_name.size() - last - 1).c_str());
+}
+
+void BlenderSession::builtin_image_info(const string &builtin_name, void *builtin_data, bool &is_float, int &width, int &height, int &channels)
+{
+	PointerRNA ptr;
+	RNA_id_pointer_create((ID*)builtin_data, &ptr);
+	BL::Image b_image(ptr);
 
 	if(b_image) {
 		is_float = b_image.is_float();
@@ -630,25 +655,40 @@ void BlenderSession::builtin_image_info(const string &name, bool &is_float, int 
 	}
 }
 
-bool BlenderSession::builtin_image_pixels(const string &name, unsigned char *pixels)
+bool BlenderSession::builtin_image_pixels(const string &builtin_name, void *builtin_data, unsigned char *pixels)
 {
-	BL::Image b_image = b_data.images[name];
+	int frame = builtin_image_frame(builtin_name);
+
+	PointerRNA ptr;
+	RNA_id_pointer_create((ID*)builtin_data, &ptr);
+	BL::Image b_image(ptr);
 
 	if(b_image) {
 		int width = b_image.size()[0];
 		int height = b_image.size()[1];
 		int channels = b_image.channels();
 
-		BL::DynamicArray<float> pixels_array = b_image.pixels();
-		float *float_pixels = pixels_array.data;
+		unsigned char *image_pixels;
+		image_pixels = image_get_pixels_for_frame(b_image, frame);
 
-		/* a bit of shame, but Py API currently only returns float array,
-		 * which need to be converted back to char buffer
-		 */
-		unsigned char *cp = pixels;
-		float *fp = float_pixels;
-		for(int i = 0; i < channels * width * height; i++, cp++, fp++) {
-			*cp = *fp * 255;
+		if(image_pixels) {
+			memcpy(pixels, image_pixels, width * height * channels * sizeof(unsigned char));
+			MEM_freeN(image_pixels);
+		}
+		else {
+			if(channels == 1) {
+				memset(pixels, 0, width * height * sizeof(unsigned char));
+			}
+			else {
+				unsigned char *cp = pixels;
+				for(int i = 0; i < width * height; i++, cp += channels) {
+					cp[0] = 255;
+					cp[1] = 0;
+					cp[2] = 255;
+					if(channels == 4)
+						cp[3] = 255;
+				}
+			}
 		}
 
 		return true;
@@ -657,18 +697,41 @@ bool BlenderSession::builtin_image_pixels(const string &name, unsigned char *pix
 	return false;
 }
 
-bool BlenderSession::builtin_image_float_pixels(const string &name, float *pixels)
+bool BlenderSession::builtin_image_float_pixels(const string &builtin_name, void *builtin_data, float *pixels)
 {
-	BL::Image b_image = b_data.images[name];
+	int frame = builtin_image_frame(builtin_name);
+
+	PointerRNA ptr;
+	RNA_id_pointer_create((ID*)builtin_data, &ptr);
+	BL::Image b_image(ptr);
 
 	if(b_image) {
 		int width = b_image.size()[0];
 		int height = b_image.size()[1];
 		int channels = b_image.channels();
 
-		BL::DynamicArray<float> pixels_array = b_image.pixels();
+		float *image_pixels;
+		image_pixels = image_get_float_pixels_for_frame(b_image, frame);
 
-		memcpy(pixels, pixels_array.data, width * height * channels * sizeof(float));
+		if(image_pixels) {
+			memcpy(pixels, image_pixels, width * height * channels * sizeof(float));
+			MEM_freeN(image_pixels);
+		}
+		else {
+			if(channels == 1) {
+				memset(pixels, 0, width * height * sizeof(float));
+			}
+			else {
+				float *fp = pixels;
+				for(int i = 0; i < width * height; i++, fp += channels) {
+					fp[0] = 1.0f;
+					fp[1] = 0.0f;
+					fp[2] = 1.0f;
+					if(channels == 4)
+						fp[3] = 1.0f;
+				}
+			}
+		}
 
 		return true;
 	}

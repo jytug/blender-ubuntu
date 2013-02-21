@@ -115,6 +115,8 @@ Light::Light()
 	spot_smooth = 0.0f;
 
 	cast_shadow = true;
+	use_mis = false;
+
 	shader = 0;
 	samples = 1;
 }
@@ -141,6 +143,7 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 
 	/* count */
 	size_t num_lights = scene->lights.size();
+	size_t num_background_lights = 0;
 	size_t num_triangles = 0;
 	size_t num_curve_segments = 0;
 
@@ -198,8 +201,10 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 		bool have_emission = false;
 
 		/* skip if we are not visible for BSDFs */
-		if(!(object->visibility & (PATH_RAY_DIFFUSE|PATH_RAY_GLOSSY|PATH_RAY_TRANSMIT)))
+		if(!(object->visibility & (PATH_RAY_DIFFUSE|PATH_RAY_GLOSSY|PATH_RAY_TRANSMIT))) {
+			j++;
 			continue;
+		}
 
 		/* skip if we have no emission shaders */
 		foreach(uint sindex, mesh->used_shaders) {
@@ -289,13 +294,21 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 
 	/* point lights */
 	float lightarea = (totarea > 0.0f)? totarea/scene->lights.size(): 1.0f;
+	bool use_lamp_mis = false;
 
 	for(int i = 0; i < scene->lights.size(); i++, offset++) {
+		Light *light = scene->lights[i];
+
 		distribution[offset].x = totarea;
 		distribution[offset].y = __int_as_float(~(int)i);
 		distribution[offset].z = 1.0f;
-		distribution[offset].w = scene->lights[i]->size;
+		distribution[offset].w = light->size;
 		totarea += lightarea;
+
+		if(light->size > 0.0f && light->use_mis)
+			use_lamp_mis = true;
+		if(light->type == LIGHT_BACKGROUND)
+			num_background_lights++;
 	}
 
 	/* normalize cumulative distribution functions */
@@ -314,6 +327,7 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 
 	/* update device */
 	KernelIntegrator *kintegrator = &dscene->data.integrator;
+	KernelFilm *kfilm = &dscene->data.film;
 	kintegrator->use_direct_light = (totarea > 0.0f);
 
 	if(kintegrator->use_direct_light) {
@@ -342,6 +356,18 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 			kintegrator->inv_pdf_lights = 1.0f/kintegrator->pdf_lights;
 		}
 
+		kintegrator->use_lamp_mis = use_lamp_mis;
+
+		/* bit of an ugly hack to compensate for emitting triangles influencing
+		 * amount of samples we get for this pass */
+		kfilm->pass_shadow_scale = 1.0f;
+
+		if(kintegrator->pdf_triangles != 0.0f)
+			kfilm->pass_shadow_scale *= 0.5f;
+
+		if(num_background_lights < num_lights)
+			kfilm->pass_shadow_scale *= (float)(num_lights - num_background_lights)/(float)num_lights;
+
 		/* CDF */
 		device->tex_alloc("__light_distribution", dscene->light_distribution);
 	}
@@ -353,6 +379,8 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 		kintegrator->pdf_triangles = 0.0f;
 		kintegrator->pdf_lights = 0.0f;
 		kintegrator->inv_pdf_lights = 0.0f;
+		kintegrator->use_lamp_mis = false;
+		kfilm->pass_shadow_scale = 1.0f;
 	}
 }
 
@@ -482,6 +510,9 @@ void LightManager::device_update_points(Device *device, DeviceScene *dscene, Sce
 			float radius = light->size;
 			float invarea = (radius > 0.0f)? 1.0f/(M_PI_F*radius*radius): 1.0f;
 
+			if(light->use_mis && radius > 0.0f)
+				shader_id |= SHADER_USE_MIS;
+
 			light_data[i*LIGHT_SIZE + 0] = make_float4(__int_as_float(light->type), co.x, co.y, co.z);
 			light_data[i*LIGHT_SIZE + 1] = make_float4(__int_as_float(shader_id), radius, invarea, 0.0f);
 			light_data[i*LIGHT_SIZE + 2] = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -496,6 +527,9 @@ void LightManager::device_update_points(Device *device, DeviceScene *dscene, Sce
 			float area = M_PI_F*radius*radius;
 			float invarea = (area > 0.0f)? 1.0f/area: 1.0f;
 
+			if(light->use_mis && area > 0.0f)
+				shader_id |= SHADER_USE_MIS;
+
 			light_data[i*LIGHT_SIZE + 0] = make_float4(__int_as_float(light->type), dir.x, dir.y, dir.z);
 			light_data[i*LIGHT_SIZE + 1] = make_float4(__int_as_float(shader_id), radius, cosangle, invarea);
 			light_data[i*LIGHT_SIZE + 2] = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -503,6 +537,7 @@ void LightManager::device_update_points(Device *device, DeviceScene *dscene, Sce
 		}
 		else if(light->type == LIGHT_BACKGROUND) {
 			shader_id &= ~SHADER_AREA_LIGHT;
+			shader_id |= SHADER_USE_MIS;
 
 			light_data[i*LIGHT_SIZE + 0] = make_float4(__int_as_float(light->type), 0.0f, 0.0f, 0.0f);
 			light_data[i*LIGHT_SIZE + 1] = make_float4(__int_as_float(shader_id), 0.0f, 0.0f, 0.0f);
@@ -513,7 +548,10 @@ void LightManager::device_update_points(Device *device, DeviceScene *dscene, Sce
 			float3 axisu = light->axisu*(light->sizeu*light->size);
 			float3 axisv = light->axisv*(light->sizev*light->size);
 			float area = len(axisu)*len(axisv);
-			float invarea = (area > 0.0f)? 1.0f/area: 0.0f;
+			float invarea = (area > 0.0f)? 1.0f/area: 1.0f;
+
+			if(light->use_mis && area > 0.0f)
+				shader_id |= SHADER_USE_MIS;
 
 			light_data[i*LIGHT_SIZE + 0] = make_float4(__int_as_float(light->type), co.x, co.y, co.z);
 			light_data[i*LIGHT_SIZE + 1] = make_float4(__int_as_float(shader_id), axisu.x, axisu.y, axisu.z);
@@ -527,6 +565,9 @@ void LightManager::device_update_points(Device *device, DeviceScene *dscene, Sce
 			float invarea = (radius > 0.0f)? 1.0f/(M_PI_F*radius*radius): 1.0f;
 			float spot_angle = cosf(light->spot_angle*0.5f);
 			float spot_smooth = (1.0f - spot_angle)*light->spot_smooth;
+
+			if(light->use_mis && radius > 0.0f)
+				shader_id |= SHADER_USE_MIS;
 
 			light_data[i*LIGHT_SIZE + 0] = make_float4(__int_as_float(light->type), co.x, co.y, co.z);
 			light_data[i*LIGHT_SIZE + 1] = make_float4(__int_as_float(shader_id), radius, invarea, spot_angle);

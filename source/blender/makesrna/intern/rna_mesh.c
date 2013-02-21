@@ -2422,7 +2422,7 @@ static void rna_def_loop_colors(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_struct_type(prop, "MeshLoopColorLayer");
 	RNA_def_property_pointer_funcs(prop, "rna_Mesh_vertex_color_active_get",
 	                               "rna_Mesh_vertex_color_active_set", NULL, NULL);
-	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
 	RNA_def_property_ui_text(prop, "Active Vertex Color Layer", "Active vertex color layer");
 	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 
@@ -2450,7 +2450,7 @@ static void rna_def_uv_layers(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_struct_type(prop, "MeshUVLoopLayer");
 	RNA_def_property_pointer_funcs(prop, "rna_Mesh_uv_layer_active_get",
 	                               "rna_Mesh_uv_layer_active_set", NULL, NULL);
-	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
 	RNA_def_property_ui_text(prop, "Active UV loop layer", "Active UV loop layer");
 	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 
@@ -2600,7 +2600,7 @@ static void rna_def_uv_textures(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_struct_type(prop, "MeshTexturePolyLayer");
 	RNA_def_property_pointer_funcs(prop, "rna_Mesh_uv_texture_active_get",
 	                               "rna_Mesh_uv_texture_active_set", NULL, NULL);
-	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
 	RNA_def_property_ui_text(prop, "Active UV Map", "Active UV Map");
 	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 
@@ -2899,11 +2899,6 @@ static void rna_def_mesh(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Draw Edges",
 	                         "Display selected edges using highlights in the 3D view and UV editor");
 	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
-
-	prop = RNA_def_property(srna, "show_all_edges", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_ALLEDGES);
-	RNA_def_property_ui_text(prop, "All Edges", "Display all edges for wireframe in all view modes in the 3D view");
-	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
 	prop = RNA_def_property(srna, "show_faces", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAWFACES);

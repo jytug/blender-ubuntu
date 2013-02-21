@@ -49,6 +49,8 @@ struct bAction;
 struct RenderData;
 struct rctf;
 struct MovieClip;
+struct Main;
+struct RigidBodyWorld;
 
 void BKE_object_workob_clear(struct Object *workob);
 void BKE_object_workob_calc_parent(struct Scene *scene, struct Object *ob, struct Object *workob);
@@ -78,12 +80,12 @@ void BKE_object_unlink(struct Object *ob);
 int  BKE_object_exists_check(struct Object *obtest);
 int BKE_object_is_in_editmode(struct Object *ob);
 
-struct Object *BKE_object_add_only_object(int type, const char *name);
+struct Object *BKE_object_add_only_object(struct Main *bmain, int type, const char *name);
 struct Object *BKE_object_add(struct Scene *scene, int type);
 void *BKE_object_obdata_add_from_type(int type);
 
+struct Object *BKE_object_copy_ex(struct Main *bmain, struct Object *ob, int copy_caches);
 struct Object *BKE_object_copy(struct Object *ob);
-struct Object *BKE_object_copy_with_caches(struct Object *ob);
 void BKE_object_make_local(struct Object *ob);
 int  BKE_object_is_libdata(struct Object *ob);
 int  BKE_object_obdata_is_libdata(struct Object *ob);
@@ -99,7 +101,10 @@ int BKE_object_pose_context_check(struct Object *ob);
 struct Object *BKE_object_pose_armature_get(struct Object *ob);
 
 void BKE_object_where_is_calc(struct Scene *scene, struct Object *ob);
+void BKE_object_where_is_calc_ex(struct Scene *scene, struct RigidBodyWorld *rbw, struct Object *ob);
 void BKE_object_where_is_calc_time(struct Scene *scene, struct Object *ob, float ctime);
+void BKE_object_where_is_calc_time_ex(struct Scene *scene, struct Object *ob, float ctime,
+                                      struct RigidBodyWorld *rbw);
 void BKE_object_where_is_calc_simul(struct Scene *scene, struct Object *ob);
 void BKE_object_where_is_calc_mat4(struct Scene *scene, struct Object *ob, float obmat[4][4]);
 
@@ -145,6 +150,8 @@ void BKE_object_tfm_protected_restore(struct Object *ob,
                                       const short protectflag);
 
 void BKE_object_handle_update(struct Scene *scene, struct Object *ob);
+void BKE_object_handle_update_ex(struct Scene *scene, struct Object *ob,
+                                 struct RigidBodyWorld *rbw);
 void BKE_object_sculpt_modifiers_changed(struct Object *ob);
 
 int BKE_object_obdata_texspace_get(struct Object *ob, short **r_texflag, float **r_loc, float **r_size, float **r_rot);

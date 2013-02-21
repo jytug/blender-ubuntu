@@ -55,7 +55,7 @@
 
 #include "KX_ConvertPhysicsObject.h"
 
-#ifdef USE_BULLET
+#ifdef WITH_BULLET
 #include "CcdPhysicsEnvironment.h"
 #endif
 
@@ -193,7 +193,7 @@ KX_BlenderSceneConverter::~KX_BlenderSceneConverter()
 		itm++;
 	}
 
-#ifdef USE_BULLET
+#ifdef WITH_BULLET
 	KX_ClearBulletSharedShapes();
 #endif
 
@@ -254,7 +254,7 @@ Scene *KX_BlenderSceneConverter::GetBlenderSceneForName(const STR_String& name)
 }
 #include "KX_PythonInit.h"
 
-#ifdef USE_BULLET
+#ifdef WITH_BULLET
 
 #include "LinearMath/btIDebugDraw.h"
 
@@ -348,7 +348,7 @@ void KX_BlenderSceneConverter::ConvertScene(class KX_Scene* destinationscene,
 
 	switch (physics_engine)
 	{
-#ifdef USE_BULLET
+#ifdef WITH_BULLET
 		case UseBullet:
 			{
 				CcdPhysicsEnvironment* ccdPhysEnv = new CcdPhysicsEnvironment(useDbvtCulling);
@@ -398,7 +398,7 @@ void KX_BlenderSceneConverter::ConvertScene(class KX_Scene* destinationscene,
 	//that would result from this is fixed in RemoveScene()
 	m_map_mesh_to_gamemesh.clear();
 
-#ifndef USE_BULLET
+#ifndef WITH_BULLET
 	/* quiet compiler warning */
 	(void)useDbvtCulling;
 #endif
@@ -601,22 +601,24 @@ void KX_BlenderSceneConverter::RegisterPolyMaterial(RAS_IPolyMaterial *polymat)
 
 void KX_BlenderSceneConverter::CachePolyMaterial(struct Material *mat, RAS_IPolyMaterial *polymat)
 {
-	m_polymat_cache[mat] = polymat;
+	if (m_use_mat_cache)
+		m_polymat_cache[mat] = polymat;
 }
 
 RAS_IPolyMaterial *KX_BlenderSceneConverter::FindCachedPolyMaterial(struct Material *mat)
 {
-	return m_polymat_cache[mat];
+	return (m_use_mat_cache) ? m_polymat_cache[mat] : NULL;
 }
 
 void KX_BlenderSceneConverter::CacheBlenderMaterial(struct Material *mat, BL_Material *blmat)
 {
-	m_mat_cache[mat] = blmat;
+	if (m_use_mat_cache)
+		m_mat_cache[mat] = blmat;
 }
 
 BL_Material *KX_BlenderSceneConverter::FindCachedBlenderMaterial(struct Material *mat)
 {
-	return m_mat_cache[mat];
+	return (m_use_mat_cache) ? m_mat_cache[mat] : NULL;
 }
 
 void KX_BlenderSceneConverter::RegisterInterpolatorList(

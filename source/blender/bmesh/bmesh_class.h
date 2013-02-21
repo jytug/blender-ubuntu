@@ -45,7 +45,7 @@ struct Object;
  * pointers. this is a requirement of mempool's method of
  * iteration.
  *
- * hrm. it doesn't but stull works ok, remove the comment above? - campbell.
+ * hrm. it doesn't but still works ok, remove the comment above? - campbell.
  */
 
 // #pragma GCC diagnostic error "-Wpadded"
@@ -253,18 +253,17 @@ enum {
 };
 
 /* defines */
-
 #define BM_ELEM_CD_GET_VOID_P(ele, offset) \
-	((void)0, (void *)((char *)(ele)->head.data + (offset)))
+	(assert(offset != -1), (void *)((char *)(ele)->head.data + (offset)))
 
 #define BM_ELEM_CD_SET_FLOAT(ele, offset, f) \
-	{ *((float *)((char *)(ele)->head.data + (offset))) = (f); } (void)0
+	{ assert(offset != -1); *((float *)((char *)(ele)->head.data + (offset))) = (f); } (void)0
 
 #define BM_ELEM_CD_GET_FLOAT(ele, offset) \
-	((void)0, *((float *)((char *)(ele)->head.data + (offset))))
+	(assert(offset != -1), *((float *)((char *)(ele)->head.data + (offset))))
 
 #define BM_ELEM_CD_GET_FLOAT_AS_UCHAR(ele, offset) \
-	(unsigned char)(BM_ELEM_CD_GET_FLOAT(ele, offset) * 255.0f)
+	(assert(offset != -1), (unsigned char)(BM_ELEM_CD_GET_FLOAT(ele, offset) * 255.0f))
 
 /*forward declarations*/
 
@@ -289,6 +288,6 @@ enum {
  * but should not error on valid cases */
 #define BM_LOOP_RADIAL_MAX 10000
 #define BM_NGON_MAX 100000
-#define BM_OMP_LIMIT 0  /* setting zero so we can catch bugs in OpenMP/BMesh */
+#define BM_OMP_LIMIT 10000  /* setting zero so we can catch bugs in OpenMP/BMesh */
 
 #endif /* __BMESH_CLASS_H__ */

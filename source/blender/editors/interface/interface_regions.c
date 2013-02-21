@@ -651,7 +651,7 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 	ofsx = 0; //(but->block->panel) ? but->block->panel->ofsx : 0;
 	ofsy = 0; //(but->block->panel) ? but->block->panel->ofsy : 0;
 
-	rect_fl.xmin = (but->rect.xmin + but->rect.xmax) * 0.5f + ofsx - TIP_BORDER_X;
+	rect_fl.xmin = BLI_rctf_cent_x(&but->rect) + ofsx - TIP_BORDER_X;
 	rect_fl.xmax = rect_fl.xmin + fontw + TIP_BORDER_X;
 	rect_fl.ymax = but->rect.ymin + ofsy - TIP_BORDER_Y;
 	rect_fl.ymin = rect_fl.ymax - fonth  - TIP_BORDER_Y;
@@ -893,7 +893,7 @@ void ui_searchbox_apply(uiBut *but, ARegion *ar)
 	}
 }
 
-void ui_searchbox_event(bContext *C, ARegion *ar, uiBut *but, wmEvent *event)
+void ui_searchbox_event(bContext *C, ARegion *ar, uiBut *but, const wmEvent *event)
 {
 	uiSearchboxData *data = ar->regiondata;
 	int type = event->type, val = event->val;
@@ -1532,7 +1532,7 @@ static void ui_block_region_draw(const bContext *C, ARegion *ar)
 static void ui_popup_block_clip(wmWindow *window, uiBlock *block)
 {
 	uiBut *bt;
-	int width = UI_ThemeMenuShadowWidth();
+	int width = UI_SCREEN_MARGIN;
 	int winx, winy;
 
 	if (block->flag & UI_BLOCK_NO_WIN_CLIP) {
@@ -2195,7 +2195,7 @@ static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, Proper
 }
 
 
-static int ui_picker_small_wheel_cb(const bContext *UNUSED(C), uiBlock *block, wmEvent *event)
+static int ui_picker_small_wheel_cb(const bContext *UNUSED(C), uiBlock *block, const wmEvent *event)
 {
 	float add = 0.0f;
 	
@@ -2574,7 +2574,7 @@ static void operator_cb(bContext *C, void *arg, int retval)
 		WM_operator_free(op);
 }
 
-static void confirm_cancel_operator(void *opv)
+static void confirm_cancel_operator(bContext *UNUSED(C), void *opv)
 {
 	WM_operator_free(opv);
 }
@@ -2621,7 +2621,7 @@ void uiPupMenuOkee(bContext *C, const char *opname, const char *str, ...)
 	va_list ap;
 	char titlestr[256];
 
-	BLI_snprintf(titlestr, sizeof(titlestr), "OK? %%i%d", ICON_QUESTION);
+	BLI_snprintf(titlestr, sizeof(titlestr), IFACE_("OK? %%i%d"), ICON_QUESTION);
 
 	va_start(ap, str);
 	vconfirm_opname(C, opname, titlestr, str, ap);
@@ -2635,7 +2635,7 @@ void uiPupMenuOkee(bContext *C, const char *opname, const char *str, ...)
  * The operator state for this is implicitly OPERATOR_RUNNING_MODAL */
 void uiPupMenuSaveOver(bContext *C, wmOperator *op, const char *filename)
 {
-	confirm_operator(C, op, "Save Over?", filename);
+	confirm_operator(C, op, IFACE_("Save Over?"), filename);
 }
 
 void uiPupMenuNotice(bContext *C, const char *str, ...)
@@ -2653,7 +2653,7 @@ void uiPupMenuError(bContext *C, const char *str, ...)
 	char nfmt[256];
 	char titlestr[256];
 
-	BLI_snprintf(titlestr, sizeof(titlestr), "Error %%i%d", ICON_ERROR);
+	BLI_snprintf(titlestr, sizeof(titlestr), IFACE_("Error %%i%d"), ICON_ERROR);
 
 	BLI_strncpy(nfmt, str, sizeof(nfmt));
 
@@ -2680,13 +2680,13 @@ void uiPupMenuReports(bContext *C, ReportList *reports)
 			/* pass */
 		}
 		else if (report->type >= RPT_ERROR) {
-			BLI_dynstr_appendf(ds, "Error %%i%d%%t|%s", ICON_ERROR, report->message);
+			BLI_dynstr_appendf(ds, IFACE_("Error %%i%d%%t|%s"), ICON_ERROR, report->message);
 		}
 		else if (report->type >= RPT_WARNING) {
-			BLI_dynstr_appendf(ds, "Warning %%i%d%%t|%s", ICON_ERROR, report->message);
+			BLI_dynstr_appendf(ds, IFACE_("Warning %%i%d%%t|%s"), ICON_ERROR, report->message);
 		}
 		else if (report->type >= RPT_INFO) {
-			BLI_dynstr_appendf(ds, "Info %%i%d%%t|%s", ICON_INFO, report->message);
+			BLI_dynstr_appendf(ds, IFACE_("Info %%i%d%%t|%s"), ICON_INFO, report->message);
 		}
 	}
 

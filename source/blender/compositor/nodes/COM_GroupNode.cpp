@@ -58,17 +58,18 @@ void GroupNode::ungroup(ExecutionSystem &system)
 		InputSocket *inputSocket = inputsockets[index];
 		bNodeSocket *editorInput = inputSocket->getbNodeSocket();
 		if (editorInput->groupsock) {
-			SocketProxyNode *proxy = new SocketProxyNode(bnode, editorInput, editorInput->groupsock);
+			SocketProxyNode *proxy = new SocketProxyNode(bnode, editorInput, editorInput->groupsock, false);
 			inputSocket->relinkConnections(proxy->getInputSocket(0), index, &system);
 			ExecutionSystemHelper::addNode(system.getNodes(), proxy);
 		}
 	}
 
+	const bool groupnodeBuffering = system.getContext().isGroupnodeBufferEnabled();
 	for (index = 0; index < outputsockets.size(); index++) {
 		OutputSocket *outputSocket = outputsockets[index];
 		bNodeSocket *editorOutput = outputSocket->getbNodeSocket();
 		if (editorOutput->groupsock) {
-			SocketProxyNode *proxy = new SocketProxyNode(bnode, editorOutput->groupsock, editorOutput);
+			SocketProxyNode *proxy = new SocketProxyNode(bnode, editorOutput->groupsock, editorOutput, groupnodeBuffering);
 			outputSocket->relinkConnections(proxy->getOutputSocket(0));
 			ExecutionSystemHelper::addNode(system.getNodes(), proxy);
 		}
