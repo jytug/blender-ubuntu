@@ -1,11 +1,15 @@
-blender (2.65a+svn53743-2) UNRELEASED; urgency=low
+blender (2.66-1) UNRELEASED; urgency=low
 
+  * New upstream stable release
   * Fixes SIGSEGV on "blender -E help" command (Closes: #658275)
   * debian/rules: purge useless processors finding
   * debian/rules: fixing FTBFS due to OIIO on some arches
     Thanks to Pino Toscano (pino) for the hint.
+  * debian/copyright: maintenance timeframe updated
+  * debian/patches/: #0010 added to fix illegal hardware instruction bug.
+    Thanks to Johann Klammer for the patch (Closes: #599680)
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Tue, 15 Jan 2013 11:41:07 +0100
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Thu, 21 Feb 2013 15:26:33 +0100
 
 blender (2.65a+svn53743-1) experimental; urgency=low
 
