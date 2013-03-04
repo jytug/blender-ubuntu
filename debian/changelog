@@ -11,6 +11,7 @@ blender (2.66-1) UNRELEASED; urgency=low
       Thanks to Johann Klammer for the patch (Closes: #599680)
     - #0010 added to fix format-security issues
   * debian/docs: TODO duplicate removed
+  * debian/: "embedded-javascript-library" lintian entry fixed
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Thu, 21 Feb 2013 15:26:33 +0100
 
