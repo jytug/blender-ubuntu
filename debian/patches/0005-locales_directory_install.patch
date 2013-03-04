@@ -1,5 +1,5 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Fri, 11 Jan 2013 15:29:45 +0100
+Date: Thu, 21 Feb 2013 16:17:01 +0100
 Subject: locales_directory_install
 
 Change where locales are installed.
@@ -11,13 +11,13 @@ Change where locales are installed.
  4 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 9086799..f7c6303 100644
+index 73294f1..dc0ba58 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
 @@ -185,7 +185,7 @@ EnumPropertyItem *BLF_RNA_lang_enum_properties(void)
- 
  void BLF_lang_init(void)
  {
+ #ifdef WITH_INTERNATIONAL
 -	char *messagepath = BLI_get_folder(BLENDER_DATAFILES, "locale");
 +	char *messagepath = BLI_get_folder(BLENDER_SYSTEM_LOCALE, NULL);
  
@@ -36,10 +36,10 @@ index 8c51c92..ee70094 100644
  /* for BLI_get_folder_version only */
  #define BLENDER_RESOURCE_PATH_USER      0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 06b1f1f..104dad3 100644
+index 5265d86..6e31575 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -1092,6 +1092,9 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
+@@ -1098,6 +1098,9 @@ char *BLI_get_folder(int folder_id, const char *subfolder)
  			if (get_path_local(path, "python", subfolder, ver)) break;
  			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
  			return NULL;
@@ -50,7 +50,7 @@ index 06b1f1f..104dad3 100644
  	
  	return path;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index a6c911e..462b7e1 100644
+index dbfa71a..cc9045b 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -292,9 +292,9 @@ endif()

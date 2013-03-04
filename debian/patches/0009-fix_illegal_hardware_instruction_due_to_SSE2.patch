@@ -1,6 +1,6 @@
 From: Johann Klammer <klammerj@a1.net>
 Date: Wed, 13 Feb 2013 09:04:08 +0100
-Subject: Fix_illegal_hardware_instruction_due_to_SSE2
+Subject: fix_illegal_hardware_instruction_due_to_SSE2
 
 This makes sure it builds compatible binaries also on
 machines which have sse/sse2. Fixes the SIGILL bug.
