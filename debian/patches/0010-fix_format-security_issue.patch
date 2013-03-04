@@ -31,7 +31,7 @@ index ea82ebb..4c6b494 100644
  	/* header print for NumInput */
  	str_p = str;
 -	str_p += BLI_snprintf(str_p, sizeof(str), IFACE_("Shrink/Fatten:"));
-+	str_p += BLI_snprintf(str_p, sizeof(str), "%s", IFACE_("Shrink/Fatten:"));
++	str_p += BLI_snprintf("%s", str_p, sizeof(str), IFACE_("Shrink/Fatten:"));
  	if (hasNumInput(&t->num)) {
  		char c[NUM_STR_REP_LEN];
  		outputNumInput(&(t->num), c);
