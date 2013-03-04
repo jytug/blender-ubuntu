@@ -6,8 +6,11 @@ blender (2.66-1) UNRELEASED; urgency=low
   * debian/rules: fixing FTBFS due to OIIO on some arches
     Thanks to Pino Toscano (pino) for the hint.
   * debian/copyright: maintenance timeframe updated
-  * debian/patches/: #0010 added to fix illegal hardware instruction bug.
-    Thanks to Johann Klammer for the patch (Closes: #599680)
+  * debian/patches/: patchset re-worked against v2.66
+    - #0009 added to fix illegal hardware instruction bug.
+      Thanks to Johann Klammer for the patch (Closes: #599680)
+    - #0010 added to fix format-security issues
+  * debian/docs: TODO duplicate removed
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Thu, 21 Feb 2013 15:26:33 +0100
 
