@@ -54,6 +54,7 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-multimedia/blender.git
 Package: blender
 Architecture: any
 Depends: fonts-droid,
+         libjs-jquery,
          ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends}

@@ -60,6 +60,7 @@ override_dh_auto_install:
 	#remove duplicated GPL license file and unneeded Python license since python is shipped externally
 	#rm $(INSTDIR)/usr/share/doc/blender/GPL-license.txt
 	#rm $(INSTDIR)/usr/share/doc/blender/Python-license.txt
+	rm $(INSTDIR)/usr/share/blender/scripts/addons/netrender/js/jquery.js
 
 override_dh_install:
 	dh_install --fail-missing --list-missing
