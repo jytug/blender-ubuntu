@@ -1,4 +1,4 @@
-blender (2.66-1) UNRELEASED; urgency=low
+blender (2.66-1) experimental; urgency=low
 
   * New upstream stable release
   * Fixes SIGSEGV on "blender -E help" command (Closes: #658275)
@@ -13,7 +13,7 @@ blender (2.66-1) UNRELEASED; urgency=low
   * debian/docs: TODO duplicate removed
   * debian/: "embedded-javascript-library" lintian entry fixed
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Thu, 21 Feb 2013 15:26:33 +0100
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 04 Mar 2013 18:08:26 +0100
 
 blender (2.65a+svn53743-1) experimental; urgency=low
 
