@@ -1,14 +1,12 @@
 #!/usr/bin/make -f
 
 INSTDIR = debian/tmp
-DEB_BUILD_ARCH ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH_CPU)
+DEB_HOST_ARCH_CPU ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_CPU)
 
-ifeq ($(DEB_BUILD_ARCH),amd64)
-	confflags += -DWITH_CYCLES=ON
-endif
-
-ifeq ($(DEB_BUILD_ARCH),i386)
-	confflags += -DWITH_CYCLES=ON
+ifneq (,$(filter $(DEB_HOST_ARCH_CPU),amd64 i386))
+        confflags += -DWITH_CYCLES=ON
+else
+        confflags += -DWITH_CYCLES=OFF
 endif
 
 # Adapted from http://wiki.debian.org/SandroTosi/Svn_get-orig-source
