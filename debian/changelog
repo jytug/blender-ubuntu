@@ -1,3 +1,9 @@
+blender (2.66a-1) UNRELEASED; urgency=low
+
+  * New upstream bugfix release
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 06 Mar 2013 11:23:56 +0100
+
 blender (2.66-2) experimental; urgency=low
 
   * debian/rules: fix FTBFS on some archs without OIIO support.
