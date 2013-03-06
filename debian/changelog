@@ -1,6 +1,8 @@
 blender (2.66a-1) UNRELEASED; urgency=low
 
   * New upstream bugfix release
+  * debian/control: python3-dev version bump to (>= 3.3) (Closes: #702420)
+  * debian/patches/: #0001 updated to use python3.3
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 06 Mar 2013 11:23:56 +0100
 
