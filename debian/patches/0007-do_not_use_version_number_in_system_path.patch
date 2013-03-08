@@ -1,14 +1,34 @@
-From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
-Date: Fri, 11 Jan 2013 15:37:53 +0100
+From: Kevin Roy <kiniou@gmail.com>
+Date: Fri, 8 Mar 2013 10:21:26 +0100
 Subject: do_not_use_version_number_in_system_path
 
-Global installation expects system patch to be
+Global installation expects system path to be
 something like /usr/share/blender/scripts/
 without version numbers.
----
- source/creator/CMakeLists.txt | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
+Contributions by:
+ Antonio Ospite <ospite@studenti.unina.it>
+
+Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
+---
+ intern/ghost/intern/GHOST_SystemPathsX11.cpp | 3 +++
+ source/creator/CMakeLists.txt                | 2 +-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/intern/ghost/intern/GHOST_SystemPathsX11.cpp b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
+index 35bebd5..e6fd170 100644
+--- a/intern/ghost/intern/GHOST_SystemPathsX11.cpp
++++ b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
+@@ -60,6 +60,9 @@ GHOST_SystemPathsX11::~GHOST_SystemPathsX11()
+ 
+ const GHOST_TUns8 *GHOST_SystemPathsX11::getSystemDir(int, const char *versionstr) const
+ {
++	/* XXX On Debian ignore versionstr when building the system path */
++	versionstr = "";
++
+ 	/* no prefix assumes a portable build which only uses bundled scripts */
+ 	if (static_path) {
+ 		static char system_path[PATH_MAX];
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
 index 7ea1dd3..6553ce3 100644
 --- a/source/creator/CMakeLists.txt

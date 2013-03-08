@@ -4,7 +4,9 @@ Subject: blender_thumbnailer
 
 * Move thumbnailer script to an appropriate destination
 * Add blender.thumbnailer file
-* Change to python 3.2 since lintian is messing around with that
+* Change to python 3.3 since lintian is messing around with that
+
+Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
 ---
  blender.thumbnailer                | 4 ++++
  release/bin/blender-thumbnailer.py | 4 ++--
@@ -23,7 +25,7 @@ index 0000000..05d4fae
 +Exec=/usr/share/blender/scripts/blender-thumbnailer.py %i %o
 +MimeType=application/x-blender;
 diff --git a/release/bin/blender-thumbnailer.py b/release/bin/blender-thumbnailer.py
-index 8b93eeb..44ffd48 100755
+index 8b93eeb..6c2cf23 100755
 --- a/release/bin/blender-thumbnailer.py
 +++ b/release/bin/blender-thumbnailer.py
 @@ -1,4 +1,4 @@

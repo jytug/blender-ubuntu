@@ -23,10 +23,10 @@ index 27c5e03..4ea4d03 100644
  	}
  
 diff --git a/source/blender/editors/transform/transform.c b/source/blender/editors/transform/transform.c
-index ea82ebb..4c6b494 100644
+index c8874d1..2cde1cb 100644
 --- a/source/blender/editors/transform/transform.c
 +++ b/source/blender/editors/transform/transform.c
-@@ -4086,7 +4086,7 @@ int ShrinkFatten(TransInfo *t, const int UNUSED(mval[2]))
+@@ -4094,7 +4094,7 @@ int ShrinkFatten(TransInfo *t, const int UNUSED(mval[2]))
  
  	/* header print for NumInput */
  	str_p = str;
@@ -35,7 +35,7 @@ index ea82ebb..4c6b494 100644
  	if (hasNumInput(&t->num)) {
  		char c[NUM_STR_REP_LEN];
  		outputNumInput(&(t->num), c);
-@@ -6437,7 +6437,7 @@ int VertSlide(TransInfo *t, const int UNUSED(mval[2]))
+@@ -6454,7 +6454,7 @@ int VertSlide(TransInfo *t, const int UNUSED(mval[2]))
  
  	/* header string */
  	str_p = str;
