@@ -1,3 +1,12 @@
+blender (2.66a-2) UNRELEASED; urgency=low
+
+  * debian/patches/: re-worked to fix pending bugs.
+    - #0005: updated to fix locale issue (Closes: #702503)
+    - #0007: updated to fix system path issue (Closes: #702515)
+    Thanks to Antonio Ospite for the hints.
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Fri, 08 Mar 2013 10:38:07 +0100
+
 blender (2.66a-1) experimental; urgency=low
 
   * New upstream bugfix release
