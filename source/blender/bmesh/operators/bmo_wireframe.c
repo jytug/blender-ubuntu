@@ -22,6 +22,8 @@
 
 /** \file blender/bmesh/operators/bmo_wireframe.c
  *  \ingroup bmesh
+ *
+ * Creates a solid wireframe from conected faces.
  */
 
 #include "MEM_guardedalloc.h"
@@ -151,8 +153,6 @@ static bool bm_loop_is_radial_boundary(BMLoop *l_first)
 	return true;
 }
 
-extern float BM_vert_calc_mean_tagged_edge_length(BMVert *v);
-
 void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 {
 	const bool use_boundary        = BMO_slot_bool_get(op->slots_in,  "use_boundary");
@@ -217,7 +217,8 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 	}
 
 	/* duplicate tagged verts */
-	for (i = 0, v_src = verts_src[i]; i < totvert_orig; i++, v_src = verts_src[i]) {
+	for (i = 0; i < totvert_orig; i++) {
+		v_src = verts_src[i];
 		if (BM_elem_flag_test(v_src, BM_ELEM_TAG)) {
 			fac = depth;
 

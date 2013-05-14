@@ -27,15 +27,9 @@
  *  \ingroup RNA
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-
-#include "rna_internal.h"
 
 #include "DNA_material_types.h"
 #include "DNA_meshdata_types.h"
@@ -47,6 +41,13 @@
 #include "DNA_scene_types.h"
 #include "DNA_boid_types.h"
 #include "DNA_texture_types.h"
+
+#include "RNA_define.h"
+#include "RNA_enum_types.h"
+
+#include "BLF_translation.h"
+
+#include "rna_internal.h"
 
 #include "WM_types.h"
 #include "WM_api.h"
@@ -622,7 +623,7 @@ static void rna_Particle_redo(Main *bmain, Scene *scene, PointerRNA *ptr)
 
 static void rna_Particle_redo_dependency(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	rna_Particle_redo(bmain, scene, ptr);
 }
 
@@ -659,7 +660,7 @@ static ParticleSystem *rna_particle_system_for_target(Object *ob, ParticleTarget
 	return NULL;
 }
 
-static void rna_Particle_target_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Particle_target_reset(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	if (ptr->type == &RNA_ParticleTarget) {
 		Object *ob = (Object *)ptr->id.data;
@@ -687,7 +688,7 @@ static void rna_Particle_target_reset(Main *bmain, Scene *scene, PointerRNA *ptr
 		psys->recalc = PSYS_RECALC_RESET;
 
 		DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-		DAG_scene_sort(bmain, scene);
+		DAG_relations_tag_update(bmain);
 	}
 
 	WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
@@ -872,7 +873,7 @@ static void rna_ParticleSystem_name_set(PointerRNA *ptr, const char *value)
 	/* copy the new name into the name slot */
 	BLI_strncpy_utf8(part->name, value, sizeof(part->name));
 
-	BLI_uniquename(&ob->particlesystem, part, "ParticleSystem", '.', offsetof(ParticleSystem, name),
+	BLI_uniquename(&ob->particlesystem, part, DATA_("ParticleSystem"), '.', offsetof(ParticleSystem, name),
 	               sizeof(part->name));
 }
 
@@ -1195,7 +1196,10 @@ static void psys_vg_name_set__internal(PointerRNA *ptr, const char *value, int i
 static char *rna_ParticleSystem_path(PointerRNA *ptr)
 {
 	ParticleSystem *psys = (ParticleSystem *)ptr->data;
-	return BLI_sprintfN("particle_systems[\"%s\"]", psys->name);
+	char name_esc[sizeof(psys->name) * 2];
+
+	BLI_strescape(name_esc, psys->name, sizeof(name_esc));
+	return BLI_sprintfN("particle_systems[\"%s\"]", name_esc);
 }
 
 static void rna_ParticleSettings_mtex_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
@@ -1622,7 +1626,7 @@ static void rna_def_fluid_settings(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Factor Repulsion", "Repulsion is a factor of stiffness");
 	RNA_def_property_update(prop, 0, "rna_Particle_reset");
 
-	prop = RNA_def_property(srna, "factor_density", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_factor_density", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SPH_FAC_DENSITY);
 	RNA_def_property_ui_text(prop, "Factor Density",
 	                         "Density is calculated as a factor of default density (depends on particle size)");
@@ -1937,14 +1941,6 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	};
 
 	/*TODO: names, tooltips */
-#if 0
-	static EnumPropertyItem rot_from_items[] = {
-		{PART_ROT_KEYS, "KEYS", 0, "keys", ""},
-		{PART_ROT_ZINCR, "ZINCR", 0, "zincr", ""},
-		{PART_ROT_IINCR, "IINCR", 0, "iincr", ""},
-		{0, NULL, 0, NULL, NULL}
-	};
-#endif
 	static EnumPropertyItem integrator_type_items[] = {
 		{PART_INT_EULER, "EULER", 0, "Euler", ""},
 		{PART_INT_VERLET, "VERLET", 0, "Verlet", ""},
@@ -2290,7 +2286,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "draw_size", PROP_INT, PROP_NONE);
 	RNA_def_property_range(prop, 0, 1000);
-	RNA_def_property_ui_range(prop, 0, 100, 1, 0);
+	RNA_def_property_ui_range(prop, 0, 100, 1, -1);
 	RNA_def_property_ui_text(prop, "Draw Size", "Size of particles on viewport in pixels (0=default)");
 	RNA_def_property_update(prop, 0, "rna_Particle_redo");
 
@@ -2302,14 +2298,14 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "draw_step", PROP_INT, PROP_NONE);
 	RNA_def_property_range(prop, 0, 10);
-	RNA_def_property_ui_range(prop, 0, 7, 1, 0);
+	RNA_def_property_ui_range(prop, 0, 7, 1, -1);
 	RNA_def_property_ui_text(prop, "Steps", "How many steps paths are drawn with (power of 2)");
 	RNA_def_property_update(prop, 0, "rna_Particle_redo");
 
 	prop = RNA_def_property(srna, "render_step", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "ren_step");
 	RNA_def_property_range(prop, 0, 20);
-	RNA_def_property_ui_range(prop, 0, 9, 1, 0);
+	RNA_def_property_ui_range(prop, 0, 9, 1, -1);
 	RNA_def_property_ui_text(prop, "Render", "How many steps paths are rendered with (power of 2)");
 
 	prop = RNA_def_property(srna, "hair_step", PROP_INT, PROP_NONE);
@@ -2346,15 +2342,6 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Material", "Material used for the particles");
 	RNA_def_property_update(prop, 0, "rna_Particle_redo");
 
-
-	/* not used anywhere, why is this in DNA??? */
-#if 0
-	prop = RNA_def_property(srna, "rotate_from", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_sdna(prop, NULL, "rotfrom");
-	RNA_def_property_enum_items(prop, rot_from_items);
-	RNA_def_property_ui_text(prop, "Rotate From", "");
-#endif
-
 	prop = RNA_def_property(srna, "integrator", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, integrator_type_items);
 	RNA_def_property_ui_text(prop, "Integration",
@@ -2387,7 +2374,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "billboard_uv_split", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "bb_uv_split");
 	RNA_def_property_range(prop, 1, 100);
-	RNA_def_property_ui_range(prop, 1, 10, 1, 0);
+	RNA_def_property_ui_range(prop, 1, 10, 1, -1);
 	RNA_def_property_ui_text(prop, "UV Split", "Number of rows/columns to split UV coordinates for billboards");
 
 	prop = RNA_def_property(srna, "billboard_animation", PROP_ENUM, PROP_NONE);
@@ -2515,7 +2502,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Timestep", "The simulation timestep per frame (seconds per frame)");
 	RNA_def_property_update(prop, 0, "rna_Particle_reset");
 
-	prop = RNA_def_property(srna, "adaptive_subframes", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_adaptive_subframes", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "time_flag", PART_TIME_AUTOSF);
 	RNA_def_property_ui_text(prop, "Automatic Subframes", "Automatically set the number of subframes");
 	RNA_def_property_update(prop, 0, "rna_Particle_reset");
@@ -2555,7 +2542,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	/* 10M particles take around 2.2 Gb of memory / disk space in saved file and */
 	/* each cached frame takes around 0.5 Gb of memory / disk space depending on cache mode. */
 	RNA_def_property_range(prop, 0, 10000000);
-	RNA_def_property_ui_range(prop, 0, 100000, 1, 0);
+	RNA_def_property_ui_range(prop, 0, 100000, 1, -1);
 	RNA_def_property_ui_text(prop, "Number", "Total number of particles");
 	RNA_def_property_update(prop, 0, "rna_Particle_reset");
 
@@ -2570,7 +2557,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	RNA_def_property_int_sdna(prop, NULL, "grid_res");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_range(prop, 1, 250); /* ~15M particles in a cube (ouch!), but could be very usable in a plane */
-	RNA_def_property_ui_range(prop, 1, 50, 1, 0); /* ~100k particles in a cube */
+	RNA_def_property_ui_range(prop, 1, 50, 1, -1); /* ~100k particles in a cube */
 	RNA_def_property_ui_text(prop, "Resolution", "The resolution of the particle grid");
 	RNA_def_property_update(prop, 0, "rna_Particle_reset");
 
@@ -2583,7 +2570,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "effector_amount", PROP_INT, PROP_UNSIGNED);
 	/* in theory PROP_ANIMATABLE perhaps should be cleared, but animating this can give some interesting results! */
 	RNA_def_property_range(prop, 0, 10000); /* 10000 effectors will bel SLOW, but who knows */
-	RNA_def_property_ui_range(prop, 0, 100, 1, 0);
+	RNA_def_property_ui_range(prop, 0, 100, 1, -1);
 	RNA_def_property_ui_text(prop, "Effector Number", "How many particles are effectors (0 is all particles)");
 	RNA_def_property_update(prop, 0, "rna_Particle_reset");
 
@@ -2730,14 +2717,14 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "child_nbr", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "child_nbr"); /*optional if prop names are the same */
 	RNA_def_property_range(prop, 0, 100000);
-	RNA_def_property_ui_range(prop, 0, 1000, 1, 0);
+	RNA_def_property_ui_range(prop, 0, 1000, 1, -1);
 	RNA_def_property_ui_text(prop, "Children Per Parent", "Number of children/parent");
 	RNA_def_property_update(prop, 0, "rna_Particle_redo_child");
 
 	prop = RNA_def_property(srna, "rendered_child_count", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "ren_child_nbr");
 	RNA_def_property_range(prop, 0, 100000);
-	RNA_def_property_ui_range(prop, 0, 10000, 1, 0);
+	RNA_def_property_ui_range(prop, 0, 10000, 1, -1);
 	RNA_def_property_ui_text(prop, "Rendered Children", "Number of children/parent for rendering");
 
 	prop = RNA_def_property(srna, "virtual_parents", PROP_FLOAT, PROP_NONE);
@@ -2909,7 +2896,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	RNA_def_property_float_funcs(prop, "rna_PartSetting_linelentail_get", "rna_PartSetting_linelentail_set", NULL);
 	RNA_def_property_range(prop, 0.0f, 100000.0f);
 	RNA_def_property_ui_range(prop, 0.0f, 10.0f, 0.1, 3);
-	RNA_def_property_ui_text(prop, "Back", "Length of the line's tail");
+	RNA_def_property_ui_text(prop, "Tail", "Length of the line's tail");
 	RNA_def_property_update(prop, 0, "rna_Particle_redo");
 
 	prop = RNA_def_property(srna, "line_length_head", PROP_FLOAT, PROP_NONE);
@@ -2934,7 +2921,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "trail_count", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "trail_count");
 	RNA_def_property_range(prop, 1, 100000);
-	RNA_def_property_ui_range(prop, 1, 100, 1, 0);
+	RNA_def_property_ui_range(prop, 1, 100, 1, -1);
 	RNA_def_property_ui_text(prop, "Trail Count", "Number of trail particles");
 	RNA_def_property_update(prop, 0, "rna_Particle_redo");
 

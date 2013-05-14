@@ -43,6 +43,8 @@
 #include "BLI_kdopbvh.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_armature_types.h"
 #include "DNA_camera_types.h"
 #include "DNA_constraint_types.h"
@@ -79,7 +81,7 @@
 #include "BKE_mesh.h"
 #include "BKE_shrinkwrap.h"
 #include "BKE_mesh.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_tracking.h"
 #include "BKE_movieclip.h"
 
@@ -98,7 +100,7 @@
 /* Find the first available, non-duplicate name for a given constraint */
 void BKE_unique_constraint_name(bConstraint *con, ListBase *list)
 {
-	BLI_uniquename(list, con, "Const", '.', offsetof(bConstraint, name), sizeof(con->name));
+	BLI_uniquename(list, con, DATA_("Const"), '.', offsetof(bConstraint, name), sizeof(con->name));
 }
 
 /* ----------------- Evaluation Loop Preparation --------------- */
@@ -348,7 +350,7 @@ void BKE_constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[
 static void contarget_get_mesh_mat(Object *ob, const char *substring, float mat[4][4])
 {
 	DerivedMesh *dm = NULL;
-	BMEditMesh *em = BMEdit_FromObject(ob);
+	BMEditMesh *em = BKE_editmesh_from_object(ob);
 	float vec[3] = {0.0f, 0.0f, 0.0f};
 	float normal[3] = {0.0f, 0.0f, 0.0f}, plane[3];
 	float imat[3][3], tmat[3][3];
@@ -817,7 +819,7 @@ static void childof_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *tar
 static bConstraintTypeInfo CTI_CHILDOF = {
 	CONSTRAINT_TYPE_CHILDOF, /* type */
 	sizeof(bChildOfConstraint), /* size */
-	"ChildOf", /* name */
+	"Child Of", /* name */
 	"bChildOfConstraint", /* struct name */
 	NULL, /* free data */
 	childof_id_looper, /* id looper */
@@ -992,7 +994,7 @@ static void trackto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *tar
 static bConstraintTypeInfo CTI_TRACKTO = {
 	CONSTRAINT_TYPE_TRACKTO, /* type */
 	sizeof(bTrackToConstraint), /* size */
-	"TrackTo", /* name */
+	"Track To", /* name */
 	"bTrackToConstraint", /* struct name */
 	NULL, /* free data */
 	trackto_id_looper, /* id looper */
@@ -1202,8 +1204,8 @@ static void followpath_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 					vec_to_quat(quat, dir, (short)data->trackflag, (short)data->upflag);
 					
 					normalize_v3(dir);
-					q[0] = (float)cos(0.5 * vec[3]);
-					x1 = (float)sin(0.5 * vec[3]);
+					q[0] = cosf(0.5 * vec[3]);
+					x1 = sinf(0.5 * vec[3]);
 					q[1] = -x1 * dir[0];
 					q[2] = -x1 * dir[1];
 					q[3] = -x1 * dir[2];
@@ -4261,7 +4263,7 @@ static void con_unlink_refs_cb(bConstraint *UNUSED(con), ID **idpoin, short isRe
 
 /* Free data of a specific constraint if it has any info.
  * be sure to run BIK_clear_data() when freeing an IK constraint,
- * unless DAG_scene_sort is called. 
+ * unless DAG_relations_tag_update is called. 
  */
 void BKE_free_constraint_data(bConstraint *con)
 {
@@ -4353,12 +4355,12 @@ static bConstraint *add_new_constraint_internal(const char *name, short type)
 			cti->new_data(con->data);
 		
 		/* if no name is provided, use the type of the constraint as the name */
-		newName = (name && name[0]) ? name : cti->name;
+		newName = (name && name[0]) ? name : DATA_(cti->name);
 	}
 	else {
 		/* if no name is provided, use the generic "Const" name */
 		/* NOTE: any constraint type that gets here really shouldn't get added... */
-		newName = (name && name[0]) ? name : "Const";
+		newName = (name && name[0]) ? name : DATA_("Const");
 	}
 	
 	/* copy the name */

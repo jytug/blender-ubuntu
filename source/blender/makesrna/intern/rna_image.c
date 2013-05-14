@@ -24,20 +24,21 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
+
+#include "DNA_image_types.h"
+#include "DNA_scene_types.h"
+
+#include "BLI_utildefines.h"
+
+#include "BKE_context.h"
+#include "BKE_depsgraph.h"
+#include "BKE_image.h"
 
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
 
 #include "rna_internal.h"
-
-#include "DNA_image_types.h"
-#include "DNA_scene_types.h"
-
-#include "BKE_context.h"
-#include "BKE_depsgraph.h"
-#include "BKE_image.h"
 
 #include "WM_types.h"
 #include "WM_api.h"
@@ -558,7 +559,7 @@ static void rna_def_image(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	
 
-	prop = RNA_def_property(srna, "view_as_render", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_view_as_render", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", IMA_VIEW_AS_RENDER);
 	RNA_def_property_ui_text(prop, "View as Render", "Apply render part of display transformation when displaying this image on the screen");
 	RNA_def_property_update(prop, NC_IMAGE | ND_DISPLAY, NULL);
@@ -583,14 +584,14 @@ static void rna_def_image(BlenderRNA *brna)
 	
 	prop = RNA_def_property(srna, "generated_width", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "gen_x");
-	RNA_def_property_range(prop, 1, 16384);
+	RNA_def_property_range(prop, 1, 65536);
 	RNA_def_property_ui_text(prop, "Generated Width", "Generated image width");
 	RNA_def_property_update(prop, NC_IMAGE | ND_DISPLAY, "rna_Image_generated_update");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	
 	prop = RNA_def_property(srna, "generated_height", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "gen_y");
-	RNA_def_property_range(prop, 1, 16384);
+	RNA_def_property_range(prop, 1, 65536);
 	RNA_def_property_ui_text(prop, "Generated Height", "Generated image height");
 	RNA_def_property_update(prop, NC_IMAGE | ND_DISPLAY, "rna_Image_generated_update");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);

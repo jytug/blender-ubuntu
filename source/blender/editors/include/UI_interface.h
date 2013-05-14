@@ -223,7 +223,7 @@ typedef enum {
 	NUMSLI        = (14 << 9),
 	COLOR         = (15 << 9),
 	IDPOIN        = (16 << 9),
-	HSVSLI        = (17 << 9),  /* UNUSED, but code still references */
+	/* HSVSLI     = (17 << 9), */  /* UNUSED */
 	SCROLL        = (18 << 9),
 	BLOCK         = (19 << 9),
 	BUTM          = (20 << 9),
@@ -259,7 +259,8 @@ typedef enum {
 	WAVEFORM      = (49 << 9),
 	VECTORSCOPE   = (50 << 9),
 	PROGRESSBAR   = (51 << 9),
-	SEARCH_MENU_UNLINK   = (52 << 9)
+	SEARCH_MENU_UNLINK   = (52 << 9),
+	NODESOCKET    = (53 << 9)
 } eButType;
 
 #define BUTTYPE     (63 << 9)
@@ -279,7 +280,6 @@ typedef enum {
  * Functions to draw various shapes, taking theme settings into account.
  * Used for code that draws its own UI style elements. */
 
-void uiEmboss(float x1, float y1, float x2, float y2, int sel);
 void uiRoundBox(float minx, float miny, float maxx, float maxy, float rad);
 void uiSetRoundBox(int type);
 int uiGetRoundBox(void);
@@ -397,7 +397,7 @@ void uiFreeActiveButtons(const struct bContext *C, struct bScreen *screen);
 
 void uiBlockSetRegion(uiBlock *block, struct ARegion *region);
 
-void uiBlockSetButLock(uiBlock *block, int val, const char *lockstr);
+void uiBlockSetButLock(uiBlock *block, bool val, const char *lockstr);
 void uiBlockClearButLock(uiBlock *block);
 
 /* automatic aligning, horiz or verical */
@@ -438,6 +438,7 @@ void    uiButSetDragValue(uiBut *but);
 void    uiButSetDragImage(uiBut *but, const char *path, int icon, struct ImBuf *ima, float scale);
 
 int     UI_but_active_drop_name(struct bContext *C);
+struct uiBut  *ui_but_find_mouse_over(struct ARegion *ar, int x, int y);
 
 void    uiButSetFlag(uiBut *but, int flag);
 void    uiButClearFlag(uiBut *but, int flag);
@@ -446,7 +447,9 @@ void    uiButSetDrawFlag(uiBut *but, int flag);
 void    uiButClearDrawFlag(uiBut *but, int flag);
 
 /* special button case, only draw it when used actively, for outliner etc */
-int     uiButActiveOnly(const struct bContext *C, uiBlock *block, uiBut *but);
+bool    uiButActiveOnly(const struct bContext *C, struct ARegion *ar, uiBlock *block, uiBut *but);
+
+void    uiButExecute(const struct bContext *C, uiBut *but);
 
 
 /* Buttons
@@ -602,9 +605,12 @@ uiBut *uiDefKeyevtButS(uiBlock *block, int retval, const char *str, int x, int y
 uiBut *uiDefHotKeyevtButS(uiBlock *block, int retval, const char *str, int x, int y, short width, short height, short *keypoin, short *modkeypoin, const char *tip);
 
 uiBut *uiDefSearchBut(uiBlock *block, void *arg, int retval, int icon, int maxlen, int x, int y, short width, short height, float a1, float a2, const char *tip);
+uiBut *uiDefSearchButO_ptr(uiBlock *block, struct wmOperatorType *ot, IDProperty *properties,
+                           void *arg, int retval, int icon, int maxlen, int x, int y,
+                           short width, short height, float a1, float a2, const char *tip);
 
 uiBut *uiDefAutoButR(uiBlock *block, struct PointerRNA *ptr, struct PropertyRNA *prop, int index, const char *name, int icon, int x1, int y1, int x2, int y2);
-int uiDefAutoButsRNA(uiLayout *layout, struct PointerRNA *ptr, int (*check_prop)(struct PointerRNA *, struct PropertyRNA *), const char label_align);
+int uiDefAutoButsRNA(uiLayout *layout, struct PointerRNA *ptr, bool (*check_prop)(struct PointerRNA *, struct PropertyRNA *), const char label_align);
 
 /* Links
  *
@@ -617,27 +623,32 @@ void uiComposeLinks(uiBlock *block);
 uiBut *uiFindInlink(uiBlock *block, void *poin);
 
 /* use inside searchfunc to add items */
-int     uiSearchItemAdd(uiSearchItems *items, const char *name, void *poin, int iconid);
+bool    uiSearchItemAdd(uiSearchItems *items, const char *name, void *poin, int iconid);
 /* bfunc gets search item *poin as arg2, or if NULL the old string */
 void    uiButSetSearchFunc(uiBut *but,        uiButSearchFunc sfunc, void *arg1, uiButHandleFunc bfunc, void *active);
 /* height in pixels, it's using hardcoded values still */
 int     uiSearchBoxHeight(void);
 int     uiSearchBoxWidth(void);
+/* check if a string is in an existing search box */
+int     uiSearchItemFindIndex(uiSearchItems *items, const char *name);
 
 void    uiBlockSetHandleFunc(uiBlock *block,    uiBlockHandleFunc func, void *arg);
 void    uiBlockSetButmFunc(uiBlock *block,    uiMenuHandleFunc func, void *arg);
 void    uiBlockSetFunc(uiBlock *block,    uiButHandleFunc func, void *arg1, void *arg2);
-void    uiBlockSetNFunc(uiBlock *block,    uiButHandleFunc func, void *argN, void *arg2);
+void    uiBlockSetNFunc(uiBlock *block,    uiButHandleNFunc funcN, void *argN, void *arg2);
 
 void    uiButSetRenameFunc(uiBut *but,        uiButHandleRenameFunc func, void *arg1);
 void    uiButSetFunc(uiBut *but,        uiButHandleFunc func, void *arg1, void *arg2);
-void    uiButSetNFunc(uiBut *but,        uiButHandleNFunc func, void *argN, void *arg2);
+void    uiButSetNFunc(uiBut *but,        uiButHandleNFunc funcN, void *argN, void *arg2);
 
 void    uiButSetCompleteFunc(uiBut *but,        uiButCompleteFunc func, void *arg);
 
 void    uiBlockSetDrawExtraFunc(uiBlock *block,
                                 void (*func)(const struct bContext *C, void *, void *, void *, struct rcti *rect),
                                 void *arg1, void *arg2);
+
+bool UI_textbutton_activate_event(const struct bContext *C, struct ARegion *ar,
+                                  const void *rna_poin_data, const char *rna_prop_id);
 
 void uiButSetFocusOnEnter(struct wmWindow *win, uiBut *but);
 
@@ -758,25 +769,25 @@ void uiLayoutSetContextPointer(uiLayout *layout, const char *name, struct Pointe
 void uiLayoutContextCopy(uiLayout *layout, struct bContextStore *context);
 const char *uiLayoutIntrospect(uiLayout *layout); // XXX - testing
 void uiLayoutOperatorButs(const struct bContext *C, struct uiLayout *layout, struct wmOperator *op,
-                          int (*check_prop)(struct PointerRNA *, struct PropertyRNA *),
+                          bool (*check_prop)(struct PointerRNA *, struct PropertyRNA *),
                           const char label_align, const short flag);
 struct MenuType *uiButGetMenuType(uiBut *but);
 
 void uiLayoutSetOperatorContext(uiLayout *layout, int opcontext);
-void uiLayoutSetActive(uiLayout *layout, int active);
-void uiLayoutSetEnabled(uiLayout *layout, int enabled);
-void uiLayoutSetRedAlert(uiLayout *layout, int redalert);
-void uiLayoutSetAlignment(uiLayout *layout, int alignment);
-void uiLayoutSetKeepAspect(uiLayout *layout, int keepaspect);
+void uiLayoutSetActive(uiLayout *layout, bool active);
+void uiLayoutSetEnabled(uiLayout *layout, bool enabled);
+void uiLayoutSetRedAlert(uiLayout *layout, bool redalert);
+void uiLayoutSetAlignment(uiLayout *layout, char alignment);
+void uiLayoutSetKeepAspect(uiLayout *layout, bool keepaspect);
 void uiLayoutSetScaleX(uiLayout *layout, float scale);
 void uiLayoutSetScaleY(uiLayout *layout, float scale);
 
 int uiLayoutGetOperatorContext(uiLayout *layout);
-int uiLayoutGetActive(uiLayout *layout);
-int uiLayoutGetEnabled(uiLayout *layout);
-int uiLayoutGetRedAlert(uiLayout *layout);
+bool uiLayoutGetActive(uiLayout *layout);
+bool uiLayoutGetEnabled(uiLayout *layout);
+bool uiLayoutGetRedAlert(uiLayout *layout);
 int uiLayoutGetAlignment(uiLayout *layout);
-int uiLayoutGetKeepAspect(uiLayout *layout);
+bool uiLayoutGetKeepAspect(uiLayout *layout);
 int uiLayoutGetWidth(uiLayout *layout);
 float uiLayoutGetScaleX(uiLayout *layout);
 float uiLayoutGetScaleY(uiLayout *layout);
@@ -796,7 +807,6 @@ uiBlock *uiLayoutAbsoluteBlock(uiLayout *layout);
 
 /* templates */
 void uiTemplateHeader(uiLayout *layout, struct bContext *C, int menus);
-void uiTemplateDopeSheetFilter(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr);
 void uiTemplateID(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, const char *propname,
                   const char *newop, const char *openop, const char *unlinkop);
 void uiTemplateIDBrowse(uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, const char *propname,
@@ -829,9 +839,10 @@ void uiOperatorSearch_But(uiBut *but);
 void uiTemplateOperatorSearch(uiLayout *layout);
 void uiTemplateHeader3D(uiLayout *layout, struct bContext *C);
 void uiTemplateEditModeSelection(uiLayout *layout, struct bContext *C);
-void uiTemplateTextureImage(uiLayout *layout, struct bContext *C, struct Tex *tex);
 void uiTemplateReportsBanner(uiLayout *layout, struct bContext *C);
 void uiTemplateKeymapItemProperties(uiLayout *layout, struct PointerRNA *ptr);
+void uiTemplateComponentMenu(uiLayout *layout, struct PointerRNA *ptr, const char *propname, const char *name);
+void uiTemplateNodeSocket(uiLayout *layout, struct bContext *C, float *color);
 
 /* Default UIList class name, keep in sync with its declaration in bl_ui/__init__.py */
 #define UI_UL_DEFAULT_CLASS_NAME "UI_UL_list"
@@ -846,6 +857,7 @@ void uiTemplateTextureShow(uiLayout *layout, struct bContext *C, struct PointerR
 void uiTemplateMovieClip(struct uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, const char *propname, int compact);
 void uiTemplateTrack(struct uiLayout *layout, struct PointerRNA *ptr, const char *propname);
 void uiTemplateMarker(struct uiLayout *layout, struct PointerRNA *ptr, const char *propname, PointerRNA *userptr, PointerRNA *trackptr, int cmpact);
+void uiTemplateMovieclipInformation(struct uiLayout *layout, struct PointerRNA *ptr, const char *propname, struct PointerRNA *userptr);
 
 void uiTemplateColorspaceSettings(struct uiLayout *layout, struct PointerRNA *ptr, const char *propname);
 void uiTemplateColormanagedViewSettings(struct uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, const char *propname);
@@ -913,8 +925,7 @@ uiStyle *UI_GetStyleDraw(void);	/* DPI scaled settings for drawing */
 void UI_template_fix_linking(void);
 
 /* UI_OT_editsource helpers */
-int  UI_editsource_enable_check(void);
+bool UI_editsource_enable_check(void);
 void UI_editsource_active_but_test(uiBut *but);
 
-#endif /*  __UI_INTERFACE_H__ */
-
+#endif  /* __UI_INTERFACE_H__ */

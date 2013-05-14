@@ -83,7 +83,7 @@ struct GHashIterator;
 #define BMO_elem_flag_toggle(   bm, ele, oflag)      _bmo_elem_flag_toggle   (bm, (ele)->oflags, oflag)
 
 BLI_INLINE short _bmo_elem_flag_test(     BMesh *bm, BMFlagLayer *oflags, const short oflag);
-BLI_INLINE short _bmo_elem_flag_test_bool(BMesh *bm, BMFlagLayer *oflags, const short oflag);
+BLI_INLINE bool  _bmo_elem_flag_test_bool(BMesh *bm, BMFlagLayer *oflags, const short oflag);
 BLI_INLINE void  _bmo_elem_flag_enable(   BMesh *bm, BMFlagLayer *oflags, const short oflag);
 BLI_INLINE void  _bmo_elem_flag_disable(  BMesh *bm, BMFlagLayer *oflags, const short oflag);
 BLI_INLINE void  _bmo_elem_flag_set(      BMesh *bm, BMFlagLayer *oflags, const short oflag, int val);
@@ -178,13 +178,21 @@ typedef struct BMOpSlot {
 /* way more than probably needed, compiler complains if limit hit */
 #define BMO_OP_MAX_SLOTS 16
 
+/* BMOpDefine->type_flag */
+typedef enum {
+	BMO_OPTYPE_FLAG_NOP                 = 0,
+	BMO_OPTYPE_FLAG_UNTAN_MULTIRES      = (1 << 0),  /* switch from multires tangent space to absolute coordinates */
+	BMO_OPTYPE_FLAG_NORMALS_CALC        = (1 << 1),  /*switch from multires tangent space to absolute coordinates*/
+	BMO_OPTYPE_FLAG_SELECT_FLUSH        = (1 << 2)   /*switch from multires tangent space to absolute coordinates*/
+} BMOpTypeFlag;
+
 typedef struct BMOperator {
 	struct BMOpSlot slots_in[BMO_OP_MAX_SLOTS];
 	struct BMOpSlot slots_out[BMO_OP_MAX_SLOTS];
 	void (*exec)(BMesh *bm, struct BMOperator *op);
 	struct MemArena *arena;
 	int type;
-	int type_flag;
+	BMOpTypeFlag type_flag;
 	int flag;  /* runtime options */
 } BMOperator;
 
@@ -207,13 +215,8 @@ typedef struct BMOpDefine {
 	BMOSlotType slot_types_in[BMO_OP_MAX_SLOTS];
 	BMOSlotType slot_types_out[BMO_OP_MAX_SLOTS];
 	void (*exec)(BMesh *bm, BMOperator *op);
-	int type_flag;
+	BMOpTypeFlag type_flag;
 } BMOpDefine;
-
-/* BMOpDefine->type_flag */
-enum {
-	BMO_OP_FLAG_UNTAN_MULTIRES  = 1 /*switch from multires tangent space to absolute coordinates*/
-};
 
 /*------------- Operator API --------------*/
 
@@ -391,10 +394,6 @@ int BMO_slot_map_count(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_na
 void BMO_slot_map_insert(BMOperator *op, BMOpSlot *slot,
                          const void *element, const void *data, const int len);
 
-/* Counts the number of edges with tool flag toolflag around
- */
-int BMO_vert_edge_flags_count(BMesh *bm, BMVert *v, const short oflag);
-
 /* flags all elements in a mapping.  note that the mapping must only have
  * bmesh elements in it.*/
 void BMO_slot_map_to_flag(BMesh *bm, BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
@@ -451,7 +450,7 @@ typedef struct BMOIter {
 	char restrictmask; /* bitwise '&' with BMHeader.htype */
 } BMOIter;
 
-void *BMO_slot_buffer_elem_first(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name);
+void *BMO_slot_buffer_get_first(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name);
 
 void *BMO_iter_new(BMOIter *iter,
                    BMOpSlot slot_args[BMO_OP_MAX_SLOTS],  const char *slot_name,
@@ -485,6 +484,8 @@ typedef struct BMOElemMapping {
 #define BMO_OP_SLOT_MAPPING_DATA(var) (void *)(((BMOElemMapping *)var) + 1)
 
 extern const int BMO_OPSLOT_TYPEINFO[BMO_OP_SLOT_TOTAL_TYPES];
+
+int BMO_opcode_from_opname(const char *opname);
 
 #ifdef __cplusplus
 }

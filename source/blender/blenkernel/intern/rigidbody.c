@@ -58,12 +58,13 @@
 #include "BKE_animsys.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_effect.h"
+#include "BKE_global.h"
 #include "BKE_group.h"
-#include "BKE_object.h"
+#include "BKE_library.h"
 #include "BKE_mesh.h"
+#include "BKE_object.h"
 #include "BKE_pointcache.h"
 #include "BKE_rigidbody.h"
-#include "BKE_global.h"
 #include "BKE_utildefines.h"
 
 #include "RNA_access.h"
@@ -636,6 +637,13 @@ void BKE_rigidbody_validate_sim_constraint(RigidBodyWorld *rbw, Object *ob, shor
 					else
 						RB_constraint_set_limits_6dof(rbc->physics_constraint, RB_LIMIT_ANG_Z, 0.0f, -1.0f);
 					break;
+				case RBC_TYPE_MOTOR:
+					rbc->physics_constraint = RB_constraint_new_motor(loc, rot, rb1, rb2);
+
+					RB_constraint_set_enable_motor(rbc->physics_constraint, rbc->flag & RBC_FLAG_USE_MOTOR_LIN, rbc->flag & RBC_FLAG_USE_MOTOR_ANG);
+					RB_constraint_set_max_impulse_motor(rbc->physics_constraint, rbc->motor_lin_max_impulse, rbc->motor_ang_max_impulse);
+					RB_constraint_set_target_velocity_motor(rbc->physics_constraint, rbc->motor_lin_target_velocity, rbc->motor_ang_target_velocity);
+					break;
 			}
 		}
 		else { /* can't create constraint without both rigid bodies */
@@ -715,6 +723,36 @@ RigidBodyWorld *BKE_rigidbody_create_world(Scene *scene)
 
 	/* return this sim world */
 	return rbw;
+}
+
+RigidBodyWorld *BKE_rigidbody_world_copy(RigidBodyWorld *rbw)
+{
+	RigidBodyWorld *rbwn = MEM_dupallocN(rbw);
+
+	if (rbw->effector_weights)
+		rbwn->effector_weights = MEM_dupallocN(rbw->effector_weights);
+	if (rbwn->group)
+		id_us_plus(&rbwn->group->id);
+	if (rbwn->constraints)
+		id_us_plus(&rbwn->constraints->id);
+
+	rbwn->pointcache = BKE_ptcache_copy_list(&rbwn->ptcaches, &rbw->ptcaches, FALSE);
+
+	rbwn->objects = NULL;
+	rbwn->physics_world = NULL;
+	rbwn->numbodies = 0;
+
+	return rbwn;
+}
+
+void BKE_rigidbody_world_groups_relink(RigidBodyWorld *rbw)
+{
+	if (rbw->group && rbw->group->id.newid)
+		rbw->group = (Group *)rbw->group->id.newid;
+	if (rbw->constraints && rbw->constraints->id.newid)
+		rbw->constraints = (Group *)rbw->constraints->id.newid;
+	if (rbw->effector_weights->group && rbw->effector_weights->group->id.newid)
+		rbw->effector_weights->group = (Group *)rbw->effector_weights->group->id.newid;
 }
 
 /* Add rigid body settings to the specified object */
@@ -818,6 +856,11 @@ RigidBodyCon *BKE_rigidbody_create_constraint(Scene *scene, Object *ob, short ty
 	rbc->spring_stiffness_x = 10.0f;
 	rbc->spring_stiffness_y = 10.0f;
 	rbc->spring_stiffness_z = 10.0f;
+
+	rbc->motor_lin_max_impulse = 1.0f;
+	rbc->motor_lin_target_velocity = 1.0f;
+	rbc->motor_ang_max_impulse = 1.0f;
+	rbc->motor_ang_target_velocity = 1.0f;
 
 	/* flag cache as outdated */
 	BKE_rigidbody_cache_reset(rbw);
@@ -989,26 +1032,26 @@ static void rigidbody_update_sim_ob(Scene *scene, RigidBodyWorld *rbw, Object *o
 		/* get effectors present in the group specified by effector_weights */
 		effectors = pdInitEffectors(scene, ob, NULL, effector_weights);
 		if (effectors) {
-			float force[3] = {0.0f, 0.0f, 0.0f};
-			float loc[3], vel[3];
+			float eff_force[3] = {0.0f, 0.0f, 0.0f};
+			float eff_loc[3], eff_vel[3];
 
 			/* create dummy 'point' which represents last known position of object as result of sim */
 			// XXX: this can create some inaccuracies with sim position, but is probably better than using unsimulated vals?
-			RB_body_get_position(rbo->physics_object, loc);
-			RB_body_get_linear_velocity(rbo->physics_object, vel);
+			RB_body_get_position(rbo->physics_object, eff_loc);
+			RB_body_get_linear_velocity(rbo->physics_object, eff_vel);
 
-			pd_point_from_loc(scene, loc, vel, 0, &epoint);
+			pd_point_from_loc(scene, eff_loc, eff_vel, 0, &epoint);
 
 			/* calculate net force of effectors, and apply to sim object
 			 *	- we use 'central force' since apply force requires a "relative position" which we don't have...
 			 */
-			pdDoEffectors(effectors, NULL, effector_weights, &epoint, force, NULL);
+			pdDoEffectors(effectors, NULL, effector_weights, &epoint, eff_force, NULL);
 			if (G.f & G_DEBUG)
-				printf("\tapplying force (%f,%f,%f) to '%s'\n", force[0], force[1], force[2], ob->id.name + 2);
+				printf("\tapplying force (%f,%f,%f) to '%s'\n", eff_force[0], eff_force[1], eff_force[2], ob->id.name + 2);
 			/* activate object in case it is deactivated */
-			if (!is_zero_v3(force))
+			if (!is_zero_v3(eff_force))
 				RB_body_activate(rbo->physics_object);
-			RB_body_apply_central_force(rbo->physics_object, force);
+			RB_body_apply_central_force(rbo->physics_object, eff_force);
 		}
 		else if (G.f & G_DEBUG)
 			printf("\tno forces to apply to '%s'\n", ob->id.name + 2);
@@ -1136,6 +1179,12 @@ static void rigidbody_update_simulation_post_step(RigidBodyWorld *rbw)
 		}
 	}
 }
+
+bool BKE_rigidbody_check_sim_running(RigidBodyWorld *rbw, float ctime)
+{
+	return (rbw && (rbw->flag & RBW_FLAG_MUTED) == 0 && ctime > rbw->pointcache->startframe);
+}
+
 /* Sync rigid body and object transformations */
 void BKE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime)
 {
@@ -1146,12 +1195,8 @@ void BKE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime)
 		return;
 
 	/* use rigid body transform after cache start frame if objects is not being transformed */
-	if (ctime > rbw->pointcache->startframe && !(ob->flag & SELECT && G.moving & G_TRANSFORM_OBJ)) {
+	if (BKE_rigidbody_check_sim_running(rbw, ctime) && !(ob->flag & SELECT && G.moving & G_TRANSFORM_OBJ)) {
 		float mat[4][4], size_mat[4][4], size[3];
-
-		/* keep original transform when the simulation is muted */
-		if (rbw->flag & RBW_FLAG_MUTED)
-			return;
 
 		normalize_qt(rbo->orn); // RB_TODO investigate why quaternion isn't normalized at this point
 		quat_to_mat4(mat, rbo->orn);
@@ -1318,6 +1363,8 @@ void BKE_rigidbody_validate_sim_object(RigidBodyWorld *rbw, Object *ob, short re
 void BKE_rigidbody_validate_sim_constraint(RigidBodyWorld *rbw, Object *ob, short rebuild) {}
 void BKE_rigidbody_validate_sim_world(Scene *scene, RigidBodyWorld *rbw, short rebuild) {}
 struct RigidBodyWorld *BKE_rigidbody_create_world(Scene *scene) { return NULL; }
+struct RigidBodyWorld *BKE_rigidbody_world_copy(RigidBodyWorld *rbw) { return NULL; }
+void BKE_rigidbody_world_groups_relink(struct RigidBodyWorld *rbw) {}
 struct RigidBodyOb *BKE_rigidbody_create_object(Scene *scene, Object *ob, short type) { return NULL; }
 struct RigidBodyCon *BKE_rigidbody_create_constraint(Scene *scene, Object *ob, short type) { return NULL; }
 struct RigidBodyWorld *BKE_rigidbody_get_world(Scene *scene) { return NULL; }
@@ -1325,7 +1372,9 @@ void BKE_rigidbody_remove_object(Scene *scene, Object *ob) {}
 void BKE_rigidbody_remove_constraint(Scene *scene, Object *ob) {}
 void BKE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime) {}
 void BKE_rigidbody_aftertrans_update(Object *ob, float loc[3], float rot[3], float quat[4], float rotAxis[3], float rotAngle) {}
+bool BKE_rigidbody_check_sim_running(RigidBodyWorld *rbw, float ctime) { return false; }
 void BKE_rigidbody_cache_reset(RigidBodyWorld *rbw) {}
+void BKE_rigidbody_rebuild_world(Scene *scene, float ctime) {}
 void BKE_rigidbody_do_simulation(Scene *scene, float ctime) {}
 
 #ifdef __GNUC__

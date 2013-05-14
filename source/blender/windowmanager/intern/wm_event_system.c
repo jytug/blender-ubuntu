@@ -187,6 +187,27 @@ void WM_main_add_notifier(unsigned int type, void *reference)
 	}
 }
 
+/**
+ * Clear notifiers by reference, Used so listeners don't act on freed data.
+ */
+void WM_main_remove_notifier_reference(const void *reference)
+{
+	Main *bmain = G.main;
+	wmWindowManager *wm = bmain->wm.first;
+	if (wm) {
+		wmNotifier *note, *note_next;
+
+		for (note = wm->queue.first; note; note = note_next) {
+			note_next = note->next;
+
+			if (note->reference == reference) {
+				BLI_remlink(&wm->queue, note);
+				MEM_freeN(note);
+			}
+		}
+	}
+}
+
 static wmNotifier *wm_notifier_next(wmWindowManager *wm)
 {
 	wmNotifier *note = wm->queue.first;
@@ -339,7 +360,7 @@ void wm_event_do_notifiers(bContext *C)
 static int wm_event_always_pass(wmEvent *event)
 {
 	/* some events we always pass on, to ensure proper communication */
-	return ISTIMER(event->type) || (event->type == WINDEACTIVATE);
+	return ISTIMER(event->type) || (event->type == WINDEACTIVATE) || (event->type == EVT_BUT_OPEN);
 }
 
 /* ********************* ui handler ******************* */
@@ -472,7 +493,7 @@ void WM_operator_region_active_win_set(bContext *C)
 /* for debugging only, getting inspecting events manually is tedious */
 #ifndef NDEBUG
 
-void WM_event_print(wmEvent *event)
+void WM_event_print(const wmEvent *event)
 {
 	if (event) {
 		const char *unknown = "UNKNOWN";
@@ -690,7 +711,21 @@ int WM_operator_repeat(bContext *C, wmOperator *op)
  * checks if WM_operator_repeat() can run at all, not that it WILL run at any time. */
 int WM_operator_repeat_check(const bContext *UNUSED(C), wmOperator *op)
 {
-	return op->type->exec != NULL;
+	if (op->type->exec != NULL) {
+		return true;
+	}
+	else if (op->opm) {
+		/* for macros, check all have exec() we can call */
+		wmOperator *opm;
+		for (opm = op->opm->type->macro.first; opm; opm = opm->next) {
+			if (opm->type->exec == NULL) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	return false;
 }
 
 static wmOperator *wm_operator_create(wmWindowManager *wm, wmOperatorType *ot,
@@ -796,10 +831,10 @@ static void wm_region_mouse_co(bContext *C, wmEvent *event)
 	}
 }
 
-#if 1 /* disabling for 2.63 release, since we keep getting reports some menu items are leaving props undefined */
-int WM_operator_last_properties_init(wmOperator *op)
+#if 1 /* may want to disable operator remembering previous state for testing */
+bool WM_operator_last_properties_init(wmOperator *op)
 {
-	int change = FALSE;
+	bool change = false;
 
 	if (op->type->last_properties) {
 		PropertyRNA *iterprop;
@@ -825,7 +860,7 @@ int WM_operator_last_properties_init(wmOperator *op)
 						idp_dst->flag |= IDP_FLAG_GHOST;
 
 						IDP_ReplaceInGroup(op->properties, idp_dst);
-						change = TRUE;
+						change = true;
 					}
 				}
 			}
@@ -836,7 +871,7 @@ int WM_operator_last_properties_init(wmOperator *op)
 	return change;
 }
 
-int WM_operator_last_properties_store(wmOperator *op)
+bool WM_operator_last_properties_store(wmOperator *op)
 {
 	if (op->type->last_properties) {
 		IDP_FreeProperty(op->type->last_properties);
@@ -849,10 +884,10 @@ int WM_operator_last_properties_store(wmOperator *op)
 			printf("%s: storing properties for '%s'\n", __func__, op->type->idname);
 		}
 		op->type->last_properties = IDP_CopyProperty(op->properties);
-		return TRUE;
+		return true;
 	}
 	else {
-		return FALSE;
+		return false;
 	}
 }
 
@@ -987,7 +1022,7 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event,
 					}
 				}
 
-				WM_cursor_grab_enable(CTX_wm_window(C), wrap, FALSE, bounds);
+				WM_cursor_grab_enable(CTX_wm_window(C), wrap, false, bounds);
 			}
 
 			/* cancel UI handlers, typically tooltips that can hang around
@@ -1349,9 +1384,10 @@ static int wm_eventmatch(wmEvent *winevent, wmKeyMapItem *kmi)
 	if (kmi->oskey != KM_ANY)
 		if (winevent->oskey != kmi->oskey && !(winevent->oskey & kmi->oskey)) return 0;
 	
+	/* only keymap entry with keymodifier is checked, means all keys without modifier get handled too. */
+	/* that is currently needed to make overlapping events work (when you press A - G fast or so). */
 	if (kmi->keymodifier)
 		if (winevent->keymodifier != kmi->keymodifier) return 0;
-		
 	
 	return 1;
 }
@@ -2108,7 +2144,7 @@ void wm_event_do_handlers(bContext *C)
 			CTX_wm_region_set(C, region_event_inside(C, &event->x));
 			
 			/* MVC demands to not draw in event handlers... but we need to leave it for ogl selecting etc */
-			wm_window_make_drawable(C, win);
+			wm_window_make_drawable(wm, win);
 			
 			wm_region_mouse_co(C, event);
 
@@ -2244,12 +2280,12 @@ void wm_event_do_handlers(bContext *C)
 
 /* ********** filesector handling ************ */
 
-void WM_event_fileselect_event(bContext *C, void *ophandle, int eventval)
+void WM_event_fileselect_event(wmWindowManager *wm, void *ophandle, int eventval)
 {
 	/* add to all windows! */
 	wmWindow *win;
 	
-	for (win = CTX_wm_manager(C)->windows.first; win; win = win->next) {
+	for (win = wm->windows.first; win; win = win->next) {
 		wmEvent event = *win->eventstate;
 		
 		event.type = EVT_FILESELECT;
@@ -2271,6 +2307,7 @@ void WM_event_fileselect_event(bContext *C, void *ophandle, int eventval)
 void WM_event_add_fileselect(bContext *C, wmOperator *op)
 {
 	wmEventHandler *handler, *handlernext;
+	wmWindowManager *wm = CTX_wm_manager(C);
 	wmWindow *win = CTX_wm_window(C);
 	int full = 1;    // XXX preset?
 
@@ -2302,7 +2339,7 @@ void WM_event_add_fileselect(bContext *C, wmOperator *op)
 		op->type->check(C, op); /* ignore return value */
 	}
 
-	WM_event_fileselect_event(C, op, full ? EVT_FILESELECT_FULL_OPEN : EVT_FILESELECT_OPEN);
+	WM_event_fileselect_event(wm, op, full ? EVT_FILESELECT_FULL_OPEN : EVT_FILESELECT_OPEN);
 }
 
 #if 0
@@ -2402,9 +2439,17 @@ wmEventHandler *WM_event_add_ui_handler(const bContext *C, ListBase *handlers,
 	handler->ui_handle = func;
 	handler->ui_remove = remove;
 	handler->ui_userdata = userdata;
-	handler->ui_area = (C) ? CTX_wm_area(C) : NULL;
-	handler->ui_region = (C) ? CTX_wm_region(C) : NULL;
-	handler->ui_menu = (C) ? CTX_wm_menu(C) : NULL;
+	if (C) {
+		handler->ui_area    = CTX_wm_area(C);
+		handler->ui_region  = CTX_wm_region(C);
+		handler->ui_menu    = CTX_wm_menu(C);
+	}
+	else {
+		handler->ui_area    = NULL;
+		handler->ui_region  = NULL;
+		handler->ui_menu    = NULL;
+	}
+
 	
 	BLI_addhead(handlers, handler);
 	
@@ -2413,7 +2458,7 @@ wmEventHandler *WM_event_add_ui_handler(const bContext *C, ListBase *handlers,
 
 /* set "postpone" for win->modalhandlers, this is in a running for () loop in wm_handlers_do() */
 void WM_event_remove_ui_handler(ListBase *handlers,
-                                wmUIHandlerFunc func, wmUIHandlerRemoveFunc remove, void *userdata, int postpone)
+                                wmUIHandlerFunc func, wmUIHandlerRemoveFunc remove, void *userdata, const bool postpone)
 {
 	wmEventHandler *handler;
 	
@@ -2487,14 +2532,14 @@ void WM_event_add_mousemove_window(wmWindow *window)
 }
 
 /* for modal callbacks, check configuration for how to interpret exit with tweaks  */
-int WM_modal_tweak_exit(wmEvent *evt, int tweak_event)
+int WM_modal_tweak_exit(const wmEvent *event, int tweak_event)
 {
 	/* if the release-confirm userpref setting is enabled, 
 	 * tweak events can be canceled when mouse is released
 	 */
 	if (U.flag & USER_RELEASECONFIRM) {
 		/* option on, so can exit with km-release */
-		if (evt->val == KM_RELEASE) {
+		if (event->val == KM_RELEASE) {
 			switch (tweak_event) {
 				case EVT_TWEAK_L:
 				case EVT_TWEAK_M:
@@ -2515,7 +2560,7 @@ int WM_modal_tweak_exit(wmEvent *evt, int tweak_event)
 		 * some items (i.e. markers) being tweaked may end up getting
 		 * dropped all over
 		 */
-		if (evt->val != KM_RELEASE)
+		if (event->val != KM_RELEASE)
 			return 1;
 	}
 	
@@ -2745,9 +2790,9 @@ static void attach_ndof_data(wmEvent *event, const GHOST_TEventNDOFMotionData *g
 }
 
 /* imperfect but probably usable... draw/enable drags to other windows */
-static wmWindow *wm_event_cursor_other_windows(wmWindowManager *wm, wmWindow *win, wmEvent *evt)
+static wmWindow *wm_event_cursor_other_windows(wmWindowManager *wm, wmWindow *win, wmEvent *event)
 {
-	int mx = evt->x, my = evt->y;
+	int mx = event->x, my = event->y;
 	
 	if (wm->windows.first == wm->windows.last)
 		return NULL;
@@ -2779,8 +2824,8 @@ static wmWindow *wm_event_cursor_other_windows(wmWindowManager *wm, wmWindow *wi
 				if (mx - posx >= 0 && owin->posy >= 0 &&
 				    mx - posx <= WM_window_pixels_x(owin) && my - posy <= WM_window_pixels_y(owin))
 				{
-					evt->x = mx - (int)(U.pixelsize * owin->posx);
-					evt->y = my - (int)(U.pixelsize * owin->posy);
+					event->x = mx - (int)(U.pixelsize * owin->posx);
+					event->y = my - (int)(U.pixelsize * owin->posy);
 					
 					return owin;
 				}

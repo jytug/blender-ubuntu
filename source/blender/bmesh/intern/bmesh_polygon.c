@@ -26,21 +26,19 @@
  * This file contains code for dealing
  * with polygons (normal/area calculation,
  * tessellation, etc)
- *
- * BMESH_TODO:
- *  - Add in Tessellator frontend that creates
- *    BMTriangles from copied faces
- *
- *  - Add in Function that checks for and flags
- *    degenerate faces.
  */
 
-#include "BLI_math.h"
-#include "BLI_array.h"
+#include "DNA_listBase.h"
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_math.h"
+#include "BLI_array.h"
+#include "BLI_scanfill.h"
+#include "BLI_listbase.h"
+
 #include "bmesh.h"
+
 #include "intern/bmesh_private.h"
 
 /**
@@ -151,6 +149,103 @@ static void bm_face_calc_poly_normal_vertex_cos(BMFace *f, float n[3],
 }
 
 /**
+ * For tools that insist on using triangles, ideally we would cache this data.
+ *
+ * \param r_loops  Store face loop pointers, (f->len)
+ * \param r_index  Store triangle triples, indicies into \a r_loops,  ((f->len - 2) * 3)
+ */
+int BM_face_calc_tessellation(BMFace *f, BMLoop **r_loops, int (*_r_index)[3])
+{
+	int *r_index = (int *)_r_index;
+	BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
+	BMLoop *l_iter;
+	int totfilltri;
+
+	if (f->len == 3) {
+		*r_loops++ = (l_iter = l_first);
+		*r_loops++ = (l_iter = l_iter->next);
+		*r_loops++ = (         l_iter->next);
+
+		r_index[0] = 0;
+		r_index[1] = 1;
+		r_index[2] = 2;
+		totfilltri = 1;
+	}
+	else if (f->len == 4) {
+		*r_loops++ = (l_iter = l_first);
+		*r_loops++ = (l_iter = l_iter->next);
+		*r_loops++ = (l_iter = l_iter->next);
+		*r_loops++ = (         l_iter->next);
+
+		r_index[0] = 0;
+		r_index[1] = 1;
+		r_index[2] = 2;
+
+		r_index[3] = 0;
+		r_index[4] = 2;
+		r_index[5] = 3;
+		totfilltri = 2;
+	}
+	else {
+		int j;
+
+		ScanFillContext sf_ctx;
+		ScanFillVert *sf_vert, *sf_vert_last = NULL, *sf_vert_first = NULL;
+		/* ScanFillEdge *e; */ /* UNUSED */
+		ScanFillFace *sf_tri;
+
+		BLI_scanfill_begin(&sf_ctx);
+
+		j = 0;
+		l_iter = l_first;
+		do {
+			sf_vert = BLI_scanfill_vert_add(&sf_ctx, l_iter->v->co);
+			sf_vert->tmp.p = l_iter;
+
+			if (sf_vert_last) {
+				/* e = */ BLI_scanfill_edge_add(&sf_ctx, sf_vert_last, sf_vert);
+			}
+
+			sf_vert_last = sf_vert;
+			if (sf_vert_first == NULL) {
+				sf_vert_first = sf_vert;
+			}
+
+			r_loops[j] = l_iter;
+
+			/* mark order */
+			BM_elem_index_set(l_iter, j++); /* set_loop */
+
+		} while ((l_iter = l_iter->next) != l_first);
+
+		/* complete the loop */
+		BLI_scanfill_edge_add(&sf_ctx, sf_vert_first, sf_vert);
+
+		totfilltri = BLI_scanfill_calc_ex(&sf_ctx, 0, f->no);
+		BLI_assert(totfilltri <= f->len - 2);
+		BLI_assert(totfilltri == BLI_countlist(&sf_ctx.fillfacebase));
+
+		for (sf_tri = sf_ctx.fillfacebase.first; sf_tri; sf_tri = sf_tri->next) {
+			int i1 = BM_elem_index_get((BMLoop *)sf_tri->v1->tmp.p);
+			int i2 = BM_elem_index_get((BMLoop *)sf_tri->v2->tmp.p);
+			int i3 = BM_elem_index_get((BMLoop *)sf_tri->v3->tmp.p);
+
+			if (i1 > i2) { SWAP(int, i1, i2); }
+			if (i2 > i3) { SWAP(int, i2, i3); }
+			if (i1 > i2) { SWAP(int, i1, i2); }
+
+			*r_index++ = i1;
+			*r_index++ = i2;
+			*r_index++ = i3;
+		}
+
+		BLI_scanfill_end(&sf_ctx);
+	}
+
+	return totfilltri;
+}
+
+/**
  * get the area of the face
  */
 float BM_face_calc_area(BMFace *f)
@@ -232,6 +327,34 @@ void BM_face_calc_center_mean(BMFace *f, float r_cent[3])
 
 	if (f->len)
 		mul_v3_fl(r_cent, 1.0f / (float) f->len);
+}
+
+/**
+ * computes the center of a face, using the mean average
+ * weighted by edge length
+ */
+void BM_face_calc_center_mean_weighted(BMFace *f, float r_cent[3])
+{
+	BMLoop *l_iter;
+	BMLoop *l_first;
+	float totw = 0.0f;
+	float w_prev;
+
+	zero_v3(r_cent);
+
+
+	l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+	w_prev = BM_edge_calc_length(l_iter->prev->e);
+	do {
+		const float w_curr = BM_edge_calc_length(l_iter->e);
+		const float w = (w_curr + w_prev);
+		madd_v3_v3fl(r_cent, l_iter->v->co, w);
+		totw += w;
+		w_prev = w_curr;
+	} while ((l_iter = l_iter->next) != l_first);
+
+	if (totw != 0.0f)
+		mul_v3_fl(r_cent, 1.0f / (float) totw);
 }
 
 /**
@@ -985,7 +1108,7 @@ void BM_face_legal_splits(BMesh *bm, BMFace *f, BMLoop *(*loops)[2], int len)
  * Small utility functions for fast access
  *
  * faster alternative to:
- *  BM_iter_as_array(bm, BM_VERTS_OF_FACE, f, (void**)v, 3);
+ *  BM_iter_as_array(bm, BM_VERTS_OF_FACE, f, (void **)v, 3);
  */
 void BM_face_as_array_vert_tri(BMFace *f, BMVert *r_verts[3])
 {
@@ -1000,7 +1123,7 @@ void BM_face_as_array_vert_tri(BMFace *f, BMVert *r_verts[3])
 
 /**
  * faster alternative to:
- *  BM_iter_as_array(bm, BM_VERTS_OF_FACE, f, (void**)v, 4);
+ *  BM_iter_as_array(bm, BM_VERTS_OF_FACE, f, (void **)v, 4);
  */
 void BM_face_as_array_vert_quad(BMFace *f, BMVert *r_verts[4])
 {

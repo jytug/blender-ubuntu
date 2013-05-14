@@ -119,25 +119,22 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         layout.prop(md, "end_cap")
 
     def BEVEL(self, layout, ob, md):
-        split = layout.split()
+        layout.prop(md, "width")
+        layout.prop(md, "segments")
 
-        split.prop(md, "width")
+        split = layout.split()
         split.prop(md, "use_only_vertices")
-
-        # -- new modifier only, this may be reverted in favor of 2.62 mod.
-        '''
-        split = layout.split()
-        split.prop(md, "use_even_offset")
-        split.prop(md, "use_distance_offset")
-        '''
-        # -- end
+        split.prop(md, "use_clamp_overlap")
 
         layout.label(text="Limit Method:")
         layout.row().prop(md, "limit_method", expand=True)
         if md.limit_method == 'ANGLE':
             layout.prop(md, "angle_limit")
-        elif md.limit_method == 'WEIGHT':
-            layout.row().prop(md, "edge_weight_method", expand=True)
+        elif md.limit_method == 'VGROUP':
+            layout.label(text="Vertex Group:")
+            layout.prop_search(md, "vertex_group", ob, "vertex_groups", text="")
+        # elif md.limit_method == 'WEIGHT':
+        #    layout.row().prop(md, "edge_weight_method", expand=True)
 
     def BOOLEAN(self, layout, ob, md):
         split = layout.split()
@@ -512,7 +509,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
             row.label()
 
     def OCEAN(self, layout, ob, md):
-        if not md.is_build_enabled:
+        if not bpy.app.build_options.mod_oceansim:
             layout.label("Built without OceanSim modifier")
             return
 
@@ -718,7 +715,10 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
 
         col = split.column()
         col.label(text="Deform:")
-        col.prop(md, "factor")
+        if md.deform_method in {'TAPER', 'STRETCH'}:
+            col.prop(md, "factor")
+        else:
+            col.prop(md, "angle")
         col.prop(md, "limits", slider=True)
         if md.deform_method in {'TAPER', 'STRETCH', 'TWIST'}:
             col.prop(md, "lock_x")
@@ -750,6 +750,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
 
         col = split.column()
         col.prop(md, "thickness")
+        col.prop(md, "thickness_clamp")
         col.prop_search(md, "vertex_group", ob, "vertex_groups", text="")
 
         col.label(text="Crease:")
@@ -761,6 +762,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         col = split.column()
 
         col.prop(md, "offset")
+        col.prop(md, "use_flip_normals")
         sub = col.column()
         sub.active = bool(md.vertex_group)
         sub.prop(md, "invert_vertex_group", text="Invert")
@@ -776,7 +778,6 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         row = row.row()
         row.active = md.use_rim
         row.prop(md, "material_offset_rim", text="Rim")
-        sub.prop(md, "use_flip_normals")
 
     def SUBSURF(self, layout, ob, md):
         layout.row().prop(md, "subdivision_type", expand=True)
@@ -935,9 +936,9 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
             layout.prop(md, "sharpness")
 
         layout.prop(md, "use_smooth_shade")
-        layout.prop(md, "remove_disconnected_pieces")
+        layout.prop(md, "use_remove_disconnected")
         row = layout.row()
-        row.active = md.remove_disconnected_pieces
+        row.active = md.use_remove_disconnected
         row.prop(md, "threshold")
 
     @staticmethod

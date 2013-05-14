@@ -24,15 +24,8 @@
  *  \ingroup RNA
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-
-#include "rna_internal.h"
 
 #include "DNA_action_types.h"
 #include "DNA_customdata_types.h"
@@ -49,8 +42,14 @@
 #include "BLI_utildefines.h"
 
 #include "BKE_paint.h"
-#include "BKE_tessmesh.h"
-#include "BKE_group.h" /* needed for object_in_group() */
+#include "BKE_editmesh.h"
+#include "BKE_group.h" /* needed for BKE_group_object_exists() */
+
+#include "RNA_access.h"
+#include "RNA_define.h"
+#include "RNA_enum_types.h"
+
+#include "rna_internal.h"
 
 #include "BLO_sys_types.h" /* needed for intptr_t used in ED_mesh.h */
 #include "ED_mesh.h"
@@ -182,6 +181,7 @@ EnumPropertyItem object_axis_items[] = {
 #include "BKE_curve.h"
 #include "BKE_depsgraph.h"
 #include "BKE_effect.h"
+#include "BKE_global.h"
 #include "BKE_key.h"
 #include "BKE_object.h"
 #include "BKE_material.h"
@@ -276,7 +276,7 @@ static void rna_Object_active_shape_update(Main *bmain, Scene *scene, PointerRNA
 				EDBM_mesh_load(ob);
 				EDBM_mesh_make(scene->toolsettings, scene, ob);
 				EDBM_mesh_normals_update(((Mesh *)ob->data)->edit_btmesh);
-				BMEdit_RecalcTessellation(((Mesh *)ob->data)->edit_btmesh);
+				BKE_editmesh_tessface_calc(((Mesh *)ob->data)->edit_btmesh);
 				break;
 			case OB_CURVE:
 			case OB_SURF:
@@ -293,12 +293,10 @@ static void rna_Object_active_shape_update(Main *bmain, Scene *scene, PointerRNA
 	rna_Object_internal_update_data(bmain, scene, ptr);
 }
 
-static void rna_Object_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Object_dependency_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	DAG_id_tag_update(ptr->id.data, OB_RECALC_OB);
-	if (scene) {
-		DAG_scene_sort(bmain, scene);
-	}
+	DAG_relations_tag_update(bmain);
 	WM_main_add_notifier(NC_OBJECT | ND_PARENT, ptr->id.data);
 }
 
@@ -332,7 +330,7 @@ static void rna_Object_layer_update__internal(Main *bmain, Scene *scene, Base *b
 		/* pass */
 	}
 	else {
-		DAG_scene_sort(bmain, scene);
+		DAG_relations_tag_update(bmain);
 	}
 
 	DAG_id_type_tag(bmain, ID_OB);
@@ -386,7 +384,7 @@ static void rna_Object_data_set(PointerRNA *ptr, PointerRNA value)
 		}
 	}
 	else if (ob->type == OB_MESH) {
-		set_mesh(ob, (Mesh *)id);
+		BKE_mesh_assign_object(ob, (Mesh *)id);
 	}
 	else {
 		if (ob->data) {
@@ -399,7 +397,7 @@ static void rna_Object_data_set(PointerRNA *ptr, PointerRNA value)
 		}
 
 		ob->data = id;
-		test_object_materials(id);
+		test_object_materials(G.main, id);
 
 		if (GS(id->name) == ID_CU)
 			BKE_curve_type_test(ob);
@@ -523,7 +521,7 @@ static void rna_Object_dup_group_set(PointerRNA *ptr, PointerRNA value)
 	/* must not let this be set if the object belongs in this group already,
 	 * thus causing a cycle/infinite-recursion leading to crashes on load [#25298]
 	 */
-	if (object_in_group(ob, grp) == 0)
+	if (BKE_group_object_exists(grp, ob) == 0)
 		ob->dup_group = grp;
 	else
 		BKE_report(NULL, RPT_ERROR,
@@ -1313,7 +1311,7 @@ static ModifierData *rna_Object_modifier_new(Object *object, bContext *C, Report
 static void rna_Object_modifier_remove(Object *object, bContext *C, ReportList *reports, PointerRNA *md_ptr)
 {
 	ModifierData *md = md_ptr->data;
-	if (ED_object_modifier_remove(reports, CTX_data_main(C), CTX_data_scene(C), object, md) == FALSE) {
+	if (ED_object_modifier_remove(reports, CTX_data_main(C), object, md) == FALSE) {
 		/* error is already set */
 		return;
 	}
@@ -1325,7 +1323,7 @@ static void rna_Object_modifier_remove(Object *object, bContext *C, ReportList *
 
 static void rna_Object_modifier_clear(Object *object, bContext *C)
 {
-	ED_object_modifier_clear(CTX_data_main(C), CTX_data_scene(C), object);
+	ED_object_modifier_clear(CTX_data_main(C), object);
 
 	WM_main_add_notifier(NC_OBJECT | ND_MODIFIER | NA_REMOVED, object);
 }
@@ -2033,6 +2031,7 @@ static void rna_def_object(BlenderRNA *brna)
 		{OB_BOUND_SPHERE, "SPHERE", 0, "Sphere", "Draw bounds as sphere"},
 		{OB_BOUND_CYLINDER, "CYLINDER", 0, "Cylinder", "Draw bounds as cylinder"},
 		{OB_BOUND_CONE, "CONE", 0, "Cone", "Draw bounds as cone"},
+		{OB_BOUND_CAPSULE, "CAPSULE", 0, "Capsule", "Draw bounds as capsule"},
 		{0, NULL, 0, NULL, NULL}
 	};
 
@@ -2480,11 +2479,11 @@ static void rna_def_object(BlenderRNA *brna)
 	RNA_def_property_update(prop, NC_OBJECT | ND_TRANSFORM, "rna_Object_internal_update");
 	
 	/* depsgraph hack */
-	prop = RNA_def_property(srna, "extra_recalc_object", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_extra_recalc_object", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "depsflag", OB_DEPS_EXTRA_OB_RECALC);
 	RNA_def_property_ui_text(prop, "Extra Object Update", "Refresh this object again on frame changes, dependency graph hack");
 	
-	prop = RNA_def_property(srna, "extra_recalc_data", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_extra_recalc_data", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "depsflag", OB_DEPS_EXTRA_DATA_RECALC);
 	RNA_def_property_ui_text(prop, "Extra Data Update", "Refresh this object's data again on frame changes, dependency graph hack");
 	
@@ -2539,14 +2538,14 @@ static void rna_def_object(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "dupli_frames_on", PROP_INT, PROP_NONE | PROP_UNIT_TIME);
 	RNA_def_property_int_sdna(prop, NULL, "dupon");
 	RNA_def_property_range(prop, MINFRAME, MAXFRAME);
-	RNA_def_property_ui_range(prop, 1, 1500, 1, 0);
+	RNA_def_property_ui_range(prop, 1, 1500, 1, -1);
 	RNA_def_property_ui_text(prop, "Dupli Frames On", "Number of frames to use between DupOff frames");
 	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Object_internal_update");
 
 	prop = RNA_def_property(srna, "dupli_frames_off", PROP_INT, PROP_NONE | PROP_UNIT_TIME);
 	RNA_def_property_int_sdna(prop, NULL, "dupoff");
 	RNA_def_property_range(prop, 0, MAXFRAME);
-	RNA_def_property_ui_range(prop, 0, 1500, 1, 0);
+	RNA_def_property_ui_range(prop, 0, 1500, 1, -1);
 	RNA_def_property_ui_text(prop, "Dupli Frames Off", "Recurring frames to exclude from the Dupliframes");
 	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Object_internal_update");
 

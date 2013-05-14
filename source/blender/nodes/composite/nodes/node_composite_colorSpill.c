@@ -34,7 +34,7 @@
 /* ******************* Color Spill Supression ********************************* */
 static bNodeSocketTemplate cmp_node_color_spill_in[] = {
 	{SOCK_RGBA, 1, N_("Image"), 1.0f, 1.0f, 1.0f, 1.0f},
-	{SOCK_FLOAT, 1, N_("Fac"),	1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
+	{SOCK_FLOAT, 1, N_("Fac"),	1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
 	{-1, 0, ""}
 };
 
@@ -43,7 +43,7 @@ static bNodeSocketTemplate cmp_node_color_spill_out[] = {
 	{-1, 0, ""}
 };
 
-static void node_composit_init_color_spill(bNodeTree *UNUSED(ntree), bNode *node, bNodeTemplate *UNUSED(ntemp))
+static void node_composit_init_color_spill(bNodeTree *UNUSED(ntree), bNode *node)
 {
 	NodeColorspill *ncs= MEM_callocN(sizeof(NodeColorspill), "node colorspill");
 	node->storage=ncs;
@@ -54,15 +54,14 @@ static void node_composit_init_color_spill(bNodeTree *UNUSED(ntree), bNode *node
 	ncs->unspill=0;   /* do not use unspill */
 }
 
-void register_node_type_cmp_color_spill(bNodeTreeType *ttype)
+void register_node_type_cmp_color_spill(void)
 {
 	static bNodeType ntype;
 	
-	node_type_base(ttype, &ntype, CMP_NODE_COLOR_SPILL, "Color Spill", NODE_CLASS_MATTE, NODE_OPTIONS);
+	cmp_node_type_base(&ntype, CMP_NODE_COLOR_SPILL, "Color Spill", NODE_CLASS_MATTE, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_color_spill_in, cmp_node_color_spill_out);
-	node_type_size(&ntype, 140, 80, 200);
 	node_type_init(&ntype, node_composit_init_color_spill);
 	node_type_storage(&ntype, "NodeColorspill", node_free_standard_storage, node_copy_standard_storage);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

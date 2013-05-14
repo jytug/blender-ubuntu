@@ -187,7 +187,7 @@ KX_GameObject::~KX_GameObject()
 #endif // WITH_PYTHON
 }
 
-KX_GameObject* KX_GameObject::GetClientObject(KX_ClientObjectInfo* info)
+KX_GameObject* KX_GameObject::GetClientObject(KX_ClientObjectInfo *info)
 {
 	if (!info)
 		return NULL;
@@ -1572,7 +1572,7 @@ static int mathutils_kxgameob_vector_set_index(BaseMathObject *bmo, int subtype,
 	return mathutils_kxgameob_vector_set(bmo, subtype);
 }
 
-Mathutils_Callback mathutils_kxgameob_vector_cb = {
+static Mathutils_Callback mathutils_kxgameob_vector_cb = {
 	mathutils_kxgameob_generic_check,
 	mathutils_kxgameob_vector_get,
 	mathutils_kxgameob_vector_set,
@@ -1628,7 +1628,7 @@ static int mathutils_kxgameob_matrix_set(BaseMathObject *bmo, int subtype)
 	return 0;
 }
 
-Mathutils_Callback mathutils_kxgameob_matrix_cb = {
+static Mathutils_Callback mathutils_kxgameob_matrix_cb = {
 	mathutils_kxgameob_generic_check,
 	mathutils_kxgameob_matrix_get,
 	mathutils_kxgameob_matrix_set,
@@ -1800,7 +1800,7 @@ static PyObject *Map_GetItem(PyObject *self_v, PyObject *item)
 	PyObject *pyconvert;
 	
 	if (self == NULL) {
-		PyErr_SetString(PyExc_SystemError, "val = gameOb[key]: KX_GameObject, "BGE_PROXY_ERROR_MSG);
+		PyErr_SetString(PyExc_SystemError, "val = gameOb[key]: KX_GameObject, " BGE_PROXY_ERROR_MSG);
 		return NULL;
 	}
 	
@@ -1834,7 +1834,7 @@ static int Map_SetItem(PyObject *self_v, PyObject *key, PyObject *val)
 		PyErr_Clear();
 	
 	if (self == NULL) {
-		PyErr_SetString(PyExc_SystemError, "gameOb[key] = value: KX_GameObject, "BGE_PROXY_ERROR_MSG);
+		PyErr_SetString(PyExc_SystemError, "gameOb[key] = value: KX_GameObject, " BGE_PROXY_ERROR_MSG);
 		return -1;
 	}
 	
@@ -1858,15 +1858,14 @@ static int Map_SetItem(PyObject *self_v, PyObject *key, PyObject *val)
 		}
 	}
 	else { /* ob["key"] = value */
-		int set= 0;
+		bool set = false;
 		
 		/* as CValue */
 		if (attr_str && PyObject_TypeCheck(val, &PyObjectPlus::Type)==0) /* don't allow GameObjects for eg to be assigned to CValue props */
 		{
-			CValue* vallie = self->ConvertPythonToValue(val, ""); /* error unused */
+			CValue *vallie = self->ConvertPythonToValue(val, false, "gameOb[key] = value: ");
 			
-			if (vallie)
-			{
+			if (vallie) {
 				CValue* oldprop = self->GetProperty(attr_str);
 				
 				if (oldprop)
@@ -1875,7 +1874,7 @@ static int Map_SetItem(PyObject *self_v, PyObject *key, PyObject *val)
 					self->SetProperty(attr_str, vallie);
 				
 				vallie->Release();
-				set= 1;
+				set = true;
 				
 				/* try remove dict value to avoid double ups */
 				if (self->m_attr_dict) {
@@ -1883,13 +1882,12 @@ static int Map_SetItem(PyObject *self_v, PyObject *key, PyObject *val)
 						PyErr_Clear();
 				}
 			}
-			else {
-				PyErr_Clear();
+			else if (PyErr_Occurred()) {
+				return -1;
 			}
 		}
 		
-		if (set==0)
-		{
+		if (set == false) {
 			if (self->m_attr_dict==NULL) /* lazy init */
 				self->m_attr_dict= PyDict_New();
 			
@@ -1898,7 +1896,7 @@ static int Map_SetItem(PyObject *self_v, PyObject *key, PyObject *val)
 			{
 				if (attr_str)
 					self->RemoveProperty(attr_str); /* overwrite the CValue if it exists */
-				set= 1;
+				set = true;
 			}
 			else {
 				if (attr_str)	PyErr_Format(PyExc_KeyError, "gameOb[key] = value: KX_GameObject, key \"%s\" not be added to internal dictionary", attr_str);
@@ -1906,8 +1904,9 @@ static int Map_SetItem(PyObject *self_v, PyObject *key, PyObject *val)
 			}
 		}
 		
-		if (set==0)
+		if (set == false) {
 			return -1; /* pythons error value */
+		}
 		
 	}
 	
@@ -1919,7 +1918,7 @@ static int Seq_Contains(PyObject *self_v, PyObject *value)
 	KX_GameObject* self = static_cast<KX_GameObject*>BGE_PROXY_REF(self_v);
 	
 	if (self == NULL) {
-		PyErr_SetString(PyExc_SystemError, "val in gameOb: KX_GameObject, "BGE_PROXY_ERROR_MSG);
+		PyErr_SetString(PyExc_SystemError, "val in gameOb: KX_GameObject, " BGE_PROXY_ERROR_MSG);
 		return -1;
 	}
 	
@@ -2742,11 +2741,11 @@ PyObject *KX_GameObject::PyGetReactionForce()
 	// only can get the velocity if we have a physics object connected to us...
 	
 	// XXX - Currently not working with bullet intergration, see KX_BulletPhysicsController.cpp's getReactionForce
-	/*
+#if 0
 	if (GetPhysicsController())
 		return PyObjectFrom(GetPhysicsController()->getReactionForce());
 	return PyObjectFrom(dummy_point);
-	*/
+#endif
 	
 	return Py_BuildValue("fff", 0.0, 0.0, 0.0);
 	
@@ -2987,7 +2986,7 @@ KX_PYMETHODDEF_DOC_O(KX_GameObject, getVectTo,
 	return returnValue;
 }
 
-bool KX_GameObject::RayHit(KX_ClientObjectInfo* client, KX_RayCast* result, void * const data)
+bool KX_GameObject::RayHit(KX_ClientObjectInfo *client, KX_RayCast *result, void * const data)
 {
 	KX_GameObject* hitKXObj = client->m_gameobject;
 	
@@ -3006,7 +3005,7 @@ bool KX_GameObject::RayHit(KX_ClientObjectInfo* client, KX_RayCast* result, void
 /* this function is used to pre-filter the object before casting the ray on them.
  * This is useful for "X-Ray" option when we want to see "through" unwanted object.
  */
-bool KX_GameObject::NeedRayCast(KX_ClientObjectInfo* client)
+bool KX_GameObject::NeedRayCast(KX_ClientObjectInfo *client)
 {
 	KX_GameObject* hitKXObj = client->m_gameobject;
 	

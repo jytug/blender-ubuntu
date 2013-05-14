@@ -33,7 +33,6 @@
 
 #include "DNA_mesh_types.h"
 #include "DNA_object_types.h"
-#include "DNA_scene_types.h"
 
 #include "BLI_math.h"
 
@@ -43,7 +42,8 @@
 #include "BKE_key.h"
 #include "BKE_mesh.h"
 #include "BKE_report.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
+#include "BKE_editmesh_bvh.h"
 
 #include "BKE_object.h"  /* XXX. only for EDBM_mesh_ensure_valid_dm_hack() which will be removed */
 
@@ -51,10 +51,11 @@
 #include "WM_types.h"
 
 #include "ED_mesh.h"
+#include "ED_screen.h"
 #include "ED_util.h"
+#include "ED_view3d.h"
 
-
-#include "mesh_intern.h"
+#include "mesh_intern.h"  /* own include */
 
 /* mesh backup implementation. This would greatly benefit from some sort of binary diffing
  * just as the undo stack would. So leaving this as an interface for further work */
@@ -79,7 +80,7 @@ void EDBM_redo_state_restore(BMBackup backup, BMEditMesh *em, int recalctess)
 	tmpbm = NULL;
 
 	if (recalctess)
-		BMEdit_RecalcTessellation(em);
+		BKE_editmesh_tessface_calc(em);
 }
 
 void EDBM_redo_state_free(BMBackup *backup, BMEditMesh *em, int recalctess)
@@ -97,7 +98,7 @@ void EDBM_redo_state_free(BMBackup *backup, BMEditMesh *em, int recalctess)
 	backup->bmcopy = NULL;
 
 	if (recalctess && em)
-		BMEdit_RecalcTessellation(em);
+		BKE_editmesh_tessface_calc(em);
 }
 
 /* hack to workaround multiple operators being called within the same event loop without an update
@@ -114,7 +115,7 @@ void EDBM_mesh_ensure_valid_dm_hack(Scene *scene, BMEditMesh *em)
 
 void EDBM_mesh_normals_update(BMEditMesh *em)
 {
-	BM_mesh_normals_update(em->bm, TRUE);
+	BM_mesh_normals_update(em->bm);
 }
 
 void EDBM_mesh_clear(BMEditMesh *em)
@@ -169,7 +170,7 @@ void EDBM_stats_update(BMEditMesh *em)
 	}
 }
 
-int EDBM_op_init(BMEditMesh *em, BMOperator *bmop, wmOperator *op, const char *fmt, ...)
+bool EDBM_op_init(BMEditMesh *em, BMOperator *bmop, wmOperator *op, const char *fmt, ...)
 {
 	BMesh *bm = em->bm;
 	va_list list;
@@ -179,21 +180,21 @@ int EDBM_op_init(BMEditMesh *em, BMOperator *bmop, wmOperator *op, const char *f
 	if (!BMO_op_vinitf(bm, bmop, BMO_FLAG_DEFAULTS, fmt, list)) {
 		BKE_reportf(op->reports, RPT_ERROR, "Parse error in %s", __func__);
 		va_end(list);
-		return 0;
+		return false;
 	}
 	
 	if (!em->emcopy)
-		em->emcopy = BMEdit_Copy(em);
+		em->emcopy = BKE_editmesh_copy(em);
 	em->emcopyusers++;
 
 	va_end(list);
 
-	return 1;
+	return true;
 }
 
 
 /* returns 0 on error, 1 on success.  executes and finishes a bmesh operator */
-int EDBM_op_finish(BMEditMesh *em, BMOperator *bmop, wmOperator *op, const int report)
+bool EDBM_op_finish(BMEditMesh *em, BMOperator *bmop, wmOperator *op, const bool do_report)
 {
 	const char *errmsg;
 	
@@ -202,7 +203,7 @@ int EDBM_op_finish(BMEditMesh *em, BMOperator *bmop, wmOperator *op, const int r
 	if (BMO_error_get(em->bm, &errmsg, NULL)) {
 		BMEditMesh *emcopy = em->emcopy;
 
-		if (report) {
+		if (do_report) {
 			BKE_report(op->reports, RPT_ERROR, errmsg);
 		}
 
@@ -216,10 +217,10 @@ int EDBM_op_finish(BMEditMesh *em, BMOperator *bmop, wmOperator *op, const int r
 		/* when copying, tessellation isn't to for faster copying,
 		 * but means we need to re-tessellate here */
 		if (em->looptris == NULL) {
-			BMEdit_RecalcTessellation(em);
+			BKE_editmesh_tessface_calc(em);
 		}
 
-		return FALSE;
+		return false;
 	}
 	else {
 		em->emcopyusers--;
@@ -228,16 +229,16 @@ int EDBM_op_finish(BMEditMesh *em, BMOperator *bmop, wmOperator *op, const int r
 		}
 
 		if (em->emcopyusers <= 0) {
-			BMEdit_Free(em->emcopy);
+			BKE_editmesh_free(em->emcopy);
 			MEM_freeN(em->emcopy);
 			em->emcopy = NULL;
 		}
 
-		return TRUE;
+		return true;
 	}
 }
 
-int EDBM_op_callf(BMEditMesh *em, wmOperator *op, const char *fmt, ...)
+bool EDBM_op_callf(BMEditMesh *em, wmOperator *op, const char *fmt, ...)
 {
 	BMesh *bm = em->bm;
 	BMOperator bmop;
@@ -248,20 +249,20 @@ int EDBM_op_callf(BMEditMesh *em, wmOperator *op, const char *fmt, ...)
 	if (!BMO_op_vinitf(bm, &bmop, BMO_FLAG_DEFAULTS, fmt, list)) {
 		BKE_reportf(op->reports, RPT_ERROR, "Parse error in %s", __func__);
 		va_end(list);
-		return 0;
+		return false;
 	}
 
 	if (!em->emcopy)
-		em->emcopy = BMEdit_Copy(em);
+		em->emcopy = BKE_editmesh_copy(em);
 	em->emcopyusers++;
 
 	BMO_op_exec(bm, &bmop);
 
 	va_end(list);
-	return EDBM_op_finish(em, &bmop, op, TRUE);
+	return EDBM_op_finish(em, &bmop, op, true);
 }
 
-int EDBM_op_call_and_selectf(BMEditMesh *em, wmOperator *op, const char *select_slot_out, const char *fmt, ...)
+bool EDBM_op_call_and_selectf(BMEditMesh *em, wmOperator *op, const char *select_slot_out, const char *fmt, ...)
 {
 	BMOpSlot *slot_select_out;
 	BMesh *bm = em->bm;
@@ -274,11 +275,11 @@ int EDBM_op_call_and_selectf(BMEditMesh *em, wmOperator *op, const char *select_
 	if (!BMO_op_vinitf(bm, &bmop, BMO_FLAG_DEFAULTS, fmt, list)) {
 		BKE_reportf(op->reports, RPT_ERROR, "Parse error in %s", __func__);
 		va_end(list);
-		return 0;
+		return false;
 	}
 
 	if (!em->emcopy)
-		em->emcopy = BMEdit_Copy(em);
+		em->emcopy = BKE_editmesh_copy(em);
 	em->emcopyusers++;
 
 	BMO_op_exec(bm, &bmop);
@@ -286,15 +287,15 @@ int EDBM_op_call_and_selectf(BMEditMesh *em, wmOperator *op, const char *select_
 	slot_select_out = BMO_slot_get(bmop.slots_out, select_slot_out);
 	hflag = slot_select_out->slot_subtype.elem & BM_ALL_NOLOOP;
 
-	BM_mesh_elem_hflag_disable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_SELECT, FALSE);
+	BM_mesh_elem_hflag_disable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_SELECT, false);
 
-	BMO_slot_buffer_hflag_enable(em->bm, bmop.slots_out, select_slot_out, hflag, BM_ELEM_SELECT, TRUE);
+	BMO_slot_buffer_hflag_enable(em->bm, bmop.slots_out, select_slot_out, hflag, BM_ELEM_SELECT, true);
 
 	va_end(list);
-	return EDBM_op_finish(em, &bmop, op, TRUE);
+	return EDBM_op_finish(em, &bmop, op, true);
 }
 
-int EDBM_op_call_silentf(BMEditMesh *em, const char *fmt, ...)
+bool EDBM_op_call_silentf(BMEditMesh *em, const char *fmt, ...)
 {
 	BMesh *bm = em->bm;
 	BMOperator bmop;
@@ -304,24 +305,24 @@ int EDBM_op_call_silentf(BMEditMesh *em, const char *fmt, ...)
 
 	if (!BMO_op_vinitf(bm, &bmop, BMO_FLAG_DEFAULTS, fmt, list)) {
 		va_end(list);
-		return 0;
+		return false;
 	}
 
 	if (!em->emcopy)
-		em->emcopy = BMEdit_Copy(em);
+		em->emcopy = BKE_editmesh_copy(em);
 	em->emcopyusers++;
 
 	BMO_op_exec(bm, &bmop);
 
 	va_end(list);
-	return EDBM_op_finish(em, &bmop, NULL, FALSE);
+	return EDBM_op_finish(em, &bmop, NULL, false);
 }
 
 void EDBM_selectmode_to_scene(bContext *C)
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *obedit = CTX_data_edit_object(C);
-	BMEditMesh *em = BMEdit_FromObject(obedit);
+	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 
 	if (!em)
 		return;
@@ -352,9 +353,9 @@ void EDBM_mesh_make(ToolSettings *ts, Scene *UNUSED(scene), Object *ob)
 	/* currently executing operators re-tessellates, so we can avoid doing here
 	 * but at some point it may need to be added back. */
 #if 0
-	me->edit_btmesh = BMEdit_Create(bm, TRUE);
+	me->edit_btmesh = BKE_editmesh_create(bm, true);
 #else
-	me->edit_btmesh = BMEdit_Create(bm, FALSE);
+	me->edit_btmesh = BKE_editmesh_create(bm, false);
 #endif
 
 	me->edit_btmesh->selectmode = me->edit_btmesh->bm->selectmode = ts->selectmode;
@@ -368,7 +369,7 @@ void EDBM_mesh_load(Object *ob)
 	Mesh *me = ob->data;
 	BMesh *bm = me->edit_btmesh->bm;
 
-	BM_mesh_bm_to_me(bm, me, FALSE);
+	BM_mesh_bm_to_me(bm, me, false);
 
 #ifdef USE_TESSFACE_DEFAULT
 	BKE_mesh_tessface_calc(me);
@@ -376,7 +377,7 @@ void EDBM_mesh_load(Object *ob)
 }
 
 /**
- * Should only be called on the active editmesh, otherwise call #BMEdit_Free
+ * Should only be called on the active editmesh, otherwise call #BKE_editmesh_free
  */
 void EDBM_mesh_free(BMEditMesh *em)
 {
@@ -386,7 +387,7 @@ void EDBM_mesh_free(BMEditMesh *em)
 	mesh_octree_table(NULL, NULL, NULL, 'e');
 	mesh_mirrtopo_table(NULL, 'e');
 
-	BMEdit_Free(em);
+	BKE_editmesh_free(em);
 }
 
 
@@ -400,7 +401,7 @@ void EDBM_index_arrays_ensure(BMEditMesh *em, const char htype)
 	BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
 
 	/* in debug mode double check we didn't need to recalculate */
-	BLI_assert(EDBM_index_arrays_check(em) == TRUE);
+	BLI_assert(EDBM_index_arrays_check(em) == true);
 
 	if (htype_needed & BM_VERT) {
 		em->vert_index = MEM_mallocN(sizeof(void **) * em->bm->totvert, "em->vert_index");
@@ -465,7 +466,7 @@ void EDBM_index_arrays_free(BMEditMesh *em)
 
 /* debug check only - no need to optimize */
 #ifndef NDEBUG
-int EDBM_index_arrays_check(BMEditMesh *em)
+bool EDBM_index_arrays_check(BMEditMesh *em)
 {
 	BMIter iter;
 	BMElem *ele;
@@ -474,7 +475,7 @@ int EDBM_index_arrays_check(BMEditMesh *em)
 	if (em->vert_index) {
 		BM_ITER_MESH_INDEX (ele, &iter, em->bm, BM_VERTS_OF_MESH, i) {
 			if (ele != (BMElem *)em->vert_index[i]) {
-				return FALSE;
+				return false;
 			}
 		}
 	}
@@ -482,7 +483,7 @@ int EDBM_index_arrays_check(BMEditMesh *em)
 	if (em->edge_index) {
 		BM_ITER_MESH_INDEX (ele, &iter, em->bm, BM_EDGES_OF_MESH, i) {
 			if (ele != (BMElem *)em->edge_index[i]) {
-				return FALSE;
+				return false;
 			}
 		}
 	}
@@ -490,12 +491,12 @@ int EDBM_index_arrays_check(BMEditMesh *em)
 	if (em->face_index) {
 		BM_ITER_MESH_INDEX (ele, &iter, em->bm, BM_FACES_OF_MESH, i) {
 			if (ele != (BMElem *)em->face_index[i]) {
-				return FALSE;
+				return false;
 			}
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 #endif
 
@@ -546,10 +547,10 @@ void EDBM_select_more(BMEditMesh *em)
 
 	BMO_op_initf(em->bm, &bmop, BMO_FLAG_DEFAULTS,
 	             "region_extend geom=%hvef use_constrict=%b use_faces=%b",
-	             BM_ELEM_SELECT, FALSE, use_faces);
+	             BM_ELEM_SELECT, false, use_faces);
 	BMO_op_exec(em->bm, &bmop);
 	/* don't flush selection in edge/vertex mode  */
-	BMO_slot_buffer_hflag_enable(em->bm, bmop.slots_out, "geom.out", BM_ALL_NOLOOP, BM_ELEM_SELECT, use_faces ? TRUE : FALSE);
+	BMO_slot_buffer_hflag_enable(em->bm, bmop.slots_out, "geom.out", BM_ALL_NOLOOP, BM_ELEM_SELECT, use_faces ? true : false);
 	BMO_op_finish(em->bm, &bmop);
 
 	EDBM_selectmode_flush(em);
@@ -562,10 +563,10 @@ void EDBM_select_less(BMEditMesh *em)
 
 	BMO_op_initf(em->bm, &bmop, BMO_FLAG_DEFAULTS,
 	             "region_extend geom=%hvef use_constrict=%b use_faces=%b",
-	             BM_ELEM_SELECT, TRUE, use_faces);
+	             BM_ELEM_SELECT, true, use_faces);
 	BMO_op_exec(em->bm, &bmop);
 	/* don't flush selection in edge/vertex mode  */
-	BMO_slot_buffer_hflag_disable(em->bm, bmop.slots_out, "geom.out", BM_ALL_NOLOOP, BM_ELEM_SELECT, use_faces ? TRUE : FALSE);
+	BMO_slot_buffer_hflag_disable(em->bm, bmop.slots_out, "geom.out", BM_ALL_NOLOOP, BM_ELEM_SELECT, use_faces ? true : false);
 	BMO_op_finish(em->bm, &bmop);
 
 	EDBM_selectmode_flush(em);
@@ -573,12 +574,12 @@ void EDBM_select_less(BMEditMesh *em)
 
 void EDBM_flag_disable_all(BMEditMesh *em, const char hflag)
 {
-	BM_mesh_elem_hflag_disable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, hflag, FALSE);
+	BM_mesh_elem_hflag_disable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, hflag, false);
 }
 
 void EDBM_flag_enable_all(BMEditMesh *em, const char hflag)
 {
-	BM_mesh_elem_hflag_enable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, hflag, TRUE);
+	BM_mesh_elem_hflag_enable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, hflag, true);
 }
 
 /**************-------------- Undo ------------*****************/
@@ -623,7 +624,7 @@ static void *editbtMesh_to_undoMesh(void *emv, void *obdata)
 
 	/* BM_mesh_validate(em->bm); */ /* for troubleshooting */
 
-	BM_mesh_bm_to_me(em->bm, &um->me, FALSE);
+	BM_mesh_bm_to_me(em->bm, &um->me, false);
 
 	um->selectmode = em->selectmode;
 	um->shapenr = em->bm->shapenr;
@@ -644,12 +645,12 @@ static void undoMesh_to_editbtMesh(void *umv, void *em_v, void *UNUSED(obdata))
 
 	bm = BM_mesh_create(&bm_mesh_allocsize_default);
 
-	BM_mesh_bm_from_me(bm, &um->me, FALSE, ob->shapenr);
+	BM_mesh_bm_from_me(bm, &um->me, false, ob->shapenr);
 
 	/* face normals need recalculation since we are not calling through an operator */
-	BM_mesh_normals_update(bm, TRUE);
+	BM_mesh_normals_update(bm);
 
-	em_tmp = BMEdit_Create(bm, TRUE);
+	em_tmp = BKE_editmesh_create(bm, true);
 	*em = *em_tmp;
 	
 	em->selectmode = um->selectmode;
@@ -667,7 +668,7 @@ static void free_undo(void *me_v)
 		MEM_freeN(me->key);
 	}
 
-	BKE_mesh_free(me, FALSE);
+	BKE_mesh_free(me, false);
 	MEM_freeN(me);
 }
 
@@ -678,7 +679,7 @@ void undo_push_mesh(bContext *C, const char *name)
 	 * this is an easy way to ensure its OK
 	 * though we could investigate the matter further. */
 	Object *obedit = CTX_data_edit_object(C);
-	BMEditMesh *em = BMEdit_FromObject(obedit);
+	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 	em->ob = obedit;
 
 	undo_editmode_push(C, name, getEditMesh, free_undo, undoMesh_to_editbtMesh, editbtMesh_to_undoMesh, NULL);
@@ -817,7 +818,7 @@ UvMapVert *EDBM_uv_vert_map_at_index(UvVertMap *vmap, unsigned int v)
 
 
 /* A specialized vert map used by stitch operator */
-UvElementMap *EDBM_uv_element_map_create(BMEditMesh *em, int selected, int do_islands)
+UvElementMap *EDBM_uv_element_map_create(BMEditMesh *em, const bool selected, const bool do_islands)
 {
 	BMVert *ev;
 	BMFace *efa;
@@ -1071,7 +1072,7 @@ UvElement *ED_uv_element_get(UvElementMap *map, BMFace *efa, BMLoop *l)
 
 /* last_sel, use em->act_face otherwise get the last selected face in the editselections
  * at the moment, last_sel is mainly useful for making sure the space image dosnt flicker */
-MTexPoly *EDBM_mtexpoly_active_get(BMEditMesh *em, BMFace **r_act_efa, int sloppy, int selected)
+MTexPoly *EDBM_mtexpoly_active_get(BMEditMesh *em, BMFace **r_act_efa, const bool sloppy, const bool selected)
 {
 	BMFace *efa = NULL;
 	
@@ -1090,14 +1091,14 @@ MTexPoly *EDBM_mtexpoly_active_get(BMEditMesh *em, BMFace **r_act_efa, int slopp
 }
 
 /* can we edit UV's for this mesh?*/
-int EDBM_mtexpoly_check(BMEditMesh *em)
+bool EDBM_mtexpoly_check(BMEditMesh *em)
 {
 	/* some of these checks could be a touch overkill */
 	return em && em->bm->totface && CustomData_has_layer(&em->bm->pdata, CD_MTEXPOLY) &&
 	       CustomData_has_layer(&em->bm->ldata, CD_MLOOPUV);
 }
 
-int EDBM_vert_color_check(BMEditMesh *em)
+bool EDBM_vert_color_check(BMEditMesh *em)
 {
 	/* some of these checks could be a touch overkill */
 	return em && em->bm->totface && CustomData_has_layer(&em->bm->ldata, CD_MLOOPCOL);
@@ -1133,7 +1134,7 @@ static BMVert *cache_mirr_intptr_as_bmvert(intptr_t *index_lookup, int index)
  * preference */
 #define BM_SEARCH_MAXDIST_MIRR 0.00002f
 #define BM_CD_LAYER_ID "__mirror_index"
-void EDBM_verts_mirror_cache_begin(BMEditMesh *em, const short use_select)
+void EDBM_verts_mirror_cache_begin(BMEditMesh *em, const bool use_select)
 {
 	Mesh *me = (Mesh *)em->ob->data;
 	BMesh *bm = em->bm;
@@ -1162,10 +1163,10 @@ void EDBM_verts_mirror_cache_begin(BMEditMesh *em, const short use_select)
 	BM_mesh_elem_index_ensure(bm, BM_VERT);
 
 	if (topo) {
-		ED_mesh_mirrtopo_init(me, -1, &mesh_topo_store, TRUE);
+		ED_mesh_mirrtopo_init(me, -1, &mesh_topo_store, true);
 	}
 	else {
-		tree = BMBVH_NewBVH(em, 0, NULL, NULL);
+		tree = BKE_bmbvh_new(em, 0, NULL, false);
 	}
 
 	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
@@ -1183,7 +1184,7 @@ void EDBM_verts_mirror_cache_begin(BMEditMesh *em, const short use_select)
 			}
 			else {
 				float co[3] = {-v->co[0], v->co[1], v->co[2]};
-				mirr = BMBVH_FindClosestVert(tree, co, BM_SEARCH_MAXDIST_MIRR);
+				mirr = BKE_bmbvh_find_vert_closest(tree, co, BM_SEARCH_MAXDIST_MIRR);
 			}
 
 			if (mirr && mirr != v) {
@@ -1203,7 +1204,7 @@ void EDBM_verts_mirror_cache_begin(BMEditMesh *em, const short use_select)
 		ED_mesh_mirrtopo_free(&mesh_topo_store);
 	}
 	else {
-		BMBVH_FreeBVH(tree);
+		BKE_bmbvh_free(tree);
 	}
 
 	em->mirror_cdlayer = li;
@@ -1266,11 +1267,12 @@ void EDBM_verts_mirror_apply(BMEditMesh *em, const int sel_from, const int sel_t
 
 
 /* swap is 0 or 1, if 1 it hides not selected */
-void EDBM_mesh_hide(BMEditMesh *em, int swap)
+void EDBM_mesh_hide(BMEditMesh *em, bool swap)
 {
 	BMIter iter;
 	BMElem *ele;
 	int itermode;
+	char hflag_swap = swap ? BM_ELEM_SELECT : 0;
 
 	if (em == NULL) return;
 
@@ -1282,8 +1284,8 @@ void EDBM_mesh_hide(BMEditMesh *em, int swap)
 		itermode = BM_FACES_OF_MESH;
 
 	BM_ITER_MESH (ele, &iter, em->bm, itermode) {
-		if (BM_elem_flag_test(ele, BM_ELEM_SELECT) ^ swap)
-			BM_elem_hide_set(em->bm, ele, TRUE);
+		if (BM_elem_flag_test(ele, BM_ELEM_SELECT) ^ hflag_swap)
+			BM_elem_hide_set(em->bm, ele, true);
 	}
 
 	EDBM_selectmode_flush(em);
@@ -1335,7 +1337,7 @@ void EDBM_mesh_reveal(BMEditMesh *em)
 
 		BM_ITER_MESH (ele, &iter, em->bm, iter_types[i]) {
 			if (BM_elem_flag_test(ele, BM_ELEM_TAG)) {
-				BM_elem_select_set(em->bm, ele, TRUE);
+				BM_elem_select_set(em->bm, ele, true);
 			}
 		}
 	}
@@ -1356,7 +1358,7 @@ void EDBM_update_generic(BMEditMesh *em, const bool do_tessface, const bool is_d
 	WM_main_add_notifier(NC_GEOM | ND_DATA, ob->data);
 
 	if (do_tessface) {
-		BMEdit_RecalcTessellation(em);
+		BKE_editmesh_tessface_calc(em);
 	}
 
 	if (is_destructive) {
@@ -1364,6 +1366,102 @@ void EDBM_update_generic(BMEditMesh *em, const bool do_tessface, const bool is_d
 	}
 	else {
 		/* in debug mode double check we didn't need to recalculate */
-		BLI_assert(EDBM_index_arrays_check(em) == TRUE);
+		BLI_assert(EDBM_index_arrays_check(em) == true);
 	}
+}
+
+/* poll call for mesh operators requiring a view3d context */
+int EDBM_view3d_poll(bContext *C)
+{
+	if (ED_operator_editmesh(C) && ED_operator_view3d_active(C))
+		return 1;
+
+	return 0;
+}
+
+
+
+/* -------------------------------------------------------------------- */
+/* BMBVH functions */
+// XXX
+#if 0 //BMESH_TODO: not implemented yet
+int BMBVH_VertVisible(BMBVHTree *tree, BMEdge *e, RegionView3D *r3d)
+{
+
+}
+#endif
+
+static BMFace *edge_ray_cast(struct BMBVHTree *tree, const float co[3], const float dir[3], float *r_hitout, BMEdge *e)
+{
+	BMFace *f = BKE_bmbvh_ray_cast(tree, co, dir, NULL, r_hitout, NULL);
+
+	if (f && BM_edge_in_face(f, e))
+		return NULL;
+
+	return f;
+}
+
+static void scale_point(float c1[3], const float p[3], const float s)
+{
+	sub_v3_v3(c1, p);
+	mul_v3_fl(c1, s);
+	add_v3_v3(c1, p);
+}
+
+bool BMBVH_EdgeVisible(struct BMBVHTree *tree, BMEdge *e, ARegion *ar, View3D *v3d, Object *obedit)
+{
+	BMFace *f;
+	float co1[3], co2[3], co3[3], dir1[3], dir2[3], dir3[3];
+	float origin[3], invmat[4][4];
+	float epsilon = 0.01f;
+	float end[3];
+	const float mval_f[2] = {ar->winx / 2.0f,
+	                         ar->winy / 2.0f};
+
+	ED_view3d_win_to_segment(ar, v3d, mval_f, origin, end, false);
+
+	invert_m4_m4(invmat, obedit->obmat);
+	mul_m4_v3(invmat, origin);
+
+	copy_v3_v3(co1, e->v1->co);
+	mid_v3_v3v3(co2, e->v1->co, e->v2->co);
+	copy_v3_v3(co3, e->v2->co);
+
+	scale_point(co1, co2, 0.99);
+	scale_point(co3, co2, 0.99);
+
+	/* ok, idea is to generate rays going from the camera origin to the
+	 * three points on the edge (v1, mid, v2)*/
+	sub_v3_v3v3(dir1, origin, co1);
+	sub_v3_v3v3(dir2, origin, co2);
+	sub_v3_v3v3(dir3, origin, co3);
+
+	normalize_v3(dir1);
+	normalize_v3(dir2);
+	normalize_v3(dir3);
+
+	mul_v3_fl(dir1, epsilon);
+	mul_v3_fl(dir2, epsilon);
+	mul_v3_fl(dir3, epsilon);
+
+	/* offset coordinates slightly along view vectors, to avoid
+	 * hitting the faces that own the edge.*/
+	add_v3_v3v3(co1, co1, dir1);
+	add_v3_v3v3(co2, co2, dir2);
+	add_v3_v3v3(co3, co3, dir3);
+
+	normalize_v3(dir1);
+	normalize_v3(dir2);
+	normalize_v3(dir3);
+
+	/* do three samplings: left, middle, right */
+	f = edge_ray_cast(tree, co1, dir1, NULL, e);
+	if (f && !edge_ray_cast(tree, co2, dir2, NULL, e))
+		return true;
+	else if (f && !edge_ray_cast(tree, co3, dir3, NULL, e))
+		return true;
+	else if (!f)
+		return true;
+
+	return false;
 }

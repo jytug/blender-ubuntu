@@ -36,8 +36,8 @@
 #include "DNA_ID.h"
 #include "DNA_modifier_types.h"
 
-#include "BLI_path_util.h"
 #include "BLI_utildefines.h"
+#include "BLI_path_util.h"
 
 #include "RNA_define.h"
 #include "RNA_access.h"
@@ -76,6 +76,7 @@
 #include "BKE_movieclip.h"
 #include "BKE_mask.h"
 #include "BKE_gpencil.h"
+#include "BKE_linestyle.h"
 
 #include "DNA_armature_types.h"
 #include "DNA_camera_types.h"
@@ -197,7 +198,7 @@ static Object *rna_Main_objects_new(Main *bmain, ReportList *reports, const char
 	id_us_min(&ob->id);
 
 	ob->data = data;
-	test_object_materials(ob->data);
+	test_object_materials(bmain, ob->data);
 	
 	return ob;
 }
@@ -235,23 +236,32 @@ static void rna_Main_materials_remove(Main *bmain, ReportList *reports, PointerR
 	}
 }
 
-static bNodeTree *rna_Main_nodetree_new(Main *bmain, const char *name, int type)
+static EnumPropertyItem *rna_Main_nodetree_type_itemf(bContext *UNUSED(C), PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), int *free)
 {
-	bNodeTree *tree = ntreeAddTree(bmain, name, type, NODE_GROUP);
-
-	id_us_min(&tree->id);
-	return tree;
+	return rna_node_tree_type_itemf(NULL, NULL, free);
 }
-static void rna_Main_nodetree_remove(Main *bmain, ReportList *reports, PointerRNA *tree_ptr)
+static struct bNodeTree *rna_Main_nodetree_new(Main *bmain, const char *name, int type)
 {
-	bNodeTree *tree = tree_ptr->data;
-	if (ID_REAL_USERS(tree) <= 0) {
-		BKE_libblock_free(&bmain->nodetree, tree);
-		RNA_POINTER_INVALIDATE(tree_ptr);
+	bNodeTreeType *typeinfo = rna_node_tree_type_from_enum(type);
+	if (typeinfo) {
+		bNodeTree *ntree = ntreeAddTree(bmain, name, typeinfo->idname);
+		
+		id_us_min(&ntree->id);
+		return ntree;
+	}
+	else
+		return NULL;
+}
+static void rna_Main_nodetree_remove(Main *bmain, ReportList *reports, PointerRNA *ntree_ptr)
+{
+	bNodeTree *ntree = ntree_ptr->data;
+	if (ID_REAL_USERS(ntree) <= 0) {
+		BKE_libblock_free(&bmain->nodetree, ntree);
+		RNA_POINTER_INVALIDATE(ntree_ptr);
 	}
 	else {
 		BKE_reportf(reports, RPT_ERROR, "Node tree '%s' must have zero users to be removed, found %d",
-		            tree->id.name + 2, ID_REAL_USERS(tree));
+		            ntree->id.name + 2, ID_REAL_USERS(ntree));
 	}
 }
 
@@ -266,7 +276,7 @@ static Mesh *rna_Main_meshes_new(Main *bmain, const char *name)
 /* settings: 1 - preview, 2 - render */
 Mesh *rna_Main_meshes_new_from_object(
         Main *bmain, ReportList *reports, Scene *sce,
-        Object *ob, int apply_modifiers, int settings, int calc_tessface)
+        Object *ob, int apply_modifiers, int settings, int calc_tessface, int calc_undeformed)
 {
 	Mesh *tmpmesh;
 	Curve *tmpcu = NULL, *copycu;
@@ -303,7 +313,7 @@ Mesh *rna_Main_meshes_new_from_object(
 			copycu->editnurb = tmpcu->editnurb;
 
 			/* get updated display list, and convert to a mesh */
-			BKE_displist_make_curveTypes_forRender(sce, tmpobj, &dispbase, &derivedFinal, FALSE);
+			BKE_displist_make_curveTypes_forRender(sce, tmpobj, &dispbase, &derivedFinal, FALSE, render);
 
 			copycu->editfont = NULL;
 			copycu->editnurb = NULL;
@@ -369,6 +379,9 @@ Mesh *rna_Main_meshes_new_from_object(
 				CustomDataMask mask = CD_MASK_MESH; /* this seems more suitable, exporter,
 			                                         * for example, needs CD_MASK_MDEFORMVERT */
 
+				if (calc_undeformed)
+					mask |= CD_MASK_ORCO;
+
 				/* Write the display mesh into the dummy mesh */
 				if (render)
 					dm = mesh_create_derived_render(sce, ob, mask);
@@ -376,7 +389,7 @@ Mesh *rna_Main_meshes_new_from_object(
 					dm = mesh_create_derived_view(sce, ob, mask);
 
 				tmpmesh = BKE_mesh_add(bmain, "Mesh");
-				DM_to_mesh(dm, tmpmesh, ob);
+				DM_to_mesh(dm, tmpmesh, ob, mask);
 				dm->release(dm);
 			}
 
@@ -455,7 +468,7 @@ Mesh *rna_Main_meshes_new_from_object(
 	}
 
 	/* make sure materials get updated in objects */
-	test_object_materials(&tmpmesh->id);
+	test_object_materials(bmain, &tmpmesh->id);
 
 	return tmpmesh;
 }
@@ -671,7 +684,7 @@ static void rna_Main_worlds_remove(Main *bmain, ReportList *reports, PointerRNA 
 
 static Group *rna_Main_groups_new(Main *bmain, const char *name)
 {
-	return add_group(bmain, name);
+	return BKE_group_add(bmain, name);
 }
 static void rna_Main_groups_remove(Main *bmain, PointerRNA *group_ptr)
 {
@@ -836,6 +849,24 @@ static void rna_Main_grease_pencil_remove(Main *bmain, ReportList *reports, Poin
 		            gpd->id.name + 2, ID_REAL_USERS(gpd));
 }
 
+FreestyleLineStyle *rna_Main_linestyles_new(Main *bmain, const char *name)
+{
+	FreestyleLineStyle *linestyle = BKE_new_linestyle(name, bmain);
+	id_us_min(&linestyle->id);
+	return linestyle;
+}
+
+void rna_Main_linestyles_remove(Main *bmain, ReportList *reports, FreestyleLineStyle *linestyle)
+{
+	if (ID_REAL_USERS(linestyle) <= 0)
+		BKE_libblock_free(&bmain->linestyle, linestyle);
+	else
+		BKE_reportf(reports, RPT_ERROR, "Line style '%s' must have zero users to be removed, found %d",
+		            linestyle->id.name + 2, ID_REAL_USERS(linestyle));
+
+	/* XXX python now has invalid pointer? */
+}
+
 /* tag functions, all the same */
 static void rna_Main_cameras_tag(Main *bmain, int value) { tag_main_lb(&bmain->camera, value); }
 static void rna_Main_scenes_tag(Main *bmain, int value) { tag_main_lb(&bmain->scene, value); }
@@ -867,6 +898,7 @@ static void rna_Main_particles_tag(Main *bmain, int value) { tag_main_lb(&bmain-
 static void rna_Main_gpencil_tag(Main *bmain, int value) { tag_main_lb(&bmain->gpencil, value); }
 static void rna_Main_movieclips_tag(Main *bmain, int value) { tag_main_lb(&bmain->movieclip, value); }
 static void rna_Main_masks_tag(Main *bmain, int value) { tag_main_lb(&bmain->mask, value); }
+static void rna_Main_linestyle_tag(Main *bmain, int value) { tag_main_lb(&bmain->linestyle, value); }
 
 static int rna_Main_cameras_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_CA); }
 static int rna_Main_scenes_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_SCE); }
@@ -1069,10 +1101,8 @@ void RNA_def_main_node_groups(BlenderRNA *brna, PropertyRNA *cprop)
 	PropertyRNA *parm;
 	PropertyRNA *prop;
 
-	static EnumPropertyItem node_nodetree_items[] = {
-		{0, "SHADER",       0,    "Shader",       ""},
-		{1, "COMPOSITE",    0,    "Composite",    ""},
-		{2, "TEXTURE",      0,    "Texture",      ""},
+	static EnumPropertyItem dummy_items[] = {
+		{0, "DUMMY", 0, "", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 
@@ -1085,7 +1115,8 @@ void RNA_def_main_node_groups(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_function_ui_description(func, "Add a new node tree to the main database");
 	parm = RNA_def_string(func, "name", "NodeGroup", 0, "", "New name for the datablock");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
-	parm = RNA_def_enum(func, "type", node_nodetree_items, 0, "Type", "The type of node_group to add");
+	parm = RNA_def_enum(func, "type", dummy_items, 0, "Type", "The type of node_group to add");
+	RNA_def_property_enum_funcs(parm, NULL, NULL, "rna_Main_nodetree_type_itemf");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	/* return type */
 	parm = RNA_def_pointer(func, "tree", "NodeTree", "", "New node tree datablock");
@@ -1144,6 +1175,7 @@ void RNA_def_main_meshes(BlenderRNA *brna, PropertyRNA *cprop)
 	parm = RNA_def_enum(func, "settings", mesh_type_items, 0, "", "Modifier settings to apply");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	RNA_def_boolean(func, "calc_tessface", true, "Calculate Tessellation", "Calculate tessellation faces");
+	RNA_def_boolean(func, "calc_undeformed", false, "Calculate Undeformed", "Calculate undeformed vertex coordinates");
 	parm = RNA_def_pointer(func, "mesh", "Mesh", "",
 	                       "Mesh created from object, remove it if it is only used for export");
 	RNA_def_function_return(func, parm);
@@ -1908,6 +1940,36 @@ void RNA_def_main_masks(BlenderRNA *brna, PropertyRNA *cprop)
 	parm = RNA_def_pointer(func, "mask", "Mask", "", "Mask to remove");
 	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
 	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
+}
+
+void RNA_def_main_linestyles(BlenderRNA *brna, PropertyRNA *cprop)
+{
+	StructRNA *srna;
+	FunctionRNA *func;
+	PropertyRNA *parm;
+
+	RNA_def_property_srna(cprop, "BlendDataLineStyles");
+	srna = RNA_def_struct(brna, "BlendDataLineStyles", NULL);
+	RNA_def_struct_sdna(srna, "Main");
+	RNA_def_struct_ui_text(srna, "Main Line Styles", "Collection of line styles");
+
+	func = RNA_def_function(srna, "tag", "rna_Main_linestyle_tag");
+	parm = RNA_def_boolean(func, "value", 0, "Value", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+
+	func = RNA_def_function(srna, "new", "rna_Main_linestyles_new");
+	RNA_def_function_ui_description(func, "Add a new line style instance to the main database");
+	parm = RNA_def_string(func, "name", "FreestyleLineStyle", 0, "", "New name for the datablock");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	/* return type */
+	parm = RNA_def_pointer(func, "linestyle", "FreestyleLineStyle", "", "New line style datablock");
+	RNA_def_function_return(func, parm);
+
+	func = RNA_def_function(srna, "remove", "rna_Main_linestyles_remove");
+	RNA_def_function_flag(func, FUNC_USE_REPORTS);
+	RNA_def_function_ui_description(func, "Remove a line style instance from the current blendfile");
+	parm = RNA_def_pointer(func, "linestyle", "FreestyleLineStyle", "", "Line style to remove");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
 }
 
 #endif

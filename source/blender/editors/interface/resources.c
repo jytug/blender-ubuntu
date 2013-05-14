@@ -279,6 +279,8 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->vertex; break;
 				case TH_VERTEX_SELECT:
 					cp = ts->vertex_select; break;
+				case TH_VERTEX_UNREFERENCED:
+					cp = ts->vertex_unreferenced; break;
 				case TH_VERTEX_SIZE:
 					cp = &ts->vertex_size; break;
 				case TH_OUTLINE_WIDTH:
@@ -307,6 +309,8 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = &ts->facedot_size; break;
 				case TH_DRAWEXTRA_EDGELEN:
 					cp = ts->extra_edge_len; break;
+				case TH_DRAWEXTRA_EDGEANG:
+					cp = ts->extra_edge_angle; break;
 				case TH_DRAWEXTRA_FACEAREA:
 					cp = ts->extra_face_area; break;
 				case TH_DRAWEXTRA_FACEANG:
@@ -359,6 +363,10 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->handle_sel_vect; break;
 				case TH_HANDLE_SEL_ALIGN:
 					cp = ts->handle_sel_align; break;
+				case TH_FREESTYLE_EDGE_MARK:
+					cp = ts->freestyle_edge_mark; break;
+				case TH_FREESTYLE_FACE_MARK:
+					cp = ts->freestyle_face_mark; break;
 
 				case TH_SYNTAX_B:
 					cp = ts->syntaxb; break;
@@ -387,6 +395,8 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->syntaxv; break;
 				case TH_NODE_GROUP:
 					cp = ts->syntaxc; break;
+				case TH_NODE_INTERFACE:
+					cp = ts->console_output; break;
 				case TH_NODE_FRAME:
 					cp = ts->movie; break;
 				case TH_NODE_MATTE:
@@ -439,7 +449,6 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 				case TH_HANDLE_VERTEX_SIZE:
 					cp = &ts->handle_vertex_size;
 					break;
-
 				case TH_DOPESHEET_CHANNELOB:
 					cp = ts->ds_channel;
 					break;
@@ -738,6 +747,7 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tv3d.transform, 0xff, 0xff, 0xff, 255);
 	rgba_char_args_set(btheme->tv3d.vertex, 0, 0, 0, 255);
 	rgba_char_args_set(btheme->tv3d.vertex_select, 255, 133, 0, 255);
+	rgba_char_args_set(btheme->tv3d.vertex_unreferenced, 0, 0, 0, 255);
 	btheme->tv3d.vertex_size = 3;
 	btheme->tv3d.outline_width = 1;
 	rgba_char_args_set(btheme->tv3d.edge,       0x0, 0x0, 0x0, 255);
@@ -758,10 +768,13 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tv3d.button_text_hi, 255, 255, 255, 255);
 	rgba_char_args_set(btheme->tv3d.button_title, 0, 0, 0, 255);
 	rgba_char_args_set(btheme->tv3d.title, 0, 0, 0, 255);
+	rgba_char_args_set(btheme->tv3d.freestyle_edge_mark, 0x7f, 0xff, 0x7f, 255);
+	rgba_char_args_set(btheme->tv3d.freestyle_face_mark, 0x7f, 0xff, 0x7f, 51);
 
 	btheme->tv3d.facedot_size = 4;
 
 	rgba_char_args_set(btheme->tv3d.extra_edge_len, 32, 0, 0, 255);
+	rgba_char_args_set(btheme->tv3d.extra_edge_angle, 32, 32, 0, 255);
 	rgba_char_args_set(btheme->tv3d.extra_face_area, 0, 32, 0, 255);
 	rgba_char_args_set(btheme->tv3d.extra_face_angle, 0, 0, 128, 255);
 
@@ -949,7 +962,7 @@ void ui_theme_init_default(void)
 	rgba_char_args_set_fl(btheme->ttime.grid,   0.36, 0.36, 0.36, 1.0);
 	rgba_char_args_set(btheme->ttime.shade1,  173, 173, 173, 255);      /* sliders */
 	
-	/* space node, re-uses syntax color storage */
+	/* space node, re-uses syntax and console color storage */
 	btheme->tnode = btheme->tv3d;
 	rgba_char_args_set(btheme->tnode.edge_select, 255, 255, 255, 255);	/* wire selected */
 	rgba_char_args_set(btheme->tnode.syntaxl, 155, 155, 155, 160);  /* TH_NODE, backdrop */
@@ -958,6 +971,7 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tnode.syntaxv, 104, 106, 117, 255);  /* generator */
 	rgba_char_args_set(btheme->tnode.syntaxc, 105, 117, 110, 255);  /* group */
 	rgba_char_args_set(btheme->tnode.movie, 155, 155, 155, 160);  /* frame */
+	rgba_char_args_set(btheme->tnode.console_output, 190, 190, 80, 255);	/* group input/output */
 	btheme->tnode.noodle_curving = 5;
 
 	/* space logic */
@@ -1368,7 +1382,7 @@ void init_userdef_do_versions(void)
 	
 	/* signal for derivedmesh to use colorband */
 	/* run in case this was on and is now off in the user prefs [#28096] */
-	vDM_ColorBand_store((U.flag & USER_CUSTOM_RANGE) ? (&U.coba_weight) : NULL);
+	vDM_ColorBand_store((U.flag & USER_CUSTOM_RANGE) ? (&U.coba_weight) : NULL, UI_GetTheme()->tv3d.vertex_unreferenced);
 
 	if (bmain->versionfile <= 191) {
 		strcpy(U.sounddir, "/");
@@ -1533,7 +1547,7 @@ void init_userdef_do_versions(void)
 			rgba_char_args_set(btheme->tv3d.editmesh_active, 255, 255, 255, 128);
 		}
 		if (U.coba_weight.tot == 0)
-			init_colorband(&U.coba_weight, 1);
+			init_colorband(&U.coba_weight, true);
 	}
 	if ((bmain->versionfile < 245) || (bmain->versionfile == 245 && bmain->subversionfile < 11)) {
 		bTheme *btheme;
@@ -2015,6 +2029,19 @@ void init_userdef_do_versions(void)
 		}
 	}
 
+	/* Freestyle color settings */
+	{
+		bTheme *btheme;
+
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			/* check for alpha == 0 is safe, then color was never set */
+			if (btheme->tv3d.freestyle_edge_mark[3] == 0) {
+				rgba_char_args_set(btheme->tv3d.freestyle_edge_mark, 0x7f, 0xff, 0x7f, 255);
+				rgba_char_args_set(btheme->tv3d.freestyle_face_mark, 0x7f, 0xff, 0x7f, 51);
+			}
+		}
+	}
+
 	/* GL Texture Garbage Collection (variable abused above!) */
 	if (U.textimeout == 0) {
 		U.texcollectrate = 60;
@@ -2147,11 +2174,21 @@ void init_userdef_do_versions(void)
 		}
 	}
 
+	if (U.versionfile < 266 || (U.versionfile == 266 && U.subversionfile < 2)) {
+		bTheme *btheme;
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			rgba_char_args_test_set(btheme->tnode.console_output, 223, 202, 53, 255);  /* interface nodes */
+		}
+	}
+
 	/* NOTE!! from now on use U.versionfile and U.subversionfile */
 	
 	
 	if (U.pixelsize == 0.0f)
 		U.pixelsize = 1.0f;
+	
+	if (U.image_draw_method == 0)
+		U.image_draw_method = IMAGE_DRAW_METHOD_2DTEXTURE;
 	
 	/* funny name, but it is GE stuff, moves userdef stuff to engine */
 // XXX	space_set_commmandline_options();

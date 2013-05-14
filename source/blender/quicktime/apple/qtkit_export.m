@@ -218,7 +218,7 @@ static NSString *stringWithCodecType(int codecType)
 	return [NSString stringWithCString:str encoding:NSASCIIStringEncoding];
 }
 
-void makeqtstring (RenderData *rd, char *string)
+void makeqtstring(RenderData *rd, char *string)
 {
 	char txt[64];
 
@@ -295,8 +295,8 @@ static OSStatus AudioConverterInputCallback(AudioConverterRef inAudioConverter,
 	
 	qtexport->audioTotalExportedFrames += *ioNumberDataPackets;
 	
-	AUD_readDevice(qtexport->audioInputDevice, (UInt8*)qtexport->audioInputBuffer, 
-				   qtexport->audioInputFormat.mFramesPerPacket * *ioNumberDataPackets);
+	AUD_readDevice(qtexport->audioInputDevice, (UInt8 *)qtexport->audioInputBuffer,
+	               qtexport->audioInputFormat.mFramesPerPacket * *ioNumberDataPackets);
 	
 	ioData->mBuffers[0].mDataByteSize = qtexport->audioInputFormat.mBytesPerPacket * *ioNumberDataPackets;
 	ioData->mBuffers[0].mData = qtexport->audioInputBuffer;
@@ -357,7 +357,7 @@ int start_qt(struct Scene *scene, struct RenderData *rd, int rectx, int recty, R
 
 			tmpnam(name);
 			strcat(name, extension);
-			outputFileURL = CFURLCreateFromFileSystemRepresentation(kCFAllocatorDefault,(UInt8*) name, strlen(name), false);
+			outputFileURL = CFURLCreateFromFileSystemRepresentation(kCFAllocatorDefault,(UInt8 *)name, strlen(name), false);
 			
 			if (outputFileURL) {
 				
@@ -648,14 +648,24 @@ int append_qt(struct RenderData *rd, int start_frame, int frame, int *pixels, in
 	
 	if (qtexport->audioFile) {
 		UInt32 audioPacketsConverted;
+
+		// Upper limit on total exported audio frames for this particular video frame
+		const UInt64 exportedAudioFrameLimit = (frame - rd->sfra) * qtexport->audioInputFormat.mSampleRate * rd->frs_sec_base / rd->frs_sec;
+
 		/* Append audio */
-		while (qtexport->audioTotalExportedFrames < qtexport->audioLastFrame) {
+		while (qtexport->audioTotalExportedFrames < exportedAudioFrameLimit) {
 
 			qtexport->audioBufferList.mNumberBuffers = 1;
 			qtexport->audioBufferList.mBuffers[0].mNumberChannels = qtexport->audioOutputFormat.mChannelsPerFrame;
 			qtexport->audioBufferList.mBuffers[0].mDataByteSize = AUDIOOUTPUTBUFFERSIZE;
 			qtexport->audioBufferList.mBuffers[0].mData = qtexport->audioOutputBuffer;
-			audioPacketsConverted = AUDIOOUTPUTBUFFERSIZE / qtexport->audioCodecMaxOutputPacketSize;
+
+			// Convert one audio packet at a time so that enclosing while loop can
+			// keep audio processing in sync with video frames.
+			// Previously, this was set to (AUDIOOUTPUTBUFFERSIZE / qtexport->audioCodecMaxOutputPacketSize),
+			// however this may cause AudioConverterFillComplexBuffer to convert audio spanning multiple
+			// video frames, which breaks animation of audio parameters such as volume for fade-in/out.
+			audioPacketsConverted = 1; 
 			
 			err = AudioConverterFillComplexBuffer(qtexport->audioConverter, AudioConverterInputCallback,
 			                                      NULL, &audioPacketsConverted, &qtexport->audioBufferList, qtexport->audioOutputPktDesc);

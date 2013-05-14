@@ -37,6 +37,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_string.h"
 #include "BLI_fileops.h"
 
@@ -120,10 +121,12 @@ static void jpeg_error(j_common_ptr cinfo)
  * INPUT HANDLER FROM MEMORY
  *---------------------------------------------------------- */
 
+#if 0
 typedef struct {
 	unsigned char  *buffer;
 	int             filled;
 } buffer_struct;
+#endif
 
 typedef struct {
 	struct jpeg_source_mgr pub; /* public fields */
@@ -368,6 +371,12 @@ static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int fla
 					goto next_stamp_marker;
 
 				/*
+				 * JPEG marker strings are not null-terminated,
+				 * create a null-terminated copy before going further
+				 */
+				str = BLI_strdupn((char *)marker->data, marker->data_length);
+
+				/*
 				 * Because JPEG format don't support the
 				 * pair "key/value" like PNG, we store the
 				 * stampinfo in a single "encode" string:
@@ -376,7 +385,7 @@ static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int fla
 				 * That is why we need split it to the
 				 * common key/value here.
 				 */
-				if (strncmp((char *) marker->data, "Blender", 7)) {
+				if (strncmp(str, "Blender", 7)) {
 					/*
 					 * Maybe the file have text that
 					 * we don't know "what it's", in that
@@ -386,12 +395,12 @@ static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int fla
 					 * the information when we write
 					 * it back to disk.
 					 */
-					IMB_metadata_add_field(ibuf, "None", (char *) marker->data);
+					IMB_metadata_add_field(ibuf, "None", str);
 					ibuf->flags |= IB_metadata;
+					MEM_freeN(str);
 					goto next_stamp_marker;
 				}
 
-				str = BLI_strdup((char *) marker->data);
 				key = strchr(str, ':');
 				/*
 				 * A little paranoid, but the file maybe

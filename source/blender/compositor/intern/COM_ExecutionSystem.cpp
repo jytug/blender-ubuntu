@@ -26,7 +26,9 @@
 
 #include "PIL_time.h"
 #include "BLI_utildefines.h"
+extern "C" {
 #include "BKE_node.h"
+}
 
 #include "COM_Converter.h"
 #include "COM_NodeOperation.h"
@@ -49,15 +51,8 @@ ExecutionSystem::ExecutionSystem(RenderData *rd, bNodeTree *editingtree, bool re
                                  const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings)
 {
 	this->m_context.setbNodeTree(editingtree);
+	this->m_context.setPreviewHash(editingtree->previews);
 	this->m_context.setFastCalculation(fastcalculation);
-	bNode *gnode;
-	for (gnode = (bNode *)editingtree->nodes.first; gnode; gnode = gnode->next) {
-		if (gnode->type == NODE_GROUP && gnode->typeinfo->group_edit_get(gnode)) {
-			this->m_context.setActivegNode(gnode);
-			break;
-		}
-	}
-
 	/* initialize the CompositorContext */
 	if (rendering) {
 		this->m_context.setQuality((CompositorQuality)editingtree->render_quality);
@@ -68,7 +63,7 @@ ExecutionSystem::ExecutionSystem(RenderData *rd, bNodeTree *editingtree, bool re
 	this->m_context.setRendering(rendering);
 	this->m_context.setHasActiveOpenCLDevices(WorkScheduler::hasGPUDevices() && (editingtree->flag & NTREE_COM_OPENCL));
 
-	ExecutionSystemHelper::addbNodeTree(*this, 0, editingtree, NULL);
+	ExecutionSystemHelper::addbNodeTree(*this, 0, editingtree, NODE_INSTANCE_KEY_BASE);
 
 	this->m_context.setRenderData(rd);
 	this->m_context.setViewSettings(viewSettings);
@@ -78,11 +73,32 @@ ExecutionSystem::ExecutionSystem(RenderData *rd, bNodeTree *editingtree, bool re
 	this->groupOperations(); /* group operations in ExecutionGroups */
 	unsigned int index;
 	unsigned int resolution[2];
+
+	rctf *viewer_border = &editingtree->viewer_border;
+	bool use_viewer_border = (editingtree->flag & NTREE_VIEWER_BORDER) &&
+	                         viewer_border->xmin < viewer_border->xmax &&
+	                         viewer_border->ymin < viewer_border->ymax;
+
 	for (index = 0; index < this->m_groups.size(); index++) {
 		resolution[0] = 0;
 		resolution[1] = 0;
 		ExecutionGroup *executionGroup = this->m_groups[index];
 		executionGroup->determineResolution(resolution);
+
+		if (rendering) {
+			/* case when cropping to render border happens is handled in
+			 * compositor output and render layer nodes
+			 */
+			if ((rd->mode & R_BORDER) && !(rd->mode & R_CROP)) {
+				executionGroup->setRenderBorder(rd->border.xmin, rd->border.xmax,
+				                                rd->border.ymin, rd->border.ymax);
+			}
+		}
+
+		if (use_viewer_border) {
+			executionGroup->setViewerBorder(viewer_border->xmin, viewer_border->xmax,
+			                                viewer_border->ymin, viewer_border->ymax);
+		}
 	}
 
 #ifdef COM_DEBUG

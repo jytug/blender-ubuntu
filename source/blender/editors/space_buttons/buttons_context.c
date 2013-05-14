@@ -353,7 +353,7 @@ static int buttons_context_path_brush(ButsContextPath *path)
 		scene = path->ptr[path->len - 1].data;
 
 		if (scene)
-			br = paint_brush(paint_get_active(scene));
+			br = BKE_paint_brush(BKE_paint_get_active(scene));
 
 		if (br) {
 			RNA_id_pointer_create((ID *)br, &path->ptr[path->len]);
@@ -540,6 +540,7 @@ static int buttons_context_path(const bContext *C, ButsContextPath *path, int ma
 	switch (mainb) {
 		case BCONTEXT_SCENE:
 		case BCONTEXT_RENDER:
+		case BCONTEXT_RENDER_LAYER:
 			found = buttons_context_path_scene(path);
 			break;
 		case BCONTEXT_WORLD:
@@ -684,7 +685,7 @@ void buttons_context_compute(const bContext *C, SpaceButs *sbuts)
 const char *buttons_context_dir[] = {
 	"texture_slot", "world", "object", "mesh", "armature", "lattice", "curve",
 	"meta_ball", "lamp", "speaker", "camera", "material", "material_slot",
-	"texture", "texture_user", "bone", "edit_bone",
+	"texture", "texture_user", "texture_user_property", "bone", "edit_bone",
 	"pose_bone", "particle_system", "particle_system_editable", "particle_settings",
 	"cloth", "soft_body", "fluid", "smoke", "collision", "brush", "dynamic_paint", NULL
 };
@@ -790,6 +791,19 @@ int buttons_context(const bContext *C, const char *member, bContextDataResult *r
 		if (ct->user && ct->user->ptr.data) {
 			ButsTextureUser *user = ct->user;
 			CTX_data_pointer_set(result, user->ptr.id.data, user->ptr.type, user->ptr.data);
+		}
+
+		return 1;
+	}
+	else if (CTX_data_equals(member, "texture_user_property")) {
+		ButsContextTexture *ct = sbuts->texuser;
+
+		if (!ct)
+			return -1;  /* old shading system (found but not available) */
+
+		if (ct->user && ct->user->ptr.data) {
+			ButsTextureUser *user = ct->user;
+			CTX_data_pointer_set(result, NULL, &RNA_Property, user->prop);
 		}
 
 		return 1;
@@ -1046,7 +1060,7 @@ void buttons_context_draw(const bContext *C, uiLayout *layout)
 			name = RNA_struct_name_get_alloc(ptr, namebuf, sizeof(namebuf), NULL);
 
 			if (name) {
-				if (!ELEM(sbuts->mainb, BCONTEXT_RENDER, BCONTEXT_SCENE) && ptr->type == &RNA_Scene)
+				if (!ELEM3(sbuts->mainb, BCONTEXT_RENDER, BCONTEXT_SCENE, BCONTEXT_RENDER_LAYER) && ptr->type == &RNA_Scene)
 					uiItemLDrag(row, ptr, "", icon);  /* save some space */
 				else
 					uiItemLDrag(row, ptr, name, icon);
@@ -1072,6 +1086,7 @@ void buttons_context_register(ARegionType *art)
 	pt = MEM_callocN(sizeof(PanelType), "spacetype buttons panel context");
 	strcpy(pt->idname, "BUTTONS_PT_context");
 	strcpy(pt->label, N_("Context"));  /* XXX C panels are not available through RNA (bpy.types)! */
+	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw = buttons_panel_context;
 	pt->flag = PNL_NO_HEADER;
 	BLI_addtail(&art->paneltypes, pt);

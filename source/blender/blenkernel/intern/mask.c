@@ -40,6 +40,8 @@
 #include "BLI_listbase.h"
 #include "BLI_math.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_mask_types.h"
 #include "DNA_node_types.h"
 #include "DNA_screen_types.h"
@@ -56,6 +58,8 @@
 #include "BKE_tracking.h"
 #include "BKE_movieclip.h"
 #include "BKE_image.h"
+
+#include "NOD_composite.h"
 
 static MaskSplinePoint *mask_spline_point_next(MaskSpline *spline, MaskSplinePoint *points_array, MaskSplinePoint *point)
 {
@@ -185,7 +189,8 @@ void BKE_mask_layer_remove(Mask *mask, MaskLayer *masklay)
 
 void BKE_mask_layer_unique_name(Mask *mask, MaskLayer *masklay)
 {
-	BLI_uniquename(&mask->masklayers, masklay, "MaskLayer", '.', offsetof(MaskLayer, name), sizeof(masklay->name));
+	BLI_uniquename(&mask->masklayers, masklay, DATA_("MaskLayer"), '.', offsetof(MaskLayer, name),
+	               sizeof(masklay->name));
 }
 
 MaskLayer *BKE_mask_layer_copy(MaskLayer *masklay)
@@ -966,10 +971,9 @@ void BKE_mask_free(Main *bmain, Mask *mask)
 		}
 	}
 
-	{
-		bNodeTreeType *treetype = ntreeGetType(NTREE_COMPOSIT);
-		treetype->foreach_nodetree(bmain, (void *)mask, &BKE_node_tree_unlink_id_cb);
-	}
+	FOREACH_NODETREE(bmain, ntree, id) {
+		BKE_node_tree_unlink_id((ID *)mask, ntree);
+	} FOREACH_NODETREE_END
 
 	/* free mask data */
 	BKE_mask_layer_free_list(&mask->masklayers);

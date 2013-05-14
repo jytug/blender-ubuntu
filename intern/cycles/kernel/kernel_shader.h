@@ -96,6 +96,9 @@ __device_noinline void shader_setup_from_ray(KernelGlobals *kg, ShaderData *sd,
 
 #ifdef __HAIR__
 		sd->segment = ~0;
+		/*elements for minimum hair width using transparency bsdf*/
+		/*sd->curve_transparency = 0.0f;*/
+		/*sd->curve_radius = 0.0f;*/
 #endif
 
 #ifdef __UV__
@@ -157,6 +160,103 @@ __device_noinline void shader_setup_from_ray(KernelGlobals *kg, ShaderData *sd,
 	differential_dudv(&sd->du, &sd->dv, sd->dPdu, sd->dPdv, sd->dP, sd->Ng);
 #endif
 }
+
+/* ShaderData setup from BSSRDF scatter */
+
+#ifdef __SUBSURFACE__
+__device_inline void shader_setup_from_subsurface(KernelGlobals *kg, ShaderData *sd,
+	const Intersection *isect, const Ray *ray)
+{
+	bool backfacing = sd->flag & SD_BACKFACING;
+
+	/* object, matrices, time, ray_length stay the same */
+	sd->flag = kernel_tex_fetch(__object_flag, sd->object);
+	sd->prim = kernel_tex_fetch(__prim_index, isect->prim);
+
+#ifdef __HAIR__
+	if(kernel_tex_fetch(__prim_segment, isect->prim) != ~0) {
+		/* Strand Shader setting*/
+		float4 curvedata = kernel_tex_fetch(__curves, sd->prim);
+
+		sd->shader = __float_as_int(curvedata.z);
+		sd->segment = isect->segment;
+
+		float tcorr = isect->t;
+		if(kernel_data.curve_kernel_data.curveflags & CURVE_KN_POSTINTERSECTCORRECTION)
+			tcorr = (isect->u < 0)? tcorr + sqrtf(isect->v) : tcorr - sqrtf(isect->v);
+
+		sd->P = bvh_curve_refine(kg, sd, isect, ray, tcorr);
+	}
+	else {
+#endif
+		/* fetch triangle data */
+		float4 Ns = kernel_tex_fetch(__tri_normal, sd->prim);
+		float3 Ng = make_float3(Ns.x, Ns.y, Ns.z);
+		sd->shader = __float_as_int(Ns.w);
+
+#ifdef __HAIR__
+		sd->segment = ~0;
+#endif
+
+#ifdef __UV__
+		sd->u = isect->u;
+		sd->v = isect->v;
+#endif
+
+		/* vectors */
+		sd->P = bvh_triangle_refine(kg, sd, isect, ray);
+		sd->Ng = Ng;
+		sd->N = Ng;
+		
+		/* smooth normal */
+		if(sd->shader & SHADER_SMOOTH_NORMAL)
+			sd->N = triangle_smooth_normal(kg, sd->prim, sd->u, sd->v);
+
+#ifdef __DPDU__
+		/* dPdu/dPdv */
+		triangle_dPdudv(kg, &sd->dPdu, &sd->dPdv, sd->prim);
+#endif
+
+#ifdef __HAIR__
+	}
+#endif
+
+	sd->flag |= kernel_tex_fetch(__shader_flag, (sd->shader & SHADER_MASK)*2);
+
+#ifdef __INSTANCING__
+	if(isect->object != ~0) {
+		/* instance transform */
+		object_normal_transform(kg, sd, &sd->N);
+		object_normal_transform(kg, sd, &sd->Ng);
+#ifdef __DPDU__
+		object_dir_transform(kg, sd, &sd->dPdu);
+		object_dir_transform(kg, sd, &sd->dPdv);
+#endif
+	}
+#endif
+
+	/* backfacing test */
+	if(backfacing) {
+		sd->flag |= SD_BACKFACING;
+		sd->Ng = -sd->Ng;
+		sd->N = -sd->N;
+#ifdef __DPDU__
+		sd->dPdu = -sd->dPdu;
+		sd->dPdv = -sd->dPdv;
+#endif
+	}
+
+	/* should not get used in principle as the shading will only use a diffuse
+	 * BSDF, but the shader might still access it */
+	sd->I = sd->N;
+
+#ifdef __RAY_DIFFERENTIALS__
+	/* differentials */
+	differential_dudv(&sd->du, &sd->dv, sd->dPdu, sd->dPdv, sd->dP, sd->Ng);
+	/* don't modify dP and dI */
+#endif
+}
+#endif
 
 /* ShaderData setup from position sampled on mesh */
 
@@ -270,24 +370,18 @@ __device_noinline void shader_setup_from_sample(KernelGlobals *kg, ShaderData *s
 
 #ifdef __RAY_DIFFERENTIALS__
 	/* no ray differentials here yet */
-	sd->dP.dx = make_float3(0.0f, 0.0f, 0.0f);
-	sd->dP.dy = make_float3(0.0f, 0.0f, 0.0f);
-	sd->dI.dx = make_float3(0.0f, 0.0f, 0.0f);
-	sd->dI.dy = make_float3(0.0f, 0.0f, 0.0f);
-	sd->du.dx = 0.0f;
-	sd->du.dy = 0.0f;
-	sd->dv.dx = 0.0f;
-	sd->dv.dy = 0.0f;
+	sd->dP = differential3_zero();
+	sd->dI = differential3_zero();
+	sd->du = differential_zero();
+	sd->dv = differential_zero();
 #endif
 }
 
 /* ShaderData setup for displacement */
 
-__device_noinline void shader_setup_from_displace(KernelGlobals *kg, ShaderData *sd,
+__device void shader_setup_from_displace(KernelGlobals *kg, ShaderData *sd,
 	int object, int prim, float u, float v)
 {
-	/* Note: no OSLShader::init call here, this is done in shader_setup_from_sample! */
-
 	float3 P, Ng, I = make_float3(0.0f, 0.0f, 0.0f);
 	int shader;
 
@@ -340,10 +434,8 @@ __device_inline void shader_setup_from_background(KernelGlobals *kg, ShaderData 
 	/* differentials */
 	sd->dP = ray->dD;
 	differential_incoming(&sd->dI, sd->dP);
-	sd->du.dx = 0.0f;
-	sd->du.dy = 0.0f;
-	sd->dv.dx = 0.0f;
-	sd->dv.dy = 0.0f;
+	sd->du = differential_zero();
+	sd->dv = differential_zero();
 #endif
 }
 
@@ -418,7 +510,7 @@ __device int shader_bsdf_sample(KernelGlobals *kg, const ShaderData *sd,
 			const ShaderClosure *sc = &sd->closure[sampled];
 			
 			if(CLOSURE_IS_BSDF(sc->type)) {
-				sum += sd->closure[sampled].sample_weight;
+				sum += sc->sample_weight;
 
 				if(r <= sum)
 					break;
@@ -811,7 +903,7 @@ __device void shader_merge_closures(KernelGlobals *kg, ShaderData *sd)
 			ShaderClosure *scj = &sd->closure[j];
 
 #ifdef __OSL__
-			if(!sci->prim && sci->type == scj->type && sci->data0 == scj->data0 && sci->data1 == scj->data1) {
+			if(!sci->prim && !scj->prim && sci->type == scj->type && sci->data0 == scj->data0 && sci->data1 == scj->data1) {
 #else
 			if(sci->type == scj->type && sci->data0 == scj->data0 && sci->data1 == scj->data1) {
 #endif
@@ -823,18 +915,12 @@ __device void shader_merge_closures(KernelGlobals *kg, ShaderData *sd)
 					memmove(scj, scj+1, size*sizeof(ShaderClosure));
 
 				sd->num_closure--;
+				j--;
 			}
 		}
 	}
 }
 #endif
-
-/* Free ShaderData */
-
-__device void shader_release(KernelGlobals *kg, ShaderData *sd)
-{
-	/* nothing to do currently */
-}
 
 CCL_NAMESPACE_END
 

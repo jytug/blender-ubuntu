@@ -229,17 +229,18 @@ typedef struct ThemeSpace {
 	char wire[4], select[4];
 	char lamp[4], speaker[4], empty[4], camera[4], pad[8];
 	char active[4], group[4], group_active[4], transform[4];
-	char vertex[4], vertex_select[4];
+	char vertex[4], vertex_select[4], vertex_unreferenced[4];
 	char edge[4], edge_select[4];
 	char edge_seam[4], edge_sharp[4], edge_facesel[4], edge_crease[4];
 	char face[4], face_select[4];	/* solid faces */
 	char face_dot[4];				/*  selected color */
-	char extra_edge_len[4], extra_face_angle[4], extra_face_area[4], pad3[4];
+	char extra_edge_len[4], extra_edge_angle[4], extra_face_angle[4], extra_face_area[4];
 	char normal[4];
 	char vertex_normal[4];
 	char bone_solid[4], bone_pose[4], bone_pose_active[4];
 	char strip[4], strip_select[4];
 	char cframe[4];
+	char freestyle_edge_mark[4], freestyle_face_mark[4];
 	
 	char nurb_uline[4], nurb_vline[4];
 	char act_spline[4], nurb_sel_uline[4], nurb_sel_vline[4], lastsel_point[4];
@@ -267,6 +268,7 @@ typedef struct ThemeSpace {
 
 	char handle_vertex[4];
 	char handle_vertex_select[4];
+	char pad2[4];
 	
 	char handle_vertex_size;
 	
@@ -450,7 +452,7 @@ typedef struct UserDef {
 
 	short ogl_multisamples;	/* amount of samples for OpenGL FSA, if zero no FSA */
 
-	short pad4;
+	short image_draw_method; /* Method to be used to draw the images (AUTO, GLSL, Textures or DrawPixels) */
 	
 	float glalphaclip;
 	
@@ -605,12 +607,13 @@ typedef enum eAutokey_Flag {
 typedef enum eUserpref_Translation_Flags {
 	USER_TR_TOOLTIPS		= (1 << 0),
 	USER_TR_IFACE			= (1 << 1),
-/*	USER_TR_MENUS			= (1 << 2)	deprecated */
-/*	USER_TR_FILESELECT	= (1 << 3)	deprecated */
-/*	USER_TR_TEXTEDIT		= (1 << 4)	deprecated */
+/*	USER_TR_MENUS			= (1 << 2),  deprecated */
+/*	USER_TR_FILESELECT		= (1 << 3),  deprecated */
+/*	USER_TR_TEXTEDIT		= (1 << 4),  deprecated */
 	USER_DOTRANSLATE		= (1 << 5),
 	USER_USETEXTUREFONT		= (1 << 6),
-/*	CONVERT_TO_UTF8			= (1 << 7)	deprecated */
+/*	CONVERT_TO_UTF8			= (1 << 7),  deprecated */
+	USER_TR_NEWDATANAME		= (1 << 8),
 } eUserpref_Translation_Flags;
 
 /* dupflag */
@@ -750,7 +753,12 @@ typedef enum eMultiSample_Type {
 	USER_MULTISAMPLE_16	= 16,
 } eMultiSample_Type;
 	
-	
+typedef enum eImageDrawMethod {
+	/* IMAGE_DRAW_METHOD_AUTO = 0, */ /* Currently unused */
+	IMAGE_DRAW_METHOD_GLSL = 1,
+	IMAGE_DRAW_METHOD_2DTEXTURE = 2,
+	IMAGE_DRAW_METHOD_DRAWPIXELS = 3,
+} eImageDrawMethod;
 
 #ifdef __cplusplus
 }

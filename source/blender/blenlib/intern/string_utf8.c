@@ -33,6 +33,7 @@
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <wcwidth.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -262,7 +263,7 @@ static size_t strlen_utf8_char(const char *strc)
 
 size_t BLI_strlen_utf8(const char *strc)
 {
-	int len;
+	size_t len;
 
 	for (len = 0; *strc; len++)
 		strc += strlen_utf8_char(strc);
@@ -315,6 +316,42 @@ size_t BLI_strncpy_wchar_from_utf8(wchar_t *__restrict dst_w, const char *__rest
 }
 
 /* end wchar_t / utf8 functions  */
+/* --------------------------------------------------------------------------*/
+
+/* count columns that character/string occupies, based on wcwidth.c */
+
+int BLI_wcwidth(wchar_t ucs)
+{
+	return mk_wcwidth(ucs);
+}
+
+int BLI_wcswidth(const wchar_t *pwcs, size_t n)
+{
+	return mk_wcswidth(pwcs, n);
+}
+
+int BLI_str_utf8_char_width(const char *p)
+{
+	unsigned int unicode = BLI_str_utf8_as_unicode(p);
+	if (unicode == BLI_UTF8_ERR)
+		return -1;
+
+	return BLI_wcwidth((wchar_t)unicode);
+}
+
+int BLI_str_utf8_char_width_safe(const char *p)
+{
+	int columns;
+
+	unsigned int unicode = BLI_str_utf8_as_unicode(p);
+	if (unicode == BLI_UTF8_ERR)
+		return 1;
+
+	columns = BLI_wcwidth((wchar_t)unicode);
+
+	return (columns < 0) ? 1 : columns;
+}
+
 /* --------------------------------------------------------------------------*/
 
 /* copied from glib's gutf8.c, added 'Err' arg */
@@ -565,7 +602,7 @@ size_t BLI_str_utf8_from_unicode(unsigned int c, char *outbuf)
  *
  * Return value: a pointer to the found character or %NULL.
  **/
-char * BLI_str_find_prev_char_utf8(const char *str, const char *p)
+char *BLI_str_find_prev_char_utf8(const char *str, const char *p)
 {
 	for (--p; p >= str; --p) {
 		if ((*p & 0xc0) != 0x80) {

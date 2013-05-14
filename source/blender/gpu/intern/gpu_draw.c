@@ -189,33 +189,28 @@ void GPU_render_text(MTFace *tface, int mode,
 
 /* Checking powers of two for images since opengl 1.x requires it */
 
-static int is_pow2_limit(int num)
+static bool is_power_of_2_resolution(int w, int h)
 {
-	/* take texture clamping into account */
-
-	/* XXX: texturepaint not global! */
-#if 0
-	if (G.f & G_TEXTUREPAINT)
-		return 1;*/
-#endif
-
-	if (U.glreslimit != 0 && num > U.glreslimit)
-		return 0;
-
-	return is_power_of_2_i(num);
+	return is_power_of_2_i(w) && is_power_of_2_i(h);
 }
 
-static int smaller_pow2_limit(int num)
+static bool is_over_resolution_limit(int w, int h)
 {
-	/* XXX: texturepaint not global! */
-#if 0
-	if (G.f & G_TEXTUREPAINT)
-		return 1;*/
-#endif
+	int reslimit = (U.glreslimit != 0)?
+		min_ii(U.glreslimit, GPU_max_texture_size()) :
+		GPU_max_texture_size();
 
+	return (w > reslimit || h > reslimit);
+}
+
+static int smaller_power_of_2_limit(int num)
+{
+	int reslimit = (U.glreslimit != 0)?
+		min_ii(U.glreslimit, GPU_max_texture_size()) :
+		GPU_max_texture_size();
 	/* take texture clamping into account */
-	if (U.glreslimit != 0 && num > U.glreslimit)
-		return U.glreslimit;
+	if (num > reslimit)
+		return reslimit;
 
 	return power_of_2_min_i(num);
 }
@@ -290,6 +285,11 @@ void GPU_set_linear_mipmap(int linear)
 int GPU_get_mipmap(void)
 {
 	return GTS.domipmap && !GTS.texpaint;
+}
+
+int GPU_get_linear_mipmap(void)
+{
+	return GTS.linearmipmap;
 }
 
 static GLenum gpu_get_mipmap_filter(int mag)
@@ -448,7 +448,7 @@ static void gpu_verify_reflection(Image *ima)
 	}
 }
 
-int GPU_verify_image(Image *ima, ImageUser *iuser, int tftile, int compare, int mipmap, int is_data)
+int GPU_verify_image(Image *ima, ImageUser *iuser, int tftile, int compare, int mipmap, bool is_data)
 {
 	ImBuf *ibuf = NULL;
 	unsigned int *bind = NULL;
@@ -670,7 +670,7 @@ int GPU_verify_image(Image *ima, ImageUser *iuser, int tftile, int compare, int 
 }
 
 /* Image *ima can be NULL */
-void GPU_create_gl_tex(unsigned int *bind, unsigned int *pix, float * frect, int rectw, int recth, int mipmap, int use_high_bit_depth, Image *ima)
+void GPU_create_gl_tex(unsigned int *bind, unsigned int *pix, float *frect, int rectw, int recth, int mipmap, int use_high_bit_depth, Image *ima)
 {
 	unsigned int *scalerect = NULL;
 	float *fscalerect = NULL;
@@ -681,9 +681,10 @@ void GPU_create_gl_tex(unsigned int *bind, unsigned int *pix, float * frect, int
 	/* scale if not a power of two. this is not strictly necessary for newer
 	 * GPUs (OpenGL version >= 2.0) since they support non-power-of-two-textures 
 	 * Then don't bother scaling for hardware that supports NPOT textures! */
-	if (!GPU_non_power_of_two_support() && (!is_pow2_limit(rectw) || !is_pow2_limit(recth))) {
-		rectw= smaller_pow2_limit(rectw);
-		recth= smaller_pow2_limit(recth);
+	if ((!GPU_non_power_of_two_support() && !is_power_of_2_resolution(rectw, recth)) ||
+		is_over_resolution_limit(rectw, recth)) {
+		rectw= smaller_power_of_2_limit(rectw);
+		recth= smaller_power_of_2_limit(recth);
 		
 		if (use_high_bit_depth) {
 			fscalerect= MEM_mallocN(rectw*recth*sizeof(*fscalerect)*4, "fscalerect");
@@ -772,7 +773,7 @@ int GPU_upload_dxt_texture(ImBuf *ibuf)
 		return FALSE;
 	}
 
-	if (!is_power_of_2_i(width) || !is_power_of_2_i(height)) {
+	if (!is_power_of_2_resolution(width, height)) {
 		printf("Unable to load non-power-of-two DXT image resolution, falling back to uncompressed\n");
 		return FALSE;
 	}
@@ -801,6 +802,9 @@ int GPU_upload_dxt_texture(ImBuf *ibuf)
 		width >>= 1;
 		height >>= 1;
 	}
+
+	/* set number of mipmap levels we have, needed in case they don't go down to 1x1 */
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, i-1);
 
 	return TRUE;
 #else
@@ -1272,7 +1276,7 @@ static void gpu_material_to_fixed(GPUMaterialFixed *smat, const Material *bmat, 
 static Material *gpu_active_node_material(Material *ma)
 {
 	if (ma && ma->use_nodes && ma->nodetree) {
-		bNode *node= nodeGetActiveID(ma->nodetree, ID_MA);
+		bNode *node = nodeGetActiveID(ma->nodetree, ID_MA);
 
 		if (node)
 			return (Material *)node->id;
@@ -1283,7 +1287,7 @@ static Material *gpu_active_node_material(Material *ma)
 	return ma;
 }
 
-void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, Object *ob, int glsl, int *do_alpha_after)
+void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, Object *ob, bool glsl, bool *do_alpha_after)
 {
 	Material *ma;
 	GPUMaterial *gpumat;
@@ -1303,7 +1307,7 @@ void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, O
 
 	GMS.gob = ob;
 	GMS.gscene = scene;
-	GMS.totmat= use_matcap? 1 : ob->totcol+1; /* materials start from 1, default material is 0 */
+	GMS.totmat = use_matcap ? 1 : ob->totcol + 1;  /* materials start from 1, default material is 0 */
 	GMS.glay= (v3d->localvd)? v3d->localvd->lay: v3d->lay; /* keep lamps visible in local view */
 	GMS.gviewmat= rv3d->viewmat;
 	GMS.gviewinv= rv3d->viewinv;
@@ -1316,7 +1320,7 @@ void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, O
 	GMS.use_alpha_pass = (do_alpha_after != NULL);
 	GMS.is_alpha_pass = (v3d->transp != FALSE);
 	if (GMS.use_alpha_pass)
-		*do_alpha_after = FALSE;
+		*do_alpha_after = false;
 	
 	if (GMS.totmat > FIXEDMAT) {
 		GMS.matbuf= MEM_callocN(sizeof(GPUMaterialFixed)*GMS.totmat, "GMS.matbuf");
@@ -1389,7 +1393,7 @@ void GPU_begin_object_materials(View3D *v3d, RegionView3D *rv3d, Scene *scene, O
 			 * drawn in a second alpha pass for improved blending */
 			if (do_alpha_after && !GMS.is_alpha_pass)
 				if (ELEM3(alphablend, GPU_BLEND_ALPHA, GPU_BLEND_ADD, GPU_BLEND_ALPHA_SORT))
-					*do_alpha_after = TRUE;
+					*do_alpha_after = true;
 
 			GMS.alphablend[a]= alphablend;
 		}
@@ -1465,10 +1469,10 @@ int GPU_enable_material(int nr, void *attribs)
 
 			gpumat = GPU_material_from_blender(GMS.gscene, mat);
 			GPU_material_vertex_attributes(gpumat, gattribs);
-			GPU_material_bind(gpumat, GMS.gob->lay, GMS.glay, 1.0, !(GMS.gob->mode & OB_MODE_TEXTURE_PAINT));
+			GPU_material_bind(gpumat, GMS.gob->lay, GMS.glay, 1.0, !(GMS.gob->mode & OB_MODE_TEXTURE_PAINT), GMS.gviewmat, GMS.gviewinv);
 
 			auto_bump_scale = GMS.gob->derivedFinal != NULL ? GMS.gob->derivedFinal->auto_bump_scale : 1.0f;
-			GPU_material_bind_uniforms(gpumat, GMS.gob->obmat, GMS.gviewmat, GMS.gviewinv, GMS.gob->col, auto_bump_scale);
+			GPU_material_bind_uniforms(gpumat, GMS.gob->obmat, GMS.gob->col, auto_bump_scale);
 			GMS.gboundmat= mat;
 
 			/* for glsl use alpha blend mode, unless it's set to solid and

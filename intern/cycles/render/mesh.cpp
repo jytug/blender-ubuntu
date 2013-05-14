@@ -135,15 +135,29 @@ void Mesh::compute_bounds()
 	size_t verts_size = verts.size();
 	size_t curve_keys_size = curve_keys.size();
 
-	for(size_t i = 0; i < verts_size; i++)
-		bnds.grow(verts[i]);
+	if(verts_size + curve_keys_size > 0) {
+		for(size_t i = 0; i < verts_size; i++)
+			bnds.grow(verts[i]);
 
-	for(size_t i = 0; i < curve_keys_size; i++)
-		bnds.grow(curve_keys[i].co, curve_keys[i].radius);
+		for(size_t i = 0; i < curve_keys_size; i++)
+			bnds.grow(curve_keys[i].co, curve_keys[i].radius);
 
-	/* happens mostly on empty meshes */
-	if(!bnds.valid())
+		if(!bnds.valid()) {
+			bnds = BoundBox::empty;
+
+			/* skip nan or inf coordinates */
+			for(size_t i = 0; i < verts_size; i++)
+				bnds.grow_safe(verts[i]);
+
+			for(size_t i = 0; i < curve_keys_size; i++)
+				bnds.grow_safe(curve_keys[i].co, curve_keys[i].radius);
+		}
+	}
+
+	if(!bnds.valid()) {
+		/* empty mesh */
 		bnds.grow(make_float3(0.0f, 0.0f, 0.0f));
+	}
 
 	bounds = bnds;
 }
@@ -875,7 +889,7 @@ void MeshManager::device_update(Device *device, DeviceScene *dscene, Scene *scen
 	bool displacement_done = false;
 
 	foreach(Mesh *mesh, scene->meshes)
-		if(mesh->need_update && displace(device, scene, mesh, progress))
+		if(mesh->need_update && displace(device, dscene, scene, mesh, progress))
 			displacement_done = true;
 
 	/* todo: properly handle cancel halfway displacement */

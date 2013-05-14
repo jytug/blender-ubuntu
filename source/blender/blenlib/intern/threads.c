@@ -29,14 +29,13 @@
  *  \ingroup bli
  */
 
-
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
 
-
-#include "BLI_blenlib.h"
+#include "BLI_listbase.h"
 #include "BLI_gsqueue.h"
 #include "BLI_threads.h"
 
@@ -400,6 +399,19 @@ void BLI_mutex_end(ThreadMutex *mutex)
 	pthread_mutex_destroy(mutex);
 }
 
+ThreadMutex *BLI_mutex_alloc(void)
+{
+	ThreadMutex *mutex = MEM_callocN(sizeof(ThreadMutex), "ThreadMutex");
+	BLI_mutex_init(mutex);
+	return mutex;
+}
+
+void BLI_mutex_free(ThreadMutex *mutex)
+{
+	BLI_mutex_end(mutex);
+	MEM_freeN(mutex);
+}
+
 /* Spin Locks */
 
 void BLI_spin_init(SpinLock *spin)
@@ -429,12 +441,16 @@ void BLI_spin_unlock(SpinLock *spin)
 #endif
 }
 
+#ifndef __APPLE__
 void BLI_spin_end(SpinLock *spin)
 {
-#ifndef __APPLE__
 	pthread_spin_destroy(spin);
-#endif
 }
+#else
+void BLI_spin_end(SpinLock *UNUSED(spin))
+{
+}
+#endif
 
 /* Read/Write Mutex Lock */
 
@@ -459,6 +475,19 @@ void BLI_rw_mutex_unlock(ThreadRWMutex *mutex)
 void BLI_rw_mutex_end(ThreadRWMutex *mutex)
 {
 	pthread_rwlock_destroy(mutex);
+}
+
+ThreadRWMutex *BLI_rw_mutex_alloc(void)
+{
+	ThreadRWMutex *mutex = MEM_callocN(sizeof(ThreadRWMutex), "ThreadRWMutex");
+	BLI_rw_mutex_init(mutex);
+	return mutex;
+}
+
+void BLI_rw_mutex_free(ThreadRWMutex *mutex)
+{
+	BLI_rw_mutex_end(mutex);
+	MEM_freeN(mutex);
 }
 
 /* ************************************************ */

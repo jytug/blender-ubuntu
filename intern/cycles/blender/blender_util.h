@@ -30,7 +30,7 @@
  * todo: clean this up ... */
 
 extern "C" {
-void BLI_timestr(double _time, char *str);
+void BLI_timestr(double _time, char *str, size_t maxlen);
 void BKE_image_user_frame_calc(void *iuser, int cfra, int fieldnr);
 void BKE_image_user_file_path(void *iuser, void *ima, char *path);
 unsigned char *BKE_image_get_pixels_for_frame(void *image, int frame);
@@ -39,9 +39,9 @@ float *BKE_image_get_float_pixels_for_frame(void *image, int frame);
 
 CCL_NAMESPACE_BEGIN
 
-static inline BL::Mesh object_to_mesh(BL::BlendData data, BL::Object object, BL::Scene scene, bool apply_modifiers, bool render)
+static inline BL::Mesh object_to_mesh(BL::BlendData data, BL::Object object, BL::Scene scene, bool apply_modifiers, bool render, bool calc_undeformed)
 {
-	return data.meshes.new_from_object(scene, object, apply_modifiers, (render)? 2: 1, true);
+	return data.meshes.new_from_object(scene, object, apply_modifiers, (render)? 2: 1, true, calc_undeformed);
 }
 
 static inline void colorramp_to_array(BL::ColorRamp ramp, float4 *data, int size)
@@ -202,18 +202,38 @@ static inline uint get_layer(BL::Array<int, 20> array, BL::Array<int, 8> local_a
 	return layer;
 }
 
-#if 0
 static inline float3 get_float3(PointerRNA& ptr, const char *name)
 {
 	float3 f;
 	RNA_float_get_array(&ptr, name, &f.x);
 	return f;
 }
-#endif
+
+static inline void set_float3(PointerRNA& ptr, const char *name, float3 value)
+{
+	RNA_float_set_array(&ptr, name, &value.x);
+}
+
+static inline float4 get_float4(PointerRNA& ptr, const char *name)
+{
+	float4 f;
+	RNA_float_get_array(&ptr, name, &f.x);
+	return f;
+}
+
+static inline void set_float4(PointerRNA& ptr, const char *name, float4 value)
+{
+	RNA_float_set_array(&ptr, name, &value.x);
+}
 
 static inline bool get_boolean(PointerRNA& ptr, const char *name)
 {
 	return RNA_boolean_get(&ptr, name)? true: false;
+}
+
+static inline void set_boolean(PointerRNA& ptr, const char *name, bool value)
+{
+	RNA_boolean_set(&ptr, name, (int)value);
 }
 
 static inline float get_float(PointerRNA& ptr, const char *name)
@@ -221,9 +241,19 @@ static inline float get_float(PointerRNA& ptr, const char *name)
 	return RNA_float_get(&ptr, name);
 }
 
+static inline void set_float(PointerRNA& ptr, const char *name, float value)
+{
+	RNA_float_set(&ptr, name, value);
+}
+
 static inline int get_int(PointerRNA& ptr, const char *name)
 {
 	return RNA_int_get(&ptr, name);
+}
+
+static inline void set_int(PointerRNA& ptr, const char *name, int value)
+{
+	RNA_int_set(&ptr, name, value);
 }
 
 static inline int get_enum(PointerRNA& ptr, const char *name)
@@ -240,6 +270,32 @@ static inline string get_enum_identifier(PointerRNA& ptr, const char *name)
 	RNA_property_enum_identifier(NULL, &ptr, prop, value, &identifier);
 
 	return string(identifier);
+}
+
+static inline void set_enum(PointerRNA& ptr, const char *name, int value)
+{
+	RNA_enum_set(&ptr, name, value);
+}
+
+static inline void set_enum(PointerRNA& ptr, const char *name, const string &identifier)
+{
+	RNA_enum_set_identifier(&ptr, name, identifier.c_str());
+}
+
+static inline string get_string(PointerRNA& ptr, const char *name)
+{
+	char cstrbuf[1024];
+	char *cstr = RNA_string_get_alloc(&ptr, name, cstrbuf, sizeof(cstrbuf));
+	string str(cstr);
+	if (cstr != cstrbuf)
+		MEM_freeN(cstr);
+	
+	return str;
+}
+
+static inline void set_string(PointerRNA& ptr, const char *name, const string &value)
+{
+	RNA_string_set(&ptr, name, value.c_str());
 }
 
 /* Relative Paths */

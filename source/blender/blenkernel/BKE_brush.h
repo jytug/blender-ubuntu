@@ -38,9 +38,15 @@ struct Brush;
 struct ImBuf;
 struct ImagePool;
 struct Main;
+struct rctf;
 struct Scene;
 struct wmOperator;
 // enum CurveMappingPreset;
+
+
+/* globals for brush execution */
+void BKE_brush_system_init(void);
+void BKE_brush_system_exit(void);
 
 /* datablock functions */
 struct Brush *BKE_brush_add(struct Main *bmain, const char *name);
@@ -62,30 +68,24 @@ int BKE_brush_clone_image_delete(struct Brush *brush);
 /* jitter */
 void BKE_brush_jitter_pos(const struct Scene *scene, struct Brush *brush,
                           const float pos[2], float jitterpos[2]);
+void BKE_brush_randomize_texture_coordinates(struct UnifiedPaintSettings *ups, bool mask);
 
 /* brush curve */
-void BKE_brush_curve_preset(struct Brush *b, /*enum CurveMappingPreset*/ int preset);
+void BKE_brush_curve_preset(struct Brush *b, int preset);
 float BKE_brush_curve_strength_clamp(struct Brush *br, float p, const float len);
 float BKE_brush_curve_strength(struct Brush *br, float p, const float len); /* used for sculpt */
 
 /* sampling */
-void BKE_brush_sample_tex(const struct Scene *scene, struct Brush *brush, const float sampleco[3], float rgba[4], const int thread, struct ImagePool *pool);
-void BKE_brush_sample_tex_2D(const struct Scene *scene, struct Brush *brush, const float xy[2], float rgba[4], const int thread);
-void BKE_brush_imbuf_new(const struct Scene *scene, struct Brush *brush, short flt, short texfalloff, int size,
-                         struct ImBuf **imbuf, int use_color_correction);
+float BKE_brush_sample_tex_3D(const Scene *scene, struct Brush *br, const float point[3],
+                              float rgba[4], const int thread, struct ImagePool *pool);
+float BKE_brush_sample_masktex(const Scene *scene, struct Brush *br, const float point[3],
+                               const int thread, struct ImagePool *pool);
 
-/* painting */
-struct BrushPainter;
-typedef struct BrushPainter BrushPainter;
-typedef int (*BrushFunc)(void *user, struct ImBuf *ibuf, const float lastpos[2], const float pos[2]);
-
-BrushPainter *BKE_brush_painter_new(struct Scene *scene, struct Brush *brush);
-void BKE_brush_painter_require_imbuf(BrushPainter *painter, short flt,
-                                     short texonly, int size);
-int BKE_brush_painter_paint(BrushPainter *painter, BrushFunc func, const float pos[2],
-                            double time, float pressure, void *user, int use_color_correction);
-void BKE_brush_painter_break_stroke(BrushPainter *painter);
-void BKE_brush_painter_free(BrushPainter *painter);
+enum BrushImBufFill { BRUSH_IMBUF_MASK, BRUSH_IMBUF_TEX, BRUSH_IMBUF_TEX_MASK };
+void BKE_brush_imbuf_new(const struct Scene *scene, struct Brush *brush, bool use_float,
+                         enum BrushImBufFill fill, int size, struct ImBuf **imbuf,
+                         bool use_color_correction, bool use_brush_alpha,
+                         struct ImagePool *pool, struct rctf *mapping);
 
 /* texture */
 unsigned int *BKE_brush_gen_texture_cache(struct Brush *br, int half_side);

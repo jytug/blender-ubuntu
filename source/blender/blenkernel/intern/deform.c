@@ -41,14 +41,15 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 
-#include "BKE_deform.h"
-
 #include "BLI_listbase.h"
 #include "BLI_math.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
+#include "BKE_deform.h"  /* own include */
 
 void defgroup_copy_list(ListBase *outbase, ListBase *inbase)
 {
@@ -127,7 +128,7 @@ void defvert_copy_index(MDeformVert *dvert_dst, const MDeformVert *dvert_src, co
 /* only sync over matching weights, don't add or remove groups
  * warning, loop within loop.
  */
-void defvert_sync(MDeformVert *dvert_dst, const MDeformVert *dvert_src, int use_verify)
+void defvert_sync(MDeformVert *dvert_dst, const MDeformVert *dvert_src, const bool use_verify)
 {
 	if (dvert_src->totweight && dvert_dst->totweight) {
 		int i;
@@ -146,7 +147,7 @@ void defvert_sync(MDeformVert *dvert_dst, const MDeformVert *dvert_src, int use_
 
 /* be sure all flip_map values are valid */
 void defvert_sync_mapped(MDeformVert *dvert_dst, const MDeformVert *dvert_src,
-                         const int *flip_map, const int flip_map_len, const int use_verify)
+                         const int *flip_map, const int flip_map_len, const bool use_verify)
 {
 	if (dvert_src->totweight && dvert_dst->totweight) {
 		int i;
@@ -347,7 +348,7 @@ int defgroup_name_index(Object *ob, const char *name)
 }
 
 /* note, must be freed */
-int *defgroup_flip_map(Object *ob, int *flip_map_len, int use_default)
+int *defgroup_flip_map(Object *ob, int *flip_map_len, const bool use_default)
 {
 	int defbase_tot = *flip_map_len = BLI_countlist(&ob->defbase);
 
@@ -385,7 +386,7 @@ int *defgroup_flip_map(Object *ob, int *flip_map_len, int use_default)
 }
 
 /* note, must be freed */
-int *defgroup_flip_map_single(Object *ob, int *flip_map_len, int use_default, int defgroup)
+int *defgroup_flip_map_single(Object *ob, int *flip_map_len, const bool use_default, int defgroup)
 {
 	int defbase_tot = *flip_map_len = BLI_countlist(&ob->defbase);
 
@@ -417,7 +418,7 @@ int *defgroup_flip_map_single(Object *ob, int *flip_map_len, int use_default, in
 	}
 }
 
-int defgroup_flip_index(Object *ob, int index, int use_default)
+int defgroup_flip_index(Object *ob, int index, const bool use_default)
 {
 	bDeformGroup *dg = BLI_findlink(&ob->defbase, index);
 	int flip_index = -1;
@@ -433,22 +434,22 @@ int defgroup_flip_index(Object *ob, int index, int use_default)
 	return (flip_index == -1 && use_default) ? index : flip_index;
 }
 
-static int defgroup_find_name_dupe(const char *name, bDeformGroup *dg, Object *ob)
+static bool defgroup_find_name_dupe(const char *name, bDeformGroup *dg, Object *ob)
 {
 	bDeformGroup *curdef;
 
 	for (curdef = ob->defbase.first; curdef; curdef = curdef->next) {
 		if (dg != curdef) {
 			if (!strcmp(curdef->name, name)) {
-				return 1;
+				return true;
 			}
 		}
 	}
 
-	return 0;
+	return false;
 }
 
-static int defgroup_unique_check(void *arg, const char *name)
+static bool defgroup_unique_check(void *arg, const char *name)
 {
 	struct {Object *ob; void *dg; } *data = arg;
 	return defgroup_find_name_dupe(name, data->dg, data->ob);
@@ -460,7 +461,7 @@ void defgroup_unique_name(bDeformGroup *dg, Object *ob)
 	data.ob = ob;
 	data.dg = dg;
 
-	BLI_uniquename_cb(defgroup_unique_check, &data, "Group", '.', dg->name, sizeof(dg->name));
+	BLI_uniquename_cb(defgroup_unique_check, &data, DATA_("Group"), '.', dg->name, sizeof(dg->name));
 }
 
 static int is_char_sep(const char c)
@@ -785,6 +786,24 @@ int defvert_find_shared(const MDeformVert *dvert_a, const MDeformVert *dvert_b)
 	}
 
 	return -1;
+}
+
+/**
+ * return true if has no weights
+ */
+bool defvert_is_weight_zero(const struct MDeformVert *dvert, const int defgroup_tot)
+{
+	MDeformWeight *dw = dvert->dw;
+	unsigned int i;
+	for (i = dvert->totweight; i != 0; i--, dw++) {
+		if (dw->weight != 0.0f) {
+			/* check the group is in-range, happens on rare situations */
+			if (LIKELY(dw->def_nr < defgroup_tot)) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 /* -------------------------------------------------------------------- */

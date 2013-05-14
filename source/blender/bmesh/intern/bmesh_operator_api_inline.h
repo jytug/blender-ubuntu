@@ -43,7 +43,7 @@ BLI_INLINE short _bmo_elem_flag_test(BMesh *bm, BMFlagLayer *oflags, const short
 	return oflags[bm->stackdepth - 1].f & oflag;
 }
 
-BLI_INLINE short _bmo_elem_flag_test_bool(BMesh *bm, BMFlagLayer *oflags, const short oflag)
+BLI_INLINE bool _bmo_elem_flag_test_bool(BMesh *bm, BMFlagLayer *oflags, const short oflag)
 {
 	return (oflags[bm->stackdepth - 1].f & oflag) != 0;
 }
@@ -120,13 +120,13 @@ BLI_INLINE void BMO_slot_map_empty_insert(BMOperator *op, BMOpSlot *slot,
 	BMO_slot_map_insert(op, slot, element, NULL, 0);
 }
 
-BLI_INLINE int BMO_slot_map_contains(BMOpSlot *slot, const void *element)
+BLI_INLINE bool BMO_slot_map_contains(BMOpSlot *slot, const void *element)
 {
 	BLI_assert(slot->slot_type == BMO_OP_SLOT_MAPPING);
 
 	/* sanity check */
 	if (UNLIKELY(slot->data.ghash == NULL)) {
-		return 0;
+		return false;
 	}
 
 	return BLI_ghash_haskey(slot->data.ghash, element);

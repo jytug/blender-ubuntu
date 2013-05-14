@@ -88,10 +88,15 @@ static uint8_t *video_buffer = 0;
 static int video_buffersize = 0;
 
 static uint8_t *audio_input_buffer = 0;
+static uint8_t *audio_deinterleave_buffer = 0;
 static int audio_input_samples = 0;
+#ifndef FFMPEG_HAVE_ENCODE_AUDIO2
 static uint8_t *audio_output_buffer = 0;
 static int audio_outbuf_size = 0;
+#endif
 static double audio_time = 0.0f;
+static bool audio_deinterleave = false;
+static int audio_sample_size = 0;
 
 #ifdef WITH_AUDASPACE
 static AUD_Device *audio_mixdown_device = 0;
@@ -111,8 +116,9 @@ static void delete_picture(AVFrame *f)
 	}
 }
 
-static int use_float_audio_buffer(int codec_id)
+static int request_float_audio_buffer(int codec_id)
 {
+	/* If any of these codecs, we prefer the float sample format (if supported) */
 	return codec_id == CODEC_ID_AAC || codec_id == CODEC_ID_AC3 || codec_id == CODEC_ID_VORBIS;
 }
 
@@ -121,15 +127,55 @@ static int write_audio_frame(void)
 {
 	AVCodecContext *c = NULL;
 	AVPacket pkt;
+	AVFrame *frame = NULL;
+	int got_output = 0;
 
 	c = audio_stream->codec;
 
 	av_init_packet(&pkt);
 	pkt.size = 0;
+	pkt.data = NULL;
 
 	AUD_readDevice(audio_mixdown_device, audio_input_buffer, audio_input_samples);
 	audio_time += (double) audio_input_samples / (double) c->sample_rate;
 
+#ifdef FFMPEG_HAVE_ENCODE_AUDIO2
+	frame = avcodec_alloc_frame();
+	frame->nb_samples = audio_input_samples;
+	frame->format = c->sample_fmt;
+#ifdef FFMPEG_HAVE_FRAME_CHANNEL_LAYOUT
+	frame->channel_layout = c->channel_layout;
+#endif
+
+	if (audio_deinterleave) {
+		int channel, i;
+		uint8_t *temp;
+
+		for (channel = 0; channel < c->channels; channel++) {
+			for (i = 0; i < frame->nb_samples; i++) {
+				memcpy(audio_deinterleave_buffer + (i + channel * frame->nb_samples) * audio_sample_size,
+					   audio_input_buffer + (c->channels * i + channel) * audio_sample_size, audio_sample_size);
+			}
+		}
+
+		temp = audio_deinterleave_buffer;
+		audio_deinterleave_buffer = audio_input_buffer;
+		audio_input_buffer = temp;
+	}
+
+	avcodec_fill_audio_frame(frame, c->channels, c->sample_fmt, audio_input_buffer,
+	                         audio_input_samples * c->channels * audio_sample_size, 1);
+
+	if (avcodec_encode_audio2(c, &pkt, frame, &got_output) < 0) {
+		// XXX error("Error writing audio packet");
+		return -1;
+	}
+
+	if (!got_output) {
+		avcodec_free_frame(&frame);
+		return 0;
+	}
+#else
 	pkt.size = avcodec_encode_audio(c, audio_output_buffer, audio_outbuf_size, (short *) audio_input_buffer);
 
 	if (pkt.size < 0) {
@@ -138,20 +184,32 @@ static int write_audio_frame(void)
 	}
 
 	pkt.data = audio_output_buffer;
+	got_output = 1;
+#endif
 
-	if (c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE) {
-		pkt.pts = av_rescale_q(c->coded_frame->pts, c->time_base, audio_stream->time_base);
-		PRINT("Audio Frame PTS: %d\n", (int) pkt.pts);
+	if (got_output) {
+		if (c->coded_frame && c->coded_frame->pts != AV_NOPTS_VALUE) {
+			pkt.pts = av_rescale_q(c->coded_frame->pts, c->time_base, audio_stream->time_base);
+			PRINT("Audio Frame PTS: %d\n", (int) pkt.pts);
+		}
+
+		pkt.stream_index = audio_stream->index;
+
+		pkt.flags |= AV_PKT_FLAG_KEY;
+
+		if (av_interleaved_write_frame(outfile, &pkt) != 0) {
+			fprintf(stderr, "Error writing audio packet!\n");
+			if (frame)
+				avcodec_free_frame(&frame);
+			return -1;
+		}
+
+		av_free_packet(&pkt);
 	}
 
-	pkt.stream_index = audio_stream->index;
+	if (frame)
+		avcodec_free_frame(&frame);
 
-	pkt.flags |= AV_PKT_FLAG_KEY;
-
-	if (av_interleaved_write_frame(outfile, &pkt) != 0) {
-		fprintf(stderr, "Error writing audio packet!\n");
-		return -1;
-	}
 	return 0;
 }
 #endif // #ifdef WITH_AUDASPACE
@@ -551,6 +609,12 @@ static AVStream *alloc_video_stream(RenderData *rd, int codec_id, AVFormatContex
 		}
 	}
 
+	if (codec_id == CODEC_ID_PNG) {
+		if (rd->im_format.planes == R_IMF_PLANES_RGBA) {
+			c->pix_fmt = PIX_FMT_ARGB;
+		}
+	}
+
 	if ((of->oformat->flags & AVFMT_GLOBALHEADER)
 //		|| !strcmp(of->oformat->name, "mp4")
 //	    || !strcmp(of->oformat->name, "mov")
@@ -601,8 +665,6 @@ static AVStream *alloc_video_stream(RenderData *rd, int codec_id, AVFormatContex
 	return st;
 }
 
-/* Prepare an audio stream for the output file */
-
 static AVStream *alloc_audio_stream(RenderData *rd, int codec_id, AVFormatContext *of, char *error, int error_size)
 {
 	AVStream *st;
@@ -623,14 +685,48 @@ static AVStream *alloc_audio_stream(RenderData *rd, int codec_id, AVFormatContex
 	c->bit_rate = ffmpeg_audio_bitrate * 1000;
 	c->sample_fmt = AV_SAMPLE_FMT_S16;
 	c->channels = rd->ffcodecdata.audio_channels;
-	if (use_float_audio_buffer(codec_id)) {
+
+	if (request_float_audio_buffer(codec_id)) {
+		/* mainly for AAC codec which is experimental */
 		c->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 		c->sample_fmt = AV_SAMPLE_FMT_FLT;
 	}
+
 	codec = avcodec_find_encoder(c->codec_id);
 	if (!codec) {
 		//XXX error("Couldn't find a valid audio codec");
 		return NULL;
+	}
+
+	if (codec->sample_fmts) {
+		/* check if the prefered sample format for this codec is supported.
+		 * this is because, depending on the version of libav, and with the whole ffmpeg/libav fork situation,
+		 * you have various implementations around. float samples in particular are not always supported.
+		 */
+		const enum AVSampleFormat *p = codec->sample_fmts;
+		for (; *p!=-1; p++) {
+			if (*p == st->codec->sample_fmt)
+				break;
+		}
+		if (*p == -1) {
+			/* sample format incompatible with codec. Defaulting to a format known to work */
+			st->codec->sample_fmt = codec->sample_fmts[0];
+		}
+	}
+
+	if (codec->supported_samplerates) {
+		const int *p = codec->supported_samplerates;
+		int best = 0;
+		int best_dist = INT_MAX;
+		for (; *p; p++) {
+			int dist = abs(st->codec->sample_rate - *p);
+			if (dist < best_dist) {
+				best_dist = dist;
+				best = *p;
+			}
+		}
+		/* best is the closest supported sample rate (same as selected if best_dist == 0) */
+		st->codec->sample_rate = best;
 	}
 
 	set_ffmpeg_properties(rd, c, "audio");
@@ -646,24 +742,34 @@ static AVStream *alloc_audio_stream(RenderData *rd, int codec_id, AVFormatContex
 	st->codec->time_base.num = 1;
 	st->codec->time_base.den = st->codec->sample_rate;
 
+#ifndef FFMPEG_HAVE_ENCODE_AUDIO2
 	audio_outbuf_size = FF_MIN_BUFFER_SIZE;
+#endif
 
-	if ((c->codec_id >= CODEC_ID_PCM_S16LE) && (c->codec_id <= CODEC_ID_PCM_DVD))
-		audio_input_samples = audio_outbuf_size * 8 / c->bits_per_coded_sample / c->channels;
+	if (c->frame_size == 0)
+		// used to be if((c->codec_id >= CODEC_ID_PCM_S16LE) && (c->codec_id <= CODEC_ID_PCM_DVD))
+		// not sure if that is needed anymore, so let's try out if there are any
+		// complaints regarding some ffmpeg versions users might have
+		audio_input_samples = FF_MIN_BUFFER_SIZE * 8 / c->bits_per_coded_sample / c->channels;
 	else {
 		audio_input_samples = c->frame_size;
+#ifndef FFMPEG_HAVE_ENCODE_AUDIO2
 		if (c->frame_size * c->channels * sizeof(int16_t) * 4 > audio_outbuf_size)
 			audio_outbuf_size = c->frame_size * c->channels * sizeof(int16_t) * 4;
+#endif
 	}
 
+	audio_deinterleave = av_sample_fmt_is_planar(c->sample_fmt);
+
+	audio_sample_size = av_get_bytes_per_sample(c->sample_fmt);
+
+	audio_input_buffer = (uint8_t *) av_malloc(audio_input_samples * c->channels * audio_sample_size);
+#ifndef FFMPEG_HAVE_ENCODE_AUDIO2
 	audio_output_buffer = (uint8_t *) av_malloc(audio_outbuf_size);
+#endif
 
-	if (use_float_audio_buffer(codec_id)) {
-		audio_input_buffer = (uint8_t *) av_malloc(audio_input_samples * c->channels * sizeof(float));
-	}
-	else {
-		audio_input_buffer = (uint8_t *) av_malloc(audio_input_samples * c->channels * sizeof(int16_t));
-	}
+	if (audio_deinterleave)
+		audio_deinterleave_buffer = (uint8_t *) av_malloc(audio_input_samples * c->channels * audio_sample_size);
 
 	audio_time = 0.0f;
 
@@ -740,7 +846,7 @@ static int start_ffmpeg_impl(struct RenderData *rd, int rectx, int recty, Report
 
 	fmt->audio_codec = ffmpeg_audio_codec;
 
-	BLI_snprintf(of->filename, sizeof(of->filename), "%s", name);
+	BLI_strncpy(of->filename, name, sizeof(of->filename));
 	/* set the codec to the user's selection */
 	switch (ffmpeg_type) {
 		case FFMPEG_AVI:
@@ -837,7 +943,8 @@ static int start_ffmpeg_impl(struct RenderData *rd, int rectx, int recty, Report
 	}
 	if (avformat_write_header(of, NULL) < 0) {
 		BKE_report(reports, RPT_ERROR, "Could not initialize streams, probably unsupported codec combination");
-			av_dict_free(&opts);
+		av_dict_free(&opts);
+		avio_close(of->pb);
 		return 0;
 	}
 
@@ -963,12 +1070,27 @@ int BKE_ffmpeg_start(struct Scene *scene, RenderData *rd, int rectx, int recty, 
 		AVCodecContext *c = audio_stream->codec;
 		AUD_DeviceSpecs specs;
 		specs.channels = c->channels;
-		if (use_float_audio_buffer(c->codec_id)) {
-			specs.format = AUD_FORMAT_FLOAT32;
-		}
-		else {
+
+		switch (av_get_packed_sample_fmt(c->sample_fmt)) {
+		case AV_SAMPLE_FMT_U8:
+			specs.format = AUD_FORMAT_U8;
+			break;
+		case AV_SAMPLE_FMT_S16:
 			specs.format = AUD_FORMAT_S16;
+			break;
+		case AV_SAMPLE_FMT_S32:
+			specs.format = AUD_FORMAT_S32;
+			break;
+		case AV_SAMPLE_FMT_FLT:
+			specs.format = AUD_FORMAT_FLOAT32;
+			break;
+		case AV_SAMPLE_FMT_DBL:
+			specs.format = AUD_FORMAT_FLOAT64;
+			break;
+		default:
+			return -31415;
 		}
+
 		specs.rate = rd->ffcodecdata.audio_mixrate;
 		audio_mixdown_device = sound_mixdown(scene, specs, rd->sfra, rd->ffcodecdata.audio_volume);
 #ifdef FFMPEG_CODEC_TIME_BASE
@@ -980,7 +1102,6 @@ int BKE_ffmpeg_start(struct Scene *scene, RenderData *rd, int rectx, int recty, 
 	return success;
 }
 
-void BKE_ffmpeg_end(void);
 static void end_ffmpeg_impl(int is_autosplit);
 
 #ifdef WITH_AUDASPACE
@@ -1092,13 +1213,20 @@ static void end_ffmpeg_impl(int is_autosplit)
 		MEM_freeN(video_buffer);
 		video_buffer = 0;
 	}
+	if (audio_input_buffer) {
+		av_free(audio_input_buffer);
+		audio_input_buffer = 0;
+	}
+#ifndef FFMPEG_HAVE_ENCODE_AUDIO2
 	if (audio_output_buffer) {
 		av_free(audio_output_buffer);
 		audio_output_buffer = 0;
 	}
-	if (audio_input_buffer) {
-		av_free(audio_input_buffer);
-		audio_input_buffer = 0;
+#endif
+
+	if (audio_deinterleave_buffer) {
+		av_free(audio_deinterleave_buffer);
+		audio_deinterleave_buffer = 0;
 	}
 
 	if (img_convert_ctx) {
@@ -1491,6 +1619,9 @@ int BKE_ffmpeg_alpha_channel_is_supported(RenderData *rd)
 	int codec = rd->ffcodecdata.codec;
 
 	if (codec == CODEC_ID_QTRLE)
+		return TRUE;
+
+	if (codec == CODEC_ID_PNG)
 		return TRUE;
 
 #ifdef FFMPEG_FFV1_ALPHA_SUPPORTED

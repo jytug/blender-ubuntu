@@ -28,13 +28,11 @@
 
 set(INC
 	.
-	../colamd/Include
 	third_party/ceres/include
 )
 
 set(INC_SYS
 	../Eigen3
-	third_party/ssba
 	${PNG_INCLUDE_DIR}
 	${ZLIB_INCLUDE_DIRS}
 )
@@ -47,12 +45,12 @@ set(SRC
 	libmv/multiview/euclidean_resection.cc
 	libmv/multiview/fundamental.cc
 	libmv/multiview/homography.cc
+	libmv/multiview/panography.cc
 	libmv/multiview/projection.cc
 	libmv/multiview/triangulation.cc
 	libmv/numeric/numeric.cc
 	libmv/numeric/poly.cc
 	libmv/simple_pipeline/bundle.cc
-	libmv/simple_pipeline/callbacks.cc
 	libmv/simple_pipeline/camera_intrinsics.cc
 	libmv/simple_pipeline/detect.cc
 	libmv/simple_pipeline/initialize_reconstruction.cc
@@ -61,7 +59,6 @@ set(SRC
 	libmv/simple_pipeline/pipeline.cc
 	libmv/simple_pipeline/reconstruction.cc
 	libmv/simple_pipeline/resect.cc
-	libmv/simple_pipeline/rigid_registration.cc
 	libmv/simple_pipeline/tracks.cc
 	libmv/tracking/brute_region_tracker.cc
 	libmv/tracking/esm_region_tracker.cc
@@ -101,6 +98,7 @@ set(SRC
 	libmv/multiview/homography.h
 	libmv/multiview/homography_parameterization.h
 	libmv/multiview/nviewtriangulation.h
+	libmv/multiview/panography.h
 	libmv/multiview/projection.h
 	libmv/multiview/resection.h
 	libmv/multiview/triangulation.h
@@ -119,7 +117,6 @@ set(SRC
 	libmv/simple_pipeline/pipeline.h
 	libmv/simple_pipeline/reconstruction.h
 	libmv/simple_pipeline/resect.h
-	libmv/simple_pipeline/rigid_registration.h
 	libmv/simple_pipeline/tracks.h
 	libmv/tracking/brute_region_tracker.h
 	libmv/tracking/esm_region_tracker.h
@@ -218,7 +215,6 @@ else()
 endif()
 
 add_definitions(
-	-DV3DLIB_ENABLE_SUITESPARSE
 	-DGOOGLE_GLOG_DLL_DECL=
 )
 

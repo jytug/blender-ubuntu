@@ -45,6 +45,7 @@ extern "C" {
 #include "DNA_vec_types.h"
 #include "DNA_listBase.h"
 #include "DNA_ID.h"
+#include "DNA_freestyle_types.h"
 
 struct Object;
 struct Brush;
@@ -187,6 +188,8 @@ typedef struct SceneRenderLayer {
 
 	int samples;
 	int pad;
+	
+	struct FreestyleConfig freestyleConfig;
 } SceneRenderLayer;
 
 /* srl->layflag */
@@ -196,7 +199,8 @@ typedef struct SceneRenderLayer {
 #define SCE_LAY_EDGE	8
 #define SCE_LAY_SKY		16
 #define SCE_LAY_STRAND	32
-	/* flags between 32 and 0x8000 are set to 1 already, for future options */
+#define SCE_LAY_FRS		64
+	/* flags between 128 and 0x8000 are set to 1 already, for future options */
 
 #define SCE_LAY_ALL_Z		0x8000
 #define SCE_LAY_XOR			0x10000
@@ -388,16 +392,22 @@ typedef struct RenderData {
 
 	short filtertype;	/* filter is box, tent, gauss, mitch, etc */
 
-	short size, maximsize;	/* size in %, max in Kb */
+	short size; /* size in % */
+	
+	short maximsize DNA_DEPRECATED; /* max in Kb */
+
+	short pad6;
+
 	/* from buttons: */
 	/**
 	 * The desired number of pixels in the x direction
 	 */
-	short xsch;
+	int xsch;
 	/**
 	 * The desired number of pixels in the y direction
 	 */
-	short ysch;
+	int ysch;
+
 	/**
 	 * The number of part to use in the x direction
 	 */
@@ -410,7 +420,7 @@ typedef struct RenderData {
 	/**
 	 * render tile dimensions
 	 */
-	short tilex, tiley;
+	int tilex, tiley;
 
 	short planes  DNA_DEPRECATED, imtype  DNA_DEPRECATED, subimtype  DNA_DEPRECATED, quality  DNA_DEPRECATED; /*deprecated!*/
 	
@@ -418,6 +428,7 @@ typedef struct RenderData {
 	 * Render to image editor, fullscreen or to new window.
 	 */
 	short displaymode;
+	short pad7;
 
 	/**
 	 * Flags for render settings. Use bit-masking to access the settings.
@@ -457,8 +468,6 @@ typedef struct RenderData {
 	short osa;
 
 	short frs_sec, edgeint;
-
-	int pad;
 
 	
 	/* safety, border and display rect */
@@ -540,6 +549,10 @@ typedef struct RenderData {
 	float domeresbuf  DNA_DEPRECATED;	//  XXX deprecated since 2.5
 	float pad2;
 	struct Text *dometext  DNA_DEPRECATED;	//  XXX deprecated since 2.5
+
+	/* Freestyle line thickness options */
+	int line_thickness_mode;
+	float unit_line_thickness; /* in pixels */
 
 	/* render engine */
 	char engine[32];
@@ -885,36 +898,66 @@ typedef struct UnifiedPaintSettings {
 	/* rake rotation */
 
 	/* record movement of mouse so that rake can start at an intuitive angle */
-	float last_x, last_y;
-	float last_angle;
+	float last_rake[2];
+	int pad;
 
-	float special_rotation;
+	float brush_rotation;
 
 	// all this below is used to communicate with the cursor drawing routine
 	int draw_anchored;
 	int   anchored_size;
-	float anchored_location[3];
 	float anchored_initial_mouse[2];
 
 	/* drawing pressure */
 	int draw_pressure;
 	float pressure_value;
+
+	/* position of mouse, used to sample the texture */
+	float tex_mouse[2];
+
+	/* position of mouse, used to sample the mask texture */
+	float mask_tex_mouse[2];
+
+	/* radius of brush, premultiplied with pressure.
+	 * In case of anchored brushes contains that radius */
+	float pixel_radius;
 } UnifiedPaintSettings;
 
 typedef enum {
-	UNIFIED_PAINT_SIZE  = (1<<0),
-	UNIFIED_PAINT_ALPHA = (1<<1),
-	UNIFIED_PAINT_WEIGHT = (1<<5),
+	UNIFIED_PAINT_SIZE  = (1 << 0),
+	UNIFIED_PAINT_ALPHA = (1 << 1),
+	UNIFIED_PAINT_WEIGHT = (1 << 5),
 
 	/* only used if unified size is enabled, mirros the brush flags
 	 * BRUSH_LOCK_SIZE and BRUSH_SIZE_PRESSURE */
-	UNIFIED_PAINT_BRUSH_LOCK_SIZE = (1<<2),
-	UNIFIED_PAINT_BRUSH_SIZE_PRESSURE   = (1<<3),
+	UNIFIED_PAINT_BRUSH_LOCK_SIZE = (1 << 2),
+	UNIFIED_PAINT_BRUSH_SIZE_PRESSURE   = (1 << 3),
 
 	/* only used if unified alpha is enabled, mirrors the brush flag
 	 * BRUSH_ALPHA_PRESSURE */
-	UNIFIED_PAINT_BRUSH_ALPHA_PRESSURE  = (1<<4)
+	UNIFIED_PAINT_BRUSH_ALPHA_PRESSURE  = (1 << 4)
 } UnifiedPaintSettingsFlags;
+
+typedef struct MeshStatVis {
+	char type;
+	char _pad1[2];
+
+	/* overhang */
+	char  overhang_axis;
+	float overhang_min, overhang_max;
+
+	/* thickness */
+	float thickness_min, thickness_max;
+	char thickness_samples;
+	char _pad2[3];
+
+	/* distort */
+	float distort_min, distort_max;
+
+	/* sharp */
+	float sharp_min, sharp_max;
+} MeshStatVis;
+
 
 /* *************************************************************** */
 /* Tool Settings */
@@ -1033,10 +1076,11 @@ typedef struct ToolSettings {
 	short proportional, prop_mode;
 	char proportional_objects; /* proportional edit, object mode */
 	char proportional_mask; /* proportional edit, object mode */
-	char pad4[2];
+	char pad4[1];
 
 	char auto_normalize; /*auto normalizing mode in wpaint*/
 	char multipaint; /* paint multiple bones in wpaint */
+	char weightuser;
 
 	/* UV painting */
 	int use_uv_sculpt;
@@ -1052,6 +1096,8 @@ typedef struct ToolSettings {
 
 	/* Unified Paint Settings */
 	struct UnifiedPaintSettings unified_paint_settings;
+
+	struct MeshStatVis statvis;
 } ToolSettings;
 
 /* *************************************************************** */
@@ -1137,11 +1183,8 @@ typedef struct Scene {
 	
 	/* none of the dependency graph  vars is mean to be saved */
 	struct  DagForest *theDag;
-	short dagisvalid, dagflags;
+	short dagflags;
 	short recalc;				/* recalc = counterpart of ob->recalc */
-
-	short pad6;
-	int pad5;
 
 	/* User-Defined KeyingSets */
 	int active_keyingset;			/* index of the active KeyingSet. first KeyingSet has index 1, 'none' active is 0, 'add new' is -1 */
@@ -1332,6 +1375,10 @@ typedef struct Scene {
 /* simplify_flag */
 #define R_SIMPLE_NO_TRIANGULATE		1
 
+/* line_thickness_mode */
+#define R_LINE_THICKNESS_ABSOLUTE 1
+#define R_LINE_THICKNESS_RELATIVE 2
+
 /* sequencer seq_prev_type seq_rend_type */
 
 
@@ -1373,6 +1420,9 @@ typedef struct Scene {
 	(base->object->restrictflag & (OB_RESTRICT_SELECT | OB_RESTRICT_VIEW)) == 0)
 #define BASE_VISIBLE(v3d, base)  (                                            \
 	(base->lay & v3d->lay) &&                                                 \
+	(base->object->restrictflag & OB_RESTRICT_VIEW) == 0)
+#define BASE_VISIBLE_BGMODE(v3d, scene, base)  (                              \
+	(base->lay & (v3d ? v3d->lay : scene->lay)) &&                            \
 	(base->object->restrictflag & OB_RESTRICT_VIEW) == 0)
 
 #define FIRSTBASE		scene->base.first
@@ -1422,6 +1472,13 @@ typedef struct Scene {
 #define SCE_SELECT_EDGE		2
 #define SCE_SELECT_FACE		4
 
+/* toolsettings->statvis->type */
+#define SCE_STATVIS_OVERHANG	0
+#define SCE_STATVIS_THICKNESS	1
+#define SCE_STATVIS_INTERSECT	2
+#define SCE_STATVIS_DISTORT		3
+#define SCE_STATVIS_SHARP		4
+
 /* toolsettings->particle.selectmode for particles */
 #define SCE_SELECT_PATH		1
 #define SCE_SELECT_POINT	2
@@ -1444,6 +1501,13 @@ typedef struct Scene {
 #define PROP_EDIT_OFF			0
 #define PROP_EDIT_ON			1
 #define PROP_EDIT_CONNECTED	2
+
+/* toolsettings->weightuser */
+enum {
+	OB_DRAW_GROUPUSER_NONE      = 0,
+	OB_DRAW_GROUPUSER_ACTIVE    = 1,
+	OB_DRAW_GROUPUSER_ALL       = 2
+};
 
 /* sce->flag */
 #define SCE_DS_SELECTED			(1<<0)
@@ -1478,24 +1542,24 @@ typedef enum {
 /* Sculpt.flags */
 /* These can eventually be moved to paint flags? */
 typedef enum SculptFlags {
-	SCULPT_SYMM_X = (1<<0),
-	SCULPT_SYMM_Y = (1<<1),
-	SCULPT_SYMM_Z = (1<<2),
-	SCULPT_LOCK_X = (1<<3),
-	SCULPT_LOCK_Y = (1<<4),
-	SCULPT_LOCK_Z = (1<<5),
-	SCULPT_SYMMETRY_FEATHER = (1<<6),
-	SCULPT_USE_OPENMP = (1<<7),
-	SCULPT_ONLY_DEFORM = (1<<8),
-	SCULPT_SHOW_DIFFUSE = (1<<9),
+	SCULPT_SYMM_X = (1 << 0),
+	SCULPT_SYMM_Y = (1 << 1),
+	SCULPT_SYMM_Z = (1 << 2),
+	SCULPT_LOCK_X = (1 << 3),
+	SCULPT_LOCK_Y = (1 << 4),
+	SCULPT_LOCK_Z = (1 << 5),
+	SCULPT_SYMMETRY_FEATHER = (1 << 6),
+	SCULPT_USE_OPENMP = (1 << 7),
+	SCULPT_ONLY_DEFORM = (1 << 8),
+	SCULPT_SHOW_DIFFUSE = (1 << 9),
 
 	/* If set, the mesh will be drawn with smooth-shading in
 	 * dynamic-topology mode */
-	SCULPT_DYNTOPO_SMOOTH_SHADING = (1<<10),
+	SCULPT_DYNTOPO_SMOOTH_SHADING = (1 << 10),
 
 	/* If set, dynamic-topology brushes will collapse short edges in
 	 * addition to subdividing long ones */
-	SCULPT_DYNTOPO_COLLAPSE = (1<<11)
+	SCULPT_DYNTOPO_COLLAPSE = (1 << 11)
 } SculptFlags;
 
 /* ImagePaintSettings.flag */
@@ -1504,7 +1568,6 @@ typedef enum SculptFlags {
 // #define IMAGEPAINT_DRAW_TOOL_DRAWING	4 // deprecated
 
 /* projection painting only */
-#define IMAGEPAINT_PROJECT_DISABLE		8	/* Non projection 3D painting */
 #define IMAGEPAINT_PROJECT_XRAY			16
 #define IMAGEPAINT_PROJECT_BACKFACE		32
 #define IMAGEPAINT_PROJECT_FLAT			64
@@ -1534,6 +1597,7 @@ typedef enum SculptFlags {
 #define EDGE_MODE_TAG_SHARP				2
 #define EDGE_MODE_TAG_CREASE			3
 #define EDGE_MODE_TAG_BEVEL				4
+#define EDGE_MODE_TAG_FREESTYLE			5
 
 /* toolsettings->gpencil_flags */
 #define GP_TOOL_FLAG_PAINTSESSIONS_ON	(1<<0)

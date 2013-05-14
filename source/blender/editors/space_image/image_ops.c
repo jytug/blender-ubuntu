@@ -162,7 +162,7 @@ static int space_image_file_exists_poll(bContext *C)
 			if (BLI_exists(name) == FALSE) {
 				CTX_wm_operator_poll_msg_set(C, "image file not found");
 			}
-			else if (BLI_file_is_writable(name) == FALSE) {
+			else if (!BLI_file_is_writable(name)) {
 				CTX_wm_operator_poll_msg_set(C, "image path can't be written to");
 			}
 			else {
@@ -238,7 +238,7 @@ typedef struct ViewPanData {
 	int event_type;
 } ViewPanData;
 
-static void image_view_pan_init(bContext *C, wmOperator *op, wmEvent *event)
+static void image_view_pan_init(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 	ViewPanData *vpd;
@@ -293,7 +293,7 @@ static int image_view_pan_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_view_pan_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int image_view_pan_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	if (event->type == MOUSEPAN) {
 		SpaceImage *sima = CTX_wm_space_image(C);
@@ -312,7 +312,7 @@ static int image_view_pan_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	}
 }
 
-static int image_view_pan_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int image_view_pan_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 	ViewPanData *vpd = op->customdata;
@@ -383,7 +383,7 @@ typedef struct ViewZoomData {
 	ARegion *ar;
 } ViewZoomData;
 
-static void image_view_zoom_init(bContext *C, wmOperator *op, wmEvent *event)
+static void image_view_zoom_init(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -455,7 +455,7 @@ enum {
 	VIEW_CONFIRM
 };
 
-static int image_view_zoom_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int image_view_zoom_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	if (event->type == MOUSEZOOM || event->type == MOUSEPAN) {
 		SpaceImage *sima = CTX_wm_space_image(C);
@@ -525,7 +525,7 @@ static void image_zoom_apply(ViewZoomData *vpd, wmOperator *op, const int x, con
 	ED_region_tag_redraw(vpd->ar);
 }
 
-static int image_view_zoom_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int image_view_zoom_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ViewZoomData *vpd = op->customdata;
 	short event_code = VIEW_PASS;
@@ -589,7 +589,7 @@ void IMAGE_OT_view_zoom(wmOperatorType *ot)
  * that explains the negative signs in the code below
  */
 
-static int image_view_ndof_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *event)
+static int image_view_ndof_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
 	if (event->type != NDOF_MOTION)
 		return OPERATOR_CANCELLED;
@@ -773,7 +773,7 @@ static int image_view_zoom_in_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_view_zoom_in_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int image_view_zoom_in_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	float location[2];
@@ -815,7 +815,7 @@ static int image_view_zoom_out_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_view_zoom_out_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int image_view_zoom_out_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	float location[2];
@@ -978,7 +978,7 @@ static int image_open_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_open_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int image_open_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	SpaceImage *sima = CTX_wm_space_image(C); /* XXX other space types can call */
 	char *path = U.textudir;
@@ -1091,7 +1091,7 @@ void IMAGE_OT_match_movie_length(wmOperatorType *ot)
 	ot->exec = image_match_len_exec;
 
 	/* flags */
-	ot->flag = OPTYPE_REGISTER /* | OPTYPE_UNDO */; /* Don't think we need undo for that. */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_INTERNAL/* | OPTYPE_UNDO */; /* Don't think we need undo for that. */
 }
 
 /******************** replace image operator ********************/
@@ -1128,7 +1128,7 @@ static int image_replace_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_replace_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int image_replace_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 
@@ -1218,14 +1218,17 @@ static int save_image_options_init(SaveImageOptions *simopts, SpaceImage *sima, 
 			simopts->im_format = scene->r.im_format;
 			is_depth_set = TRUE;
 		}
-		else if (ima->source == IMA_SRC_GENERATED) {
-			simopts->im_format.imtype = R_IMF_IMTYPE_PNG;
-		}
 		else {
-			BKE_imbuf_to_image_format(&simopts->im_format, ibuf);
+			if (ima->source == IMA_SRC_GENERATED) {
+				simopts->im_format.imtype = R_IMF_IMTYPE_PNG;
+			}
+			else {
+				BKE_imbuf_to_image_format(&simopts->im_format, ibuf);
+				simopts->im_format.quality = ibuf->ftype & 0xff;
+			}
+			simopts->im_format.quality = ibuf->ftype & 0xff;
 		}
 		//simopts->subimtype = scene->r.subimtype; /* XXX - this is lame, we need to make these available too! */
-		simopts->im_format.quality = ibuf->ftype & 0xff;
 
 		BLI_strncpy(simopts->filepath, ibuf->name, sizeof(simopts->filepath));
 
@@ -1442,7 +1445,7 @@ static int image_save_as_check(bContext *UNUSED(C), wmOperator *op)
 	return WM_operator_filesel_ensure_ext_imtype(op, imf);
 }
 
-static int image_save_as_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int image_save_as_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 	Image *ima = ED_space_image(sima);
@@ -1483,15 +1486,15 @@ static int image_save_as_cancel(bContext *UNUSED(C), wmOperator *op)
 	return OPERATOR_CANCELLED;
 }
 
-static int image_save_as_draw_check_prop(PointerRNA *ptr, PropertyRNA *prop)
+static bool image_save_as_draw_check_prop(PointerRNA *ptr, PropertyRNA *prop)
 {
 	const char *prop_id = RNA_property_identifier(prop);
 
-	return !(strcmp(prop_id, "filepath") == 0 ||
-	         strcmp(prop_id, "directory") == 0 ||
-	         strcmp(prop_id, "filename") == 0 ||
+	return !(STREQ(prop_id, "filepath") ||
+	         STREQ(prop_id, "directory") ||
+	         STREQ(prop_id, "filename") ||
 	         /* when saving a copy, relative path has no effect */
-	         ((strcmp(prop_id, "relative_path") == 0) && RNA_boolean_get(ptr, "copy"))
+	         ((STREQ(prop_id, "relative_path")) && RNA_boolean_get(ptr, "copy"))
 	         );
 }
 
@@ -1603,7 +1606,7 @@ static int image_save_sequence_exec(bContext *C, wmOperator *op)
 	SpaceImage *sima = CTX_wm_space_image(C);
 	ImBuf *ibuf;
 	int tot = 0;
-	char di[FILE_MAX], fi[FILE_MAX];
+	char di[FILE_MAX];
 	
 	if (sima->image == NULL)
 		return OPERATOR_CANCELLED;
@@ -1632,10 +1635,8 @@ static int image_save_sequence_exec(bContext *C, wmOperator *op)
 	for (ibuf = sima->image->ibufs.first; ibuf; ibuf = ibuf->next)
 		if (ibuf->userflags & IB_BITMAPDIRTY)
 			break;
-	
-	BLI_strncpy(di, ibuf->name, FILE_MAX);
-	BLI_splitdirstring(di, fi);
-	
+
+	BLI_split_dir_part(ibuf->name, di, sizeof(di));
 	BKE_reportf(op->reports, RPT_INFO, "%d image(s) will be saved in %s", tot, di);
 
 	for (ibuf = sima->image->ibufs.first; ibuf; ibuf = ibuf->next) {
@@ -1709,6 +1710,7 @@ void IMAGE_OT_reload(wmOperatorType *ot)
 }
 
 /********************** new image operator *********************/
+#define IMA_DEF_NAME N_("Untitled")
 
 static int image_new_exec(bContext *C, wmOperator *op)
 {
@@ -1719,7 +1721,8 @@ static int image_new_exec(bContext *C, wmOperator *op)
 	Main *bmain;
 	PointerRNA ptr, idptr;
 	PropertyRNA *prop;
-	char name[MAX_ID_NAME - 2];
+	char _name[MAX_ID_NAME - 2];
+	char *name = _name;
 	float color[4];
 	int width, height, floatbuf, gen_type, alpha;
 
@@ -1729,7 +1732,12 @@ static int image_new_exec(bContext *C, wmOperator *op)
 	obedit = CTX_data_edit_object(C);
 	bmain = CTX_data_main(C);
 
-	RNA_string_get(op->ptr, "name", name);
+	prop = RNA_struct_find_property(op->ptr, "name");
+	RNA_property_string_get(op->ptr, prop, name);
+	if (!RNA_property_is_set(op->ptr, prop)) {
+		/* Default value, we can translate! */
+		name = (char *)DATA_(name);
+	}
 	width = RNA_int_get(op->ptr, "width");
 	height = RNA_int_get(op->ptr, "height");
 	floatbuf = RNA_boolean_get(op->ptr, "float");
@@ -1775,10 +1783,11 @@ static int image_new_exec(bContext *C, wmOperator *op)
 
 /* XXX, Ton is not a fan of OK buttons but using this function to avoid undo/redo bug while in mesh-editmode, - campbell */
 /* XXX Note: the WM_operator_props_dialog_popup() doesn't work for uiIDContextProperty(), image is not being that way */
-static int image_new_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int image_new_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
+	/* Better for user feedback. */
+	RNA_string_set(op->ptr, "name", DATA_(IMA_DEF_NAME));
 	return WM_operator_props_dialog_popup(C, op, 15 * UI_UNIT_X, 5 * UI_UNIT_Y);
-
 }
 
 void IMAGE_OT_new(wmOperatorType *ot)
@@ -1799,7 +1808,7 @@ void IMAGE_OT_new(wmOperatorType *ot)
 	ot->flag = OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_string(ot->srna, "name", "untitled", MAX_ID_NAME - 2, "Name", "Image datablock name");
+	RNA_def_string(ot->srna, "name", IMA_DEF_NAME, MAX_ID_NAME - 2, "Name", "Image datablock name");
 	RNA_def_int(ot->srna, "width", 1024, 1, INT_MAX, "Width", "Image width", 1, 16384);
 	RNA_def_int(ot->srna, "height", 1024, 1, INT_MAX, "Height", "Image height", 1, 16384);
 	prop = RNA_def_float_color(ot->srna, "color", 4, NULL, 0.0f, FLT_MAX, "Color", "Default fill color", 0.0f, 1.0f);
@@ -1810,6 +1819,8 @@ void IMAGE_OT_new(wmOperatorType *ot)
 	             "Generated Type", "Fill the image with a grid for UV map testing");
 	RNA_def_boolean(ot->srna, "float", 0, "32 bit Float", "Create image with 32 bit floating point bit depth");
 }
+
+#undef IMA_DEF_NAME
 
 /********************* invert operators *********************/
 
@@ -1945,7 +1956,7 @@ static int image_pack_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_pack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int image_pack_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Image *ima = CTX_data_edit_image(C);
 	ImBuf *ibuf;
@@ -1959,9 +1970,10 @@ static int image_pack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event)
 	ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
 
 	if (!as_png && (ibuf && (ibuf->userflags & IB_BITMAPDIRTY))) {
-		pup = uiPupMenuBegin(C, "OK", ICON_QUESTION);
+		pup = uiPupMenuBegin(C, IFACE_("OK"), ICON_QUESTION);
 		layout = uiPupMenuLayout(pup);
-		uiItemBooleanO(layout, "Can't pack edited image from disk. Pack as internal PNG?", ICON_NONE, op->idname, "as_png", 1);
+		uiItemBooleanO(layout, IFACE_("Can't pack edited image from disk, pack as internal PNG?"), ICON_NONE,
+		               op->idname, "as_png", 1);
 		uiPupMenuEnd(C, pup);
 
 		BKE_image_release_ibuf(ima, ibuf, NULL);
@@ -2028,7 +2040,7 @@ static int image_unpack_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_unpack_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int image_unpack_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Image *ima = CTX_data_edit_image(C);
 
@@ -2080,6 +2092,7 @@ typedef struct ImageSampleInfo {
 
 	unsigned char col[4];
 	float colf[4];
+	float linearcol[4];
 	int z;
 	float zf;
 
@@ -2100,7 +2113,7 @@ static void image_sample_draw(const bContext *C, ARegion *ar, void *arg_info)
 		Scene *scene = CTX_data_scene(C);
 
 		ED_image_draw_info(scene, ar, info->color_manage, info->use_default_view, info->channels,
-		                   info->x, info->y, info->colp, info->colfp, info->zp, info->zfp);
+		                   info->x, info->y, info->colp, info->colfp, info->linearcol, info->zp, info->zfp);
 	}
 }
 
@@ -2144,7 +2157,7 @@ int ED_space_image_color_sample(SpaceImage *sima, ARegion *ar, int mval[2], floa
 	return ret;
 }
 
-static void image_sample_apply(bContext *C, wmOperator *op, wmEvent *event)
+static void image_sample_apply(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -2199,7 +2212,10 @@ static void image_sample_apply(bContext *C, wmOperator *op, wmEvent *event)
 			info->colf[3] = (float)cp[3] / 255.0f;
 			info->colfp = info->colf;
 
-			info->color_manage = FALSE;
+			copy_v4_v4(info->linearcol, info->colf);
+			IMB_colormanagement_colorspace_to_scene_linear_v4(info->linearcol, false, ibuf->rect_colorspace);
+
+			info->color_manage = TRUE;
 		}
 		if (ibuf->rect_float) {
 			fp = (ibuf->rect_float + (ibuf->channels) * (y * ibuf->x + x));
@@ -2209,6 +2225,8 @@ static void image_sample_apply(bContext *C, wmOperator *op, wmEvent *event)
 			info->colf[2] = fp[2];
 			info->colf[3] = fp[3];
 			info->colfp = info->colf;
+
+			copy_v4_v4(info->linearcol, info->colf);
 
 			info->color_manage = TRUE;
 		}
@@ -2270,7 +2288,7 @@ static void image_sample_exit(bContext *C, wmOperator *op)
 	MEM_freeN(info);
 }
 
-static int image_sample_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int image_sample_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -2291,7 +2309,7 @@ static int image_sample_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	return OPERATOR_RUNNING_MODAL;
 }
 
-static int image_sample_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int image_sample_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	switch (event->type) {
 		case LEFTMOUSE:
@@ -2377,7 +2395,7 @@ static int image_sample_line_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_sample_line_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int image_sample_line_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 
@@ -2532,7 +2550,7 @@ static int image_record_composite_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int image_record_composite_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int image_record_composite_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	RecordCompositeData *rcd;
 	
@@ -2549,7 +2567,7 @@ static int image_record_composite_invoke(bContext *C, wmOperator *op, wmEvent *U
 	return OPERATOR_RUNNING_MODAL;
 }
 
-static int image_record_composite_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int image_record_composite_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	RecordCompositeData *rcd = op->customdata;
 

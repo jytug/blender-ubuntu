@@ -197,9 +197,9 @@ void hex_to_rgb(char *hexcol, float *r, float *g, float *b)
 	if (hexcol[0] == '#') hexcol++;
 
 	if (sscanf(hexcol, "%02x%02x%02x", &ri, &gi, &bi) == 3) {
-		*r = ri / 255.0f;
-		*g = gi / 255.0f;
-		*b = bi / 255.0f;
+		*r = ri * (1.0f / 255.0f);
+		*g = gi * (1.0f / 255.0f);
+		*b = bi * (1.0f / 255.0f);
 		CLAMP(*r, 0.0f, 1.0f);
 		CLAMP(*g, 0.0f, 1.0f);
 		CLAMP(*b, 0.0f, 1.0f);
@@ -394,17 +394,17 @@ void cpack_to_rgb(unsigned int col, float *r, float *g, float *b)
 
 void rgb_uchar_to_float(float col_r[3], const unsigned char col_ub[3])
 {
-	col_r[0] = ((float)col_ub[0]) / 255.0f;
-	col_r[1] = ((float)col_ub[1]) / 255.0f;
-	col_r[2] = ((float)col_ub[2]) / 255.0f;
+	col_r[0] = ((float)col_ub[0]) * (1.0f / 255.0f);
+	col_r[1] = ((float)col_ub[1]) * (1.0f / 255.0f);
+	col_r[2] = ((float)col_ub[2]) * (1.0f / 255.0f);
 }
 
 void rgba_uchar_to_float(float col_r[4], const unsigned char col_ub[4])
 {
-	col_r[0] = ((float)col_ub[0]) / 255.0f;
-	col_r[1] = ((float)col_ub[1]) / 255.0f;
-	col_r[2] = ((float)col_ub[2]) / 255.0f;
-	col_r[3] = ((float)col_ub[3]) / 255.0f;
+	col_r[0] = ((float)col_ub[0]) * (1.0f / 255.0f);
+	col_r[1] = ((float)col_ub[1]) * (1.0f / 255.0f);
+	col_r[2] = ((float)col_ub[2]) * (1.0f / 255.0f);
+	col_r[3] = ((float)col_ub[3]) * (1.0f / 255.0f);
 }
 
 void rgb_float_to_uchar(unsigned char col_r[3], const float col_f[3])
@@ -457,7 +457,7 @@ float linearrgb_to_srgb(float c)
 		return 1.055f * powf(c, 1.0f / 2.4f) - 0.055f;
 }
 
-void minmax_rgb(short c[])
+void minmax_rgb(short c[3])
 {
 	if (c[0] > 255) c[0] = 255;
 	else if (c[0] < 0) c[0] = 0;

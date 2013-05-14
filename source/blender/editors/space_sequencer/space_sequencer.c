@@ -330,6 +330,7 @@ static void sequencer_listener(ScrArea *sa, wmNotifier *wmn)
 					break;
 			}
 			break;
+		case NC_WINDOW:
 		case NC_SPACE:
 			if (wmn->data == ND_SPACE_SEQUENCER)
 				sequencer_scopes_tag_refresh(sa);
@@ -373,7 +374,7 @@ static void sequencer_main_area_draw(const bContext *C, ARegion *ar)
 
 /* ************* dropboxes ************* */
 
-static int image_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int image_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	Scene *scene = CTX_data_scene(C);
@@ -387,7 +388,7 @@ static int image_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
 	return 0;
 }
 
-static int movie_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int movie_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	Scene *scene = CTX_data_scene(C);
@@ -400,7 +401,7 @@ static int movie_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
 	return 0;
 }
 
-static int sound_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int sound_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	Scene *scene = CTX_data_scene(C);
@@ -598,9 +599,12 @@ static void sequencer_preview_area_listener(ARegion *ar, wmNotifier *wmn)
 /* add handlers, stuff you only do once or on area/region changes */
 static void sequencer_buttons_area_init(wmWindowManager *wm, ARegion *ar)
 {
-	
+	wmKeyMap *keymap;
+
+	keymap = WM_keymap_find(wm->defaultconf, "SequencerCommon", SPACE_SEQ, 0);
+	WM_event_add_keymap_handler_bb(&ar->handlers, keymap, &ar->v2d.mask, &ar->winrct);
+
 	ED_region_panels_init(wm, ar);
-	
 }
 
 static void sequencer_buttons_area_draw(const bContext *C, ARegion *ar)

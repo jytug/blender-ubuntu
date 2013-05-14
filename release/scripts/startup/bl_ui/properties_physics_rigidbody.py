@@ -36,12 +36,6 @@ class PHYSICS_PT_rigid_body(PHYSICS_PT_rigidbody_panel, Panel):
         return (obj and obj.rigid_body and
                 (not context.scene.render.use_game_engine))
 
-    def draw_header(self, context):
-        obj = context.object
-        rbo = obj.rigid_body
-        if rbo is not None:
-            self.layout.prop(rbo, "enabled", text="")
-
     def draw(self, context):
         layout = self.layout
 
@@ -50,7 +44,10 @@ class PHYSICS_PT_rigid_body(PHYSICS_PT_rigidbody_panel, Panel):
 
         if rbo is not None:
             layout.prop(rbo, "type", text="Type")
-            layout.prop(rbo, "kinematic", text="Animated")
+            row = layout.row()
+            if rbo.type == 'ACTIVE':
+                row.prop(rbo, "enabled", text="Dynamic")
+            row.prop(rbo, "kinematic", text="Animated")
 
             if rbo.type == 'ACTIVE':
                 layout.prop(rbo, "mass")
@@ -112,7 +109,7 @@ class PHYSICS_PT_rigid_body_dynamics(PHYSICS_PT_rigidbody_panel, Panel):
 
         #col = layout.column(align=1)
         #col.label(text="Activation:")
-        # XXX: settings such as activate on collison/etc. 
+        # XXX: settings such as activate on collison/etc.
 
         split = layout.split()
 
@@ -121,7 +118,7 @@ class PHYSICS_PT_rigid_body_dynamics(PHYSICS_PT_rigidbody_panel, Panel):
         col.prop(rbo, "use_deactivation")
         sub = col.column()
         sub.active = rbo.use_deactivation
-        sub.prop(rbo, "start_deactivated")
+        sub.prop(rbo, "use_start_deactivated")
         sub.prop(rbo, "deactivate_linear_velocity", text="Linear Vel")
         sub.prop(rbo, "deactivate_angular_velocity", text="Angular Vel")
         # TODO: other params such as time?

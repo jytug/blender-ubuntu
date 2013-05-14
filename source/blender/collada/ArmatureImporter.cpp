@@ -49,8 +49,8 @@ static const char *bc_get_joint_name(T *node)
 	return id.size() ? id.c_str() : node->getOriginalId().c_str();
 }
 
-ArmatureImporter::ArmatureImporter(UnitConverter *conv, MeshImporterBase *mesh, AnimationImporterBase *anim, Scene *sce) :
-	TransformReader(conv), scene(sce), empty(NULL), mesh_importer(mesh), anim_importer(anim) {
+ArmatureImporter::ArmatureImporter(UnitConverter *conv, MeshImporterBase *mesh, Scene *sce) :
+	TransformReader(conv), scene(sce), empty(NULL), mesh_importer(mesh) {
 }
 
 ArmatureImporter::~ArmatureImporter()
@@ -79,7 +79,7 @@ JointData *ArmatureImporter::get_joint_data(COLLADAFW::Node *node);
 }
 #endif
 
-void ArmatureImporter::create_bone(SkinInfo* skin, COLLADAFW::Node *node, EditBone *parent, int totchild,
+void ArmatureImporter::create_bone(SkinInfo *skin, COLLADAFW::Node *node, EditBone *parent, int totchild,
                                    float parent_mat[4][4], bArmature *arm)
 {
 	//Checking if bone is already made.
@@ -134,10 +134,10 @@ void ArmatureImporter::create_bone(SkinInfo* skin, COLLADAFW::Node *node, EditBo
 
 	// set parent tail
 	if (parent && totchild == 1) {
-	   copy_v3_v3(parent->tail, bone->head);
+		copy_v3_v3(parent->tail, bone->head);
 
 		// not setting BONE_CONNECTED because this would lock child bone location with respect to parent
-		 bone->flag |= BONE_CONNECTED;
+		bone->flag |= BONE_CONNECTED;
 
 		// XXX increase this to prevent "very" small bones?
 		const float epsilon = 0.000001f;
@@ -674,7 +674,7 @@ void ArmatureImporter::make_shape_keys()
 		
 		if (source_ob) {
 
-			Mesh *source_me = (Mesh*) source_ob->data;
+			Mesh *source_me = (Mesh *)source_ob->data;
 			//insert key to source mesh
 			Key *key = source_me->key = BKE_key_add((ID *)source_me);
 			key->type = KEY_RELATIVE;

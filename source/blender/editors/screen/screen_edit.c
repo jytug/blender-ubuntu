@@ -194,7 +194,9 @@ void removenotused_scrverts(bScreen *sc)
 			BLI_remlink(&sc->vertbase, sv);
 			MEM_freeN(sv);
 		}
-		else sv->flag = 0;
+		else {
+			sv->flag = 0;
+		}
 		sv = svn;
 	}
 }
@@ -250,7 +252,9 @@ void removenotused_scredges(bScreen *sc)
 			BLI_remlink(&sc->edgebase, se);
 			MEM_freeN(se);
 		}
-		else se->flag = 0;
+		else {
+			se->flag = 0;
+		}
 		se = sen;
 	}
 }
@@ -1133,7 +1137,11 @@ void ED_screens_initialize(wmWindowManager *wm)
 
 void ED_region_exit(bContext *C, ARegion *ar)
 {
+	wmWindowManager *wm = CTX_wm_manager(C);
 	ARegion *prevar = CTX_wm_region(C);
+
+	if (ar->type && ar->type->exit)
+		ar->type->exit(wm, ar);
 
 	CTX_wm_region_set(C, ar);
 	WM_event_remove_handlers(C, &ar->handlers);
@@ -1153,18 +1161,12 @@ void ED_region_exit(bContext *C, ARegion *ar)
 
 void ED_area_exit(bContext *C, ScrArea *sa)
 {
+	wmWindowManager *wm = CTX_wm_manager(C);
 	ScrArea *prevsa = CTX_wm_area(C);
 	ARegion *ar;
 
-	if (sa->spacetype == SPACE_FILE) {
-		SpaceLink *sl = sa->spacedata.first;
-		if (sl && sl->spacetype == SPACE_FILE) {
-			ED_fileselect_exit(C, (SpaceFile *)sl);
-		}
-	}
-	else if (sa->spacetype == SPACE_VIEW3D) {
-		ED_render_engine_area_exit(sa);
-	}
+	if (sa->type && sa->type->exit)
+		sa->type->exit(wm, sa);
 
 	CTX_wm_area_set(C, sa);
 	for (ar = sa->regionbase.first; ar; ar = ar->next)
@@ -1446,6 +1448,36 @@ void ED_screen_delete(bContext *C, bScreen *sc)
 		BKE_libblock_free(&bmain->screen, sc);
 }
 
+static void ed_screen_set_3dview_camera(Scene *scene, bScreen *sc, ScrArea *sa, View3D *v3d)
+{
+	/* fix any cameras that are used in the 3d view but not in the scene */
+	BKE_screen_view3d_sync(v3d, scene);
+
+	if (!v3d->camera || !BKE_scene_base_find(scene, v3d->camera)) {
+		v3d->camera = BKE_scene_camera_find(sc->scene);
+		// XXX if (sc == curscreen) handle_view3d_lock();
+		if (!v3d->camera) {
+			ARegion *ar;
+			ListBase *regionbase;
+			
+			/* regionbase is in different place depending if space is active */
+			if (v3d == sa->spacedata.first)
+				regionbase = &sa->regionbase;
+			else
+				regionbase = &v3d->regionbase;
+				
+			for (ar = regionbase->first; ar; ar = ar->next) {
+				if (ar->regiontype == RGN_TYPE_WINDOW) {
+					RegionView3D *rv3d = ar->regiondata;
+					if (rv3d->persp == RV3D_CAMOB) {
+						rv3d->persp = RV3D_PERSP;
+					}
+				}
+			}
+		}
+	}
+}
+
 /* only call outside of area/region loops */
 void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 {
@@ -1456,9 +1488,9 @@ void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 		return;
 	
 	if (ed_screen_used(CTX_wm_manager(C), screen))
-		ED_object_exit_editmode(C, EM_FREEDATA | EM_DO_UNDO);
+		ED_object_editmode_exit(C, EM_FREEDATA | EM_DO_UNDO);
 
-	for (sc = CTX_data_main(C)->screen.first; sc; sc = sc->id.next) {
+	for (sc = bmain->screen.first; sc; sc = sc->id.next) {
 		if ((U.flag & USER_SCENEGLOBAL) || sc == screen) {
 			
 			if (scene != sc->scene) {
@@ -1477,7 +1509,7 @@ void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 	//  copy_view3d_lock(0);	/* space.c */
 	
 	/* are there cameras in the views that are not in the scene? */
-	for (sc = CTX_data_main(C)->screen.first; sc; sc = sc->id.next) {
+	for (sc = bmain->screen.first; sc; sc = sc->id.next) {
 		if ((U.flag & USER_SCENEGLOBAL) || sc == screen) {
 			ScrArea *sa = sc->areabase.first;
 			while (sa) {
@@ -1485,24 +1517,8 @@ void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 				while (sl) {
 					if (sl->spacetype == SPACE_VIEW3D) {
 						View3D *v3d = (View3D *) sl;
+						ed_screen_set_3dview_camera(scene, sc, sa, v3d);
 
-						BKE_screen_view3d_sync(v3d, scene);
-
-						if (!v3d->camera || !BKE_scene_base_find(scene, v3d->camera)) {
-							v3d->camera = BKE_scene_camera_find(sc->scene);
-							// XXX if (sc == curscreen) handle_view3d_lock();
-							if (!v3d->camera) {
-								ARegion *ar;
-								for (ar = v3d->regionbase.first; ar; ar = ar->next) {
-									if (ar->regiontype == RGN_TYPE_WINDOW) {
-										RegionView3D *rv3d = ar->regiondata;
-
-										if (rv3d->persp == RV3D_CAMOB)
-											rv3d->persp = RV3D_PERSP;
-									}
-								}
-							}
-						}
 					}
 					sl = sl->next;
 				}

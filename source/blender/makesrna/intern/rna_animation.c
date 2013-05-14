@@ -26,12 +26,6 @@
 
 #include <stdlib.h>
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-
-#include "rna_internal.h"
-
 #include "DNA_anim_types.h"
 #include "DNA_action_types.h"
 #include "DNA_scene_types.h"
@@ -40,9 +34,15 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "ED_keyframing.h"
+#include "RNA_access.h"
+#include "RNA_define.h"
+#include "RNA_enum_types.h"
+
+#include "rna_internal.h"
 
 #include "WM_types.h"
+
+#include "ED_keyframing.h"
 
 /* exported for use in API */
 EnumPropertyItem keyingset_path_grouping_items[] = {
@@ -71,10 +71,23 @@ EnumPropertyItem keying_flag_items[] = {
 #include "BLI_math_base.h"
 
 #include "BKE_animsys.h"
+#include "BKE_depsgraph.h"
 #include "BKE_fcurve.h"
 #include "BKE_nla.h"
 
+#include "DNA_object_types.h"
+
 #include "WM_api.h"
+
+static void rna_AnimData_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+{
+	ID *id = ptr->id.data;
+	
+	/* tag for refresh so that scheduled updates (e.g. action changed) will 
+	 * get computed and reflected in the scene [#34869] 
+	 */
+	DAG_id_tag_update(id, OB_RECALC_OB | OB_RECALC_DATA);
+}
 
 static int rna_AnimData_action_editable(PointerRNA *ptr)
 {
@@ -90,7 +103,16 @@ static int rna_AnimData_action_editable(PointerRNA *ptr)
 static void rna_AnimData_action_set(PointerRNA *ptr, PointerRNA value)
 {
 	ID *ownerId = (ID *)ptr->id.data;
+	AnimData *adt;
+	
+	/* set action */
 	BKE_animdata_set_action(NULL, ownerId, value.data);
+	
+	/* force action to get evaluated [#34869] */
+	adt = BKE_animdata_from_id(ownerId);
+	if (adt) {
+		adt->recalc |= ADT_RECALC_ANIM;
+	}
 }
 
 /* ****************************** */
@@ -895,6 +917,7 @@ static void rna_def_animdata(BlenderRNA *brna)
 	
 	srna = RNA_def_struct(brna, "AnimData", NULL);
 	RNA_def_struct_ui_text(srna, "Animation Data", "Animation data for datablock");
+	RNA_def_struct_ui_icon(srna, ICON_ANIM_DATA);
 	
 	/* NLA */
 	prop = RNA_def_property(srna, "nla_tracks", PROP_COLLECTION, PROP_NONE);
@@ -911,7 +934,7 @@ static void rna_def_animdata(BlenderRNA *brna)
 	RNA_def_property_pointer_funcs(prop, NULL, "rna_AnimData_action_set", NULL, "rna_Action_id_poll");
 	RNA_def_property_editable_func(prop, "rna_AnimData_action_editable");
 	RNA_def_property_ui_text(prop, "Action", "Active Action for this datablock");
-	RNA_def_property_update(prop, NC_ANIMATION, NULL); /* this will do? */
+	RNA_def_property_update(prop, NC_ANIMATION | ND_NLA_ACTCHANGE, "rna_AnimData_update");
 
 	/* Active Action Settings */
 	prop = RNA_def_property(srna, "action_extrapolation", PROP_ENUM, PROP_NONE);
@@ -919,7 +942,7 @@ static void rna_def_animdata(BlenderRNA *brna)
 	RNA_def_property_enum_items(prop, nla_mode_extend_items);
 	RNA_def_property_ui_text(prop, "Action Extrapolation",
 	                         "Action to take for gaps past the Active Action's range (when evaluating with NLA)");
-	RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, NULL); /* this will do? */
+	RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, NULL);
 	
 	prop = RNA_def_property(srna, "action_blend_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "act_blendmode");

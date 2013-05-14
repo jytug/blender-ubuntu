@@ -97,6 +97,7 @@ void print_qt(const char *str, const float q[4]);
 /* conversion */
 void axis_angle_to_quat(float r[4], const float axis[3], const float angle);
 void axis_angle_to_mat3(float R[3][3], const float axis[3], const float angle);
+void axis_angle_normalized_to_mat3(float R[3][3], const float axis[3], const float angle);
 void axis_angle_to_mat4(float R[4][4], const float axis[3], const float angle);
 
 void quat_to_axis_angle(float axis[3], float *angle, const float q[4]);
@@ -172,10 +173,10 @@ typedef struct DualQuat {
 void copy_dq_dq(DualQuat *r, DualQuat *dq);
 void normalize_dq(DualQuat *dq, float totw);
 void add_weighted_dq_dq(DualQuat *r, DualQuat *dq, float weight);
-void mul_v3m3_dq(float r[3], float R[3][3], DualQuat * dq);
+void mul_v3m3_dq(float r[3], float R[3][3], DualQuat *dq);
 
-void mat4_to_dquat(DualQuat * r, float base[4][4], float M[4][4]);
-void dquat_to_mat4(float R[4][4], DualQuat * dq);
+void mat4_to_dquat(DualQuat *r, float base[4][4], float M[4][4]);
+void dquat_to_mat4(float R[4][4], DualQuat *dq);
 
 void quat_apply_track(float quat[4], short axis, short upflag);
 void vec_apply_track(float vec[3], short axis);

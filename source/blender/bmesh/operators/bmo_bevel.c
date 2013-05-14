@@ -22,6 +22,8 @@
 
 /** \file blender/bmesh/operators/bmo_bevel.c
  *  \ingroup bmesh
+ *
+ * Bevel wrapper around #BM_mesh_bevel
  */
 
 #include "BLI_utildefines.h"
@@ -55,7 +57,7 @@ void bmo_bevel_exec(BMesh *bm, BMOperator *op)
 			}
 		}
 
-		BM_mesh_bevel(bm, offset, seg, vonly);
+		BM_mesh_bevel(bm, offset, seg, vonly, false, false, NULL, -1);
 
 		BMO_slot_buffer_from_enabled_hflag(bm, op, op->slots_out, "faces.out", BM_FACE, BM_ELEM_TAG);
 	}

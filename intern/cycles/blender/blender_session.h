@@ -80,6 +80,7 @@ public:
 	BL::RenderEngine b_engine;
 	BL::UserPreferences b_userpref;
 	BL::BlendData b_data;
+	BL::RenderSettings b_render;
 	BL::Scene b_scene;
 	BL::SpaceView3D b_v3d;
 	BL::RegionView3D b_rv3d;
@@ -89,6 +90,7 @@ public:
 	float last_progress;
 
 	int width, height;
+	double start_resize_time;
 
 protected:
 	void do_write_update_render_result(BL::RenderResult b_rr, BL::RenderLayer b_rlay, RenderTile& rtile, bool do_update_only);

@@ -138,6 +138,9 @@ static void console_main_area_init(wmWindowManager *wm, ARegion *ar)
 
 	const float prev_y_min = ar->v2d.cur.ymin; /* so re-sizing keeps the cursor visible */
 
+	/* force it on init, for old files, until it becomes config */
+	ar->v2d.scroll = (V2D_SCROLL_RIGHT);
+
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_CUSTOM, ar->winx, ar->winy);
 
 	/* always keep the bottom part of the view aligned, less annoying */
@@ -160,7 +163,7 @@ static void console_main_area_init(wmWindowManager *wm, ARegion *ar)
 
 /* ************* dropboxes ************* */
 
-static int id_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
+static int id_drop_poll(bContext *UNUSED(C), wmDrag *drag, const wmEvent *UNUSED(event))
 {
 //	SpaceConsole *sc = CTX_wm_space_console(C);
 	if (drag->type == WM_DRAG_ID)
@@ -179,7 +182,7 @@ static void id_drop_copy(wmDrag *drag, wmDropBox *drop)
 	MEM_freeN(text);
 }
 
-static int path_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
+static int path_drop_poll(bContext *UNUSED(C), wmDrag *drag, const wmEvent *UNUSED(event))
 {
 	// SpaceConsole *sc = CTX_wm_space_console(C);
 	if (drag->type == WM_DRAG_PATH)

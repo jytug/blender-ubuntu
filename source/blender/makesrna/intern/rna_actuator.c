@@ -27,21 +27,22 @@
 
 #include <stdlib.h>
 
-#include "RNA_define.h"
-#include "RNA_access.h"
-#include "RNA_enum_types.h"
-
-#include "rna_internal.h"
 #include "DNA_constraint_types.h"
 #include "DNA_object_types.h"
 #include "DNA_actuator_types.h"
 #include "DNA_scene_types.h" /* for MAXFRAME */
 
-#include "WM_types.h"
-
 #include "BLI_utildefines.h"
 
 #include "BLF_translation.h"
+
+#include "RNA_define.h"
+#include "RNA_access.h"
+#include "RNA_enum_types.h"
+
+#include "rna_internal.h"
+
+#include "WM_types.h"
 
 /* Always keep in alphabetical order */
 EnumPropertyItem actuator_type_items[] = {
@@ -121,7 +122,7 @@ static void rna_Actuator_name_set(PointerRNA *ptr, const char *value)
 
 	if (ptr->id.data) {
 		Object *ob = (Object *)ptr->id.data;
-		BLI_uniquename(&ob->actuators, act, "Actuator", '.', offsetof(bActuator, name), sizeof(act->name));
+		BLI_uniquename(&ob->actuators, act, DATA_("Actuator"), '.', offsetof(bActuator, name), sizeof(act->name));
 	}
 }
 
@@ -2074,7 +2075,7 @@ static void rna_def_steering_actuator(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "show_visualization", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", ACT_STEERING_ENABLEVISUALIZATION);
-	RNA_def_property_ui_text(prop, "Visualize", "Enable debug visualization");
+	RNA_def_property_ui_text(prop, "Visualize", "Enable debug visualization for 'Path following'");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 
 	prop = RNA_def_property(srna, "update_period", PROP_INT, PROP_NONE);

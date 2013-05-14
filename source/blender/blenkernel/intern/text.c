@@ -519,6 +519,9 @@ void BKE_text_unlink(Main *bmain, Text *text)
 	bNodeTree *ntree;
 	bNode *node;
 	Material *mat;
+	Scene *sce;
+	SceneRenderLayer *srl;
+	FreestyleModuleConfig *module;
 	short update;
 
 	for (ob = bmain->object.first; ob; ob = ob->id.next) {
@@ -604,6 +607,16 @@ void BKE_text_unlink(Main *bmain, Text *text)
 						st->top = 0;
 					}
 				}
+			}
+		}
+	}
+
+	/* Freestyle */
+	for (sce = bmain->scene.first; sce; sce = sce->id.next) {
+		for (srl = sce->r.layers.first; srl; srl = srl->next) {
+			for (module = srl->freestyleConfig.modules.first; module; module = module->next) {
+				if (module->script == text)
+					module->script = NULL;
 			}
 		}
 	}
@@ -767,6 +780,16 @@ static void txt_curs_sel(Text *text, TextLine ***linep, int **charp)
 	*linep = &text->sell; *charp = &text->selc;
 }
 
+bool txt_cursor_is_line_start(Text *text)
+{
+	return (text->selc == 0);
+}
+
+bool txt_cursor_is_line_end(Text *text)
+{
+	return (text->selc == text->sell->len);
+}
+
 /*****************************/
 /* Cursor movement functions */
 /*****************************/
@@ -787,6 +810,29 @@ int txt_utf8_index_to_offset(const char *str, int index)
 	while (pos != index) {
 		offset += BLI_str_utf8_size(str + offset);
 		pos++;
+	}
+	return offset;
+}
+
+int txt_utf8_offset_to_column(const char *str, int offset)
+{
+	int column = 0, pos = 0;
+	while (pos < offset) {
+		column += BLI_str_utf8_char_width_safe(str + pos);
+		pos += BLI_str_utf8_size_safe(str + pos);
+	}
+	return column;
+}
+
+int txt_utf8_column_to_offset(const char *str, int column)
+{
+	int offset = 0, pos = 0, col;
+	while (*(str + offset) && pos < column) {
+		col = BLI_str_utf8_char_width_safe(str + offset);
+		if (pos + col > column)
+			break;
+		offset += BLI_str_utf8_size_safe(str + offset);
+		pos += col;
 	}
 	return offset;
 }
@@ -815,10 +861,9 @@ void txt_move_up(Text *text, short sel)
 	if (!*linep) return;
 
 	if ((*linep)->prev) {
-		int index = txt_utf8_offset_to_index((*linep)->line, *charp);
+		int column = txt_utf8_offset_to_column((*linep)->line, *charp);
 		*linep = (*linep)->prev;
-		if (index > txt_utf8_len((*linep)->line)) *charp = (*linep)->len;
-		else *charp = txt_utf8_index_to_offset((*linep)->line, index);
+		*charp = txt_utf8_column_to_offset((*linep)->line, column);
 		
 	}
 	else {
@@ -839,10 +884,9 @@ void txt_move_down(Text *text, short sel)
 	if (!*linep) return;
 
 	if ((*linep)->next) {
-		int index = txt_utf8_offset_to_index((*linep)->line, *charp);
+		int column = txt_utf8_offset_to_column((*linep)->line, *charp);
 		*linep = (*linep)->next;
-		if (index > txt_utf8_len((*linep)->line)) *charp = (*linep)->len;
-		else *charp = txt_utf8_index_to_offset((*linep)->line, index);
+		*charp = txt_utf8_column_to_offset((*linep)->line, column);
 	}
 	else {
 		txt_move_eol(text, sel);
@@ -930,7 +974,9 @@ void txt_move_right(Text *text, short sel)
 				tabsize++;
 			(*charp) = i;
 		}
-		else (*charp) += BLI_str_utf8_size((*linep)->line + *charp);
+		else {
+			(*charp) += BLI_str_utf8_size((*linep)->line + *charp);
+		}
 	}
 	
 	if (!sel) txt_pop_sel(text);
@@ -2708,7 +2754,7 @@ void txt_comment(Text *text)
 	
 	if (!text) return;
 	if (!text->curl) return;
-	if (!text->sell) return;  // Need to change this need to check if only one line is selected to more then one
+	if (!text->sell) return;  // Need to change this need to check if only one line is selected to more than one
 
 	num = 0;
 	while (TRUE) {
@@ -2825,7 +2871,7 @@ void txt_move_lines(struct Text *text, const int direction)
 	}
 }
 
-int setcurr_tab_spaces(Text *text, int space)
+int txt_setcurr_tab_spaces(Text *text, int space)
 {
 	int i = 0;
 	int test = 0;

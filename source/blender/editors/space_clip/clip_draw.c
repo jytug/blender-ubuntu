@@ -37,11 +37,6 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BKE_context.h"
-#include "BKE_movieclip.h"
-#include "BKE_tracking.h"
-#include "BKE_mask.h"
-
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
@@ -51,6 +46,11 @@
 #include "BLI_string.h"
 #include "BLI_rect.h"
 #include "BLI_math_base.h"
+
+#include "BKE_context.h"
+#include "BKE_movieclip.h"
+#include "BKE_tracking.h"
+#include "BKE_mask.h"
 
 #include "ED_screen.h"
 #include "ED_clip.h"
@@ -244,8 +244,10 @@ static void draw_movieclip_notes(SpaceClip *sc, ARegion *ar)
 			strcpy(str, "Locked");
 	}
 
-	if (str[0])
-		ED_region_info_draw(ar, str, block, 0.6f);
+	if (str[0]) {
+		float fill_color[4] = {0.0f, 0.0f, 0.0f, 0.6f};
+		ED_region_info_draw(ar, str, block, fill_color);
+	}
 }
 
 static void draw_movieclip_buffer(const bContext *C, SpaceClip *sc, ARegion *ar, ImBuf *ibuf,
@@ -261,49 +263,34 @@ static void draw_movieclip_buffer(const bContext *C, SpaceClip *sc, ARegion *ar,
 		glRectf(x, y, x + zoomx * width, y + zoomy * height);
 	}
 	else {
-		unsigned char *display_buffer;
-		void *cache_handle;
+		MovieClip *clip = ED_space_clip_get_clip(sc);
+		int filter = GL_LINEAR;
 
-		display_buffer = IMB_display_buffer_acquire_ctx(C, ibuf, &cache_handle);
+		/* checkerboard for case alpha */
+		if (ibuf->planes == 32) {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		if (display_buffer) {
-			int need_fallback = 1;
-
-			if (ED_space_clip_texture_buffer_supported(sc)) {
-				if (ED_space_clip_load_movieclip_buffer(sc, ibuf, display_buffer)) {
-					glPushMatrix();
-					glTranslatef(x, y, 0.0f);
-					glScalef(zoomx, zoomy, 1.0f);
-
-					glBegin(GL_QUADS);
-					glTexCoord2f(0.0f, 0.0f); glVertex2f(0.0f,  0.0f);
-					glTexCoord2f(1.0f, 0.0f); glVertex2f(width, 0.0f);
-					glTexCoord2f(1.0f, 1.0f); glVertex2f(width, height);
-					glTexCoord2f(0.0f, 1.0f); glVertex2f(0.0f,  height);
-					glEnd();
-
-					glPopMatrix();
-
-					ED_space_clip_unload_movieclip_buffer(sc);
-
-					need_fallback = 0;
-				}
-			}
-
-			/* if texture buffers aren't efficiently supported or texture is too large to
-			 * be binder fallback to simple draw pixels solution */
-			if (need_fallback) {
-				/* set zoom */
-				glPixelZoom(zoomx * width / ibuf->x, zoomy * height / ibuf->y);
-
-				glaDrawPixelsSafe(x, y, ibuf->x, ibuf->y, ibuf->x, GL_RGBA, GL_UNSIGNED_BYTE, display_buffer);
-
-				/* reset zoom */
-				glPixelZoom(1.0f, 1.0f);
-			}
+			fdrawcheckerboard(x, y, x + zoomx * ibuf->x, y + zoomy * ibuf->y);
 		}
 
-		IMB_display_buffer_release(cache_handle);
+		/* non-scaled proxy shouldn't use filtering */
+		if ((clip->flag & MCLIP_USE_PROXY) == 0 ||
+		    ELEM(sc->user.render_size, MCLIP_PROXY_RENDER_SIZE_FULL, MCLIP_PROXY_RENDER_SIZE_100))
+		{
+			filter = GL_NEAREST;
+		}
+
+		/* set zoom */
+		glPixelZoom(zoomx * width / ibuf->x, zoomy * height / ibuf->y);
+
+		glaDrawImBuf_glsl_ctx(C, ibuf, x, y, filter);
+
+		/* reset zoom */
+		glPixelZoom(1.0f, 1.0f);
+
+		if (ibuf->planes == 32)
+			glDisable(GL_BLEND);
 	}
 }
 
@@ -944,7 +931,7 @@ static void draw_marker_texts(SpaceClip *sc, MovieTrackingTrack *track, MovieTra
 	if (state[0])
 		BLI_snprintf(str, sizeof(str), "%s: %s", track->name, state);
 	else
-		BLI_snprintf(str, sizeof(str), "%s", track->name);
+		BLI_strncpy(str, track->name, sizeof(str));
 
 	BLF_position(fontid, pos[0], pos[1], 0.0f);
 	BLF_draw(fontid, str, sizeof(str));

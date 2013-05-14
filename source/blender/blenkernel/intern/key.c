@@ -40,6 +40,8 @@
 #include "BLI_math_vector.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_anim_types.h"
 #include "DNA_key_types.h"
 #include "DNA_lattice_types.h"
@@ -56,7 +58,7 @@
 #include "BKE_key.h"
 #include "BKE_lattice.h"
 #include "BKE_library.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_main.h"
 #include "BKE_object.h"
 #include "BKE_deform.h"
@@ -246,7 +248,7 @@ void BKE_key_sort(Key *key)
 		/* find the right location and insert before */
 		for (kb2 = key->block.first; kb2; kb2 = kb2->next) {
 			if (kb2->pos > kb->pos) {
-				BLI_insertlink(&key->block, kb2->prev, kb);
+				BLI_insertlinkafter(&key->block, kb2->prev, kb);
 				break;
 			}
 		}
@@ -405,9 +407,13 @@ static int setkeys(float fac, ListBase *lb, KeyBlock *k[], float t[4], int cycl)
 				k1 = firstkey;
 				ofs += dpos;
 			}
-			else if (t[2] == t[3]) break;
+			else if (t[2] == t[3]) {
+				break;
+			}
 		}
-		else k1 = k1->next;
+		else {
+			k1 = k1->next;
+		}
 
 		t[0] = t[1];
 		k[0] = k[1];
@@ -595,7 +601,9 @@ static void cp_key(const int start, int end, const int tot, char *poin, Key *key
 				k1 += a * key->elemsize;
 			}
 		}
-		else k1 += start * key->elemsize;
+		else {
+			k1 += start * key->elemsize;
+		}
 	}
 	
 	if (mode == KEY_MODE_BEZTRIPLE) {
@@ -828,7 +836,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 		if (k[0]->totelem) {
 			k1d = k[0]->totelem / (float)tot;
 		}
-		else flagdo -= 1;
+		else {
+			flagdo -= 1;
+		}
 	}
 	if (tot != k[1]->totelem) {
 		k2tot = 0.0;
@@ -836,7 +846,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 		if (k[0]->totelem) {
 			k2d = k[1]->totelem / (float)tot;
 		}
-		else flagdo -= 2;
+		else {
+			flagdo -= 2;
+		}
 	}
 	if (tot != k[2]->totelem) {
 		k3tot = 0.0;
@@ -844,7 +856,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 		if (k[0]->totelem) {
 			k3d = k[2]->totelem / (float)tot;
 		}
-		else flagdo -= 4;
+		else {
+			flagdo -= 4;
+		}
 	}
 	if (tot != k[3]->totelem) {
 		k4tot = 0.0;
@@ -852,7 +866,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 		if (k[0]->totelem) {
 			k4d = k[3]->totelem / (float)tot;
 		}
-		else flagdo -= 8;
+		else {
+			flagdo -= 8;
+		}
 	}
 
 	/* this exception needed for slurphing */
@@ -869,7 +885,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 					k1 += a * key->elemsize;
 				}
 			}
-			else k1 += start * key->elemsize;
+			else {
+				k1 += start * key->elemsize;
+			}
 		}
 		if (flagdo & 2) {
 			if (flagflo & 2) {
@@ -880,7 +898,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 					k2 += a * key->elemsize;
 				}
 			}
-			else k2 += start * key->elemsize;
+			else {
+				k2 += start * key->elemsize;
+			}
 		}
 		if (flagdo & 4) {
 			if (flagflo & 4) {
@@ -891,7 +911,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 					k3 += a * key->elemsize;
 				}
 			}
-			else k3 += start * key->elemsize;
+			else {
+				k3 += start * key->elemsize;
+			}
 		}
 		if (flagdo & 8) {
 			if (flagflo & 8) {
@@ -902,7 +924,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 					k4 += a * key->elemsize;
 				}
 			}
-			else k4 += start * key->elemsize;
+			else {
+				k4 += start * key->elemsize;
+			}
 		}
 
 	}
@@ -968,7 +992,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 					k2 += elemsize;
 				}
 			}
-			else k2 += elemsize;
+			else {
+				k2 += elemsize;
+			}
 		}
 		if (flagdo & 4) {
 			if (flagflo & 4) {
@@ -978,7 +1004,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 					k3 += elemsize;
 				}
 			}
-			else k3 += elemsize;
+			else {
+				k3 += elemsize;
+			}
 		}
 		if (flagdo & 8) {
 			if (flagflo & 8) {
@@ -988,7 +1016,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 					k4 += elemsize;
 				}
 			}
-			else k4 += elemsize;
+			else {
+				k4 += elemsize;
+			}
 		}
 		
 		if (mode == KEY_MODE_BEZTRIPLE) a += 2;
@@ -1413,11 +1443,13 @@ KeyBlock *BKE_keyblock_add(Key *key, const char *name)
 		BLI_strncpy(kb->name, name, sizeof(kb->name));
 	}
 	else {
-		if (tot == 1) BLI_strncpy(kb->name, "Basis", sizeof(kb->name));
-		else BLI_snprintf(kb->name, sizeof(kb->name), "Key %d", tot - 1);
+		if (tot == 1)
+			BLI_strncpy(kb->name, DATA_("Basis"), sizeof(kb->name));
+		else
+			BLI_snprintf(kb->name, sizeof(kb->name), DATA_("Key %d"), tot - 1);
 	}
 
-	BLI_uniquename(&key->block, kb, "Key", '.', offsetof(KeyBlock, name), sizeof(kb->name));
+	BLI_uniquename(&key->block, kb, DATA_("Key"), '.', offsetof(KeyBlock, name), sizeof(kb->name));
 
 	kb->uid = key->uidgen++;
 

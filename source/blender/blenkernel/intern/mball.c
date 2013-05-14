@@ -439,18 +439,15 @@ float *BKE_mball_make_orco(Object *ob, ListBase *dispbase)
  * It test last character of Object ID name. If last character
  * is digit it return 0, else it return 1.
  */
-int BKE_mball_is_basis(Object *ob)
+bool BKE_mball_is_basis(Object *ob)
 {
-	int len;
-	
 	/* just a quick test */
-	len = strlen(ob->id.name);
-	if (isdigit(ob->id.name[len - 1]) ) return 0;
-	return 1;
+	const int len = strlen(ob->id.name);
+	return (!isdigit(ob->id.name[len - 1]));
 }
 
 /* return nonzero if ob1 is a basis mball for ob */
-int BKE_mball_is_basis_for(Object *ob1, Object *ob2)
+bool BKE_mball_is_basis_for(Object *ob1, Object *ob2)
 {
 	int basis1nr, basis2nr;
 	char basis1name[MAX_ID_NAME], basis2name[MAX_ID_NAME];
@@ -458,8 +455,12 @@ int BKE_mball_is_basis_for(Object *ob1, Object *ob2)
 	BLI_split_name_num(basis1name, &basis1nr, ob1->id.name + 2, '.');
 	BLI_split_name_num(basis2name, &basis2nr, ob2->id.name + 2, '.');
 
-	if (!strcmp(basis1name, basis2name)) return BKE_mball_is_basis(ob1);
-	else return 0;
+	if (!strcmp(basis1name, basis2name)) {
+		return BKE_mball_is_basis(ob1);
+	}
+	else {
+		return false;
+	}
 }
 
 /* \brief copy some properties from object to other metaball object with same base name
@@ -1425,7 +1426,8 @@ static void converge(const float p1[3], const float p2[3], float v1, float v2,
 		while (1) {
 			if (i++ == RES) return;
 			p[0] = 0.5f * (pos[0] + neg[0]);
-			if ((function(p[0], p[1], p[2])) > 0.0f) pos[0] = p[0]; else neg[0] = p[0];
+			if ((function(p[0], p[1], p[2])) > 0.0f) pos[0] = p[0];
+			else                                     neg[0] = p[0];
 		}
 	}
 
@@ -1435,7 +1437,8 @@ static void converge(const float p1[3], const float p2[3], float v1, float v2,
 		while (1) {
 			if (i++ == RES) return;
 			p[1] = 0.5f * (pos[1] + neg[1]);
-			if ((function(p[0], p[1], p[2])) > 0.0f) pos[1] = p[1]; else neg[1] = p[1];
+			if ((function(p[0], p[1], p[2])) > 0.0f) pos[1] = p[1];
+			else                                     neg[1] = p[1];
 		}
 	}
 
@@ -1445,7 +1448,8 @@ static void converge(const float p1[3], const float p2[3], float v1, float v2,
 		while (1) {
 			if (i++ == RES) return;
 			p[2] = 0.5f * (pos[2] + neg[2]);
-			if ((function(p[0], p[1], p[2])) > 0.0f) pos[2] = p[2]; else neg[2] = p[2];
+			if ((function(p[0], p[1], p[2])) > 0.0f) pos[2] = p[2];
+			else                                     neg[2] = p[2];
 		}
 	}
 
@@ -1500,7 +1504,7 @@ static void add_cube(PROCESS *mbproc, int i, int j, int k, int count)
 static void find_first_points(PROCESS *mbproc, MetaBall *mb, int a)
 {
 	MetaElem *ml;
-	float f = 0.0f;
+	float f;
 
 	ml = G_mb.mainb[a];
 	f = 1.0f - (mb->thresh / ml->s);
@@ -2176,7 +2180,7 @@ static void free_metaball_octal_node(octal_node *node)
 	MEM_freeN(node);
 }
 
-/* If scene include more then one MetaElem, then octree is used */
+/* If scene include more than one MetaElem, then octree is used */
 static void init_metaball_octal_tree(int depth)
 {
 	struct octal_node *node;
@@ -2265,7 +2269,7 @@ void BKE_mball_polygonize(Scene *scene, Object *ob, ListBase *dispbase)
 		G_mb.metaball_tree = NULL;
 	}
 
-	/* if scene includes more then one MetaElem, then octal tree optimization is used */
+	/* if scene includes more than one MetaElem, then octal tree optimization is used */
 	if ((G_mb.totelem >    1) && (G_mb.totelem <=   64)) init_metaball_octal_tree(1);
 	if ((G_mb.totelem >   64) && (G_mb.totelem <=  128)) init_metaball_octal_tree(2);
 	if ((G_mb.totelem >  128) && (G_mb.totelem <=  512)) init_metaball_octal_tree(3);
@@ -2293,7 +2297,9 @@ void BKE_mball_polygonize(Scene *scene, Object *ob, ListBase *dispbase)
 	}
 
 	/* width is size per polygonize cube */
-	if (G.is_rendering) width = mb->rendersize;
+	if (G.is_rendering) {
+		width = mb->rendersize;
+	}
 	else {
 		width = mb->wiresize;
 		if (G.moving && mb->flag == MB_UPDATE_HALFRES) width *= 2;

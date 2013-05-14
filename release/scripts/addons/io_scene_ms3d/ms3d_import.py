@@ -56,6 +56,7 @@ from io_scene_ms3d.ms3d_spec import (
         Ms3dModel,
         Ms3dVertexEx2,
         Ms3dVertexEx3,
+        Ms3dHeader,
         )
 from io_scene_ms3d.ms3d_utils import (
         select_all,
@@ -87,7 +88,7 @@ class Ms3dImporter():
     """
     def __init__(self,
             report,
-            verbose=False,
+            verbose='NONE',
             use_extended_normal_handling=False,
             use_animation=True,
             use_quaternion_rotation=False,
@@ -131,13 +132,16 @@ class Ms3dImporter():
                 # open ms3d file
                 with io.FileIO(filepath, 'rb') as raw_io:
                     # read and inject ms3d data from disk to internal structure
-                    ms3d_model.read(raw_io)
+                    debug_out = ms3d_model.read(raw_io)
                     raw_io.close()
+
+                    if self.options_verbose in Ms3dUi.VERBOSE_MAXIMAL:
+                        print(debug_out)
             finally:
                 pass
 
             # if option is set, this time will enlargs the io time
-            if self.options_verbose:
+            if self.options_verbose in Ms3dUi.VERBOSE_MAXIMAL:
                 ms3d_model.print_internal()
 
             t2 = time()
@@ -148,77 +152,47 @@ class Ms3dImporter():
                 # inject ms3d data to blender
                 self.to_blender(blender_context, ms3d_model)
 
-                blender_scene = blender_context.scene
-
-                # finalize/restore environment
-                blender_scene.update()
-
                 post_setup_environment(self, blender_context)
 
-            print()
-            print("##########################################################")
-            print("Import from MS3D to Blender")
-            print(statistics)
-            print("##########################################################")
+            if self.options_verbose in Ms3dUi.VERBOSE_NORMAL:
+                print()
+                print("##########################################################")
+                print("Import from MS3D to Blender")
+                print(statistics)
+                print("##########################################################")
+
+        except Ms3dHeader.HeaderError:
+            msg = "read - invalid file format."
+            if self.options_verbose in Ms3dUi.VERBOSE_NORMAL:
+                print(msg)
+                if self.report:
+                    self.report({'WARNING', 'ERROR', }, msg)
+
+            return False
 
         except Exception:
             type, value, traceback = exc_info()
-            print("read - exception in try block\n  type: '{0}'\n"
-                    "  value: '{1}'".format(type, value, traceback))
+            if self.options_verbose in Ms3dUi.VERBOSE_NORMAL:
+                print("read - exception in try block\n  type: '{0}'\n"
+                        "  value: '{1}'".format(type, value, traceback))
+                if self.report:
+                    self.report({'WARNING', 'ERROR', }, "read - exception.")
 
             if t2 is None:
                 t2 = time()
 
-            raise
+            return False
 
         else:
             pass
 
         t3 = time()
-        print(ms3d_str['SUMMARY_IMPORT'].format(
-                (t3 - t1), (t2 - t1), (t3 - t2)))
 
-        return {"FINISHED"}
+        if self.options_verbose in Ms3dUi.VERBOSE_NORMAL:
+            print(ms3d_str['SUMMARY_IMPORT'].format(
+                    (t3 - t1), (t2 - t1), (t3 - t2)))
 
-
-    def internal_read(self, blender_context, raw_io):
-        try:
-            # setup environment
-            pre_setup_environment(self, blender_context)
-
-            try:
-                ms3d_model.read(raw_io)
-            finally:
-                pass
-
-            # if option is set, this time will enlargs the io time
-            if self.options_verbose:
-                ms3d_model.print_internal()
-
-            is_valid, statistics = ms3d_model.is_valid()
-
-            if is_valid:
-                # inject ms3d data to blender
-                blender_empty_object, blender_mesh_object = self.to_blender(blender_context, ms3d_model)
-
-                blender_scene = blender_context.scene
-
-                # finalize/restore environment
-                blender_scene.update()
-
-                post_setup_environment(self, blender_context)
-
-        except Exception:
-            type, value, traceback = exc_info()
-            print("read - exception in try block\n  type: '{0}'\n"
-                    "  value: '{1}'".format(type, value, traceback))
-
-            raise
-
-        else:
-            pass
-
-        return blender_empty_object, blender_mesh_object
+        return True
 
 
     ###########################################################################
@@ -533,35 +507,39 @@ class Ms3dImporter():
                         bmv_new[layer_extra] = bmv[layer_extra]
                         vert_index = length_verts
                         length_verts += 1
-                        self.report({'WARNING', 'INFO'},
-                                ms3d_str['WARNING_IMPORT_EXTRA_VERTEX_NORMAL'].format(
-                                bmv.normal, blender_normal))
+                        if self.report and self.options_verbose in Ms3dUi.VERBOSE_NORMAL:
+                            self.report({'WARNING', 'INFO'},
+                                    ms3d_str['WARNING_IMPORT_EXTRA_VERTEX_NORMAL'].format(
+                                    bmv.normal, blender_normal))
                     bmv = bmv_new
 
                 if [[x] for x in bmv_list if x == bmv]:
-                    self.report(
-                            {'WARNING', 'INFO'},
-                            ms3d_str['WARNING_IMPORT_SKIP_VERTEX_DOUBLE'].format(
-                                    ms3d_triangle_index))
+                    if self.report and self.options_verbose in Ms3dUi.VERBOSE_NORMAL:
+                        self.report(
+                                {'WARNING', 'INFO'},
+                                ms3d_str['WARNING_IMPORT_SKIP_VERTEX_DOUBLE'].format(
+                                        ms3d_triangle_index))
                     continue
                 bmv_list.append(bmv)
                 bmf_normal += bmv.normal
 
             if len(bmv_list) < 3:
-                self.report(
-                        {'WARNING', 'INFO'},
-                        ms3d_str['WARNING_IMPORT_SKIP_LESS_VERTICES'].format(
-                                ms3d_triangle_index))
+                if self.report and self.options_verbose in Ms3dUi.VERBOSE_NORMAL:
+                    self.report(
+                            {'WARNING', 'INFO'},
+                            ms3d_str['WARNING_IMPORT_SKIP_LESS_VERTICES'].format(
+                                    ms3d_triangle_index))
                 continue
 
             bmf_normal.normalize()
 
             bmf = bm.faces.get(bmv_list)
             if bmf is not None:
-                self.report(
-                        {'WARNING', 'INFO'},
-                        ms3d_str['WARNING_IMPORT_SKIP_FACE_DOUBLE'].format(
-                                ms3d_triangle_index))
+                if self.report and self.options_verbose in Ms3dUi.VERBOSE_NORMAL:
+                    self.report(
+                            {'WARNING', 'INFO'},
+                            ms3d_str['WARNING_IMPORT_SKIP_FACE_DOUBLE'].format(
+                                    ms3d_triangle_index))
                 continue
 
             bmf = bm.faces.new(bmv_list)
@@ -629,7 +607,7 @@ class Ms3dImporter():
         # end BMesh stuff
         ####################################################
 
-        blender_mesh.validate(self.options_verbose)
+        blender_mesh.validate(self.options_verbose in Ms3dUi.VERBOSE_MAXIMAL)
 
         return blender_mesh_object
 

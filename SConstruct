@@ -269,6 +269,7 @@ if 'blenderlite' in B.targets:
     target_env_defs['WITH_BF_PYTHON'] = False
     target_env_defs['WITH_BF_3DMOUSE'] = False
     target_env_defs['WITH_BF_LIBMV'] = False
+    target_env_defs['WITH_BF_FREESTYLE'] = False
 
     # Merge blenderlite, let command line to override
     for k,v in target_env_defs.iteritems():
@@ -382,6 +383,9 @@ else:
 env['CPPFLAGS'].append('-DWITH_AUDASPACE')
 env['CPPFLAGS'].append('-DWITH_AVI')
 env['CPPFLAGS'].append('-DWITH_BOOL_COMPAT')
+
+if env['OURPLATFORM'] not in ('win32-vc', 'win64-vc'):
+    env['CPPFLAGS'].append('-DHAVE_STDBOOL_H')
 
 # lastly we check for root_build_dir ( we should not do before, otherwise we might do wrong builddir
 B.root_build_dir = env['BF_BUILDDIR']
@@ -527,11 +531,13 @@ if B.targets != ['cudakernels']:
     data_to_c_simple("release/datafiles/preview_cycles.blend")
 
     # --- glsl ---
+    data_to_c_simple("source/blender/gpu/shaders/gpu_shader_simple_frag.glsl")
+    data_to_c_simple("source/blender/gpu/shaders/gpu_shader_simple_vert.glsl")
     data_to_c_simple("source/blender/gpu/shaders/gpu_shader_material.glsl")
-    data_to_c_simple("source/blender/gpu/shaders/gpu_shader_vertex.glsl")
+    data_to_c_simple("source/blender/gpu/shaders/gpu_shader_material.glsl")
     data_to_c_simple("source/blender/gpu/shaders/gpu_shader_sep_gaussian_blur_frag.glsl")
     data_to_c_simple("source/blender/gpu/shaders/gpu_shader_sep_gaussian_blur_vert.glsl")
-    data_to_c_simple("source/blender/gpu/shaders/gpu_shader_material.glsl")
+    data_to_c_simple("source/blender/gpu/shaders/gpu_shader_vertex.glsl")
     data_to_c_simple("source/blender/gpu/shaders/gpu_shader_vsm_store_frag.glsl")
     data_to_c_simple("source/blender/gpu/shaders/gpu_shader_vsm_store_vert.glsl")
 
@@ -709,6 +715,10 @@ if env['OURPLATFORM']!='darwin':
                 # only for testing builds
                 if VERSION_RELEASE_CYCLE == "release" and "addons_contrib" in dn:
                     dn.remove('addons_contrib')
+
+                # do not install freestyle if disabled
+                if not env['WITH_BF_FREESTYLE'] and "freestyle" in dn:
+                    dn.remove("freestyle")
 
                 dir = os.path.join(env['BF_INSTALLDIR'], VERSION)
                 dir += os.sep + os.path.basename(scriptpath) + dp[len(scriptpath):]

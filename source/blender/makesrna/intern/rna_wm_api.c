@@ -86,6 +86,54 @@ static void rna_event_timer_remove(struct wmWindowManager *wm, wmTimer *timer)
 	WM_event_remove_timer(wm, timer->win, timer);
 }
 
+/* placeholder data for final implementation of a true progressbar */
+struct wmStaticProgress {
+	float min;
+	float max;
+	bool  is_valid;
+} wm_progress_state = {0, 0, false};
+
+
+static void rna_progress_begin(struct wmWindowManager *wm, float min, float max)
+{
+	float range = max - min;
+	if (range != 0) {
+		wm_progress_state.min = min;
+		wm_progress_state.max = max;
+		wm_progress_state.is_valid = true;
+	}
+	else {
+		wm_progress_state.is_valid = false;
+	}
+}
+
+static void rna_progress_update(struct wmWindowManager *wm, float value)
+{
+	if (wm_progress_state.is_valid) {
+		/* Map to cursor_time range [0,9999] */
+		int val = (int)(10000 * (value - wm_progress_state.min) / (wm_progress_state.max - wm_progress_state.min));
+		WM_cursor_time(wm->winactive, val);
+	}
+}
+
+static void rna_progress_end(struct wmWindowManager *wm)
+{
+	if (wm_progress_state.is_valid) {
+		WM_cursor_restore(wm->winactive);
+		wm_progress_state.is_valid = false;
+	}
+}
+
+/* wrap these because of 'const wmEvent *' */
+static int rna_Operator_confirm(bContext *C, wmOperator *op, wmEvent *event)
+{
+	return WM_operator_confirm(C, op, event);
+}
+static int rna_Operator_props_popup(bContext *C, wmOperator *op, wmEvent *event)
+{
+	return WM_operator_props_popup(C, op, event);
+}
+
 static wmKeyMapItem *rna_KeyMap_item_new(wmKeyMap *km, ReportList *reports, const char *idname, int type, int value,
                                          int any, int shift, int ctrl, int alt, int oskey, int keymodifier, int head)
 {
@@ -264,9 +312,22 @@ void RNA_api_wm(StructRNA *srna)
 	parm = RNA_def_pointer(func, "timer", "Timer", "", "");
 	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL);
 
+	/* Progress bar interface */
+	func = RNA_def_function(srna, "progress_begin", "rna_progress_begin");
+	parm = RNA_def_property(func, "min", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_property(func, "max", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+
+	func = RNA_def_function(srna, "progress_update", "rna_progress_update");
+	parm = RNA_def_property(func, "value", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	RNA_def_property_ui_text(parm, "value", "any value between min and max as set in progress_init()");
+
+	func = RNA_def_function(srna, "progress_end", "rna_progress_end");
 
 	/* invoke functions, for use with python */
-	func = RNA_def_function(srna, "invoke_props_popup", "WM_operator_props_popup");
+	func = RNA_def_function(srna, "invoke_props_popup", "rna_Operator_props_popup");
 	RNA_def_function_ui_description(func, "Operator popup invoke");
 	rna_generic_op_invoke(func, WM_GEN_INVOKE_EVENT | WM_GEN_INVOKE_RETURN);
 
@@ -284,7 +345,7 @@ void RNA_api_wm(StructRNA *srna)
 	RNA_def_function_ui_description(func, "Operator popup invoke");
 	rna_generic_op_invoke(func, WM_GEN_INVOKE_SIZE | WM_GEN_INVOKE_RETURN);
 
-	func = RNA_def_function(srna, "invoke_confirm", "WM_operator_confirm");
+	func = RNA_def_function(srna, "invoke_confirm", "rna_Operator_confirm");
 	RNA_def_function_ui_description(func, "Operator confirmation");
 	rna_generic_op_invoke(func, WM_GEN_INVOKE_EVENT | WM_GEN_INVOKE_RETURN);
 	

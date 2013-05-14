@@ -24,13 +24,8 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
 #include <limits.h>
-
-#include "RNA_define.h"
-
-#include "rna_internal.h"
 
 #include "BLI_math_base.h"
 
@@ -42,6 +37,10 @@
 #include "DNA_object_force.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
+
+#include "RNA_define.h"
+
+#include "rna_internal.h"
 
 #include "WM_types.h"
 
@@ -63,24 +62,32 @@ static char *rna_DynamicPaintCanvasSettings_path(PointerRNA *ptr)
 {
 	DynamicPaintCanvasSettings *settings = (DynamicPaintCanvasSettings *)ptr->data;
 	ModifierData *md = (ModifierData *)settings->pmd;
+	char name_esc[sizeof(md->name) * 2];
 
-	return BLI_sprintfN("modifiers[\"%s\"].canvas_settings", md->name);
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	return BLI_sprintfN("modifiers[\"%s\"].canvas_settings", name_esc);
 }
 
 static char *rna_DynamicPaintBrushSettings_path(PointerRNA *ptr)
 {
 	DynamicPaintBrushSettings *settings = (DynamicPaintBrushSettings *)ptr->data;
 	ModifierData *md = (ModifierData *)settings->pmd;
+	char name_esc[sizeof(md->name) * 2];
 
-	return BLI_sprintfN("modifiers[\"%s\"].brush_settings", md->name);
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	return BLI_sprintfN("modifiers[\"%s\"].brush_settings", name_esc);
 }
 
 static char *rna_DynamicPaintSurface_path(PointerRNA *ptr)
 {
 	DynamicPaintSurface *surface = (DynamicPaintSurface *)ptr->data;
 	ModifierData *md = (ModifierData *)surface->canvas->pmd;
+	char name_esc[sizeof(md->name) * 2];
+	char name_esc_surface[sizeof(surface->name) * 2];
 
-	return BLI_sprintfN("modifiers[\"%s\"].canvas_settings.canvas_surfaces[\"%s\"]", md->name, surface->name);
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	BLI_strescape(name_esc_surface, surface->name, sizeof(name_esc_surface));
+	return BLI_sprintfN("modifiers[\"%s\"].canvas_settings.canvas_surfaces[\"%s\"]", name_esc, name_esc_surface);
 }
 
 
@@ -152,7 +159,7 @@ static void rna_DynamicPaintSurfaces_changeFormat(Main *bmain, Scene *scene, Poi
 static void rna_DynamicPaint_resetDependancy(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	rna_DynamicPaintSurface_reset(bmain, scene, ptr);
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 }
 
 static PointerRNA rna_PaintSurface_active_get(PointerRNA *ptr)
@@ -432,7 +439,7 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "dissolve_speed", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "diss_speed");
 	RNA_def_property_range(prop, 1.0, 10000.0);
-	RNA_def_property_ui_range(prop, 1.0, 10000.0, 5, 0);
+	RNA_def_property_ui_range(prop, 1.0, 10000.0, 5, -1);
 	RNA_def_property_ui_text(prop, "Dissolve Speed", "Approximately in how many frames should dissolve happen");
 
 	prop = RNA_def_property(srna, "use_drying", PROP_BOOLEAN, PROP_NONE);
@@ -441,7 +448,7 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
 	
 	prop = RNA_def_property(srna, "dry_speed", PROP_INT, PROP_NONE);
 	RNA_def_property_range(prop, 1.0, 10000.0);
-	RNA_def_property_ui_range(prop, 1.0, 10000.0, 5, 0);
+	RNA_def_property_ui_range(prop, 1.0, 10000.0, 5, -1);
 	RNA_def_property_ui_text(prop, "Dry Speed", "Approximately in how many frames should drying happen");
 	
 	/*
@@ -450,7 +457,7 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "image_resolution", PROP_INT, PROP_NONE);
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_range(prop, 16.0, 4096.0);
-	RNA_def_property_ui_range(prop, 16.0, 4096.0, 1, 0);
+	RNA_def_property_ui_range(prop, 16.0, 4096.0, 1, -1);
 	RNA_def_property_ui_text(prop, "Resolution", "Output image resolution");
 	
 	prop = RNA_def_property(srna, "uv_layer", PROP_STRING, PROP_NONE);
@@ -462,7 +469,7 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
 	RNA_def_property_int_sdna(prop, NULL, "start_frame");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_range(prop, 1.0, 9999.0);
-	RNA_def_property_ui_range(prop, 1.0, 9999, 1, 0);
+	RNA_def_property_ui_range(prop, 1.0, 9999, 1, -1);
 	RNA_def_property_ui_text(prop, "Start Frame", "Simulation start frame");
 	RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_updateFrames");
 	
@@ -470,14 +477,14 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
 	RNA_def_property_int_sdna(prop, NULL, "end_frame");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_range(prop, 1.0, 9999.0);
-	RNA_def_property_ui_range(prop, 1.0, 9999.0, 1, 0);
+	RNA_def_property_ui_range(prop, 1.0, 9999.0, 1, -1);
 	RNA_def_property_ui_text(prop, "End Frame", "Simulation end frame");
 	RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_updateFrames");
 	
 	prop = RNA_def_property(srna, "frame_substeps", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "substeps");
 	RNA_def_property_range(prop, 0.0, 20.0);
-	RNA_def_property_ui_range(prop, 0.0, 10, 1, 0);
+	RNA_def_property_ui_range(prop, 0.0, 10, 1, -1);
 	RNA_def_property_ui_text(prop, "Sub-Steps", "Do extra frames between scene frames to ensure smooth motion");
 	
 	prop = RNA_def_property(srna, "use_antialiasing", PROP_BOOLEAN, PROP_NONE);
@@ -968,7 +975,7 @@ static void rna_def_dynamic_paint_brush_settings(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "smooth_radius", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "particle_smooth");
 	RNA_def_property_range(prop, 0.0, 10.0);
-	RNA_def_property_ui_range(prop, 0.0, 1.0, 5, 0);
+	RNA_def_property_ui_range(prop, 0.0, 1.0, 5, -1);
 	RNA_def_property_ui_text(prop, "Smooth Radius", "Smooth falloff added after solid radius");
 	RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaint_redoModifier");
 	

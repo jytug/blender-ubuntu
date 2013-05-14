@@ -50,6 +50,7 @@
 #include "BLI_edgehash.h"
 #include "BLI_kdtree.h"
 #include "BLI_kdopbvh.h"
+#include "BLI_threads.h"
 #include "BLI_utildefines.h"
 #include "BLI_voxel.h"
 
@@ -365,6 +366,9 @@ static void smokeModifier_freeDomain(SmokeModifierData *smd)
 		if (smd->domain->fluid)
 			smoke_free(smd->domain->fluid);
 
+		if (smd->domain->fluid_mutex)
+			BLI_rw_mutex_free(smd->domain->fluid_mutex);
+
 		if (smd->domain->wt)
 			smoke_turbulence_free(smd->domain->wt);
 
@@ -424,7 +428,7 @@ void smokeModifier_reset_turbulence(struct SmokeModifierData *smd)
 	}
 }
 
-void smokeModifier_reset(struct SmokeModifierData *smd)
+static void smokeModifier_reset_ex(struct SmokeModifierData *smd, bool need_lock)
 {
 	if (smd)
 	{
@@ -436,8 +440,14 @@ void smokeModifier_reset(struct SmokeModifierData *smd)
 
 			if (smd->domain->fluid)
 			{
+				if (need_lock)
+					BLI_rw_mutex_lock(smd->domain->fluid_mutex, THREAD_LOCK_WRITE);
+
 				smoke_free(smd->domain->fluid);
 				smd->domain->fluid = NULL;
+
+				if (need_lock)
+					BLI_rw_mutex_unlock(smd->domain->fluid_mutex);
 			}
 
 			smokeModifier_reset_turbulence(smd);
@@ -463,6 +473,11 @@ void smokeModifier_reset(struct SmokeModifierData *smd)
 			}
 		}
 	}
+}
+
+void smokeModifier_reset(struct SmokeModifierData *smd)
+{
+	smokeModifier_reset_ex(smd, true);
 }
 
 void smokeModifier_free(SmokeModifierData *smd)
@@ -497,6 +512,7 @@ void smokeModifier_createType(struct SmokeModifierData *smd)
 			smd->domain->ptcaches[1].first = smd->domain->ptcaches[1].last = NULL;
 			/* set some standard values */
 			smd->domain->fluid = NULL;
+			smd->domain->fluid_mutex = BLI_rw_mutex_alloc();
 			smd->domain->wt = NULL;
 			smd->domain->eff_group = NULL;
 			smd->domain->fluid_group = NULL;
@@ -969,6 +985,7 @@ static void emit_from_particles(Object *flow_ob, SmokeDomainSettings *sds, Smoke
 		sim.scene = scene;
 		sim.ob = flow_ob;
 		sim.psys = psys;
+		sim.rng = BLI_rng_new(psys->seed);
 
 		if (psys->part->type == PART_HAIR)
 		{
@@ -1055,6 +1072,8 @@ static void emit_from_particles(Object *flow_ob, SmokeDomainSettings *sds, Smoke
 			MEM_freeN(particle_pos);
 		if (particle_vel)
 			MEM_freeN(particle_vel);
+
+		BLI_rng_free(sim.rng);
 	}
 }
 
@@ -1303,9 +1322,17 @@ static void adjustDomainResolution(SmokeDomainSettings *sds, int new_shift[3], E
 	int x, y, z, i;
 	float *density = smoke_get_density(sds->fluid);
 	float *fuel = smoke_get_fuel(sds->fluid);
+	float *bigdensity = smoke_turbulence_get_density(sds->wt);
+	float *bigfuel = smoke_turbulence_get_fuel(sds->wt);
 	float *vx = smoke_get_velocity_x(sds->fluid);
 	float *vy = smoke_get_velocity_y(sds->fluid);
 	float *vz = smoke_get_velocity_z(sds->fluid);
+	int block_size = sds->amplify + 1;
+	int wt_res[3];
+
+	if (sds->flags & MOD_SMOKE_HIGHRES && sds->wt) {
+		smoke_turbulence_get_res(sds->wt, wt_res);
+	}
 
 	INIT_MINMAX(min_vel, max_vel);
 
@@ -1317,8 +1344,35 @@ static void adjustDomainResolution(SmokeDomainSettings *sds, int new_shift[3], E
 				int xn = x - new_shift[0];
 				int yn = y - new_shift[1];
 				int zn = z - new_shift[2];
-				int index = smoke_get_index(x - sds->res_min[0], sds->res[0], y - sds->res_min[1], sds->res[1], z - sds->res_min[2]);
-				float max_den = (fuel) ? MAX2(density[index], fuel[index]) : density[index];
+				int index;
+				float max_den;
+				
+				/* skip if cell already belongs to new area */
+				if (xn >= min[0] && xn <= max[0] && yn >= min[1] && yn <= max[1] && zn >= min[2] && zn <= max[2])
+					continue;
+
+				index = smoke_get_index(x - sds->res_min[0], sds->res[0], y - sds->res_min[1], sds->res[1], z - sds->res_min[2]);
+				max_den = (fuel) ? MAX2(density[index], fuel[index]) : density[index];
+
+				/* check high resolution bounds if max density isnt already high enough */
+				if (max_den < sds->adapt_threshold && sds->flags & MOD_SMOKE_HIGHRES && sds->wt) {
+					int i, j, k;
+					/* high res grid index */
+					int xx = (x - sds->res_min[0]) * block_size;
+					int yy = (y - sds->res_min[1]) * block_size;
+					int zz = (z - sds->res_min[2]) * block_size;
+
+					for (i = 0; i < block_size; i++)
+						for (j = 0; j < block_size; j++)
+							for (k = 0; k < block_size; k++)
+							{
+								int big_index = smoke_get_index(xx + i, wt_res[0], yy + j, wt_res[1], zz + k);
+								float den = (bigfuel) ? MAX2(bigdensity[big_index], bigfuel[big_index]) : bigdensity[big_index];
+								if (den > max_den) {
+									max_den = den;
+								}
+							}
+				}
 
 				/* content bounds (use shifted coordinates) */
 				if (max_den >= sds->adapt_threshold) {
@@ -1329,6 +1383,7 @@ static void adjustDomainResolution(SmokeDomainSettings *sds, int new_shift[3], E
 					if (max[1] < yn) max[1] = yn;
 					if (max[2] < zn) max[2] = zn;
 				}
+
 				/* velocity bounds */
 				if (min_vel[0] > vx[index]) min_vel[0] = vx[index];
 				if (min_vel[1] > vy[index]) min_vel[1] = vy[index];
@@ -1549,7 +1604,7 @@ BLI_INLINE void apply_inflow_fields(SmokeFlowSettings *sfs, float emission_value
 	float fuel_flow = emission_value * sfs->fuel_amount;
 	/* add heat */
 	if (heat) {
-		heat[index] = MAX2(emission_value * sfs->temp, heat[index]);
+		heat[index] = ADD_IF_LOWER(heat[index], emission_value * sfs->temp);
 	}
 	/* absolute */
 	if (absolute_flow) {
@@ -1776,6 +1831,8 @@ static void update_flowsfluids(Scene *scene, Object *ob, SmokeDomainSettings *sd
 							dy = gy - sds->res_min[1];
 							dz = gz - sds->res_min[2];
 							d_index = smoke_get_index(dx, sds->res[0], dy, sds->res[1], dz);
+							/* make sure emission cell is inside the new domain boundary */
+							if (dx < 0 || dy < 0 || dz < 0 || dx >= sds->res[0] || dy >= sds->res[1] || dz >= sds->res[2]) continue;
 
 							if (sfs->type == MOD_SMOKE_FLOW_TYPE_OUTFLOW) { // outflow
 								apply_outflow_fields(d_index, density, heat, fuel, react, color_r, color_g, color_b);
@@ -2144,7 +2201,7 @@ static void smokeModifier_process(SmokeModifierData *smd, Scene *scene, Object *
 		else if (scene->r.cfra < smd->time)
 		{
 			smd->time = scene->r.cfra;
-			smokeModifier_reset(smd);
+			smokeModifier_reset_ex(smd, false);
 		}
 	}
 	else if (smd->type & MOD_SMOKE_TYPE_COLL)
@@ -2164,7 +2221,7 @@ static void smokeModifier_process(SmokeModifierData *smd, Scene *scene, Object *
 		smd->time = scene->r.cfra;
 		if (scene->r.cfra < smd->time)
 		{
-			smokeModifier_reset(smd);
+			smokeModifier_reset_ex(smd, false);
 		}
 	}
 	else if (smd->type & MOD_SMOKE_TYPE_DOMAIN)
@@ -2186,7 +2243,7 @@ static void smokeModifier_process(SmokeModifierData *smd, Scene *scene, Object *
 		if (!smd->domain->fluid || framenr == startframe)
 		{
 			BKE_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
-			smokeModifier_reset(smd);
+			smokeModifier_reset_ex(smd, false);
 			BKE_ptcache_validate(cache, framenr);
 			cache->flag &= ~PTCACHE_REDO_NEEDED;
 		}
@@ -2275,7 +2332,14 @@ static void smokeModifier_process(SmokeModifierData *smd, Scene *scene, Object *
 
 struct DerivedMesh *smokeModifier_do(SmokeModifierData *smd, Scene *scene, Object *ob, DerivedMesh *dm)
 {
+	/* lock so preview render does not read smoke data while it gets modified */
+	if ((smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain)
+		BLI_rw_mutex_lock(smd->domain->fluid_mutex, THREAD_LOCK_WRITE);
+
 	smokeModifier_process(smd, scene, ob, dm);
+
+	if ((smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain)
+		BLI_rw_mutex_unlock(smd->domain->fluid_mutex);
 
 	/* return generated geometry for adaptive domain */
 	if (smd->type & MOD_SMOKE_TYPE_DOMAIN && smd->domain &&
@@ -2284,7 +2348,9 @@ struct DerivedMesh *smokeModifier_do(SmokeModifierData *smd, Scene *scene, Objec
 	{
 		return createDomainGeometry(smd->domain, ob);
 	}
-	else return CDDM_copy(dm);
+	else {
+		return CDDM_copy(dm);
+	}
 }
 
 static float calc_voxel_transp(float *result, float *input, int res[3], int *pixel, float *tRay, float correct)

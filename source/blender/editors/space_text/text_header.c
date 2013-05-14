@@ -42,6 +42,8 @@
 
 #include "BLI_blenlib.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
@@ -111,6 +113,38 @@ void TEXT_OT_properties(wmOperatorType *ot)
 	ot->poll = text_properties_poll;
 }
 
+static int text_text_search_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	ScrArea *sa = CTX_wm_area(C);
+	ARegion *ar = text_has_properties_region(sa);
+	SpaceText *st = CTX_wm_space_text(C);
+	
+	if (ar) {
+		if (ar->flag & RGN_FLAG_HIDDEN)
+			ED_region_toggle_hidden(C, ar);
+		
+		/* cannot send a button activate yet for case when region wasn't visible yet */
+		/* flag gets checked and cleared in main draw callback */
+		st->flags |= ST_FIND_ACTIVATE;
+		
+		ED_region_tag_redraw(ar);
+	}
+	return OPERATOR_FINISHED;
+}
+
+
+void TEXT_OT_start_find(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Find";
+	ot->description = "Start searching text";
+	ot->idname = "TEXT_OT_start_find";
+	
+	/* api callbacks */
+	ot->exec = text_text_search_exec;
+	ot->poll = text_properties_poll;
+}
+
 /******************** XXX popup menus *******************/
 
 #if 0
@@ -120,7 +154,7 @@ void TEXT_OT_properties(wmOperatorType *ot)
 	uiPopupMenu *pup;
 
 	if (text) {
-		pup = uiPupMenuBegin(C, "Text", ICON_NONE);
+		pup = uiPupMenuBegin(C, IFACE_("Text"), ICON_NONE);
 		if (txt_has_sel(text)) {
 			uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_cut");
 			uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_copy");
@@ -134,7 +168,7 @@ void TEXT_OT_properties(wmOperatorType *ot)
 		uiPupMenuEnd(C, pup);
 	}
 	else {
-		pup = uiPupMenuBegin(C, "File", ICON_NONE);
+		pup = uiPupMenuBegin(C, IFACE_("File"), ICON_NONE);
 		uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_new");
 		uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_open");
 		uiPupMenuEnd(C, pup);
@@ -146,7 +180,7 @@ void TEXT_OT_properties(wmOperatorType *ot)
 
 	uiPopupMenu *pup;
 
-	pup = uiPupMenuBegin(C, "Edit", ICON_NONE);
+	pup = uiPupMenuBegin(C, IFACE_("Edit"), ICON_NONE);
 	uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_cut");
 	uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_copy");
 	uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_paste");
@@ -159,7 +193,7 @@ void TEXT_OT_properties(wmOperatorType *ot)
 	uiPopupMenu *pup;
 
 	if (text) {
-		pup = uiPupMenuBegin(C, "Text", ICON_NONE);
+		pup = uiPupMenuBegin(C, IFACE_("Text"), ICON_NONE);
 		uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_new");
 		uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_open");
 		uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_save");
@@ -168,7 +202,7 @@ void TEXT_OT_properties(wmOperatorType *ot)
 		uiPupMenuEnd(C, pup);
 	}
 	else {
-		pup = uiPupMenuBegin(C, "File", ICON_NONE);
+		pup = uiPupMenuBegin(C, IFACE_("File"), ICON_NONE);
 		uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_new");
 		uiItemO(layout, NULL, ICON_NONE, "TEXT_OT_open");
 		uiPupMenuEnd(C, pup);
@@ -180,11 +214,14 @@ void TEXT_OT_properties(wmOperatorType *ot)
 
 	uiPopupMenu *pup;
 
-	pup = uiPupMenuBegin(C, "Text", ICON_NONE);
-	uiItemEnumO(layout, "TEXT_OT_move", "Top of File", 0, "type", FILE_TOP);
-	uiItemEnumO(layout, "TEXT_OT_move", "Bottom of File", 0, "type", FILE_BOTTOM);
-	uiItemEnumO(layout, "TEXT_OT_move", "Page Up", 0, "type", PREV_PAGE);
-	uiItemEnumO(layout, "TEXT_OT_move", "Page Down", 0, "type", NEXT_PAGE);
+	pup = uiPupMenuBegin(C, IFACE_("Text"), ICON_NONE);
+	uiItemEnumO(layout, "TEXT_OT_move", CTX_IFACE_(BLF_I18NCONTEXT_OPERATOR_DEFAULT, "Top of File"),
+	            0, "type", FILE_TOP);
+	uiItemEnumO(layout, "TEXT_OT_move", CTX_IFACE_(BLF_I18NCONTEXT_OPERATOR_DEFAULT, "Bottom of File"),
+	            0, "type", FILE_BOTTOM);
+	uiItemEnumO(layout, "TEXT_OT_move", CTX_IFACE_(BLF_I18NCONTEXT_OPERATOR_DEFAULT, "Page Up"), 0, "type", PREV_PAGE);
+	uiItemEnumO(layout, "TEXT_OT_move", CTX_IFACE_(BLF_I18NCONTEXT_OPERATOR_DEFAULT, "Page Down"),
+	            0, "type", NEXT_PAGE);
 	uiPupMenuEnd(C, pup);
 }
 #endif

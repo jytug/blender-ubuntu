@@ -24,7 +24,6 @@
  *  \ingroup RNA
  */
 
-
 #include <float.h>
 #include <limits.h>
 #include <stdio.h>
@@ -33,6 +32,8 @@
 #include <errno.h>
 
 #include "MEM_guardedalloc.h"
+
+#include "BLI_utildefines.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
@@ -44,18 +45,6 @@
 #  ifndef snprintf
 #    define snprintf _snprintf
 #  endif
-#endif
-
-/* so we can use __func__ everywhere */
-#if defined(_MSC_VER)
-#  define __func__ __FUNCTION__
-#endif
-
-/* copied from BLI_utildefines.h ugh */
-#ifdef __GNUC__
-#  define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
-#else
-#  define UNUSED(x) x
 #endif
 
 /* Replace if different */
@@ -1835,10 +1824,8 @@ static void rna_def_struct_function_prototype_cpp(FILE *f, StructRNA *UNUSED(srn
 		pout = (flag & PROP_OUTPUT);
 
 		if (type == PROP_POINTER)
-			ptrstr = "";
-		else if ((type == PROP_POINTER) && (flag & PROP_RNAPTR) && !(flag & PROP_THICK_WRAP))
-			ptrstr = "*";
-		else if (type == PROP_POINTER || dp->prop->arraydimension)
+			ptrstr = pout ? "*": "";
+		else if (dp->prop->arraydimension)
 			ptrstr = "*";
 		else if (type == PROP_STRING && (flag & PROP_THICK_WRAP))
 			ptrstr = "";
@@ -2016,6 +2003,8 @@ static void rna_def_struct_function_call_impl_cpp(FILE *f, StructRNA *srna, Func
 		if (dp->prop->type == PROP_POINTER)
 			if ((dp->prop->flag & PROP_RNAPTR) && !(dp->prop->flag & PROP_THICK_WRAP))
 				fprintf(f, "(::%s *) &%s.ptr", rna_parameter_type_name(dp->prop), rna_safe_id(dp->prop->identifier));
+			else if (dp->prop->flag & PROP_OUTPUT)
+				fprintf(f, "(::%s **) &%s->ptr.data", rna_parameter_type_name(dp->prop), rna_safe_id(dp->prop->identifier));
 			else
 				fprintf(f, "(::%s *) %s.ptr.data", rna_parameter_type_name(dp->prop), rna_safe_id(dp->prop->identifier));
 		else
@@ -2450,6 +2439,7 @@ static const char *rna_property_subtypename(PropertySubType type)
 		case PROP_ANGLE: return "PROP_ANGLE";
 		case PROP_TIME: return "PROP_TIME";
 		case PROP_DISTANCE: return "PROP_DISTANCE";
+		case PROP_DISTANCE_CAMERA: return "PROP_DISTANCE_CAMERA";
 		case PROP_COLOR: return "PROP_COLOR";
 		case PROP_TRANSLATION: return "PROP_TRANSLATION";
 		case PROP_DIRECTION: return "PROP_DIRECTION";
@@ -2490,6 +2480,7 @@ static const char *rna_property_subtype_unit(PropertySubType type)
 		case PROP_UNIT_TIME:         return "PROP_UNIT_TIME";
 		case PROP_UNIT_VELOCITY:     return "PROP_UNIT_VELOCITY";
 		case PROP_UNIT_ACCELERATION: return "PROP_UNIT_ACCELERATION";
+		case PROP_UNIT_CAMERA:       return "PROP_UNIT_CAMERA";
 		default:                     return "PROP_UNIT_UNKNOWN";
 	}
 }
@@ -3172,7 +3163,9 @@ static void rna_generate_struct(BlenderRNA *UNUSED(brna), StructRNA *srna, FILE 
 
 		fprintf(f, "\t(PropertyRNA *)&rna_%s_%s, ", base->identifier, prop->identifier);
 	}
-	else fprintf(f, "\tNULL, ");
+	else {
+		fprintf(f, "\tNULL, ");
+	}
 
 	prop = srna->iteratorproperty;
 	base = srna;
@@ -3245,6 +3238,7 @@ static RNAProcessItem PROCESS_ITEMS[] = {
 	{"rna_key.c", NULL, RNA_def_key},
 	{"rna_lamp.c", NULL, RNA_def_lamp},
 	{"rna_lattice.c", NULL, RNA_def_lattice},
+	{"rna_linestyle.c", NULL, RNA_def_linestyle},
 	{"rna_main.c", "rna_main_api.c", RNA_def_main},
 	{"rna_material.c", "rna_material_api.c", RNA_def_material},
 	{"rna_mesh.c", "rna_mesh_api.c", RNA_def_mesh},

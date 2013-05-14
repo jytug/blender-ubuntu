@@ -40,11 +40,11 @@ struct Mesh;
 struct HookModifierData;
 
 /* add hook menu */
-enum {
+enum eObject_Hook_Add_Mode {
 	OBJECT_ADDHOOK_NEWOB = 1,
 	OBJECT_ADDHOOK_SELOB,
 	OBJECT_ADDHOOK_SELOB_BONE
-} eObject_Hook_Add_Mode;
+};
 
 /* internal exports only */
 
@@ -113,6 +113,7 @@ void OBJECT_OT_metaball_add(struct wmOperatorType *ot);
 void OBJECT_OT_text_add(struct wmOperatorType *ot);
 void OBJECT_OT_armature_add(struct wmOperatorType *ot);
 void OBJECT_OT_empty_add(struct wmOperatorType *ot);
+void OBJECT_OT_drop_named_image(struct wmOperatorType *ot);
 void OBJECT_OT_lamp_add(struct wmOperatorType *ot);
 void OBJECT_OT_effector_add(struct wmOperatorType *ot);
 void OBJECT_OT_camera_add(struct wmOperatorType *ot);
@@ -137,6 +138,7 @@ void OBJECT_OT_hook_recenter(struct wmOperatorType *ot);
 
 /* object_lattice.c */
 void LATTICE_OT_select_all(struct wmOperatorType *ot);
+void LATTICE_OT_select_ungrouped(struct wmOperatorType *ot);
 void LATTICE_OT_make_regular(struct wmOperatorType *ot);
 void LATTICE_OT_flip(struct wmOperatorType *ot);
 

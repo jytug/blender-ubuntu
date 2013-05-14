@@ -269,7 +269,7 @@ static void rna_uiTemplatePathBuilder(uiLayout *layout, PointerRNA *ptr, const c
 
 static int rna_ui_get_rnaptr_icon(bContext *C, PointerRNA *ptr_icon)
 {
-	return UI_rnaptr_icon_get(C, ptr_icon, RNA_struct_ui_icon(ptr_icon->type), FALSE);
+	return UI_rnaptr_icon_get(C, ptr_icon, RNA_struct_ui_icon(ptr_icon->type), false);
 }
 
 static const char *rna_ui_get_enum_name(bContext *C, PointerRNA *ptr, const char *propname, const char *identifier)
@@ -418,6 +418,8 @@ void RNA_api_ui_layout(StructRNA *srna)
 		{'h', "HUE", 0, "Hue", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
+
+	static float node_socket_color_default[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 	/* simple layout specifiers */
 	func = RNA_def_function(srna, "row", "uiLayoutRow");
@@ -595,7 +597,7 @@ void RNA_api_ui_layout(StructRNA *srna)
 
 	func = RNA_def_function(srna, "label", "rna_uiItemL");
 	RNA_def_function_ui_description(func, "Item. Display text and/or icon in the layout");
-	 api_ui_item_common(func);
+	api_ui_item_common(func);
 	parm = RNA_def_property(func, "icon_value", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_ui_text(parm, "Icon Value",
 	                         "Override automatic icon of the item "
@@ -765,6 +767,12 @@ void RNA_api_ui_layout(StructRNA *srna)
 	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_RNAPTR | PROP_NEVER_NULL);
 	RNA_def_boolean(func, "compact", 0, "", "Use more compact layout");
 
+	func = RNA_def_function(srna, "template_movieclip_information", "uiTemplateMovieclipInformation");
+	RNA_def_function_ui_description(func, "Item. Movie clip information data.");
+	api_ui_item_rna_common(func);
+	parm = RNA_def_pointer(func, "clip_user", "MovieClipUser", "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_RNAPTR | PROP_NEVER_NULL);
+
 	func = RNA_def_function(srna, "template_list", "uiTemplateList");
 	RNA_def_function_ui_description(func, "Item. A list widget to display data, e.g. vertexgroups.");
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
@@ -829,6 +837,14 @@ void RNA_api_ui_layout(StructRNA *srna)
 	parm = RNA_def_pointer(func, "item", "KeyMapItem", "", "");
 	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_RNAPTR | PROP_NEVER_NULL);
 
+	func = RNA_def_function(srna, "template_component_menu", "uiTemplateComponentMenu");
+	RNA_def_function_ui_description(func, "Item. Display expanded property in a popup menu");
+	parm = RNA_def_pointer(func, "data", "AnyType", "", "Data from which to take property");
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_RNAPTR);
+	parm = RNA_def_string(func, "property", "", 0, "", "Identifier of property in data");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	RNA_def_string(func, "name", "", 0, "", "");
+
 	func = RNA_def_function(srna, "introspect", "uiLayoutIntrospect");
 	parm = RNA_def_string(func, "string", "", 1024 * 1024, "Descr", "DESCR");
 	RNA_def_function_return(func, parm);
@@ -843,6 +859,12 @@ void RNA_api_ui_layout(StructRNA *srna)
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 	api_ui_item_rna_common(func);
 	/* RNA_def_boolean(func, "show_global_settings", 0, "", "Show widgets to control global color management settings"); */
+
+	/* node socket icon */
+	func = RNA_def_function(srna, "template_node_socket", "uiTemplateNodeSocket");
+	RNA_def_function_ui_description(func, "Node Socket Icon");
+	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+	RNA_def_float_array(func, "color", 4, node_socket_color_default, 0.0f, 1.0f, "Color", "", 0.0f, 1.0f);
 }
 
 #endif

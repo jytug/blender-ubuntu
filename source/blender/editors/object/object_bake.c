@@ -61,6 +61,8 @@
 #include "BKE_modifier.h"
 #include "BKE_DerivedMesh.h"
 #include "BKE_subsurf.h"
+#include "BKE_depsgraph.h"
+#include "BKE_mesh.h"
 
 #include "RE_pipeline.h"
 #include "RE_shader_ext.h"
@@ -138,7 +140,9 @@ static int multiresbake_check(bContext *C, wmOperator *op)
 				}
 			}
 		}
-		else ok = 0;
+		else {
+			ok = 0;
+		}
 
 		if (!ok) {
 			BKE_report(op->reports, RPT_ERROR, "Multires data baking requires multi-resolution object");
@@ -321,7 +325,7 @@ static int multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 
 	CTX_DATA_BEGIN (C, Base *, base, selected_editable_bases)
 	{
-		MultiresBakeRender bkr = {0};
+		MultiresBakeRender bkr = {NULL};
 
 		ob = base->object;
 
@@ -417,7 +421,7 @@ static void multiresbake_startjob(void *bkv, short *stop, short *do_update, floa
 	}
 
 	for (data = bkj->data.first; data; data = data->next) {
-		MultiresBakeRender bkr = {0};
+		MultiresBakeRender bkr = {NULL};
 
 		/* copy data stored in job descriptor */
 		bkr.bake_filter = bkj->bake_filter;
@@ -570,7 +574,7 @@ static void init_bake_internal(BakeRender *bkr, bContext *C)
 	bScreen *sc = CTX_wm_screen(C);
 
 	/* get editmode results */
-	ED_object_exit_editmode(C, 0);  /* 0 = does not exit editmode */
+	ED_object_editmode_load(CTX_data_edit_object(C));
 
 	bkr->sa = sc ? BKE_screen_find_big_area(sc, SPACE_IMAGE, 10) : NULL; /* can be NULL */
 	bkr->main = CTX_data_main(C);
@@ -605,40 +609,55 @@ static void finish_bake_internal(BakeRender *bkr)
 			bkr->scene->r.mode &= ~R_RAYTRACE;
 
 	/* force OpenGL reload and mipmap recalc */
-	for (ima = G.main->image.first; ima; ima = ima->id.next) {
-		ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
+	if ((bkr->scene->r.bake_flag & R_BAKE_VCOL) == 0) {
+		for (ima = G.main->image.first; ima; ima = ima->id.next) {
+			ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
 
-		/* some of the images could have been changed during bake,
-		 * so recreate mipmaps regardless bake result status
-		 */
-		if (ima->ok == IMA_OK_LOADED) {
-			if (ibuf) {
-				if (ibuf->userflags & IB_BITMAPDIRTY) {
-					GPU_free_image(ima);
-					imb_freemipmapImBuf(ibuf);
+			/* some of the images could have been changed during bake,
+			 * so recreate mipmaps regardless bake result status
+			 */
+			if (ima->ok == IMA_OK_LOADED) {
+				if (ibuf) {
+					if (ibuf->userflags & IB_BITMAPDIRTY) {
+						GPU_free_image(ima);
+						imb_freemipmapImBuf(ibuf);
+					}
+
+					/* invalidate display buffers for changed images */
+					if (ibuf->userflags & IB_BITMAPDIRTY)
+						ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
 				}
-
-				/* invalidate display buffers for changed images */
-				if (ibuf->userflags & IB_BITMAPDIRTY)
-					ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
 			}
-		}
 
-		/* freed when baking is done, but if its canceled we need to free here */
-		if (ibuf) {
-			if (ibuf->userdata) {
-				BakeImBufuserData *userdata = (BakeImBufuserData *) ibuf->userdata;
-				if (userdata->mask_buffer)
-					MEM_freeN(userdata->mask_buffer);
-				if (userdata->displacement_buffer)
-					MEM_freeN(userdata->displacement_buffer);
-				MEM_freeN(userdata);
-				ibuf->userdata = NULL;
+			/* freed when baking is done, but if its canceled we need to free here */
+			if (ibuf) {
+				if (ibuf->userdata) {
+					BakeImBufuserData *userdata = (BakeImBufuserData *) ibuf->userdata;
+					if (userdata->mask_buffer)
+						MEM_freeN(userdata->mask_buffer);
+					if (userdata->displacement_buffer)
+						MEM_freeN(userdata->displacement_buffer);
+					MEM_freeN(userdata);
+					ibuf->userdata = NULL;
+				}
 			}
-		}
 
-		BKE_image_release_ibuf(ima, ibuf, NULL);
+			BKE_image_release_ibuf(ima, ibuf, NULL);
+		}
 	}
+
+	if (bkr->scene->r.bake_flag & R_BAKE_VCOL) {
+		/* update all tagged meshes */
+		Mesh *me;
+		BLI_assert(BLI_thread_is_main());
+		for (me = G.main->mesh.first; me; me = me->id.next) {
+			if (me->id.flag & LIB_DOIT) {
+				DAG_id_tag_update(&me->id, OB_RECALC_DATA);
+				BKE_mesh_tessface_clear(me);
+			}
+		}
+	}
+
 }
 
 static void *do_bake_render(void *bake_v)
@@ -696,7 +715,7 @@ static void bake_freejob(void *bkv)
 }
 
 /* catch esc */
-static int objects_bake_render_modal(bContext *C, wmOperator *UNUSED(op), wmEvent *event)
+static int objects_bake_render_modal(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
 	/* no running blender, remove handler and pass through */
 	if (0 == WM_jobs_test(CTX_wm_manager(C), CTX_data_scene(C), WM_JOB_TYPE_OBJECT_BAKE_TEXTURE))
@@ -719,7 +738,7 @@ static int is_multires_bake(Scene *scene)
 	return 0;
 }
 
-static int objects_bake_render_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(_event))
+static int objects_bake_render_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(_event))
 {
 	Scene *scene = CTX_data_scene(C);
 	int result = OPERATOR_CANCELLED;

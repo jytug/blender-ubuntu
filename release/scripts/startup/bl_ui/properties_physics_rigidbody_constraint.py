@@ -51,17 +51,18 @@ class PHYSICS_PT_rigid_body_constraint(PHYSICS_PT_rigidbody_constraint_panel, Pa
         layout.prop(rbc, "object1")
         layout.prop(rbc, "object2")
 
-        row = layout.row()
-        row.prop(rbc, "use_breaking")
-        sub = row.row()
-        sub.active = rbc.use_breaking
-        sub.prop(rbc, "breaking_threshold", text="Threshold")
+        if rbc.type != 'MOTOR':
+            row = layout.row()
+            row.prop(rbc, "use_breaking")
+            sub = row.row()
+            sub.active = rbc.use_breaking
+            sub.prop(rbc, "breaking_threshold", text="Threshold")
 
         row = layout.row()
-        row.prop(rbc, "override_solver_iterations", text="Override Iterations")
+        row.prop(rbc, "use_override_solver_iterations", text="Override Iterations")
         sub = row.row()
-        sub.active = rbc.override_solver_iterations
-        sub.prop(rbc, "num_solver_iterations", text="Iterations")
+        sub.active = rbc.use_override_solver_iterations
+        sub.prop(rbc, "solver_iterations", text="Iterations")
 
         if rbc.type == 'HINGE':
             col = layout.column(align=True)
@@ -112,6 +113,30 @@ class PHYSICS_PT_rigid_body_constraint(PHYSICS_PT_rigidbody_constraint_panel, Pa
             sub.active = rbc.use_limit_ang_x
             sub.prop(rbc, "limit_ang_x_lower", text="Lower")
             sub.prop(rbc, "limit_ang_x_upper", text="Upper")
+
+        elif rbc.type == 'MOTOR':
+            col = layout.column(align=True)
+            col.label("Linear motor:")
+
+            row = col.row()
+            sub = row.row()
+            sub.scale_x = 0.5
+            sub.prop(rbc, "use_motor_lin", toggle=True, text="Enable")
+            sub = row.row()
+            sub.active = rbc.use_motor_lin
+            sub.prop(rbc, "motor_lin_target_velocity", text="Target Velocity")
+            sub.prop(rbc, "motor_lin_max_impulse", text="Max Impulse")
+
+            col.label("Angular motor:")
+
+            row = col.row()
+            sub = row.row()
+            sub.scale_x = 0.5
+            sub.prop(rbc, "use_motor_ang", toggle=True, text="Enable")
+            sub = row.row()
+            sub.active = rbc.use_motor_ang
+            sub.prop(rbc, "motor_ang_target_velocity", text="Target Velocity")
+            sub.prop(rbc, "motor_ang_max_impulse", text="Max Impulse")
 
         elif rbc.type in {'GENERIC', 'GENERIC_SPRING'}:
             col = layout.column(align=True)

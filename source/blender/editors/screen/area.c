@@ -67,6 +67,8 @@
 
 #include "screen_intern.h"
 
+extern void ui_draw_anti_tria(float x1, float y1, float x2, float y2, float x3, float y3); /* xxx temp */
+
 /* general area and region code */
 
 static void region_draw_emboss(ARegion *ar, rcti *scirct)
@@ -245,8 +247,6 @@ static void draw_azone_plus(float x1, float y1, float x2, float y2)
 
 static void region_draw_azone_tab_plus(AZone *az)
 {
-	extern void ui_draw_anti_tria(float x1, float y1, float x2, float y2, float x3, float y3); /* xxx temp */
-	
 	glEnable(GL_BLEND);
 	
 	/* add code to draw region hidden as 'too small' */
@@ -321,8 +321,6 @@ static void region_draw_azone_tab(AZone *az)
 
 static void region_draw_azone_tria(AZone *az)
 {
-	extern void ui_draw_anti_tria(float x1, float y1, float x2, float y2, float x3, float y3); /* xxx temp */
-	
 	glEnable(GL_BLEND);
 	//UI_GetThemeColor3fv(TH_HEADER, col);
 	glColor4f(0.0f, 0.0f, 0.0f, 0.35f);
@@ -446,7 +444,7 @@ void ED_region_do_draw(bContext *C, ARegion *ar)
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		UI_ThemeColor(TH_TEXT);
-		BLF_draw_default(UI_UNIT_X, 0.4f*UI_UNIT_Y, 0.0f, ar->headerstr, BLF_DRAW_STR_DUMMY_MAX);
+		BLF_draw_default(UI_UNIT_X, 0.4f * UI_UNIT_Y, 0.0f, ar->headerstr, BLF_DRAW_STR_DUMMY_MAX);
 	}
 	else if (at->draw) {
 		at->draw(C, ar);
@@ -590,7 +588,7 @@ static void area_azone_initialize(bScreen *screen, ScrArea *sa)
 	BLI_rcti_init(&az->rect, az->x1, az->x2, az->y1, az->y2);
 }
 
-#define AZONEPAD_EDGE   (0.2f * U.widget_unit)
+#define AZONEPAD_EDGE   (0.1f * U.widget_unit)
 #define AZONEPAD_ICON   (0.45f * U.widget_unit)
 static void region_azone_edge(AZone *az, ARegion *ar)
 {
@@ -599,22 +597,22 @@ static void region_azone_edge(AZone *az, ARegion *ar)
 			az->x1 = ar->winrct.xmin;
 			az->y1 = ar->winrct.ymax - AZONEPAD_EDGE;
 			az->x2 = ar->winrct.xmax;
-			az->y2 = ar->winrct.ymax;
+			az->y2 = ar->winrct.ymax + AZONEPAD_EDGE;
 			break;
 		case AE_BOTTOM_TO_TOPLEFT:
 			az->x1 = ar->winrct.xmin;
 			az->y1 = ar->winrct.ymin + AZONEPAD_EDGE;
 			az->x2 = ar->winrct.xmax;
-			az->y2 = ar->winrct.ymin;
+			az->y2 = ar->winrct.ymin - AZONEPAD_EDGE;
 			break;
 		case AE_LEFT_TO_TOPRIGHT:
-			az->x1 = ar->winrct.xmin;
+			az->x1 = ar->winrct.xmin - AZONEPAD_EDGE;
 			az->y1 = ar->winrct.ymin;
 			az->x2 = ar->winrct.xmin + AZONEPAD_EDGE;
 			az->y2 = ar->winrct.ymax;
 			break;
 		case AE_RIGHT_TO_TOPLEFT:
-			az->x1 = ar->winrct.xmax;
+			az->x1 = ar->winrct.xmax + AZONEPAD_EDGE;
 			az->y1 = ar->winrct.ymin;
 			az->x2 = ar->winrct.xmax - AZONEPAD_EDGE;
 			az->y2 = ar->winrct.ymax;
@@ -1071,7 +1069,9 @@ static void region_rect_recursive(wmWindow *win, ScrArea *sa, ARegion *ar, rcti 
 				if (G.debug & G_DEBUG)
 					printf("region quadsplit failed\n");
 			}
-			else quad = 1;
+			else {
+				quad = 1;
+			}
 		}
 		if (quad) {
 			if (quad == 1) { /* left bottom */
@@ -1586,14 +1586,14 @@ int ED_area_header_standardbuttons(const bContext *C, uiBlock *block, int yco)
 		                       ICON_DISCLOSURE_TRI_RIGHT,
 		                       xco, yco, U.widget_unit, U.widget_unit * 0.9f,
 		                       &(sa->flag), 0, 0, 0, 0,
-		                       "Show pulldown menus");
+		                       TIP_("Show pulldown menus"));
 	}
 	else {
 		but = uiDefIconButBitS(block, TOG, HEADER_NO_PULLDOWN, 0,
 		                       ICON_DISCLOSURE_TRI_DOWN,
 		                       xco, yco, U.widget_unit, U.widget_unit * 0.9f,
 		                       &(sa->flag), 0, 0, 0, 0,
-		                       "Hide pulldown menus");
+		                       TIP_("Hide pulldown menus"));
 	}
 
 	uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
@@ -1746,7 +1746,9 @@ void ED_region_panels(const bContext *C, ARegion *ar, int vertical, const char *
 			/* uiScalePanels(ar, BLI_rctf_size_x(&v2d->cur));
 			   break; */
 		}
-		else break;
+		else {
+			break;
+		}
 	}
 	
 	
@@ -1845,7 +1847,6 @@ void ED_region_header(const bContext *C, ARegion *ar)
 
 void ED_region_header_init(ARegion *ar)
 {
-	ar->v2d.flag &= ~V2D_IS_INITIALISED;
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_HEADER, ar->winx, ar->winy);
 }
 
@@ -1855,11 +1856,12 @@ int ED_area_headersize(void)
 	return (int)(1.3f * UI_UNIT_Y);
 }
 
-void ED_region_info_draw(ARegion *ar, const char *text, int block, float alpha)
+void ED_region_info_draw(ARegion *ar, const char *text, int block, float fill_color[4])
 {
 	const int header_height = UI_UNIT_Y;
 	uiStyle *style = UI_GetStyleDraw();
 	int fontid = style->widget.uifont_id;
+	GLint scissor[4];
 	rcti rect;
 
 	/* background box */
@@ -1872,9 +1874,14 @@ void ED_region_info_draw(ARegion *ar, const char *text, int block, float alpha)
 
 	rect.ymax = BLI_rcti_size_y(&ar->winrct);
 
+	/* setup scissor */
+	glGetIntegerv(GL_SCISSOR_BOX, scissor);
+	glScissor(ar->winrct.xmin + rect.xmin, ar->winrct.ymin + rect.ymin,
+	          BLI_rcti_size_x(&rect) + 1, BLI_rcti_size_y(&rect) + 1);
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glColor4f(0.0f, 0.0f, 0.0f, alpha);
+	glColor4fv(fill_color);
 	glRecti(rect.xmin, rect.ymin, rect.xmax + 1, rect.ymax + 1);
 	glDisable(GL_BLEND);
 
@@ -1887,6 +1894,9 @@ void ED_region_info_draw(ARegion *ar, const char *text, int block, float alpha)
 	BLF_draw(fontid, text, BLF_DRAW_STR_DUMMY_MAX);
 
 	BLF_disable(fontid, BLF_CLIPPING);
+
+	/* restore scissor as it was before */
+	glScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
 }
 
 void ED_region_grid_draw(ARegion *ar, float zoomx, float zoomy)
@@ -1967,11 +1977,11 @@ void ED_region_visible_rect(ARegion *ar, rcti *rect)
 			if (BLI_rcti_isect(rect, &arn->winrct, NULL)) {
 				
 				/* overlap left, also check 1 pixel offset (2 regions on one side) */
-				if ( ABS(rect->xmin - arn->winrct.xmin) < 2)
+				if (ABS(rect->xmin - arn->winrct.xmin) < 2)
 					rect->xmin = arn->winrct.xmax;
 
 				/* overlap right */
-				if ( ABS(rect->xmax - arn->winrct.xmax) < 2)
+				if (ABS(rect->xmax - arn->winrct.xmax) < 2)
 					rect->xmax = arn->winrct.xmin;
 			}
 		}

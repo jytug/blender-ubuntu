@@ -1042,7 +1042,7 @@ char BKE_ftype_to_imtype(const int ftype)
 }
 
 
-int BKE_imtype_is_movie(const char imtype)
+bool BKE_imtype_is_movie(const char imtype)
 {
 	switch (imtype) {
 		case R_IMF_IMTYPE_AVIRAW:
@@ -1053,9 +1053,9 @@ int BKE_imtype_is_movie(const char imtype)
 		case R_IMF_IMTYPE_THEORA:
 		case R_IMF_IMTYPE_XVID:
 		case R_IMF_IMTYPE_FRAMESERVER:
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
 int BKE_imtype_supports_zbuf(const char imtype)
@@ -1567,7 +1567,9 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 		if (camera && camera->type == OB_CAMERA) {
 			BLI_snprintf(text, sizeof(text), "%.2f", ((Camera *)camera->data)->lens);
 		}
-		else BLI_strncpy(text, "<none>", sizeof(text));
+		else {
+			BLI_strncpy(text, "<none>", sizeof(text));
+		}
 
 		BLI_snprintf(stamp_data->cameralens, sizeof(stamp_data->cameralens), do_prefix ? "Lens %s" : "%s", text);
 	}
@@ -1599,7 +1601,7 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 		RenderStats *stats = re ? RE_GetStats(re) : NULL;
 
 		if (stats && (scene->r.stamp & R_STAMP_RENDERTIME)) {
-			BLI_timestr(stats->lastframetime, text);
+			BLI_timestr(stats->lastframetime, text, sizeof(text));
 
 			BLI_snprintf(stamp_data->rendertime, sizeof(stamp_data->rendertime), do_prefix ? "RenderTime %s" : "%s", text);
 		}
@@ -1817,7 +1819,7 @@ void BKE_stamp_buf(Scene *scene, Object *camera, unsigned char *rect, float *rec
 	}
 
 	/* cleanup the buffer. */
-	BLF_buffer(mono, NULL, NULL, 0, 0, 0, FALSE);
+	BLF_buffer(mono, NULL, NULL, 0, 0, 0, NULL);
 
 #undef BUFF_MARGIN_X
 #undef BUFF_MARGIN_Y
@@ -1944,7 +1946,7 @@ int BKE_imbuf_write(ImBuf *ibuf, const char *name, ImageFormatData *imf)
 	else if (imtype == R_IMF_IMTYPE_DPX) {
 		ibuf->ftype = DPX;
 		if (imf->cineon_flag & R_IMF_CINEON_FLAG_LOG) {
-		  ibuf->ftype |= CINEON_LOG;
+			ibuf->ftype |= CINEON_LOG;
 		}
 		if (imf->depth == R_IMF_CHAN_DEPTH_16) {
 			ibuf->ftype |= CINEON_16BIT;
@@ -2169,7 +2171,7 @@ void BKE_image_walk_all_users(const Main *mainp, void *customdata,
 				}
 				else if (sa->spacetype == SPACE_NODE) {
 					SpaceNode *snode = sa->spacedata.first;
-					if ((snode->treetype == NTREE_COMPOSIT) && (snode->nodetree)) {
+					if (snode->nodetree && snode->nodetree->type == NTREE_COMPOSIT) {
 						bNode *node;
 						for (node = snode->nodetree->nodes.first; node; node = node->next) {
 							if (node->id && node->type == CMP_NODE_IMAGE) {
@@ -3009,7 +3011,7 @@ static ImBuf *image_acquire_ibuf(Image *ima, ImageUser *iuser, void **lock_r)
 					*lock_r = ima;
 
 					/* XXX anim play for viewer nodes not yet supported */
-					frame = 0; // XXX iuser?iuser->framenr:0;
+					frame = 0; // XXX iuser ? iuser->framenr : 0;
 					ibuf = image_get_ibuf(ima, 0, frame);
 
 					if (!ibuf) {
@@ -3377,7 +3379,7 @@ void BKE_image_get_aspect(Image *image, float *aspx, float *aspy)
 
 unsigned char *BKE_image_get_pixels_for_frame(struct Image *image, int frame)
 {
-	ImageUser iuser = {0};
+	ImageUser iuser = {NULL};
 	void *lock;
 	ImBuf *ibuf;
 	unsigned char *pixels = NULL;
@@ -3404,7 +3406,7 @@ unsigned char *BKE_image_get_pixels_for_frame(struct Image *image, int frame)
 
 float *BKE_image_get_float_pixels_for_frame(struct Image *image, int frame)
 {
-	ImageUser iuser = {0};
+	ImageUser iuser = {NULL};
 	void *lock;
 	ImBuf *ibuf;
 	float *pixels = NULL;
@@ -3427,4 +3429,16 @@ float *BKE_image_get_float_pixels_for_frame(struct Image *image, int frame)
 		return NULL;
 
 	return pixels;
+}
+
+int BKE_image_sequence_guess_offset(Image *image)
+{
+	unsigned short numlen;
+	char head[FILE_MAX], tail[FILE_MAX];
+	char num[FILE_MAX] = {0};
+
+	BLI_stringdec(image->name, head, tail, &numlen);
+	BLI_strncpy(num, image->name + strlen(head), numlen + 1);
+
+	return atoi(num);
 }

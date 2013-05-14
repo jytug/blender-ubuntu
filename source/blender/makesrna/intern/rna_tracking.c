@@ -82,9 +82,10 @@ static void rna_tracking_defaultSettings_searchUpdate(Main *UNUSED(bmain), Scene
 
 static char *rna_trackingTrack_path(PointerRNA *ptr)
 {
-	MovieTrackingTrack *track = (MovieTrackingTrack *) ptr->data;
-
-	return BLI_sprintfN("tracking.tracks[\"%s\"]", track->name);
+	MovieTrackingTrack *track = (MovieTrackingTrack *)ptr->data;
+	char name_esc[sizeof(track->name) * 2];
+	BLI_strescape(name_esc, track->name, sizeof(name_esc));
+	return BLI_sprintfN("tracking.tracks[\"%s\"]", name_esc);
 }
 
 static void rna_trackingTracks_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
@@ -113,6 +114,7 @@ static void rna_tracking_active_object_index_set(PointerRNA *ptr, int value)
 	MovieClip *clip = (MovieClip *)ptr->id.data;
 
 	clip->tracking.objectnr = value;
+	BKE_tracking_dopesheet_tag_update(&clip->tracking);
 }
 
 static void rna_tracking_active_object_index_range(PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
@@ -579,6 +581,9 @@ static void rna_def_trackingSettings(BlenderRNA *brna)
 		{REFINE_FOCAL_LENGTH |
 		 REFINE_PRINCIPAL_POINT, "FOCAL_LENGTH_PRINCIPAL_POINT", 0, "Focal Length, Optical Center",
 		 "Refine focal length and optical center"},
+		{REFINE_RADIAL_DISTORTION_K1 |
+		 REFINE_RADIAL_DISTORTION_K2, "RADIAL_K1_K2", 0, "K1, K2",
+		 "Refine radial distortion K1 and K2"},
 		{0, NULL, 0, NULL, NULL}
 	};
 

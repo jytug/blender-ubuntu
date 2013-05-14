@@ -116,6 +116,18 @@ RenderEngineType *RE_engines_find(const char *idname)
 	if (!type)
 		type = &internal_render_type;
 
+	/* XXX Hack to make this a debug-only option, remove section to make it available default */
+	if (type == &internal_render_type) {
+		static RenderEngineType rtype;
+		
+		if (type->view_update == NULL)
+			rtype = internal_render_type;
+		else if (G.debug_value != -1) {
+			type = &rtype;
+		}
+	}
+	/* XXX end hack */
+	
 	return type;
 }
 
@@ -132,7 +144,7 @@ RenderEngine *RE_engine_create(RenderEngineType *type)
 	return RE_engine_create_ex(type, FALSE);
 }
 
-RenderEngine *RE_engine_create_ex(RenderEngineType *type, int use_for_viewport)
+RenderEngine *RE_engine_create_ex(RenderEngineType *type, bool use_for_viewport)
 {
 	RenderEngine *engine = MEM_callocN(sizeof(RenderEngine), "RenderEngine");
 	engine->type = type;
@@ -383,6 +395,11 @@ void RE_engine_get_current_tiles(Render *re, int *total_tiles_r, rcti **tiles_r)
 
 	*total_tiles_r = total_tiles;
 	*tiles_r = tiles;
+}
+
+RenderData *RE_engine_get_render_data(Render *re)
+{
+	return &re->r;
 }
 
 /* Render */

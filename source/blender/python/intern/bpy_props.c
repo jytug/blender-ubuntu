@@ -49,7 +49,7 @@
 
 #include "../generic/py_capi_utils.h"
 
-/* initial definition of callback slots we'll probably have more then 1 */
+/* initial definition of callback slots we'll probably have more than 1 */
 #define BPY_DATA_CB_SLOT_SIZE 3
 
 #define BPY_DATA_CB_SLOT_UPDATE 0
@@ -1265,9 +1265,11 @@ static int icon_id_from_name(const char *name)
 	int id;
 
 	if (name[0]) {
-		for (item = icon_items, id = 0; item->identifier; item++, id++)
-			if (strcmp(item->name, name) == 0)
+		for (item = icon_items, id = 0; item->identifier; item++, id++) {
+			if (STREQ(item->name, name)) {
 				return item->value;
+			}
+		}
 	}
 	
 	return 0;
@@ -1353,7 +1355,7 @@ static EnumPropertyItem *enum_items_from_py(PyObject *seq_fast, PyObject *def, i
 					tmp.value = i;
 				}
 
-				if (def && def_used == 0 && strcmp(def_cmp, tmp.identifier) == 0) {
+				if (def && def_used == 0 && STREQ(def_cmp, tmp.identifier)) {
 					*defvalue = tmp.value;
 					def_used++; /* only ever 1 */
 				}
@@ -2226,6 +2228,8 @@ BPY_PROPDEF_DESC_DOC
 "   :type subtype: string\n"
 BPY_PROPDEF_UNIT_DOC
 BPY_PROPDEF_UPDATE_DOC
+"   :arg precision: Number of digits of precision to display.\n"
+"   :type precision: int\n"
 );
 static PyObject *BPy_FloatProperty(PyObject *self, PyObject *args, PyObject *kw)
 {
@@ -2331,6 +2335,8 @@ BPY_PROPDEF_DESC_DOC
 BPY_PROPDEF_UNIT_DOC
 "   :arg size: Vector dimensions in [1, and " STRINGIFY(PYRNA_STACK_ARRAY) "].\n"
 "   :type size: int\n"
+"   :arg precision: Number of digits of precision to display.\n"
+"   :type precision: int\n"
 BPY_PROPDEF_UPDATE_DOC
 );
 static PyObject *BPy_FloatVectorProperty(PyObject *self, PyObject *args, PyObject *kw)
@@ -2516,22 +2522,24 @@ PyDoc_STRVAR(BPy_EnumProperty_doc,
 "\n"
 BPY_PROPDEF_NAME_DOC
 BPY_PROPDEF_DESC_DOC
-"   :arg default: The default value for this enum, A string when *ENUM_FLAG*\n"
-"      is disabled otherwise a set which may only contain string identifiers\n"
-"      used in *items*.\n"
+"   :arg default: The default value for this enum, a string from the identifiers used in *items*.\n"
+"      If the *ENUM_FLAG* option is used this must be a set of such string identifiers instead.\n"
 "   :type default: string or set\n"
 "   :arg options: Enumerator in ['HIDDEN', 'SKIP_SAVE', 'ANIMATABLE', 'ENUM_FLAG', 'LIBRARY_EDITABLE'].\n"
 "   :type options: set\n"
 "   :arg items: sequence of enum items formatted:\n"
 "      [(identifier, name, description, icon, number), ...] where the identifier is used\n"
 "      for python access and other values are used for the interface.\n"
+"      The three first elements of the tuples are mandatory.\n"
+"      The forth one is either the (unique!) number id of the item or, if followed by a fith element \n"
+"      (which must be the numid), an icon string identifier.\n"
 "      Note the item is optional.\n"
 "      For dynamic values a callback can be passed which returns a list in\n"
 "      the same format as the static list.\n"
 "      This function must take 2 arguments (self, context)\n"
 "      WARNING: Do not use generators here (they will work the first time, but will lead to empty values\n"
-"               in some unload/reload scenarii)!\n"
-"   :type items: sequence of string triples or a function\n"
+"      in some unload/reload scenarii)!\n"
+"   :type items: sequence of string tuples or a function\n"
 BPY_PROPDEF_UPDATE_DOC
 );
 static PyObject *BPy_EnumProperty(PyObject *self, PyObject *args, PyObject *kw)

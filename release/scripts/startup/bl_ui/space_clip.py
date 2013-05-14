@@ -332,8 +332,7 @@ class CLIP_PT_tools_solve(CLIP_PT_tracking_panel, Panel):
         col.prop(tracking_object, "keyframe_b")
 
         col = layout.column(align=True)
-        col.active = (tracking_object.is_camera and
-                      not settings.use_tripod_solver)
+        col.active = tracking_object.is_camera
         col.label(text="Refine:")
         col.prop(settings, "refine_intrinsics", text="")
 
@@ -876,16 +875,34 @@ class CLIP_PT_footage(CLIP_PT_clip_view_panel, Panel):
         col.prop(clip, "frame_offset")
 
 
+class CLIP_PT_footage_info(CLIP_PT_clip_view_panel, Panel):
+    bl_space_type = 'CLIP_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = "Footage Information"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        sc = context.space_data
+        clip = sc.clip
+
+        col = layout.column()
+        col.template_movieclip_information(sc, "clip", sc.clip_user)
+
+
 class CLIP_PT_tools_clip(CLIP_PT_clip_view_panel, Panel):
     bl_space_type = 'CLIP_EDITOR'
     bl_region_type = 'TOOLS'
     bl_label = "Clip"
+    bl_translation_context = bpy.app.translations.contexts.id_movieclip
 
     def draw(self, context):
         layout = self.layout
 
         layout.operator("clip.set_viewport_background")
         layout.operator("clip.setup_tracking_scene")
+        layout.operator("clip.prefetch")
 
 
 class CLIP_MT_view(Menu):
@@ -934,6 +951,7 @@ class CLIP_MT_view(Menu):
 
 class CLIP_MT_clip(Menu):
     bl_label = "Clip"
+    bl_translation_context = bpy.app.translations.contexts.id_movieclip
 
     def draw(self, context):
         layout = self.layout
@@ -944,6 +962,7 @@ class CLIP_MT_clip(Menu):
         layout.operator("clip.open")
 
         if clip:
+            layout.operator("clip.prefetch")
             layout.operator("clip.reload")
             layout.menu("CLIP_MT_proxy")
 

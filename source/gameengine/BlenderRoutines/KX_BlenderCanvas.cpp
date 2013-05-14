@@ -32,11 +32,13 @@
 
 #include "KX_BlenderCanvas.h"
 #include "DNA_screen_types.h"
+#include "DNA_windowmanager_types.h"
 #include <stdio.h>
 #include <assert.h>
 
 
-KX_BlenderCanvas::KX_BlenderCanvas(struct wmWindow *win, RAS_Rect &rect, struct ARegion *ar) :
+KX_BlenderCanvas::KX_BlenderCanvas(wmWindowManager *wm, wmWindow *win, RAS_Rect &rect, struct ARegion *ar) :
+m_wm(wm),
 m_win(win),
 m_frame_rect(rect)
 {
@@ -69,20 +71,40 @@ void KX_BlenderCanvas::ResizeWindow(int width, int height)
 	// Not implemented for the embedded player
 }
 
+void KX_BlenderCanvas::SetFullScreen(bool enable)
+{
+	// Not implemented for the embedded player
+}
+
+bool KX_BlenderCanvas::GetFullScreen()
+{
+	// Not implemented for the embedded player
+	return false;
+}
+
+bool KX_BlenderCanvas::BeginDraw()
+{
+	// in case of multi-window we need to ensure we are drawing to the correct
+	// window always, because it may change in window event handling
+	BL_MakeDrawable(m_wm, m_win);
+	return true;
+}
+
+
+void KX_BlenderCanvas::EndDraw()
+{
+	// nothing needs to be done here
+}
+
 void KX_BlenderCanvas::BeginFrame()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-
 }
 
 
 void KX_BlenderCanvas::EndFrame()
 {
-		// this is needed, else blender distorts a lot
-	glPopAttrib();
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-		
 	glDisable(GL_FOG);
 }
 
@@ -248,7 +270,7 @@ void KX_BlenderCanvas::SetMousePosition(int x,int y)
 
 
 
-void KX_BlenderCanvas::MakeScreenShot(const char* filename)
+void KX_BlenderCanvas::MakeScreenShot(const char *filename)
 {
 	ScrArea area_dummy= {0};
 	area_dummy.totrct.xmin = m_frame_rect.GetLeft();
@@ -256,5 +278,5 @@ void KX_BlenderCanvas::MakeScreenShot(const char* filename)
 	area_dummy.totrct.ymin = m_frame_rect.GetBottom();
 	area_dummy.totrct.ymax = m_frame_rect.GetTop();
 
-	BL_MakeScreenShot(&area_dummy, filename);
+	BL_MakeScreenShot(m_win->screen, &area_dummy, filename);
 }

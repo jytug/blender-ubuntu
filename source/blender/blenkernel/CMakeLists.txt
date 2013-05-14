@@ -65,7 +65,6 @@ set(SRC
 	intern/blender.c
 	intern/bmfont.c
 	intern/boids.c
-	intern/booleanops_mesh.c
 	intern/bpath.c
 	intern/brush.c
 	intern/bullet.c
@@ -85,11 +84,14 @@ set(SRC
 	intern/displist.c
 	intern/dynamicpaint.c
 	intern/editderivedmesh.c
+	intern/editmesh.c
+	intern/editmesh_bvh.c
 	intern/effect.c
 	intern/fcurve.c
 	intern/fluidsim.c
 	intern/fmodifier.c
 	intern/font.c
+	intern/freestyle.c
 	intern/gpencil.c
 	intern/group.c
 	intern/icons.c
@@ -103,6 +105,7 @@ set(SRC
 	intern/lamp.c
 	intern/lattice.c
 	intern/library.c
+	intern/linestyle.c
 	intern/mask.c
 	intern/mask_evaluate.c
 	intern/mask_rasterize.c
@@ -164,7 +167,6 @@ set(SRC
 	BKE_bmfont.h
 	BKE_bmfont_types.h
 	BKE_boids.h
-	BKE_booleanops_mesh.h
 	BKE_bpath.h
 	BKE_brush.h
 	BKE_bullet.h
@@ -188,6 +190,7 @@ set(SRC
 	BKE_fcurve.h
 	BKE_fluidsim.h
 	BKE_font.h
+	BKE_freestyle.h
 	BKE_global.h
 	BKE_gpencil.h
 	BKE_group.h
@@ -200,6 +203,7 @@ set(SRC
 	BKE_lamp.h
 	BKE_lattice.h
 	BKE_library.h
+	BKE_linestyle.h
 	BKE_main.h
 	BKE_mask.h
 	BKE_material.h
@@ -234,7 +238,8 @@ set(SRC
 	BKE_speaker.h
 	BKE_subsurf.h
 	BKE_suggestions.h
-	BKE_tessmesh.h
+	BKE_editmesh.h
+	BKE_editmesh_bvh.h
 	BKE_text.h
 	BKE_texture.h
 	BKE_tracking.h
@@ -422,6 +427,10 @@ endif()
 
 if(WITH_INTERNATIONAL)
 	add_definitions(-DWITH_INTERNATIONAL)
+endif()
+
+if(WITH_FREESTYLE)
+	add_definitions(-DWITH_FREESTYLE)
 endif()
 
 ## Warnings as errors, this is too strict!

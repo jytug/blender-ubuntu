@@ -271,6 +271,12 @@ MINLINE void add_v2_v2v2(float r[2], const float a[2], const float b[2])
 	r[1] = a[1] + b[1];
 }
 
+MINLINE void add_v2_v2v2_int(int r[2], const int a[2], const int b[2])
+{
+	r[0] = a[0] + b[0];
+	r[1] = a[1] + b[1];
+}
+
 MINLINE void add_v3_v3(float r[3], const float a[3])
 {
 	r[0] += a[0];
@@ -308,6 +314,12 @@ MINLINE void sub_v2_v2(float r[2], const float a[2])
 }
 
 MINLINE void sub_v2_v2v2(float r[2], const float a[2], const float b[2])
+{
+	r[0] = a[0] - b[0];
+	r[1] = a[1] - b[1];
+}
+
+MINLINE void sub_v2_v2v2_int(int r[2], const int a[2], const int b[2])
 {
 	r[0] = a[0] - b[0];
 	r[1] = a[1] - b[1];
@@ -397,6 +409,15 @@ MINLINE void mul_v4_v4fl(float r[4], const float a[4], float f)
 	r[2] = a[2] * f;
 	r[3] = a[3] * f;
 }
+
+/* note: could add a matrix inline */
+MINLINE float mul_project_m4_v3_zfac(float mat[4][4], const float co[3])
+{
+	return (mat[0][3] * co[0]) +
+	       (mat[1][3] * co[1]) +
+	       (mat[2][3] * co[2]) + mat[3][3];
+}
+
 
 MINLINE void madd_v2_v2fl(float r[2], const float a[2], float f)
 {
@@ -573,6 +594,11 @@ MINLINE float len_manhattan_v2(const float v[2])
 	return fabsf(v[0]) + fabsf(v[1]);
 }
 
+MINLINE float len_manhattan_v2_int(const int v[2])
+{
+	return ABS(v[0]) + ABS(v[1]);
+}
+
 MINLINE float len_manhattan_v3(const float v[3])
 {
 	return fabsf(v[0]) + fabsf(v[1]) + fabsf(v[2]);
@@ -619,6 +645,14 @@ MINLINE float len_manhattan_v2v2(const float a[2], const float b[2])
 
 	sub_v2_v2v2(d, b, a);
 	return len_manhattan_v2(d);
+}
+
+MINLINE float len_manhattan_v2v2_int(const int a[2], const int b[2])
+{
+	int d[2];
+
+	sub_v2_v2v2_int(d, b, a);
+	return len_manhattan_v2_int(d);
 }
 
 MINLINE float len_manhattan_v3v3(const float a[3], const float b[3])

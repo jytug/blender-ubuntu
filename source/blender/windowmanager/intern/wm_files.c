@@ -395,7 +395,14 @@ void WM_file_read(bContext *C, const char *filepath, ReportList *reports)
 		/* confusing this global... */
 		G.relbase_valid = 1;
 		retval = BKE_read_file(C, filepath, reports);
-		G.save_over = 1;
+		/* when loading startup.blend's, we can be left with a blank path */
+		if (G.main->name[0]) {
+			G.save_over = 1;
+		}
+		else {
+			G.save_over = 0;
+			G.relbase_valid = 0;
+		}
 
 		/* this flag is initialized by the operator but overwritten on read.
 		 * need to re-enable it here else drivers + registered scripts wont work. */
@@ -502,7 +509,7 @@ int wm_homefile_read(bContext *C, ReportList *UNUSED(reports), short from_memory
 
 	G.relbase_valid = 0;
 	if (!from_memory) {
-		char *cfgdir = BLI_get_folder(BLENDER_USER_CONFIG, NULL);
+		const char * const cfgdir = BLI_get_folder(BLENDER_USER_CONFIG, NULL);
 		if (cfgdir) {
 			BLI_make_file_string(G.main->name, startstr, cfgdir, BLENDER_STARTUP_FILE);
 			BLI_make_file_string(G.main->name, prefstr, cfgdir, BLENDER_USERPREF_FILE);
@@ -526,7 +533,8 @@ int wm_homefile_read(bContext *C, ReportList *UNUSED(reports), short from_memory
 		}
 
 		if (U.themes.first == NULL) {
-			printf("\nNote: No (valid) '%s' found, fall back to built-in default.\n\n", startstr);
+			if (G.debug & G_DEBUG)
+				printf("\nNote: No (valid) '%s' found, fall back to built-in default.\n\n", startstr);
 			success = 0;
 		}
 	}
@@ -601,6 +609,13 @@ int wm_homefile_read(bContext *C, ReportList *UNUSED(reports), short from_memory
 	return TRUE;
 }
 
+int wm_history_read_exec(bContext *UNUSED(C), wmOperator *UNUSED(op))
+{
+	/* TODO, read bookmarks */
+	wm_read_history();
+	return OPERATOR_FINISHED;
+}
+
 int wm_homefile_read_exec(bContext *C, wmOperator *op)
 {
 	int from_memory = strcmp(op->type->idname, "WM_OT_read_factory_settings") == 0;
@@ -614,7 +629,7 @@ void wm_read_history(void)
 	struct RecentFile *recent;
 	char *line;
 	int num;
-	char *cfgdir = BLI_get_folder(BLENDER_USER_CONFIG, NULL);
+	const char * const cfgdir = BLI_get_folder(BLENDER_USER_CONFIG, NULL);
 
 	if (!cfgdir) return;
 
@@ -636,14 +651,13 @@ void wm_read_history(void)
 	}
 	
 	BLI_file_free_lines(lines);
-
 }
 
 static void write_history(void)
 {
 	struct RecentFile *recent, *next_recent;
 	char name[FILE_MAX];
-	char *user_config_dir;
+	const char *user_config_dir;
 	FILE *fp;
 	int i;
 
@@ -828,8 +842,8 @@ int wm_file_write(bContext *C, const char *target, int fileflags, ReportList *re
 	if (G.fileflags & G_AUTOPACK) {
 		packAll(G.main, reports);
 	}
-	
-	ED_object_exit_editmode(C, EM_DO_UNDO);
+
+	ED_object_editmode_load(CTX_data_edit_object(C));
 	ED_sculpt_force_update(C);
 
 	/* don't forget not to return without! */
@@ -949,7 +963,7 @@ void wm_autosave_location(char *filepath)
 {
 	char pidstr[32];
 #ifdef WIN32
-	char *savedir;
+	const char *savedir;
 #endif
 
 	BLI_snprintf(pidstr, sizeof(pidstr), "%d.blend", abs(getpid()));
@@ -1044,7 +1058,7 @@ void wm_autosave_delete(void)
 		BLI_make_file_string("/", str, BLI_temporary_dir(), BLENDER_QUIT_FILE);
 
 		/* if global undo; remove tempsave, otherwise rename */
-		if (U.uiflag & USER_GLOBALUNDO) BLI_delete(filename, 0, 0);
+		if (U.uiflag & USER_GLOBALUNDO) BLI_delete(filename, false, false);
 		else BLI_rename(filename, str);
 	}
 }

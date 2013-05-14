@@ -19,7 +19,6 @@
 #include "background.h"
 #include "camera.h"
 #include "film.h"
-#include "../render/filter.h"
 #include "graph.h"
 #include "integrator.h"
 #include "light.h"
@@ -197,6 +196,7 @@ void BlenderSync::sync_integrator()
 	integrator->transmission_samples = get_int(cscene, "transmission_samples");
 	integrator->ao_samples = get_int(cscene, "ao_samples");
 	integrator->mesh_light_samples = get_int(cscene, "mesh_light_samples");
+	integrator->subsurface_samples = get_int(cscene, "subsurface_samples");
 	integrator->progressive = get_boolean(cscene, "progressive");
 
 	if(integrator->modified(previntegrator))
@@ -213,30 +213,22 @@ void BlenderSync::sync_film()
 	Film prevfilm = *film;
 
 	film->exposure = get_float(cscene, "film_exposure");
+	film->filter_type = (FilterType)RNA_enum_get(&cscene, "filter_type");
+	film->filter_width = (film->filter_type == FILTER_BOX)? 1.0f: get_float(cscene, "filter_width");
 
 	if(film->modified(prevfilm))
 		film->tag_update(scene);
-
-	Filter *filter = scene->filter;
-	Filter prevfilter = *filter;
-
-	filter->filter_type = (FilterType)RNA_enum_get(&cscene, "filter_type");
-	filter->filter_width = (filter->filter_type == FILTER_BOX)? 1.0f: get_float(cscene, "filter_width");
-
-	if(filter->modified(prevfilter))
-		filter->tag_update(scene);
 }
 
 /* Render Layer */
 
 void BlenderSync::sync_render_layers(BL::SpaceView3D b_v3d, const char *layer)
 {
+	PointerRNA cscene = RNA_pointer_get(&b_scene.ptr, "cycles");
 	string layername;
 
 	/* 3d view */
 	if(b_v3d) {
-		PointerRNA cscene = RNA_pointer_get(&b_scene.ptr, "cycles");
-
 		if(RNA_boolean_get(&cscene, "preview_active_layer")) {
 			BL::RenderLayers layers(b_scene.render().ptr);
 			layername = layers.active().name();
@@ -252,6 +244,7 @@ void BlenderSync::sync_render_layers(BL::SpaceView3D b_v3d, const char *layer)
 			render_layer.use_background = true;
 			render_layer.use_viewport_visibility = true;
 			render_layer.samples = 0;
+			render_layer.bound_samples = false;
 			return;
 		}
 	}
@@ -259,6 +252,7 @@ void BlenderSync::sync_render_layers(BL::SpaceView3D b_v3d, const char *layer)
 	/* render layer */
 	BL::RenderSettings r = b_scene.render();
 	BL::RenderSettings::layers_iterator b_rlay;
+	int use_layer_samples = RNA_enum_get(&cscene, "use_layer_samples");
 	bool first_layer = true;
 
 	for(r.layers.begin(b_rlay); b_rlay != r.layers.end(); ++b_rlay) {
@@ -278,7 +272,10 @@ void BlenderSync::sync_render_layers(BL::SpaceView3D b_v3d, const char *layer)
 			render_layer.use_background = b_rlay->use_sky();
 			render_layer.use_viewport_visibility = false;
 			render_layer.use_localview = false;
-			render_layer.samples = b_rlay->samples();
+
+			render_layer.bound_samples = (use_layer_samples == 1);
+			if(use_layer_samples != 2)
+				render_layer.samples = b_rlay->samples();
 		}
 
 		first_layer = false;

@@ -237,7 +237,7 @@ int insert_bezt_fcurve(FCurve *fcu, BezTriple *bezt, short flag)
 	
 	/* are there already keyframes? */
 	if (fcu->bezt) {
-		short replace = -1;
+		bool replace;
 		i = binarysearch_bezt_index(fcu->bezt, bezt->vec[1][0], fcu->totvert, &replace);
 		
 		/* replace an existing keyframe? */
@@ -714,7 +714,6 @@ static float visualkey_get_value(PointerRNA *ptr, PropertyRNA *prop, int array_i
 	else if (ptr->type == &RNA_PoseBone) {
 		Object *ob = (Object *)ptr->id.data; /* we assume that this is always set, and is an object */
 		bPoseChannel *pchan = (bPoseChannel *)ptr->data;
-		float tmat[4][4];
 		
 		/* Although it is not strictly required for this particular space conversion, 
 		 * arg1 must not be null, as there is a null check for the other conversions to
@@ -811,7 +810,7 @@ short insert_keyframe_direct(ReportList *reports, PointerRNA ptr, PropertyRNA *p
 		PointerRNA tmp_ptr;
 		
 		/* try to get property we should be affecting */
-		if ((RNA_path_resolve(&ptr, fcu->rna_path, &tmp_ptr, &prop) == 0) || (prop == NULL)) {
+		if (RNA_path_resolve_property(&ptr, fcu->rna_path, &tmp_ptr, &prop) == false) {
 			/* property not found... */
 			const char *idname = (ptr.id.data) ? ((ID *)ptr.id.data)->name : TIP_("<No ID pointer>");
 			
@@ -921,7 +920,7 @@ short insert_keyframe(ReportList *reports, ID *id, bAction *act, const char grou
 	}
 	
 	RNA_id_pointer_create(id, &id_ptr);
-	if ((RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop) == 0) || (prop == NULL)) {
+	if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
 		BKE_reportf(reports, RPT_ERROR,
 		            "Could not insert keyframe, as RNA path is invalid for the given ID (ID = %s, path = %s)",
 		            (id) ? id->name : TIP_("<Missing ID block>"), rna_path);
@@ -1013,7 +1012,7 @@ short delete_keyframe(ReportList *reports, ID *id, bAction *act, const char grou
 	
 	/* validate pointer first - exit if failure */
 	RNA_id_pointer_create(id, &id_ptr);
-	if ((RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop) == 0) || (prop == NULL)) {
+	if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
 		BKE_reportf(reports, RPT_ERROR,
 		            "Could not delete keyframe, as RNA path is invalid for the given ID (ID = %s, path = %s)",
 		            id->name, rna_path);
@@ -1056,7 +1055,7 @@ short delete_keyframe(ReportList *reports, ID *id, bAction *act, const char grou
 	/* will only loop once unless the array index was -1 */
 	for (; array_index < array_index_max; array_index++) {
 		FCurve *fcu = verify_fcurve(act, group, &ptr, rna_path, array_index, 0);
-		short found = -1;
+		bool found;
 		int i;
 		
 		/* check if F-Curve exists and/or whether it can be edited */
@@ -1114,7 +1113,7 @@ static short clear_keyframe(ReportList *reports, ID *id, bAction *act, const cha
 
 	/* validate pointer first - exit if failure */
 	RNA_id_pointer_create(id, &id_ptr);
-	if ((RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop) == 0) || (prop == NULL)) {
+	if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
 		BKE_reportf(reports, RPT_ERROR,
 		            "Could not clear keyframe, as RNA path is invalid for the given ID (ID = %s, path = %s)",
 		            id->name, rna_path);
@@ -1215,7 +1214,6 @@ static int modify_key_op_poll(bContext *C)
 
 static int insert_key_exec(bContext *C, wmOperator *op)
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	KeyingSet *ks = NULL;
 	int type = RNA_enum_get(op->ptr, "type");
@@ -1261,9 +1259,6 @@ static int insert_key_exec(bContext *C, wmOperator *op)
 	else
 		BKE_report(op->reports, RPT_WARNING, "Keying set failed to insert any keyframes");
 	
-	/* send updates */
-	DAG_ids_flush_update(bmain, 0);
-	
 	return OPERATOR_FINISHED;
 }
 
@@ -1302,7 +1297,7 @@ void ANIM_OT_keyframe_insert(wmOperatorType *ot)
  * then calls the menu if necessary before 
  */
 
-static int insert_key_menu_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int insert_key_menu_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Scene *scene = CTX_data_scene(C);
 	
@@ -1312,7 +1307,7 @@ static int insert_key_menu_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(e
 		uiLayout *layout;
 		
 		/* call the menu, which will call this operator again, hence the canceled */
-		pup = uiPupMenuBegin(C, op->type->name, ICON_NONE);
+		pup = uiPupMenuBegin(C, RNA_struct_ui_name(op->type->srna), ICON_NONE);
 		layout = uiPupMenuLayout(pup);
 		uiItemsEnumO(layout, "ANIM_OT_keyframe_insert_menu", "type");
 		uiPupMenuEnd(C, pup);
@@ -1371,7 +1366,6 @@ void ANIM_OT_keyframe_insert_menu(wmOperatorType *ot)
 
 static int delete_key_exec(bContext *C, wmOperator *op)
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	KeyingSet *ks = NULL;
 	int type = RNA_enum_get(op->ptr, "type");
@@ -1417,9 +1411,6 @@ static int delete_key_exec(bContext *C, wmOperator *op)
 	else
 		BKE_report(op->reports, RPT_WARNING, "Keying set failed to remove any keyframes");
 	
-	/* send updates */
-	DAG_ids_flush_update(bmain, 0);
-	
 	return OPERATOR_FINISHED;
 }
 
@@ -1459,8 +1450,6 @@ void ANIM_OT_keyframe_delete(wmOperatorType *ot)
  
 static int clear_anim_v3d_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Main *bmain = CTX_data_main(C);
-	
 	CTX_DATA_BEGIN (C, Object *, ob, selected_objects)
 	{
 		/* just those in active action... */
@@ -1505,12 +1494,11 @@ static int clear_anim_v3d_exec(bContext *C, wmOperator *UNUSED(op))
 		}
 		
 		/* update... */
-		ob->recalc |= OB_RECALC_OB;
+		DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 	}
 	CTX_DATA_END;
 	
 	/* send updates */
-	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_OBJECT | ND_KEYS, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -1536,7 +1524,6 @@ void ANIM_OT_keyframe_clear_v3d(wmOperatorType *ot)
 
 static int delete_key_v3d_exec(bContext *C, wmOperator *op)
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	float cfra = (float)CFRA;
 	
@@ -1563,12 +1550,11 @@ static int delete_key_v3d_exec(bContext *C, wmOperator *op)
 		
 		/* report success (or failure) */
 		BKE_reportf(op->reports, RPT_INFO, "Object '%s' successfully had %d keyframes removed", id->name + 2, success);
-		ob->recalc |= OB_RECALC_OB;
+		DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 	}
 	CTX_DATA_END;
 	
 	/* send updates */
-	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_OBJECT | ND_KEYS, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -1596,7 +1582,6 @@ void ANIM_OT_keyframe_delete_v3d(wmOperatorType *ot)
 
 static int insert_key_button_exec(bContext *C, wmOperator *op)
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	PointerRNA ptr = {{NULL}};
 	PropertyRNA *prop = NULL;
@@ -1638,24 +1623,26 @@ static int insert_key_button_exec(bContext *C, wmOperator *op)
 			success += insert_keyframe_direct(op->reports, ptr, prop, fcu, cfra, 0);
 		}
 		else {
-			if (G.debug & G_DEBUG)
-				printf("Button Insert-Key: no path to property\n");
-			BKE_report(op->reports, RPT_WARNING, "Failed to resolve path to property, try using a keying set instead");
+			BKE_report(op->reports, RPT_WARNING, 
+			           "Failed to resolve path to property, try manually specifying this using a Keying Set instead");
 		}
 	}
-	else if (G.debug & G_DEBUG) {
-		printf("ptr.data = %p, prop = %p,", (void *)ptr.data, (void *)prop);
-		if (prop)
-			printf("animatable = %d\n", RNA_property_animateable(&ptr, prop));
-		else
-			printf("animatable = NULL\n");
+	else {
+		if (prop && !RNA_property_animateable(&ptr, prop)) {
+			BKE_reportf(op->reports, RPT_WARNING, 
+			           "\"%s\" property cannot be animated",
+			           RNA_property_identifier(prop));
+		}
+		else {
+			BKE_reportf(op->reports, RPT_WARNING,
+			            "Button doesn't appear to have any property information attached (ptr.data = %p, prop = %p)",
+			            (void *)ptr.data, (void *)prop);
+		}
 	}
 	
 	if (success) {
 		/* send updates */
 		uiContextAnimUpdate(C);
-		
-		DAG_ids_flush_update(bmain, 0);
 		
 		/* send notifiers that keyframes have been changed */
 		WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
@@ -1676,7 +1663,7 @@ void ANIM_OT_keyframe_insert_button(wmOperatorType *ot)
 	ot->poll = modify_key_op_poll;
 	
 	/* flags */
-	ot->flag = OPTYPE_UNDO;
+	ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 
 	/* properties */
 	RNA_def_boolean(ot->srna, "all", 1, "All", "Insert a keyframe for all element of the array");
@@ -1686,7 +1673,6 @@ void ANIM_OT_keyframe_insert_button(wmOperatorType *ot)
 
 static int delete_key_button_exec(bContext *C, wmOperator *op)
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	PointerRNA ptr = {{NULL}};
 	PropertyRNA *prop = NULL;
@@ -1728,8 +1714,6 @@ static int delete_key_button_exec(bContext *C, wmOperator *op)
 		/* send updates */
 		uiContextAnimUpdate(C);
 		
-		DAG_ids_flush_update(bmain, 0);
-		
 		/* send notifiers that keyframes have been changed */
 		WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
 	}
@@ -1749,7 +1733,7 @@ void ANIM_OT_keyframe_delete_button(wmOperatorType *ot)
 	ot->poll = modify_key_op_poll;
 	
 	/* flags */
-	ot->flag = OPTYPE_UNDO;
+	ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 
 	/* properties */
 	RNA_def_boolean(ot->srna, "all", 1, "All", "Delete keyframes from all elements of the array");
@@ -1760,7 +1744,6 @@ void ANIM_OT_keyframe_delete_button(wmOperatorType *ot)
 
 static int clear_key_button_exec(bContext *C, wmOperator *op)
 {
-	Main *bmain = CTX_data_main(C);
 	PointerRNA ptr = {{NULL}};
 	PropertyRNA *prop = NULL;
 	char *path;
@@ -1800,8 +1783,6 @@ static int clear_key_button_exec(bContext *C, wmOperator *op)
 		/* send updates */
 		uiContextAnimUpdate(C);
 		
-		DAG_ids_flush_update(bmain, 0);
-		
 		/* send notifiers that keyframes have been changed */
 		WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
 	}
@@ -1821,7 +1802,7 @@ void ANIM_OT_keyframe_clear_button(wmOperatorType *ot)
 	ot->poll = modify_key_op_poll;
 
 	/* flags */
-	ot->flag = OPTYPE_UNDO;
+	ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 
 	/* properties */
 	RNA_def_boolean(ot->srna, "all", 1, "All", "Clear keyframes from all elements of the array");
@@ -1864,7 +1845,7 @@ short fcurve_frame_has_keyframe(FCurve *fcu, float frame, short filter)
 	
 	/* we either include all regardless of muting, or only non-muted  */
 	if ((filter & ANIMFILTER_KEYS_MUTED) || (fcu->flag & FCURVE_MUTED) == 0) {
-		short replace = -1;
+		bool replace;
 		int i = binarysearch_bezt_index(fcu->bezt, frame, fcu->totvert, &replace);
 		
 		/* binarysearch_bezt_index will set replace to be 0 or 1

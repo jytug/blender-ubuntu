@@ -46,7 +46,7 @@
 #include "BKE_global.h"
 #include "BKE_scene.h"
 #include "BKE_screen.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_sequencer.h"
 #include "BKE_node.h"
 
@@ -337,7 +337,7 @@ static void image_keymap(struct wmKeyConfig *keyconf)
 }
 
 /* dropboxes */
-static int image_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
+static int image_drop_poll(bContext *UNUSED(C), wmDrag *drag, const wmEvent *UNUSED(event))
 {
 	if (drag->type == WM_DRAG_PATH)
 		if (ELEM3(drag->icon, 0, ICON_FILE_IMAGE, ICON_FILE_BLANK)) /* rule might not work? */
@@ -398,16 +398,7 @@ static void image_refresh(const bContext *C, ScrArea *sa)
 		int selected = !(scene->toolsettings->uv_flag & UV_SYNC_SELECTION); /* only selected active face? */
 
 		if (BKE_scene_use_new_shading_nodes(scene)) {
-			/* new shading system, get image from material */
-			BMFace *efa = BM_active_face_get(em->bm, sloppy, selected);
-
-			if (efa) {
-				Image *node_ima;
-				ED_object_get_active_image(obedit, efa->mat_nr + 1, &node_ima, NULL, NULL);
-
-				if (node_ima)
-					sima->image = node_ima;
-			}
+			/* new shading system does not alter image */
 		}
 		else {
 			/* old shading system, we set texface */
@@ -435,6 +426,11 @@ static void image_listener(ScrArea *sa, wmNotifier *wmn)
 	
 	/* context changes */
 	switch (wmn->category) {
+		case NC_WINDOW:
+			/* notifier comes from editing color space */
+			image_scopes_tag_refresh(sa);
+			ED_area_tag_redraw(sa);
+			break;
 		case NC_SCENE:
 			switch (wmn->data) {
 				case ND_FRAME:
@@ -662,6 +658,9 @@ static void image_main_area_draw(const bContext *C, ARegion *ar)
 
 	/* and uvs in 0.0-1.0 space */
 	UI_view2d_view_ortho(v2d);
+
+	ED_region_draw_cb_draw(C, ar, REGION_DRAW_PRE_VIEW);
+
 	draw_uvedit_main(sima, ar, scene, obedit, obact);
 
 	/* check for mask (delay draw) */
@@ -801,11 +800,15 @@ static void image_scope_area_draw(const bContext *C, ARegion *ar)
 	Scene *scene = CTX_data_scene(C);
 	void *lock;
 	ImBuf *ibuf = ED_space_image_acquire_buffer(sima, &lock);
+	
 	if (ibuf) {
 		if (!sima->scopes.ok) {
 			BKE_histogram_update_sample_line(&sima->sample_line_hist, ibuf, &scene->view_settings, &scene->display_settings);
 		}
-		scopes_update(&sima->scopes, ibuf, &scene->view_settings, &scene->display_settings);
+		if (sima->image->flag & IMA_VIEW_AS_RENDER)
+			scopes_update(&sima->scopes, ibuf, &scene->view_settings, &scene->display_settings);
+		else
+			scopes_update(&sima->scopes, ibuf, NULL, &scene->display_settings);
 	}
 	ED_space_image_release_buffer(sima, ibuf, lock);
 	

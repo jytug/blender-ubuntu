@@ -426,63 +426,74 @@ static void SetDefaultLightMode(Scene* scene)
 }
 
 
+static bool GetMaterialUseVColor(Material *ma, const bool glslmat)
+{
+	if (ma) {
+		/* glsl uses vertex colors, otherwise use material setting
+		 * defmaterial doesn't have VERTEXCOLP as default [#34505] */
+		return (glslmat || ma == &defmaterial || (ma->mode & MA_VERTEXCOLP) != 0);
+	}
+	else {
+		/* no material, use vertex colors */
+		return true;
+	}
+}
+
 // --
-static void GetRGB(short type,
-	MFace* mface,
-	MCol* mmcol,
-	Material *mat,
-	unsigned int c[4])
+static void GetRGB(
+        const bool use_vcol,
+        MFace* mface,
+        MCol* mmcol,
+        Material *mat,
+        unsigned int c[4])
 {
 	unsigned int color = 0xFFFFFFFFL;
-	switch (type) {
-		case 0:	// vertex colors
-		{
-			if (mmcol) {
-				c[0] = KX_Mcol2uint_new(mmcol[0]);
-				c[1] = KX_Mcol2uint_new(mmcol[1]);
-				c[2] = KX_Mcol2uint_new(mmcol[2]);
-				if (mface->v4)
-					c[3] = KX_Mcol2uint_new(mmcol[3]);
-			}
-			else { // backup white
-				c[0] = KX_rgbaint2uint_new(color);
-				c[1] = KX_rgbaint2uint_new(color);
-				c[2] = KX_rgbaint2uint_new(color);
-				if (mface->v4)
-					c[3] = KX_rgbaint2uint_new( color );
-			}
-		} break;
-		
-	
-		case 1: // material rgba
-		{
-			if (mat) {
-				union {
-					unsigned char cp[4];
-					unsigned int integer;
-				} col_converter;
-				col_converter.cp[3] = (unsigned char) (mat->r     * 255.0f);
-				col_converter.cp[2] = (unsigned char) (mat->g     * 255.0f);
-				col_converter.cp[1] = (unsigned char) (mat->b     * 255.0f);
-				col_converter.cp[0] = (unsigned char) (mat->alpha * 255.0f);
-				color = col_converter.integer;
-			}
+	if (use_vcol == true) {
+		if (mmcol) {
+			c[0] = KX_Mcol2uint_new(mmcol[0]);
+			c[1] = KX_Mcol2uint_new(mmcol[1]);
+			c[2] = KX_Mcol2uint_new(mmcol[2]);
+			if (mface->v4)
+				c[3] = KX_Mcol2uint_new(mmcol[3]);
+		}
+		else { // backup white
 			c[0] = KX_rgbaint2uint_new(color);
 			c[1] = KX_rgbaint2uint_new(color);
 			c[2] = KX_rgbaint2uint_new(color);
 			if (mface->v4)
-				c[3] = KX_rgbaint2uint_new(color);
-		} break;
-		
-		default: // white
-		{
-			c[0] = KX_rgbaint2uint_new(color);
-			c[1] = KX_rgbaint2uint_new(color);
-			c[2] = KX_rgbaint2uint_new(color);
-			if (mface->v4)
-				c[3] = KX_rgbaint2uint_new(color);
-		} break;
+				c[3] = KX_rgbaint2uint_new( color );
+		}
 	}
+	else {
+		/* material rgba */
+		if (mat) {
+			union {
+				unsigned char cp[4];
+				unsigned int integer;
+			} col_converter;
+			col_converter.cp[3] = (unsigned char) (mat->r     * 255.0f);
+			col_converter.cp[2] = (unsigned char) (mat->g     * 255.0f);
+			col_converter.cp[1] = (unsigned char) (mat->b     * 255.0f);
+			col_converter.cp[0] = (unsigned char) (mat->alpha * 255.0f);
+			color = col_converter.integer;
+		}
+		c[0] = KX_rgbaint2uint_new(color);
+		c[1] = KX_rgbaint2uint_new(color);
+		c[2] = KX_rgbaint2uint_new(color);
+		if (mface->v4) {
+			c[3] = KX_rgbaint2uint_new(color);
+		}
+	}
+
+#if 0  /* white, unused */
+	{
+		c[0] = KX_rgbaint2uint_new(color);
+		c[1] = KX_rgbaint2uint_new(color);
+		c[2] = KX_rgbaint2uint_new(color);
+		if (mface->v4)
+			c[3] = KX_rgbaint2uint_new(color);
+	}
+#endif
 }
 
 typedef struct MTF_localLayer {
@@ -570,23 +581,16 @@ static bool ConvertMaterial(
 {
 	material->Initialize();
 	int texalpha = 0;
-	bool validmat	= (mat!=0);
-	bool validface	= (tface!=0);
-	
-	short type = 0;
-	if ( validmat )
-		type = 1; // material color 
+	const bool validmat  = (mat != NULL);
+	const bool validface = (tface != NULL);
+	const bool use_vcol  = GetMaterialUseVColor(mat, glslmat);
 	
 	material->IdMode = DEFAULT_BLENDER;
-	material->glslmat = (validmat)? glslmat: false;
+	material->glslmat = (validmat) ? glslmat: false;
 	material->materialindex = mface->mat_nr;
 
 	// --------------------------------
 	if (validmat) {
-
-		// use vertex colors by explicitly setting
-		if (mat->mode &MA_VERTEXCOLP || glslmat)
-			type = 0;
 
 		// use lighting?
 		material->ras_mode |= ( mat->mode & MA_SHLESS )?0:USE_LIGHT;
@@ -621,19 +625,14 @@ static bool ConvertMaterial(
 					material->flag[i] |= ( mat->game.alpha_blend & GEMAT_ALPHA )?USEALPHA:0;
 					material->flag[i] |= ( mat->game.alpha_blend & GEMAT_ADD )?CALCALPHA:0;
 
-					if (material->img[i]->flag & IMA_REFLECT)
+					if (material->img[i]->flag & IMA_REFLECT) {
 						material->mapping[i].mapping |= USEREFL;
-					else
-					{
-						mttmp = getImageFromMaterial( mat, i );
-						if (mttmp && mttmp->texco &TEXCO_UV)
-						{
-							STR_String uvName = mttmp->uvname;
-
-							if (!uvName.IsEmpty())
-								material->mapping[i].uvCoName = mttmp->uvname;
-							else
-								material->mapping[i].uvCoName = "";
+					}
+					else {
+						mttmp = getMTexFromMaterial(mat, i);
+						if (mttmp && (mttmp->texco & TEXCO_UV)) {
+							/* string may be "" but thats detected as empty after */
+							material->mapping[i].uvCoName = mttmp->uvname;
 						}
 						material->mapping[i].mapping |= USEUV;
 					}
@@ -647,9 +646,9 @@ static bool ConvertMaterial(
 				continue;
 			}
 
-			mttmp = getImageFromMaterial( mat, i );
-			if ( mttmp ) {
-				if ( mttmp->tex ) {
+			mttmp = getMTexFromMaterial(mat, i);
+			if (mttmp) {
+				if (mttmp->tex) {
 					if ( mttmp->tex->type == TEX_IMAGE ) {
 						material->mtexname[i] = mttmp->tex->id.name;
 						material->img[i] = mttmp->tex->ima;
@@ -714,14 +713,9 @@ static bool ConvertMaterial(
 							material->mapping[i].mapping |= USEREFL;
 						else if (mttmp->texco &(TEXCO_ORCO|TEXCO_GLOB))
 							material->mapping[i].mapping |= USEORCO;
-						else if (mttmp->texco &TEXCO_UV)
-						{
-							STR_String uvName = mttmp->uvname;
-
-							if (!uvName.IsEmpty())
-								material->mapping[i].uvCoName = mttmp->uvname;
-							else
-								material->mapping[i].uvCoName = "";
+						else if (mttmp->texco & TEXCO_UV) {
+							/* string may be "" but thats detected as empty after */
+							material->mapping[i].uvCoName = mttmp->uvname;
 							material->mapping[i].mapping |= USEUV;
 						}
 						else if (mttmp->texco &TEXCO_NORM)
@@ -869,10 +863,10 @@ static bool ConvertMaterial(
 	// XXX The RGB values here were meant to be temporary storage for the conversion process,
 	// but fonts now make use of them too, so we leave them in for now.
 	unsigned int rgb[4];
-	GetRGB(type,mface,mmcol,mat,rgb);
+	GetRGB(use_vcol, mface, mmcol, mat, rgb);
 
 	// swap the material color, so MCol on bitmap font works
-	if (validmat && type==1 && (mat->game.flag & GEMAT_TEXT))
+	if (validmat && (use_vcol == false) && (mat->game.flag & GEMAT_TEXT))
 	{
 		rgb[0] = KX_rgbaint2uint_new(rgb[0]);
 		rgb[1] = KX_rgbaint2uint_new(rgb[1]);
@@ -914,9 +908,8 @@ static RAS_MaterialBucket *material_from_mesh(Material *ma, MFace *mface, MTFace
 			converter->CacheBlenderMaterial(ma, bl_mat);
 		}
 
-
-		short type = (ma) ? ((ma->mode & MA_VERTEXCOLP || bl_mat->glslmat) ? 0 : 1) : 0;
-		GetRGB(type,mface,mcol,ma,rgb);
+		const bool use_vcol = GetMaterialUseVColor(ma, bl_mat->glslmat);
+		GetRGB(use_vcol, mface, mcol, ma, rgb);
 
 		GetUVs(bl_mat, layers, mface, tface, uvs);
 				
@@ -1031,9 +1024,9 @@ static RAS_MaterialBucket *material_from_mesh(Material *ma, MFace *mface, MTFace
 		}
 
 		// only zsort alpha + add
-		bool alpha = ELEM3(alpha_blend, GEMAT_ALPHA, GEMAT_ADD, GEMAT_ALPHA_SORT);
-		bool zsort = (alpha_blend == GEMAT_ALPHA_SORT);
-		bool light = (ma)?(ma->mode & MA_SHLESS)==0:default_light_mode;
+		const bool alpha = ELEM3(alpha_blend, GEMAT_ALPHA, GEMAT_ADD, GEMAT_ALPHA_SORT);
+		const bool zsort = (alpha_blend == GEMAT_ALPHA_SORT);
+		const bool light = (ma)?(ma->mode & MA_SHLESS)==0:default_light_mode;
 
 		// don't need zort anymore, deal as if it it's alpha blend
 		if (alpha_blend == GEMAT_ALPHA_SORT) alpha_blend = GEMAT_ALPHA;
@@ -1115,7 +1108,10 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 	{
 		if (dm->faceData.layers[i].type == CD_MTFACE)
 		{
-			assert(validLayers <= 8);
+			if (validLayers >= MAX_MTFACE) {
+				printf("%s: corrupted mesh %s - too many CD_MTFACE layers\n", __func__, mesh->id.name);
+				break;
+			}
 
 			layers[validLayers].face = (MTFace*)(dm->faceData.layers[i].data);
 			layers[validLayers].name = dm->faceData.layers[i].name;
@@ -1145,6 +1141,11 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 		pt[i].setValue(zero_vec);
 		no[i].setValue(zero_vec);
 		tan[i].setValue(zero_vec);
+	}
+
+	/* we need to manually initialize the uvs (MoTo doesn't do that) [#34550] */
+	for (unsigned int i = 0; i < RAS_TexVert::MAX_UNIT; i++) {
+		uvs[0][i] = uvs[1][i] = uvs[2][i] = uvs[3][i] = MT_Point2(0.f, 0.f);
 	}
 
 	for (int f=0;f<totface;f++,mface++)
@@ -2109,7 +2110,7 @@ struct parentChildLink {
 #include "DNA_constraint_types.h"
 //XXX #include "BIF_editconstraint.h"
 
-static bPoseChannel *get_active_posechannel2 (Object *ob)
+static bPoseChannel *get_active_posechannel2(Object *ob)
 {
 	bArmature *arm= (bArmature*)ob->data;
 	bPoseChannel *pchan;
@@ -2150,7 +2151,7 @@ static void UNUSED_FUNCTION(RBJconstraints)(Object *ob)//not used
 	conlist = get_active_constraints2(ob);
 
 	if (conlist) {
-		for (curcon = (bConstraint *)conlist->first; curcon; curcon=(bConstraint *)curcon->next) {
+		for (curcon = (bConstraint *)conlist->first; curcon; curcon = (bConstraint *)curcon->next) {
 
 			printf("%i\n",curcon->type);
 		}
@@ -2795,7 +2796,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 			continue;
 
 		if (conlist) {
-			for (curcon = (bConstraint *)conlist->first; curcon; curcon=(bConstraint *)curcon->next) {
+			for (curcon = (bConstraint *)conlist->first; curcon; curcon = (bConstraint *)curcon->next) {
 				if (curcon->type==CONSTRAINT_TYPE_RIGIDBODYJOINT) {
 
 					bRigidBodyJointConstraint *dat=(bRigidBodyJointConstraint *)curcon->data;

@@ -36,6 +36,8 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_camera_types.h"
@@ -47,6 +49,7 @@
 #include "DNA_key_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_lattice_types.h"
+#include "DNA_linestyle_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_material_types.h"
 #include "DNA_meta_types.h"
@@ -379,6 +382,10 @@ static short acf_generic_dataexpand_setting_valid(bAnimContext *ac, bAnimListEle
 		case ACHANNEL_SETTING_MUTE:
 			return ((ac) && (ac->spacetype == SPACE_NLA));
 			
+		/* select is ok for most "ds*" channels (e.g. dsmat) */
+		case ACHANNEL_SETTING_SELECT:
+			return 1;
+			
 		/* other flags are never supported */
 		default:
 			return 0;
@@ -420,7 +427,7 @@ static void acf_summary_backdrop(bAnimContext *ac, bAnimListElem *ale, float ymi
 static void acf_summary_name(bAnimListElem *UNUSED(ale), char *name)
 {
 	if (name)
-		BLI_strncpy(name, "DopeSheet Summary", ANIM_CHAN_NAME_SIZE);
+		BLI_strncpy(name, IFACE_("DopeSheet Summary"), ANIM_CHAN_NAME_SIZE);
 }
 
 // FIXME: this is really a temp icon I think
@@ -891,6 +898,27 @@ static void acf_fcurve_name(bAnimListElem *ale, char *name)
 	getname_anim_fcurve(name, ale->id, ale->data);
 }
 
+/* "name" property for fcurve entries */
+static short acf_fcurve_name_prop(bAnimListElem *ale, PointerRNA *ptr, PropertyRNA **prop)
+{
+	FCurve *fcu = (FCurve *)ale->data;
+	
+	/* Ctrl-Click Usability Convenience Hack: 
+	 * For disabled F-Curves, allow access to the RNA Path 
+	 * as our "name" so that user can perform quick fixes
+	 */
+	if (fcu->flag & FCURVE_DISABLED) {
+		RNA_pointer_create(ale->id, &RNA_FCurve, ale->data, ptr);
+		*prop = RNA_struct_find_property(ptr, "data_path");
+	}
+	else {
+		/* for "normal" F-Curves - no editable name, but *prop may not be set properly yet... */
+		*prop = NULL;
+	}
+	
+	return (*prop != NULL);
+}
+
 /* check if some setting exists for this channel */
 static short acf_fcurve_setting_valid(bAnimContext *ac, bAnimListElem *ale, int setting)
 {
@@ -962,7 +990,7 @@ static bAnimChannelType ACF_FCURVE =
 	acf_generic_group_offset,       /* offset */
 
 	acf_fcurve_name,                /* name */
-	NULL,                           /* name prop */
+	acf_fcurve_name_prop,           /* name prop */
 	NULL,                           /* icon */
 
 	acf_fcurve_setting_valid,       /* has setting */
@@ -1065,7 +1093,7 @@ static int acf_filldrivers_icon(bAnimListElem *UNUSED(ale))
 
 static void acf_filldrivers_name(bAnimListElem *UNUSED(ale), char *name)
 {
-	BLI_strncpy(name, "Drivers", ANIM_CHAN_NAME_SIZE);
+	BLI_strncpy(name, IFACE_("Drivers"), ANIM_CHAN_NAME_SIZE);
 }
 
 /* check if some setting exists for this channel */
@@ -2010,6 +2038,83 @@ static bAnimChannelType ACF_DSNTREE =
 	acf_dsntree_setting_ptr                 /* pointer for setting */
 };
 
+/* LineStyle Expander  ------------------------------------------- */
+
+/* TODO: just get this from RNA? */
+static int acf_dslinestyle_icon(bAnimListElem *UNUSED(ale))
+{
+	return ICON_BRUSH_DATA; /* FIXME */
+}
+
+/* get the appropriate flag(s) for the setting when it is valid  */
+static int acf_dslinestyle_setting_flag(bAnimContext *UNUSED(ac), int setting, short *neg)
+{
+	/* clear extra return data first */
+	*neg = 0;
+	
+	switch (setting) {
+		case ACHANNEL_SETTING_EXPAND: /* expanded */
+			return LS_DS_EXPAND;
+			
+		case ACHANNEL_SETTING_MUTE: /* mute (only in NLA) */
+			return ADT_NLA_EVAL_OFF;
+			
+		case ACHANNEL_SETTING_VISIBLE: /* visible (only in Graph Editor) */
+			*neg = 1;
+			return ADT_CURVES_NOT_VISIBLE;
+			
+		case ACHANNEL_SETTING_SELECT: /* selected */
+			return ADT_UI_SELECTED;
+			
+		default: /* unsupported */
+			return 0;
+	}
+}
+
+/* get pointer to the setting */
+static void *acf_dslinestyle_setting_ptr(bAnimListElem *ale, int setting, short *type)
+{
+	FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ale->data;
+	
+	/* clear extra return data first */
+	*type = 0;
+	
+	switch (setting) {
+		case ACHANNEL_SETTING_EXPAND: /* expanded */
+			return GET_ACF_FLAG_PTR(linestyle->flag, type);
+			
+		case ACHANNEL_SETTING_SELECT: /* selected */
+		case ACHANNEL_SETTING_MUTE: /* muted (for NLA only) */
+		case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
+			if (linestyle->adt)
+				return GET_ACF_FLAG_PTR(linestyle->adt->flag, type);
+			else
+				return NULL;
+			
+		default: /* unsupported */
+			return NULL;
+	}
+}
+
+/* node tree expander type define */
+static bAnimChannelType ACF_DSLINESTYLE =
+{
+	"Line Style Expander",			/* type name */
+	
+	acf_generic_dataexpand_color,	/* backdrop color */
+	acf_generic_dataexpand_backdrop,/* backdrop */
+	acf_generic_indention_1,		/* indent level */
+	acf_generic_basic_offset,		/* offset */
+	
+	acf_generic_idblock_name,		/* name */
+	acf_generic_idblock_nameprop,	/* name prop */
+	acf_dslinestyle_icon,			/* icon */
+	
+	acf_generic_dataexpand_setting_valid,	/* has setting */
+	acf_dslinestyle_setting_flag,			/* flag for setting */
+	acf_dslinestyle_setting_ptr				/* pointer for setting */
+};
+
 /* Mesh Expander  ------------------------------------------- */
 
 // TODO: just get this from RNA?
@@ -2254,7 +2359,7 @@ static void acf_shapekey_name(bAnimListElem *ale, char *name)
 		if (kb->name[0])
 			BLI_strncpy(name, kb->name, ANIM_CHAN_NAME_SIZE);
 		else
-			BLI_snprintf(name, ANIM_CHAN_NAME_SIZE, "Key %d", ale->index);
+			BLI_snprintf(name, ANIM_CHAN_NAME_SIZE, IFACE_("Key %d"), ale->index);
 	}
 }
 
@@ -2722,6 +2827,7 @@ static void ANIM_init_channel_typeinfo_data(void)
 		animchannelTypeInfo[type++] = &ACF_DSTEX;        /* Texture Channel */
 		animchannelTypeInfo[type++] = &ACF_DSLAT;        /* Lattice Channel */
 		animchannelTypeInfo[type++] = &ACF_DSSPK;        /* Speaker Channel */
+		animchannelTypeInfo[type++] = &ACF_DSLINESTYLE;  /* LineStyle Channel */
 		
 		animchannelTypeInfo[type++] = &ACF_SHAPEKEY;     /* ShapeKey */
 		
@@ -2936,8 +3042,7 @@ void ANIM_channel_draw(bAnimContext *ac, bAnimListElem *ale, float yminc, float 
 	else
 		offset = 0;
 		
-	/* calculate appropriate y-coordinates for icon buttons 
-	 */
+	/* calculate appropriate y-coordinates for icon buttons */
 	y = (ymaxc - yminc) / 2 + yminc;
 	ymid = y - 0.5f * ICON_WIDTH;
 	/* y-coordinates for text is only 4 down from middle */
@@ -3175,7 +3280,7 @@ static void achannel_setting_slider_cb(bContext *C, void *id_poin, void *fcu_poi
 	RNA_id_pointer_create(id, &id_ptr);
 	
 	/* try to resolve the path stored in the F-Curve */
-	if (RNA_path_resolve(&id_ptr, fcu->rna_path, &ptr, &prop)) {
+	if (RNA_path_resolve_property(&id_ptr, fcu->rna_path, &ptr, &prop)) {
 		/* set the special 'replace' flag if on a keyframe */
 		if (fcurve_frame_has_keyframe(fcu, cfra, 0))
 			flag |= INSERTKEY_REPLACE;
@@ -3213,7 +3318,7 @@ static void achannel_setting_slider_shapekey_cb(bContext *C, void *key_poin, voi
 	RNA_id_pointer_create((ID *)key, &id_ptr);
 	
 	/* try to resolve the path stored in the F-Curve */
-	if (RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop)) {
+	if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop)) {
 		/* find or create new F-Curve */
 		// XXX is the group name for this ok?
 		bAction *act = verify_adt_action((ID *)key, 1);
@@ -3257,40 +3362,40 @@ static void draw_setting_widget(bAnimContext *ac, bAnimListElem *ale, bAnimChann
 			icon = ICON_VISIBLE_IPO_OFF;
 			
 			if (ale->type == ANIMTYPE_FCURVE)
-				tooltip = "Channel is visible in Graph Editor for editing";
+				tooltip = TIP_("Channel is visible in Graph Editor for editing");
 			else
-				tooltip = "Channel(s) are visible in Graph Editor for editing";
+				tooltip = TIP_("Channels are visible in Graph Editor for editing");
 			break;
 			
 		case ACHANNEL_SETTING_EXPAND: /* expanded triangle */
-			//icon = ((enabled)? ICON_TRIA_DOWN : ICON_TRIA_RIGHT);
+			//icon = ((enabled) ? ICON_TRIA_DOWN : ICON_TRIA_RIGHT);
 			icon = ICON_TRIA_RIGHT;
-			tooltip = "Make channels grouped under this channel visible";
+			tooltip = TIP_("Make channels grouped under this channel visible");
 			break;
 			
 		case ACHANNEL_SETTING_SOLO: /* NLA Tracks only */
-			//icon = ((enabled)? ICON_LAYER_ACTIVE : ICON_LAYER_USED);
+			//icon = ((enabled) ? ICON_LAYER_ACTIVE : ICON_LAYER_USED);
 			icon = ICON_LAYER_USED;
-			tooltip = "NLA Track is the only one evaluated for the AnimData block it belongs to";
+			tooltip = TIP_("NLA Track is the only one evaluated for the AnimData block it belongs to");
 			break;
 		
 		/* --- */
 		
 		case ACHANNEL_SETTING_PROTECT: /* protected lock */
 			// TODO: what about when there's no protect needed?
-			//icon = ((enabled)? ICON_LOCKED : ICON_UNLOCKED);
+			//icon = ((enabled) ? ICON_LOCKED : ICON_UNLOCKED);
 			icon = ICON_UNLOCKED;
-			tooltip = "Editability of keyframes for this channel";
+			tooltip = TIP_("Editability of keyframes for this channel");
 			break;
 			
 		case ACHANNEL_SETTING_MUTE: /* muted speaker */
-			//icon = ((enabled)? ICON_MUTE_IPO_ON : ICON_MUTE_IPO_OFF);
+			//icon = ((enabled) ? ICON_MUTE_IPO_ON : ICON_MUTE_IPO_OFF);
 			icon = ICON_MUTE_IPO_OFF;
 			
 			if (ale->type == ALE_FCURVE) 
-				tooltip = "Does F-Curve contribute to result";
+				tooltip = TIP_("Does F-Curve contribute to result");
 			else
-				tooltip = "Do channels contribute to result";
+				tooltip = TIP_("Do channels contribute to result");
 			break;
 			
 		default:
@@ -3404,10 +3509,13 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 		
 		/* if rename index matches, add widget for this */
 		if (ac->ads->renameIndex == channel_index + 1) {
-			PointerRNA ptr;
-			PropertyRNA *prop;
+			PointerRNA ptr = {{NULL}};
+			PropertyRNA *prop = NULL;
 			
-			/* draw renaming widget if we can get RNA pointer for it */
+			/* draw renaming widget if we can get RNA pointer for it 
+			 * NOTE: property may only be available in some cases, even if we have 
+			 *       a callback available (e.g. broken F-Curve rename)
+			 */
 			if (acf->name_prop(ale, &ptr, &prop)) {
 				uiBut *but;
 				
@@ -3416,7 +3524,7 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 				but = uiDefButR(block, TEX, 1, "", offset + 3, yminc, RENAME_TEXT_WIDTH, channel_height,
 				                &ptr, RNA_property_identifier(prop), -1, 0, 0, -1, -1, NULL);
 				uiButSetFunc(but, achannel_setting_rename_done_cb, ac->ads, NULL);
-				uiButActiveOnly(C, block, but);
+				uiButActiveOnly(C, ac->ar, block, but);
 				
 				uiBlockSetEmboss(block, UI_EMBOSSN);
 			}
@@ -3507,7 +3615,7 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 					RNA_id_pointer_create(ale->id, &id_ptr);
 					
 					/* try to resolve the path */
-					if (RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop)) {
+					if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop)) {
 						uiBut *but;
 						
 						/* create the slider button, and assign relevant callback to ensure keyframes are inserted... */

@@ -47,6 +47,7 @@
 #include "DNA_meta_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_mask_types.h"
+#include "DNA_node_types.h"
 #include "DNA_userdef_types.h"
 
 #include "BKE_context.h"
@@ -54,11 +55,12 @@
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_mesh.h"
+#include "BKE_node.h"
 #include "BKE_object.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_screen.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_sound.h"
 #include "BKE_mask.h"
 
@@ -206,7 +208,7 @@ int ED_operator_animview_active(bContext *C)
 			return TRUE;
 	}
 
-	CTX_wm_operator_poll_msg_set(C, "expected an timeline/animation area to be active");
+	CTX_wm_operator_poll_msg_set(C, "expected a timeline/animation area to be active");
 	return 0;
 }
 
@@ -331,7 +333,7 @@ int ED_operator_editmesh(bContext *C)
 {
 	Object *obedit = CTX_data_edit_object(C);
 	if (obedit && obedit->type == OB_MESH)
-		return NULL != BMEdit_FromObject(obedit);
+		return NULL != BKE_editmesh_from_object(obedit);
 	return 0;
 }
 
@@ -419,13 +421,20 @@ int ED_operator_uvedit(bContext *C)
 	return ED_space_image_show_uvedit(sima, obedit);
 }
 
+int ED_operator_uvedit_space_image(bContext *C)
+{
+	SpaceImage *sima = CTX_wm_space_image(C);
+	Object *obedit = CTX_data_edit_object(C);
+	return sima && ED_space_image_show_uvedit(sima, obedit);
+}
+
 int ED_operator_uvmap(bContext *C)
 {
 	Object *obedit = CTX_data_edit_object(C);
 	BMEditMesh *em = NULL;
 	
 	if (obedit && obedit->type == OB_MESH) {
-		em = BMEdit_FromObject(obedit);
+		em = BKE_editmesh_from_object(obedit);
 	}
 	
 	if (em && (em->bm->totface)) {
@@ -644,7 +653,7 @@ static void actionzone_apply(bContext *C, wmOperator *op, int type)
 	wm_event_add(win, &event);
 }
 
-static int actionzone_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int actionzone_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	AZone *az = is_in_area_actionzone(CTX_wm_area(C), &event->x);
 	sActionzoneData *sad;
@@ -674,7 +683,7 @@ static int actionzone_invoke(bContext *C, wmOperator *op, wmEvent *event)
 }
 
 
-static int actionzone_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int actionzone_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	sActionzoneData *sad = op->customdata;
 	int deltax, deltay;
@@ -769,7 +778,7 @@ typedef struct sAreaSwapData {
 	ScrArea *sa1, *sa2;
 } sAreaSwapData;
 
-static int area_swap_init(wmOperator *op, wmEvent *event)
+static int area_swap_init(wmOperator *op, const wmEvent *event)
 {
 	sAreaSwapData *sd = NULL;
 	sActionzoneData *sad = event->customdata;
@@ -800,7 +809,7 @@ static int area_swap_cancel(bContext *C, wmOperator *op)
 	return OPERATOR_CANCELLED;
 }
 
-static int area_swap_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int area_swap_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	
 	if (!area_swap_init(op, event))
@@ -814,7 +823,7 @@ static int area_swap_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	
 }
 
-static int area_swap_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int area_swap_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	sActionzoneData *sad = op->customdata;
 	
@@ -866,7 +875,7 @@ static void SCREEN_OT_area_swap(wmOperatorType *ot)
 /* *********** Duplicate area as new window operator ****************** */
 
 /* operator callback */
-static int area_dupli_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int area_dupli_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	wmWindow *newwin, *win;
 	bScreen *newsc, *sc;
@@ -897,6 +906,9 @@ static int area_dupli_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	/* adds window to WM */
 	rect = sa->totrct;
 	BLI_rcti_translate(&rect, win->posx, win->posy);
+	rect.xmax = rect.xmin + BLI_rcti_size_x(&rect) / U.pixelsize;
+	rect.ymax = rect.ymin + BLI_rcti_size_y(&rect) / U.pixelsize;
+
 	newwin = WM_window_open(C, &rect);
 	
 	/* allocs new screen and adds to newly created window, using window size */
@@ -1100,7 +1112,7 @@ static int area_move_exec(bContext *C, wmOperator *op)
 }
 
 /* interaction callback */
-static int area_move_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int area_move_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	RNA_int_set(op->ptr, "x", event->x);
 	RNA_int_set(op->ptr, "y", event->y);
@@ -1125,7 +1137,7 @@ static int area_move_cancel(bContext *C, wmOperator *op)
 }
 
 /* modal callback for while moving edges */
-static int area_move_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int area_move_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	sAreaMoveData *md = op->customdata;
 	int delta, x, y;
@@ -1382,7 +1394,7 @@ static void area_split_exit(bContext *C, wmOperator *op)
 
 
 /* UI callback, adds new handler */
-static int area_split_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int area_split_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	sAreaSplitData *sd;
 	int dir;
@@ -1514,7 +1526,7 @@ static int area_split_cancel(bContext *C, wmOperator *op)
 	return OPERATOR_CANCELLED;
 }
 
-static int area_split_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int area_split_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	sAreaSplitData *sd = (sAreaSplitData *)op->customdata;
 	float fac;
@@ -1697,7 +1709,7 @@ static int area_max_regionsize(ScrArea *sa, ARegion *scalear, AZEdge edge)
 	return dist;
 }
 
-static int region_scale_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int region_scale_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	sActionzoneData *sad = event->customdata;
 	AZone *az;
@@ -1795,7 +1807,7 @@ static void region_scale_toggle_hidden(bContext *C, RegionMoveData *rmd)
 	region_scale_validate_size(rmd);
 }
 
-static int region_scale_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int region_scale_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	RegionMoveData *rmd = op->customdata;
 	int delta;
@@ -2318,7 +2330,7 @@ static int area_join_exec(bContext *C, wmOperator *op)
 }
 
 /* interaction callback */
-static int area_join_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int area_join_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	
 	if (event->type == EVT_ACTIONZONE_AREA) {
@@ -2374,7 +2386,7 @@ static int area_join_cancel(bContext *C, wmOperator *op)
 }
 
 /* modal callback while selecting area (space) that will be removed */
-static int area_join_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int area_join_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bScreen *sc = CTX_wm_screen(C);
 	sAreaJoinData *jd = (sAreaJoinData *)op->customdata;
@@ -2490,7 +2502,7 @@ static void SCREEN_OT_area_join(wmOperatorType *ot)
 
 /* ******************************* */
 
-static int screen_area_options_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int screen_area_options_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	uiPopupMenu *pup;
 	uiLayout *layout;
@@ -2604,7 +2616,7 @@ static void SCREEN_OT_repeat_last(wmOperatorType *ot)
 	
 }
 
-static int repeat_history_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int repeat_history_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmOperator *lastop;
@@ -2661,7 +2673,7 @@ static void SCREEN_OT_repeat_history(wmOperatorType *ot)
 
 /* ********************** redo operator ***************************** */
 
-static int redo_last_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(event))
+static int redo_last_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *UNUSED(event))
 {
 	wmOperator *lastop = WM_operator_last_redo(C);
 	
@@ -2958,7 +2970,7 @@ void ED_screens_header_tools_menu_create(bContext *C, uiLayout *layout, void *UN
 	}
 }
 
-static int header_toolbox_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(event))
+static int header_toolbox_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *UNUSED(event))
 {
 	uiPopupMenu *pup;
 	uiLayout *layout;
@@ -3071,7 +3083,7 @@ static int match_region_with_redraws(int spacetype, int regiontype, int redraws)
 	return 0;
 }
 
-static int screen_animation_step(bContext *C, wmOperator *UNUSED(op), wmEvent *event)
+static int screen_animation_step(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
 	bScreen *screen = CTX_wm_screen(C);
 
@@ -3421,7 +3433,7 @@ static void SCREEN_OT_back_to_previous(struct wmOperatorType *ot)
 
 /* *********** show user pref window ****** */
 
-static int userpref_show_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *event)
+static int userpref_show_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
 	wmWindow *win = CTX_wm_window(C);
 	rcti rect;
@@ -3518,17 +3530,17 @@ static int scene_new_exec(bContext *C, wmOperator *op)
 	int type = RNA_enum_get(op->ptr, "type");
 
 	if (type == SCE_COPY_NEW) {
-		newscene = BKE_scene_add(bmain, "Scene");
+		newscene = BKE_scene_add(bmain, DATA_("Scene"));
 	}
 	else { /* different kinds of copying */
 		newscene = BKE_scene_copy(scene, type);
 
 		/* these can't be handled in blenkernel curently, so do them here */
 		if (type == SCE_COPY_LINK_DATA) {
-			ED_object_single_users(bmain, newscene, 0);
+			ED_object_single_users(bmain, newscene, false, true);
 		}
 		else if (type == SCE_COPY_FULL) {
-			ED_object_single_users(bmain, newscene, 1);
+			ED_object_single_users(bmain, newscene, true, true);
 		}
 	}
 	
@@ -3696,7 +3708,7 @@ void region_blend_start(bContext *C, ScrArea *sa, ARegion *ar)
 }
 
 /* timer runs in win->handlers, so it cannot use context to find area/region */
-static int region_blend_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *event)
+static int region_blend_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
 	RegionAlphaInfo *rgi;
 	wmTimer *timer = event->customdata;
@@ -3820,7 +3832,7 @@ static void keymap_modal_set(wmKeyConfig *keyconf)
 	
 }
 
-static int open_file_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
+static int open_file_drop_poll(bContext *UNUSED(C), wmDrag *drag, const wmEvent *UNUSED(event))
 {
 	if (drag->type == WM_DRAG_PATH) {
 		if (drag->icon == ICON_FILE_BLEND)

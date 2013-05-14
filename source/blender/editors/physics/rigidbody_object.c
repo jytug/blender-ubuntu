@@ -44,6 +44,8 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_global.h"
@@ -59,6 +61,7 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+#include "ED_object.h"
 #include "ED_physics.h"
 #include "ED_screen.h"
 
@@ -70,18 +73,8 @@
 static int ED_operator_rigidbody_active_poll(bContext *C)
 {
 	if (ED_operator_object_active_editable(C)) {
-		Object *ob = CTX_data_active_object(C);
+		Object *ob = ED_object_active_context(C);
 		return (ob && ob->rigidbody_object);
-	}
-	else
-		return 0;
-}
-
-static int ED_operator_rigidbody_add_poll(bContext *C)
-{
-	if (ED_operator_object_active_editable(C)) {
-		Object *ob = CTX_data_active_object(C);
-		return (ob && ob->type == OB_MESH);
 	}
 	else
 		return 0;
@@ -89,27 +82,31 @@ static int ED_operator_rigidbody_add_poll(bContext *C)
 
 /* ----------------- */
 
-void ED_rigidbody_ob_add(wmOperator *op, Scene *scene, Object *ob, int type)
+bool ED_rigidbody_object_add(Scene *scene, Object *ob, int type, ReportList *reports)
 {
 	RigidBodyWorld *rbw = BKE_rigidbody_get_world(scene);
 
 	if (ob->type != OB_MESH) {
-		BKE_report(op->reports, RPT_ERROR, "Can't add Rigid Body to non mesh object");
-		return;
+		BKE_report(reports, RPT_ERROR, "Can't add Rigid Body to non mesh object");
+		return false;
 	}
 	if (((Mesh *)ob->data)->totpoly == 0) {
-		BKE_report(op->reports, RPT_ERROR, "Can't create Rigid Body from mesh with no polygons");
-		return;
+		BKE_report(reports, RPT_ERROR, "Can't create Rigid Body from mesh with no polygons");
+		return false;
 	}
 
 	/* Add rigid body world and group if they don't exist for convenience */
 	if (rbw == NULL) {
 		rbw = BKE_rigidbody_create_world(scene);
+		if (rbw == NULL) {
+			BKE_report(reports, RPT_ERROR, "Can't create Rigid Body world");
+			return false;
+		}
 		BKE_rigidbody_validate_sim_world(scene, rbw, false);
 		scene->rigidbody_world = rbw;
 	}
 	if (rbw->group == NULL) {
-		rbw->group = add_group(G.main, "RigidBodyWorld");
+		rbw->group = BKE_group_add(G.main, "RigidBodyWorld");
 	}
 
 	/* make rigidbody object settings */
@@ -120,18 +117,20 @@ void ED_rigidbody_ob_add(wmOperator *op, Scene *scene, Object *ob, int type)
 	ob->rigidbody_object->flag |= RBO_FLAG_NEEDS_VALIDATE;
 
 	/* add object to rigid body group */
-	add_to_group(rbw->group, ob, scene, NULL);
+	BKE_group_object_add(rbw->group, ob, scene, NULL);
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_OB);
+
+	return true;
 }
 
-void ED_rigidbody_ob_remove(Scene *scene, Object *ob)
+void ED_rigidbody_object_remove(Scene *scene, Object *ob)
 {
 	RigidBodyWorld *rbw = BKE_rigidbody_get_world(scene);
 
 	BKE_rigidbody_remove_object(scene, ob);
 	if (rbw)
-		rem_from_group(rbw->group, ob, scene, NULL);
+		BKE_group_object_unlink(rbw->group, ob, scene, NULL);
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 }
@@ -141,22 +140,26 @@ void ED_rigidbody_ob_remove(Scene *scene, Object *ob)
 
 /* ************ Add Rigid Body ************** */
 
-static int rigidbody_ob_add_exec(bContext *C, wmOperator *op)
+static int rigidbody_object_add_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
-	Object *ob = (scene) ? OBACT : NULL;
+	Object *ob = ED_object_active_context(C);
 	int type = RNA_enum_get(op->ptr, "type");
+	bool change;
 
 	/* apply to active object */
-	ED_rigidbody_ob_add(op, scene, ob, type);
+	change = ED_rigidbody_object_add(scene, ob, type, op->reports);
 
-	/* send updates */
-	DAG_ids_flush_update(CTX_data_main(C), 0);
+	if (change) {
+		/* send updates */
+		WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 
-	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
-
-	/* done */
-	return OPERATOR_FINISHED;
+		/* done */
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
 }
 
 void RIGIDBODY_OT_object_add(wmOperatorType *ot)
@@ -167,42 +170,41 @@ void RIGIDBODY_OT_object_add(wmOperatorType *ot)
 	ot->description = "Add active object as Rigid Body";
 
 	/* callbacks */
-	ot->exec = rigidbody_ob_add_exec;
-	ot->poll = ED_operator_rigidbody_add_poll;
+	ot->exec = rigidbody_object_add_exec;
+	ot->poll = ED_operator_object_active_editable_mesh;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* properties */
-	ot->prop = RNA_def_enum(ot->srna, "type", rigidbody_ob_type_items, RBO_TYPE_ACTIVE, "Rigid Body Type", "");
+	ot->prop = RNA_def_enum(ot->srna, "type", rigidbody_object_type_items, RBO_TYPE_ACTIVE, "Rigid Body Type", "");
 }
 
 /* ************ Remove Rigid Body ************** */
 
-static int rigidbody_ob_remove_exec(bContext *C, wmOperator *op)
+static int rigidbody_object_remove_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
-	Object *ob = (scene) ? OBACT : NULL;
-
-	/* sanity checks */
-	if (scene == NULL)
-		return OPERATOR_CANCELLED;
+	Object *ob = ED_object_active_context(C);
+	bool change = false;
 
 	/* apply to active object */
-	if (ELEM(NULL, ob, ob->rigidbody_object)) {
+	if (!ELEM(NULL, ob, ob->rigidbody_object)) {
+		ED_rigidbody_object_remove(scene, ob);
+		change = true;
+	}
+
+	if (change) {
+		/* send updates */
+		WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
+
+		/* done */
+		return OPERATOR_FINISHED;
+	}
+	else {
 		BKE_report(op->reports, RPT_ERROR, "Object has no Rigid Body settings to remove");
 		return OPERATOR_CANCELLED;
 	}
-	else
-		ED_rigidbody_ob_remove(scene, ob);
-
-	/* send updates */
-	DAG_ids_flush_update(CTX_data_main(C), 0);
-
-	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
-
-	/* done */
-	return OPERATOR_FINISHED;
 }
 
 void RIGIDBODY_OT_object_remove(wmOperatorType *ot)
@@ -213,7 +215,7 @@ void RIGIDBODY_OT_object_remove(wmOperatorType *ot)
 	ot->description = "Remove Rigid Body settings from Object";
 
 	/* callbacks */
-	ot->exec = rigidbody_ob_remove_exec;
+	ot->exec = rigidbody_object_remove_exec;
 	ot->poll = ED_operator_rigidbody_active_poll;
 
 	/* flags */
@@ -225,30 +227,29 @@ void RIGIDBODY_OT_object_remove(wmOperatorType *ot)
 
 /* ************ Add Rigid Bodies ************** */
 
-static int rigidbody_obs_add_exec(bContext *C, wmOperator *op)
+static int rigidbody_objects_add_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
 	int type = RNA_enum_get(op->ptr, "type");
+	bool change = false;
 
-	/* sanity check */
-	if (scene == NULL) {
-		BKE_report(op->reports, RPT_ERROR, "No Scene to add Rigid Bodies to");
-		return OPERATOR_CANCELLED;
-	}
 	/* create rigid body objects and add them to the world's group */
 	CTX_DATA_BEGIN(C, Object *, ob, selected_objects) {
-		ED_rigidbody_ob_add(op, scene, ob, type);
+		change |= ED_rigidbody_object_add(scene, ob, type, op->reports);
 	}
 	CTX_DATA_END;
 
-	/* send updates */
-	DAG_ids_flush_update(CTX_data_main(C), 0);
+	if (change) {
+		/* send updates */
+		WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
+		WM_event_add_notifier(C, NC_OBJECT | ND_POINTCACHE, NULL);
 
-	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
-	WM_event_add_notifier(C, NC_OBJECT | ND_POINTCACHE, NULL);
-
-	/* done */
-	return OPERATOR_FINISHED;
+		/* done */
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
 }
 
 void RIGIDBODY_OT_objects_add(wmOperatorType *ot)
@@ -259,42 +260,43 @@ void RIGIDBODY_OT_objects_add(wmOperatorType *ot)
 	ot->description = "Add selected objects as Rigid Bodies";
 
 	/* callbacks */
-	ot->exec = rigidbody_obs_add_exec;
-	ot->poll = ED_operator_rigidbody_add_poll;
+	ot->exec = rigidbody_objects_add_exec;
+	ot->poll = ED_operator_object_active_editable_mesh;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* properties */
-	ot->prop = RNA_def_enum(ot->srna, "type", rigidbody_ob_type_items, RBO_TYPE_ACTIVE, "Rigid Body Type", "");
+	ot->prop = RNA_def_enum(ot->srna, "type", rigidbody_object_type_items, RBO_TYPE_ACTIVE, "Rigid Body Type", "");
 }
 
 /* ************ Remove Rigid Bodies ************** */
 
-static int rigidbody_obs_remove_exec(bContext *C, wmOperator *UNUSED(op))
+static int rigidbody_objects_remove_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene = CTX_data_scene(C);
-
-	/* sanity checks */
-	if (scene == NULL)
-		return OPERATOR_CANCELLED;
+	bool change = false;
 
 	/* apply this to all selected objects... */
 	CTX_DATA_BEGIN(C, Object *, ob, selected_objects)
 	{
 		if (ob->rigidbody_object) {
-			ED_rigidbody_ob_remove(scene, ob);
+			ED_rigidbody_object_remove(scene, ob);
+			change = true;
 		}
 	}
 	CTX_DATA_END;
 
-	/* send updates */
-	DAG_ids_flush_update(CTX_data_main(C), 0);
+	if (change) {
+		/* send updates */
+		WM_event_add_notifier(C, NC_OBJECT | ND_POINTCACHE, NULL);
 
-	WM_event_add_notifier(C, NC_OBJECT | ND_POINTCACHE, NULL);
-
-	/* done */
-	return OPERATOR_FINISHED;
+		/* done */
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
 }
 
 void RIGIDBODY_OT_objects_remove(wmOperatorType *ot)
@@ -305,8 +307,8 @@ void RIGIDBODY_OT_objects_remove(wmOperatorType *ot)
 	ot->description = "Remove selected objects from Rigid Body simulation";
 
 	/* callbacks */
-	ot->exec = rigidbody_obs_remove_exec;
-	ot->poll = ED_operator_rigidbody_active_poll;
+	ot->exec = rigidbody_objects_remove_exec;
+	ot->poll = ED_operator_scene_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -317,14 +319,10 @@ void RIGIDBODY_OT_objects_remove(wmOperatorType *ot)
 
 /* ************ Change Collision Shapes ************** */
 
-static int rigidbody_obs_shape_change_exec(bContext *C, wmOperator *op)
+static int rigidbody_objects_shape_change_exec(bContext *C, wmOperator *op)
 {
-	Scene *scene = CTX_data_scene(C);
 	int shape = RNA_enum_get(op->ptr, "type");
-
-	/* sanity checks */
-	if (scene == NULL)
-		return OPERATOR_CANCELLED;
+	bool change = false;
 
 	/* apply this to all selected objects... */
 	CTX_DATA_BEGIN(C, Object *, ob, selected_objects)
@@ -337,15 +335,22 @@ static int rigidbody_obs_shape_change_exec(bContext *C, wmOperator *op)
 			RNA_enum_set(&ptr, "collision_shape", shape);
 
 			DAG_id_tag_update(&ob->id, OB_RECALC_OB);
+
+			change = true;
 		}
 	}
 	CTX_DATA_END;
 
-	/* send updates */
-	WM_event_add_notifier(C, NC_OBJECT | ND_POINTCACHE, NULL);
+	if (change) {
+		/* send updates */
+		WM_event_add_notifier(C, NC_OBJECT | ND_POINTCACHE, NULL);
 
-	/* done */
-	return OPERATOR_FINISHED;
+		/* done */
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
 }
 
 void RIGIDBODY_OT_shape_change(wmOperatorType *ot)
@@ -357,14 +362,14 @@ void RIGIDBODY_OT_shape_change(wmOperatorType *ot)
 
 	/* callbacks */
 	ot->invoke = WM_menu_invoke;
-	ot->exec = rigidbody_obs_shape_change_exec;
-	ot->poll = ED_operator_rigidbody_active_poll;
+	ot->exec = rigidbody_objects_shape_change_exec;
+	ot->poll = ED_operator_scene_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* properties */
-	ot->prop = RNA_def_enum(ot->srna, "type", rigidbody_ob_shape_items, RB_SHAPE_TRIMESH, "Rigid Body Shape", "");
+	ot->prop = RNA_def_enum(ot->srna, "type", rigidbody_object_shape_items, RB_SHAPE_TRIMESH, "Rigid Body Shape", "");
 }
 
 /* ************ Calculate Mass ************** */
@@ -382,61 +387,61 @@ typedef struct rbMaterialDensityItem {
  * 3) http://www.avlandesign.com/density_metal.htm
  */
 static rbMaterialDensityItem RB_MATERIAL_DENSITY_TABLE[] = {
-	{"Air", 1.0f}, /* not quite; adapted from 1.43 for oxygen for use as default */
-	{"Acrylic", 1400.0f},
-	{"Asphalt (Crushed)", 721.0f},
-	{"Bark", 240.0f},
-	{"Beans (Cocoa)", 593.0f},
-	{"Beans (Soy)", 721.0f},
-	{"Brick (Pressed)", 2400.0f},
-	{"Brick (Common)", 2000.0f},
-	{"Brick (Soft)", 1600.0f},
-	{"Brass", 8216.0f},
-	{"Bronze", 8860.0f},
-	{"Carbon (Solid)", 2146.0f},
-	{"Cardboard", 689.0f},
-	{"Cast Iron", 7150.0f},
-	//{"Cement", 1442.0f},
-	{"Chalk (Solid)", 2499.0f},
-	//{"Coffee (Fresh/Roast)", ~500},
-	{"Concrete", 2320.0f},
-	{"Charcoal", 208.0f},
-	{"Cork", 240.0f},
-	{"Copper", 8933.0f},
-	{"Garbage", 481.0f},
-	{"Glass (Broken)", 1940.0f},
-	{"Glass (Solid)", 2190.0f},
-	{"Gold", 19282.0f},
-	{"Granite (Broken)", 1650.0f},
-	{"Granite (Solid)", 2691.0f},
-	{"Gravel", 2780.0f},
-	{"Ice (Crushed)", 593.0f},
-	{"Ice (Solid)", 919.0f},
-	{"Iron", 7874.0f},
-	{"Lead", 11342.0f},
-	{"Limestone (Broken)", 1554.0f},
-	{"Limestone (Solid)", 2611.0f},
-	{"Marble (Broken)", 1570.0f},
-	{"Marble (Solid)", 2563.0f},
-	{"Paper", 1201.0f},
-	{"Peanuts (Shelled)", 641.0f},
-	{"Peanuts (Not Shelled)", 272.0f},
-	{"Plaster", 849.0f},
-	{"Plastic", 1200.0f},
-	{"Polystyrene", 1050.0f},
-	{"Rubber", 1522.0f},
-	{"Silver", 10501.0f},
-	{"Steel", 7860.0f},
-	{"Stone", 2515.0f},
-	{"Stone (Crushed)", 1602.0f},
-	{"Timber", 610.0f}
+	{N_("Air"), 1.0f}, /* not quite; adapted from 1.43 for oxygen for use as default */
+	{N_("Acrylic"), 1400.0f},
+	{N_("Asphalt (Crushed)"), 721.0f},
+	{N_("Bark"), 240.0f},
+	{N_("Beans (Cocoa)"), 593.0f},
+	{N_("Beans (Soy)"), 721.0f},
+	{N_("Brick (Pressed)"), 2400.0f},
+	{N_("Brick (Common)"), 2000.0f},
+	{N_("Brick (Soft)"), 1600.0f},
+	{N_("Brass"), 8216.0f},
+	{N_("Bronze"), 8860.0f},
+	{N_("Carbon (Solid)"), 2146.0f},
+	{N_("Cardboard"), 689.0f},
+	{N_("Cast Iron"), 7150.0f},
+	/* {N_("Cement"), 1442.0f}, */
+	{N_("Chalk (Solid)"), 2499.0f},
+	/* {N_("Coffee (Fresh/Roast)"), ~500}, */
+	{N_("Concrete"), 2320.0f},
+	{N_("Charcoal"), 208.0f},
+	{N_("Cork"), 240.0f},
+	{N_("Copper"), 8933.0f},
+	{N_("Garbage"), 481.0f},
+	{N_("Glass (Broken)"), 1940.0f},
+	{N_("Glass (Solid)"), 2190.0f},
+	{N_("Gold"), 19282.0f},
+	{N_("Granite (Broken)"), 1650.0f},
+	{N_("Granite (Solid)"), 2691.0f},
+	{N_("Gravel"), 2780.0f},
+	{N_("Ice (Crushed)"), 593.0f},
+	{N_("Ice (Solid)"), 919.0f},
+	{N_("Iron"), 7874.0f},
+	{N_("Lead"), 11342.0f},
+	{N_("Limestone (Broken)"), 1554.0f},
+	{N_("Limestone (Solid)"), 2611.0f},
+	{N_("Marble (Broken)"), 1570.0f},
+	{N_("Marble (Solid)"), 2563.0f},
+	{N_("Paper"), 1201.0f},
+	{N_("Peanuts (Shelled)"), 641.0f},
+	{N_("Peanuts (Not Shelled)"), 272.0f},
+	{N_("Plaster"), 849.0f},
+	{N_("Plastic"), 1200.0f},
+	{N_("Polystyrene"), 1050.0f},
+	{N_("Rubber"), 1522.0f},
+	{N_("Silver"), 10501.0f},
+	{N_("Steel"), 7860.0f},
+	{N_("Stone"), 2515.0f},
+	{N_("Stone (Crushed)"), 1602.0f},
+	{N_("Timber"), 610.0f}
 };
 static const int NUM_RB_MATERIAL_PRESETS = sizeof(RB_MATERIAL_DENSITY_TABLE) / sizeof(rbMaterialDensityItem);
 
 
 /* dynamically generate list of items
  * - Although there is a runtime cost, this has a lower maintenance cost
- *	 in the long run than other two-list solutions...
+ *   in the long run than other two-list solutions...
  */
 static EnumPropertyItem *rigidbody_materials_itemf(bContext *UNUSED(C), PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), int *free)
 {
@@ -449,14 +454,16 @@ static EnumPropertyItem *rigidbody_materials_itemf(bContext *UNUSED(C), PointerR
 	for (i = 0; i < NUM_RB_MATERIAL_PRESETS; i++) {
 		rbMaterialDensityItem *preset = &RB_MATERIAL_DENSITY_TABLE[i];
 
-		item_tmp.identifier = item_tmp.name = preset->name;
+		item_tmp.identifier = preset->name;
+		item_tmp.name = IFACE_(preset->name);
 		item_tmp.value = i;
 		RNA_enum_item_add(&item, &totitem, &item_tmp);
 	}
 
 	/* add special "custom" entry to the end of the list */
 	{
-		item_tmp.identifier = item_tmp.name = "Custom";
+		item_tmp.identifier = "Custom";
+		item_tmp.name = IFACE_("Custom");
 		item_tmp.value = -1;
 		RNA_enum_item_add(&item, &totitem, &item_tmp);
 	}
@@ -471,7 +478,7 @@ static EnumPropertyItem *rigidbody_materials_itemf(bContext *UNUSED(C), PointerR
 
 /* helper function to calculate volume of rigidbody object */
 // TODO: allow a parameter to specify method used to calculate this?
-static float calc_rigidbody_ob_volume(Object *ob)
+static float rigidbody_object_calc_volume(Object *ob)
 {
 	RigidBodyOb *rbo = ob->rigidbody_object;
 
@@ -541,15 +548,11 @@ static float calc_rigidbody_ob_volume(Object *ob)
 
 /* ------------------------------------------ */
 
-static int rigidbody_obs_calc_mass_exec(bContext *C, wmOperator *op)
+static int rigidbody_objects_calc_mass_exec(bContext *C, wmOperator *op)
 {
-	Scene *scene = CTX_data_scene(C);
 	int material = RNA_enum_get(op->ptr, "material");
 	float density;
-
-	/* sanity checks */
-	if (scene == NULL)
-		return OPERATOR_CANCELLED;
+	bool change = false;
 
 	/* get density (kg/m^3) to apply */
 	if (material >= 0) {
@@ -577,7 +580,7 @@ static int rigidbody_obs_calc_mass_exec(bContext *C, wmOperator *op)
 			/* mass is calculated from the approximate volume of the object,
 			 * and the density of the material we're simulating
 			 */
-			volume = calc_rigidbody_ob_volume(ob);
+			volume = rigidbody_object_calc_volume(ob);
 			mass = volume * density;
 
 			/* use RNA-system to change the property and perform all necessary changes */
@@ -585,15 +588,22 @@ static int rigidbody_obs_calc_mass_exec(bContext *C, wmOperator *op)
 			RNA_float_set(&ptr, "mass", mass);
 
 			DAG_id_tag_update(&ob->id, OB_RECALC_OB);
+
+			change = true;
 		}
 	}
 	CTX_DATA_END;
 
-	/* send updates */
-	WM_event_add_notifier(C, NC_OBJECT | ND_POINTCACHE, NULL);
+	if (change) {
+		/* send updates */
+		WM_event_add_notifier(C, NC_OBJECT | ND_POINTCACHE, NULL);
 
-	/* done */
-	return OPERATOR_FINISHED;
+		/* done */
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
 }
 
 void RIGIDBODY_OT_mass_calculate(wmOperatorType *ot)
@@ -607,8 +617,8 @@ void RIGIDBODY_OT_mass_calculate(wmOperatorType *ot)
 
 	/* callbacks */
 	ot->invoke = WM_menu_invoke; // XXX
-	ot->exec = rigidbody_obs_calc_mass_exec;
-	ot->poll = ED_operator_rigidbody_active_poll;
+	ot->exec = rigidbody_objects_calc_mass_exec;
+	ot->poll = ED_operator_scene_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;

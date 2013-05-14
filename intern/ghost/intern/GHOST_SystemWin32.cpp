@@ -225,7 +225,7 @@ GHOST_IWindow *GHOST_SystemWin32::createWindow(
 		const STR_String& title,
 		GHOST_TInt32 left, GHOST_TInt32 top, GHOST_TUns32 width, GHOST_TUns32 height,
 		GHOST_TWindowState state, GHOST_TDrawingContextType type,
-		bool stereoVisual, const GHOST_TUns16 numOfAASamples, const GHOST_TEmbedderWindowID parentWindow)
+		bool stereoVisual, const bool exclusive, const GHOST_TUns16 numOfAASamples, const GHOST_TEmbedderWindowID parentWindow)
 {
 	GHOST_Window *window = 0;
 	window = new GHOST_WindowWin32(this, title, left, top, width, height, state, type, stereoVisual, numOfAASamples, parentWindow);
@@ -296,6 +296,9 @@ bool GHOST_SystemWin32::processEvents(bool waitForEvent)
 
 		// Process all the events waiting for us
 		while (::PeekMessageW(&msg, 0, 0, 0, PM_REMOVE) != 0) {
+			// TranslateMessage doesn't alter the message, and doesn't change our raw keyboard data.
+			// Needed for MapVirtualKey or if we ever need to get chars from wm_ime_char or similar.
+			::TranslateMessage(&msg);
 			::DispatchMessageW(&msg);
 			anyProcessed = true;
 		}
@@ -397,7 +400,7 @@ GHOST_TSuccess GHOST_SystemWin32::init()
 	}
 
 	if (success) {
-		WNDCLASSW wc;
+		WNDCLASSW wc = {0};
 		wc.style = CS_HREDRAW | CS_VREDRAW;
 		wc.lpfnWndProc = s_wndProc;
 		wc.cbClsExtra = 0;
@@ -409,7 +412,7 @@ GHOST_TSuccess GHOST_SystemWin32::init()
 			::LoadIcon(NULL, IDI_APPLICATION);
 		}
 		wc.hCursor = ::LoadCursor(0, IDC_ARROW);
-		wc.hbrBackground = (HBRUSH) ::GetStockObject(BLACK_BRUSH);
+		wc.hbrBackground = 0;
 		wc.lpszMenuName = 0;
 		wc.lpszClassName = L"GHOST_WindowClass";
 
@@ -604,7 +607,17 @@ GHOST_TKey GHOST_SystemWin32::convertKey(GHOST_IWindow *window, short vKey, shor
 			case VK_GR_LESS:        key = GHOST_kKeyGrLess;         break;
 
 			case VK_SHIFT:
-				key = (scanCode == 0x36) ? GHOST_kKeyRightShift : GHOST_kKeyLeftShift;
+					/* Check single shift presses */
+					if (scanCode == 0x36) {
+						key = GHOST_kKeyRightShift;
+					} else if (scanCode == 0x2a) {
+						key = GHOST_kKeyLeftShift;
+					} else {
+						/* Must be a combination SHIFT (Left or Right) + a Key 
+						 * Ignore this as the next message will contain
+						 * the desired "Key" */
+						key = GHOST_kKeyUnknown;
+					}
 				break;
 			case VK_CONTROL:
 				key = (extend) ? GHOST_kKeyRightControl : GHOST_kKeyLeftControl;
@@ -729,13 +742,17 @@ GHOST_EventKey *GHOST_SystemWin32::processKeyEvent(GHOST_IWindow *window, RAWINP
 		int r;
 		GetKeyboardState((PBYTE)state);
 
-		if ((r = ToUnicodeEx(vk, 0, state, utf16, 2, 0, system->m_keylayout))) {
-			if ((r > 0 && r < 3)) {
-				utf16[r] = 0;
-				conv_utf_16_to_8(utf16, utf8_char, 6);
-			}
-			else if (r == -1) {
-				utf8_char[0] = '\0';
+		// don't call ToUnicodeEx on dead keys as it clears the buffer and so won't allow diacritical composition.
+		if (MapVirtualKeyW(vk,2) != 0) {
+			// todo: ToUnicodeEx can respond with up to 4 utf16 chars (only 2 here). Could be up to 24 utf8 bytes.
+			if ((r = ToUnicodeEx(vk, raw.data.keyboard.MakeCode, state, utf16, 2, 0, system->m_keylayout))) {
+				if ((r > 0 && r < 3)) {
+					utf16[r] = 0;
+					conv_utf_16_to_8(utf16, utf8_char, 6);
+				}
+				else if (r == -1) {
+					utf8_char[0] = '\0';
+				}
 			}
 		}
 
@@ -887,7 +904,7 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 	GHOST_ASSERT(system, "GHOST_SystemWin32::s_wndProc(): system not initialized");
 
 	if (hwnd) {
-		GHOST_WindowWin32 *window = (GHOST_WindowWin32 *)::GetWindowLong(hwnd, GWL_USERDATA);
+		GHOST_WindowWin32 *window = (GHOST_WindowWin32 *)::GetWindowLongPtr(hwnd, GWL_USERDATA);
 		if (window) {
 			switch (msg) {
 				// we need to check if new key layout has AltGr
@@ -972,7 +989,17 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					 * maximize, minimize  or close the window are triggered. Also it is sent when ALT 
 					 * button is press for menu. To prevent this we must return preventing DefWindowProc.
 					 */
-					if (wParam == SC_KEYMENU) return 0;
+					if (wParam == SC_KEYMENU) 
+					{
+						eventHandled = true;
+					}// else
+						/* XXX Disable for now due to area resizing issue. bug# 34990 */
+					/*if((wParam&0xfff0)==SC_SIZE)
+					{
+						window->registerMouseClickEvent(0);
+						window->m_wsh.startSizing(wParam);
+						eventHandled = true;
+					}*/
 					break;
 				////////////////////////////////////////////////////////////////////////
 				// Tablet events, processed
@@ -1010,7 +1037,10 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					break;
 				case WM_LBUTTONUP:
 					window->registerMouseClickEvent(1);
-					event = processButtonEvent(GHOST_kEventButtonUp, window, GHOST_kButtonMaskLeft);
+					if(window->m_wsh.isWinChanges())
+						window->m_wsh.accept();
+					else
+						event = processButtonEvent(GHOST_kEventButtonUp, window, GHOST_kButtonMaskLeft);
 					break;
 				case WM_MBUTTONUP:
 					window->registerMouseClickEvent(1);
@@ -1030,7 +1060,10 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					}
 					break;
 				case WM_MOUSEMOVE:
-					event = processCursorEvent(GHOST_kEventCursorMove, window);
+					if(window->m_wsh.isWinChanges())
+						window->m_wsh.updateWindowSize();
+					else
+						event = processCursorEvent(GHOST_kEventCursorMove, window);
 					break;
 				case WM_MOUSEWHEEL:
 					/* The WM_MOUSEWHEEL message is sent to the focus window 
@@ -1098,6 +1131,9 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					event = processWindowEvent(LOWORD(wParam) ? GHOST_kEventWindowActivate : GHOST_kEventWindowDeactivate, window);
 					/* WARNING: Let DefWindowProc handle WM_ACTIVATE, otherwise WM_MOUSEWHEEL
 					 * will not be dispatched to OUR active window if we minimize one of OUR windows. */
+					if(LOWORD(wParam)==WA_INACTIVE)
+						window->lostMouseCapture();
+
 					lResult = ::DefWindowProc(hwnd, msg, wParam, lParam);
 					break;
 				}
@@ -1228,6 +1264,10 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					 * In GHOST, we let DefWindowProc call the timer callback.
 					 */
 					break;
+				case WM_CANCELMODE:
+					if(window->m_wsh.isWinChanges())
+						window->m_wsh.cancel();
+
 			}
 		}
 		else {

@@ -29,18 +29,16 @@
  *  \ingroup edtransform
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
 #ifndef WIN32
-#include <unistd.h>
+#  include <unistd.h>
 #else
-#include <io.h>
+#  include <io.h>
 #endif
-
 
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
@@ -51,14 +49,14 @@
 #include "BIF_gl.h"
 #include "BIF_glutil.h"
 
+#include "BLI_math.h"
+#include "BLI_utildefines.h"
+#include "BLI_string.h"
+
 #include "BKE_context.h"
 
 #include "ED_image.h"
 #include "ED_view3d.h"
-
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
-#include "BLI_string.h"
 
 #include "BLF_translation.h"
 
@@ -395,7 +393,11 @@ static void applyObjectConstraintVec(TransInfo *t, TransData *td, const float in
 			if (t->con.mode & CON_AXIS2) {
 				out[2] = in[i++];
 			}
+
 			mul_m3_v3(td->axismtx, out);
+			if (t->flag & T_EDIT) {
+				mul_m3_v3(t->obedit_mat, out);
+			}
 		}
 	}
 }
@@ -447,6 +449,9 @@ static void applyObjectConstraintSize(TransInfo *t, TransData *td, float smat[3]
 		}
 
 		mul_m3_m3m3(tmat, smat, imat);
+		if (t->flag & T_EDIT) {
+			mul_m3_m3m3(smat, t->obedit_mat, smat);
+		}
 		mul_m3_m3m3(smat, td->axismtx, tmat);
 	}
 }
@@ -511,24 +516,34 @@ static void applyObjectConstraintRot(TransInfo *t, TransData *td, float vec[3], 
 {
 	if (t->con.mode & CON_APPLY) {
 		int mode = t->con.mode & (CON_AXIS0 | CON_AXIS1 | CON_AXIS2);
+		float tmp_axismtx[3][3];
+		float (*axismtx)[3];
 
 		/* on setup call, use first object */
 		if (td == NULL) {
 			td = t->data;
 		}
 
+		if (t->flag & T_EDIT) {
+			mul_m3_m3m3(tmp_axismtx, t->obedit_mat, td->axismtx);
+			axismtx = tmp_axismtx;
+		}
+		else {
+			axismtx = td->axismtx;
+		}
+
 		switch (mode) {
 			case CON_AXIS0:
 			case (CON_AXIS1 | CON_AXIS2):
-				copy_v3_v3(vec, td->axismtx[0]);
+				copy_v3_v3(vec, axismtx[0]);
 				break;
 			case CON_AXIS1:
 			case (CON_AXIS0 | CON_AXIS2):
-				copy_v3_v3(vec, td->axismtx[1]);
+				copy_v3_v3(vec, axismtx[1]);
 				break;
 			case CON_AXIS2:
 			case (CON_AXIS0 | CON_AXIS1):
-				copy_v3_v3(vec, td->axismtx[2]);
+				copy_v3_v3(vec, axismtx[2]);
 				break;
 		}
 		if (angle && (mode & CON_NOFLIP) == 0 && hasNumInput(&t->num) == 0) {
@@ -557,32 +572,36 @@ void setConstraint(TransInfo *t, float space[3][3], int mode, const char text[])
 	t->redraw = 1;
 }
 
-void setLocalConstraint(TransInfo *t, int mode, const char text[])
+/* applies individual td->axismtx constraints */
+void setAxisMatrixConstraint(TransInfo *t, int mode, const char text[])
 {
-	if (t->flag & T_EDIT) {
-		float obmat[3][3];
-		copy_m3_m4(obmat, t->scene->obedit->obmat);
-		normalize_m3(obmat);
-		setConstraint(t, obmat, mode, text);
+	if (t->total == 1) {
+		setConstraint(t, t->data->axismtx, mode, text);
 	}
 	else {
-		if (t->total == 1) {
-			setConstraint(t, t->data->axismtx, mode, text);
-		}
-		else {
-			BLI_strncpy(t->con.text + 1, text, sizeof(t->con.text) - 1);
-			copy_m3_m3(t->con.mtx, t->data->axismtx);
-			t->con.mode = mode;
-			getConstraintMatrix(t);
+		BLI_strncpy(t->con.text + 1, text, sizeof(t->con.text) - 1);
+		copy_m3_m3(t->con.mtx, t->data->axismtx);
+		t->con.mode = mode;
+		getConstraintMatrix(t);
 
-			startConstraint(t);
+		startConstraint(t);
 
-			t->con.drawExtra = drawObjectConstraint;
-			t->con.applyVec = applyObjectConstraintVec;
-			t->con.applySize = applyObjectConstraintSize;
-			t->con.applyRot = applyObjectConstraintRot;
-			t->redraw = 1;
-		}
+		t->con.drawExtra = drawObjectConstraint;
+		t->con.applyVec = applyObjectConstraintVec;
+		t->con.applySize = applyObjectConstraintSize;
+		t->con.applyRot = applyObjectConstraintRot;
+		t->redraw = 1;
+	}
+}
+
+void setLocalConstraint(TransInfo *t, int mode, const char text[])
+{
+	/* edit-mode now allows local transforms too */
+	if (t->flag & T_EDIT) {
+		setConstraint(t, t->obedit_mat, mode, text);
+	}
+	else {
+		setAxisMatrixConstraint(t, mode, text);
 	}
 }
 
@@ -610,7 +629,12 @@ void setUserConstraint(TransInfo *t, short orientation, int mode, const char fte
 			break;
 		case V3D_MANIP_NORMAL:
 			BLI_snprintf(text, sizeof(text), ftext, IFACE_("normal"));
-			setConstraint(t, t->spacemtx, mode, text);
+			if (checkUseAxisMatrix(t)) {
+				setAxisMatrixConstraint(t, mode, text);
+			}
+			else {
+				setConstraint(t, t->spacemtx, mode, text);
+			}
 			break;
 		case V3D_MANIP_VIEW:
 			BLI_snprintf(text, sizeof(text), ftext, IFACE_("view"));
@@ -745,37 +769,50 @@ void drawPropCircle(const struct bContext *C, TransInfo *t)
 
 static void drawObjectConstraint(TransInfo *t)
 {
-	int i;
-	TransData *td = t->data;
-
 	/* Draw the first one lighter because that's the one who controls the others.
 	 * Meaning the transformation is projected on that one and just copied on the others
 	 * constraint space.
 	 * In a nutshell, the object with light axis is controlled by the user and the others follow.
 	 * Without drawing the first light, users have little clue what they are doing.
 	 */
-	if (t->con.mode & CON_AXIS0) {
-		drawLine(t, td->ob->obmat[3], td->axismtx[0], 'X', DRAWLIGHT);
-	}
-	if (t->con.mode & CON_AXIS1) {
-		drawLine(t, td->ob->obmat[3], td->axismtx[1], 'Y', DRAWLIGHT);
-	}
-	if (t->con.mode & CON_AXIS2) {
-		drawLine(t, td->ob->obmat[3], td->axismtx[2], 'Z', DRAWLIGHT);
-	}
+	short options = DRAWLIGHT;
+	TransData *td = t->data;
+	int i;
+	float tmp_axismtx[3][3];
 
-	td++;
+	for (i = 0; i < t->total; i++, td++) {
+		float co[3];
+		float (*axismtx)[3];
 
-	for (i = 1; i < t->total; i++, td++) {
+		if (t->flag & T_OBJECT) {
+			copy_v3_v3(co, td->ob->obmat[3]);
+			axismtx = td->axismtx;
+		}
+		else if (t->flag & T_EDIT) {
+			mul_v3_m4v3(co, t->obedit->obmat, td->center);
+
+			mul_m3_m3m3(tmp_axismtx, t->obedit_mat, td->axismtx);
+			axismtx = tmp_axismtx;
+		}
+		else if (t->flag & T_POSE) {
+			mul_v3_m4v3(co, t->poseobj->obmat, td->center);
+			axismtx = td->axismtx;
+		}
+		else {
+			copy_v3_v3(co, td->center);
+			axismtx = td->axismtx;
+		}
+
 		if (t->con.mode & CON_AXIS0) {
-			drawLine(t, td->ob->obmat[3], td->axismtx[0], 'X', 0);
+			drawLine(t, co, axismtx[0], 'X', options);
 		}
 		if (t->con.mode & CON_AXIS1) {
-			drawLine(t, td->ob->obmat[3], td->axismtx[1], 'Y', 0);
+			drawLine(t, co, axismtx[1], 'Y', options);
 		}
 		if (t->con.mode & CON_AXIS2) {
-			drawLine(t, td->ob->obmat[3], td->axismtx[2], 'Z', 0);
+			drawLine(t, co, axismtx[2], 'Z', options);
 		}
+		options &= ~DRAWLIGHT;
 	}
 }
 
@@ -867,11 +904,11 @@ static void setNearestAxis2d(TransInfo *t)
 	/* no correction needed... just use whichever one is lower */
 	if (abs(t->mval[0] - t->con.imval[0]) < abs(t->mval[1] - t->con.imval[1]) ) {
 		t->con.mode |= CON_AXIS1;
-		BLI_snprintf(t->con.text, sizeof(t->con.text), IFACE_(" along Y axis"));
+		BLI_strncpy(t->con.text, IFACE_(" along Y axis"), sizeof(t->con.text));
 	}
 	else {
 		t->con.mode |= CON_AXIS0;
-		BLI_snprintf(t->con.text, sizeof(t->con.text), IFACE_(" along X axis"));
+		BLI_strncpy(t->con.text, IFACE_(" along X axis"), sizeof(t->con.text));
 	}
 }
 
@@ -892,9 +929,9 @@ static void setNearestAxis3d(TransInfo *t)
 	 * and to overflow the short integers.
 	 * The formula used is a bit stupid, just a simplification of the subtraction
 	 * of two 2D points 30 pixels apart (that's the last factor in the formula) after
-	 * projecting them with window_to_3d_delta and then get the length of that vector.
+	 * projecting them with ED_view3d_win_to_delta and then get the length of that vector.
 	 */
-	zfac = t->persmat[0][3] * t->center[0] + t->persmat[1][3] * t->center[1] + t->persmat[2][3] * t->center[2] + t->persmat[3][3];
+	zfac = mul_project_m4_v3_zfac(t->persmat, t->center);
 	zfac = len_v3(t->persinv[0]) * 2.0f / t->ar->winx * zfac * 30.0f;
 
 	for (i = 0; i < 3; i++) {
@@ -994,20 +1031,20 @@ char constraintModeToChar(TransInfo *t)
 }
 
 
-int isLockConstraint(TransInfo *t)
+bool isLockConstraint(TransInfo *t)
 {
 	int mode = t->con.mode;
 
 	if ((mode & (CON_AXIS0 | CON_AXIS1)) == (CON_AXIS0 | CON_AXIS1))
-		return 1;
+		return true;
 
 	if ((mode & (CON_AXIS1 | CON_AXIS2)) == (CON_AXIS1 | CON_AXIS2))
-		return 1;
+		return true;
 
 	if ((mode & (CON_AXIS0 | CON_AXIS2)) == (CON_AXIS0 | CON_AXIS2))
-		return 1;
+		return true;
 
-	return 0;
+	return false;
 }
 
 /*

@@ -41,6 +41,7 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_scene_types.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_ghash.h"
 #include "BLI_math.h"
 #include "BLI_math_vector.h"
@@ -52,7 +53,7 @@
 #include "BKE_customdata.h"
 #include "BKE_depsgraph.h"
 #include "BKE_mesh.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "ED_mesh.h"
 #include "ED_uvedit.h"
@@ -753,7 +754,8 @@ static void stitch_set_face_preview_buffer_position(BMFace *efa, StitchPreviewer
 
 /* setup face preview for all coincident uvs and their faces */
 static void stitch_setup_face_preview_for_uv_group(UvElement *element, StitchState *state, IslandStitchData *island_stitch_data,
-                                                   PreviewPosition *preview_position) {
+                                                   PreviewPosition *preview_position)
+{
 	StitchPreviewer *preview = state->stitch_preview;
 
 	/* static island does not change so returning immediately */
@@ -773,7 +775,8 @@ static void stitch_setup_face_preview_for_uv_group(UvElement *element, StitchSta
 
 /* checks if uvs are indeed stitchable and registers so that they can be shown in preview */
 static void stitch_validate_uv_stichability(UvElement *element, StitchState *state, IslandStitchData *island_stitch_data,
-                                         PreviewPosition *preview_position) {
+                                            PreviewPosition *preview_position)
+{
 	UvElement *element_iter;
 	StitchPreviewer *preview = state->stitch_preview;
 	int vert_index;
@@ -808,7 +811,8 @@ static void stitch_validate_uv_stichability(UvElement *element, StitchState *sta
 
 
 static void stitch_validate_edge_stichability(UvEdge *edge, StitchState *state, IslandStitchData *island_stitch_data,
-                                              PreviewPosition *preview_position) {
+                                              PreviewPosition *preview_position)
+{
 	UvEdge *edge_iter = edge->first;
 	StitchPreviewer *preview = state->stitch_preview;
 
@@ -1306,13 +1310,13 @@ static int stitch_process_data(StitchState *state, Scene *scene, int final)
 		if (state->mode == STITCH_VERT) {
 			UvElement *element = state->selection_stack[i];
 
-			stitch_propagate_uv_final_position (element, i, preview_position, final_position, state, final, scene);
+			stitch_propagate_uv_final_position(element, i, preview_position, final_position, state, final, scene);
 		}
 		else {
 			UvEdge *edge = state->selection_stack[i];
 
-			stitch_propagate_uv_final_position (state->uvs[edge->uv1], edge->uv1, preview_position, final_position, state, final, scene);
-			stitch_propagate_uv_final_position (state->uvs[edge->uv2], edge->uv2, preview_position, final_position, state, final, scene);
+			stitch_propagate_uv_final_position(state->uvs[edge->uv1], edge->uv1, preview_position, final_position, state, final, scene);
+			stitch_propagate_uv_final_position(state->uvs[edge->uv2], edge->uv2, preview_position, final_position, state, final, scene);
 
 			edge->flag &= (STITCH_SELECTED | STITCH_BOUNDARY);
 		}
@@ -1607,7 +1611,7 @@ static int stitch_init(bContext *C, wmOperator *op)
 	/* initialize state */
 	state->use_limit = RNA_boolean_get(op->ptr, "use_limit");
 	state->limit_dist = RNA_float_get(op->ptr, "limit");
-	state->em = em = BMEdit_FromObject(obedit);
+	state->em = em = BKE_editmesh_from_object(obedit);
 	state->snap_islands = RNA_boolean_get(op->ptr, "snap_islands");
 	state->static_island = RNA_int_get(op->ptr, "static_island");
 	state->midpoints = RNA_boolean_get(op->ptr, "midpoint_snap");
@@ -1748,7 +1752,7 @@ static int stitch_init(bContext *C, wmOperator *op)
 	state->total_separate_edges = total_edges;
 
 	/* fill the edges with data */
-	for (i = 0, BLI_ghashIterator_init(ghi, edge_hash); !BLI_ghashIterator_isDone(ghi); BLI_ghashIterator_step(ghi)) {
+	for (i = 0, BLI_ghashIterator_init(ghi, edge_hash); BLI_ghashIterator_notDone(ghi); BLI_ghashIterator_step(ghi)) {
 		edges[i++] = *((UvEdge *)BLI_ghashIterator_getKey(ghi));
 	}
 
@@ -1910,7 +1914,7 @@ static int stitch_init(bContext *C, wmOperator *op)
 	return 1;
 }
 
-static int stitch_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int stitch_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Object *obedit = CTX_data_edit_object(C);
 	if (!stitch_init(C, op))
@@ -2000,7 +2004,7 @@ static int stitch_exec(bContext *C, wmOperator *op)
 	}
 }
 
-static void stitch_select(bContext *C, Scene *scene, wmEvent *event, StitchState *state)
+static void stitch_select(bContext *C, Scene *scene, const wmEvent *event, StitchState *state)
 {
 	/* add uv under mouse to processed uv's */
 	float co[2];
@@ -2034,7 +2038,7 @@ static void stitch_select(bContext *C, Scene *scene, wmEvent *event, StitchState
 	}
 }
 
-static int stitch_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int stitch_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	StitchState *state;
 	Scene *scene = CTX_data_scene(C);

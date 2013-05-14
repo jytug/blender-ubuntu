@@ -56,6 +56,8 @@
 #include "BLI_threads.h"
 #include "BLI_linklist.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_anim.h"
 #include "BKE_animsys.h"
 
@@ -262,11 +264,12 @@ static void psys_create_frand(ParticleSystem *psys)
 {
 	int i;
 	float *rand = psys->frand = MEM_callocN(PSYS_FRAND_COUNT * sizeof(float), "particle randoms");
-
-	BLI_srandom(psys->seed);
+	RNG *rng = BLI_rng_new_srandom(psys->seed);
 
 	for (i = 0; i < 1024; i++, rand++)
-		*rand = BLI_frand();
+		*rand = BLI_rng_get_float(rng);
+
+	BLI_rng_free(rng);
 }
 int psys_check_enabled(Object *ob, ParticleSystem *psys)
 {
@@ -312,7 +315,7 @@ void psys_check_group_weights(ParticleSettings *part)
 		/* first remove all weights that don't have an object in the group */
 		dw = part->dupliweights.first;
 		while (dw) {
-			if (!object_in_group(dw->ob, part->dup_group)) {
+			if (!BKE_group_object_exists(part->dup_group, dw->ob)) {
 				tdw = dw->next;
 				BLI_freelinkN(&part->dupliweights, dw);
 				dw = tdw;
@@ -3300,8 +3303,11 @@ void psys_cache_edit_paths(Scene *scene, Object *ob, PTCacheEdit *edit, float cf
 		sim.ob = ob;
 		sim.psys = psys;
 		sim.psmd = psys_get_modifier(ob, psys);
+		sim.rng = BLI_rng_new(0);
 
 		psys_cache_child_paths(&sim, cfra, 1);
+
+		BLI_rng_free(sim.rng);
 	}
 
 	/* clear recalc flag if set here */
@@ -3488,17 +3494,19 @@ ModifierData *object_add_particle_system(Scene *scene, Object *ob, const char *n
 	psys->pointcache = BKE_ptcache_add(&psys->ptcaches);
 	BLI_addtail(&ob->particlesystem, psys);
 
-	psys->part = psys_new_settings("ParticleSettings", NULL);
+	psys->part = psys_new_settings(DATA_("ParticleSettings"), NULL);
 
 	if (BLI_countlist(&ob->particlesystem) > 1)
-		BLI_snprintf(psys->name, sizeof(psys->name), "ParticleSystem %i", BLI_countlist(&ob->particlesystem));
+		BLI_snprintf(psys->name, sizeof(psys->name), DATA_("ParticleSystem %i"), BLI_countlist(&ob->particlesystem));
 	else
-		strcpy(psys->name, "ParticleSystem");
+		strcpy(psys->name, DATA_("ParticleSystem"));
 
 	md = modifier_new(eModifierType_ParticleSystem);
 
-	if (name) BLI_strncpy_utf8(md->name, name, sizeof(md->name));
-	else BLI_snprintf(md->name, sizeof(md->name), "ParticleSystem %i", BLI_countlist(&ob->particlesystem));
+	if (name)
+		BLI_strncpy_utf8(md->name, name, sizeof(md->name));
+	else
+		BLI_snprintf(md->name, sizeof(md->name), DATA_("ParticleSystem %i"), BLI_countlist(&ob->particlesystem));
 	modifier_unique_name(&ob->modifiers, md);
 
 	psmd = (ParticleSystemModifierData *) md;
@@ -3509,12 +3517,12 @@ ModifierData *object_add_particle_system(Scene *scene, Object *ob, const char *n
 	psys->flag = PSYS_ENABLED | PSYS_CURRENT;
 	psys->cfra = BKE_scene_frame_get_from_ctime(scene, CFRA + 1);
 
-	DAG_scene_sort(G.main, scene);
+	DAG_relations_tag_update(G.main);
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 
 	return md;
 }
-void object_remove_particle_system(Scene *scene, Object *ob)
+void object_remove_particle_system(Scene *UNUSED(scene), Object *ob)
 {
 	ParticleSystem *psys = psys_get_current(ob);
 	ParticleSystemModifierData *psmd;
@@ -3552,7 +3560,7 @@ void object_remove_particle_system(Scene *scene, Object *ob)
 	else
 		ob->mode &= ~OB_MODE_PARTICLE_EDIT;
 
-	DAG_scene_sort(G.main, scene);
+	DAG_relations_tag_update(G.main);
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 }
 static void default_particle_settings(ParticleSettings *part)
@@ -4656,6 +4664,7 @@ void psys_apply_hair_lattice(Scene *scene, Object *ob, ParticleSystem *psys)
 	sim.ob = ob;
 	sim.psys = psys;
 	sim.psmd = psys_get_modifier(ob, psys);
+	sim.rng = BLI_rng_new(0);
 
 	psys->lattice = psys_get_lattice(&sim);
 
@@ -4683,4 +4692,6 @@ void psys_apply_hair_lattice(Scene *scene, Object *ob, ParticleSystem *psys)
 		/* protect the applied shape */
 		psys->flag |= PSYS_EDITED;
 	}
+
+	BLI_rng_free(sim.rng);
 }

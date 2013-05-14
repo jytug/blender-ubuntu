@@ -28,6 +28,8 @@
  *  \ingroup DNA
  *  \since mar-2001
  *  \author nzc
+ *
+ * Structs for each of space type in the user interface.
  */
 
 #ifndef __DNA_SPACE_TYPES_H__
@@ -41,6 +43,7 @@
 #include "DNA_image_types.h"        /* ImageUser */
 #include "DNA_movieclip_types.h"    /* MovieClipUser */
 #include "DNA_sequence_types.h"     /* SequencerScopes */
+#include "DNA_node_types.h"         /* for bNodeInstanceKey */
 /* Hum ... Not really nice... but needed for spacebuts. */
 #include "DNA_view2d_types.h"
 
@@ -180,6 +183,7 @@ typedef enum eSpaceButtons_Context {
 	BCONTEXT_MODIFIER = 10,
 	BCONTEXT_CONSTRAINT = 11,
 	BCONTEXT_BONE_CONSTRAINT = 12,
+	BCONTEXT_RENDER_LAYER = 13,
 	
 	/* always as last... */
 	BCONTEXT_TOT
@@ -837,6 +841,8 @@ typedef enum eSpaceText_Flags {
 	ST_FIND_ALL             = (1 << 6),
 	ST_SHOW_MARGIN          = (1 << 7),
 	ST_MATCH_CASE           = (1 << 8),
+	
+	ST_FIND_ACTIVATE		= (1 << 9),
 } eSpaceText_Flags;
 
 /* stext->findstr/replacestr */
@@ -878,6 +884,18 @@ typedef struct SpaceScript {
 /* Nodes Editor =========================================== */
 
 /* Node Editor */
+
+typedef struct bNodeTreePath {
+	struct bNodeTreePath *next, *prev;
+	
+	struct bNodeTree *nodetree;
+	bNodeInstanceKey parent_key;	/* base key for nodes in this tree instance */
+	int pad;
+	float view_center[2];			/* v2d center point, so node trees can have different offsets in editors */
+	/* XXX this is not automatically updated when node names are changed! */
+	char node_name[64];		/* MAX_NAME */
+} bNodeTreePath;
+
 typedef struct SpaceNode {
 	SpaceLink *next, *prev;
 	ListBase regionbase;        /* storage of regions for inactive spaces */
@@ -895,12 +913,24 @@ typedef struct SpaceNode {
 	float zoom;   /* zoom for backdrop */
 	float cursor[2];    /* mouse pos for drawing socketless link and adding nodes */
 	
+	/* XXX nodetree pointer info is all in the path stack now,
+	 * remove later on and use bNodeTreePath instead. For now these variables are set when pushing/popping
+	 * from path stack, to avoid having to update all the functions and operators. Can be done when
+	 * design is accepted and everything is properly tested.
+	 */
+	ListBase treepath;
+	
 	struct bNodeTree *nodetree, *edittree;
-	int treetype;       /* treetype: as same nodetree->type */
+	
+	/* tree type for the current node tree */
+	char tree_idname[64];
+	int treetype DNA_DEPRECATED; /* treetype: as same nodetree->type */
+	int pad3;
+	
 	short texfrom;      /* texfrom object, world or brush */
 	short shaderfrom;   /* shader from object or world */
 	short recalc;       /* currently on 0/1, for auto compo */
-	short pad[3];
+	short pad4;
 	ListBase linkdrag;  /* temporary data for modal linking operator */
 	
 	struct bGPdata *gpd;        /* grease-pencil data */
@@ -919,6 +949,7 @@ typedef enum eSpaceNode_Flag {
 	SNODE_SHOW_HIGHLIGHT = (1 << 6),
 	SNODE_USE_HIDDEN_PREVIEW = (1 << 10),
 	SNODE_NEW_SHADERS = (1 << 11),
+	SNODE_PIN            = (1 << 12),
 } eSpaceNode_Flag;
 
 /* snode->texfrom */
@@ -1004,8 +1035,8 @@ typedef struct SpaceUserPref {
 	ListBase regionbase;        /* storage of regions for inactive spaces */
 	int spacetype;
 	
-	int pad;
-	
+	char pad[3];
+	char filter_type;
 	char filter[64];        /* search term for filtering in the UI */
 } SpaceUserPref;
 
@@ -1042,8 +1073,6 @@ typedef struct SpaceClip {
 
 	/* grease pencil */
 	short gpencil_src, pad2;
-
-	void *draw_context;
 
 	int around, pad4;             /* pivot point for transforms */
 
@@ -1133,4 +1162,4 @@ typedef enum eSpace_Type {
 
 #define IMG_SIZE_FALLBACK 256
 
-#endif
+#endif  /* __DNA_SPACE_TYPES_H__ */

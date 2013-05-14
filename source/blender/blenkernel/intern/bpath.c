@@ -70,6 +70,7 @@
 #include "DNA_vfont_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_smoke_types.h"
+#include "DNA_freestyle_types.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
@@ -671,14 +672,14 @@ int BKE_bpath_relocate_visitor(void *pathbase_v, char *path_dst, const char *pat
 
 struct PathStore {
 	struct PathStore *next, *prev;
-} PathStore;
+};
 
 static int bpath_list_append(void *userdata, char *UNUSED(path_dst), const char *path_src)
 {
 	/* store the path and string in a single alloc */
 	ListBase *ls = userdata;
 	size_t path_size = strlen(path_src) + 1;
-	struct PathStore *path_store = MEM_mallocN(sizeof(PathStore) + path_size, __func__);
+	struct PathStore *path_store = MEM_mallocN(sizeof(struct PathStore) + path_size, __func__);
 	char *filepath = (char *)(path_store + 1);
 
 	memcpy(filepath, path_src, path_size);

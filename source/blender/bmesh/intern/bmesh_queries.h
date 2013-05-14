@@ -34,7 +34,7 @@ bool    BM_verts_in_face(BMFace *f, BMVert **varr, int len);
 bool    BM_edge_in_face(BMFace *f, BMEdge *e);
 bool    BM_edge_in_loop(BMEdge *e, BMLoop *l);
 
-bool    BM_vert_in_edge(BMEdge *e, BMVert *v);
+bool    BM_vert_in_edge(const BMEdge *e, const BMVert *v);
 bool    BM_verts_in_edge(BMVert *v1, BMVert *v2, BMEdge *e);
 
 float   BM_edge_calc_length(BMEdge *e);
@@ -44,6 +44,7 @@ bool    BM_edge_loop_pair(BMEdge *e, BMLoop **r_la, BMLoop **r_lb);
 BMVert *BM_edge_other_vert(BMEdge *e, BMVert *v);
 BMLoop *BM_edge_other_loop(BMEdge *e, BMLoop *l);
 BMLoop *BM_face_other_edge_loop(BMFace *f, BMEdge *e, BMVert *v);
+BMLoop *BM_loop_other_edge_loop(BMLoop *l, BMVert *v);
 BMLoop *BM_face_other_vert_loop(BMFace *f, BMVert *v_prev, BMVert *v);
 BMLoop *BM_loop_other_vert_loop(BMLoop *l, BMVert *v);
 BMLoop *BM_vert_step_fan_loop(BMLoop *l, BMEdge **e_step);
@@ -62,6 +63,7 @@ bool    BM_vert_is_manifold(BMVert *v);
 bool    BM_edge_is_manifold(BMEdge *e);
 bool    BM_edge_is_boundary(BMEdge *e);
 bool    BM_edge_is_contiguous(BMEdge *e);
+bool    BM_edge_is_convex(BMEdge *e);
 
 bool    BM_loop_is_convex(BMLoop *l);
 
@@ -71,6 +73,7 @@ void    BM_loop_calc_face_direction(BMLoop *l, float r_normal[3]);
 void    BM_loop_calc_face_tangent(BMLoop *l, float r_tangent[3]);
 
 float   BM_edge_calc_face_angle(BMEdge *e);
+float   BM_edge_calc_face_angle_signed(BMEdge *e);
 void    BM_edge_calc_face_tangent(BMEdge *e, BMLoop *e_loop, float r_tangent[3]);
 
 float   BM_vert_calc_edge_angle(BMVert *v);
@@ -109,5 +112,7 @@ void    BM_edge_ordered_verts_ex(BMEdge *edge, BMVert **r_v1, BMVert **r_v2,
 bool BM_edge_is_any_vert_flag_test(BMEdge *e, const char hflag);
 bool BM_face_is_any_vert_flag_test(BMFace *f, const char hflag);
 bool BM_face_is_any_edge_flag_test(BMFace *f, const char hflag);
+
+float BM_mesh_calc_volume(BMesh *bm, bool is_signed);
 
 #endif /* __BMESH_QUERIES_H__ */

@@ -88,7 +88,8 @@ typedef enum PropertyUnit {
 	PROP_UNIT_ROTATION = (5 << 16),       /* radians */
 	PROP_UNIT_TIME = (6 << 16),           /* frame */
 	PROP_UNIT_VELOCITY = (7 << 16),       /* m/s */
-	PROP_UNIT_ACCELERATION = (8 << 16)    /* m/(s^2) */
+	PROP_UNIT_ACCELERATION = (8 << 16),   /* m/(s^2) */
+	PROP_UNIT_CAMERA = (9 << 16)       /* mm */
 } PropertyUnit;
 
 #define RNA_SUBTYPE_UNIT(subtype)       ((subtype) &  0x00FF0000)
@@ -122,6 +123,7 @@ typedef enum PropertySubType {
 	PROP_TIME = 17 | PROP_UNIT_TIME,
 	/* distance in 3d space, don't use for pixel distance for eg. */
 	PROP_DISTANCE = 18 | PROP_UNIT_LENGTH,
+	PROP_DISTANCE_CAMERA = 19 | PROP_UNIT_CAMERA,
 
 	/* number arrays */
 	PROP_COLOR = 20,
@@ -144,7 +146,7 @@ typedef enum PropertySubType {
 } PropertySubType;
 
 /* Make sure enums are updated with thses */
-/* HIGHEST FLAG IN USE: 1 << 28 */
+/* HIGHEST FLAG IN USE: 1 << 29 */
 typedef enum PropertyFlag {
 	/* editable means the property is editable in the user
 	 * interface, properties are editable by default except
@@ -224,7 +226,8 @@ typedef enum PropertyFlag {
 	PROP_RAW_ARRAY = (1 << 14),
 	PROP_FREE_POINTERS = (1 << 15),
 	PROP_DYNAMIC = (1 << 17), /* for dynamic arrays, and retvals of type string */
-	PROP_ENUM_NO_CONTEXT = (1 << 24) /* for enum that shouldn't be contextual */
+	PROP_ENUM_NO_CONTEXT = (1 << 24), /* for enum that shouldn't be contextual */
+	PROP_ENUM_NO_TRANSLATE = (1 << 29), /* for enums that shouldn't be translated (e.g. renderlayers' names in nodes) */
 } PropertyFlag;
 
 typedef struct CollectionPropertyIterator {

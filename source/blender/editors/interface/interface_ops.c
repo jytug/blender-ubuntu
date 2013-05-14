@@ -239,7 +239,7 @@ static void eyedropper_color_sample_accum(bContext *C, Eyedropper *eye, int mx, 
 }
 
 /* main modal status check */
-static int eyedropper_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int eyedropper_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	Eyedropper *eye = (Eyedropper *)op->customdata;
 	
@@ -285,7 +285,7 @@ static int eyedropper_modal(bContext *C, wmOperator *op, wmEvent *event)
 }
 
 /* Modal Operator init */
-static int eyedropper_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int eyedropper_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	/* init */
 	if (eyedropper_init(C, op)) {
@@ -551,7 +551,7 @@ static int copy_to_selected_button_poll(bContext *C)
 					if (use_path) {
 						lprop = NULL;
 						RNA_id_pointer_create(link->ptr.id.data, &idptr);
-						RNA_path_resolve(&idptr, path, &lptr, &lprop);
+						RNA_path_resolve_property(&idptr, path, &lptr, &lprop);
 					}
 					else {
 						lptr = link->ptr;
@@ -601,7 +601,7 @@ static int copy_to_selected_button_exec(bContext *C, wmOperator *op)
 					if (use_path) {
 						lprop = NULL;
 						RNA_id_pointer_create(link->ptr.id.data, &idptr);
-						RNA_path_resolve(&idptr, path, &lptr, &lprop);
+						RNA_path_resolve_property(&idptr, path, &lptr, &lprop);
 					}
 					else {
 						lptr = link->ptr;
@@ -716,7 +716,7 @@ struct uiEditSourceButStore {
 /* should only ever be set while the edit source operator is running */
 static struct uiEditSourceStore *ui_editsource_info = NULL;
 
-int  UI_editsource_enable_check(void)
+bool UI_editsource_enable_check(void)
 {
 	return (ui_editsource_info != NULL);
 }
@@ -853,7 +853,7 @@ static int editsource_exec(bContext *C, wmOperator *op)
 		ED_region_do_draw(C, ar);
 
 		for (BLI_ghashIterator_init(&ghi, ui_editsource_info->hash);
-		     !BLI_ghashIterator_isDone(&ghi);
+		     BLI_ghashIterator_notDone(&ghi);
 		     BLI_ghashIterator_step(&ghi))
 		{
 			uiBut *but_key = BLI_ghashIterator_getKey(&ghi);
@@ -1089,4 +1089,3 @@ void UI_buttons_operatortypes(void)
 #endif
 	WM_operatortype_append(UI_OT_reloadtranslation);
 }
-

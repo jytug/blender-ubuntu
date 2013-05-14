@@ -235,19 +235,20 @@ struct DerivedMesh {
 	 * from the derived mesh (this gives a pointer to the actual data, not
 	 * a copy)
 	 */
-	void *(*getVertData)(DerivedMesh * dm, int index, int type);
-	void *(*getEdgeData)(DerivedMesh * dm, int index, int type);
-	void *(*getTessFaceData)(DerivedMesh * dm, int index, int type);
-	void *(*getPolyData)(DerivedMesh * dm, int index, int type);
+	void *(*getVertData)(DerivedMesh *dm, int index, int type);
+	void *(*getEdgeData)(DerivedMesh *dm, int index, int type);
+	void *(*getTessFaceData)(DerivedMesh *dm, int index, int type);
+	void *(*getPolyData)(DerivedMesh *dm, int index, int type);
 
 	/** Return a pointer to the entire array of vert/edge/face custom data
 	 * from the derived mesh (this gives a pointer to the actual data, not
 	 * a copy)
 	 */
-	void *(*getVertDataArray)(DerivedMesh * dm, int type);
-	void *(*getEdgeDataArray)(DerivedMesh * dm, int type);
-	void *(*getTessFaceDataArray)(DerivedMesh * dm, int type);
-	void *(*getPolyDataArray)(DerivedMesh * dm, int type);
+	void *(*getVertDataArray)(DerivedMesh *dm, int type);
+	void *(*getEdgeDataArray)(DerivedMesh *dm, int type);
+	void *(*getTessFaceDataArray)(DerivedMesh *dm, int type);
+	void *(*getLoopDataArray)(DerivedMesh *dm, int type);
+	void *(*getPolyDataArray)(DerivedMesh *dm, int type);
 
 	/** Retrieves the base CustomData structures for
 	 * verts/edges/tessfaces/loops/facdes*/
@@ -467,7 +468,7 @@ int DM_release(DerivedMesh *dm);
 
 /** utility function to convert a DerivedMesh to a Mesh
  */
-void DM_to_mesh(DerivedMesh *dm, struct Mesh *me, struct Object *ob);
+void DM_to_mesh(DerivedMesh *dm, struct Mesh *me, struct Object *ob, CustomDataMask mask);
 
 struct BMEditMesh *DM_to_editbmesh(struct DerivedMesh *dm,
                                    struct BMEditMesh *existing, int do_tessellate);
@@ -608,7 +609,7 @@ void DM_interp_poly_data(struct DerivedMesh *source, struct DerivedMesh *dest,
                          float *weights, int count, int dest_index);
 
 /* Temporary? A function to give a colorband to derivedmesh for vertexcolor ranges */
-void vDM_ColorBand_store(struct ColorBand *coba);
+void vDM_ColorBand_store(const struct ColorBand *coba, const char alert_color[4]);
 
 /** Simple function to get me->totvert amount of vertices/normals,
  * correctly deformed and subsurfered. Needed especially when vertexgroups are involved.

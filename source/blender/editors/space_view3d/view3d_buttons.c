@@ -60,7 +60,7 @@
 #include "BKE_main.h"
 #include "BKE_mesh.h"
 #include "BKE_screen.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_deform.h"
 #include "BKE_object.h"
 
@@ -158,7 +158,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 	TransformProperties *tfp;
 	float median[NBR_TRANSFORM_PROPERTIES], ve_median[NBR_TRANSFORM_PROPERTIES];
 	int tot, totedgedata, totcurvedata, totlattdata, totskinradius, totcurvebweight;
-	int meshdata = FALSE;
+	bool has_meshdata = false;
 	char defstr[320];
 	PointerRNA data_ptr;
 
@@ -253,7 +253,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			}
 		}
 
-		meshdata = totedgedata || totskinradius;
+		has_meshdata = (totedgedata || totskinradius);
 	}
 	else if (ob->type == OB_CURVE || ob->type == OB_SURF) {
 		Curve *cu = ob->data;
@@ -360,7 +360,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 	if (v3d->flag & V3D_GLOBAL_STATS)
 		mul_m4_v3(ob->obmat, &median[LOC_X]);
 
-	if (meshdata) {
+	if (has_meshdata) {
 		if (totedgedata) {
 			median[M_CREASE] /= (float)totedgedata;
 			median[M_WEIGHT] /= (float)totedgedata;
@@ -428,7 +428,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		uiBlockEndAlign(block);
 
 		/* Meshes... */
-		if (meshdata) {
+		if (has_meshdata) {
 			if (totedgedata) {
 				/* customdata layer added on demand */
 				uiDefButF(block, NUM, B_OBJECTPANELMEDIAN,
@@ -808,8 +808,8 @@ static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int inde
 			if (def_nr == -1) {
 				/* all vgroups, add groups where neded  */
 				int flip_map_len;
-				int *flip_map = defgroup_flip_map(ob, &flip_map_len, TRUE);
-				defvert_sync_mapped(dvert_dst, dvert_src, flip_map, flip_map_len, TRUE);
+				int *flip_map = defgroup_flip_map(ob, &flip_map_len, true);
+				defvert_sync_mapped(dvert_dst, dvert_src, flip_map, flip_map_len, true);
 				MEM_freeN(flip_map);
 			}
 			else {
@@ -1270,12 +1270,14 @@ void view3d_buttons_register(ARegionType *art)
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel object");
 	strcpy(pt->idname, "VIEW3D_PT_object");
 	strcpy(pt->label, N_("Transform"));  /* XXX C panels not  available through RNA (bpy.types)! */
+	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw = view3d_panel_object;
 	BLI_addtail(&art->paneltypes, pt);
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel gpencil");
 	strcpy(pt->idname, "VIEW3D_PT_gpencil");
 	strcpy(pt->label, N_("Grease Pencil"));  /* XXX C panels are not available through RNA (bpy.types)! */
+	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw_header = gpencil_panel_standard_header;
 	pt->draw = gpencil_panel_standard;
 	BLI_addtail(&art->paneltypes, pt);
@@ -1283,6 +1285,7 @@ void view3d_buttons_register(ARegionType *art)
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel vgroup");
 	strcpy(pt->idname, "VIEW3D_PT_vgroup");
 	strcpy(pt->label, N_("Vertex Groups"));  /* XXX C panels are not available through RNA (bpy.types)! */
+	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw = view3d_panel_vgroup;
 	pt->poll = view3d_panel_vgroup_poll;
 	BLI_addtail(&art->paneltypes, pt);
