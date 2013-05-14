@@ -233,7 +233,7 @@ static void draw_modifier__generator(uiLayout *layout, ID *id, FModifier *fcm, s
 				
 				/* closing bracket and multiplication sign */
 				if ( (i != (data->poly_order - 1)) || ((i == 0) && data->poly_order == 2) ) {
-					uiDefBut(block, LABEL, 1, ") ×", 0, 0, 40, 20, NULL, 0.0, 0.0, 0, 0, "");
+					uiDefBut(block, LABEL, 1, ") \xc3\x97", 0, 0, 40, 20, NULL, 0.0, 0.0, 0, 0, "");
 					
 					/* set up new row for the next pair of coefficients */
 					row = uiLayoutRow(layout, TRUE);
@@ -343,7 +343,7 @@ static void fmod_envelope_addpoint_cb(bContext *C, void *fcm_dv, void *UNUSED(ar
 	
 	/* check that no data exists for the current frame... */
 	if (env->data) {
-		short exists = -1;
+		bool exists;
 		int i = BKE_fcm_envelope_find_index(env->data, (float)(scene->r.cfra), env->totvert, &exists);
 		
 		/* binarysearch_...() will set exists by default to 0, so if it is non-zero, that means that the point exists already */
@@ -584,9 +584,9 @@ void ANIM_uiTemplate_fmodifier_draw(uiLayout *layout, ID *id, ListBase *modifier
 		
 		/* name */
 		if (fmi)
-			uiItemL(sub, fmi->name, ICON_NONE);
+			uiItemL(sub, IFACE_(fmi->name), ICON_NONE);
 		else
-			uiItemL(sub, "<Unknown Modifier>", ICON_NONE);
+			uiItemL(sub, IFACE_("<Unknown Modifier>"), ICON_NONE);
 		
 		/* right-align ------------------------------------------- */
 		sub = uiLayoutRow(row, TRUE);

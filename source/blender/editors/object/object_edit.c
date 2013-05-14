@@ -79,7 +79,7 @@
 #include "BKE_sca.h"
 #include "BKE_softbody.h"
 #include "BKE_modifier.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "ED_armature.h"
 #include "ED_curve.h"
@@ -150,7 +150,7 @@ static int object_hide_view_clear_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 	if (changed) {
 		DAG_id_type_tag(bmain, ID_OB);
-		DAG_scene_sort(bmain, scene);
+		DAG_relations_tag_update(bmain);
 		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
 	}
 
@@ -207,7 +207,7 @@ static int object_hide_view_set_exec(bContext *C, wmOperator *op)
 
 	if (changed) {
 		DAG_id_type_tag(bmain, ID_OB);
-		DAG_scene_sort(bmain, scene);
+		DAG_relations_tag_update(bmain);
 		
 		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, CTX_data_scene(C));
 		
@@ -312,29 +312,26 @@ void OBJECT_OT_hide_render_set(wmOperatorType *ot)
 
 /* ******************* toggle editmode operator  ***************** */
 
-void ED_object_exit_editmode(bContext *C, int flag)
+/**
+ * Load EditMode data back into the object,
+ * optionally freeing the editmode data.
+ */
+static bool ED_object_editmode_load_ex(Object *obedit, const bool freedata)
 {
-	/* Note! only in exceptional cases should 'EM_DO_UNDO' NOT be in the flag */
+	if (obedit == NULL) {
+		return false;
+	}
 
-	Scene *scene = CTX_data_scene(C);
-	Object *obedit = CTX_data_edit_object(C);
-	int freedata = flag & EM_FREEDATA;
-	
-	if (obedit == NULL) return;
-	
-	if (flag & EM_WAITCURSOR) waitcursor(1);
 	if (obedit->type == OB_MESH) {
 		Mesh *me = obedit->data;
-		
-//		if (EM_texFaceCheck())
-		
+
 		if (me->edit_btmesh->bm->totvert > MESH_MAX_VERTS) {
 			error("Too many vertices");
-			return;
+			return false;
 		}
-		
+
 		EDBM_mesh_load(obedit);
-		
+
 		if (freedata) {
 			EDBM_mesh_free(me->edit_btmesh);
 			MEM_freeN(me->edit_btmesh);
@@ -367,6 +364,29 @@ void ED_object_exit_editmode(bContext *C, int flag)
 		if (freedata) free_editMball(obedit);
 	}
 
+	return true;
+}
+
+bool ED_object_editmode_load(Object *obedit)
+{
+	return ED_object_editmode_load_ex(obedit, false);
+}
+
+void ED_object_editmode_exit(bContext *C, int flag)
+{
+	/* Note! only in exceptional cases should 'EM_DO_UNDO' NOT be in the flag */
+	/* Note! if 'EM_FREEDATA' isn't in the flag, use ED_object_editmode_load directly */
+	Scene *scene = CTX_data_scene(C);
+	Object *obedit = CTX_data_edit_object(C);
+	const bool freedata = (flag & EM_FREEDATA) != 0;
+
+	if (flag & EM_WAITCURSOR) waitcursor(1);
+
+	if (ED_object_editmode_load_ex(obedit, freedata) == false) {
+		if (flag & EM_WAITCURSOR) waitcursor(0);
+		return;
+	}
+
 	/* freedata only 0 now on file saves and render */
 	if (freedata) {
 		ListBase pidlist;
@@ -390,17 +410,17 @@ void ED_object_exit_editmode(bContext *C, int flag)
 	
 		if (flag & EM_DO_UNDO)
 			ED_undo_push(C, "Editmode");
-	
-		if (flag & EM_WAITCURSOR) waitcursor(0);
-	
+
 		WM_event_add_notifier(C, NC_SCENE | ND_MODE | NS_MODE_OBJECT, scene);
 
 		obedit->mode &= ~OB_MODE_EDIT;
 	}
+
+	if (flag & EM_WAITCURSOR) waitcursor(0);
 }
 
 
-void ED_object_enter_editmode(bContext *C, int flag)
+void ED_object_editmode_enter(bContext *C, int flag)
 {
 	Scene *scene = CTX_data_scene(C);
 	Base *base = NULL;
@@ -456,11 +476,11 @@ void ED_object_enter_editmode(bContext *C, int flag)
 
 		EDBM_mesh_make(CTX_data_tool_settings(C), scene, ob);
 
-		em = BMEdit_FromObject(ob);
+		em = BKE_editmesh_from_object(ob);
 		if (LIKELY(em)) {
 			/* order doesn't matter */
 			EDBM_mesh_normals_update(em);
-			BMEdit_RecalcTessellation(em);
+			BKE_editmesh_tessface_calc(em);
 
 			BM_mesh_select_mode_flush(em->bm);
 		}
@@ -537,9 +557,9 @@ static int editmode_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 	ToolSettings *toolsettings =  CTX_data_tool_settings(C);
 
 	if (!CTX_data_edit_object(C))
-		ED_object_enter_editmode(C, EM_WAITCURSOR);
+		ED_object_editmode_enter(C, EM_WAITCURSOR);
 	else
-		ED_object_exit_editmode(C, EM_FREEDATA | EM_FREEUNDO | EM_WAITCURSOR);  /* had EM_DO_UNDO but op flag calls undo too [#24685] */
+		ED_object_editmode_exit(C, EM_FREEDATA | EM_FREEUNDO | EM_WAITCURSOR);  /* had EM_DO_UNDO but op flag calls undo too [#24685] */
 	
 	ED_space_image_uv_sculpt_update(CTX_wm_manager(C), toolsettings);
 
@@ -589,7 +609,7 @@ static int posemode_exec(bContext *C, wmOperator *UNUSED(op))
 	
 	if (base->object->type == OB_ARMATURE) {
 		if (base->object == CTX_data_edit_object(C)) {
-			ED_object_exit_editmode(C, EM_FREEDATA | EM_DO_UNDO);
+			ED_object_editmode_exit(C, EM_FREEDATA | EM_DO_UNDO);
 			ED_armature_enter_posemode(C, base);
 		}
 		else if (base->object->mode & OB_MODE_POSE)
@@ -771,7 +791,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 	Base *base;
 	Curve *cu, *cu1;
 	Nurb *nu;
-	int do_scene_sort = FALSE;
+	bool do_depgraph_update = false;
 	
 	if (scene->id.lib) return;
 
@@ -798,7 +818,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 	for (base = FIRSTBASE; base; base = base->next) {
 		if (base != BASACT) {
 			if (TESTBASELIB(v3d, base)) {
-				base->object->recalc |= OB_RECALC_OB;
+				DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 				
 				if (event == 1) {  /* loc */
 					copy_v3_v3(base->object->loc, ob->loc);
@@ -897,7 +917,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 						
 						BLI_strncpy(cu1->family, cu->family, sizeof(cu1->family));
 						
-						base->object->recalc |= OB_RECALC_DATA;
+						DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 					}
 				}
 				else if (event == 19) {   /* bevel settings */
@@ -913,7 +933,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 						cu1->ext1 = cu->ext1;
 						cu1->ext2 = cu->ext2;
 						
-						base->object->recalc |= OB_RECALC_DATA;
+						DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 					}
 				}
 				else if (event == 25) {   /* curve resolution */
@@ -932,7 +952,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 							nu = nu->next;
 						}
 						
-						base->object->recalc |= OB_RECALC_DATA;
+						DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 					}
 				}
 				else if (event == 21) {
@@ -948,7 +968,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 							}
 
 							modifier_copyData(md, tmd);
-							base->object->recalc |= OB_RECALC_DATA;
+							DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 						}
 					}
 				}
@@ -956,7 +976,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 					/* Copy the constraint channels over */
 					BKE_copy_constraints(&base->object->constraints, &ob->constraints, TRUE);
 					
-					do_scene_sort = TRUE;
+					do_depgraph_update = true;
 				}
 				else if (event == 23) {
 					base->object->softflag = ob->softflag;
@@ -1008,13 +1028,11 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 		}
 	}
 	
-	if (do_scene_sort)
-		DAG_scene_sort(bmain, scene);
-
-	DAG_ids_flush_update(bmain, 0);
+	if (do_depgraph_update)
+		DAG_relations_tag_update(bmain);
 }
 
-static void UNUSED_FUNCTION(copy_attr_menu) (Main * bmain, Scene * scene, View3D * v3d)
+static void UNUSED_FUNCTION(copy_attr_menu) (Main *bmain, Scene *scene, View3D *v3d)
 {
 	Object *ob;
 	short event;
@@ -1134,7 +1152,7 @@ void ED_objects_recalculate_paths(bContext *C, Scene *scene)
 
 
 /* show popup to determine settings */
-static int object_calculate_paths_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int object_calculate_paths_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Object *ob = CTX_data_active_object(C);
 	
@@ -1332,7 +1350,7 @@ void OBJECT_OT_shade_flat(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Shade Flat";
-	ot->description = "Display faces 'flat'";
+	ot->description = "Render and display faces uniform, using Face Normals";
 	ot->idname = "OBJECT_OT_shade_flat";
 	
 	/* api callbacks */
@@ -1347,7 +1365,7 @@ void OBJECT_OT_shade_smooth(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Shade Smooth";
-	ot->description = "Display faces 'smooth' (using vertex normals)";
+	ot->description = "Render and display faces smooth, using interpolated Vertex Normals";
 	ot->idname = "OBJECT_OT_shade_smooth";
 	
 	/* api callbacks */
@@ -1360,7 +1378,7 @@ void OBJECT_OT_shade_smooth(wmOperatorType *ot)
 
 /* ********************** */
 
-static void UNUSED_FUNCTION(image_aspect) (Scene * scene, View3D * v3d)
+static void UNUSED_FUNCTION(image_aspect) (Scene *scene, View3D *v3d)
 {
 	/* all selected objects with an image map: scale in image aspect */
 	Base *base;

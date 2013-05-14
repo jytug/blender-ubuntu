@@ -51,7 +51,7 @@ FilterRGB24 defFilter;
 // forward declaration;
 extern PyTypeObject ImageBuffType;
 
-static int ImageBuff_init (PyObject *pySelf, PyObject *args, PyObject *kwds)
+static int ImageBuff_init(PyObject *pySelf, PyObject *args, PyObject *kwds)
 {
 	short width = -1;
 	short height = -1;
@@ -94,7 +94,7 @@ ImageBuff::~ImageBuff (void)
 
 
 // load image from buffer
-void ImageBuff::load (unsigned char * img, short width, short height)
+void ImageBuff::load(unsigned char *img, short width, short height)
 {
 	// loading a new buffer implies to reset the imbuf if any, because the size may change
 	if (m_imbuf)
@@ -117,7 +117,7 @@ void ImageBuff::load (unsigned char * img, short width, short height)
 	m_avail = true;
 }
 
-void ImageBuff::clear (short width, short height, unsigned char color)
+void ImageBuff::clear(short width, short height, unsigned char color)
 {
 	unsigned char *p;
 	int size;
@@ -146,7 +146,7 @@ void ImageBuff::clear (short width, short height, unsigned char color)
 }
 
 // img must point to a array of RGBA data of size width*height
-void ImageBuff::plot (unsigned char * img, short width, short height, short x, short y, short mode)
+void ImageBuff::plot(unsigned char *img, short width, short height, short x, short y, short mode)
 {
 	struct ImBuf *tmpbuf;
 
@@ -163,14 +163,14 @@ void ImageBuff::plot (unsigned char * img, short width, short height, short x, s
 	// assign temporarily our buffer to the ImBuf buffer, we use the same format
 	tmpbuf->rect = (unsigned int*)img;
 	m_imbuf->rect = m_image;
-	IMB_rectblend(m_imbuf, tmpbuf, x, y, 0, 0, width, height, (IMB_BlendMode)mode);
+	IMB_rectblend(m_imbuf, m_imbuf, tmpbuf, NULL, 0, x, y, x, y, 0, 0, width, height, (IMB_BlendMode)mode);
 	// remove so that MB_freeImBuf will free our buffer
 	m_imbuf->rect = NULL;
 	tmpbuf->rect = NULL;
 	IMB_freeImBuf(tmpbuf);
 }
 
-void ImageBuff::plot (ImageBuff* img, short x, short y, short mode)
+void ImageBuff::plot(ImageBuff *img, short x, short y, short mode)
 {
 	if (m_size[0] == 0 || m_size[1] == 0 || img->m_size[0] == 0 || img->m_size[1] == 0)
 		return;
@@ -186,7 +186,7 @@ void ImageBuff::plot (ImageBuff* img, short x, short y, short mode)
 	// assign temporarily our buffer to the ImBuf buffer, we use the same format
 	img->m_imbuf->rect = img->m_image;
 	m_imbuf->rect = m_image;
-	IMB_rectblend(m_imbuf, img->m_imbuf, x, y, 0, 0, img->m_imbuf->x, img->m_imbuf->y, (IMB_BlendMode)mode);
+	IMB_rectblend(m_imbuf, m_imbuf, img->m_imbuf, NULL, 0, x, y, x, y, 0, 0, img->m_imbuf->x, img->m_imbuf->y, (IMB_BlendMode)mode);
 	// remove so that MB_freeImBuf will free our buffer
 	m_imbuf->rect = NULL;
 	img->m_imbuf->rect = NULL;
@@ -194,13 +194,13 @@ void ImageBuff::plot (ImageBuff* img, short x, short y, short mode)
 
 
 // cast Image pointer to ImageBuff
-inline ImageBuff * getImageBuff (PyImage *self)
-{ return static_cast<ImageBuff*>(self->m_image); }
+inline ImageBuff *getImageBuff(PyImage *self)
+{ return static_cast<ImageBuff *>(self->m_image); }
 
 
 // python methods
 
-static bool testPyBuffer(Py_buffer* buffer, int width, int height, unsigned int pixsize)
+static bool testPyBuffer(Py_buffer *buffer, int width, int height, unsigned int pixsize)
 {
 	if (buffer->itemsize != 1)
 	{
@@ -232,7 +232,7 @@ static bool testPyBuffer(Py_buffer* buffer, int width, int height, unsigned int 
 	return true;
 }
 
-static bool testBGLBuffer(Buffer* buffer, int width, int height, unsigned int pixsize)
+static bool testBGLBuffer(Buffer *buffer, int width, int height, unsigned int pixsize)
 {
 	unsigned int size = BGL_typeSize(buffer->type);
 	for (int i=0; i<buffer->ndimensions; i++)
@@ -313,7 +313,7 @@ static PyObject *load(PyImage *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-static PyObject *plot (PyImage *self, PyObject *args)
+static PyObject *plot(PyImage *self, PyObject *args)
 {
 	PyImage * other;
 	Buffer* bglBuffer;
@@ -362,15 +362,14 @@ static PyObject *plot (PyImage *self, PyObject *args)
 }
 
 // methods structure
-static PyMethodDef imageBuffMethods[] =
-{ 
+static PyMethodDef imageBuffMethods[] = {
 	{"load", (PyCFunction)load, METH_VARARGS, "Load image from buffer"},
 	{"plot", (PyCFunction)plot, METH_VARARGS, "update image buffer"},
 	{NULL}
 };
 // attributes structure
-static PyGetSetDef imageBuffGetSets[] =
-{	// attributes from ImageBase class
+static PyGetSetDef imageBuffGetSets[] = {
+	// attributes from ImageBase class
 	{(char*)"valid", (getter)Image_valid, NULL, (char*)"bool to tell if an image is available", NULL},
 	{(char*)"image", (getter)Image_getImage, NULL, (char*)"image data", NULL},
 	{(char*)"size", (getter)Image_getSize, NULL, (char*)"image size", NULL},
@@ -382,8 +381,7 @@ static PyGetSetDef imageBuffGetSets[] =
 
 
 // define python type
-PyTypeObject ImageBuffType =
-{ 
+PyTypeObject ImageBuffType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"VideoTexture.ImageBuff",   /*tp_name*/
 	sizeof(PyImage),          /*tp_basicsize*/

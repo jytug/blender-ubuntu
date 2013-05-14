@@ -87,6 +87,7 @@ enum {
 	TH_TRANSFORM,
 	TH_VERTEX,
 	TH_VERTEX_SELECT,
+	TH_VERTEX_UNREFERENCED,
 	TH_VERTEX_SIZE,
 	TH_OUTLINE_WIDTH,
 	TH_EDGE,
@@ -143,6 +144,7 @@ enum {
 	
 	TH_NODE,
 	TH_NODE_IN_OUT,
+	TH_NODE_INTERFACE,
 	TH_NODE_OPERATOR,
 	TH_NODE_CONVERTOR,
 	TH_NODE_GROUP,
@@ -183,6 +185,7 @@ enum {
 	TH_EDGE_CREASE,
 
 	TH_DRAWEXTRA_EDGELEN,
+	TH_DRAWEXTRA_EDGEANG,
 	TH_DRAWEXTRA_FACEAREA,
 	TH_DRAWEXTRA_FACEANG,
 
@@ -205,6 +208,9 @@ enum {
 	TH_STITCH_PREVIEW_STITCHABLE,
 	TH_STITCH_PREVIEW_UNSTITCHABLE,
 	TH_STITCH_PREVIEW_ACTIVE,
+
+	TH_FREESTYLE_EDGE_MARK,
+	TH_FREESTYLE_FACE_MARK,
 
 	TH_MATCH,           /* highlight color for search matches */
 	TH_SELECT_HIGHLIGHT, /* highlight color for selected outliner item */
@@ -305,4 +311,4 @@ const unsigned char *UI_ThemeGetColorPtr(struct bTheme *btheme, int spacetype, i
 
 void UI_make_axis_color(const unsigned char *src_col, unsigned char *dst_col, const char axis);
 
-#endif /*  UI_ICONS_H */
+#endif  /* __UI_RESOURCES_H__ */

@@ -38,6 +38,8 @@
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"        /* for rectcpy */
 
@@ -244,10 +246,26 @@ static void envmap_transmatrix(float mat[4][4], int part)
 	             NULL, NULL, NULL,
 	             NULL, NULL, NULL);
 }
+/* ------------------------------------------------------------------------- */
+
+static void env_set_imats(Render *re)
+{
+	Base *base;
+	float mat[4][4];
+	
+	base = re->scene->base.first;
+	while (base) {
+		mult_m4_m4m4(mat, re->viewmat, base->object->obmat);
+		invert_m4_m4(base->object->imat, mat);
+		
+		base = base->next;
+	}
+	
+}
 
 /* ------------------------------------------------------------------------- */
 
-static void env_rotate_scene(Render *re, float mat[4][4], int mode)
+void env_rotate_scene(Render *re, float mat[4][4], int mode)
 {
 	GroupObject *go;
 	ObjectRen *obr;
@@ -326,6 +344,10 @@ static void env_rotate_scene(Render *re, float mat[4][4], int mode)
 		}
 	}
 	
+	if (mode) {
+		init_render_world(re);
+		env_set_imats(re);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -393,23 +415,6 @@ static void env_showobjects(Render *re)
 
 /* ------------------------------------------------------------------------- */
 
-static void env_set_imats(Render *re)
-{
-	Base *base;
-	float mat[4][4];
-	
-	base = re->scene->base.first;
-	while (base) {
-		mult_m4_m4m4(mat, re->viewmat, base->object->obmat);
-		invert_m4_m4(base->object->imat, mat);
-		
-		base = base->next;
-	}
-
-}	
-
-/* ------------------------------------------------------------------------- */
-
 static void render_envmap(Render *re, EnvMap *env)
 {
 	/* only the cubemap and planar map is implemented */
@@ -452,11 +457,9 @@ static void render_envmap(Render *re, EnvMap *env)
 		invert_m4_m4(env->imat, tmat);
 		
 		env_rotate_scene(envre, tmat, 1);
-		init_render_world(envre);
 		project_renderdata(envre, projectverto, 0, 0, 1);
 		env_layerflags(envre, env->notlay);
 		env_hideobject(envre, env->object);
-		env_set_imats(envre);
 				
 		if (re->test_break(re->tbh) == 0) {
 			RE_TileProcessor(envre);
@@ -512,7 +515,7 @@ void make_envmaps(Render *re)
 	trace = (re->r.mode & R_RAYTRACE);
 	re->r.mode &= ~R_RAYTRACE;
 
-	re->i.infostr = "Creating Environment maps";
+	re->i.infostr = IFACE_("Creating Environment maps");
 	re->stats_draw(re->sdh, &re->i);
 	
 	/* 5 = hardcoded max recursion level */

@@ -32,8 +32,6 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BKE_cloth.h"
-
 #include "DNA_cloth_types.h"
 #include "DNA_group_types.h"
 #include "DNA_mesh_types.h"
@@ -52,11 +50,12 @@
 #include "BLI_rand.h"
 
 #include "BKE_DerivedMesh.h"
+#include "BKE_cloth.h"
 #include "BKE_global.h"
-#include "BKE_scene.h"
 #include "BKE_mesh.h"
-#include "BKE_object.h"
 #include "BKE_modifier.h"
+#include "BKE_object.h"
+#include "BKE_scene.h"
 
 #include "BKE_DerivedMesh.h"
 #ifdef WITH_BULLET
@@ -116,7 +115,7 @@ BVHTree *bvhtree_build_from_mvert ( MFace *mfaces, unsigned int numfaces, MVert 
 	return tree;
 }
 
-void bvhtree_update_from_mvert(BVHTree * bvhtree, MFace *faces, int numfaces, MVert *x, MVert *xnew, int UNUSED(numverts), int moving )
+void bvhtree_update_from_mvert(BVHTree *bvhtree, MFace *faces, int numfaces, MVert *x, MVert *xnew, int UNUSED(numverts), int moving )
 {
 	int i;
 	MFace *mfaces = faces;
@@ -654,7 +653,7 @@ static void cloth_bvh_objcollisions_nearcheck ( ClothModifierData * clmd, Collis
 {
 	int i;
 	
-	*collisions = (CollPair *) MEM_mallocN(sizeof(CollPair) * numresult * 64, "collision array" ); //*4 since cloth_collision_static can return more than 1 collision
+	*collisions = (CollPair *) MEM_mallocN(sizeof(CollPair) * numresult * 64, "collision array" ); // * 4 since cloth_collision_static can return more than 1 collision
 	*collisions_index = *collisions;
 
 	for ( i = 0; i < numresult; i++ ) {
@@ -706,7 +705,7 @@ static int cloth_bvh_objcollisions_resolve ( ClothModifierData * clmd, Collision
 }
 
 // cloth - object collisions
-int cloth_bvh_objcollision(Object *ob, ClothModifierData * clmd, float step, float dt )
+int cloth_bvh_objcollision(Object *ob, ClothModifierData *clmd, float step, float dt )
 {
 	Cloth *cloth= clmd->clothObject;
 	BVHTree *cloth_bvh= cloth->bvhtree;

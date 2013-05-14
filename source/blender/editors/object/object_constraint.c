@@ -40,6 +40,8 @@
 #include "BLI_dynstr.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_anim_types.h"
 #include "DNA_constraint_types.h"
 #include "DNA_curve_types.h"
@@ -433,7 +435,9 @@ static void test_constraints(Object *owner, bPoseChannel *pchan)
 								curcon->flag |= CONSTRAINT_DISABLE;
 						}
 					}
-					else curcon->flag |= CONSTRAINT_DISABLE;
+					else {
+						curcon->flag |= CONSTRAINT_DISABLE;
+					}
 				}
 			}
 			else if (curcon->type == CONSTRAINT_TYPE_CAMERASOLVER) {
@@ -600,7 +604,7 @@ static bConstraint *edit_constraint_property_get(wmOperator *op, Object *ob, int
 			list = &pchan->constraints;
 		else {
 			//if (G.debug & G_DEBUG)
-			//printf("edit_constraint_property_get: No active bone for object '%s'\n", (ob)? ob->id.name+2 : "<None>");
+			//printf("edit_constraint_property_get: No active bone for object '%s'\n", (ob) ? ob->id.name + 2 : "<None>");
 			return NULL;
 		}
 	}
@@ -612,7 +616,7 @@ static bConstraint *edit_constraint_property_get(wmOperator *op, Object *ob, int
 	
 	con = BKE_constraints_findByName(list, constraint_name);
 	//if (G.debug & G_DEBUG)
-	//printf("constraint found = %p, %s\n", (void *)con, (con)?con->name:"<Not found>");
+	//printf("constraint found = %p, %s\n", (void *)con, (con) ? con->name : "<Not found>");
 
 	if (con && (type != 0) && (con->type != type))
 		con = NULL;
@@ -643,7 +647,7 @@ static int stretchto_reset_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int stretchto_reset_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int stretchto_reset_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	if (edit_constraint_invoke_properties(C, op))
 		return stretchto_reset_exec(C, op);
@@ -689,7 +693,7 @@ static int limitdistance_reset_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int limitdistance_reset_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int limitdistance_reset_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	if (edit_constraint_invoke_properties(C, op))
 		return limitdistance_reset_exec(C, op);
@@ -825,7 +829,7 @@ static int childof_set_inverse_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int childof_set_inverse_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int childof_set_inverse_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	if (edit_constraint_invoke_properties(C, op))
 		return childof_set_inverse_exec(C, op);
@@ -872,7 +876,7 @@ static int childof_clear_inverse_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int childof_clear_inverse_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int childof_clear_inverse_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	if (edit_constraint_invoke_properties(C, op))
 		return childof_clear_inverse_exec(C, op);
@@ -989,7 +993,7 @@ static int followpath_path_animate_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int followpath_path_animate_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int followpath_path_animate_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	/* hook up invoke properties for figuring out which constraint we're dealing with */
 	if (edit_constraint_invoke_properties(C, op)) {
@@ -1047,7 +1051,7 @@ static int objectsolver_set_inverse_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int objectsolver_set_inverse_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int objectsolver_set_inverse_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	if (edit_constraint_invoke_properties(C, op))
 		return objectsolver_set_inverse_exec(C, op);
@@ -1093,7 +1097,7 @@ static int objectsolver_clear_inverse_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int objectsolver_clear_inverse_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int objectsolver_clear_inverse_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	if (edit_constraint_invoke_properties(C, op))
 		return objectsolver_clear_inverse_exec(C, op);
@@ -1146,12 +1150,12 @@ void ED_object_constraint_update(Object *ob)
 		DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 }
 
-void ED_object_constraint_dependency_update(Main *bmain, Scene *scene, Object *ob)
+void ED_object_constraint_dependency_update(Main *bmain, Object *ob)
 {
 	ED_object_constraint_update(ob);
 
 	if (ob->pose) ob->pose->flag |= POSE_RECALC;    // checks & sorts pose channels
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 }
 
 static int constraint_poll(bContext *C)
@@ -1229,7 +1233,7 @@ static int constraint_move_down_exec(bContext *C, wmOperator *op)
 	return OPERATOR_CANCELLED;
 }
 
-static int constraint_move_down_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int constraint_move_down_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	if (edit_constraint_invoke_properties(C, op))
 		return constraint_move_down_exec(C, op);
@@ -1278,7 +1282,7 @@ static int constraint_move_up_exec(bContext *C, wmOperator *op)
 	return OPERATOR_CANCELLED;
 }
 
-static int constraint_move_up_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int constraint_move_up_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	if (edit_constraint_invoke_properties(C, op))
 		return constraint_move_up_exec(C, op);
@@ -1310,7 +1314,6 @@ void CONSTRAINT_OT_move_up(wmOperatorType *ot)
 static int pose_constraints_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
 	
 	/* free constraints for all selected bones */
@@ -1322,7 +1325,7 @@ static int pose_constraints_clear_exec(bContext *C, wmOperator *UNUSED(op))
 	CTX_DATA_END;
 	
 	/* force depsgraph to get recalculated since relationships removed */
-	DAG_scene_sort(bmain, scene);       /* sort order of objects */
+	DAG_relations_tag_update(bmain);
 	
 	/* note, calling BIK_clear_data() isn't needed here */
 
@@ -1349,7 +1352,6 @@ void POSE_OT_constraints_clear(wmOperatorType *ot)
 static int object_constraints_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	
 	/* do freeing */
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
@@ -1360,7 +1362,7 @@ static int object_constraints_clear_exec(bContext *C, wmOperator *UNUSED(op))
 	CTX_DATA_END;
 	
 	/* force depsgraph to get recalculated since relationships removed */
-	DAG_scene_sort(bmain, scene);       /* sort order of objects */
+	DAG_relations_tag_update(bmain);
 	
 	/* do updates */
 	WM_event_add_notifier(C, NC_OBJECT | ND_CONSTRAINT, NULL);
@@ -1385,7 +1387,6 @@ void OBJECT_OT_constraints_clear(wmOperatorType *ot)
 static int pose_constraint_copy_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	bPoseChannel *pchan = CTX_data_active_pose_bone(C);
 	
 	/* don't do anything if bone doesn't exist or doesn't have any constraints */
@@ -1407,7 +1408,7 @@ static int pose_constraint_copy_exec(bContext *C, wmOperator *op)
 	CTX_DATA_END;
 	
 	/* force depsgraph to get recalculated since new relationships added */
-	DAG_scene_sort(bmain, scene);       /* sort order of objects/bones */
+	DAG_relations_tag_update(bmain);
 
 	WM_event_add_notifier(C, NC_OBJECT | ND_CONSTRAINT, NULL);
 	
@@ -1432,7 +1433,6 @@ void POSE_OT_constraints_copy(wmOperatorType *ot)
 static int object_constraint_copy_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	Object *obact = ED_object_active_context(C);
 	
 	/* copy all constraints from active object to all selected objects */
@@ -1447,7 +1447,7 @@ static int object_constraint_copy_exec(bContext *C, wmOperator *UNUSED(op))
 	CTX_DATA_END;
 	
 	/* force depsgraph to get recalculated since new relationships added */
-	DAG_scene_sort(bmain, scene);       /* sort order of objects */
+	DAG_relations_tag_update(bmain);
 	
 	/* notifiers for updates */
 	WM_event_add_notifier(C, NC_OBJECT | ND_CONSTRAINT | NA_ADDED, NULL);
@@ -1572,12 +1572,13 @@ static short get_new_constraint_target(bContext *C, int con_type, Object **tar_o
 	
 	/* if still not found, add a new empty to act as a target (if allowed) */
 	if ((found == 0) && (add)) {
+		Main *bmain = CTX_data_main(C);
 		Scene *scene = CTX_data_scene(C);
 		Base *base = BASACT, *newbase = NULL;
 		Object *obt;
 		
 		/* add new target object */
-		obt = BKE_object_add(scene, OB_EMPTY);
+		obt = BKE_object_add(bmain, scene, OB_EMPTY);
 		
 		/* set layers OK */
 		newbase = BASACT;
@@ -1615,7 +1616,6 @@ static short get_new_constraint_target(bContext *C, int con_type, Object **tar_o
 static int constraint_add_exec(bContext *C, wmOperator *op, Object *ob, ListBase *list, int type, short setTarget)
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	bPoseChannel *pchan;
 	bConstraint *con;
 	
@@ -1709,7 +1709,7 @@ static int constraint_add_exec(bContext *C, wmOperator *op, Object *ob, ListBase
 
 
 	/* force depsgraph to get recalculated since new relationships added */
-	DAG_scene_sort(bmain, scene);       /* sort order of objects */
+	DAG_relations_tag_update(bmain);
 	
 	if ((ob->type == OB_ARMATURE) && (pchan)) {
 		ob->pose->flag |= POSE_RECALC;  /* sort pose channels */
@@ -1851,7 +1851,7 @@ void POSE_OT_constraint_add_with_targets(wmOperatorType *ot)
 // TODO: should these be here, or back in editors/armature/poseobject.c again?
 
 /* present menu with options + validation for targets to use */
-static int pose_ik_add_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(evt))
+static int pose_ik_add_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
 	bPoseChannel *pchan = BKE_pose_channel_active(ob);
@@ -1878,7 +1878,7 @@ static int pose_ik_add_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(evt))
 	}
 	
 	/* prepare popup menu to choose targetting options */
-	pup = uiPupMenuBegin(C, "Add IK", ICON_NONE);
+	pup = uiPupMenuBegin(C, IFACE_("Add IK"), ICON_NONE);
 	layout = uiPupMenuLayout(pup);
 	
 	/* the type of targets we'll set determines the menu entries to show... */
@@ -1887,14 +1887,14 @@ static int pose_ik_add_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(evt))
 		 *	- the only thing that matters is that we want a target...
 		 */
 		if (tar_pchan)
-			uiItemBooleanO(layout, "To Active Bone", ICON_NONE, "POSE_OT_ik_add", "with_targets", 1);
+			uiItemBooleanO(layout, IFACE_("To Active Bone"), ICON_NONE, "POSE_OT_ik_add", "with_targets", 1);
 		else
-			uiItemBooleanO(layout, "To Active Object", ICON_NONE, "POSE_OT_ik_add", "with_targets", 1);
+			uiItemBooleanO(layout, IFACE_("To Active Object"), ICON_NONE, "POSE_OT_ik_add", "with_targets", 1);
 	}
 	else {
 		/* we have a choice of adding to a new empty, or not setting any target (targetless IK) */
-		uiItemBooleanO(layout, "To New Empty Object", ICON_NONE, "POSE_OT_ik_add", "with_targets", 1);
-		uiItemBooleanO(layout, "Without Targets", ICON_NONE, "POSE_OT_ik_add", "with_targets", 0);
+		uiItemBooleanO(layout, IFACE_("To New Empty Object"), ICON_NONE, "POSE_OT_ik_add", "with_targets", 1);
+		uiItemBooleanO(layout, IFACE_("Without Targets"), ICON_NONE, "POSE_OT_ik_add", "with_targets", 0);
 	}
 	
 	/* finish building the menu, and process it (should result in calling self again) */

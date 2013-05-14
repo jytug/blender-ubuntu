@@ -29,7 +29,8 @@
  *  \ingroup bke
  */
 
-
+#include <stdlib.h>
+#include <string.h>
 
 #include "DNA_object_types.h"
 #include "DNA_mesh_types.h"
@@ -40,6 +41,7 @@
 
 #include "BLI_bitmap.h"
 #include "BLI_utildefines.h"
+#include "BLI_math_vector.h"
 
 #include "BKE_brush.h"
 #include "BKE_context.h"
@@ -50,15 +52,70 @@
 
 #include "bmesh.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 const char PAINT_CURSOR_SCULPT[3] = {255, 100, 100};
 const char PAINT_CURSOR_VERTEX_PAINT[3] = {255, 255, 255};
 const char PAINT_CURSOR_WEIGHT_PAINT[3] = {200, 200, 255};
 const char PAINT_CURSOR_TEXTURE_PAINT[3] = {255, 255, 255};
 
-Paint *paint_get_active(Scene *sce)
+static OverlayControlFlags overlay_flags = 0;
+
+void BKE_paint_invalidate_overlay_tex (Scene *scene, const Tex *tex)
+{
+	Paint *p = BKE_paint_get_active(scene);
+	Brush *br = p->brush;
+
+	if (!br)
+		return;
+
+	if (br->mtex.tex == tex)
+		overlay_flags |= PAINT_INVALID_OVERLAY_TEXTURE_PRIMARY;
+	if (br->mask_mtex.tex == tex)
+		overlay_flags |= PAINT_INVALID_OVERLAY_TEXTURE_SECONDARY;
+}
+
+void BKE_paint_invalidate_cursor_overlay (Scene *scene, CurveMapping *curve)
+{
+	Paint *p = BKE_paint_get_active(scene);
+	Brush *br = p->brush;
+
+	if (br && br->curve == curve)
+		overlay_flags |= PAINT_INVALID_OVERLAY_CURVE;
+}
+
+void BKE_paint_invalidate_overlay_all(void)
+{
+	overlay_flags |= (PAINT_INVALID_OVERLAY_TEXTURE_SECONDARY |
+	                  PAINT_INVALID_OVERLAY_TEXTURE_PRIMARY |
+	                  PAINT_INVALID_OVERLAY_CURVE);
+}
+
+OverlayControlFlags BKE_paint_get_overlay_flags(void)
+{
+	return overlay_flags;
+}
+
+void BKE_paint_set_overlay_override(OverlayFlags flags)
+{
+	if (flags & BRUSH_OVERLAY_OVERRIDE_MASK) {
+		if (flags & BRUSH_OVERLAY_CURSOR_OVERRIDE_ON_STROKE)
+			overlay_flags |= PAINT_OVERLAY_OVERRIDE_CURSOR;
+		if (flags & BRUSH_OVERLAY_PRIMARY_OVERRIDE_ON_STROKE)
+			overlay_flags |= PAINT_OVERLAY_OVERRIDE_PRIMARY;
+		if (flags & BRUSH_OVERLAY_SECONDARY_OVERRIDE_ON_STROKE)
+			overlay_flags |= PAINT_OVERLAY_OVERRIDE_SECONDARY;
+	}
+	else {
+		overlay_flags &= ~(PAINT_OVERRIDE_MASK);
+	}
+}
+
+void BKE_paint_reset_overlay_invalid(OverlayControlFlags flag)
+{
+	overlay_flags &= ~(flag);
+}
+
+
+Paint *BKE_paint_get_active(Scene *sce)
 {
 	if (sce) {
 		ToolSettings *ts = sce->toolsettings;
@@ -88,7 +145,7 @@ Paint *paint_get_active(Scene *sce)
 	return NULL;
 }
 
-Paint *paint_get_active_from_context(const bContext *C)
+Paint *BKE_paint_get_active_from_context(const bContext *C)
 {
 	Scene *sce = CTX_data_scene(C);
 	SpaceImage *sima;
@@ -137,12 +194,61 @@ Paint *paint_get_active_from_context(const bContext *C)
 	return NULL;
 }
 
-Brush *paint_brush(Paint *p)
+PaintMode BKE_paintmode_get_active_from_context(const bContext *C)
+{
+	Scene *sce = CTX_data_scene(C);
+	SpaceImage *sima;
+
+	if (sce) {
+		ToolSettings *ts = sce->toolsettings;
+		Object *obact = NULL;
+
+		if (sce->basact && sce->basact->object)
+			obact = sce->basact->object;
+
+		if ((sima = CTX_wm_space_image(C)) != NULL) {
+			if (obact && obact->mode == OB_MODE_EDIT) {
+				if (sima->mode == SI_MODE_PAINT)
+					return PAINT_TEXTURE_2D;
+				else if (ts->use_uv_sculpt)
+					return PAINT_SCULPT_UV;
+			}
+			else {
+				return PAINT_TEXTURE_2D;
+			}
+		}
+		else if (obact) {
+			switch (obact->mode) {
+				case OB_MODE_SCULPT:
+					return PAINT_SCULPT;
+				case OB_MODE_VERTEX_PAINT:
+					return PAINT_VERTEX;
+				case OB_MODE_WEIGHT_PAINT:
+					return PAINT_WEIGHT;
+				case OB_MODE_TEXTURE_PAINT:
+					return PAINT_TEXTURE_PROJECTIVE;
+				case OB_MODE_EDIT:
+					if (ts->use_uv_sculpt)
+						return PAINT_SCULPT_UV;
+					else
+						return PAINT_TEXTURE_2D;
+			}
+		}
+		else {
+			/* default to image paint */
+			return PAINT_TEXTURE_2D;
+		}
+	}
+
+	return PAINT_INVALID;
+}
+
+Brush *BKE_paint_brush(Paint *p)
 {
 	return p ? p->brush : NULL;
 }
 
-void paint_brush_set(Paint *p, Brush *br)
+void BKE_paint_brush_set(Paint *p, Brush *br)
 {
 	if (p) {
 		id_us_min((ID *)p->brush);
@@ -178,10 +284,10 @@ void BKE_paint_init(Paint *p, const char col[3])
 	Brush *brush;
 
 	/* If there's no brush, create one */
-	brush = paint_brush(p);
+	brush = BKE_paint_brush(p);
 	if (brush == NULL)
 		brush = BKE_brush_add(G.main, "Brush");
-	paint_brush_set(p, brush);
+	BKE_paint_brush_set(p, brush);
 
 	memcpy(p->paint_cursor_col, col, 3);
 	p->paint_cursor_col[3] = 128;
@@ -250,4 +356,23 @@ float paint_grid_paint_mask(const GridPaintMask *gpm, unsigned level,
 	int gridsize = ccg_gridsize(gpm->level);
 	
 	return gpm->data[(y * factor) * gridsize + (x * factor)];
+}
+
+/* threshhold to move before updating the brush rotation */
+#define RAKE_THRESHHOLD 20
+
+void paint_calculate_rake_rotation(UnifiedPaintSettings *ups, const float mouse_pos[2])
+{
+	const float u = 0.5f;
+	const float r = RAKE_THRESHHOLD;
+
+	float dpos[2];
+	sub_v2_v2v2(dpos, ups->last_rake, mouse_pos);
+
+	if (len_squared_v2(dpos) >= r * r) {
+		ups->brush_rotation = atan2(dpos[0], dpos[1]);
+
+		interp_v2_v2v2(ups->last_rake, ups->last_rake,
+		               mouse_pos, u);
+	}
 }

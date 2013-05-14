@@ -32,7 +32,7 @@ subject to the following restrictions:
 #include "KX_GameObject.h"
 
 #include "BulletSoftBody/btSoftBody.h"
-#include "BulletSoftBody//btSoftBodyInternals.h"
+#include "BulletSoftBody/btSoftBodyInternals.h"
 #include "BulletSoftBody/btSoftBodyHelpers.h"
 #include "LinearMath/btConvexHull.h"
 #include "BulletCollision/Gimpact/btGImpactShape.h"
@@ -63,8 +63,6 @@ extern bool gDisableDeactivation;
 float gLinearSleepingTreshold;
 float gAngularSleepingTreshold;
 
-
-btVector3 startVel(0,0,0);//-10000);
 
 BlenderBulletCharacterController::BlenderBulletCharacterController(btMotionState *motionState, btPairCachingGhostObject *ghost, btConvexShape* shape, float stepHeight)
 	: btKinematicCharacterController(ghost,shape,stepHeight,2),
@@ -144,14 +142,6 @@ CcdPhysicsController::CcdPhysicsController (const CcdConstructionInfo& ci)
 	m_characterController = 0;
 	
 	CreateRigidbody();
-	
-
-///???
-/*#ifdef WIN32
-	if (GetRigidBody() && !GetRigidBody()->isStaticObject())
-		GetRigidBody()->setLinearVelocity(startVel);
-#endif*/
-
 }
 
 btTransform&	CcdPhysicsController::GetTransformFromMotionState(PHY_IMotionState* motionState)
@@ -546,7 +536,9 @@ void CcdPhysicsController::CreateRigidbody()
 		{
 			body->setAngularFactor(0.f);
 		}
-		body->setContactProcessingThreshold(m_cci.m_contactProcessingThreshold);
+		// use bullet's default contact processing theshold, blender's old default of 1 is too small here.
+		// if there's really a need to change this, it should be exposed in the ui first.
+//		body->setContactProcessingThreshold(m_cci.m_contactProcessingThreshold);
 		body->setSleepingThresholds(gLinearSleepingTreshold, gAngularSleepingTreshold);
 
 	}
@@ -1090,7 +1082,7 @@ void		CcdPhysicsController::resolveCombinedVelocities(float linvelX,float linvel
 {
 }
 
-void 		CcdPhysicsController::getPosition(PHY__Vector3&	pos) const
+void 		CcdPhysicsController::getPosition(MT_Vector3&	pos) const
 {
 	const btTransform& xform = m_object->getWorldTransform();
 	pos[0] = xform.getOrigin().x();

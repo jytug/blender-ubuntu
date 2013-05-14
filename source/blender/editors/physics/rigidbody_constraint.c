@@ -77,34 +77,37 @@ static int ED_operator_rigidbody_con_active_poll(bContext *C)
 }
 
 
-void ED_rigidbody_con_add(wmOperator *op, Scene *scene, Object *ob, int type)
+bool ED_rigidbody_constraint_add(Scene *scene, Object *ob, int type, ReportList *reports)
 {
 	RigidBodyWorld *rbw = BKE_rigidbody_get_world(scene);
 
 	/* check that object doesn't already have a constraint */
 	if (ob->rigidbody_constraint) {
-		BKE_reportf(op->reports, RPT_INFO, "Object '%s' already has a Rigid Body Constraint", ob->id.name + 2);
-		return;
+		BKE_reportf(reports, RPT_INFO, "Object '%s' already has a Rigid Body Constraint", ob->id.name + 2);
+		return false;
 	}
 	/* create constraint group if it doesn't already exits */
 	if (rbw->constraints == NULL) {
-		rbw->constraints = add_group(G.main, "RigidBodyConstraints");
+		rbw->constraints = BKE_group_add(G.main, "RigidBodyConstraints");
 	}
 	/* make rigidbody constraint settings */
 	ob->rigidbody_constraint = BKE_rigidbody_create_constraint(scene, ob, type);
 	ob->rigidbody_constraint->flag |= RBC_FLAG_NEEDS_VALIDATE;
 
 	/* add constraint to rigid body constraint group */
-	add_to_group(rbw->constraints, ob, scene, NULL);
+	BKE_group_object_add(rbw->constraints, ob, scene, NULL);
+
+	DAG_id_tag_update(&ob->id, OB_RECALC_OB);
+	return true;
 }
 
-void ED_rigidbody_con_remove(Scene *scene, Object *ob)
+void ED_rigidbody_constraint_remove(Scene *scene, Object *ob)
 {
 	RigidBodyWorld *rbw = BKE_rigidbody_get_world(scene);
 
 	BKE_rigidbody_remove_constraint(scene, ob);
 	if (rbw)
-		rem_from_group(rbw->constraints, ob, scene, NULL);
+		BKE_group_object_unlink(rbw->constraints, ob, scene, NULL);
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 }
@@ -120,6 +123,7 @@ static int rigidbody_con_add_exec(bContext *C, wmOperator *op)
 	RigidBodyWorld *rbw = BKE_rigidbody_get_world(scene);
 	Object *ob = (scene) ? OBACT : NULL;
 	int type = RNA_enum_get(op->ptr, "type");
+	bool change;
 
 	/* sanity checks */
 	if (ELEM(NULL, scene, rbw)) {
@@ -127,15 +131,18 @@ static int rigidbody_con_add_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 	/* apply to active object */
-	ED_rigidbody_con_add(op, scene, ob, type);
+	change = ED_rigidbody_constraint_add(scene, ob, type, op->reports);
 
-	/* send updates */
-	DAG_ids_flush_update(CTX_data_main(C), 0);
+	if (change) {
+		/* send updates */
+		WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 
-	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
-
-	/* done */
-	return OPERATOR_FINISHED;
+		/* done */
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
 }
 
 void RIGIDBODY_OT_constraint_add(wmOperatorType *ot)
@@ -153,7 +160,7 @@ void RIGIDBODY_OT_constraint_add(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* properties */
-	ot->prop = RNA_def_enum(ot->srna, "type", rigidbody_con_type_items, RBC_TYPE_FIXED, "Rigid Body Constraint Type", "");
+	ot->prop = RNA_def_enum(ot->srna, "type", rigidbody_constraint_type_items, RBC_TYPE_FIXED, "Rigid Body Constraint Type", "");
 }
 
 /* ************ Remove Rigid Body Constraint ************** */
@@ -173,12 +180,10 @@ static int rigidbody_con_remove_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 	else {
-		ED_rigidbody_con_remove(scene, ob);
+		ED_rigidbody_constraint_remove(scene, ob);
 	}
 
 	/* send updates */
-	DAG_ids_flush_update(CTX_data_main(C), 0);
-
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 
 	/* done */

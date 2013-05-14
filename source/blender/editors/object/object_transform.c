@@ -54,7 +54,7 @@
 #include "BKE_mesh.h"
 #include "BKE_object.h"
 #include "BKE_report.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_multires.h"
 #include "BKE_armature.h"
 #include "BKE_lattice.h"
@@ -213,7 +213,6 @@ static void object_clear_scale(Object *ob)
 static int object_clear_transform_generic_exec(bContext *C, wmOperator *op, 
                                                void (*clear_func)(Object *), const char default_ksName[])
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	KeyingSet *ks;
 	
@@ -244,8 +243,6 @@ static int object_clear_transform_generic_exec(bContext *C, wmOperator *op,
 	CTX_DATA_END;
 	
 	/* this is needed so children are also updated */
-	DAG_ids_flush_update(bmain, 0);
-
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 
 	return OPERATOR_FINISHED;
@@ -318,7 +315,6 @@ void OBJECT_OT_scale_clear(wmOperatorType *ot)
 
 static int object_origin_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Main *bmain = CTX_data_main(C);
 	float *v1, *v3;
 	float mat[3][3];
 
@@ -338,8 +334,6 @@ static int object_origin_clear_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 	CTX_DATA_END;
 
-	DAG_ids_flush_update(bmain, 0);
-	
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -801,8 +795,8 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 
 				if (centermode == ORIGIN_TO_CURSOR) { /* done */ }
 				else if (centermode == ORIGIN_TO_CENTER_OF_MASS) { BKE_mesh_center_centroid(me, cent); }
-				else if (around == V3D_CENTROID) { BKE_mesh_center_median(me, cent); }
-				else { BKE_mesh_center_bounds(me, cent); }
+				else if (around == V3D_CENTROID)                 { BKE_mesh_center_median(me, cent); }
+				else                                             { BKE_mesh_center_bounds(me, cent); }
 
 				negate_v3_v3(cent_neg, cent);
 				BKE_mesh_translate(me, cent_neg, 1);
@@ -814,9 +808,9 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 			else if (ELEM(ob->type, OB_CURVE, OB_SURF)) {
 				Curve *cu = ob->data;
 
-				if (centermode == ORIGIN_TO_CURSOR) { /* done */ }
+				if      (centermode == ORIGIN_TO_CURSOR) { /* done */ }
 				else if (around == V3D_CENTROID) { BKE_curve_center_median(cu, cent); }
-				else { BKE_curve_center_bounds(cu, cent);   }
+				else                             { BKE_curve_center_bounds(cu, cent);   }
 
 				/* don't allow Z change if curve is 2D */
 				if ((ob->type == OB_CURVE) && !(cu->flag & CU_3D))
@@ -877,7 +871,7 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 					/* Function to recenter armatures in editarmature.c
 					 * Bone + object locations are handled there.
 					 */
-					docenter_armature(scene, ob, cursor, centermode, around);
+					ED_armature_origin_set(scene, ob, cursor, centermode, around);
 
 					tot_change++;
 					arm->id.flag |= LIB_DOIT;
@@ -895,9 +889,9 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 			else if (ob->type == OB_MBALL) {
 				MetaBall *mb = ob->data;
 
-				if (centermode == ORIGIN_TO_CURSOR) { /* done */ }
+				if      (centermode == ORIGIN_TO_CURSOR) { /* done */ }
 				else if (around == V3D_CENTROID) { BKE_mball_center_median(mb, cent); }
-				else { BKE_mball_center_bounds(mb, cent);    }
+				else                             { BKE_mball_center_bounds(mb, cent); }
 
 				negate_v3_v3(cent_neg, cent);
 				BKE_mball_translate(mb, cent_neg);
@@ -916,9 +910,9 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 			else if (ob->type == OB_LATTICE) {
 				Lattice *lt = ob->data;
 
-				if (centermode == ORIGIN_TO_CURSOR) { /* done */ }
+				if      (centermode == ORIGIN_TO_CURSOR) { /* done */ }
 				else if (around == V3D_CENTROID) { BKE_lattice_center_median(lt, cent); }
-				else { BKE_lattice_center_bounds(lt, cent); }
+				else                             { BKE_lattice_center_bounds(lt, cent); }
 
 				negate_v3_v3(cent_neg, cent);
 				BKE_lattice_translate(lt, cent_neg, 1);
@@ -991,7 +985,6 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 			DAG_id_tag_update(&tob->id, OB_RECALC_OB | OB_RECALC_DATA);
 
 	if (tot_change) {
-		DAG_ids_flush_update(bmain, 0);
 		WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	}
 

@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "BLI_utildefines.h"
 #include "BLI_path_util.h"
 
 #include "RNA_define.h"
@@ -51,7 +52,7 @@
 #include "BKE_scene.h"
 #include "BKE_writeavi.h"
 
-
+#include "ED_transform.h"
 
 static void rna_Scene_frame_set(Scene *scene, int frame, float subframe)
 {
@@ -90,6 +91,33 @@ static void rna_SceneRender_get_frame_path(RenderData *rd, int frame, char *name
 		                  rd->scemode & R_EXTENSION, TRUE);
 }
 
+static void rna_Scene_ray_cast(Scene *scene, float ray_start[3], float ray_end[3],
+                               int *r_success, Object **r_ob, float r_obmat[16],
+                               float r_location[3], float r_normal[3])
+{
+	float dummy_dist_px = 0;
+	float ray_nor[3];
+	float ray_dist;
+
+	sub_v3_v3v3(ray_nor, ray_end, ray_start);
+	ray_dist = normalize_v3(ray_nor);
+
+	if (snapObjectsRayEx(scene, NULL, NULL, NULL, NULL, SCE_SNAP_MODE_FACE,
+	                     r_ob, (float(*)[4])r_obmat,
+	                     ray_start, ray_nor, &ray_dist,
+	                     NULL, &dummy_dist_px, r_location, r_normal, SNAP_ALL))
+	{
+		*r_success = true;
+	}
+	else {
+		unit_m4((float(*)[4])r_obmat);
+		zero_v3(r_location);
+		zero_v3(r_normal);
+
+		*r_success = false;
+	}
+}
+
 #ifdef WITH_COLLADA
 /* don't remove this, as COLLADA exporting cannot be done through operators in render() callback. */
 #include "../../collada/collada.h"
@@ -111,14 +139,16 @@ static void rna_Scene_collada_export(
         int include_material_textures,
         int use_texture_copies,
 
+        int use_ngons,
         int use_object_instantiation,
         int sort_by_name,
+        int export_transformation_type,
         int second_life)
 {
 	collada_export(scene, filepath, apply_modifiers, export_mesh_type, selected,
 	               include_children, include_armatures, include_shapekeys, deform_bones_only,
 	               active_uv_only, include_uv_textures, include_material_textures,
-	               use_texture_copies, use_object_instantiation, sort_by_name, second_life);
+	               use_texture_copies, use_ngons, use_object_instantiation, sort_by_name, export_transformation_type, second_life);
 }
 
 #endif
@@ -140,6 +170,32 @@ void RNA_api_scene(StructRNA *srna)
 	RNA_def_function_ui_description(func,
 	                                "Update data tagged to be updated from previous access to data or operators");
 
+	/* Ray Cast */
+	func = RNA_def_function(srna, "ray_cast", "rna_Scene_ray_cast");
+	RNA_def_function_ui_description(func, "Cast a ray onto in object space");
+
+	/* ray start and end */
+	parm = RNA_def_float_vector(func, "start", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_float_vector(func, "end", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+
+	/* return location and normal */
+	parm = RNA_def_boolean(func, "result", 0, "", "");
+	RNA_def_function_output(func, parm);
+	parm = RNA_def_pointer(func, "object", "Object", "", "Ray cast object");
+	RNA_def_function_output(func, parm);
+	parm = RNA_def_float_matrix(func, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
+	RNA_def_function_output(func, parm);
+	parm = RNA_def_float_vector(func, "location", 3, NULL, -FLT_MAX, FLT_MAX, "Location",
+	                            "The hit location of this ray cast", -1e4, 1e4);
+	RNA_def_property_flag(parm, PROP_THICK_WRAP);
+	RNA_def_function_output(func, parm);
+	parm = RNA_def_float_vector(func, "normal", 3, NULL, -FLT_MAX, FLT_MAX, "Normal",
+	                            "The face normal at the ray cast hit location", -1e4, 1e4);
+	RNA_def_property_flag(parm, PROP_THICK_WRAP);
+	RNA_def_function_output(func, parm);
+
 #ifdef WITH_COLLADA
 	/* don't remove this, as COLLADA exporting cannot be done through operators in render() callback. */
 	func = RNA_def_function(srna, "collada_export", "rna_Scene_collada_export");
@@ -160,9 +216,14 @@ void RNA_api_scene(StructRNA *srna)
 	parm = RNA_def_boolean(func, "include_material_textures", 0, "Include Material Textures", "Export textures assigned to the object Materials");
 	parm = RNA_def_boolean(func, "use_texture_copies", 0, "copy", "Copy textures to same folder where the .dae file is exported");
 
+	parm = RNA_def_boolean(func, "use_ngons", 1, "Use NGons", "Keep NGons in Export");
 	parm = RNA_def_boolean(func, "use_object_instantiation", 1, "Use Object Instances", "Instantiate multiple Objects from same Data");
 	parm = RNA_def_boolean(func, "sort_by_name", 0, "Sort by Object name", "Sort exported data by Object name");
 	parm = RNA_def_boolean(func, "second_life", 0, "Export for Second Life", "Compatibility mode for Second Life");
+
+	parm = RNA_def_int(func, "export_transformation_type", 0, INT_MIN, INT_MAX,
+	            "Transformation", "Transformation type for translation, scale and rotation", INT_MIN, INT_MAX);
+
 	RNA_def_function_ui_description(func, "Export to collada file");
 #endif
 }

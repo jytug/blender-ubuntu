@@ -140,11 +140,11 @@ struct uiLayout {
 	int x, y, w, h;
 	float scale[2];
 	short space;
-	char align;
-	char active;
-	char enabled;
-	char redalert;
-	char keepaspect;
+	bool align;
+	bool active;
+	bool enabled;
+	bool redalert;
+	bool keepaspect;
 	char alignment;
 };
 
@@ -1333,7 +1333,7 @@ static void rna_search_cb(const struct bContext *C, void *arg_but, const char *s
 			BLI_strncpy(name_ui, id->name + 2, sizeof(name_ui));
 #endif
 			name = BLI_strdup(name_ui);
-			iconid = ui_id_icon_get((bContext *)C, id, 0);
+			iconid = ui_id_icon_get((bContext *)C, id, false);
 		}
 		else {
 			name = RNA_struct_name_get_alloc(&itemptr, NULL, 0, NULL); /* could use the string length here */
@@ -1359,7 +1359,7 @@ static void rna_search_cb(const struct bContext *C, void *arg_but, const char *s
 	
 	/* add search items from temporary list */
 	for (cis = items_list->first; cis; cis = cis->next) {
-		if (!uiSearchItemAdd(items, cis->name, SET_INT_IN_POINTER(cis->index), cis->iconid)) {
+		if (false == uiSearchItemAdd(items, cis->name, SET_INT_IN_POINTER(cis->index), cis->iconid)) {
 			break;
 		}
 	}
@@ -1411,11 +1411,7 @@ void ui_but_add_search(uiBut *but, PointerRNA *ptr, PropertyRNA *prop, PointerRN
 
 	/* turn button into search button */
 	if (searchprop) {
-		if (RNA_property_flag(prop) & PROP_NEVER_UNLINK)
-			but->type = SEARCH_MENU;
-		else
-			but->type = SEARCH_MENU_UNLINK;
-
+		but->type = RNA_property_is_unlink(prop) ? SEARCH_MENU_UNLINK : SEARCH_MENU;
 		but->hardmax = MAX2(but->hardmax, 256.0f);
 		but->rnasearchpoin = *searchptr;
 		but->rnasearchprop = searchprop;
@@ -1567,7 +1563,7 @@ void uiItemM(uiLayout *layout, bContext *UNUSED(C), const char *menuname, const 
 	}
 
 	if (!name) {
-		name = IFACE_(mt->label);
+		name = CTX_IFACE_(mt->translation_context, mt->label);
 	}
 
 	if (layout->root->type == UI_LAYOUT_MENU && !icon)
@@ -1598,6 +1594,14 @@ static uiBut *uiItemL_(uiLayout *layout, const char *name, int icon)
 		but = uiDefIconBut(block, LABEL, 0, icon, 0, 0, w, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
 	else
 		but = uiDefBut(block, LABEL, 0, name, 0, 0, w, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
+	
+	/* to compensate for string size padding in ui_text_icon_width,
+	 * make text aligned right if the layout is aligned right.
+	 */
+	if (uiLayoutGetAlignment(layout) == UI_LAYOUT_ALIGN_RIGHT) {
+		but->flag &= ~UI_TEXT_LEFT;	/* default, needs to be unset */
+		but->flag |= UI_TEXT_RIGHT;
+	}
 	
 	return but;
 }
@@ -1635,11 +1639,11 @@ void uiItemV(uiLayout *layout, const char *name, int icon, int argval)
 	w = ui_text_icon_width(layout, name, icon, 0);
 
 	if (icon && name[0])
-		uiDefIconTextButF(block, BUT, argval, icon, name, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, 0, "");
+		uiDefIconTextButF(block, BUT, argval, icon, name, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, -1, "");
 	else if (icon)
-		uiDefIconButF(block, BUT, argval, icon, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, 0, "");
+		uiDefIconButF(block, BUT, argval, icon, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, -1, "");
 	else
-		uiDefButF(block, BUT, argval, name, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, 0, "");
+		uiDefButF(block, BUT, argval, name, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, -1, "");
 }
 
 /* separator item */
@@ -2259,10 +2263,11 @@ uiLayout *uiLayoutRow(uiLayout *layout, int align)
 	litem->item.type = ITEM_LAYOUT_ROW;
 	litem->root = layout->root;
 	litem->align = align;
-	litem->active = 1;
-	litem->enabled = 1;
+	litem->active = true;
+	litem->enabled = true;
 	litem->context = layout->context;
 	litem->space = (align) ? 0 : layout->root->style->buttonspacex;
+	litem->redalert = layout->redalert;
 	litem->w = layout->w;
 	BLI_addtail(&layout->items, litem);
 
@@ -2279,10 +2284,11 @@ uiLayout *uiLayoutColumn(uiLayout *layout, int align)
 	litem->item.type = ITEM_LAYOUT_COLUMN;
 	litem->root = layout->root;
 	litem->align = align;
-	litem->active = 1;
-	litem->enabled = 1;
+	litem->active = true;
+	litem->enabled = true;
 	litem->context = layout->context;
 	litem->space = (litem->align) ? 0 : layout->root->style->buttonspacey;
+	litem->redalert = layout->redalert;
 	litem->w = layout->w;
 	BLI_addtail(&layout->items, litem);
 
@@ -2299,10 +2305,11 @@ uiLayout *uiLayoutColumnFlow(uiLayout *layout, int number, int align)
 	flow->litem.item.type = ITEM_LAYOUT_COLUMN_FLOW;
 	flow->litem.root = layout->root;
 	flow->litem.align = align;
-	flow->litem.active = 1;
-	flow->litem.enabled = 1;
+	flow->litem.active = true;
+	flow->litem.enabled = true;
 	flow->litem.context = layout->context;
 	flow->litem.space = (flow->litem.align) ? 0 : layout->root->style->columnspace;
+	flow->litem.redalert = layout->redalert;
 	flow->litem.w = layout->w;
 	flow->number = number;
 	BLI_addtail(&layout->items, flow);
@@ -2323,6 +2330,7 @@ static uiLayoutItemBx *ui_layout_box(uiLayout *layout, int type)
 	box->litem.enabled = 1;
 	box->litem.context = layout->context;
 	box->litem.space = layout->root->style->columnspace;
+	box->litem.redalert = layout->redalert;
 	box->litem.w = layout->w;
 	BLI_addtail(&layout->items, box);
 
@@ -2365,6 +2373,7 @@ uiLayout *uiLayoutAbsolute(uiLayout *layout, int align)
 	litem->active = 1;
 	litem->enabled = 1;
 	litem->context = layout->context;
+	litem->redalert = layout->redalert;
 	BLI_addtail(&layout->items, litem);
 
 	uiBlockSetCurLayout(layout->root->block, litem);
@@ -2389,9 +2398,10 @@ uiLayout *uiLayoutOverlap(uiLayout *layout)
 	litem = MEM_callocN(sizeof(uiLayout), "uiLayoutOverlap");
 	litem->item.type = ITEM_LAYOUT_OVERLAP;
 	litem->root = layout->root;
-	litem->active = 1;
-	litem->enabled = 1;
+	litem->active = true;
+	litem->enabled = true;
 	litem->context = layout->context;
+	litem->redalert = layout->redalert;
 	BLI_addtail(&layout->items, litem);
 
 	uiBlockSetCurLayout(layout->root->block, litem);
@@ -2407,10 +2417,11 @@ uiLayout *uiLayoutSplit(uiLayout *layout, float percentage, int align)
 	split->litem.item.type = ITEM_LAYOUT_SPLIT;
 	split->litem.root = layout->root;
 	split->litem.align = align;
-	split->litem.active = 1;
-	split->litem.enabled = 1;
+	split->litem.active = true;
+	split->litem.enabled = true;
 	split->litem.context = layout->context;
 	split->litem.space = layout->root->style->columnspace;
+	split->litem.redalert = layout->redalert;
 	split->litem.w = layout->w;
 	split->percentage = percentage;
 	BLI_addtail(&layout->items, split);
@@ -2420,27 +2431,27 @@ uiLayout *uiLayoutSplit(uiLayout *layout, float percentage, int align)
 	return &split->litem;
 }
 
-void uiLayoutSetActive(uiLayout *layout, int active)
+void uiLayoutSetActive(uiLayout *layout, bool active)
 {
 	layout->active = active;
 }
 
-void uiLayoutSetEnabled(uiLayout *layout, int enabled)
+void uiLayoutSetEnabled(uiLayout *layout, bool enabled)
 {
 	layout->enabled = enabled;
 }
 
-void uiLayoutSetRedAlert(uiLayout *layout, int redalert)
+void uiLayoutSetRedAlert(uiLayout *layout, bool redalert)
 {
 	layout->redalert = redalert;
 }
 
-void uiLayoutSetKeepAspect(uiLayout *layout, int keepaspect)
+void uiLayoutSetKeepAspect(uiLayout *layout, bool keepaspect)
 {
 	layout->keepaspect = keepaspect;
 }
 
-void uiLayoutSetAlignment(uiLayout *layout, int alignment)
+void uiLayoutSetAlignment(uiLayout *layout, char alignment)
 {
 	layout->alignment = alignment;
 }
@@ -2455,22 +2466,22 @@ void uiLayoutSetScaleY(uiLayout *layout, float scale)
 	layout->scale[1] = scale;
 }
 
-int uiLayoutGetActive(uiLayout *layout)
+bool uiLayoutGetActive(uiLayout *layout)
 {
 	return layout->active;
 }
 
-int uiLayoutGetEnabled(uiLayout *layout)
+bool uiLayoutGetEnabled(uiLayout *layout)
 {
 	return layout->enabled;
 }
 
-int uiLayoutGetRedAlert(uiLayout *layout)
+bool uiLayoutGetRedAlert(uiLayout *layout)
 {
 	return layout->redalert;
 }
 
-int uiLayoutGetKeepAspect(uiLayout *layout)
+bool uiLayoutGetKeepAspect(uiLayout *layout)
 {
 	return layout->keepaspect;
 }
@@ -2907,7 +2918,7 @@ static void ui_layout_operator_buts__reset_cb(bContext *UNUSED(C), void *op_pt, 
 
 /* this function does not initialize the layout, functions can be called on the layout before and after */
 void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,
-                          int (*check_prop)(struct PointerRNA *, struct PropertyRNA *),
+                          bool (*check_prop)(struct PointerRNA *, struct PropertyRNA *),
                           const char label_align, const short flag)
 {
 	if (!op->properties) {
@@ -2922,7 +2933,7 @@ void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,
 	/* poll() on this operator may still fail, at the moment there is no nice feedback when this happens
 	 * just fails silently */
 	if (!WM_operator_repeat_check(C, op)) {
-		uiBlockSetButLock(uiLayoutGetBlock(layout), TRUE, "Operator can't' redo");
+		uiBlockSetButLock(uiLayoutGetBlock(layout), true, "Operator can't' redo");
 
 		/* XXX, could give some nicer feedback or not show redo panel at all? */
 		uiItemL(layout, IFACE_("* Redo Unsupported *"), ICON_NONE);

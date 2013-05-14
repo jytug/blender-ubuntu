@@ -257,11 +257,12 @@ void GPU_material_free(Material *ma)
 	BLI_freelistN(&ma->gpumaterial);
 }
 
-void GPU_material_bind(GPUMaterial *material, int oblay, int viewlay, double time, int mipmap)
+void GPU_material_bind(GPUMaterial *material, int oblay, int viewlay, double time, int mipmap, float viewmat[4][4], float viewinv[4][4])
 {
 	if (material->pass) {
 		LinkData *nlink;
 		GPULamp *lamp;
+		GPUShader *shader = GPU_pass_shader(material->pass);
 
 		/* handle layer lamps */
 		for (nlink=material->lamps.first; nlink; nlink=nlink->next) {
@@ -275,46 +276,6 @@ void GPU_material_bind(GPUMaterial *material, int oblay, int viewlay, double tim
 				lamp->dynenergy = 0.0f;
 				lamp->dyncol[0]= lamp->dyncol[1]= lamp->dyncol[2] = 0.0f;
 			}
-		}
-
-		GPU_pass_bind(material->pass, time, mipmap);
-		material->bound = 1;
-	}
-}
-
-void GPU_material_bind_uniforms(GPUMaterial *material, float obmat[4][4], float viewmat[4][4], float viewinv[4][4], float obcol[4], float autobumpscale)
-{
-	if (material->pass) {
-		GPUShader *shader = GPU_pass_shader(material->pass);
-		LinkData *nlink;
-		GPULamp *lamp;
-		float invmat[4][4], col[4];
-
-		/* handle builtins */
-		if (material->builtins & GPU_VIEW_MATRIX) {
-			GPU_shader_uniform_vector(shader, material->viewmatloc, 16, 1, (float*)viewmat);
-		}
-		if (material->builtins & GPU_INVERSE_VIEW_MATRIX) {
-			GPU_shader_uniform_vector(shader, material->invviewmatloc, 16, 1, (float*)viewinv);
-		}
-		if (material->builtins & GPU_OBJECT_MATRIX) {
-			GPU_shader_uniform_vector(shader, material->obmatloc, 16, 1, (float*)obmat);
-		}
-		if (material->builtins & GPU_INVERSE_OBJECT_MATRIX) {
-			invert_m4_m4(invmat, obmat);
-			GPU_shader_uniform_vector(shader, material->invobmatloc, 16, 1, (float*)invmat);
-		}
-		if (material->builtins & GPU_OBCOLOR) {
-			copy_v4_v4(col, obcol);
-			CLAMP(col[3], 0.0f, 1.0f);
-			GPU_shader_uniform_vector(shader, material->obcolloc, 4, 1, col);
-		}
-		if (material->builtins & GPU_AUTO_BUMPSCALE) {
-			GPU_shader_uniform_vector(shader, material->obautobumpscaleloc, 1, 1, &autobumpscale);
-		}
-		/* update lamps */
-		for (nlink=material->lamps.first; nlink; nlink=nlink->next) {
-			lamp= nlink->data;
 
 			if (material->dynproperty & DYN_LAMP_VEC) {
 				copy_v3_v3(lamp->dynvec, lamp->vec);
@@ -339,7 +300,43 @@ void GPU_material_bind_uniforms(GPUMaterial *material, float obmat[4][4], float 
 			}
 		}
 
+		/* handle per material built-ins */
+		if (material->builtins & GPU_VIEW_MATRIX) {
+			GPU_shader_uniform_vector(shader, material->viewmatloc, 16, 1, (float*)viewmat);
+		}
+		if (material->builtins & GPU_INVERSE_VIEW_MATRIX) {
+			GPU_shader_uniform_vector(shader, material->invviewmatloc, 16, 1, (float*)viewinv);
+		}
+
+		GPU_pass_bind(material->pass, time, mipmap);
 		GPU_pass_update_uniforms(material->pass);
+
+		material->bound = 1;
+	}
+}
+
+void GPU_material_bind_uniforms(GPUMaterial *material, float obmat[4][4], float obcol[4], float autobumpscale)
+{
+	if (material->pass) {
+		GPUShader *shader = GPU_pass_shader(material->pass);
+		float invmat[4][4], col[4];
+
+		/* handle per object builtins */
+		if (material->builtins & GPU_OBJECT_MATRIX) {
+			GPU_shader_uniform_vector(shader, material->obmatloc, 16, 1, (float*)obmat);
+		}
+		if (material->builtins & GPU_INVERSE_OBJECT_MATRIX) {
+			invert_m4_m4(invmat, obmat);
+			GPU_shader_uniform_vector(shader, material->invobmatloc, 16, 1, (float*)invmat);
+		}
+		if (material->builtins & GPU_OBCOLOR) {
+			copy_v4_v4(col, obcol);
+			CLAMP(col[3], 0.0f, 1.0f);
+			GPU_shader_uniform_vector(shader, material->obcolloc, 4, 1, col);
+		}
+		if (material->builtins & GPU_AUTO_BUMPSCALE) {
+			GPU_shader_uniform_vector(shader, material->obautobumpscaleloc, 1, 1, &autobumpscale);
+		}
 	}
 }
 
@@ -574,7 +571,7 @@ static void add_to_diffuse(GPUMaterial *mat, Material *ma, GPUShadeInput *shi, G
 		addcol = shi->rgb;
 
 	/* output to */
-	GPU_link(mat, "shade_madd_clamped", *diff, rgb, addcol, diff);
+	GPU_link(mat, "shade_madd", *diff, rgb, addcol, diff);
 }
 
 static void ramp_spec_result(GPUShadeInput *shi, GPUNodeLink **spec)
@@ -1919,7 +1916,7 @@ void GPU_lamp_shadow_buffer_bind(GPULamp *lamp, float viewmat[4][4], int *winsiz
 void GPU_lamp_shadow_buffer_unbind(GPULamp *lamp)
 {
 	if (lamp->la->shadowmap_type == LA_SHADMAP_VARIANCE) {
-		GPU_shader_unbind(GPU_shader_get_builtin_shader(GPU_SHADER_VSM_STORE));
+		GPU_shader_unbind();
 		GPU_framebuffer_blur(lamp->fb, lamp->tex, lamp->blurfb, lamp->blurtex);
 	}
 

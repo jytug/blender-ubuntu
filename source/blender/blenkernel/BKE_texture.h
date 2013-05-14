@@ -61,8 +61,8 @@ struct World;
 
 void BKE_texture_free(struct Tex *t); 
 
-void init_colorband(struct ColorBand *coba, int rangetype);
-struct ColorBand *add_colorband(int rangetype);
+void init_colorband(struct ColorBand *coba, bool rangetype);
+struct ColorBand *add_colorband(bool rangetype);
 int do_colorband(const struct ColorBand *coba, float in, float out[4]);
 void colorband_table_RGBA(struct ColorBand *coba, float **array, int *size);
 struct CBData *colorband_element_add(struct ColorBand *coba, float position);
@@ -78,7 +78,8 @@ struct MTex *add_mtex_id(struct ID *id, int slot);
 struct Tex *BKE_texture_copy(struct Tex *tex);
 struct Tex *localize_texture(struct Tex *tex);
 void BKE_texture_make_local(struct Tex *tex);
-void autotexname(struct Tex *tex);
+/* UNUSED */
+// void autotexname(struct Tex *tex);
 
 struct Tex *give_current_object_texture(struct Object *ob);
 struct Tex *give_current_material_texture(struct Material *ma);

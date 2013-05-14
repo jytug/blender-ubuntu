@@ -104,7 +104,7 @@ DocumentImporter::DocumentImporter(bContext *C, const ImportSettings *import_set
 	import_settings(import_settings),
 	mImportStage(General),
 	mContext(C),
-	armature_importer(&unit_converter, &mesh_importer, &anim_importer, CTX_data_scene(C)),
+	armature_importer(&unit_converter, &mesh_importer, CTX_data_scene(C)),
 	mesh_importer(&unit_converter, &armature_importer, CTX_data_scene(C)),
 	anim_importer(&unit_converter, &armature_importer, CTX_data_scene(C))
 {
@@ -157,7 +157,8 @@ bool DocumentImporter::import()
 	
 	delete ehandler;
 
-	mesh_importer.bmeshConversion();
+	//XXX No longer needed (geometries are now created as bmesh)
+	//mesh_importer.bmeshConversion();
 
 	return true;
 }
@@ -230,8 +231,7 @@ void DocumentImporter::finish()
 		}
 
 		// update scene
-		DAG_scene_sort(bmain, sce);
-		DAG_ids_flush_update(bmain, 0);
+		DAG_relations_tag_update(bmain);
 		WM_event_add_notifier(mContext, NC_OBJECT | ND_TRANSFORM, NULL);
 
 	}
@@ -242,8 +242,7 @@ void DocumentImporter::finish()
 	armature_importer.set_tags_map(this->uid_tags_map);
 	armature_importer.make_armatures(mContext);
 	armature_importer.make_shape_keys();
-	DAG_scene_sort(bmain, sce);
-	DAG_ids_flush_update(bmain, 0);
+	DAG_relations_tag_update(bmain);
 
 #if 0
 	armature_importer.fix_animation();
@@ -277,8 +276,7 @@ void DocumentImporter::finish()
 		}
 		libnode_ob.clear();
 
-		DAG_scene_sort(bmain, sce);
-		DAG_ids_flush_update(bmain, 0);
+		DAG_relations_tag_update(bmain);
 	}
 }
 
@@ -389,7 +387,7 @@ Object *DocumentImporter::create_instance_node(Object *source_ob, COLLADAFW::Nod
 	fprintf(stderr, "create <instance_node> under node id=%s from node id=%s\n", instance_node ? instance_node->getOriginalId().c_str() : NULL, source_node ? source_node->getOriginalId().c_str() : NULL);
 
 	Object *obn = BKE_object_copy(source_ob);
-	obn->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+	DAG_id_tag_update(&obn->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 	BKE_scene_base_add(sce, obn);
 
 	if (instance_node) {
@@ -416,8 +414,7 @@ Object *DocumentImporter::create_instance_node(Object *source_ob, COLLADAFW::Nod
 		anim_importer.read_node_transform(source_node, obn);
 	}
 
-	/*DAG_scene_sort(CTX_data_main(mContext), sce);
-	DAG_ids_flush_update(CTX_data_main(mContext), 0);*/
+	/*DAG_relations_tag_update(CTX_data_main(mContext));*/
 
 	COLLADAFW::NodePointerArray &children = source_node->getChildNodes();
 	if (children.getCount()) {
@@ -480,7 +477,7 @@ std::vector<Object *> *DocumentImporter::write_node(COLLADAFW::Node *node, COLLA
 			// Here we add the armature "on the fly":
 			par = bc_add_object(sce, OB_ARMATURE, std::string("Armature").c_str());
 			objects_done->push_back(par);
-			object_map.insert(std::make_pair<COLLADAFW::UniqueId, Object *>(node->getUniqueId(), par));
+			object_map.insert(std::pair<COLLADAFW::UniqueId, Object *>(node->getUniqueId(), par));
 			node_map[node->getUniqueId()] = node;
 		}
 		armature_importer.add_joint(node, parent_node == NULL || parent_node->getType() != COLLADAFW::Node::JOINT, par, sce);
@@ -585,7 +582,7 @@ std::vector<Object *> *DocumentImporter::write_node(COLLADAFW::Node *node, COLLA
 			ob = *it;
 			std::string nodename = node->getName().size() ? node->getName() : node->getOriginalId();
 			rename_id(&ob->id, (char *)nodename.c_str());
-			object_map.insert(std::make_pair<COLLADAFW::UniqueId, Object *>(node->getUniqueId(), ob));
+			object_map.insert(std::pair<COLLADAFW::UniqueId, Object *>(node->getUniqueId(), ob));
 			node_map[node->getUniqueId()] = node;
 
 			if (is_library_node)

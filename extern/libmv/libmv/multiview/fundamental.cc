@@ -18,13 +18,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include "libmv/multiview/fundamental.h"
+
 #include "libmv/logging/logging.h"
 #include "libmv/numeric/numeric.h"
 #include "libmv/numeric/poly.h"
 #include "libmv/multiview/conditioning.h"
 #include "libmv/multiview/projection.h"
 #include "libmv/multiview/triangulation.h"
-#include "libmv/multiview/fundamental.h"
 
 namespace libmv {
 
@@ -254,8 +255,8 @@ double SymmetricEpipolarDistance(const Mat &F, const Vec2 &x1, const Vec2 &x2) {
   Vec3 Ft_y = F.transpose() * y;
   double y_F_x = y.dot(F_x);
 
-  return y_F_x * (  1 / F_x.head<2>().norm()
-                  + 1 / Ft_y.head<2>().norm());
+  return Square(y_F_x) * (  1 / F_x.head<2>().squaredNorm()
+                          + 1 / Ft_y.head<2>().squaredNorm());
 }
 
 // HZ 9.6 pag 257 (formula 9.12)
@@ -304,7 +305,6 @@ void MotionFromEssential(const Mat3 &E,
                          std::vector<Vec3> *ts) {
   Eigen::JacobiSVD<Mat3> USV(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
   Mat3 U =  USV.matrixU();
-  Vec3 d =  USV.singularValues();
   Mat3 Vt = USV.matrixV().transpose();
 
   // Last column of U is undetermined since d = (a a 0).

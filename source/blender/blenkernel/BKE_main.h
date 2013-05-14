@@ -88,6 +88,7 @@ typedef struct Main {
 	ListBase gpencil;
 	ListBase movieclip;
 	ListBase mask;
+	ListBase linestyle;
 
 	char id_tag_update[256];
 } Main;
@@ -95,6 +96,10 @@ typedef struct Main {
 #define MAIN_VERSION_ATLEAST(main, ver, subver) \
 	((main)->versionfile > (ver) || (main->versionfile == (ver) && (main)->subversionfile >= (subver)))
 
+#define MAIN_VERSION_OLDER(main, ver, subver) \
+	((main)->versionfile < (ver) || (main->versionfile == (ver) && (main)->subversionfile < (subver)))
+
+	
 #ifdef __cplusplus
 }
 #endif

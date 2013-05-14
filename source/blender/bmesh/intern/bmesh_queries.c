@@ -43,7 +43,7 @@
  * Returns whether or not a given vertex is
  * is part of a given edge.
  */
-bool BM_vert_in_edge(BMEdge *e, BMVert *v)
+bool BM_vert_in_edge(const BMEdge *e, const BMVert *v)
 {
 	return bmesh_vert_in_edge(e, v);
 }
@@ -63,23 +63,24 @@ bool BM_vert_in_edge(BMEdge *e, BMVert *v)
  *                      in the face to check.
  *                      The faces loop direction is ignored.
  * </pre>
+ *
+ * \note caller must ensure \a e is used in \a f
  */
 BMLoop *BM_face_other_edge_loop(BMFace *f, BMEdge *e, BMVert *v)
 {
-	BMLoop *l_iter;
-	BMLoop *l_first;
+	BMLoop *l = BM_face_edge_share_loop(f, e);
+	BLI_assert(l != NULL);
+	return BM_loop_other_edge_loop(l, v);
+}
 
-	/* we could loop around the face too, but turns out this uses a lot
-	 * more iterations (approx double with quads, many more with 5+ ngons) */
-	l_iter = l_first = e->l;
-
-	do {
-		if (l_iter->e == e && l_iter->f == f) {
-			break;
-		}
-	} while ((l_iter = l_iter->radial_next) != l_first);
-	
-	return l_iter->v == v ? l_iter->prev : l_iter->next;
+/**
+ * See #BM_face_other_edge_loop This is the same functionality
+ * to be used when the edges loop is already known.
+ */
+BMLoop *BM_loop_other_edge_loop(BMLoop *l, BMVert *v)
+{
+	BLI_assert(BM_vert_in_edge(l->e, v));
+	return l->v == v ? l->prev : l->next;
 }
 
 /**
@@ -680,7 +681,7 @@ bool BM_edge_is_wire(BMEdge *e)
  */
 bool BM_vert_is_manifold(BMVert *v)
 {
-	BMEdge *e, *oe;
+	BMEdge *e, *e_old;
 	BMLoop *l;
 	int len, count, flag;
 
@@ -691,7 +692,7 @@ bool BM_vert_is_manifold(BMVert *v)
 
 	/* count edges while looking for non-manifold edges */
 	len = 0;
-	oe = e = v->e;
+	e_old = e = v->e;
 	do {
 		/* loose edge or edge shared by more than two faces,
 		 * edges with 1 face user are OK, otherwise we could
@@ -700,14 +701,14 @@ bool BM_vert_is_manifold(BMVert *v)
 			return false;
 		}
 		len++;
-	} while ((e = bmesh_disk_edge_next(e, v)) != oe);
+	} while ((e = bmesh_disk_edge_next(e, v)) != e_old);
 
 	count = 1;
 	flag = 1;
 	e = NULL;
-	oe = v->e;
-	l = oe->l;
-	while (e != oe) {
+	e_old = v->e;
+	l = e_old->l;
+	while (e != e_old) {
 		l = (l->v == v) ? l->prev : l->next;
 		e = l->e;
 		count++; /* count the edges */
@@ -716,13 +717,13 @@ bool BM_vert_is_manifold(BMVert *v)
 			/* we've hit the edge of an open mesh, reset once */
 			flag = 0;
 			count = 1;
-			oe = e;
+			e_old = e;
 			e = NULL;
-			l = oe->l;
+			l = e_old->l;
 		}
 		else if (l->radial_next == l) {
 			/* break the loop */
-			e = oe;
+			e = e_old;
 		}
 		else {
 			l = l->radial_next;
@@ -769,10 +770,31 @@ int BM_edge_is_manifold(BMEdge *e)
 bool BM_edge_is_contiguous(BMEdge *e)
 {
 	const BMLoop *l = e->l;
-	const BMLoop *l_other = l->radial_next;
-	return (l && (l_other != l) &&               /* not 0 or 1 face users */
-	             (l_other->radial_next == l) &&  /* 2 face users */
+	const BMLoop *l_other;
+	return (l && ((l_other = l->radial_next) != l) &&  /* not 0 or 1 face users */
+	             (l_other->radial_next == l) &&        /* 2 face users */
 	             (l_other->v != l->v));
+}
+
+/**
+ * Check if the edge is convex or concave
+ * (depends on face winding)
+ */
+bool BM_edge_is_convex(BMEdge *e)
+{
+	if (BM_edge_is_manifold(e)) {
+		BMLoop *l1 = e->l;
+		BMLoop *l2 = e->l->radial_next;
+		if (!equals_v3v3(l1->f->no, l2->f->no)) {
+			float cross[3];
+			float l_dir[3];
+			cross_v3_v3v3(cross, l1->f->no, l2->f->no);
+			/* we assume contiguous normals, otherwise the result isn't meaningful */
+			sub_v3_v3v3(l_dir, l1->next->v->co, l1->v->co);
+			return (dot_v3v3(l_dir, cross) > 0.0f);
+		}
+	}
+	return true;
 }
 
 /**
@@ -937,6 +959,7 @@ bool BM_edge_share_vert_check(BMEdge *e1, BMEdge *e2)
  */
 BMVert *BM_edge_share_vert(BMEdge *e1, BMEdge *e2)
 {
+	BLI_assert(e1 != e2);
 	if (BM_vert_in_edge(e2, e1->v1)) {
 		return e1->v1;
 	}
@@ -1153,6 +1176,27 @@ float BM_edge_calc_face_angle(BMEdge *e)
 }
 
 /**
+ * \brief BMESH EDGE/FACE ANGLE
+ *
+ *  Calculates the angle between two faces.
+ *  Assumes the face normals are correct.
+ *
+ * \return angle in radians
+ */
+float BM_edge_calc_face_angle_signed(BMEdge *e)
+{
+	if (BM_edge_is_manifold(e)) {
+		BMLoop *l1 = e->l;
+		BMLoop *l2 = e->l->radial_next;
+		const float angle = angle_normalized_v3v3(l1->f->no, l2->f->no);
+		return BM_edge_is_convex(e) ? angle : -angle;
+	}
+	else {
+		return DEG2RADF(90.0f);
+	}
+}
+
+/**
  * \brief BMESH EDGE/FACE TANGENT
  *
  * Calculate the tangent at this loop corner or fallback to the face normal on straight lines.
@@ -1351,6 +1395,8 @@ BMEdge *BM_edge_exists(BMVert *v1, BMVert *v2)
 {
 	BMIter iter;
 	BMEdge *e;
+
+	BLI_assert(v1 != v2);
 
 	BM_ITER_ELEM (e, &iter, v1, BM_EDGES_OF_VERT) {
 		if (e->v1 == v2 || e->v2 == v2)
@@ -1651,4 +1697,43 @@ bool BM_face_is_any_edge_flag_test(BMFace *f, const char hflag)
 		}
 	} while ((l_iter = l_iter->next) != l_first);
 	return false;
+}
+
+static void bm_mesh_calc_volume_face(BMFace *f, float *r_vol)
+{
+	int tottri = f->len - 2;
+	BMLoop **loops     = BLI_array_alloca(loops, f->len);
+	int    (*index)[3] = BLI_array_alloca(index, tottri);
+	int j;
+
+	tottri = BM_face_calc_tessellation(f, loops, index);
+	BLI_assert(tottri <= f->len - 2);
+
+	for (j = 0; j < tottri; j++) {
+		const float *p1 = loops[index[j][0]]->v->co;
+		const float *p2 = loops[index[j][1]]->v->co;
+		const float *p3 = loops[index[j][2]]->v->co;
+
+		/* co1.dot(co2.cross(co3)) / 6.0 */
+		float cross[3];
+		cross_v3_v3v3(cross, p2, p3);
+		*r_vol += (1.0f / 6.0f) * dot_v3v3(p1, cross);
+	}
+}
+float BM_mesh_calc_volume(BMesh *bm, bool is_signed)
+{
+	/* warning, calls own tessellation function, may be slow */
+	float vol = 0.0f;
+	BMFace *f;
+	BMIter fiter;
+
+	BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+		bm_mesh_calc_volume_face(f, &vol);
+	}
+
+	if (is_signed == false) {
+		vol = fabsf(vol);
+	}
+
+	return vol;
 }

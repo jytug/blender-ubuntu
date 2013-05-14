@@ -29,6 +29,8 @@ from bpy.props import (StringProperty,
 
 from rna_prop_ui import rna_idprop_ui_prop_get, rna_idprop_ui_prop_clear
 
+from bpy.app.translations import pgettext_tip as tip_
+
 
 class MESH_OT_delete_edgeloop(Operator):
     """Delete an edge loop by merging the faces on each side """ \
@@ -828,7 +830,7 @@ def _wm_doc_get_id(doc_id, do_url=True, url_prefix=""):
                 rna = "bpy.ops.%s.%s" % (class_name, class_prop)
         else:
             rna_class = getattr(bpy.types, class_name)
-            
+
             # an operator setting (selected from a running operator), rare case
             # note: Py defined operators are subclass of Operator,
             #       C defined operators are subclass of OperatorProperties.
@@ -883,13 +885,11 @@ class WM_OT_doc_view_manual(Operator):
 
     @staticmethod
     def _lookup_rna_url(rna_id, verbose=True):
-        url = None
         for prefix, url_manual_mapping in bpy.utils.manual_map():
             rna_ref = WM_OT_doc_view_manual._find_reference(rna_id, url_manual_mapping, verbose=verbose)
             if rna_ref is not None:
                 url = prefix + rna_ref
-                break
-        return url
+                return url
 
     def execute(self, context):
         rna_id = _wm_doc_get_id(self.doc_id, do_url=False)
@@ -1038,10 +1038,10 @@ rna_max = FloatProperty(
 
 
 class WM_OT_properties_edit(Operator):
-    """Internal use (edit a property data_path)"""
     bl_idname = "wm.properties_edit"
     bl_label = "Edit Property"
-    bl_options = {'REGISTER'}  # only because invoke_props_popup requires.
+    # register only because invoke_props_popup requires.
+    bl_options = {'REGISTER', 'INTERNAL'}
 
     data_path = rna_path
     property = rna_property
@@ -1126,10 +1126,9 @@ class WM_OT_properties_edit(Operator):
 
 
 class WM_OT_properties_add(Operator):
-    """Internal use (edit a property data_path)"""
     bl_idname = "wm.properties_add"
     bl_label = "Add Property"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'INTERNAL'}
 
     data_path = rna_path
 
@@ -1160,9 +1159,10 @@ class WM_OT_properties_add(Operator):
 
 
 class WM_OT_properties_context_change(Operator):
-    "Change the context tab in a Properties Window"
+    "Jump to a different tab inside the properties editor"
     bl_idname = "wm.properties_context_change"
     bl_label = ""
+    bl_options = {'INTERNAL'}
 
     context = StringProperty(
             name="Context",
@@ -1178,7 +1178,7 @@ class WM_OT_properties_remove(Operator):
     """Internal use (edit a property data_path)"""
     bl_idname = "wm.properties_remove"
     bl_label = "Remove Property"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'INTERNAL'}
 
     data_path = rna_path
     property = rna_property
@@ -1271,11 +1271,15 @@ class WM_OT_copy_prev_settings(Operator):
         else:
             shutil.copytree(path_src, path_dst, symlinks=True)
 
+            # reload recent-files.txt
+            bpy.ops.wm.read_history()
+
             # don't loose users work if they open the splash later.
             if bpy.data.is_saved is bpy.data.is_dirty is False:
                 bpy.ops.wm.read_homefile()
             else:
                 self.report({'INFO'}, "Reload Start-Up file to restore settings")
+
             return {'FINISHED'}
 
         return {'CANCELLED'}
@@ -1838,7 +1842,7 @@ class WM_OT_addon_install(Operator):
         bpy.utils.refresh_script_paths()
 
         # print message
-        msg = "Modules Installed from %r into %r (%s)" % (pyfile, path_addons, ", ".join(sorted(addons_new)))
+        msg = tip_("Modules Installed from %r into %r (%s)") % (pyfile, path_addons, ", ".join(sorted(addons_new)))
         print(msg)
         self.report({'INFO'}, msg)
 

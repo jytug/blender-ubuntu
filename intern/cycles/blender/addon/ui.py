@@ -83,6 +83,13 @@ class CyclesRender_PT_sampling(CyclesButtonsPanel, Panel):
             sub.prop(cscene, "transmission_samples", text="Transmission")
             sub.prop(cscene, "ao_samples", text="AO")
             sub.prop(cscene, "mesh_light_samples", text="Mesh Light")
+            sub.prop(cscene, "subsurface_samples", text="Subsurface")
+
+        for rl in scene.render.layers:
+            if rl.samples > 0:
+                layout.separator()
+                layout.row().prop(cscene, "use_layer_samples")
+                break
 
 
 class CyclesRender_PT_light_paths(CyclesButtonsPanel, Panel):
@@ -168,19 +175,6 @@ class CyclesRender_PT_film(CyclesButtonsPanel, Panel):
         if cscene.filter_type != 'BOX':
             sub.prop(cscene, "filter_width", text="Width")
 
-        layout.separator()
-
-        rd = scene.render
-        col = layout.column()
-
-        split = col.split(percentage=0.40)
-        split.prop(rd, "use_antialiasing", "OpenGL AA")
-        row = split.row()
-        row.active = rd.use_antialiasing
-        row.prop(rd, "antialiasing_samples", expand=True)
-
-        col.prop(rd, "alpha_mode", text="OpenGL Alpha")
-
 
 class CyclesRender_PT_performance(CyclesButtonsPanel, Panel):
     bl_label = "Performance"
@@ -233,28 +227,63 @@ class CyclesRender_PT_performance(CyclesButtonsPanel, Panel):
         sub.prop(rd, "use_persistent_data", text="Persistent Images")
 
 
-class CyclesRender_PT_layers(CyclesButtonsPanel, Panel):
-    bl_label = "Layers"
+class CyclesRender_PT_opengl(CyclesButtonsPanel, Panel):
+    bl_label = "OpenGL Render"
     bl_options = {'DEFAULT_CLOSED'}
-    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        rd = context.scene.render
+
+        split = layout.split()
+
+        col = split.column()
+        col.prop(rd, "use_antialiasing")
+        sub = col.row()
+        sub.active = rd.use_antialiasing
+        sub.prop(rd, "antialiasing_samples", expand=True)
+
+        col = split.column()
+        col.label(text="Alpha:")
+        col.prop(rd, "alpha_mode", text="")
+
+
+class CyclesRender_PT_layers(CyclesButtonsPanel, Panel):
+    bl_label = "Layer List"
+    bl_context = "render_layer"
+    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         layout = self.layout
 
         scene = context.scene
         rd = scene.render
+        rl = rd.layers.active
 
         row = layout.row()
-        row.template_list("RENDER_UL_renderlayers", "", rd, "layers", rd.layers, "active_index", rows=2)
+        row.template_list("RENDERLAYER_UL_renderlayers", "", rd, "layers", rd.layers, "active_index", rows=2)
 
         col = row.column(align=True)
         col.operator("scene.render_layer_add", icon='ZOOMIN', text="")
         col.operator("scene.render_layer_remove", icon='ZOOMOUT', text="")
 
         row = layout.row()
-        rl = rd.layers.active
-        row.prop(rl, "name")
+        if rl:
+            row.prop(rl, "name")
         row.prop(rd, "use_single_layer", text="", icon_only=True)
+
+
+class CyclesRender_PT_layer_options(CyclesButtonsPanel, Panel):
+    bl_label = "Layer"
+    bl_context = "render_layer"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        rd = scene.render
+        rl = rd.layers.active
 
         split = layout.split()
 
@@ -264,8 +293,7 @@ class CyclesRender_PT_layers(CyclesButtonsPanel, Panel):
 
         col = split.column()
         col.prop(rl, "layers", text="Layer")
-        col.label(text="Mask Layers:")
-        col.prop(rl, "layers_zmask", text="")
+        col.prop(rl, "layers_zmask", text="Mask Layer")
 
         split = layout.split()
 
@@ -277,10 +305,22 @@ class CyclesRender_PT_layers(CyclesButtonsPanel, Panel):
         col.prop(rl, "samples")
         col.prop(rl, "use_sky", "Use Environment")
 
+
+class CyclesRender_PT_layer_passes(CyclesButtonsPanel, Panel):
+    bl_label = "Passes"
+    bl_context = "render_layer"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        rd = scene.render
+        rl = rd.layers.active
+
         split = layout.split()
 
         col = split.column()
-        col.label(text="Passes:")
         col.prop(rl, "use_pass_combined")
         col.prop(rl, "use_pass_z")
         col.prop(rl, "use_pass_normal")
@@ -527,7 +567,7 @@ def panel_node_draw(layout, id_data, output_type, input_name):
 
     node = find_node(id_data, output_type)
     if not node:
-        layout.label(text="No output node.")
+        layout.label(text="No output node")
     else:
         input = find_node_input(node, input_name)
         layout.template_node_view(ntree, node, input)
@@ -590,7 +630,7 @@ class CyclesLamp_PT_lamp(CyclesButtonsPanel, Panel):
         layout.prop(clamp, "use_multiple_importance_sampling")
 
         if lamp.type == 'HEMI':
-            layout.label(text="Not supported, interpreted as sun lamp.")
+            layout.label(text="Not supported, interpreted as sun lamp")
 
 
 class CyclesLamp_PT_nodes(CyclesButtonsPanel, Panel):
@@ -856,15 +896,16 @@ class CyclesTexture_PT_context(CyclesButtonsPanel, Panel):
 
             if pin_id:
                 col.template_ID(space, "pin_id")
-            elif user:
-                col.template_ID(user, "texture", new="texture.new")
+            else:
+                propname = context.texture_user_property.identifier
+                col.template_ID(user, propname, new="texture.new")
 
             if tex:
                 split = layout.split(percentage=0.2)
                 split.label(text="Type:")
                 split.prop(tex, "type", text="")
-                
-                
+
+
 class CyclesTexture_PT_node(CyclesButtonsPanel, Panel):
     bl_label = "Node"
     bl_context = "texture"
@@ -893,7 +934,7 @@ class CyclesTexture_PT_mapping(CyclesButtonsPanel, Panel):
 
     def draw(self, context):
         layout = self.layout
-        
+
         node = context.texture_node
 
         mapping = node.texture_mapping
@@ -925,7 +966,7 @@ class CyclesTexture_PT_colors(CyclesButtonsPanel, Panel):
 
     def draw(self, context):
         layout = self.layout
-        
+
         node = context.texture_node
 
         mapping = node.color_mapping
@@ -1045,6 +1086,10 @@ class CyclesRender_PT_CurveRendering(CyclesButtonsPanel, Panel):
 
             row = layout.row()
             row.prop(ccscene, "use_parents", text="Include parents")
+        
+        row = layout.row()
+        row.prop(ccscene, "minimum_width", text="Min Pixels")
+        row.prop(ccscene, "maximum_width", text="Max Ext.")
 
 
 class CyclesParticle_PT_CurveSettings(CyclesButtonsPanel, Panel):
@@ -1069,12 +1114,15 @@ class CyclesParticle_PT_CurveSettings(CyclesButtonsPanel, Panel):
 
         row = layout.row()
         row.prop(cpsys, "shape", text="Shape")
-        row.prop(cpsys, "use_closetip", text="Close tip")
 
-        layout.label(text="Width multiplier:")
+        layout.label(text="Thickness:")
         row = layout.row()
         row.prop(cpsys, "root_width", text="Root")
         row.prop(cpsys, "tip_width", text="Tip")
+        
+        row = layout.row()
+        row.prop(cpsys, "radius_scale", text="Scaling")
+        row.prop(cpsys, "use_closetip", text="Close tip")
 
 
 class CyclesScene_PT_simplify(CyclesButtonsPanel, Panel):
@@ -1093,13 +1141,9 @@ class CyclesScene_PT_simplify(CyclesButtonsPanel, Panel):
 
         layout.active = rd.use_simplify
 
-        split = layout.split()
-
-        col = split.column()
-        col.prop(rd, "simplify_subdivision", text="Subdivision")
-
-        col = split.column()
-        col.prop(rd, "simplify_child_particles", text="Child Particles")
+        row = layout.row()
+        row.prop(rd, "simplify_subdivision", text="Subdivision")
+        row.prop(rd, "simplify_child_particles", text="Child Particles")
 
 
 def draw_device(self, context):

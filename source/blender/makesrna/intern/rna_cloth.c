@@ -24,9 +24,12 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
 #include <limits.h>
+
+#include "DNA_cloth_types.h"
+#include "DNA_object_types.h"
+#include "DNA_scene_types.h"
 
 #include "RNA_define.h"
 
@@ -34,10 +37,6 @@
 
 #include "BKE_cloth.h"
 #include "BKE_modifier.h"
-
-#include "DNA_cloth_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -213,7 +212,14 @@ static char *rna_ClothSettings_path(PointerRNA *ptr)
 	Object *ob = (Object *)ptr->id.data;
 	ModifierData *md = modifiers_findByType(ob, eModifierType_Cloth);
 
-	return md ? BLI_sprintfN("modifiers[\"%s\"].settings", md->name) : NULL;
+	if (md) {
+		char name_esc[sizeof(md->name) * 2];
+		BLI_strescape(name_esc, md->name, sizeof(name_esc));
+		return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
+	}
+	else {
+		return NULL;
+	}
 }
 
 static char *rna_ClothCollisionSettings_path(PointerRNA *ptr)
@@ -221,7 +227,14 @@ static char *rna_ClothCollisionSettings_path(PointerRNA *ptr)
 	Object *ob = (Object *)ptr->id.data;
 	ModifierData *md = modifiers_findByType(ob, eModifierType_Cloth);
 
-	return md ? BLI_sprintfN("modifiers[\"%s\"].collision_settings", md->name) : NULL;
+	if (md) {
+		char name_esc[sizeof(md->name) * 2];
+		BLI_strescape(name_esc, md->name, sizeof(name_esc));
+		return BLI_sprintfN("modifiers[\"%s\"].collision_settings", name_esc);
+	}
+	else {
+		return NULL;
+	}
 }
 
 #else

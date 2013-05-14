@@ -100,7 +100,7 @@ public:
 	virtual GHOST_ITimerTask *installTimer(GHOST_TUns64 delay,
 	                                       GHOST_TUns64 interval,
 	                                       GHOST_TimerProcPtr timerProc,
-	                                       GHOST_TUserDataPtr userData = 0);
+	                                       GHOST_TUserDataPtr userData = NULL);
 
 	/**
 	 * Removes a timer.
@@ -330,7 +330,7 @@ protected:
 	 * \param window The window created.
 	 * \return Indication of success.
 	 */
-	virtual GHOST_TSuccess createFullScreenWindow(GHOST_Window **window,
+	virtual GHOST_TSuccess createFullScreenWindow(GHOST_Window **window, const GHOST_DisplaySetting &settings,
 	                                              const bool stereoVisual, const GHOST_TUns16 numOfAASamples = 0);
 
 	/** The display manager (platform dependant). */

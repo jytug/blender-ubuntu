@@ -47,6 +47,7 @@
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
+#include "BLI_fileops_types.h"
 
 #include "DNA_brush_types.h"
 #include "DNA_dynamicpaint_types.h"
@@ -75,12 +76,14 @@
 
 #include "interface_intern.h"
 
+#ifndef WITH_HEADLESS
 #define ICON_GRID_COLS      26
 #define ICON_GRID_ROWS      30
 
 #define ICON_GRID_MARGIN    10
 #define ICON_GRID_W         32
 #define ICON_GRID_H         32
+#endif  /* WITH_HEADLESS */
 
 typedef struct IconImage {
 	int w;
@@ -703,10 +706,8 @@ static void init_iconfile_list(struct ListBase *list)
 {
 	IconFile *ifile;
 	struct direntry *dir;
-	int restoredir = 1; /* restore to current directory */
 	int totfile, i, index = 1;
 	const char *icondir;
-	char olddir[FILE_MAX];
 
 	list->first = list->last = NULL;
 	icondir = BLI_get_folder(BLENDER_DATAFILES, "icons");
@@ -714,12 +715,7 @@ static void init_iconfile_list(struct ListBase *list)
 	if (icondir == NULL)
 		return;
 	
-	/* since BLI_dir_contents changes the current working directory, restore it 
-	 * back to old value afterwards */
-	if (!BLI_current_working_dir(olddir, sizeof(olddir))) 
-		restoredir = 0;
 	totfile = BLI_dir_contents(icondir, &dir);
-	if (restoredir && !chdir(olddir)) {} /* fix warning about checking return value */
 
 	for (i = 0; i < totfile; i++) {
 		if ((dir[i].type & S_IFREG)) {
@@ -766,18 +762,8 @@ static void init_iconfile_list(struct ListBase *list)
 			}
 		}
 	}
-	
-	/* free temporary direntry structure that's been created by BLI_dir_contents() */
-	i = totfile - 1;
-	
-	for (; i >= 0; i--) {
-		MEM_freeN(dir[i].relname);
-		MEM_freeN(dir[i].path);
-		if (dir[i].string) {
-			MEM_freeN(dir[i].string);
-		}
-	}
-	free(dir);
+
+	BLI_free_filelist(dir, totfile);
 	dir = NULL;
 }
 
@@ -1180,7 +1166,7 @@ static void ui_id_preview_image_render_size(bContext *C, ID *id, PreviewImage *p
 	}
 }
 
-static void ui_id_icon_render(bContext *C, ID *id, int big)
+static void ui_id_icon_render(bContext *C, ID *id, const bool big)
 {
 	PreviewImage *pi = BKE_previewimg_get(id);
 
@@ -1264,7 +1250,7 @@ static int ui_id_brush_get_icon(bContext *C, ID *id)
 	return id->icon_id;
 }
 
-int ui_id_icon_get(bContext *C, ID *id, int big)
+int ui_id_icon_get(bContext *C, ID *id, const bool big)
 {
 	int iconid = 0;
 	
@@ -1289,7 +1275,7 @@ int ui_id_icon_get(bContext *C, ID *id, int big)
 	return iconid;
 }
 
-int UI_rnaptr_icon_get(bContext *C, PointerRNA *ptr, int rnaicon, int big)
+int UI_rnaptr_icon_get(bContext *C, PointerRNA *ptr, int rnaicon, const bool big)
 {
 	ID *id = NULL;
 

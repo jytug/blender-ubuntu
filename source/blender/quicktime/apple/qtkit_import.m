@@ -32,6 +32,7 @@
 #include "BLO_sys_types.h"
 #include "BKE_global.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_dynstr.h"
 #include "BLI_path_util.h"
 
@@ -77,7 +78,7 @@ void quicktime_exit(void)
 }
 
 
-int anim_is_quicktime (const char *name)
+int anim_is_quicktime(const char *name)
 {
 	NSAutoreleasePool *pool;
 	
@@ -93,6 +94,8 @@ int anim_is_quicktime (const char *name)
 	    BLI_testextensie(name, ".png") ||
 	    BLI_testextensie(name, ".bmp") ||
 	    BLI_testextensie(name, ".jpg") ||
+	    BLI_testextensie(name, ".tif") ||
+	    BLI_testextensie(name, ".exr") ||
 	    BLI_testextensie(name, ".wav") ||
 	    BLI_testextensie(name, ".zip") ||
 	    BLI_testextensie(name, ".mp3"))
@@ -118,7 +121,7 @@ int anim_is_quicktime (const char *name)
 }
 
 
-void free_anim_quicktime (struct anim *anim)
+void free_anim_quicktime(struct anim *anim)
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
@@ -142,7 +145,7 @@ void free_anim_quicktime (struct anim *anim)
 	[pool drain];
 }
 
-static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
+static ImBuf *nsImageToiBuf(NSImage *sourceImage, int width, int height)
 {
 	ImBuf *ibuf = NULL;
 	uchar *rasterRGB = NULL;
@@ -154,7 +157,7 @@ static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
 	NSEnumerator *enumerator;
 	NSImageRep *representation;
 	
-	ibuf = IMB_allocImBuf (width, height, 32, IB_rect);
+	ibuf = IMB_allocImBuf(width, height, 32, IB_rect);
 	if (!ibuf) {
 		if (QTIME_DEBUG) {
 			printf("quicktime_import: could not allocate memory for the image.\n");
@@ -259,7 +262,7 @@ static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
 	return ibuf;
 }
 
-ImBuf * qtime_fetchibuf (struct anim *anim, int position)
+ImBuf *qtime_fetchibuf (struct anim *anim, int position)
 {
 	NSImage *frameImage;
 	QTTime time;
@@ -298,7 +301,7 @@ ImBuf * qtime_fetchibuf (struct anim *anim, int position)
 }
 
 
-int startquicktime (struct anim *anim)
+int startquicktime(struct anim *anim)
 {
 	NSAutoreleasePool *pool;
 	NSArray* videoTracks;
@@ -306,7 +309,7 @@ int startquicktime (struct anim *anim)
 	QTTime qtTimeDuration;
 	NSDictionary *attributes;
 	
-	anim->qtime = MEM_callocN (sizeof(QuicktimeMovie),"animqt");
+	anim->qtime = MEM_callocN(sizeof(QuicktimeMovie),"animqt");
 
 	if (anim->qtime == NULL) {
 		if(QTIME_DEBUG) printf("Can't alloc qtime: %s\n", anim->name);
@@ -364,7 +367,7 @@ int startquicktime (struct anim *anim)
 		return -1;
 	}
 
-	anim->qtime->ibuf = IMB_allocImBuf (anim->x, anim->y, 32, IB_rect);
+	anim->qtime->ibuf = IMB_allocImBuf(anim->x, anim->y, 32, IB_rect);
 	
 	qtTimeDuration = [[anim->qtime->media attributeForKey:QTMediaDurationAttribute] QTTimeValue];
 	anim->qtime->durationTime = qtTimeDuration.timeValue;
@@ -389,7 +392,7 @@ int startquicktime (struct anim *anim)
 	return 0;
 }
 
-int imb_is_a_quicktime (char *name)
+int imb_is_a_quicktime(char *name)
 {
 	NSImage *image;
 	int result;

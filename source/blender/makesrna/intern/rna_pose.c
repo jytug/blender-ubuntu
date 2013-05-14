@@ -41,6 +41,8 @@
 
 #include "BLI_math.h"
 
+#include "BLF_translation.h"
+
 #include "WM_types.h"
 
 
@@ -131,7 +133,11 @@ static void rna_Pose_IK_update(Main *UNUSED(bmain), Scene *UNUSED(scene), Pointe
 
 static char *rna_PoseBone_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("pose.bones[\"%s\"]", ((bPoseChannel *)ptr->data)->name);
+	bPoseChannel *pchan = ptr->data;
+	char name_esc[sizeof(pchan->name) * 2];
+
+	BLI_strescape(name_esc, pchan->name, sizeof(name_esc));
+	return BLI_sprintfN("pose.bones[\"%s\"]", name_esc);
 }
 
 /* shared for actions groups and bone groups */
@@ -156,10 +162,11 @@ static void rna_BoneGroup_name_set(PointerRNA *ptr, const char *value)
 	/* copy the new name into the name slot */
 	BLI_strncpy_utf8(agrp->name, value, sizeof(agrp->name));
 
-	BLI_uniquename(&ob->pose->agroups, agrp, "Group", '.', offsetof(bActionGroup, name), sizeof(agrp->name));
+	BLI_uniquename(&ob->pose->agroups, agrp, CTX_DATA_(BLF_I18NCONTEXT_ID_ARMATURE, "Group"), '.',
+	               offsetof(bActionGroup, name), sizeof(agrp->name));
 }
 
-static IDProperty *rna_PoseBone_idprops(PointerRNA *ptr, int create)
+static IDProperty *rna_PoseBone_idprops(PointerRNA *ptr, bool create)
 {
 	bPoseChannel *pchan = ptr->data;
 
@@ -187,13 +194,13 @@ static void rna_Pose_ik_solver_set(struct PointerRNA *ptr, int value)
 	}
 }
 
-static void rna_Pose_ik_solver_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Pose_ik_solver_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	Object *ob = ptr->id.data;
 	bPose *pose = ptr->data;
 
 	pose->flag |= POSE_RECALC;  /* checks & sorts pose channels */
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	
 	BKE_pose_update_constraint_flags(pose);
 	
@@ -444,7 +451,7 @@ static void rna_pose_bgroup_name_index_set(PointerRNA *ptr, const char *value, s
 	int a;
 	
 	for (a = 1, grp = pose->agroups.first; grp; grp = grp->next, a++) {
-		if (strcmp(grp->name, value) == 0) {
+		if (STREQ(grp->name, value)) {
 			*index = a;
 			return;
 		}
@@ -459,7 +466,7 @@ static void rna_pose_pgroup_name_set(PointerRNA *ptr, const char *value, char *r
 	bActionGroup *grp;
 	
 	for (grp = pose->agroups.first; grp; grp = grp->next) {
-		if (strcmp(grp->name, value) == 0) {
+		if (STREQ(grp->name, value)) {
 			BLI_strncpy(result, value, maxlen);
 			return;
 		}

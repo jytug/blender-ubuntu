@@ -76,7 +76,7 @@ static void VertexIt_Destruct(CSG_VertexIteratorDescriptor *iterator)
 	if (iterator->it) {
 		/* deallocate memory for iterator */
 		MEM_freeN(iterator->it);
-		iterator->it = 0;
+		iterator->it = NULL;
 	}
 	iterator->Done = NULL;
 	iterator->Fill = NULL;
@@ -127,11 +127,11 @@ static void VertexIt_Construct(CSG_VertexIteratorDescriptor *output, DerivedMesh
 {
 
 	VertexIt *it;
-	if (output == 0) return;
+	if (output == NULL) return;
 
 	/* allocate some memory for blender iterator */
 	it = (VertexIt *)(MEM_mallocN(sizeof(VertexIt), "Boolean_VIt"));
-	if (it == 0) {
+	if (it == NULL) {
 		return;
 	}
 	/* assign blender specific variables */
@@ -221,11 +221,11 @@ static void FaceIt_Construct(
         CSG_FaceIteratorDescriptor *output, DerivedMesh *dm, int offset, Object *ob)
 {
 	FaceIt *it;
-	if (output == 0) return;
+	if (output == NULL) return;
 
 	/* allocate some memory for blender iterator */
 	it = (FaceIt *)(MEM_mallocN(sizeof(FaceIt), "Boolean_FIt"));
-	if (it == 0) {
+	if (it == NULL) {
 		return;
 	}
 	/* assign blender specific variables */
@@ -625,7 +625,7 @@ int NewBooleanMesh(Scene *scene, Base *base, Base *base_select, int int_op_type)
 	ob_new = AddNewBlenderMesh(scene, base_select);
 	me_new = ob_new->data;
 
-	DM_to_mesh(result, me_new, ob_new);
+	DM_to_mesh(result, me_new, ob_new, CD_MASK_MESH);
 	result->release(result);
 
 	dm->release(dm);

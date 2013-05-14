@@ -500,6 +500,7 @@ int cocoa_request_qtcodec_settings(bContext *C, wmOperator *op)
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
 - (void)applicationWillTerminate:(NSNotification *)aNotification;
 - (void)applicationWillBecomeActive:(NSNotification *)aNotification;
+- (void)toggleFullScreen:(NSNotification *)notification;
 @end
 
 @implementation CocoaAppDelegate : NSObject
@@ -536,12 +537,19 @@ int cocoa_request_qtcodec_settings(bContext *C, wmOperator *op)
 {
 	systemCocoa->handleApplicationBecomeActiveEvent();
 }
+
+- (void)toggleFullScreen:(NSNotification *)notification
+{
+}
+
 @end
+
 
 
 
 #pragma mark initialization/finalization
 
+const char *user_locale; // Global current user locale
 
 GHOST_SystemCocoa::GHOST_SystemCocoa()
 {
@@ -580,6 +588,13 @@ GHOST_SystemCocoa::GHOST_SystemCocoa()
 	rstring = NULL;
 	
 	m_ignoreWindowSizedMessages = false;
+	
+	//Get current locale
+	CFLocaleRef myCFLocale = CFLocaleCopyCurrent();
+	NSLocale * myNSLocale = (NSLocale *) myCFLocale;
+	[myNSLocale autorelease];
+	NSString *nsIdentifier = [myNSLocale localeIdentifier];
+	user_locale = [nsIdentifier UTF8String];	
 }
 
 GHOST_SystemCocoa::~GHOST_SystemCocoa()
@@ -647,6 +662,11 @@ GHOST_TSuccess GHOST_SystemCocoa::init()
 				
 				[windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
 				
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060 // make it build with  10.6 deployment target, but as it is not available in 10.6, it will get weaklinked
+				menuItem = [windowMenu addItemWithTitle:@"Enter Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f" ];
+				[menuItem setKeyEquivalentModifierMask:NSControlKeyMask | NSCommandKeyMask];
+#endif
+
 				menuItem = [windowMenu addItemWithTitle:@"Close" action:@selector(performClose:) keyEquivalent:@"w"];
 				[menuItem setKeyEquivalentModifierMask:NSCommandKeyMask];
 				
@@ -734,6 +754,7 @@ GHOST_IWindow* GHOST_SystemCocoa::createWindow(
 	GHOST_TWindowState state,
 	GHOST_TDrawingContextType type,
 	bool stereoVisual,
+	const bool exclusive,
 	const GHOST_TUns16 numOfAASamples,
 	const GHOST_TEmbedderWindowID parentWindow
 )
@@ -1395,7 +1416,13 @@ GHOST_TSuccess GHOST_SystemCocoa::handleTabletEvent(void *eventPtr, short eventT
 	
 	switch (eventType) {
 		case NSTabletPoint:
-			ct.Pressure = [event pressure];
+			// workaround 2 cornercases:
+			// 1. if [event isEnteringProximity] was not triggered since program-start
+			// 2. device is not sending [event pointingDeviceType], due no eraser
+			if (ct.Active == GHOST_kTabletModeNone)
+				ct.Active = GHOST_kTabletModeStylus;
+				
+			ct.Pressure = sqrtf(powf([event pressure], 5 )); // experimental: change sensivity curve
 			ct.Xtilt = [event tilt].x;
 			ct.Ytilt = [event tilt].y;
 			break;
@@ -1772,7 +1799,7 @@ GHOST_TSuccess GHOST_SystemCocoa::handleKeyEvent(void *eventPtr)
 				//printf("Key down rawCode=0x%x charsIgnoringModifiers=%c keyCode=%u ascii=%i %c utf8=%s\n",[event keyCode],[charsIgnoringModifiers length]>0?[charsIgnoringModifiers characterAtIndex:0]:' ',keyCode,ascii,ascii, utf8_buf);
 			}
 			else {
-				pushEvent( new GHOST_EventKey([event timestamp] * 1000, GHOST_kEventKeyUp, window, keyCode, 0, '\0') );
+				pushEvent( new GHOST_EventKey([event timestamp] * 1000, GHOST_kEventKeyUp, window, keyCode, 0, NULL) );
 				//printf("Key up rawCode=0x%x charsIgnoringModifiers=%c keyCode=%u ascii=%i %c utf8=%s\n",[event keyCode],[charsIgnoringModifiers length]>0?[charsIgnoringModifiers characterAtIndex:0]:' ',keyCode,ascii,ascii, utf8_buf);
 			}
 			break;

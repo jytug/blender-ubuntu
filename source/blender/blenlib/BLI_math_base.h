@@ -179,6 +179,11 @@
 #include "intern/math_base_inline.c"
 #endif
 
+#ifdef BLI_MATH_GCC_WARN_PRAGMA
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wredundant-decls"
+#endif
+
 /******************************* Float ******************************/
 
 MINLINE float sqrt3f(float f);
@@ -208,6 +213,8 @@ MINLINE int is_power_of_2_i(int n);
 MINLINE int power_of_2_max_i(int n);
 MINLINE int power_of_2_min_i(int n);
 
+MINLINE int divide_round_i(int a, int b);
+
 MINLINE float shell_angle_to_dist(const float angle);
 
 #if (defined(WIN32) || defined(WIN64)) && !defined(FREE_WINDOWS)
@@ -216,6 +223,10 @@ extern double round(double x);
 #endif
 
 double double_round(double x, int ndigits);
+
+#ifdef BLI_MATH_GCC_WARN_PRAGMA
+#  pragma GCC diagnostic pop
+#endif
 
 /* asserts, some math functions expect normalized inputs
  * check the vector is unit length, or zero length (which can't be helped in some cases).

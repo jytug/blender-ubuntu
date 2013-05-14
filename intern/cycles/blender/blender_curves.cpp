@@ -166,7 +166,7 @@ bool ObtainCacheParticleData(Mesh *mesh, BL::Mesh *b_mesh, BL::Object *b_ob, Par
 
 	BL::Object::modifiers_iterator b_mod;
 	for(b_ob->modifiers.begin(b_mod); b_mod != b_ob->modifiers.end(); ++b_mod) {
-		if((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && (b_mod->show_viewport()) && (b_mod->show_render())) {
+		if((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && (background ? b_mod->show_render() : b_mod->show_viewport())) {
 			BL::ParticleSystemModifier psmd((const PointerRNA)b_mod->ptr);
 
 			BL::ParticleSystem b_psys((const PointerRNA)psmd.particle_system().ptr);
@@ -195,7 +195,7 @@ bool ObtainCacheParticleData(Mesh *mesh, BL::Mesh *b_mesh, BL::Object *b_ob, Par
 				CData->psys_curvenum.push_back(totcurves);
 				CData->psys_shader.push_back(shader);
 
-				float radius = b_psys.settings().particle_size() * 0.5f;
+				float radius = get_float(cpsys, "radius_scale") * 0.5f;
 	
 				CData->psys_rootradius.push_back(radius * get_float(cpsys, "root_width"));
 				CData->psys_tipradius.push_back(radius * get_float(cpsys, "tip_width"));
@@ -257,7 +257,7 @@ bool ObtainCacheParticleUV(Mesh *mesh, BL::Mesh *b_mesh, BL::Object *b_ob, Parti
 
 	BL::Object::modifiers_iterator b_mod;
 	for(b_ob->modifiers.begin(b_mod); b_mod != b_ob->modifiers.end(); ++b_mod) {
-		if ((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && (b_mod->show_viewport()) && (b_mod->show_render())) {
+		if((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && (background ? b_mod->show_render() : b_mod->show_viewport())) {
 			BL::ParticleSystemModifier psmd((const PointerRNA)b_mod->ptr);
 
 			BL::ParticleSystem b_psys((const PointerRNA)psmd.particle_system().ptr);
@@ -327,7 +327,7 @@ bool ObtainCacheParticleVcol(Mesh *mesh, BL::Mesh *b_mesh, BL::Object *b_ob, Par
 
 	BL::Object::modifiers_iterator b_mod;
 	for(b_ob->modifiers.begin(b_mod); b_mod != b_ob->modifiers.end(); ++b_mod) {
-		if ((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && (b_mod->show_viewport()) && (b_mod->show_render())) {
+		if((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && (background ? b_mod->show_render() : b_mod->show_viewport())) {
 			BL::ParticleSystemModifier psmd((const PointerRNA)b_mod->ptr);
 
 			BL::ParticleSystem b_psys((const PointerRNA)psmd.particle_system().ptr);
@@ -383,7 +383,7 @@ static void set_resolution(Mesh *mesh, BL::Mesh *b_mesh, BL::Object *b_ob, BL::S
 {
 	BL::Object::modifiers_iterator b_mod;
 	for(b_ob->modifiers.begin(b_mod); b_mod != b_ob->modifiers.end(); ++b_mod) {
-		if ((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && (b_mod->show_viewport()) && (b_mod->show_render())) {
+		if ((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && ((b_mod->show_viewport()) || (b_mod->show_render()))) {
 			BL::ParticleSystemModifier psmd((const PointerRNA)b_mod->ptr);
 			BL::ParticleSystem b_psys((const PointerRNA)psmd.particle_system().ptr);
 			b_psys.set_resolution(*scene, *b_ob, (render)? 2: 1);
@@ -884,6 +884,8 @@ void BlenderSync::sync_curve_settings()
 	CurveSystemManager prev_curve_system_manager = *curve_system_manager;
 
 	curve_system_manager->use_curves = get_boolean(csscene, "use_curves");
+	curve_system_manager->minimum_width = get_float(csscene, "minimum_width");
+	curve_system_manager->maximum_width = get_float(csscene, "maximum_width");
 
 	if(preset == CURVE_CUSTOM) {
 		/*custom properties*/
@@ -955,6 +957,12 @@ void BlenderSync::sync_curve_settings()
 				/*Cardinal curves preset*/
 				curve_system_manager->primitive = CURVE_SEGMENTS;
 				curve_system_manager->use_backfacing = true;
+				curve_system_manager->subdivisions = 4;
+				break;
+			case CURVE_SMOOTH_RIBBONS:
+				/*Cardinal ribbons preset*/
+				curve_system_manager->primitive = CURVE_RIBBONS;
+				curve_system_manager->use_backfacing = false;
 				curve_system_manager->subdivisions = 4;
 				break;
 		}

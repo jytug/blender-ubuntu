@@ -52,10 +52,8 @@ __device void kernel_shader_evaluate(KernelGlobals *kg, uint4 *input, float4 *ou
 #endif
 
 #ifdef __RAY_DIFFERENTIALS__
-		ray.dD.dx = make_float3(0.0f, 0.0f, 0.0f);
-		ray.dD.dy = make_float3(0.0f, 0.0f, 0.0f);
-		ray.dP.dx = make_float3(0.0f, 0.0f, 0.0f);
-		ray.dP.dy = make_float3(0.0f, 0.0f, 0.0f);
+		ray.dD = differential3_zero();
+		ray.dP = differential3_zero();
 #endif
 
 		/* setup shader data */
@@ -65,8 +63,6 @@ __device void kernel_shader_evaluate(KernelGlobals *kg, uint4 *input, float4 *ou
 		int flag = 0; /* we can't know which type of BSDF this is for */
 		out = shader_eval_background(kg, &sd, flag, SHADER_CONTEXT_MAIN);
 	}
-	
-	shader_release(kg, &sd);
 	
 	/* write output */
 	output[i] = make_float4(out.x, out.y, out.z, 0.0f);

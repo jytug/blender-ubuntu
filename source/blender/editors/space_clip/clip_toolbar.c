@@ -33,8 +33,6 @@
 
 #include "DNA_windowmanager_types.h"
 
-#include "RNA_access.h"
-
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
@@ -45,11 +43,13 @@
 #include "BKE_context.h"
 #include "BKE_screen.h"
 
-#include "ED_screen.h"
-#include "ED_util.h"
+#include "RNA_access.h"
 
 #include "WM_types.h"
 #include "WM_api.h"
+
+#include "ED_screen.h"
+#include "ED_util.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
@@ -257,7 +257,8 @@ void ED_clip_tool_props_register(ARegionType *art)
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype clip panel last operator");
 	strcpy(pt->idname, "CLIP_PT_last_operator");
-	strcpy(pt->label, "Operator");
+	strcpy(pt->label, N_("Operator"));
+	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw_header = clip_panel_operator_redo_header;
 	pt->draw = clip_panel_operator_redo;
 	BLI_addtail(&art->paneltypes, pt);

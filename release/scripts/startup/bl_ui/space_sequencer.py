@@ -98,7 +98,7 @@ class SEQUENCER_HT_header(Header):
                 row.prop(ed, "show_overlay", text="", icon='GHOST_ENABLED')
                 if ed.show_overlay:
                     row.prop(ed, "overlay_frame", text="")
-                    row.prop(ed, "overlay_lock", text="", icon='LOCKED')
+                    row.prop(ed, "use_overlay_lock", text="", icon='LOCKED')
 
                     row = layout.row()
                     row.prop(st, "overlay_type", text="")
@@ -284,6 +284,9 @@ class SEQUENCER_MT_strip(Menu):
 
         layout.operator("transform.transform", text="Grab/Move").mode = 'TRANSLATION'
         layout.operator("transform.transform", text="Grab/Extend from frame").mode = 'TIME_EXTEND'
+        layout.operator("sequencer.gap_remove")
+        layout.operator("sequencer.gap_insert")
+
         #  uiItemO(layout, NULL, 0, "sequencer.strip_snap"); // TODO - add this operator
         layout.separator()
 
@@ -511,9 +514,6 @@ class SEQUENCER_PT_effect(SequencerButtonsPanel, Panel):
                     layout.prop(strip, "speed_factor", text="Frame number")
                     layout.prop(strip, "scale_to_length")
 
-            #doesn't work currently
-            #layout.prop(strip, "use_frame_blend")
-
         elif strip.type == 'TRANSFORM':
             layout = self.layout
             col = layout.column()
@@ -555,7 +555,7 @@ class SEQUENCER_PT_effect(SequencerButtonsPanel, Panel):
 
             row.label("Cut To")
             for i in range(1, strip.channel):
-                row.operator("sequencer.cut_multicam", text=str(i)).camera = i
+                row.operator("sequencer.cut_multicam", text="%d" % i).camera = i
 
         col = layout.column(align=True)
         if strip.type == 'SPEED':

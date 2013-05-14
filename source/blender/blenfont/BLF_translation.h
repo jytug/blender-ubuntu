@@ -37,6 +37,10 @@
 
 #define TEXT_DOMAIN_NAME "blender"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* blf_lang.c */
 
 /* Search the path directory to the locale files, this try all
@@ -68,14 +72,19 @@ struct EnumPropertyItem *BLF_RNA_lang_enum_properties(void);
 
 unsigned char *BLF_get_unifont(int *unifont_size);
 void BLF_free_unifont(void);
+unsigned char *BLF_get_unifont_mono(int *unifont_size);
+void BLF_free_unifont_mono(void);
 
+bool BLF_is_default_context(const char *msgctxt);
 const char *BLF_pgettext(const char *msgctxt, const char *msgid);
 
 /* translation */
 bool BLF_translate_iface(void);
 bool BLF_translate_tooltips(void);
+bool BLF_translate_new_dataname(void);
 const char *BLF_translate_do_iface(const char *msgctxt, const char *msgid);
 const char *BLF_translate_do_tooltip(const char *msgctxt, const char *msgid);
+const char *BLF_translate_do_new_dataname(const char *msgctxt, const char *msgid);
 
 
 /* The "translation-marker" macro. */
@@ -87,19 +96,23 @@ const char *BLF_translate_do_tooltip(const char *msgctxt, const char *msgid);
 /*#  define _(msgid) BLF_gettext(msgid) */
 #  define IFACE_(msgid) BLF_translate_do_iface(NULL, msgid)
 #  define TIP_(msgid) BLF_translate_do_tooltip(NULL, msgid)
+#  define DATA_(msgid) BLF_translate_do_new_dataname(NULL, msgid)
 #  define CTX_IFACE_(context, msgid) BLF_translate_do_iface(context, msgid)
 #  define CTX_TIP_(context, msgid) BLF_translate_do_tooltip(context, msgid)
+#  define CTX_DATA_(context, msgid) BLF_translate_do_new_dataname(context, msgid)
 #else
 /*#  define _(msgid) msgid */
 #  define IFACE_(msgid) msgid
 #  define TIP_(msgid)   msgid
+#  define DATA_(msgid)  msgid
 #  define CTX_IFACE_(context, msgid) msgid
 #  define CTX_TIP_(context, msgid)   msgid
+#  define CTX_DATA_(context, msgid)  msgid
 #endif
 
 /* Helper macro, when we want to define a same msgid for multiple msgctxt...
  * Does nothing in C, but is "parsed" by our i18n py tools.
- * XXX Currently limited to at most 16 contexts at most
+ * XXX Currently limited to at most 16 contexts at once
  *     (but you can call it several times with the same msgid, should you need more contexts!).
  */
 #define BLF_I18N_MSGID_MULTI_CTXT(msgid, ...)
@@ -108,20 +121,25 @@ const char *BLF_translate_do_tooltip(const char *msgctxt, const char *msgid);
  * All i18n contexts must be defined here.
  * This is a nice way to be sure not to use a context twice for different
  * things, and limit the number of existing contexts!
+ * WARNING! Contexts should not be longer than BKE_ST_MAXNAME - 1!
  */
 
 /* Default, void context.
  * WARNING! The "" context is not the same as no (NULL) context at mo/boost::locale level!
  * NOTE: We translate BLF_I18NCONTEXT_DEFAULT as BLF_I18NCONTEXT_DEFAULT_BPY in Python, as we can't use "natural"
  *       None value in rna string properties... :/
+ *       The void string "" is also interpreted as BLF_I18NCONTEXT_DEFAULT.
  *       For perf reason, we only use the first char to detect this context, so other contexts should never start
  *       with the same char!
  */
 #define BLF_I18NCONTEXT_DEFAULT NULL
-#define BLF_I18NCONTEXT_DEFAULT_BPY "*"
+#define BLF_I18NCONTEXT_DEFAULT_BPYRNA "*"
 
 /* Default context for operator names/labels. */
 #define BLF_I18NCONTEXT_OPERATOR_DEFAULT "Operator"
+
+/* Mark the msgid applies to several elements (needed in some cases, as english adjectives have no plural mark. :( */
+#define BLF_I18NCONTEXT_PLURAL "Plural"
 
 /* ID-types contexts. */
 /* WARNING! Keep it in sync with idtypes in blenkernel/intern/idcode.c */
@@ -130,6 +148,7 @@ const char *BLF_translate_do_tooltip(const char *msgctxt, const char *msgid);
 #define BLF_I18NCONTEXT_ID_BRUSH                "Brush"
 #define BLF_I18NCONTEXT_ID_CAMERA               "Camera"
 #define BLF_I18NCONTEXT_ID_CURVE                "Curve"
+#define BLF_I18NCONTEXT_ID_FREESTYLELINESTYLE   "FreestyleLineStyle"
 #define BLF_I18NCONTEXT_ID_GPENCIL              "GPencil"
 #define BLF_I18NCONTEXT_ID_GROUP                "Group"
 #define BLF_I18NCONTEXT_ID_ID                   "ID"
@@ -170,13 +189,15 @@ typedef struct
 
 #define BLF_I18NCONTEXTS_DESC {                                                                                        \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_DEFAULT, "default_real"),                                                    \
-	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_DEFAULT_BPY, "default"),                                                     \
+	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_DEFAULT_BPYRNA, "default"),                                                  \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_OPERATOR_DEFAULT, "operator_default"),                                       \
+	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_PLURAL, "plural"),                                                           \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_ACTION, "id_action"),                                                     \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_ARMATURE, "id_armature"),                                                 \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_BRUSH, "id_brush"),                                                       \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_CAMERA, "id_camera"),                                                     \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_CURVE, "id_curve"),                                                       \
+	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_FREESTYLELINESTYLE, "id_fs_linestyle"),                                   \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_GPENCIL, "id_gpencil"),                                                   \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_GROUP, "id_group"),                                                       \
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_ID, "id_id"),                                                             \
@@ -206,5 +227,9 @@ typedef struct
 	BLF_I18NCONTEXTS_ITEM(BLF_I18NCONTEXT_ID_MASK, "id_mask"),                                                         \
 	{NULL, NULL, NULL}                                                                                                 \
 }
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* __BLF_TRANSLATION_H__ */

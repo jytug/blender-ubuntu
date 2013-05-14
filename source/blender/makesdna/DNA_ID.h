@@ -104,7 +104,7 @@ typedef struct IDProperty {
 /* 2 characters for ID code and 64 for actual name */
 #define MAX_ID_NAME	66
 
-/* There's a nasty circular dependency here.... void* to the rescue! I
+/* There's a nasty circular dependency here.... 'void *' to the rescue! I
  * really wonder why this is needed. */
 typedef struct ID {
 	void *next, *prev;
@@ -212,6 +212,7 @@ typedef struct PreviewImage {
 #define ID_WM		MAKE_ID2('W', 'M') /* WindowManager */
 #define ID_MC		MAKE_ID2('M', 'C') /* MovieClip */
 #define ID_MSK		MAKE_ID2('M', 'S') /* Mask */
+#define ID_LS		MAKE_ID2('L', 'S') /* FreestyleLineStyle */
 
 	/* NOTE! Fake IDs, needed for g.sipo->blocktype or outliner */
 #define ID_SEQ		MAKE_ID2('S', 'Q')
@@ -224,7 +225,7 @@ typedef struct PreviewImage {
 			/* fluidsim Ipo */
 #define ID_FLUIDSIM	MAKE_ID2('F', 'S')
 
-#define ID_REAL_USERS(id) (((ID *)id)->us - ((((ID *)id)->flag & LIB_FAKEUSER) ? 1:0))
+#define ID_REAL_USERS(id) (((ID *)id)->us - ((((ID *)id)->flag & LIB_FAKEUSER) ? 1 : 0))
 
 #define ID_CHECK_UNDO(id) ((GS((id)->name) != ID_SCR) && (GS((id)->name) != ID_WM))
 

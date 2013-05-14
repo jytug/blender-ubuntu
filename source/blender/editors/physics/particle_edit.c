@@ -132,8 +132,12 @@ int PE_hair_poll(bContext *C)
 
 int PE_poll_view3d(bContext *C)
 {
-	return PE_poll(C) && CTX_wm_area(C)->spacetype == SPACE_VIEW3D &&
-		CTX_wm_region(C)->regiontype == RGN_TYPE_WINDOW;
+	ScrArea *sa = CTX_wm_area(C);
+	ARegion *ar = CTX_wm_region(C);
+
+	return (PE_poll(C) &&
+	        (sa && sa->spacetype == SPACE_VIEW3D) &&
+	        (ar && ar->regiontype == RGN_TYPE_WINDOW));
 }
 
 void PE_free_ptcache_edit(PTCacheEdit *edit)
@@ -430,15 +434,6 @@ static int key_test_depth(PEData *data, const float co[3], const int screen_co[2
 	gluProject(co[0], co[1], co[2], data->mats.modelview, data->mats.projection,
 	           (GLint *)data->mats.viewport, &ux, &uy, &uz);
 
-#if 0 /* works well but too slow on some systems [#23118] */
-	screen_co[0] += (short)data->vc.ar->winrct.xmin;
-	screen_co[1] += (short)data->vc.ar->winrct.ymin;
-
-	/* PE_set_view3d_data calls this. no need to call here */
-	/* view3d_validate_backbuf(&data->vc); */
-	glReadPixels(screen_co[0], screen_co[1], 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-#else /* faster to use depths, these are calculated in PE_set_view3d_data */
-
 	/* check if screen_co is within bounds because brush_cut uses out of screen coords */
 	if (screen_co[0] >= 0 && screen_co[0] < vd->w && screen_co[1] >= 0 && screen_co[1] < vd->h) {
 		BLI_assert(vd && vd->depths);
@@ -447,7 +442,6 @@ static int key_test_depth(PEData *data, const float co[3], const int screen_co[2
 	}
 	else
 		return 0;
-#endif
 
 	if ((float)uz - 0.00001f > depth)
 		return 0;
@@ -1413,7 +1407,7 @@ void PARTICLE_OT_select_all(wmOperatorType *ot)
 
 /************************ pick select operator ************************/
 
-int PE_mouse_particles(bContext *C, const int mval[2], int extend, int deselect, int toggle)
+int PE_mouse_particles(bContext *C, const int mval[2], bool extend, bool deselect, bool toggle)
 {
 	PEData data;
 	Scene *scene= CTX_data_scene(C);
@@ -1555,7 +1549,7 @@ static int select_linked_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int select_linked_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int select_linked_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	RNA_int_set_array(op->ptr, "location", event->mval);
 	return select_linked_exec(C, op);
@@ -1594,7 +1588,7 @@ void PE_deselect_all_visible(PTCacheEdit *edit)
 	}
 }
 
-int PE_border_select(bContext *C, rcti *rect, int select, int extend)
+int PE_border_select(bContext *C, rcti *rect, bool select, bool extend)
 {
 	Scene *scene= CTX_data_scene(C);
 	Object *ob= CTX_data_active_object(C);
@@ -1646,7 +1640,7 @@ int PE_circle_select(bContext *C, int selecting, const int mval[2], float rad)
 
 /************************ lasso select operator ************************/
 
-int PE_lasso_select(bContext *C, const int mcords[][2], const short moves, short extend, short select)
+int PE_lasso_select(bContext *C, const int mcords[][2], const short moves, bool extend, bool select)
 {
 	Scene *scene= CTX_data_scene(C);
 	Object *ob= CTX_data_active_object(C);
@@ -2297,13 +2291,13 @@ static void subdivide_particle(PEData *data, int pa_index)
 		nekey++;
 
 		if (ekey->flag & PEK_SELECT && (ekey+1)->flag & PEK_SELECT) {
-			nkey->time= (key->time + (key+1)->time)*0.5f;
-			state.time= (endtime != 0.0f)? nkey->time/endtime: 0.0f;
+			nkey->time = (key->time + (key + 1)->time) * 0.5f;
+			state.time = (endtime != 0.0f) ? nkey->time / endtime: 0.0f;
 			psys_get_particle_on_path(&sim, pa_index, &state, 0);
 			copy_v3_v3(nkey->co, state.co);
 
 			nekey->co= nkey->co;
-			nekey->time= &nkey->time;
+			nekey->time = &nkey->time;
 			nekey->flag |= PEK_SELECT;
 			if (!(psys->flag & PSYS_GLOBAL_HAIR))
 				nekey->flag |= PEK_USE_WCO;
@@ -3260,12 +3254,13 @@ static int brush_add(PEData *data, short number)
 	short size= pset->brush[PE_BRUSH_ADD].size;
 	short size2= size*size;
 	DerivedMesh *dm=0;
+	RNG *rng;
 	invert_m4_m4(imat, ob->obmat);
 
 	if (psys->flag & PSYS_GLOBAL_HAIR)
 		return 0;
 
-	BLI_srandom(psys->seed+data->mval[0]+data->mval[1]);
+	rng = BLI_rng_new_srandom(psys->seed+data->mval[0]+data->mval[1]);
 
 	sim.scene= scene;
 	sim.ob= ob;
@@ -3287,8 +3282,8 @@ static int brush_add(PEData *data, short number)
 
 			/* rejection sampling to get points in circle */
 			while (dmx*dmx + dmy*dmy > size2) {
-				dmx= (2.0f*BLI_frand() - 1.0f)*size;
-				dmy= (2.0f*BLI_frand() - 1.0f)*size;
+				dmx= (2.0f*BLI_rng_get_float(rng) - 1.0f)*size;
+				dmy= (2.0f*BLI_rng_get_float(rng) - 1.0f)*size;
 			}
 		}
 		else {
@@ -3298,7 +3293,7 @@ static int brush_add(PEData *data, short number)
 
 		mco[0] = data->mval[0] + dmx;
 		mco[1] = data->mval[1] + dmy;
-		ED_view3d_win_to_segment_clip(data->vc.ar, data->vc.v3d, mco, co1, co2);
+		ED_view3d_win_to_segment(data->vc.ar, data->vc.v3d, mco, co1, co2, true);
 
 		mul_m4_v3(imat, co1);
 		mul_m4_v3(imat, co2);
@@ -3464,6 +3459,8 @@ static int brush_add(PEData *data, short number)
 	if (!psmd->dm->deformedOnly)
 		dm->release(dm);
 	
+	BLI_rng_free(rng);
+	
 	return n;
 }
 
@@ -3476,6 +3473,7 @@ typedef struct BrushEdit {
 
 	int first;
 	int lastmouse[2];
+	float zfac;
 
 	/* optional cached view settings to avoid setting on every mousemove */
 	PEData data;
@@ -3498,7 +3496,6 @@ static int brush_edit_init(bContext *C, wmOperator *op)
 	INIT_MINMAX(min, max);
 	PE_minmax(scene, min, max);
 	mid_v3_v3v3(min, min, max);
-	initgrabz(ar->regiondata, min[0], min[1], min[2]);
 
 	bedit= MEM_callocN(sizeof(BrushEdit), "BrushEdit");
 	bedit->first= 1;
@@ -3507,6 +3504,8 @@ static int brush_edit_init(bContext *C, wmOperator *op)
 	bedit->scene= scene;
 	bedit->ob= ob;
 	bedit->edit= edit;
+
+	bedit->zfac = ED_view3d_calc_zfac(ar->regiondata, min, NULL);
 
 	/* cache view depths and settings for re-use */
 	PE_set_view3d_data(C, &bedit->data);
@@ -3587,7 +3586,7 @@ static void brush_edit_apply(bContext *C, wmOperator *op, PointerRNA *itemptr)
 
 					invert_m4_m4(ob->imat, ob->obmat);
 
-					ED_view3d_win_to_delta(ar, mval_f, vec);
+					ED_view3d_win_to_delta(ar, mval_f, vec, bedit->zfac);
 					data.dvec= vec;
 
 					foreach_mouse_hit_key(&data, brush_comb, selected);
@@ -3757,7 +3756,7 @@ static int brush_edit_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static void brush_edit_apply_event(bContext *C, wmOperator *op, wmEvent *event)
+static void brush_edit_apply_event(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	PointerRNA itemptr;
 	float mouse[2];
@@ -3774,7 +3773,7 @@ static void brush_edit_apply_event(bContext *C, wmOperator *op, wmEvent *event)
 	brush_edit_apply(C, op, &itemptr);
 }
 
-static int brush_edit_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int brush_edit_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	if (!brush_edit_init(C, op))
 		return OPERATOR_CANCELLED;
@@ -3786,7 +3785,7 @@ static int brush_edit_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	return OPERATOR_RUNNING_MODAL;
 }
 
-static int brush_edit_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int brush_edit_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	switch (event->type) {
 		case LEFTMOUSE:

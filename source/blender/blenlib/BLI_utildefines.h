@@ -167,7 +167,7 @@ typedef bool _BLI_Bool;
 	(b) = (tval);                 \
 } (void)0
 
-
+/* ELEM#(a, ...): is the first arg equal any of the others */
 #define ELEM(a, b, c)           ((a) == (b) || (a) == (c))
 #define ELEM3(a, b, c, d)       (ELEM(a, b, c) || (a) == (d) )
 #define ELEM4(a, b, c, d, e)    (ELEM(a, b, c) || ELEM(a, d, e) )
@@ -295,18 +295,17 @@ typedef bool _BLI_Bool;
 #define UNPACK3(a)  ((a)[0]), ((a)[1]), ((a)[2])
 #define UNPACK4(a)  ((a)[0]), ((a)[1]), ((a)[2]), ((a)[3])
 /* op may be '&' or '*' */
-#define UNPACK2OP(a, op)  op((a)[0]), op((a)[1])
-#define UNPACK3OP(a, op)  op((a)[0]), op((a)[1]), op((a)[2])
-#define UNPACK4OP(a, op)  op((a)[0]), op((a)[1]), op((a)[2]), op((a)[3])
+#define UNPACK2OP(op, a)  op((a)[0]), op((a)[1])
+#define UNPACK3OP(op, a)  op((a)[0]), op((a)[1]), op((a)[2])
+#define UNPACK4OP(op, a)  op((a)[0]), op((a)[1]), op((a)[2]), op((a)[3])
 
 /* array helpers */
-#define ARRAY_LAST_ITEM(arr_start, arr_dtype, elem_size, tot)                 \
+#define ARRAY_LAST_ITEM(arr_start, arr_dtype, elem_size, tot) \
 	(arr_dtype *)((char *)arr_start + (elem_size * (tot - 1)))
 
-#define ARRAY_HAS_ITEM(item, arr_start, arr_dtype, elem_size, tot) (          \
-		(item >= arr_start) &&                                                \
-		(item <= ARRAY_LAST_ITEM(arr_start, arr_dtype, elem_size, tot))       \
-	)
+#define ARRAY_HAS_ITEM(arr_item, arr_start, tot) \
+	((unsigned int)((arr_item) - (arr_start)) < (unsigned int)(tot))
+
 
 /* Warning-free macros for storing ints in pointers. Use these _only_
  * for storing an int in a pointer, not a pointer in an int (64bit)! */
@@ -325,6 +324,16 @@ typedef bool _BLI_Bool;
 #define STRINGIFY_ARG(x) "" #x
 #define STRINGIFY_APPEND(a, b) "" a #b
 #define STRINGIFY(x) STRINGIFY_APPEND("", x)
+
+
+/* generic strcmp macros */
+#define STREQ(a, b) (strcmp(a, b) == 0)
+#define STRCASEEQ(a, b) (strcasecmp(a, b) == 0)
+#define STREQLEN(a, b, n) (strncmp(a, b, n) == 0)
+#define STRCASEEQLEN(a, b, n) (strncasecmp(a, b, n) == 0)
+
+#define STRPREFIX(a, b) (strncmp((a), (b), strlen(b)) == 0)
+
 
 /* useful for debugging */
 #define AT __FILE__ ":" STRINGIFY(__LINE__)
@@ -399,7 +408,8 @@ typedef bool _BLI_Bool;
 #  define BLI_assert(a) (void)0
 #endif
 
-#if (defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 406))  /* gcc4.6+ only */
+/* C++ can't use _Static_assert, expects static_assert() but c++0x only */
+#if (!defined(__cplusplus)) && (defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 406))  /* gcc4.6+ only */
 #  define BLI_STATIC_ASSERT(a, msg) _Static_assert(a, msg);
 #else
    /* TODO msvc, clang */

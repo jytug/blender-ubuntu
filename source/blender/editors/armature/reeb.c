@@ -24,29 +24,14 @@
  *  \ingroup edarmature
  */
 
-#include <math.h>
-#include <string.h> /* for memcpy */
-#include <stdio.h>
-#include <stdlib.h> /* for qsort */
-#include <float.h>
-
-#include "DNA_scene_types.h"
-#include "DNA_object_types.h"
-
 #include "MEM_guardedalloc.h"
-
-#include "BKE_context.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_utildefines.h"
 #include "BLI_edgehash.h"
 #include "BLI_ghash.h"
-#include "BLI_heap.h"
 
-#include "BKE_mesh.h"
-
-#include "ONL_opennl.h"
+#include "BKE_context.h"
 
 #include "reeb.h"
 
@@ -67,9 +52,11 @@ static ReebGraph *FILTERED_RG = NULL;
  * SIGGRAPH 2007
  * 
  * */
- 
+
+#if 0
 #define DEBUG_REEB
 #define DEBUG_REEB_NODE
+#endif
 
 /* place-holders! */
 typedef struct EditEdge {
@@ -1674,7 +1661,7 @@ int filterSmartReebGraph(ReebGraph *UNUSED(rg), float UNUSED(threshold))
 			float avg_vec[3] = {0, 0, 0};
 			
 			for (BLI_ghashIterator_init(&ghi, arc->faces);
-			     !BLI_ghashIterator_isDone(&ghi);
+			     BLI_ghashIterator_notDone(&ghi);
 			     BLI_ghashIterator_step(&ghi))
 			{
 				EditFace *efa = BLI_ghashIterator_getValue(&ghi);
@@ -2060,7 +2047,7 @@ void mergeArcFaces(ReebGraph *UNUSED(rg), ReebArc *aDst, ReebArc *aSrc)
 	GHashIterator ghi;
 	
 	for (BLI_ghashIterator_init(&ghi, aSrc->faces);
-	     !BLI_ghashIterator_isDone(&ghi);
+	     BLI_ghashIterator_notDone(&ghi);
 	     BLI_ghashIterator_step(&ghi))
 	{
 		EditFace *efa = BLI_ghashIterator_getValue(&ghi);

@@ -27,18 +27,20 @@
  * to access C defined builtin functions.
  * A script writer should never directly access this module.
  */
- 
-#define WITH_PYTHON /* for AUD_PyInit.h, possibly others */
 
 #include <Python.h>
 
-#include "RNA_types.h"
-#include "RNA_access.h"
-
+#include "BLI_utildefines.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
+
+#include "BKE_main.h"
+#include "BKE_global.h" /* XXX, G.main only */
+#include "BKE_blender.h"
 #include "BKE_bpath.h"
-#include "BLI_utildefines.h"
+
+#include "RNA_types.h"
+#include "RNA_access.h"
 
 #include "bpy.h"
 #include "bpy_util.h"
@@ -48,10 +50,6 @@
 #include "bpy_library.h"
 #include "bpy_operator.h"
 
-#include "BKE_main.h"
-#include "BKE_global.h" /* XXX, G.main only */
-#include "BKE_blender.h"
-
 #include "MEM_guardedalloc.h"
 
 /* external util modules */
@@ -59,6 +57,10 @@
 #include "../generic/bgl.h"
 #include "../generic/blf_py_api.h"
 #include "../mathutils/mathutils.h"
+
+#ifdef WITH_FREESTYLE
+#  include "BPy_Freestyle.h"
+#endif
 
 PyObject *bpy_package_py = NULL;
 
@@ -74,7 +76,7 @@ static PyObject *bpy_script_paths(PyObject *UNUSED(self))
 {
 	PyObject *ret = PyTuple_New(2);
 	PyObject *item;
-	char *path;
+	const char *path;
 
 	path = BLI_get_folder(BLENDER_SYSTEM_SCRIPTS, NULL);
 	item = PyUnicode_DecodeFSDefault(path ? path : "");
@@ -147,16 +149,16 @@ static PyObject *bpy_user_resource(PyObject *UNUSED(self), PyObject *args, PyObj
 	int folder_id;
 	static const char *kwlist[] = {"type", "subdir", NULL};
 
-	char *path;
+	const char *path;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|s:user_resource", (char **)kwlist, &type, &subdir))
 		return NULL;
 	
 	/* stupid string compare */
-	if      (!strcmp(type, "DATAFILES")) folder_id = BLENDER_USER_DATAFILES;
-	else if (!strcmp(type, "CONFIG"))    folder_id = BLENDER_USER_CONFIG;
-	else if (!strcmp(type, "SCRIPTS"))   folder_id = BLENDER_USER_SCRIPTS;
-	else if (!strcmp(type, "AUTOSAVE"))  folder_id = BLENDER_USER_AUTOSAVE;
+	if      (STREQ(type, "DATAFILES")) folder_id = BLENDER_USER_DATAFILES;
+	else if (STREQ(type, "CONFIG"))    folder_id = BLENDER_USER_CONFIG;
+	else if (STREQ(type, "SCRIPTS"))   folder_id = BLENDER_USER_SCRIPTS;
+	else if (STREQ(type, "AUTOSAVE"))  folder_id = BLENDER_USER_AUTOSAVE;
 	else {
 		PyErr_SetString(PyExc_ValueError, "invalid resource argument");
 		return NULL;
@@ -191,15 +193,15 @@ static PyObject *bpy_resource_path(PyObject *UNUSED(self), PyObject *args, PyObj
 	int major = BLENDER_VERSION / 100, minor = BLENDER_VERSION % 100;
 	static const char *kwlist[] = {"type", "major", "minor", NULL};
 	int folder_id;
-	char *path;
+	const char *path;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "s|ii:resource_path", (char **)kwlist, &type, &major, &minor))
 		return NULL;
 
 	/* stupid string compare */
-	if      (!strcmp(type, "USER"))    folder_id = BLENDER_RESOURCE_PATH_USER;
-	else if (!strcmp(type, "LOCAL"))   folder_id = BLENDER_RESOURCE_PATH_LOCAL;
-	else if (!strcmp(type, "SYSTEM"))  folder_id = BLENDER_RESOURCE_PATH_SYSTEM;
+	if      (STREQ(type, "USER"))    folder_id = BLENDER_RESOURCE_PATH_USER;
+	else if (STREQ(type, "LOCAL"))   folder_id = BLENDER_RESOURCE_PATH_LOCAL;
+	else if (STREQ(type, "SYSTEM"))  folder_id = BLENDER_RESOURCE_PATH_SYSTEM;
 	else {
 		PyErr_SetString(PyExc_ValueError, "invalid resource argument");
 		return NULL;
@@ -222,7 +224,7 @@ static PyMethodDef meth_bpy_resource_path =
 
 static PyObject *bpy_import_test(const char *modname)
 {
-	PyObject *mod = PyImport_ImportModuleLevel((char *)modname, NULL, NULL, NULL, 0);
+	PyObject *mod = PyImport_ImportModuleLevel(modname, NULL, NULL, NULL, 0);
 	if (mod) {
 		Py_DECREF(mod);
 	}
@@ -245,7 +247,7 @@ void BPy_init_modules(void)
 	PyObject *mod;
 
 	/* Needs to be first since this dir is needed for future modules */
-	char *modpath = BLI_get_folder(BLENDER_SYSTEM_SCRIPTS, "modules");
+	const char * const modpath = BLI_get_folder(BLENDER_SYSTEM_SCRIPTS, "modules");
 	if (modpath) {
 		// printf("bpy: found module path '%s'.\n", modpath);
 		PyObject *sys_path = PySys_GetObject("path"); /* borrow */
@@ -258,6 +260,9 @@ void BPy_init_modules(void)
 	}
 	/* stand alone utility modules not related to blender directly */
 	IDProp_Init_Types(); /* not actually a submodule, just types */
+#ifdef WITH_FREESTYLE
+	Freestyle_Init();
+#endif
 
 	mod = PyModule_New("_bpy");
 

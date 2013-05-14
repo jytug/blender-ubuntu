@@ -103,7 +103,6 @@ endif()
 		ge_logic_ketsji 
 		ge_phys_bullet 
 		ge_phys_dummy
-		ge_phys_common 
 		ge_logic 
 		ge_rasterizer 
 		ge_oglrasterizer 
@@ -151,6 +150,7 @@ endif()
 		bf_intern_opencolorio
 		bf_intern_opennl
 		extern_rangetree
+		extern_wcwidth
 	)
 
 	if(WITH_MOD_CLOTH_ELTOPO)
@@ -167,7 +167,6 @@ endif()
 
 	if(WITH_LIBMV)
 		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
-		list(APPEND BLENDER_SORTED_LIBS extern_ssba)
 		list(APPEND BLENDER_SORTED_LIBS extern_ceres)
 	endif()
 

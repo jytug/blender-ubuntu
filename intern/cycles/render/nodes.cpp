@@ -249,6 +249,7 @@ void ImageTextureNode::compile(OSLCompiler& compiler)
 		compiler.parameter("color_space", "sRGB");
 	compiler.parameter("projection", projection);
 	compiler.parameter("projection_blend", projection_blend);
+	compiler.parameter("is_float", is_float);
 	compiler.add(this, "node_image_texture");
 }
 
@@ -368,6 +369,7 @@ void EnvironmentTextureNode::compile(OSLCompiler& compiler)
 		compiler.parameter("color_space", "Linear");
 	else
 		compiler.parameter("color_space", "sRGB");
+	compiler.parameter("is_float", is_float);
 	compiler.add(this, "node_environment_texture");
 }
 
@@ -393,7 +395,7 @@ static void sky_texture_precompute(KernelSunSky *ksunsky, float3 dir, float turb
 	ksunsky->phi = phi;
 
 	float theta2 = theta*theta;
-	float theta3 = theta*theta*theta;
+	float theta3 = theta2*theta;
 	float T = turbidity;
 	float T2 = T * T;
 
@@ -1242,15 +1244,14 @@ void ConvertNode::compile(OSLCompiler& compiler)
 
 /* Proxy */
 
-ProxyNode::ProxyNode(ShaderSocketType from_, ShaderSocketType to_)
+ProxyNode::ProxyNode(ShaderSocketType type_)
 : ShaderNode("proxy")
 {
-	from = from_;
-	to = to_;
+	type = type_;
 	special_type = SHADER_SPECIAL_TYPE_PROXY;
 
-	add_input("Input", from);
-	add_output("Output", to);
+	add_input("Input", type);
+	add_output("Output", type);
 }
 
 void ProxyNode::compile(SVMCompiler& compiler)
@@ -1263,16 +1264,19 @@ void ProxyNode::compile(OSLCompiler& compiler)
 
 /* BSDF Closure */
 
-BsdfNode::BsdfNode()
-: ShaderNode("bsdf")
+BsdfNode::BsdfNode(bool scattering_)
+: ShaderNode("subsurface_scattering"), scattering(scattering_)
 {
-	closure = ccl::CLOSURE_BSDF_DIFFUSE_ID;
+	closure = ccl::CLOSURE_BSSRDF_ID;
 
 	add_input("Color", SHADER_SOCKET_COLOR, make_float3(0.8f, 0.8f, 0.8f));
 	add_input("Normal", SHADER_SOCKET_NORMAL, ShaderInput::NORMAL);
 	add_input("SurfaceMixWeight", SHADER_SOCKET_FLOAT, 0.0f, ShaderInput::USE_SVM);
 
-	add_output("BSDF", SHADER_SOCKET_CLOSURE);
+	if(scattering)
+		add_output("BSSRDF", SHADER_SOCKET_CLOSURE);
+	else
+		add_output("BSDF", SHADER_SOCKET_CLOSURE);
 }
 
 void BsdfNode::compile(SVMCompiler& compiler, ShaderInput *param1, ShaderInput *param2, ShaderInput *param3)
@@ -1314,7 +1318,8 @@ void BsdfNode::compile(SVMCompiler& compiler, ShaderInput *param1, ShaderInput *
 			(param3)? param3->stack_offset: SVM_STACK_INVALID);
 	}
 	else {
-		compiler.add_node(NODE_CLOSURE_BSDF, normal_in->stack_offset);
+		compiler.add_node(NODE_CLOSURE_BSDF, normal_in->stack_offset, SVM_STACK_INVALID,
+			(param3)? param3->stack_offset: SVM_STACK_INVALID);
 	}
 }
 
@@ -1547,6 +1552,29 @@ void TransparentBsdfNode::compile(SVMCompiler& compiler)
 void TransparentBsdfNode::compile(OSLCompiler& compiler)
 {
 	compiler.add(this, "node_transparent_bsdf");
+}
+
+/* Subsurface Scattering Closure */
+
+SubsurfaceScatteringNode::SubsurfaceScatteringNode()
+: BsdfNode(true)
+{
+	name = "subsurface_scattering";
+	closure = CLOSURE_BSSRDF_ID;
+
+	add_input("Scale", SHADER_SOCKET_FLOAT, 0.01f);
+	add_input("Radius", SHADER_SOCKET_VECTOR, make_float3(0.1f, 0.1f, 0.1f));
+	add_input("IOR", SHADER_SOCKET_FLOAT, 1.3f);
+}
+
+void SubsurfaceScatteringNode::compile(SVMCompiler& compiler)
+{
+	BsdfNode::compile(compiler, input("Scale"), input("IOR"), input("Radius"));
+}
+
+void SubsurfaceScatteringNode::compile(OSLCompiler& compiler)
+{
+	compiler.add(this, "node_subsurface_scattering");
 }
 
 /* Emissive Closure */
@@ -2255,6 +2283,8 @@ HairInfoNode::HairInfoNode()
 	add_output("Intercept", SHADER_SOCKET_FLOAT);
 	add_output("Thickness", SHADER_SOCKET_FLOAT);
 	add_output("Tangent Normal", SHADER_SOCKET_NORMAL);
+	/*output for minimum hair width transparency - deactivated*/
+	/*add_output("Fade", SHADER_SOCKET_FLOAT);*/
 }
 
 void HairInfoNode::attributes(AttributeRequestSet *attributes)
@@ -2295,6 +2325,12 @@ void HairInfoNode::compile(SVMCompiler& compiler)
 		compiler.stack_assign(out);
 		compiler.add_node(NODE_HAIR_INFO, NODE_INFO_CURVE_TANGENT_NORMAL, out->stack_offset);
 	}
+
+	/*out = output("Fade");
+	if(!out->links.empty()) {
+		compiler.stack_assign(out);
+		compiler.add_node(NODE_HAIR_INFO, NODE_INFO_CURVE_FADE, out->stack_offset);
+	}*/
 
 }
 

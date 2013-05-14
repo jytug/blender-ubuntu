@@ -111,7 +111,7 @@ void UnitConverter::mat4_to_dae_double(double out[4][4], float in[4][4])
 
 float(&UnitConverter::get_rotation())[4][4]
 {
-	switch(up_axis) {
+	switch (up_axis) {
 		case COLLADAFW::FileInfo::X_UP:
 			return x_up_mat4;
 			break;
@@ -224,6 +224,12 @@ void clear_global_id_map()
 }
 
 /** Look at documentation of translate_map */
+std::string translate_id(const char *idString)
+{
+	std::string id = std::string(idString);
+	return translate_id(id);
+}
+
 std::string translate_id(const std::string &id)
 {
 	if (id.size() == 0) {

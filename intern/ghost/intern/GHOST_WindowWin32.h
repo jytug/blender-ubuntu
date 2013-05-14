@@ -38,6 +38,7 @@
 #endif // WIN32
 
 #include "GHOST_Window.h"
+#include "GHOST_SizerWin32.h"
 #include "GHOST_TaskbarWin32.h"
 
 #define _WIN32_WINNT 0x501 // require Windows XP or newer
@@ -275,6 +276,12 @@ public:
 	void processWin32TabletInitEvent();
 	void processWin32TabletEvent(WPARAM wParam, LPARAM lParam);
 	void bringTabletContextToFront();
+
+	GHOST_TSuccess beginFullScreen() const {return GHOST_kFailure;}
+
+	GHOST_TSuccess endFullScreen() const {return GHOST_kFailure;}
+
+	GHOST_SizerWin32 m_wsh;
 
 protected:
 	GHOST_TSuccess initMultisample(PIXELFORMATDESCRIPTOR pfd);

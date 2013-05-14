@@ -29,6 +29,10 @@
 
 #include "RNA_types.h"
 
+struct bNodeTreeType;
+struct bNodeType;
+struct bNodeSocketType;
+
 /* Types */
 
 extern EnumPropertyItem id_type_items[];
@@ -102,9 +106,9 @@ extern EnumPropertyItem object_type_items[];
 
 extern EnumPropertyItem object_type_curve_items[];
 
-extern EnumPropertyItem rigidbody_ob_type_items[];
-extern EnumPropertyItem rigidbody_ob_shape_items[];
-extern EnumPropertyItem rigidbody_con_type_items[];
+extern EnumPropertyItem rigidbody_object_type_items[];
+extern EnumPropertyItem rigidbody_object_shape_items[];
+extern EnumPropertyItem rigidbody_constraint_type_items[];
 
 extern EnumPropertyItem object_axis_items[];
 
@@ -128,8 +132,23 @@ extern EnumPropertyItem gameproperty_type_items[];
 
 extern EnumPropertyItem viewport_shade_items[];
 
-extern EnumPropertyItem nodetree_type_items[];
-extern EnumPropertyItem node_socket_type_items[];
+int rna_node_tree_type_to_enum(struct bNodeTreeType *typeinfo);
+int rna_node_tree_idname_to_enum(const char *idname);
+struct bNodeTreeType *rna_node_tree_type_from_enum(int value);
+EnumPropertyItem *rna_node_tree_type_itemf(void *data, int (*poll)(void *data, struct bNodeTreeType *), int *free);
+
+int rna_node_type_to_enum(struct bNodeType *typeinfo);
+int rna_node_idname_to_enum(const char *idname);
+struct bNodeType *rna_node_type_from_enum(int value);
+EnumPropertyItem *rna_node_type_itemf(void *data, int (*poll)(void *data, struct bNodeType *), int *free);
+
+int rna_node_socket_type_to_enum(struct bNodeSocketType *typeinfo);
+int rna_node_socket_idname_to_enum(const char *idname);
+struct bNodeSocketType *rna_node_socket_type_from_enum(int value);
+EnumPropertyItem *rna_node_socket_type_itemf(void *data, int (*poll)(void *data, struct bNodeSocketType *), int *free);
+
+extern EnumPropertyItem node_socket_in_out_items[];
+extern EnumPropertyItem node_icon_items[];
 
 extern EnumPropertyItem node_math_items[];
 extern EnumPropertyItem node_vec_math_items[];
@@ -143,6 +162,11 @@ extern EnumPropertyItem clip_editor_mode_items[];
 
 extern EnumPropertyItem icon_items[];
 extern EnumPropertyItem uilist_layout_type_items[];
+
+extern EnumPropertyItem linestyle_color_modifier_type_items[];
+extern EnumPropertyItem linestyle_alpha_modifier_type_items[];
+extern EnumPropertyItem linestyle_thickness_modifier_type_items[];
+extern EnumPropertyItem linestyle_geometry_modifier_type_items[];
 
 struct bContext;
 struct PointerRNA;

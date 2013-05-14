@@ -141,10 +141,10 @@ static int txtfmt_osl_find_specialvar(const char *string)
 	int i, len;
 	
 	/* OSL shader types */
-	if      (STR_LITERAL_STARTSWITH(string, "shader", 		len)) i = len;
-	else if (STR_LITERAL_STARTSWITH(string, "surface", 		len)) i = len;
-	else if (STR_LITERAL_STARTSWITH(string, "volume", 		len)) i = len;
-	else if (STR_LITERAL_STARTSWITH(string, "displacement",	len)) i = len;
+	if      (STR_LITERAL_STARTSWITH(string, "shader",       len)) i = len;
+	else if (STR_LITERAL_STARTSWITH(string, "surface",      len)) i = len;
+	else if (STR_LITERAL_STARTSWITH(string, "volume",       len)) i = len;
+	else if (STR_LITERAL_STARTSWITH(string, "displacement", len)) i = len;
 	else                                                    i = 0;
 
 	/* If next source char is an identifier (eg. 'i' in "definate") no match */
@@ -252,7 +252,7 @@ static void txtfmt_osl_format_line(SpaceText *st, TextLine *line, const int do_n
 			/* Deal with comments first */
 			if (*str == '/' && *(str + 1) == '/') {
 				/* fill the remaining line */
-				text_format_fill(&str, &fmt, FMT_TYPE_COMMENT, len - (int)(str - fs.buf));
+				text_format_fill(&str, &fmt, FMT_TYPE_COMMENT, len - (int)(fmt - line->format));
 			}
 			/* C-Style (multi-line) comments */
 			else if (*str == '/' && *(str + 1) == '*') {
@@ -325,7 +325,7 @@ static void txtfmt_osl_format_line(SpaceText *st, TextLine *line, const int do_n
 
 void ED_text_format_register_osl(void)
 {
-	static TextFormatType tft = {0};
+	static TextFormatType tft = {NULL};
 	static const char *ext[] = {"osl", NULL};
 
 	tft.format_identifier = txtfmt_osl_format_identifier;

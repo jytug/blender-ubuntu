@@ -121,7 +121,7 @@ static void init_render_texture(Render *re, Tex *tex)
 	}
 	
 	if (tex->nodetree && tex->use_nodes) {
-		ntreeTexBeginExecTree(tex->nodetree, 1); /* has internal flag to detect it only does it once */
+		ntreeTexBeginExecTree(tex->nodetree); /* has internal flag to detect it only does it once */
 	}
 }
 
@@ -141,7 +141,7 @@ void init_render_textures(Render *re)
 static void end_render_texture(Tex *tex)
 {
 	if (tex && tex->use_nodes && tex->nodetree && tex->nodetree->execdata)
-		ntreeTexEndExecTree(tex->nodetree->execdata, 1);
+		ntreeTexEndExecTree(tex->nodetree->execdata);
 }
 
 void end_render_textures(Render *re)
@@ -1532,7 +1532,7 @@ float texture_value_blend(float tex, float out, float fact, float facg, int blen
 	return in;
 }
 
-static void texco_mapping(ShadeInput* shi, Tex* tex, MTex* mtex,
+static void texco_mapping(ShadeInput *shi, Tex *tex, MTex *mtex,
                           const float co[3], const float dx[3], const float dy[3], float texvec[3], float dxt[3], float dyt[3])
 {
 	/* new: first swap coords, then map, then trans/scale */
@@ -3475,6 +3475,7 @@ void render_realtime_texture(ShadeInput *shi, Image *ima)
 	
 	tex= &imatex[shi->thread];
 	tex->iuser.ok= ima->ok;
+	tex->ima = ima;
 	
 	texvec[0]= 0.5f+0.5f*suv->uv[0];
 	texvec[1]= 0.5f+0.5f*suv->uv[1];

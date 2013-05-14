@@ -37,6 +37,8 @@
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_brush_types.h"
 #include "DNA_ID.h"
 #include "DNA_lamp_types.h"
@@ -116,10 +118,10 @@ static void buttons_texture_users_find_nodetree(ListBase *users, ID *id,
 			if (node->typeinfo->nclass == NODE_CLASS_TEXTURE) {
 				PointerRNA ptr;
 				/* PropertyRNA *prop; */ /* UNUSED */
-
+				
 				RNA_pointer_create(&ntree->id, &RNA_Node, node, &ptr);
 				/* prop = RNA_struct_find_property(&ptr, "texture"); */ /* UNUSED */
-
+				
 				buttons_texture_user_node_add(users, id, ntree, node,
 				                              category, RNA_struct_ui_icon(ptr.type), node->name);
 			}
@@ -175,7 +177,7 @@ static void buttons_texture_users_from_context(ListBase *users, const bContext *
 	if (!(pinid || pinid == &scene->id)) {
 		ob = (scene->basact) ? scene->basact->object : NULL;
 		wrld = scene->world;
-		brush = paint_brush(paint_get_active_from_context(C));
+		brush = BKE_paint_brush(BKE_paint_get_active_from_context(C));
 	}
 
 	if (ob && ob->type == OB_LAMP && !la)
@@ -203,7 +205,6 @@ static void buttons_texture_users_from_context(ListBase *users, const bContext *
 
 		/* particle systems */
 		if (psys) {
-			/* todo: these slots are not in the UI */
 			for (a = 0; a < MAX_MTEX; a++) {
 				mtex = psys->part->mtex[a];
 
@@ -238,11 +239,19 @@ static void buttons_texture_users_from_context(ListBase *users, const bContext *
 		PointerRNA ptr;
 		PropertyRNA *prop;
 
+		/* texture */
 		RNA_pointer_create(&brush->id, &RNA_BrushTextureSlot, &brush->mtex, &ptr);
 		prop = RNA_struct_find_property(&ptr, "texture");
 
 		buttons_texture_user_property_add(users, &brush->id, ptr, prop,
-		                                  "Brush", ICON_BRUSH_DATA, brush->id.name + 2);
+		                                  "Brush", ICON_BRUSH_DATA, "Brush");
+
+		/* mask texture */
+		RNA_pointer_create(&brush->id, &RNA_BrushTextureSlot, &brush->mask_mtex, &ptr);
+		prop = RNA_struct_find_property(&ptr, "texture");
+
+		buttons_texture_user_property_add(users, &brush->id, ptr, prop,
+		                                  "Brush", ICON_BRUSH_DATA, "Brush Mask");
 	}
 }
 
@@ -331,6 +340,17 @@ static void template_texture_select(bContext *C, void *user_p, void *UNUSED(arg)
 		tex = (RNA_struct_is_a(texptr.type, &RNA_Texture)) ? texptr.data : NULL;
 
 		ct->texture = tex;
+
+		if (user->ptr.type == &RNA_ParticleSettingsTextureSlot) {
+			/* stupid exception for particle systems which still uses influence
+			 * from the old texture system, set the active texture slots as well */
+			ParticleSettings *part = user->ptr.id.data;
+			int a;
+
+			for (a = 0; a < MAX_MTEX; a++)
+				if (user->ptr.data == part->mtex[a])
+					part->texact = a;
+		}
 	}
 
 	ct->user = user;
@@ -397,12 +417,12 @@ void uiTemplateTextureUser(uiLayout *layout, bContext *C)
 	user = ct->user;
 
 	if (!user) {
-		uiItemL(layout, "No textures in context.", ICON_NONE);
+		uiItemL(layout, IFACE_("No textures in context"), ICON_NONE);
 		return;
 	}
 
 	/* create button */
-	BLI_snprintf(name, UI_MAX_NAME_STR, "%s", user->name);
+	BLI_strncpy(name, user->name, UI_MAX_NAME_STR);
 
 	if (user->icon) {
 		but = uiDefIconTextMenuBut(block, template_texture_user_menu, NULL,

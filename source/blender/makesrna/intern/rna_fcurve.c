@@ -24,14 +24,7 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
-
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-
-#include "rna_internal.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_object_types.h"
@@ -42,6 +35,12 @@
 #include "BLI_math.h"
 
 #include "BKE_action.h"
+
+#include "RNA_access.h"
+#include "RNA_define.h"
+#include "RNA_enum_types.h"
+
+#include "rna_internal.h"
 
 #include "WM_types.h"
 
@@ -116,7 +115,7 @@ static void rna_ChannelDriver_update_data(Main *bmain, Scene *scene, PointerRNA 
 	driver->flag &= ~DRIVER_FLAG_INVALID;
 	
 	/* TODO: this really needs an update guard... */
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	DAG_id_tag_update(id, OB_RECALC_OB | OB_RECALC_DATA);
 	
 	WM_main_add_notifier(NC_SCENE | ND_FRAME, scene);
@@ -647,7 +646,7 @@ static FCM_EnvelopeData *rna_FModifierEnvelope_points_add(FModifier *fmod, Repor
 	fed.f1 = fed.f2 = 0;
 
 	if (env->data) {
-		short exists = -1;
+		bool exists;
 		i = BKE_fcm_envelope_find_index(env->data, frame, env->totvert, &exists);
 		if (exists) {
 			BKE_reportf(reports, RPT_ERROR, "Already a control point at frame %.6f", frame);

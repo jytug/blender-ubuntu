@@ -57,12 +57,15 @@
 #include "BLI_callbacks.h"
 #include "BLI_string.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_anim.h"
 #include "BKE_animsys.h"
 #include "BKE_action.h"
 #include "BKE_colortools.h"
 #include "BKE_depsgraph.h"
 #include "BKE_fcurve.h"
+#include "BKE_freestyle.h"
 #include "BKE_global.h"
 #include "BKE_group.h"
 #include "BKE_idprop.h"
@@ -76,9 +79,8 @@
 #include "BKE_rigidbody.h"
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
-#include "BKE_world.h"
-
 #include "BKE_sound.h"
+#include "BKE_world.h"
 
 #include "RE_engine.h"
 
@@ -140,6 +142,7 @@ static void remove_sequencer_fcurves(Scene *sce)
 Scene *BKE_scene_copy(Scene *sce, int type)
 {
 	Scene *scen;
+	SceneRenderLayer *srl, *new_srl;
 	ToolSettings *ts;
 	Base *base, *obase;
 	
@@ -173,7 +176,9 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 		scen->obedit = NULL;
 		scen->stats = NULL;
 		scen->fps_info = NULL;
-		scen->rigidbody_world = NULL; /* RB_TODO figure out a way of copying the rigid body world */
+
+		if (sce->rigidbody_world)
+			scen->rigidbody_world = BKE_rigidbody_world_copy(sce->rigidbody_world);
 
 		BLI_duplicatelist(&(scen->markers), &(sce->markers));
 		BLI_duplicatelist(&(scen->transform_spaces), &(sce->transform_spaces));
@@ -207,6 +212,13 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 		/* remove animation used by sequencer */
 		if (type != SCE_COPY_FULL)
 			remove_sequencer_fcurves(scen);
+
+		/* copy Freestyle settings */
+		new_srl = scen->r.layers.first;
+		for (srl = sce->r.layers.first; srl; srl = srl->next) {
+			BKE_freestyle_config_copy(&new_srl->freestyleConfig, &srl->freestyleConfig);
+			new_srl = new_srl->next;
+		}
 	}
 
 	/* tool settings */
@@ -285,10 +297,17 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 	return scen;
 }
 
+void BKE_scene_groups_relink(Scene *sce)
+{
+	if (sce->rigidbody_world)
+		BKE_rigidbody_world_groups_relink(sce->rigidbody_world);
+}
+
 /* do not free scene itself */
 void BKE_scene_free(Scene *sce)
 {
 	Base *base;
+	SceneRenderLayer *srl;
 
 	/* check all sequences */
 	BKE_sequencer_clear_scene_in_allseqs(G.main, sce);
@@ -335,6 +354,10 @@ void BKE_scene_free(Scene *sce)
 		sce->r.ffcodecdata.properties = NULL;
 	}
 	
+	for (srl = sce->r.layers.first; srl; srl = srl->next) {
+		BKE_freestyle_config_free(&srl->freestyleConfig);
+	}
+	
 	BLI_freelistN(&sce->markers);
 	BLI_freelistN(&sce->transform_spaces);
 	BLI_freelistN(&sce->r.layers);
@@ -362,10 +385,7 @@ void BKE_scene_free(Scene *sce)
 		sce->toolsettings = NULL;
 	}
 	
-	if (sce->theDag) {
-		free_forest(sce->theDag);
-		MEM_freeN(sce->theDag);
-	}
+	DAG_scene_free(sce);
 	
 	if (sce->nodetree) {
 		ntreeFreeTree(sce->nodetree);
@@ -438,7 +458,7 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	sce->r.postsat = 1.0;
 
 	sce->r.bake_mode = 1;    /* prevent to include render stuff here */
-	sce->r.bake_filter = 2;
+	sce->r.bake_filter = 16;
 	sce->r.bake_osa = 5;
 	sce->r.bake_flag = R_BAKE_CLEAR;
 	sce->r.bake_normal_space = R_BAKE_SPACE_TANGENT;
@@ -507,6 +527,17 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	sce->toolsettings->skgen_subdivisions[0] = SKGEN_SUB_CORRELATION;
 	sce->toolsettings->skgen_subdivisions[1] = SKGEN_SUB_LENGTH;
 	sce->toolsettings->skgen_subdivisions[2] = SKGEN_SUB_ANGLE;
+
+	sce->toolsettings->statvis.overhang_axis = OB_NEGZ;
+	sce->toolsettings->statvis.overhang_min = 0;
+	sce->toolsettings->statvis.overhang_max = DEG2RADF(45.0f);
+	sce->toolsettings->statvis.thickness_max = 0.1f;
+	sce->toolsettings->statvis.thickness_samples = 1;
+	sce->toolsettings->statvis.distort_min = DEG2RADF(5.0f);
+	sce->toolsettings->statvis.distort_max = DEG2RADF(45.0f);
+
+	sce->toolsettings->statvis.sharp_min = DEG2RADF(90.0f);
+	sce->toolsettings->statvis.sharp_max = DEG2RADF(180.0f);
 
 	sce->toolsettings->proportional_size = 1.0f;
 
@@ -652,12 +683,11 @@ void BKE_scene_set_background(Main *bmain, Scene *scene)
 	}
 
 	/* sort baselist */
-	DAG_scene_sort(bmain, scene);
+	DAG_scene_relations_rebuild(bmain, scene);
 	
 	/* ensure dags are built for sets */
-	for (sce = scene->set; sce; sce = sce->set)
-		if (sce->theDag == NULL)
-			DAG_scene_sort(bmain, sce);
+	for (sce = scene; sce; sce = sce->set)
+		DAG_scene_relations_update(bmain, sce);
 
 	/* copy layers and flags from bases to objects */
 	for (base = scene->base.first; base; base = base->next) {
@@ -764,7 +794,9 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 			else {
 				if (*base && fase != F_DUPLI) {
 					*base = (*base)->next;
-					if (*base) *ob = (*base)->object;
+					if (*base) {
+						*ob = (*base)->object;
+					}
 					else {
 						if (fase == F_SCENE) {
 							/* (*scene) is finished, now do the set */
@@ -781,7 +813,9 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 				}
 			}
 			
-			if (*base == NULL) fase = F_START;
+			if (*base == NULL) {
+				fase = F_START;
+			}
 			else {
 				if (fase != F_DUPLI) {
 					if ( (*base)->object->transflag & OB_DUPLI) {
@@ -905,7 +939,7 @@ char *BKE_scene_find_marker_name(Scene *scene, int frame)
 }
 
 /* return the current marker for this frame,
- * we can have more then 1 marker per frame, this just returns the first :/ */
+ * we can have more than 1 marker per frame, this just returns the first :/ */
 char *BKE_scene_find_last_marker_name(Scene *scene, int frame)
 {
 	TimeMarker *marker, *best_marker = NULL;
@@ -1042,6 +1076,15 @@ static void scene_update_drivers(Main *UNUSED(bmain), Scene *scene)
 		if (adt && adt->drivers.first)
 			BKE_animsys_evaluate_animdata(scene, nid, adt, ctime, ADT_RECALC_DRIVERS);
 	}
+
+	/* world nodes */
+	if (scene->world && scene->world->nodetree) {
+		ID *nid = (ID *)scene->world->nodetree;
+		AnimData *adt = BKE_animdata_from_id(nid);
+		
+		if (adt && adt->drivers.first)
+			BKE_animsys_evaluate_animdata(scene, nid, adt, ctime, ADT_RECALC_DRIVERS);
+	}
 }
 
 /* deps hack - do extra recalcs at end */
@@ -1078,7 +1121,7 @@ static void scene_depsgraph_hack(Scene *scene, Scene *scene_parent)
 					if (go->ob)
 						go->ob->recalc |= recalc;
 				}
-				group_handle_recalc_and_update(scene_parent, ob, ob->dup_group);
+				BKE_group_handle_recalc_and_update(scene_parent, ob, ob->dup_group);
 			}
 		}
 	}
@@ -1121,7 +1164,7 @@ static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scen
 		BKE_object_handle_update_ex(scene_parent, ob, scene->rigidbody_world);
 		
 		if (ob->dup_group && (ob->transflag & OB_DUPLIGROUP))
-			group_handle_recalc_and_update(scene_parent, ob, ob->dup_group);
+			BKE_group_handle_recalc_and_update(scene_parent, ob, ob->dup_group);
 			
 		/* always update layer, so that animating layers works (joshua july 2010) */
 		/* XXX commented out, this has depsgraph issues anyway - and this breaks setting scenes
@@ -1143,8 +1186,14 @@ static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scen
 /* this is called in main loop, doing tagged updates before redraw */
 void BKE_scene_update_tagged(Main *bmain, Scene *scene)
 {
+	Scene *sce_iter;
+	
 	/* keep this first */
 	BLI_callback_exec(bmain, &scene->id, BLI_CB_EVT_SCENE_UPDATE_PRE);
+
+	/* (re-)build dependency graph if needed */
+	for (sce_iter = scene; sce_iter; sce_iter = sce_iter->set)
+		DAG_scene_relations_update(bmain, sce_iter);
 
 	/* flush recalc flags to dependencies */
 	DAG_ids_flush_tagged(bmain);
@@ -1202,10 +1251,8 @@ void BKE_scene_update_for_newframe(Main *bmain, Scene *sce, unsigned int lay)
 	/* clear animation overrides */
 	/* XXX TODO... */
 
-	for (sce_iter = sce; sce_iter; sce_iter = sce_iter->set) {
-		if (sce_iter->theDag == NULL)
-			DAG_scene_sort(bmain, sce_iter);
-	}
+	for (sce_iter = sce; sce_iter; sce_iter = sce_iter->set)
+		DAG_scene_relations_update(bmain, sce_iter);
 
 	/* flush recalc flags to dependencies, if we were only changing a frame
 	 * this would not be necessary, but if a user or a script has modified
@@ -1258,17 +1305,18 @@ SceneRenderLayer *BKE_scene_add_render_layer(Scene *sce, const char *name)
 	SceneRenderLayer *srl;
 
 	if (!name)
-		name = "RenderLayer";
+		name = DATA_("RenderLayer");
 
 	srl = MEM_callocN(sizeof(SceneRenderLayer), "new render layer");
 	BLI_strncpy(srl->name, name, sizeof(srl->name));
-	BLI_uniquename(&sce->r.layers, srl, "RenderLayer", '.', offsetof(SceneRenderLayer, name), sizeof(srl->name));
+	BLI_uniquename(&sce->r.layers, srl, DATA_("RenderLayer"), '.', offsetof(SceneRenderLayer, name), sizeof(srl->name));
 	BLI_addtail(&sce->r.layers, srl);
 
 	/* note, this is also in render, pipeline.c, to make layer when scenedata doesnt have it */
 	srl->lay = (1 << 20) - 1;
 	srl->layflag = 0x7FFF;   /* solid ztra halo edge strand */
 	srl->passflag = SCE_PASS_COMBINED | SCE_PASS_Z;
+	BKE_freestyle_config_init(&srl->freestyleConfig);
 
 	return srl;
 }

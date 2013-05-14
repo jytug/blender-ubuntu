@@ -47,6 +47,7 @@
 #include "DNA_userdef_types.h"
 #include "DNA_windowmanager_types.h"
 
+#include "BLI_callbacks.h"
 #include "BLI_listbase.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
@@ -125,7 +126,7 @@ static void wm_free_reports(bContext *C)
 	BKE_reports_clear(CTX_wm_reports(C));
 }
 
-int wm_start_with_console = 0; /* used in creator.c */
+bool wm_start_with_console = false; /* used in creator.c */
 
 /* only called once, for startup */
 void WM_init(bContext *C, int argc, const char **argv)
@@ -144,6 +145,7 @@ void WM_init(bContext *C, int argc, const char **argv)
 	WM_uilisttype_init();
 
 	set_free_windowmanager_cb(wm_close_and_free);   /* library.c */
+	set_free_notifier_reference_cb(WM_main_remove_notifier_reference);   /* library.c */
 	set_blender_test_break_cb(wm_window_testbreak); /* blender.c */
 	DAG_editors_update_cb(ED_render_id_flush_update, ED_render_scene_update); /* depsgraph.c */
 	
@@ -198,7 +200,7 @@ void WM_init(bContext *C, int argc, const char **argv)
 	clear_matcopybuf();
 	ED_render_clear_mtex_copybuf();
 
-	//	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
 	ED_preview_init_dbase();
 	
@@ -220,8 +222,18 @@ void WM_init(bContext *C, int argc, const char **argv)
 #endif
 	
 	/* load last session, uses regular file reading so it has to be in end (after init py etc) */
-	if (U.uiflag2 & USER_KEEP_SESSION)
-		wm_recover_last_session(C, NULL);
+	if (U.uiflag2 & USER_KEEP_SESSION) {
+		/* calling WM_recover_last_session(C, NULL) has been moved to creator.c */
+		/* that prevents loading both the kept session, and the file on the command line */
+	}
+	else {
+		/* normally 'wm_homefile_read' will do this,
+		 * however python is not initialized when called from this function.
+		 *
+		 * unlikey any handlers are set but its possible,
+		 * note that recovering the last session does its own callbacks. */
+		BLI_callback_exec(CTX_data_main(C), NULL, BLI_CB_EVT_LOAD_POST);
+	}
 }
 
 void WM_init_splash(bContext *C)
@@ -238,7 +250,7 @@ void WM_init_splash(bContext *C)
 	}
 }
 
-int WM_init_game(bContext *C)
+bool WM_init_game(bContext *C)
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmWindow *win;
@@ -308,7 +320,7 @@ int WM_init_game(bContext *C)
 
 		sound_exit();
 
-		return 1;
+		return true;
 	}
 	else {
 		ReportTimerInfo *rti;
@@ -323,8 +335,9 @@ int WM_init_game(bContext *C)
 
 		rti = MEM_callocN(sizeof(ReportTimerInfo), "ReportTimerInfo");
 		wm->reports.reporttimer->customdata = rti;
+
+		return false;
 	}
-	return 0;
 }
 
 /* free strings of open recent files */
@@ -425,6 +438,10 @@ void WM_exit_ext(bContext *C, const short do_python)
 	
 	BKE_mball_cubeTable_free();
 	
+	/* render code might still access databases */
+	RE_FreeAllRender();
+	RE_engines_exit();
+	
 	ED_preview_free_dbase();  /* frees a Main dbase, before free_blender! */
 
 	if (C && wm)
@@ -449,13 +466,11 @@ void WM_exit_ext(bContext *C, const short do_python)
 
 #ifdef WITH_INTERNATIONAL
 	BLF_free_unifont();
+	BLF_free_unifont_mono();
 	BLF_lang_free();
 #endif
 	
 	ANIM_keyingset_infos_exit();
-	
-	RE_FreeAllRender();
-	RE_engines_exit();
 	
 //	free_txt_data();
 	

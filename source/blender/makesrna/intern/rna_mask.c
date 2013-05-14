@@ -31,6 +31,12 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "DNA_mask_types.h"
+#include "DNA_object_types.h"	/* SELECT */
+#include "DNA_scene_types.h"
+
+#include "BLF_translation.h"
+
 #include "BKE_movieclip.h"
 #include "BKE_tracking.h"
 
@@ -38,10 +44,6 @@
 #include "RNA_enum_types.h"
 
 #include "rna_internal.h"
-
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"	/* SELECT */
-#include "DNA_scene_types.h"
 
 #include "WM_types.h"
 
@@ -166,7 +168,10 @@ static void rna_Mask_layer_active_index_range(PointerRNA *ptr, int *min, int *ma
 
 static char *rna_MaskLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("layers[\"%s\"]", ((MaskLayer *)ptr->data)->name);
+	MaskLayer *masklay = (MaskLayer *)ptr->data;
+	char name_esc[sizeof(masklay->name) * 2];
+	BLI_strescape(name_esc, masklay->name, sizeof(name_esc));
+	return BLI_sprintfN("layers[\"%s\"]", name_esc);
 }
 
 static PointerRNA rna_Mask_layer_active_get(PointerRNA *ptr)
@@ -680,6 +685,7 @@ static void rna_def_mask_layer(BlenderRNA *brna)
 	RNA_def_property_enum_sdna(prop, NULL, "falloff");
 	RNA_def_property_enum_items(prop, proportional_falloff_curve_only_items);
 	RNA_def_property_ui_text(prop, "Falloff", "Falloff type the feather");
+	RNA_def_property_translation_context(prop, BLF_I18NCONTEXT_ID_CURVE); /* Abusing id_curve :/ */
 	RNA_def_property_update(prop, NC_MASK | NA_EDITED, NULL);
 
 }

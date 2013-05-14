@@ -54,7 +54,7 @@
 #include "BKE_paint.h"
 #include "BKE_scene.h"
 #include "BKE_subsurf.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "BKE_object.h"
 
@@ -310,7 +310,7 @@ MultiresModifierData *find_multires_modifier_before(Scene *scene, ModifierData *
 /* used for applying scale on mdisps layer and syncing subdivide levels when joining objects
  * use_first - return first multires modifier if all multires'es are disabled
  */
-MultiresModifierData *get_multires_modifier(Scene *scene, Object *ob, int use_first)
+MultiresModifierData *get_multires_modifier(Scene *scene, Object *ob, bool use_first)
 {
 	ModifierData *md;
 	MultiresModifierData *mmd = NULL, *firstmmd = NULL;

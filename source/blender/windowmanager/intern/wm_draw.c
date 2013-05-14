@@ -53,6 +53,7 @@
 
 #include "GHOST_C-api.h"
 
+#include "ED_view3d.h"
 #include "ED_screen.h"
 
 #include "GPU_draw.h"
@@ -125,14 +126,24 @@ static int wm_area_test_invalid_backbuf(ScrArea *sa)
 		return 1;
 }
 
-static void wm_region_test_render_do_draw(ScrArea *sa, ARegion *ar)
+static void wm_region_test_render_do_draw(bScreen *screen, ScrArea *sa, ARegion *ar)
 {
+	/* tag region for redraw from render engine preview running inside of it */
 	if (sa->spacetype == SPACE_VIEW3D) {
 		RegionView3D *rv3d = ar->regiondata;
 		RenderEngine *engine = (rv3d) ? rv3d->render_engine : NULL;
 
 		if (engine && (engine->flag & RE_ENGINE_DO_DRAW)) {
-			ar->do_draw = TRUE;
+			Scene *scene = screen->scene;
+			View3D *v3d = sa->spacedata.first;
+			rcti border_rect;
+
+			/* do partial redraw when possible */
+			if (ED_view3d_calc_render_border(scene, v3d, ar, &border_rect))
+				ED_region_tag_redraw_partial(ar, &border_rect);
+			else
+				ED_region_tag_redraw(ar);
+
 			engine->flag &= ~RE_ENGINE_DO_DRAW;
 		}
 	}
@@ -463,7 +474,7 @@ static int wm_triple_gen_textures(wmWindow *win, wmDrawTriple *triple)
 		for (x = 0; x < triple->nx; x++) {
 			/* proxy texture is only guaranteed to test for the cases that
 			 * there is only one texture in use, which may not be the case */
-			glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxsize);
+			maxsize = GPU_max_texture_size();
 
 			if (triple->x[x] > maxsize || triple->y[y] > maxsize) {
 				glBindTexture(triple->target, 0);
@@ -628,6 +639,26 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 		wm_triple_copy_textures(win, triple);
 	}
 
+	if (paintcursor && wm->paintcursors.first) {
+		for (sa = screen->areabase.first; sa; sa = sa->next) {
+			for (ar = sa->regionbase.first; ar; ar = ar->next) {
+				if (ar->swinid && ar->swinid == screen->subwinactive) {
+					CTX_wm_area_set(C, sa);
+					CTX_wm_region_set(C, ar);
+
+					/* make region ready for draw, scissor, pixelspace */
+					ED_region_set(C, ar);
+					wm_paintcursor_draw(C, ar);
+
+					CTX_wm_region_set(C, NULL);
+					CTX_wm_area_set(C, NULL);
+				}
+			}
+		}
+
+		wmSubWindowSet(win, screen->mainwin);
+	}
+
 	/* draw overlapping area regions (always like popups) */
 	for (sa = screen->areabase.first; sa; sa = sa->next) {
 		CTX_wm_area_set(C, sa);
@@ -662,26 +693,6 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 	/* always draw, not only when screen tagged */
 	if (win->gesture.first)
 		wm_gesture_draw(win);
-
-	if (paintcursor && wm->paintcursors.first) {
-		for (sa = screen->areabase.first; sa; sa = sa->next) {
-			for (ar = sa->regionbase.first; ar; ar = ar->next) {
-				if (ar->swinid && ar->swinid == screen->subwinactive) {
-					CTX_wm_area_set(C, sa);
-					CTX_wm_region_set(C, ar);
-
-					/* make region ready for draw, scissor, pixelspace */
-					ED_region_set(C, ar);
-					wm_paintcursor_draw(C, ar);
-
-					CTX_wm_region_set(C, NULL);
-					CTX_wm_area_set(C, NULL);
-				}
-			}
-		}
-
-		wmSubWindowSet(win, screen->mainwin);
-	}
 	
 	/* needs pixel coords in screen */
 	if (wm->drags.first) {
@@ -710,7 +721,7 @@ static int wm_draw_update_test_window(wmWindow *win)
 
 	for (sa = win->screen->areabase.first; sa; sa = sa->next) {
 		for (ar = sa->regionbase.first; ar; ar = ar->next) {
-			wm_region_test_render_do_draw(sa, ar);
+			wm_region_test_render_do_draw(win->screen, sa, ar);
 
 			if (ar->swinid && ar->do_draw)
 				do_draw = TRUE;
@@ -769,12 +780,12 @@ static int wm_automatic_draw_method(wmWindow *win)
 		return win->drawmethod;
 }
 
-int WM_is_draw_triple(wmWindow *win)
+bool WM_is_draw_triple(wmWindow *win)
 {
 	/* function can get called before this variable is set in drawing code below */
 	if (win->drawmethod != U.wmdrawmethod)
 		win->drawmethod = U.wmdrawmethod;
-	return USER_DRAW_TRIPLE == wm_automatic_draw_method(win);
+	return (USER_DRAW_TRIPLE == wm_automatic_draw_method(win));
 }
 
 void wm_tag_redraw_overlay(wmWindow *win, ARegion *ar)
@@ -796,15 +807,18 @@ void wm_draw_update(bContext *C)
 	GPU_free_unused_buffers();
 	
 	for (win = wm->windows.first; win; win = win->next) {
-		int state = GHOST_GetWindowState(win->ghostwin);
+#ifdef WIN32
+		if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_ANY, GPU_DRIVER_ANY)) {
+			GHOST_TWindowState state = GHOST_GetWindowState(win->ghostwin);
 
-		if (state == GHOST_kWindowStateMinimized) {
-			/* do not update minimized windows, it gives issues on intel drivers (see [#33223])
-			 * anyway, it seems logical to skip update for invisible windows
-			 */
-			continue;
+			if (state == GHOST_kWindowStateMinimized) {
+				/* do not update minimized windows, it gives issues on intel drivers (see [#33223])
+				 * anyway, it seems logical to skip update for invisible windows
+				 */
+				continue;
+			}
 		}
-
+#endif
 		if (win->drawmethod != U.wmdrawmethod) {
 			wm_draw_window_clear(win);
 			win->drawmethod = U.wmdrawmethod;
@@ -814,7 +828,7 @@ void wm_draw_update(bContext *C)
 			CTX_wm_window_set(C, win);
 			
 			/* sets context window+screen */
-			wm_window_make_drawable(C, win);
+			wm_window_make_drawable(wm, win);
 
 			/* notifiers for screen redraw */
 			if (win->screen->do_refresh)

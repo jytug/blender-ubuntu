@@ -134,6 +134,8 @@ static const char *includefiles[] = {
 	"DNA_dynamicpaint_types.h",
 	"DNA_mask_types.h",
 	"DNA_rigidbody_types.h",
+	"DNA_freestyle_types.h",
+	"DNA_linestyle_types.h",
 
 	/* empty string to indicate end of includefiles */
 	""
@@ -251,7 +253,9 @@ static int add_type(const char *str, int len)
 	}
 	
 	/* append new type */
-	if (nr_types == 0) cp = typedata;
+	if (nr_types == 0) {
+		cp = typedata;
+	}
 	else {
 		cp = types[nr_types - 1] + strlen(types[nr_types - 1]) + 1;
 	}
@@ -397,7 +401,9 @@ static int add_name(const char *str)
 	}
 	
 	/* append new type */
-	if (nr_names == 0) cp = namedata;
+	if (nr_names == 0) {
+		cp = namedata;
+	}
 	else {
 		cp = names[nr_names - 1] + strlen(names[nr_names - 1]) + 1;
 	}
@@ -1264,4 +1270,6 @@ int main(int argc, char **argv)
 #include "DNA_dynamicpaint_types.h"
 #include "DNA_mask_types.h"
 #include "DNA_rigidbody_types.h"
+#include "DNA_freestyle_types.h"
+#include "DNA_linestyle_types.h"
 /* end of list */

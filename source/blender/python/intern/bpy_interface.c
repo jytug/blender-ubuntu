@@ -39,13 +39,13 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_path_util.h"
 #include "BLI_fileops.h"
 #include "BLI_listbase.h"
 #include "BLI_math_base.h"
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
-#include "BLI_utildefines.h"
 #include "BLI_threads.h"
 
 #include "RNA_types.h"
@@ -259,12 +259,15 @@ void BPY_python_start(int argc, const char **argv)
 	 * Python doesn't expose a good way to set this. */
 	BLI_setenv("PYTHONIOENCODING", "utf-8:surrogateescape");
 
+	/* Update, Py3.3 resolves attempting to parse non-existing header */
+#if 0
 	/* Python 3.2 now looks for '2.xx/python/include/python3.2d/pyconfig.h' to
 	 * parse from the 'sysconfig' module which is used by 'site',
 	 * so for now disable site. alternatively we could copy the file. */
 	if (py_path_bundle) {
 		Py_NoSiteFlag = 1;
 	}
+#endif
 
 	Py_FrozenFlag = 1;
 
@@ -931,11 +934,7 @@ static void bpy_module_free(void *UNUSED(mod))
 
 
 /* EVIL, define text.c functions here... */
-extern int text_check_identifier_unicode(const unsigned int ch);
-extern int text_check_identifier_nodigit_unicode(const unsigned int ch);
-extern int text_check_identifier(const char ch);
-extern int text_check_identifier_nodigit(const char ch);
-
+/* BKE_text.h */
 int text_check_identifier_unicode(const unsigned int ch)
 {
 	return (ch < 255 && text_check_identifier((char)ch)) || Py_UNICODE_ISALNUM(ch);

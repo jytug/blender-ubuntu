@@ -454,7 +454,7 @@ GHOST_WindowCocoa::GHOST_WindowCocoa(
 	GHOST_TDrawingContextType type,
 	const bool stereoVisual, const GHOST_TUns16 numOfAASamples
 ) :
-	GHOST_Window(width, height, state, GHOST_kDrawingContextTypeNone, stereoVisual, numOfAASamples),
+	GHOST_Window(width, height, state, GHOST_kDrawingContextTypeNone, stereoVisual, false, numOfAASamples),
 	m_customCursor(0)
 {
 	NSOpenGLPixelFormatAttribute pixelFormatAttrsWindow[40];
@@ -622,7 +622,13 @@ GHOST_WindowCocoa::GHOST_WindowCocoa(
 	
 	[m_window registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType,
 										  NSStringPboardType, NSTIFFPboardType, nil]];
-										  
+	
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+	if (state != GHOST_kWindowStateFullScreen) {
+		[m_window setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+	}
+#endif
+	
 	if (state == GHOST_kWindowStateFullScreen)
 		setState(GHOST_kWindowStateFullScreen);
 		
@@ -845,6 +851,16 @@ GHOST_TWindowState GHOST_WindowCocoa::getState() const
 	GHOST_ASSERT(getValid(), "GHOST_WindowCocoa::getState(): window invalid");
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	GHOST_TWindowState state;
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+	NSUInteger masks = [m_window styleMask];
+
+	if (masks & NSFullScreenWindowMask) {
+		// Lion style fullscreen
+		state = GHOST_kWindowStateFullScreen;
+	}
+	else
+#endif
 	if (m_fullScreen) {
 		state = GHOST_kWindowStateFullScreen;
 	} 
@@ -953,8 +969,14 @@ GHOST_TSuccess GHOST_WindowCocoa::setState(GHOST_TWindowState state)
 			[m_window zoom:nil];
 			break;
 		
-		case GHOST_kWindowStateFullScreen:
+		case GHOST_kWindowStateFullScreen: {
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+			NSUInteger masks = [m_window styleMask];
+
+			if (!m_fullScreen && !(masks & NSFullScreenWindowMask)) {
+#else
 			if (!m_fullScreen) {
+#endif
 				NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 			
 				/* This status change needs to be done before Cocoa call to enter fullscreen mode
@@ -963,10 +985,15 @@ GHOST_TSuccess GHOST_WindowCocoa::setState(GHOST_TWindowState state)
 				m_fullScreen = true;
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+				/* Disable toggle for Lion style fullscreen */
+				[m_window setCollectionBehavior:NSWindowCollectionBehaviorDefault];
+#endif
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
 				//10.6 provides Cocoa functions to autoshow menu bar, and to change a window style
-				//Hide menu & dock if needed
+				//Hide menu & dock if on primary screen. else only menu
 				if ([[m_window screen] isEqual:[[NSScreen screens] objectAtIndex:0]]) {
-					[NSApp setPresentationOptions:(NSApplicationPresentationHideDock | NSApplicationPresentationAutoHideMenuBar)];
+					[NSApp setPresentationOptions:(NSApplicationPresentationAutoHideDock | NSApplicationPresentationAutoHideMenuBar)];
 				}
 				//Make window borderless and enlarge it
 				[m_window setStyleMask:NSBorderlessWindowMask];
@@ -1011,11 +1038,26 @@ GHOST_TSuccess GHOST_WindowCocoa::setState(GHOST_TWindowState state)
 				[pool drain];
 				}
 			break;
+		}
 		case GHOST_kWindowStateNormal:
 		default:
 			NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+			NSUInteger masks = [m_window styleMask];
+
+			if (masks & NSFullScreenWindowMask) {
+				// Lion style fullscreen
+				[m_window toggleFullScreen:nil];
+			}
+			else
+#endif
 			if (m_fullScreen) {
 				m_fullScreen = false;
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+				/* Enable toggle for into Lion style fullscreen */
+				[m_window setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+#endif
 
 				//Exit fullscreen
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060

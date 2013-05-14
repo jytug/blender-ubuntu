@@ -47,7 +47,7 @@
 #include "BKE_armature.h"
 #include "BKE_curve.h"
 #include "BKE_context.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_report.h"
 
 #include "BLF_translation.h"
@@ -89,14 +89,15 @@ static TransformOrientation *findOrientationName(ListBase *lb, const char *name)
 	return NULL;
 }
 
-static int uniqueOrientationNameCheck(void *arg, const char *name)
+static bool uniqueOrientationNameCheck(void *arg, const char *name)
 {
 	return findOrientationName((ListBase *)arg, name) != NULL;
 }
 
 static void uniqueOrientationName(ListBase *lb, char *name)
 {
-	BLI_uniquename_cb(uniqueOrientationNameCheck, lb, "Space", '.', name, sizeof(((TransformOrientation *)NULL)->name));
+	BLI_uniquename_cb(uniqueOrientationNameCheck, lb, CTX_DATA_(BLF_I18NCONTEXT_ID_SCENE, "Space"), '.', name,
+	                  sizeof(((TransformOrientation *)NULL)->name));
 }
 
 void BIF_createTransformOrientation(bContext *C, ReportList *reports, char *name, int use, int overwrite)
@@ -212,13 +213,13 @@ TransformOrientation *createMeshSpace(bContext *C, ReportList *reports, char *na
 	return addMatrixSpace(C, mat, name, overwrite);
 }
 
-int createSpaceNormal(float mat[3][3], float normal[3])
+bool createSpaceNormal(float mat[3][3], const float normal[3])
 {
 	float tangent[3] = {0.0f, 0.0f, 1.0f};
 	
 	copy_v3_v3(mat[2], normal);
 	if (normalize_v3(mat[2]) == 0.0f) {
-		return 0; /* error return */
+		return false;  /* error return */
 	}
 
 	cross_v3_v3v3(mat[0], mat[2], tangent);
@@ -232,14 +233,14 @@ int createSpaceNormal(float mat[3][3], float normal[3])
 
 	normalize_m3(mat);
 	
-	return 1;
+	return true;
 }
 
-int createSpaceNormalTangent(float mat[3][3], float normal[3], float tangent[3])
+bool createSpaceNormalTangent(float mat[3][3], float normal[3], float tangent[3])
 {
 	copy_v3_v3(mat[2], normal);
 	if (normalize_v3(mat[2]) == 0.0f) {
-		return 0; /* error return */
+		return false;  /* error return */
 	}
 	
 	/* preempt zero length tangent from causing trouble */
@@ -249,14 +250,14 @@ int createSpaceNormalTangent(float mat[3][3], float normal[3], float tangent[3])
 
 	cross_v3_v3v3(mat[0], mat[2], tangent);
 	if (normalize_v3(mat[0]) == 0.0f) {
-		return 0; /* error return */
+		return false;  /* error return */
 	}
 	
 	cross_v3_v3v3(mat[1], mat[2], mat[0]);
 
 	normalize_m3(mat);
 	
-	return 1;
+	return true;
 }
 
 TransformOrientation *addMatrixSpace(bContext *C, float mat[3][3], char name[], int overwrite)
@@ -409,14 +410,16 @@ const char *BIF_menustringTransformOrientation(const bContext *C, const char *ti
 	int i = V3D_MANIP_CUSTOM;
 	char *str_menu, *p;
 	const int elem_size = MAX_NAME + 4;
+	size_t str_menu_size;
 
 	title = IFACE_(title);
 
-	str_menu = MEM_callocN(strlen(menu) + strlen(title) + 1 + elem_size * BIF_countTransformOrientation(C), "UserTransSpace from matrix");
+	str_menu_size = strlen(menu) + strlen(title) + 1 + (elem_size * BIF_countTransformOrientation(C));
+	str_menu = MEM_callocN(str_menu_size, "UserTransSpace from matrix");
+
 	p = str_menu;
-	
-	p += sprintf(str_menu, "%s", title);
-	p += sprintf(p, "%s", menu);
+	p += BLI_strncpy_rlen(p, title, str_menu_size);
+	p += BLI_strncpy_rlen(p, menu, str_menu_size - (p - str_menu));
 	
 	for (ts = transform_spaces->first; ts; ts = ts->next) {
 		p += sprintf(p, "|%s %%x%d", ts->name, i++);
@@ -567,7 +570,7 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 		ob = obedit;
 
 		if (ob->type == OB_MESH) {
-			BMEditMesh *em = BMEdit_FromObject(ob);
+			BMEditMesh *em = BKE_editmesh_from_object(ob);
 			BMVert *eve;
 			BMEditSelection ese;
 			float vec[3] = {0, 0, 0};
@@ -882,7 +885,7 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 	return result;
 }
 
-void ED_getTransformOrientationMatrix(const bContext *C, float orientation_mat[3][3], int activeOnly)
+void ED_getTransformOrientationMatrix(const bContext *C, float orientation_mat[3][3], const bool activeOnly)
 {
 	float normal[3] = {0.0, 0.0, 0.0};
 	float plane[3] = {0.0, 0.0, 0.0};

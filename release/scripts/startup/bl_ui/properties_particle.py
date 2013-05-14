@@ -496,8 +496,8 @@ class PARTICLE_PT_physics(ParticleButtonsPanel, Panel):
             supports_courant = part.physics_type == 'FLUID'
             subsub = sub.row()
             subsub.enabled = supports_courant
-            subsub.prop(part, "adaptive_subframes", text="")
-            if supports_courant and part.adaptive_subframes:
+            subsub.prop(part, "use_adaptive_subframes", text="")
+            if supports_courant and part.use_adaptive_subframes:
                 col.prop(part, "courant_target", text="Threshold")
 
             row = layout.row()
@@ -536,8 +536,8 @@ class PARTICLE_PT_physics(ParticleButtonsPanel, Panel):
                 sub.prop(fluid, "factor_radius", text="")
 
                 sub = col.row()
-                sub.prop(fluid, "rest_density", slider=fluid.factor_density)
-                sub.prop(fluid, "factor_density", text="")
+                sub.prop(fluid, "rest_density", slider=fluid.use_factor_density)
+                sub.prop(fluid, "use_factor_density", text="")
 
                 if fluid.solver == 'CLASSICAL':
                     # With the classical solver, it is possible to calculate the
@@ -843,7 +843,12 @@ class PARTICLE_PT_render(ParticleButtonsPanel, Panel):
             col = split.column()
             col.label(text="Timing:")
             col.prop(part, "use_absolute_path_time")
-            col.prop(part, "path_start", text="Start", slider=not part.use_absolute_path_time)
+
+            if part.type == 'HAIR' or psys.point_cache.is_baked:
+                col.prop(part, "path_start", text="Start", slider=not part.use_absolute_path_time)
+            else:
+                col.prop(part, "trail_count")
+
             col.prop(part, "path_end", text="End", slider=not part.use_absolute_path_time)
             col.prop(part, "length_random", text="Random", slider=True)
 

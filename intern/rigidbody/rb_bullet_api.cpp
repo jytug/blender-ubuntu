@@ -57,7 +57,7 @@ subject to the following restrictions:
  */
 
 #include <stdio.h>
- 
+
 #include "RBI_api.h"
 
 #include "btBulletDynamicsCommon.h"
@@ -112,7 +112,7 @@ static inline void copy_v3_btvec3(float vec[3], const btVector3 &btvec)
 	vec[1] = (float)btvec[1];
 	vec[2] = (float)btvec[2];
 }
-static inline void copy_quat_btquat(float quat[3], const btQuaternion &btquat)
+static inline void copy_quat_btquat(float quat[4], const btQuaternion &btquat)
 {
 	quat[0] = btquat.getW();
 	quat[1] = btquat.getX();
@@ -133,7 +133,7 @@ rbDynamicsWorld *RB_dworld_new(const float gravity[3])
 	world->collisionConfiguration = new btDefaultCollisionConfiguration();
 	
 	world->dispatcher = new btCollisionDispatcher(world->collisionConfiguration);
-	btGImpactCollisionAlgorithm::registerAlgorithm((btCollisionDispatcher *)world->dispatcher); // XXX: experimental
+	btGImpactCollisionAlgorithm::registerAlgorithm((btCollisionDispatcher *)world->dispatcher);
 	
 	world->pairCache = new btDbvtBroadphase();
 	
@@ -240,6 +240,56 @@ void RB_dworld_remove_body(rbDynamicsWorld *world, rbRigidBody *object)
 	btRigidBody *body = object->body;
 	
 	world->dynamicsWorld->removeRigidBody(body);
+}
+
+/* Collision detection */
+
+void RB_world_convex_sweep_test(rbDynamicsWorld *world, rbRigidBody *object, const float loc_start[3], const float loc_end[3], float v_location[3],  float v_hitpoint[3],  float v_normal[3], int *r_hit)
+{
+	btRigidBody *body = object->body;
+	btCollisionShape *collisionShape = body->getCollisionShape();
+	/* only convex shapes are supported, but user can specify a non convex shape */
+	if (collisionShape->isConvex()) {
+		btCollisionWorld::ClosestConvexResultCallback result(btVector3(loc_start[0], loc_start[1], loc_start[2]), btVector3(loc_end[0], loc_end[1], loc_end[2]));
+
+		btQuaternion obRot = body->getWorldTransform().getRotation();
+		
+		btTransform rayFromTrans;
+		rayFromTrans.setIdentity();
+		rayFromTrans.setRotation(obRot);
+		rayFromTrans.setOrigin(btVector3(loc_start[0], loc_start[1], loc_start[2]));
+
+		btTransform rayToTrans;
+		rayToTrans.setIdentity();
+		rayToTrans.setRotation(obRot);
+		rayToTrans.setOrigin(btVector3(loc_end[0], loc_end[1], loc_end[2]));
+		
+		world->dynamicsWorld->convexSweepTest((btConvexShape*) collisionShape, rayFromTrans, rayToTrans, result, 0);
+		
+		if (result.hasHit()) {
+			*r_hit = 1;
+			
+			v_location[0] = result.m_convexFromWorld[0]+(result.m_convexToWorld[0]-result.m_convexFromWorld[0])*result.m_closestHitFraction;
+			v_location[1] = result.m_convexFromWorld[1]+(result.m_convexToWorld[1]-result.m_convexFromWorld[1])*result.m_closestHitFraction;
+			v_location[2] = result.m_convexFromWorld[2]+(result.m_convexToWorld[2]-result.m_convexFromWorld[2])*result.m_closestHitFraction;
+			
+			v_hitpoint[0] = result.m_hitPointWorld[0];
+			v_hitpoint[1] = result.m_hitPointWorld[1];
+			v_hitpoint[2] = result.m_hitPointWorld[2];
+			
+			v_normal[0] = result.m_hitNormalWorld[0];
+			v_normal[1] = result.m_hitNormalWorld[1];
+			v_normal[2] = result.m_hitNormalWorld[2];
+			
+		}
+		else {
+			*r_hit = 0;
+		}
+	}
+	else{
+		/* we need to return a value if user passes non convex body, to report */
+		*r_hit = -2;
+	}
 }
 
 /* ............ */
@@ -850,6 +900,27 @@ rbConstraint *RB_constraint_new_6dof_spring(float pivot[3], float orn[4], rbRigi
 	return (rbConstraint *)con;
 }
 
+rbConstraint *RB_constraint_new_motor(float pivot[3], float orn[4], rbRigidBody *rb1, rbRigidBody *rb2)
+{
+	btRigidBody *body1 = rb1->body;
+	btRigidBody *body2 = rb2->body;
+	btTransform transform1;
+	btTransform transform2;
+	
+	make_constraint_transforms(transform1, transform2, body1, body2, pivot, orn);
+	
+	btGeneric6DofConstraint *con = new btGeneric6DofConstraint(*body1, *body2, transform1, transform2, true);
+	
+	/* unlock constraint axes */
+	for (int i = 0; i < 6; i++) {
+		con->setLimit(i, 0.0f, -1.0f);
+	}
+	/* unlock motor axes */
+	con->getTranslationalLimitMotor()->m_upperLimit.setValue(-1.0f, -1.0f, -1.0f);
+	
+	return (rbConstraint*)con;
+}
+
 /* Cleanup ----------------------------- */
 
 void RB_constraint_delete(rbConstraint *con)
@@ -945,6 +1016,30 @@ void RB_constraint_set_breaking_threshold(rbConstraint *con, float threshold)
 	btTypedConstraint *constraint = reinterpret_cast<btTypedConstraint*>(con);
 	
 	constraint->setBreakingImpulseThreshold(threshold);
+}
+
+void RB_constraint_set_enable_motor(rbConstraint *con, int enable_lin, int enable_ang)
+{
+	btGeneric6DofConstraint *constraint = reinterpret_cast<btGeneric6DofConstraint*>(con);
+	
+	constraint->getTranslationalLimitMotor()->m_enableMotor[0] = enable_lin;
+	constraint->getRotationalLimitMotor(0)->m_enableMotor = enable_ang;
+}
+
+void RB_constraint_set_max_impulse_motor(rbConstraint *con, float max_impulse_lin, float max_impulse_ang)
+{
+	btGeneric6DofConstraint *constraint = reinterpret_cast<btGeneric6DofConstraint*>(con);
+	
+	constraint->getTranslationalLimitMotor()->m_maxMotorForce.setX(max_impulse_lin);
+	constraint->getRotationalLimitMotor(0)->m_maxMotorForce = max_impulse_ang;
+}
+
+void RB_constraint_set_target_velocity_motor(rbConstraint *con, float velocity_lin, float velocity_ang)
+{
+	btGeneric6DofConstraint *constraint = reinterpret_cast<btGeneric6DofConstraint*>(con);
+	
+	constraint->getTranslationalLimitMotor()->m_targetVelocity.setX(velocity_lin);
+	constraint->getRotationalLimitMotor(0)->m_targetVelocity = velocity_ang;
 }
 
 /* ********************************** */

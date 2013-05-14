@@ -200,13 +200,15 @@ void FLUID_3D::setZeroZ(float* field, Vec3Int res, int zBegin, int zEnd)
 	const int totalCells = res[0] * res[1] * res[2];
 
 	int index = 0;
-	if ((zBegin == 0))
-	for (int y = 0; y < res[1]; y++)
-		for (int x = 0; x < res[0]; x++, index++)
-		{
-			// front slab
-			field[index] = 0.0f;
-    }
+	if (zBegin == 0)
+	{
+		for (int y = 0; y < res[1]; y++)
+			for (int x = 0; x < res[0]; x++, index++)
+			{
+				// front slab
+				field[index] = 0.0f;
+		}
+	}
 
 	if (zEnd == res[2])
 	{
@@ -265,27 +267,29 @@ void FLUID_3D::copyBorderZ(float* field, Vec3Int res, int zBegin, int zEnd)
 	const int totalCells = res[0] * res[1] * res[2];
 	int index=0;
 
-	if ((zBegin == 0))
-	for (int y = 0; y < res[1]; y++)
-		for (int x = 0; x < res[0]; x++, index++)
-		{
-			field[index] = field[index + slabSize]; 
-		}
+	if (zBegin == 0)
+	{
+		for (int y = 0; y < res[1]; y++)
+			for (int x = 0; x < res[0]; x++, index++)
+			{
+				field[index] = field[index + slabSize]; 
+			}
+	}
 
-	if ((zEnd == res[2]))
+	if (zEnd == res[2])
 	{
 
-	index=0;
-	int indexx=0;
-	const int cellsslab = totalCells - slabSize;
+		index=0;
+		int indexx=0;
+		const int cellsslab = totalCells - slabSize;
 
-	for (int y = 0; y < res[1]; y++)
-		for (int x = 0; x < res[0]; x++, index++)
-		{
-			// back slab
-			indexx = index + cellsslab;
-			field[indexx] = field[indexx - slabSize];
-		}
+		for (int y = 0; y < res[1]; y++)
+			for (int x = 0; x < res[0]; x++, index++)
+			{
+				// back slab
+				indexx = index + cellsslab;
+				field[indexx] = field[indexx - slabSize];
+			}
 	}
 }
 
@@ -313,12 +317,12 @@ void FLUID_3D::advectFieldSemiLagrange(const float dt, const float* velx, const 
 				float zTrace = z - dt * velz[index];
 
 				// clamp backtrace to grid boundaries
-				if (xTrace < 0.5) xTrace = 0.5;
-				if (xTrace > xres - 1.5) xTrace = xres - 1.5;
-				if (yTrace < 0.5) yTrace = 0.5;
-				if (yTrace > yres - 1.5) yTrace = yres - 1.5;
-				if (zTrace < 0.5) zTrace = 0.5;
-				if (zTrace > zres - 1.5) zTrace = zres - 1.5;
+				if (xTrace < 0.5f) xTrace = 0.5f;
+				if (xTrace > xres - 1.5f) xTrace = xres - 1.5f;
+				if (yTrace < 0.5f) yTrace = 0.5f;
+				if (yTrace > yres - 1.5f) yTrace = yres - 1.5f;
+				if (zTrace < 0.5f) zTrace = 0.5f;
+				if (zTrace > zres - 1.5f) zTrace = zres - 1.5f;
 
 				// locate neighbors to interpolate
 				const int x0 = (int)xTrace;
@@ -399,7 +403,7 @@ void FLUID_3D::advectFieldMacCormack2(const float dt, const float* xVelocity, co
 
 
 	// phiHatN = A^R(phiHatN1)
-	advectFieldSemiLagrange( -1.0*dt, xVelocity, yVelocity, zVelocity, phiHatN, t1, res, zBegin, zEnd);		// uses wide data from old field and velocities (both are whole)
+	advectFieldSemiLagrange( -1.0f*dt, xVelocity, yVelocity, zVelocity, phiHatN, t1, res, zBegin, zEnd);		// uses wide data from old field and velocities (both are whole)
 
 	// phiN1 = phiHatN1 + (phiN - phiHatN) / 2
 	const int border = 0; 
@@ -452,12 +456,12 @@ void FLUID_3D::clampExtrema(const float dt, const float* velx, const float* vely
 				float zTrace = z - dt * velz[index];
 
 				// clamp backtrace to grid boundaries
-				if (xTrace < 0.5) xTrace = 0.5;
-				if (xTrace > xres - 1.5) xTrace = xres - 1.5;
-				if (yTrace < 0.5) yTrace = 0.5;
-				if (yTrace > yres - 1.5) yTrace = yres - 1.5;
-				if (zTrace < 0.5) zTrace = 0.5;
-				if (zTrace > zres - 1.5) zTrace = zres - 1.5;
+				if (xTrace < 0.5f) xTrace = 0.5f;
+				if (xTrace > xres - 1.5f) xTrace = xres - 1.5f;
+				if (yTrace < 0.5f) yTrace = 0.5f;
+				if (yTrace > yres - 1.5f) yTrace = yres - 1.5f;
+				if (zTrace < 0.5f) zTrace = 0.5f;
+				if (zTrace > zres - 1.5f) zTrace = zres - 1.5f;
 
 				// locate neighbors to interpolate
 				const int x0 = (int)xTrace;

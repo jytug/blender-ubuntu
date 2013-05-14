@@ -24,15 +24,9 @@
  *  \ingroup RNA
  */
 
-
 #include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-
-#include "rna_internal.h"
 
 #include "DNA_brush_types.h"
 #include "DNA_lamp_types.h"
@@ -47,6 +41,12 @@
 #include "BLI_utildefines.h"
 
 #include "BKE_node.h"
+#include "BKE_paint.h"
+
+#include "RNA_define.h"
+#include "RNA_enum_types.h"
+
+#include "rna_internal.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -108,6 +108,7 @@ EnumPropertyItem blend_type_items[] = {
 
 #include "RNA_access.h"
 
+#include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_image.h"
 #include "BKE_texture.h"
@@ -168,7 +169,7 @@ static void rna_Texture_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *pt
 	}
 	else if (GS(id->name) == ID_NT) {
 		bNodeTree *ntree = ptr->id.data;
-		ED_node_generic_update(bmain, ntree, NULL);
+		ED_node_tag_update_nodetree(bmain, ntree);
 	}
 }
 
@@ -257,6 +258,24 @@ void rna_TextureSlot_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRN
 	}
 }
 
+void rna_TextureSlot_brush_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+{
+	ID *id = ptr->id.data;
+
+	DAG_id_tag_update(id, 0);
+
+	switch (GS(id->name)) {
+		case ID_BR:
+		{
+			MTex *mtex = ptr->data;
+			BKE_paint_invalidate_overlay_tex(scene, mtex->tex);
+			break;
+		}
+	}
+	rna_TextureSlot_update(bmain, scene, ptr);
+}
+
+
 char *rna_TextureSlot_path(PointerRNA *ptr)
 {
 	MTex *mtex = ptr->data;
@@ -288,10 +307,15 @@ char *rna_TextureSlot_path(PointerRNA *ptr)
 	}
 	
 	/* this is a compromise for the remaining cases... */
-	if (mtex->tex)
-		return BLI_sprintfN("texture_slots[\"%s\"]", mtex->tex->id.name + 2);
-	else
+	if (mtex->tex) {
+		char name_esc[(sizeof(mtex->tex->id.name) - 2) * 2];
+
+		BLI_strescape(name_esc, mtex->tex->id.name + 2, sizeof(name_esc));
+		return BLI_sprintfN("texture_slots[\"%s\"]", name_esc);
+	}
+	else {
 		return BLI_strdup("texture_slots[0]");
+	}
 }
 
 static int rna_TextureSlot_name_length(PointerRNA *ptr)
@@ -382,18 +406,21 @@ static void rna_Texture_use_color_ramp_set(PointerRNA *ptr, int value)
 	else tex->flag &= ~TEX_COLORBAND;
 
 	if ((tex->flag & TEX_COLORBAND) && tex->coba == NULL)
-		tex->coba = add_colorband(0);
+		tex->coba = add_colorband(false);
 }
 
-static void rna_Texture_use_nodes_set(PointerRNA *ptr, int v)
+static void rna_Texture_use_nodes_update(bContext *C, PointerRNA *ptr)
 {
 	Tex *tex = (Tex *)ptr->data;
 	
-	tex->use_nodes = v;
-	tex->type = 0;
+	if (tex->use_nodes) {
+		tex->type = 0;
+		
+		if (tex->nodetree == NULL)
+			ED_node_texture_default(C, tex);
+	}
 	
-	if (v && tex->nodetree == NULL)
-		ED_node_texture_default(tex);
+	rna_Texture_nodes_update(CTX_data_main(C), CTX_data_scene(C), ptr);
 }
 
 static void rna_ImageTexture_mipmap_set(PointerRNA *ptr, int value)
@@ -624,13 +651,13 @@ static void rna_def_mtex(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "ofs");
 	RNA_def_property_ui_range(prop, -10, 10, 10, RNA_TRANSLATION_PREC_DEFAULT);
 	RNA_def_property_ui_text(prop, "Offset", "Fine tune of the texture mapping X, Y and Z locations");
-	RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+	RNA_def_property_update(prop, 0, "rna_TextureSlot_brush_update");
 
 	prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_XYZ);
 	RNA_def_property_float_sdna(prop, NULL, "size");
 	RNA_def_property_ui_range(prop, -100, 100, 10, 2);
 	RNA_def_property_ui_text(prop, "Size", "Set scaling for the texture's X, Y and Z sizes");
-	RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+	RNA_def_property_update(prop, 0, "rna_TextureSlot_brush_update");
 
 	prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
 	RNA_def_property_float_sdna(prop, NULL, "r");
@@ -1598,7 +1625,7 @@ static void rna_def_texture_pointdensity(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}
 	};
 		
-	static EnumPropertyItem vertice_cache_items[] = {
+	static EnumPropertyItem vertex_cache_items[] = {
 		{TEX_PD_OBJECTLOC, "OBJECT_LOCATION", 0, "Object Location", ""},
 		{TEX_PD_OBJECTSPACE, "OBJECT_SPACE", 0, "Object Space", ""},
 		{TEX_PD_WORLDSPACE, "WORLD_SPACE", 0, "Global Space", ""},
@@ -1668,7 +1695,7 @@ static void rna_def_texture_pointdensity(BlenderRNA *brna)
 	
 	prop = RNA_def_property(srna, "vertex_cache_space", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "ob_cache_space");
-	RNA_def_property_enum_items(prop, vertice_cache_items);
+	RNA_def_property_enum_items(prop, vertex_cache_items);
 	RNA_def_property_ui_text(prop, "Vertices Cache", "Coordinate system to cache vertices in");
 	RNA_def_property_update(prop, 0, "rna_Texture_update");
 	
@@ -2022,9 +2049,9 @@ static void rna_def_texture(BlenderRNA *brna)
 	/* nodetree */
 	prop = RNA_def_property(srna, "use_nodes", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "use_nodes", 1);
-	RNA_def_property_boolean_funcs(prop, NULL, "rna_Texture_use_nodes_set");
+	RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
 	RNA_def_property_ui_text(prop, "Use Nodes", "Make this a node-based texture");
-	RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+	RNA_def_property_update(prop, 0, "rna_Texture_use_nodes_update");
 	
 	prop = RNA_def_property(srna, "node_tree", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "nodetree");

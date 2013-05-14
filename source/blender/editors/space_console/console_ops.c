@@ -116,7 +116,7 @@ static ConsoleLine *console_history_find(SpaceConsole *sc, const char *str, Cons
 }
 
 /* return 0 if no change made, clamps the range */
-static int console_line_cursor_set(ConsoleLine *cl, int cursor)
+static bool console_line_cursor_set(ConsoleLine *cl, int cursor)
 {
 	int cursor_new;
 
@@ -125,11 +125,11 @@ static int console_line_cursor_set(ConsoleLine *cl, int cursor)
 	else cursor_new = cursor;
 	
 	if (cursor_new == cl->cursor) {
-		return FALSE;
+		return false;
 	}
 	
 	cl->cursor = cursor_new;
-	return TRUE;
+	return true;
 }
 
 #if 0 // XXX unused 
@@ -188,7 +188,7 @@ static ConsoleLine *console_scrollback_add(const bContext *C, ConsoleLine *from)
 }
 #endif
 
-static ConsoleLine *console_lb_add_str__internal(ListBase *lb, char *str, int own)
+static ConsoleLine *console_lb_add_str__internal(ListBase *lb, char *str, bool own)
 {
 	ConsoleLine *ci = MEM_callocN(sizeof(ConsoleLine), "ConsoleLine Add");
 	if (own) ci->line = str;
@@ -199,11 +199,11 @@ static ConsoleLine *console_lb_add_str__internal(ListBase *lb, char *str, int ow
 	BLI_addtail(lb, ci);
 	return ci;
 }
-ConsoleLine *console_history_add_str(SpaceConsole *sc, char *str, int own)
+ConsoleLine *console_history_add_str(SpaceConsole *sc, char *str, bool own)
 {
 	return console_lb_add_str__internal(&sc->history, str, own);
 }
-ConsoleLine *console_scrollback_add_str(SpaceConsole *sc, char *str, int own)
+ConsoleLine *console_scrollback_add_str(SpaceConsole *sc, char *str, bool own)
 {
 	ConsoleLine *ci = console_lb_add_str__internal(&sc->scrollback, str, own);
 	console_select_offset(sc, ci->len + 1);
@@ -225,7 +225,12 @@ static void console_line_verify_length(ConsoleLine *ci, int len)
 {
 	/* resize the buffer if needed */
 	if (len >= ci->len_alloc) {
-		int new_len = len * 2; /* new length */
+		/* new length */
+#ifndef NDEBUG
+		int new_len = len + 1;
+#else
+		int new_len = (len + 1) * 2;
+#endif
 		char *new_line = MEM_callocN(new_len, "console line");
 		memcpy(new_line, ci->line, ci->len);
 		MEM_freeN(ci->line);
@@ -276,7 +281,7 @@ static int console_move_exec(bContext *C, wmOperator *op)
 	ConsoleLine *ci = console_history_verify(C);
 	
 	int type = RNA_enum_get(op->ptr, "type");
-	int done = FALSE;
+	bool done = false;
 	int pos;
 	
 	switch (type) {
@@ -390,7 +395,7 @@ static int console_insert_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int console_insert_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int console_insert_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	// if (!RNA_struct_property_is_set(op->ptr, "text")) { /* always set from keymap XXX */
 	if (!RNA_string_length(op->ptr, "text")) {
@@ -565,7 +570,7 @@ static int console_delete_exec(bContext *C, wmOperator *op)
 				                         (type == DEL_NEXT_CHAR) ? STRCUR_JUMP_NONE : STRCUR_JUMP_DELIM, true);
 				stride = pos - ci->cursor;
 				if (stride) {
-					memmove(ci->line + ci->cursor, ci->line + ci->cursor + stride, (ci->len - ci->cursor) + 1);
+					memmove(ci->line + ci->cursor, ci->line + ci->cursor + stride, (ci->len - (ci->cursor + stride)) + 1);
 					ci->len -= stride;
 					BLI_assert(ci->len >= 0);
 					done = TRUE;
@@ -582,7 +587,7 @@ static int console_delete_exec(bContext *C, wmOperator *op)
 				stride = ci->cursor - pos;
 				if (stride) {
 					ci->cursor -= stride; /* same as above */
-					memmove(ci->line + ci->cursor, ci->line + ci->cursor + stride, (ci->len - ci->cursor) + 1);
+					memmove(ci->line + ci->cursor, ci->line + ci->cursor + stride, (ci->len - (ci->cursor + stride)) + 1);
 					ci->len -= stride;
 					BLI_assert(ci->len >= 0);
 					done = TRUE;
@@ -1042,7 +1047,7 @@ static void console_cursor_set_to_pos(SpaceConsole *sc, ARegion *ar, SetConsoleC
 	}
 }
 
-static void console_modal_select_apply(bContext *C, wmOperator *op, wmEvent *event)
+static void console_modal_select_apply(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SpaceConsole *sc = CTX_wm_space_console(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -1080,7 +1085,7 @@ static void console_cursor_set_exit(bContext *UNUSED(C), wmOperator *op)
 	MEM_freeN(scu);
 }
 
-static int console_modal_select_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int console_modal_select_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SpaceConsole *sc = CTX_wm_space_console(C);
 //	ARegion *ar = CTX_wm_region(C);
@@ -1101,7 +1106,7 @@ static int console_modal_select_invoke(bContext *C, wmOperator *op, wmEvent *eve
 	return OPERATOR_RUNNING_MODAL;
 }
 
-static int console_modal_select(bContext *C, wmOperator *op, wmEvent *event)
+static int console_modal_select(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	switch (event->type) {
 		case LEFTMOUSE:

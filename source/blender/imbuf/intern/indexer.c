@@ -361,17 +361,16 @@ int IMB_timecode_to_array_index(IMB_Timecode_Type tc)
  * - rebuild helper functions
  * ---------------------------------------------------------------------- */
 
-static void get_index_dir(struct anim *anim, char *index_dir)
+static void get_index_dir(struct anim *anim, char *index_dir, size_t index_dir_len)
 {
 	if (!anim->index_dir[0]) {
 		char fname[FILE_MAXFILE];
-		BLI_strncpy(index_dir, anim->name, FILE_MAXDIR);
-		BLI_splitdirstring(index_dir, fname);
-		BLI_join_dirfile(index_dir, FILE_MAXDIR, index_dir, "BL_proxy");
-		BLI_join_dirfile(index_dir, FILE_MAXDIR, index_dir, fname);
+		BLI_split_dirfile(anim->name, index_dir, fname, index_dir_len, sizeof(fname));
+		BLI_join_dirfile(index_dir, index_dir_len, index_dir, "BL_proxy");
+		BLI_join_dirfile(index_dir, index_dir_len, index_dir, fname);
 	}
 	else {
-		BLI_strncpy(index_dir, anim->index_dir, FILE_MAXDIR);
+		BLI_strncpy(index_dir, anim->index_dir, index_dir_len);
 	}
 }
 
@@ -396,7 +395,7 @@ static void get_proxy_filename(struct anim *anim, IMB_Proxy_Size preview_size,
 	BLI_snprintf(proxy_temp_name, sizeof(proxy_temp_name), "proxy_%d%s_part.avi",
 	             (int) (proxy_fac[i] * 100), stream_suffix);
 
-	get_index_dir(anim, index_dir);
+	get_index_dir(anim, index_dir, sizeof(index_dir));
 
 	BLI_join_dirfile(fname, FILE_MAXFILE + FILE_MAXDIR, index_dir, 
 	                 temp ? proxy_temp_name : proxy_name);
@@ -425,7 +424,7 @@ static void get_tc_filename(struct anim *anim, IMB_Timecode_Type tc,
 	
 	BLI_snprintf(index_name, 256, index_names[i], stream_suffix);
 
-	get_index_dir(anim, index_dir);
+	get_index_dir(anim, index_dir, sizeof(index_dir));
 	
 	BLI_join_dirfile(fname, FILE_MAXFILE + FILE_MAXDIR, 
 	                 index_dir, index_name);
@@ -492,7 +491,7 @@ static struct proxy_output_ctx *alloc_proxy_output_ffmpeg(
 	rv->of = avformat_alloc_context();
 	rv->of->oformat = av_guess_format("avi", NULL, NULL);
 	
-	BLI_snprintf(rv->of->filename, sizeof(rv->of->filename), "%s", fname);
+	BLI_strncpy(rv->of->filename, fname, sizeof(rv->of->filename));
 
 	fprintf(stderr, "Starting work on proxy: %s\n", rv->of->filename);
 
@@ -553,7 +552,7 @@ static struct proxy_output_ctx *alloc_proxy_output_ffmpeg(
 	rv->video_buffer = (uint8_t *)MEM_mallocN(
 	        rv->video_buffersize, "FFMPEG video buffer");
 
-	rv->orig_height = st->codec->height;
+	rv->orig_height = av_get_cropped_height_from_codec(st->codec);
 
 	if (st->codec->width != width || st->codec->height != height ||
 	    st->codec->pix_fmt != rv->c->pix_fmt)
@@ -568,7 +567,7 @@ static struct proxy_output_ctx *alloc_proxy_output_ffmpeg(
 
 		rv->sws_ctx = sws_getContext(
 		        st->codec->width,
-		        st->codec->height,
+		        rv->orig_height,
 		        st->codec->pix_fmt,
 		        width, height,
 		        rv->c->pix_fmt,
@@ -810,7 +809,8 @@ static IndexBuildContext *index_ffmpeg_create_context(struct anim *anim, IMB_Tim
 			context->proxy_ctx[i] = alloc_proxy_output_ffmpeg(
 			        anim, context->iStream, proxy_sizes[i],
 			        context->iCodecCtx->width * proxy_fac[i],
-			        context->iCodecCtx->height * proxy_fac[i],
+			        av_get_cropped_height_from_codec(
+			        context->iCodecCtx) * proxy_fac[i],
 			        quality);
 			if (!context->proxy_ctx[i]) {
 				proxy_sizes_in_use &= ~proxy_sizes[i];

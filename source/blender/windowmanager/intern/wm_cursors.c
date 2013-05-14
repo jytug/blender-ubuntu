@@ -35,6 +35,8 @@
 
 #include "GHOST_C-api.h"
 
+#include "BLI_utildefines.h"
+
 #include "BLO_sys_types.h"
 
 #include "DNA_listBase.h"
@@ -44,8 +46,8 @@
 #include "BKE_global.h"
 #include "BKE_main.h"
 
-#include "WM_api.h"
 #include "WM_types.h"
+#include "WM_api.h"
 #include "wm_cursors.h"
 
 /* XXX this still is mess from old code */
@@ -162,7 +164,7 @@ void WM_cursor_restore(wmWindow *win)
 }
 
 /* to allow usage all over, we do entire WM */
-void WM_cursor_wait(int val)
+void WM_cursor_wait(bool val)
 {
 	if (!G.background) {
 		wmWindowManager *wm = G.main->wm.first;
@@ -182,7 +184,7 @@ void WM_cursor_wait(int val)
 /**
  * \param bounds can be NULL
  */
-void WM_cursor_grab_enable(wmWindow *win, int wrap, int hide, int bounds[4])
+void WM_cursor_grab_enable(wmWindow *win, bool wrap, bool hide, int bounds[4])
 {
 	/* Only grab cursor when not running debug.
 	 * It helps not to get a stuck WM when hitting a breakpoint  

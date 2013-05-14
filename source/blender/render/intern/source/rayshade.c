@@ -47,6 +47,8 @@
 #include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_global.h"
 #include "BKE_node.h"
 
@@ -400,7 +402,7 @@ static void makeraytree_single(Render *re)
 	}
 	
 	if (!test_break(re)) {
-		re->i.infostr= "Raytree.. building";
+		re->i.infostr = IFACE_("Raytree.. building");
 		re->stats_draw(re->sdh, &re->i);
 
 		RE_rayobject_done(raytree);
@@ -412,7 +414,7 @@ void makeraytree(Render *re)
 	float min[3], max[3], sub[3];
 	int i;
 	
-	re->i.infostr= "Raytree.. preparing";
+	re->i.infostr = IFACE_("Raytree.. preparing");
 	re->stats_draw(re->sdh, &re->i);
 
 	/* disable options not yet supported by octree,
@@ -425,7 +427,7 @@ void makeraytree(Render *re)
 	if (test_break(re)) {
 		freeraytree(re);
 
-		re->i.infostr= "Raytree building canceled";
+		re->i.infostr = IFACE_("Raytree building canceled");
 		re->stats_draw(re->sdh, &re->i);
 	}
 	else {
@@ -446,7 +448,7 @@ void makeraytree(Render *re)
 
 		re->maxdist = len_v3(sub);
 
-		re->i.infostr= "Raytree finished";
+		re->i.infostr = IFACE_("Raytree finished");
 		re->stats_draw(re->sdh, &re->i);
 	}
 
@@ -933,15 +935,14 @@ void init_jitter_plane(LampRen *lar)
 	
 	/* if 1 sample, we leave table to be zero's */
 	if (tot>1) {
+		/* set per-lamp fixed seed */
+		RNG *rng = BLI_rng_new_srandom(tot);
 		int iter=12;
 
-		/* set per-lamp fixed seed */
-		BLI_srandom(tot);
-		
 		/* fill table with random locations, area_size large */
 		for (x=0; x<tot; x++, fp+=2) {
-			fp[0]= (BLI_frand()-0.5f)*lar->area_size;
-			fp[1]= (BLI_frand()-0.5f)*lar->area_sizey;
+			fp[0]= (BLI_rng_get_float(rng)-0.5f)*lar->area_size;
+			fp[1]= (BLI_rng_get_float(rng)-0.5f)*lar->area_sizey;
 		}
 		
 		while (iter--) {
@@ -950,6 +951,8 @@ void init_jitter_plane(LampRen *lar)
 				DP_energy(lar->jitter, fp, tot, lar->area_size, lar->area_sizey);
 			}
 		}
+
+		BLI_rng_free(rng);
 	}
 	/* create the dithered tables (could just check lamp type!) */
 	jitter_plane_offset(lar->jitter, lar->jitter+2*tot, tot, lar->area_size, lar->area_sizey, 0.5f, 0.0f);
@@ -1725,12 +1728,12 @@ static int UNUSED_FUNCTION(ray_trace_shadow_rad)(ShadeInput *ship, ShadeResult *
 }
 
 /* aolight: function to create random unit sphere vectors for total random sampling */
-static void RandomSpherical(float v[3])
+static void RandomSpherical(RNG *rng, float v[3])
 {
 	float r;
-	v[2] = 2.f*BLI_frand()-1.f;
+	v[2] = 2.f*BLI_rng_get_float(rng)-1.f;
 	if ((r = 1.f - v[2]*v[2])>0.f) {
-		float a = 6.283185307f*BLI_frand();
+		float a = 6.283185307f*BLI_rng_get_float(rng);
 		r = sqrt(r);
 		v[0] = r * cosf(a);
 		v[1] = r * sinf(a);
@@ -1768,6 +1771,8 @@ static void DS_energy(float *sphere, int tot, float vec[3])
 /* and allocates threadsafe memory */
 void init_ao_sphere(World *wrld)
 {
+	/* fixed random */
+	RNG *rng;
 	float *fp;
 	int a, tot, iter= 16;
 
@@ -1775,14 +1780,12 @@ void init_ao_sphere(World *wrld)
 	tot= 2*wrld->aosamp*wrld->aosamp;
 	
 	wrld->aosphere= MEM_mallocN(3*tot*sizeof(float), "AO sphere");
-	
-	/* fixed random */
-	BLI_srandom(tot);
+	rng = BLI_rng_new_srandom(tot);
 	
 	/* init */
 	fp= wrld->aosphere;
 	for (a=0; a<tot; a++, fp+= 3) {
-		RandomSpherical(fp);
+		RandomSpherical(rng, fp);
 	}
 	
 	while (iter--) {
@@ -1793,6 +1796,8 @@ void init_ao_sphere(World *wrld)
 	
 	/* tables */
 	wrld->aotables= MEM_mallocN(BLENDER_MAX_THREADS*3*tot*sizeof(float), "AO tables");
+
+	BLI_rng_free(rng);
 }
 
 /* give per thread a table, we have to compare xs ys because of way OSA works... */
@@ -1821,17 +1826,20 @@ static float *sphere_sampler(int type, int resol, int thread, int xs, int ys, in
 	tot= 2*resol*resol;
 
 	if (type & WO_AORNDSMP) {
+		/* total random sampling. NOT THREADSAFE! (should be removed, is not useful) */
+		RNG *rng = BLI_rng_new(BLI_thread_rand(thread));
 		float *sphere;
 		int a;
 		
 		/* always returns table */
 		sphere= threadsafe_table_sphere(0, thread, xs, ys, tot);
 
-		/* total random sampling. NOT THREADSAFE! (should be removed, is not useful) */
 		vec= sphere;
 		for (a=0; a<tot; a++, vec+=3) {
-			RandomSpherical(vec);
+			RandomSpherical(rng, vec);
 		}
+
+		BLI_rng_free(rng);
 		
 		return sphere;
 	}

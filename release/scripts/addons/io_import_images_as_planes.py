@@ -19,8 +19,8 @@
 bl_info = {
     "name": "Import Images as Planes",
     "author": "Florian Meyer (tstscr), mont29, matali",
-    "version": (1, 7),
-    "blender": (2, 65, 0),
+    "version": (1, 9),
+    "blender": (2, 66, 4),
     "location": "File > Import > Images as Planes or Add > Mesh > Images as Planes",
     "description": "Imports images and creates planes with the appropriate aspect ratio. "
                    "The images are mapped to the planes.",
@@ -214,7 +214,7 @@ class IMPORT_OT_image_to_plane(Operator, AddObjectHelper):
         ('DPI', "Dpi", "Use definition of the image as dots per inch"),
         ('DPBU', "Dots/BU", "Use definition of the image as dots per Blender Unit"),
     )
-    size_mode = EnumProperty(name="Size Mode", default='DPI', items=_size_modes,
+    size_mode = EnumProperty(name="Size Mode", default='ABSOLUTE', items=_size_modes,
                              description="How the size of the plane is computed")
 
     height = FloatProperty(name="Height", description="Height of the created plane",
@@ -369,29 +369,24 @@ class IMPORT_OT_image_to_plane(Operator, AddObjectHelper):
             px = py = 1
 
         if self.size_mode == 'ABSOLUTE':
-            y = self.height / 2
+            y = self.height
             x = px / py * y
         elif self.size_mode == 'DPI':
-            fact = 1 / self.factor / context.scene.unit_settings.scale_length * 0.0254 / 2
+            fact = 1 / self.factor / context.scene.unit_settings.scale_length * 0.0254
             x = px * fact
             y = py * fact
         else:  # elif self.size_mode == 'DPBU'
-            fact = 1 / self.factor / 2
+            fact = 1 / self.factor
             x = px * fact
             y = py * fact
 
-        verts = ((-x, -y, 0.0),
-                 (+x, -y, 0.0),
-                 (+x, +y, 0.0),
-                 (-x, +y, 0.0),
-                 )
-        faces = ((0, 1, 2, 3), )
-
-        mesh_data = bpy.data.meshes.new(img.name)
-        mesh_data.from_pydata(verts, [], faces)
-        mesh_data.update()
-        object_data_add(context, mesh_data, operator=self)
+        bpy.ops.mesh.primitive_plane_add('INVOKE_REGION_WIN')
         plane = context.scene.objects.active
+        # Why does mesh.primitive_plane_add leave the object in edit mode???
+        if plane.mode is not 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        plane.dimensions = x, y, 0.0
+        bpy.ops.object.transform_apply(scale=True)
         plane.data.uv_textures.new()
         plane.data.materials.append(material)
         plane.data.uv_textures[0].data[0].image = img
@@ -499,17 +494,17 @@ class IMPORT_OT_image_to_plane(Operator, AddObjectHelper):
         out_node = clean_node_tree(node_tree)
 
         if self.shader == 'BSDF_DIFFUSE':
-            bsdf_diffuse = node_tree.nodes.new('BSDF_DIFFUSE')
-            tex_image = node_tree.nodes.new('TEX_IMAGE')
+            bsdf_diffuse = node_tree.nodes.new('ShaderNodeBsdfDiffuse')
+            tex_image = node_tree.nodes.new('ShaderNodeTexImage')
             tex_image.image = image
             tex_image.show_texture = True
             node_tree.links.new(out_node.inputs[0], bsdf_diffuse.outputs[0])
             node_tree.links.new(bsdf_diffuse.inputs[0], tex_image.outputs[0])
 
         elif self.shader == 'EMISSION':
-            emission = node_tree.nodes.new('EMISSION')
-            lightpath = node_tree.nodes.new('LIGHT_PATH')
-            tex_image = node_tree.nodes.new('TEX_IMAGE')
+            emission = node_tree.nodes.new('ShaderNodeEmission')
+            lightpath = node_tree.nodes.new('ShaderNodeLightPath')
+            tex_image = node_tree.nodes.new('ShaderNodeTexImage')
             tex_image.image = image
             tex_image.show_texture = True
             node_tree.links.new(out_node.inputs[0], emission.outputs[0])
@@ -517,10 +512,10 @@ class IMPORT_OT_image_to_plane(Operator, AddObjectHelper):
             node_tree.links.new(emission.inputs[1], lightpath.outputs[0])
 
         elif self.shader == 'BSDF_DIFFUSE_BSDF_TRANSPARENT':
-            bsdf_diffuse = node_tree.nodes.new('BSDF_DIFFUSE')
-            bsdf_transparent = node_tree.nodes.new('BSDF_TRANSPARENT')
-            mix_shader = node_tree.nodes.new('MIX_SHADER')
-            tex_image = node_tree.nodes.new('TEX_IMAGE')
+            bsdf_diffuse = node_tree.nodes.new('ShaderNodeBsdfDiffuse')
+            bsdf_transparent = node_tree.nodes.new('ShaderNodeBsdfTransparent')
+            mix_shader = node_tree.nodes.new('ShaderNodeMixShader')
+            tex_image = node_tree.nodes.new('ShaderNodeTexImage')
             tex_image.image = image
             tex_image.show_texture = True
             node_tree.links.new(out_node.inputs[0], mix_shader.outputs[0])
@@ -530,11 +525,11 @@ class IMPORT_OT_image_to_plane(Operator, AddObjectHelper):
             node_tree.links.new(bsdf_diffuse.inputs[0], tex_image.outputs[0])
 
         elif self.shader == 'EMISSION_BSDF_TRANSPARENT':
-            emission = node_tree.nodes.new('EMISSION')
-            lightpath = node_tree.nodes.new('LIGHT_PATH')
-            bsdf_transparent = node_tree.nodes.new('BSDF_TRANSPARENT')
-            mix_shader = node_tree.nodes.new('MIX_SHADER')
-            tex_image = node_tree.nodes.new('TEX_IMAGE')
+            emission = node_tree.nodes.new('ShaderNodeEmission')
+            lightpath = node_tree.nodes.new('ShaderNodeLightPath')
+            bsdf_transparent = node_tree.nodes.new('ShaderNodeBsdfTransparent')
+            mix_shader = node_tree.nodes.new('ShaderNodeMixShader')
+            tex_image = node_tree.nodes.new('ShaderNodeTexImage')
             tex_image.image = image
             tex_image.show_texture = True
             node_tree.links.new(out_node.inputs[0], mix_shader.outputs[0])

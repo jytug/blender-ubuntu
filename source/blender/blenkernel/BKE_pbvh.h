@@ -163,8 +163,8 @@ void BKE_pbvh_node_num_verts(PBVH *bvh, PBVHNode *node,
 void BKE_pbvh_node_get_verts(PBVH *bvh, PBVHNode *node,
                              int **vert_indices, struct MVert **verts);
 
-void BKE_pbvh_node_get_BB(PBVHNode * node, float bb_min[3], float bb_max[3]);
-void BKE_pbvh_node_get_original_BB(PBVHNode * node, float bb_min[3], float bb_max[3]);
+void BKE_pbvh_node_get_BB(PBVHNode *node, float bb_min[3], float bb_max[3]);
+void BKE_pbvh_node_get_original_BB(PBVHNode *node, float bb_min[3], float bb_max[3]);
 
 float BKE_pbvh_node_get_tmin(PBVHNode *node);
 
@@ -181,7 +181,7 @@ void BKE_pbvh_bmesh_after_stroke(PBVH *bvh);
 /* Update Normals/Bounding Box/Draw Buffers/Redraw and clear flags */
 
 void BKE_pbvh_update(PBVH *bvh, int flags, float (*face_nors)[3]);
-void BKE_pbvh_redraw_BB(PBVH * bvh, float bb_min[3], float bb_max[3]);
+void BKE_pbvh_redraw_BB(PBVH *bvh, float bb_min[3], float bb_max[3]);
 void BKE_pbvh_get_grid_updates(PBVH *bvh, int clear, void ***gridfaces, int *totface);
 void BKE_pbvh_grids_update(PBVH *bvh, struct CCGElem **grid_elems,
                            struct DMGridAdjacency *gridadj, void **gridfaces,
@@ -295,7 +295,7 @@ void pbvh_vertex_iter_init(PBVH *bvh, PBVHNode *node,
 						vi.mask = &vi.vmask[vi.vert_indices[vi.gx]]; \
 				} \
 				else { \
-					if (!BLI_ghashIterator_isDone(&vi.bm_unique_verts)) {\
+					if (BLI_ghashIterator_notDone(&vi.bm_unique_verts)) {\
 						vi.bm_vert = BLI_ghashIterator_getKey(&vi.bm_unique_verts); \
 						BLI_ghashIterator_step(&vi.bm_unique_verts); \
 					} \

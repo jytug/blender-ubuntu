@@ -23,12 +23,16 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
+# XXX allowing blenkernel and RNA includes in blenlib is a hack,
+# but needed in a few places atm (bpath.c for instance)
 set(INC 
 	.
 	# ../blenkernel  # dont add this back!
 	../makesdna
+	../makesrna
 	../../../intern/ghost
 	../../../intern/guardedalloc
+	../../../extern/wcwidth
 )
 
 set(INC_SYS
@@ -66,6 +70,7 @@ set(SRC
 	intern/math_base.c
 	intern/math_base_inline.c
 	intern/math_color.c
+	intern/math_color_blend_inline.c
 	intern/math_color_inline.c
 	intern/math_geom.c
 	intern/math_geom_inline.c
@@ -124,6 +129,7 @@ set(SRC
 	BLI_math.h
 	BLI_math_base.h
 	BLI_math_color.h
+	BLI_math_color_blend.h
 	BLI_math_geom.h
 	BLI_math_inline.h
 	BLI_math_interp.h

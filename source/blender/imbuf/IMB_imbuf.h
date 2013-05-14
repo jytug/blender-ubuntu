@@ -134,7 +134,7 @@ struct ImBuf *IMB_allocImBuf(unsigned int x, unsigned int y,
  */
 
 void IMB_refImBuf(struct ImBuf *ibuf);
-struct ImBuf * IMB_makeSingleUser(struct ImBuf *ibuf);
+struct ImBuf *IMB_makeSingleUser(struct ImBuf *ibuf);
 
 /**
  *
@@ -169,17 +169,19 @@ typedef enum IMB_BlendMode {
 	IMB_BLEND_COPY_ALPHA = 1002
 } IMB_BlendMode;
 
-unsigned int IMB_blend_color(unsigned int src1, unsigned int src2, int fac,
-	IMB_BlendMode mode);
-void IMB_blend_color_float(float *dst, float *src1, float *src2, float fac,
+void IMB_blend_color_byte(unsigned char dst[4], unsigned char src1[4],
+	unsigned char src2[4], IMB_BlendMode mode);
+void IMB_blend_color_float(float dst[4], float src1[4], float src2[4],
 	IMB_BlendMode mode);
 
 void IMB_rectclip(struct ImBuf *dbuf, struct ImBuf *sbuf, int *destx, 
 	int *desty, int *srcx, int *srcy, int *width, int *height);
 void IMB_rectcpy(struct ImBuf *drect, struct ImBuf *srect, int destx,
 	int desty, int srcx, int srcy, int width, int height);
-void IMB_rectblend(struct ImBuf *dbuf, struct ImBuf *sbuf, int destx, 
-	int desty, int srcx, int srcy, int width, int height, IMB_BlendMode mode);
+void IMB_rectblend(struct ImBuf *dbuf, struct ImBuf *obuf, struct ImBuf *sbuf,
+	unsigned short *mask, unsigned short mask_max,
+	int destx,  int desty, int origx, int origy, int srcx, int srcy,
+	int width, int height, IMB_BlendMode mode);
 
 /**
  *
@@ -213,9 +215,9 @@ typedef enum IMB_Proxy_Size {
 } IMB_Proxy_Size;
 
 /* defaults to BL_proxy within the directory of the animation */
-void IMB_anim_set_index_dir(struct anim * anim, const char * dir);
+void IMB_anim_set_index_dir(struct anim *anim, const char *dir);
 
-int IMB_anim_index_get_frame_index(struct anim * anim, IMB_Timecode_Type tc,
+int IMB_anim_index_get_frame_index(struct anim *anim, IMB_Timecode_Type tc,
                                    int position);
 
 struct IndexBuildContext;
@@ -241,8 +243,8 @@ int IMB_anim_get_duration(struct anim *anim, IMB_Timecode_Type tc);
  * Return the fps contained in movie files (function rval is FALSE,
  * and frs_sec and frs_sec_base untouched if none available!)
  */
-int IMB_anim_get_fps(struct anim * anim, 
-                     short * frs_sec, float * frs_sec_base);
+int IMB_anim_get_fps(struct anim *anim,
+                     short *frs_sec, float *frs_sec_base);
 
 /**
  *
@@ -335,6 +337,12 @@ struct ImBuf *IMB_scaleImBuf(struct ImBuf *ibuf, unsigned int newx, unsigned int
  * \attention Defined in scaling.c
  */
 struct ImBuf *IMB_scalefastImBuf(struct ImBuf *ibuf, unsigned int newx, unsigned int newy);
+
+/**
+ *
+ * \attention Defined in scaling.c
+ */
+void IMB_scaleImBuf_threaded(struct ImBuf *ibuf, unsigned int newx, unsigned int newy);
 
 /**
  *

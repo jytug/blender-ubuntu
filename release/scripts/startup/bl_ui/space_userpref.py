@@ -20,6 +20,7 @@
 import bpy
 from bpy.types import Header, Menu, Panel
 from bpy.app.translations import pgettext_iface as iface_
+from bpy.app.translations import contexts as i18n_contexts
 
 
 def ui_style_items(col, context):
@@ -480,6 +481,10 @@ class USERPREF_PT_system(Panel):
         col.prop(system, "texture_collection_rate", text="Collection Rate")
 
         col.separator()
+
+        col.label(text="Images Draw Method:")
+        col.prop(system, "image_draw_method", text="")
+
         col.separator()
         col.separator()
 
@@ -524,9 +529,11 @@ class USERPREF_PT_system(Panel):
             if system.use_international_fonts:
                 column.prop(system, "language")
                 row = column.row()
-                row.label(text="Translate:")
-                row.prop(system, "use_translate_interface", text="Interface")
-                row.prop(system, "use_translate_tooltips", text="Tooltips")
+                row.label(text="Translate:", text_ctxt=i18n_contexts.id_windowmanager)
+                row = column.row(True)
+                row.prop(system, "use_translate_interface", text="Interface", toggle=True)
+                row.prop(system, "use_translate_tooltips", text="Tooltips", toggle=True)
+                row.prop(system, "use_translate_new_dataname", text="New Data", toggle=True)
 
 
 class USERPREF_MT_interface_theme_presets(Menu):
@@ -743,6 +750,7 @@ class USERPREF_PT_theme(Panel):
             padding = subsplit.split(percentage=0.15)
             colsub = padding.column()
             colsub = padding.column()
+            colsub.active = False
             colsub.row().prop(ui, "icon_file")
 
             subsplit = row.split(percentage=0.85)
@@ -1106,9 +1114,9 @@ class USERPREF_PT_addons(Panel):
     def draw_error(layout, message):
         lines = message.split("\n")
         box = layout.box()
-        rowsub = box.row()
-        rowsub.label(lines[0])
-        rowsub.label(icon='ERROR')
+        sub = box.row()
+        sub.label(lines[0])
+        sub.label(icon='ERROR')
         for l in lines[1:]:
             box.label(l)
 
@@ -1191,14 +1199,14 @@ class USERPREF_PT_addons(Panel):
 
                 row.operator("wm.addon_expand", icon='TRIA_DOWN' if info["show_expanded"] else 'TRIA_RIGHT', emboss=False).module = module_name
 
-                rowsub = row.row()
-                rowsub.active = is_enabled
-                rowsub.label(text='%s: %s' % (info["category"], info["name"]))
+                sub = row.row()
+                sub.active = is_enabled
+                sub.label(text='%s: %s' % (info["category"], info["name"]))
                 if info["warning"]:
-                    rowsub.label(icon='ERROR')
+                    sub.label(icon='ERROR')
 
                 # icon showing support level.
-                rowsub.label(icon=self._support_icon_mapping.get(info["support"], 'QUESTION'))
+                sub.label(icon=self._support_icon_mapping.get(info["support"], 'QUESTION'))
 
                 if is_enabled:
                     row.operator("wm.addon_disable", icon='CHECKBOX_HLT', text="", emboss=False).module = module_name
@@ -1239,7 +1247,7 @@ class USERPREF_PT_addons(Panel):
                         split = colsub.row().split(percentage=0.15)
                         split.label(text="Internet:")
                         if info["wiki_url"]:
-                            split.operator("wm.url_open", text="Link to the Wiki", icon='HELP').url = info["wiki_url"]
+                            split.operator("wm.url_open", text="Documentation", icon='HELP').url = info["wiki_url"]
                         if info["tracker_url"]:
                             split.operator("wm.url_open", text="Report a Bug", icon='URL').url = info["tracker_url"]
                         if user_addon:

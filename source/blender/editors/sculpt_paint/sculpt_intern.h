@@ -54,16 +54,11 @@ struct SculptUndoNode;
 /* Interface */
 struct MultiresModifierData *sculpt_multires_active(struct Scene *scene, struct Object *ob);
 
-void sculpt(struct Sculpt *sd);
-
 int sculpt_mode_poll(struct bContext *C);
 int sculpt_mode_poll_view3d(struct bContext *C);
 int sculpt_poll(struct bContext *C);
 void sculpt_update_mesh_elements(struct Scene *scene, struct Sculpt *sd, struct Object *ob,
                                  int need_pmap, int need_mask);
-
-/* Deformed mesh sculpt */
-void free_sculptsession_deformMats(struct SculptSession *ss);
 
 /* Stroke */
 int sculpt_stroke_get_location(bContext *C, float out[3], const float mouse[2]);

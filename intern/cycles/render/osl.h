@@ -21,6 +21,7 @@
 
 #include "util_set.h"
 #include "util_string.h"
+#include "util_thread.h"
 
 #include "shader.h"
 
@@ -50,11 +51,13 @@ class ShaderOutput;
 
 struct OSLShaderInfo {
 	OSLShaderInfo()
-	: has_surface_emission(false), has_surface_transparent(false)
+	: has_surface_emission(false), has_surface_transparent(false),
+	  has_surface_bssrdf(false)
 	{}
 
 	bool has_surface_emission;
 	bool has_surface_transparent;
+	bool has_surface_bssrdf;
 };
 
 /* Shader Manage */
@@ -69,7 +72,7 @@ public:
 	bool use_osl() { return true; }
 
 	void device_update(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress);
-	void device_free(Device *device, DeviceScene *dscene);
+	void device_free(Device *device, DeviceScene *dscene, Scene *scene);
 
 	/* osl compile and query */
 	static bool osl_compile(const string& inputfile, const string& outputfile);
@@ -83,13 +86,26 @@ public:
 
 protected:
 	void texture_system_init();
+	void texture_system_free();
+
 	void shading_system_init();
+	void shading_system_free();
 
 	OSL::ShadingSystem *ss;
 	OSL::TextureSystem *ts;
 	OSLRenderServices *services;
 	OSL::ErrorHandler errhandler;
 	map<string, OSLShaderInfo> loaded_shaders;
+
+	static OSL::TextureSystem *ts_shared;
+	static thread_mutex ts_shared_mutex;
+	static int ts_shared_users;
+
+	static OSL::ShadingSystem *ss_shared;
+	static OSLRenderServices *services_shared;
+	static thread_mutex ss_shared_mutex;
+	static thread_mutex ss_mutex;
+	static int ss_shared_users;
 };
 
 #endif

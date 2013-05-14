@@ -22,6 +22,8 @@
 
 /** \file blender/bmesh/operators/bmo_hull.c
  *  \ingroup bmesh
+ *
+ * Create a convex hull using bullet physics library.
  */
 
 #ifdef WITH_BULLET
@@ -29,16 +31,13 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_array.h"
-#include "BLI_ghash.h"
 #include "BLI_listbase.h"
 #include "BLI_math.h"
-#include "BLI_utildefines.h"
 
 #include "Bullet-C-Api.h"
 
 /* XXX: using 128 for totelem and pchunk of mempool, no idea what good
  * values would be though */
-#include "BLI_mempool.h"
 
 #include "bmesh.h"
 
@@ -154,8 +153,9 @@ static void hull_output_triangles(BMesh *bm, GHash *hull_triangles)
 				const int next = (i == 2 ? 0 : i + 1);
 				BMEdge *e = BM_edge_exists(t->v[i], t->v[next]);
 				if (e &&
-					BMO_elem_flag_test(bm, e, HULL_FLAG_INPUT) &&
-					!BMO_elem_flag_test(bm, e, HULL_FLAG_HOLE)) {
+				    BMO_elem_flag_test(bm, e, HULL_FLAG_INPUT) &&
+				    !BMO_elem_flag_test(bm, e, HULL_FLAG_HOLE))
+				{
 					BMO_elem_flag_enable(bm, e, HULL_FLAG_OUTPUT_GEOM);
 				}
 			}

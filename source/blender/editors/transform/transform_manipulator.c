@@ -64,7 +64,7 @@
 #include "BKE_mesh.h"
 #include "BKE_particle.h"
 #include "BKE_pointcache.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "BIF_gl.h"
 
@@ -293,7 +293,7 @@ int calc_manipulator_stats(const bContext *C)
 		if ((ob->lay & v3d->lay) == 0) return 0;
 
 		if (obedit->type == OB_MESH) {
-			BMEditMesh *em = BMEdit_FromObject(obedit);
+			BMEditMesh *em = BKE_editmesh_from_object(obedit);
 			BMEditSelection ese;
 			float vec[3] = {0, 0, 0};
 
@@ -719,13 +719,13 @@ static void partial_doughnut(float radring, float radhole, int start, int end, i
 	side_delta = 2.0f * (float)M_PI / (float)nsides;
 
 	theta = (float)M_PI + 0.5f * ring_delta;
-	cos_theta = (float)cos(theta);
-	sin_theta = (float)sin(theta);
+	cos_theta = cosf(theta);
+	sin_theta = sinf(theta);
 
 	for (i = nrings - 1; i >= 0; i--) {
 		theta1 = theta + ring_delta;
-		cos_theta1 = (float)cos(theta1);
-		sin_theta1 = (float)sin(theta1);
+		cos_theta1 = cosf(theta1);
+		sin_theta1 = sinf(theta1);
 
 		if (do_caps && i == start) {  // cap
 			glBegin(GL_POLYGON);
@@ -766,8 +766,8 @@ static void partial_doughnut(float radring, float radhole, int start, int end, i
 				float cos_phi, sin_phi, dist;
 
 				phi -= side_delta;
-				cos_phi = (float)cos(phi);
-				sin_phi = (float)sin(phi);
+				cos_phi = cosf(phi);
+				sin_phi = sinf(phi);
 				dist = radhole + radring * cos_phi;
 
 				glVertex3f(cos_theta * dist, -sin_theta * dist,  radring * sin_phi);
@@ -841,27 +841,6 @@ static void manipulator_setcolor(View3D *v3d, char axis, int colcode, unsigned c
 	glColor4ubv(col);
 }
 
-static void axis_sort_v3(const float axis_values[3], int r_axis_order[3])
-{
-	float v[3];
-	copy_v3_v3(v, axis_values);
-
-#define SWAP_AXIS(a, b) { \
-	SWAP(float, v[a],            v[b]); \
-	SWAP(int,   r_axis_order[a], r_axis_order[b]); \
-} (void)0
-
-	if (v[0] < v[1]) {
-		if (v[2] < v[0]) {  SWAP_AXIS(0, 2); }
-	}
-	else {
-		if (v[1] < v[2]) { SWAP_AXIS(0, 1); }
-		else { SWAP_AXIS(0, 2); }
-	}
-	if (v[2] < v[1])     { SWAP_AXIS(1, 2); }
-
-#undef SWAP_AXIS
-}
 static void manipulator_axis_order(RegionView3D *rv3d, int r_axis_order[3])
 {
 	float axis_values[3];
@@ -948,7 +927,6 @@ static void postOrtho(int ortho)
 
 static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving, int drawflags, int combo)
 {
-	GLUquadricObj *qobj;
 	double plane[4];
 	float matt[4][4];
 	float size, unitmat[4][4];
@@ -967,9 +945,6 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 	/* Init stuff */
 	glDisable(GL_DEPTH_TEST);
 	unit_m4(unitmat);
-
-	qobj = gluNewQuadric();
-	gluQuadricDrawStyle(qobj, GLU_FILL);
 
 	/* prepare for screen aligned draw */
 	size = len_v3(rv3d->twmat[0]);
@@ -1195,7 +1170,6 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 
 	/* restore */
 	glLoadMatrixf(rv3d->viewmat);
-	gluDeleteQuadric(qobj);
 	if (v3d->zbuf) glEnable(GL_DEPTH_TEST);
 
 }
@@ -1293,7 +1267,9 @@ static void draw_manipulator_scale(View3D *v3d, RegionView3D *rv3d, int moving, 
 
 		dz = 1.0;
 	}
-	else dz = 1.0f - 4.0f * cusize;
+	else {
+		dz = 1.0f - 4.0f * cusize;
+	}
 
 	if (moving) {
 		float matt[4][4];
@@ -1638,15 +1614,18 @@ void BIF_draw_manipulator(const bContext *C)
 		switch (v3d->around) {
 			case V3D_CENTER:
 			case V3D_ACTIVE:
-				rv3d->twmat[3][0] = (scene->twmin[0] + scene->twmax[0]) / 2.0f;
-				rv3d->twmat[3][1] = (scene->twmin[1] + scene->twmax[1]) / 2.0f;
-				rv3d->twmat[3][2] = (scene->twmin[2] + scene->twmax[2]) / 2.0f;
-				if (v3d->around == V3D_ACTIVE && scene->obedit == NULL) {
-					Object *ob = OBACT;
-					if (ob && !(ob->mode & OB_MODE_POSE))
-						copy_v3_v3(rv3d->twmat[3], ob->obmat[3]);
+			{
+				Object *ob;
+				if (((v3d->around == V3D_ACTIVE) && (scene->obedit == NULL)) &&
+				    ((ob = OBACT) && !(ob->mode & OB_MODE_POSE)))
+				{
+					copy_v3_v3(rv3d->twmat[3], ob->obmat[3]);
+				}
+				else {
+					mid_v3_v3v3(rv3d->twmat[3], scene->twmin, scene->twmax);
 				}
 				break;
+			}
 			case V3D_LOCAL:
 			case V3D_CENTROID:
 				copy_v3_v3(rv3d->twmat[3], scene->twcent);
@@ -1739,8 +1718,12 @@ static int manipulator_selectbuf(ScrArea *sa, ARegion *ar, const int mval[2], fl
 			dep = buffer[4 * a + 1];
 			val = buffer[4 * a + 3];
 
-			if (val == MAN_TRANS_C) return MAN_TRANS_C;
-			else if (val == MAN_SCALE_C) return MAN_SCALE_C;
+			if (val == MAN_TRANS_C) {
+				return MAN_TRANS_C;
+			}
+			else if (val == MAN_SCALE_C) {
+				return MAN_SCALE_C;
+			}
 			else {
 				if (val & MAN_ROT_C) {
 					if (minvalrot == 0 || dep < mindeprot) {
@@ -1767,7 +1750,7 @@ static int manipulator_selectbuf(ScrArea *sa, ARegion *ar, const int mval[2], fl
 
 
 /* return 0; nothing happened */
-int BIF_do_manipulator(bContext *C, struct wmEvent *event, wmOperator *op)
+int BIF_do_manipulator(bContext *C, const struct wmEvent *event, wmOperator *op)
 {
 	ScrArea *sa = CTX_wm_area(C);
 	View3D *v3d = sa->spacedata.first;
@@ -1855,8 +1838,15 @@ int BIF_do_manipulator(bContext *C, struct wmEvent *event, wmOperator *op)
 			//wm_operator_invoke(C, WM_operatortype_find("TRANSFORM_OT_resize", 0), event, op->ptr, NULL, FALSE);
 		}
 		else if (drawflags == MAN_ROT_T) { /* trackball need special case, init is different */
-			WM_operator_name_call(C, "TRANSFORM_OT_trackball", WM_OP_INVOKE_DEFAULT, op->ptr);
-			//wm_operator_invoke(C, WM_operatortype_find("TRANSFORM_OT_trackball", 0), event, op->ptr, NULL, FALSE);
+			/* Do not pass op->ptr!!! trackball has no "constraint" properties!
+			 * See [#34621], it's a miracle it did not cause more problems!!! */
+			/* However, we need to copy the "release_confirm" property... */
+			PointerRNA props_ptr;
+			WM_operator_properties_create(&props_ptr, "TRANSFORM_OT_trackball");
+			RNA_boolean_set(&props_ptr, "release_confirm", RNA_boolean_get(op->ptr, "release_confirm"));
+
+			WM_operator_name_call(C, "TRANSFORM_OT_trackball", WM_OP_INVOKE_DEFAULT, &props_ptr);
+			//wm_operator_invoke(C, WM_operatortype_find("TRANSFORM_OT_trackball", 0), event, NULL, NULL, FALSE);
 		}
 		else if (drawflags & MAN_ROT_C) {
 			switch (drawflags) {

@@ -24,10 +24,11 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
 
 #include "DNA_ID.h"
+
+#include "BLI_utildefines.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
@@ -65,6 +66,7 @@ EnumPropertyItem property_subtype_items[] = {
 	{PROP_ANGLE, "ANGLE", 0, "Angle", ""},
 	{PROP_TIME, "TIME", 0, "Time", ""},
 	{PROP_DISTANCE, "DISTANCE", 0, "Distance", ""},
+	{PROP_DISTANCE_CAMERA, "DISTANCE_CAMERA", 0, "Camera Distance", ""},
 
 	/* number arrays */
 	{PROP_COLOR, "COLOR", 0, "Color", ""},
@@ -96,6 +98,7 @@ EnumPropertyItem property_unit_items[] = {
 	{PROP_UNIT_TIME, "TIME", 0, "Time", ""},
 	{PROP_UNIT_VELOCITY, "VELOCITY", 0, "Velocity", ""},
 	{PROP_UNIT_ACCELERATION, "ACCELERATION", 0, "Acceleration", ""},
+	{PROP_UNIT_CAMERA, "CAMERA", 0, "Camera", ""},
 	{0, NULL, 0, NULL, NULL}
 };
 
@@ -138,12 +141,12 @@ static int rna_Struct_name_length(PointerRNA *ptr)
 
 static void rna_Struct_translation_context_get(PointerRNA *ptr, char *value)
 {
-	strcpy(value, ((StructRNA *)ptr->data)->translation_context ? ((StructRNA *)ptr->data)->translation_context : "");
+	strcpy(value, ((StructRNA *)ptr->data)->translation_context);
 }
 
 static int rna_Struct_translation_context_length(PointerRNA *ptr)
 {
-	return ((StructRNA *)ptr->data)->translation_context ? strlen(((StructRNA *)ptr->data)->translation_context) : 0;
+	return strlen(((StructRNA *)ptr->data)->translation_context);
 }
 
 static PointerRNA rna_Struct_base_get(PointerRNA *ptr)
@@ -488,14 +491,14 @@ static void rna_Property_translation_context_get(PointerRNA *ptr, char *value)
 {
 	PropertyRNA *prop = (PropertyRNA *)ptr->data;
 	rna_idproperty_check(&prop, ptr);
-	strcpy(value, prop->translation_context ? prop->translation_context : "");
+	strcpy(value, prop->translation_context);
 }
 
 static int rna_Property_translation_context_length(PointerRNA *ptr)
 {
 	PropertyRNA *prop = (PropertyRNA *)ptr->data;
 	rna_idproperty_check(&prop, ptr);
-	return prop->translation_context ? strlen(prop->translation_context) : 0;
+	return strlen(prop->translation_context);
 }
 
 static int rna_Property_type_get(PointerRNA *ptr)

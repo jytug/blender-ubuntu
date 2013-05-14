@@ -29,19 +29,20 @@
  *  \ingroup RNA
  */
 
-
 #include <float.h>
 #include <limits.h>
 #include <stdlib.h>
-
-#include "RNA_define.h"
-
-#include "rna_internal.h"
 
 #include "DNA_scene_types.h"
 #include "DNA_boid_types.h"
 #include "DNA_object_types.h"
 #include "DNA_particle_types.h"
+
+#include "BLI_utildefines.h"
+
+#include "RNA_define.h"
+
+#include "rna_internal.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -100,7 +101,7 @@ static void rna_Boids_reset(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRN
 
 	WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
 }
-static void rna_Boids_reset_deps(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Boids_reset_deps(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	if (ptr->type == &RNA_ParticleSystem) {
 		ParticleSystem *psys = (ParticleSystem *)ptr->data;
@@ -112,7 +113,7 @@ static void rna_Boids_reset_deps(Main *bmain, Scene *scene, PointerRNA *ptr)
 	else
 		DAG_id_tag_update(ptr->id.data, OB_RECALC_DATA | PSYS_RECALC_RESET);
 
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 
 	WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
 }
@@ -141,7 +142,12 @@ static StructRNA *rna_BoidRule_refine(struct PointerRNA *ptr)
 
 static char *rna_BoidRule_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("rules[\"%s\"]", ((BoidRule *)ptr->data)->name);  /* XXX not unique */
+	BoidRule *rule = (BoidRule *)ptr->data;
+	char name_esc[sizeof(rule->name) * 2];
+
+	BLI_strescape(name_esc, rule->name, sizeof(name_esc));
+
+	return BLI_sprintfN("rules[\"%s\"]", name_esc);  /* XXX not unique */
 }
 
 static PointerRNA rna_BoidState_active_boid_rule_get(PointerRNA *ptr)

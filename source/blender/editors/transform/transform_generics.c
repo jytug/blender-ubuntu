@@ -77,7 +77,7 @@
 #include "BKE_nla.h"
 #include "BKE_context.h"
 #include "BKE_sequencer.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_tracking.h"
 #include "BKE_mask.h"
 
@@ -742,7 +742,7 @@ static void recalcData_view3d(TransInfo *t)
 			if (la->editlatt->latt->flag & LT_OUTSIDE) outside_lattice(la->editlatt->latt);
 		}
 		else if (t->obedit->type == OB_MESH) {
-			BMEditMesh *em = BMEdit_FromObject(t->obedit);
+			BMEditMesh *em = BKE_editmesh_from_object(t->obedit);
 			/* mirror modifier clipping? */
 			if (t->state != TRANS_CANCEL) {
 				/* apply clipping after so we never project past the clip plane [#25423] */
@@ -755,7 +755,7 @@ static void recalcData_view3d(TransInfo *t)
 			DAG_id_tag_update(t->obedit->data, 0);  /* sets recalc flags */
 			
 			EDBM_mesh_normals_update(em);
-			BMEdit_RecalcTessellation(em);
+			BKE_editmesh_tessface_calc(em);
 		}
 		else if (t->obedit->type == OB_ARMATURE) { /* no recalc flag, does pose */
 			bArmature *arm = t->obedit->data;
@@ -962,10 +962,6 @@ void recalcData(TransInfo *t)
 	else if (t->spacetype == SPACE_CLIP) {
 		recalcData_spaceclip(t);
 	}
-
-	if (t->options & CTX_MASK) {
-
-	}
 }
 
 void drawLine(TransInfo *t, const float center[3], const float dir[3], char axis, short options)
@@ -1006,13 +1002,26 @@ void drawLine(TransInfo *t, const float center[3], const float dir[3], char axis
 	}
 }
 
+/**
+ * Free data before switching to another mode.
+ */
+void resetTransModal(TransInfo *t)
+{
+	if (t->mode == TFM_EDGE_SLIDE) {
+		freeEdgeSlideVerts(t);
+	}
+	else if (t->mode == TFM_VERT_SLIDE) {
+		freeVertSlideVerts(t);
+	}
+}
+
 void resetTransRestrictions(TransInfo *t)
 {
 	t->flag &= ~T_ALL_RESTRICTIONS;
 }
 
 /* the *op can be NULL */
-int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
+int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, const wmEvent *event)
 {
 	Scene *sce = CTX_data_scene(C);
 	ToolSettings *ts = CTX_data_tool_settings(C);
@@ -1031,7 +1040,12 @@ int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 	t->ar = ar;
 	t->obedit = obedit;
 	t->settings = ts;
-	
+
+	if (obedit) {
+		copy_m3_m4(t->obedit_mat, obedit->obmat);
+		normalize_m3(t->obedit_mat);
+	}
+
 	t->data = NULL;
 	t->ext = NULL;
 	
@@ -1160,7 +1174,7 @@ int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 			t->options |= CTX_MASK;
 		}
 		else {
-			BLI_assert(0);
+			/* image not in uv edit, nor in mask mode, can happen for some tools */
 		}
 	}
 	else if (t->spacetype == SPACE_NODE) {
@@ -1609,7 +1623,7 @@ void calculateCenter(TransInfo *t)
 			if (t->obedit) {
 				if (t->obedit && t->obedit->type == OB_MESH) {
 					BMEditSelection ese;
-					BMEditMesh *em = BMEdit_FromObject(t->obedit);
+					BMEditMesh *em = BKE_editmesh_from_object(t->obedit);
 
 					if (BM_select_history_active_get(em->bm, &ese)) {
 						BM_editselection_center(&ese, t->center);
@@ -1669,7 +1683,7 @@ void calculateCenter(TransInfo *t)
 				
 				projectIntView(t, axis, t->center2d);
 				
-				/* rotate only needs correct 2d center, grab needs initgrabz() value */
+				/* rotate only needs correct 2d center, grab needs ED_view3d_calc_zfac() value */
 				if (t->mode == TFM_TRANSLATION) {
 					copy_v3_v3(t->center, axis);
 					copy_v3_v3(t->con.center, t->center);
@@ -1679,18 +1693,16 @@ void calculateCenter(TransInfo *t)
 	}
 	
 	if (t->spacetype == SPACE_VIEW3D) {
-		/* initgrabz() defines a factor for perspective depth correction, used in window_to_3d_delta() */
+		/* ED_view3d_calc_zfac() defines a factor for perspective depth correction, used in ED_view3d_win_to_delta() */
+		float vec[3];
 		if (t->flag & (T_EDIT | T_POSE)) {
 			Object *ob = t->obedit ? t->obedit : t->poseobj;
-			float vec[3];
-			
-			copy_v3_v3(vec, t->center);
-			mul_m4_v3(ob->obmat, vec);
-			initgrabz(t->ar->regiondata, vec[0], vec[1], vec[2]);
+			mul_v3_m4v3(vec, ob->obmat, t->center);
 		}
 		else {
-			initgrabz(t->ar->regiondata, t->center[0], t->center[1], t->center[2]);
+			copy_v3_v3(vec, t->center);
 		}
+		t->zfac = ED_view3d_calc_zfac(t->ar->regiondata, vec, NULL);
 	}
 }
 
@@ -1760,7 +1772,6 @@ void calculatePropRatio(TransInfo *t)
 						td->factor = (float)sqrt(2 * dist - dist * dist);
 						break;
 					case PROP_RANDOM:
-						BLI_srand(BLI_rand()); /* random seed */
 						td->factor = BLI_frand() * dist;
 						break;
 					default:
