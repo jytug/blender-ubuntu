@@ -1,8 +1,8 @@
-blender (2.67-1) UNRELEASED; urgency=low
+blender (2.67a-1) UNRELEASED; urgency=low
 
-  * New upstream stable release
+  * New upstream bugfix release
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Tue, 14 May 2013 15:30:12 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 22 May 2013 17:07:44 +0200
 
 blender (2.66a-3) experimental; urgency=low
 
