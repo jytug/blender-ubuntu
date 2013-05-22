@@ -2002,8 +2002,7 @@ static void wm_paintcursor_tag(bContext *C, wmPaintCursor *pc, ARegion *ar)
 		for (; pc; pc = pc->next) {
 			if (pc->poll == NULL || pc->poll(C)) {
 				wmWindow *win = CTX_wm_window(C);
-				win->screen->do_draw_paintcursor = TRUE;
-				wm_tag_redraw_overlay(win, ar);
+				WM_paint_cursor_tag_redraw(win, ar);
 			}
 		}
 	}
@@ -2473,6 +2472,21 @@ void WM_event_remove_ui_handler(ListBase *handlers,
 				wm_event_free_handler(handler);
 			}
 			break;
+		}
+	}
+}
+
+void WM_event_free_ui_handler_all(bContext *C, ListBase *handlers,
+                                  wmUIHandlerFunc func, wmUIHandlerRemoveFunc remove)
+{
+	wmEventHandler *handler, *handler_next;
+
+	for (handler = handlers->first; handler; handler = handler_next) {
+		handler_next = handler->next;
+		if (handler->ui_handle == func && handler->ui_remove == remove) {
+			remove(C, handler->ui_userdata);
+			BLI_remlink(handlers, handler);
+			wm_event_free_handler(handler);
 		}
 	}
 }
