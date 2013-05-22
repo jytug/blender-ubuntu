@@ -2768,7 +2768,7 @@ static void operator_search_cb(const bContext *C, void *UNUSED(arg), const char 
 				
 				/* check for hotkey */
 				if (len < sizeof(name) - 6) {
-					if (WM_key_event_operator_string(C, ot->idname, WM_OP_EXEC_DEFAULT, NULL, TRUE,
+					if (WM_key_event_operator_string(C, ot->idname, WM_OP_EXEC_DEFAULT, NULL, true,
 					                                 &name[len + 1], sizeof(name) - len - 1))
 					{
 						name[len] = '|';
@@ -3115,6 +3115,7 @@ void uiTemplateComponentMenu(uiLayout *layout, PointerRNA *ptr, const char *prop
 {
 	ComponentMenuArgs *args = MEM_callocN(sizeof(ComponentMenuArgs), "component menu template args");
 	uiBlock *block;
+	uiBut *but;
 	
 	args->ptr = *ptr;
 	BLI_strncpy(args->propname, propname, sizeof(args->propname));
@@ -3122,7 +3123,11 @@ void uiTemplateComponentMenu(uiLayout *layout, PointerRNA *ptr, const char *prop
 	block = uiLayoutGetBlock(layout);
 	uiBlockBeginAlign(block);
 
-	uiDefBlockButN(block, component_menu, args, name, 0, 0, UI_UNIT_X * 6, UI_UNIT_Y, "");
+	but = uiDefBlockButN(block, component_menu, args, name, 0, 0, UI_UNIT_X * 6, UI_UNIT_Y, "");
+	/* set rna directly, uiDefBlockButN doesn't do this */
+	but->rnapoin = *ptr;
+	but->rnaprop = RNA_struct_find_property(ptr, propname);
+	but->rnaindex = 0;
 	
 	uiBlockEndAlign(block);
 }

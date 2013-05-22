@@ -453,6 +453,9 @@ static void rna_Scene_set_set(PointerRNA *ptr, PointerRNA value)
 	for (nested_set = set; nested_set; nested_set = nested_set->set) {
 		if (nested_set == scene)
 			return;
+		/* prevent eternal loops, set can point to next, and next to set, without problems usually */
+		if (nested_set->set == set)
+			return;
 	}
 
 	scene->set = set;
@@ -1119,6 +1122,10 @@ static void rna_SceneRenderLayer_name_set(PointerRNA *ptr, const char *value)
 {
 	Scene *scene = (Scene *)ptr->id.data;
 	SceneRenderLayer *rl = (SceneRenderLayer *)ptr->data;
+	char oldname[sizeof(rl->name)];
+
+	BLI_strncpy(oldname, rl->name, sizeof(rl->name));
+
 	BLI_strncpy_utf8(rl->name, value, sizeof(rl->name));
 	BLI_uniquename(&scene->r.layers, rl, DATA_("RenderLayer"), '.', offsetof(SceneRenderLayer, name), sizeof(rl->name));
 
@@ -1133,6 +1140,9 @@ static void rna_SceneRenderLayer_name_set(PointerRNA *ptr, const char *value)
 			}
 		}
 	}
+
+	/* fix all the animation data which may link to this */
+	BKE_all_animdata_fix_paths_rename(NULL, "render.layers", oldname, rl->name);
 }
 
 static char *rna_SceneRenderLayer_path(PointerRNA *ptr)

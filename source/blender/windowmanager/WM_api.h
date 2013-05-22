@@ -63,6 +63,7 @@ struct wmDropBox;
 struct wmDrag;
 struct ImBuf;
 struct ImageFormatData;
+struct ARegion;
 
 typedef struct wmJob wmJob;
 
@@ -130,6 +131,7 @@ void		*WM_paint_cursor_activate(struct wmWindowManager *wm,
                                       void *customdata);
 
 void		WM_paint_cursor_end(struct wmWindowManager *wm, void *handle);
+void		WM_paint_cursor_tag_redraw(struct wmWindow *win, struct ARegion *ar);
 
 void		WM_cursor_warp		(struct wmWindow *win, int x, int y);
 float		WM_cursor_pressure	(const struct wmWindow *win);
@@ -157,6 +159,9 @@ void		WM_event_remove_ui_handler(ListBase *handlers,
                                        void (*remove)(struct bContext *C, void *userdata),
                                        void *userdata, const bool postpone);
 void		WM_event_remove_area_handler(struct ListBase *handlers, void *area);
+void		WM_event_free_ui_handler_all(struct bContext *C, ListBase *handlers,
+                                         int (*func)(struct bContext *C, const struct wmEvent *event, void *userdata),
+                                         void (*remove)(struct bContext *C, void *userdata));
 
 struct wmEventHandler *WM_event_add_modal_handler(struct bContext *C, struct wmOperator *op);
 void		WM_event_remove_handlers(struct bContext *C, ListBase *handlers);

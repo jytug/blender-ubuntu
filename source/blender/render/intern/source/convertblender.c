@@ -871,7 +871,7 @@ static float *get_object_orco(Render *re, Object *ob)
 
 	if (!orco) {
 		if (ELEM(ob->type, OB_CURVE, OB_FONT)) {
-			orco = BKE_curve_make_orco(re->scene, ob);
+			orco = BKE_curve_make_orco(re->scene, ob, NULL);
 		}
 		else if (ob->type==OB_SURF) {
 			orco = BKE_curve_surf_make_orco(ob);
@@ -3268,10 +3268,12 @@ static EdgeHash *make_freestyle_edge_mark_hash(Mesh *me, DerivedMesh *dm)
 	if (fed) {
 		edge_hash = BLI_edgehash_new();
 		if (!index) {
-			BLI_assert(me->totedge == totedge);
-			for (a = 0; a < me->totedge; a++) {
-				if (fed[a].flag & FREESTYLE_EDGE_MARK)
-					BLI_edgehash_insert(edge_hash, medge[a].v1, medge[a].v2, medge+a);
+			if (me->totedge == totedge) {
+				for (a = 0; a < me->totedge; a++) {
+					if (fed[a].flag & FREESTYLE_EDGE_MARK) {
+						BLI_edgehash_insert(edge_hash, medge[a].v1, medge[a].v2, medge + a);
+					}
+				}
 			}
 		}
 		else {
@@ -4194,7 +4196,7 @@ static void set_phong_threshold(ObjectRen *obr)
 	
 	for (i=0; i<obr->totvlak; i++) {
 		vlr= RE_findOrAddVlak(obr, i);
-		if (vlr->flag & R_SMOOTH) {
+		if ((vlr->flag & R_SMOOTH) && (vlr->flag & R_STRAND)==0) {
 			dot= dot_v3v3(vlr->n, vlr->v1->n);
 			dot= ABS(dot);
 			if (dot>0.9f) {
