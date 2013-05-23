@@ -73,7 +73,7 @@ Description: Very fast and versatile 3D modeller/renderer
  a standalone binary are common products of Blender use.
 
 Package: blender-data
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends}
