@@ -39,18 +39,7 @@ override_dh_auto_configure:
 
 override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
-	# Get rid of embedded python, blender should fall back to
-	# system python if it doesn't find the embedded one:
-	#rm -r $(INSTDIR)/usr/share/blender/*/python/
-	# Remove apparently-unneded dotfiles:
-	#rm $(INSTDIR)/usr/share/blender/*/.bfont.ttf
-	#rm $(INSTDIR)/usr/share/blender/*/.Blanguages
-	#mv $(INSTDIR)/usr/lib/blender/*/datafiles/locale $(INSTDIR)/usr/share/locale
-	#remove empty directory (e.g scripts/cfg)
 	find $(INSTDIR)/usr/share/blender/ -type d -empty -delete
-	#remove duplicated GPL license file and unneeded Python license since python is shipped externally
-	#rm $(INSTDIR)/usr/share/doc/blender/GPL-license.txt
-	#rm $(INSTDIR)/usr/share/doc/blender/Python-license.txt
 	rm $(INSTDIR)/usr/share/blender/scripts/addons/netrender/js/jquery.js
 
 override_dh_install:
