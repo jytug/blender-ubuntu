@@ -1,13 +1,6 @@
 #!/usr/bin/make -f
 
 INSTDIR = debian/tmp
-DEB_HOST_ARCH_CPU ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_CPU)
-
-ifneq (,$(filter $(DEB_HOST_ARCH_CPU),amd64 i386))
-        confflags += -DWITH_CYCLES=ON
-else
-        confflags += -DWITH_CYCLES=OFF
-endif
 
 # Adapted from http://wiki.debian.org/SandroTosi/Svn_get-orig-source
 PACKAGE = blender
@@ -42,7 +35,7 @@ override_dh_auto_configure:
 		-DWITH_CODEC_SNDFILE=ON \
 		-DWITH_FONTCONFIG=ON \
 		-DWITH_MOD_OCEANSIM=ON \
-		$(confflags)
+		-DWITH_CYCLES=ON
 
 override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
