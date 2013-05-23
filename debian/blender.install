@@ -1,4 +1,1 @@
 usr/bin
-usr/share
-debian/misc/blender-*.xpm usr/share/pixmaps
-blender.thumbnailer usr/share/thumbnailers/
