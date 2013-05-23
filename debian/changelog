@@ -1,6 +1,11 @@
 blender (2.67a-1) UNRELEASED; urgency=low
 
   * New upstream bugfix release
+  * debian/: Cycles support added to all architectures
+    - debian/control: libopenimageio-dev versioning dropped
+    - debian/rules: arch-parsing for Cycles dropped
+  * debian/rules: cosmetic cleanup
+    All outdated/useless comments were removed.
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 22 May 2013 17:07:44 +0200
 
