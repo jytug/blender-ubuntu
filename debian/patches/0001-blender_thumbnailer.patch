@@ -44,10 +44,10 @@ index 8b93eeb..6c2cf23 100755
  
  import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index bb10bdd..8d02216 100644
+index d5407fe..eeb43dc 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -392,7 +392,7 @@ if(UNIX AND NOT APPLE)
+@@ -406,7 +406,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py

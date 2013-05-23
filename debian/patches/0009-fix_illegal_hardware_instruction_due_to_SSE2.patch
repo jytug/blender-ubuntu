@@ -7,15 +7,17 @@ machines which have sse/sse2. Fixes the SIGILL bug.
 Checks for DEB_HOST_ARCH_CPU!=i386 before tests are attempted.
 Will try to use SSE/SSE2 on all other architectures.
 Generated Code will still need MMX support to run.
+
+Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
 ---
  build_files/cmake/macros.cmake | 49 +++++++++++++++++++++++-------------------
  1 file changed, 27 insertions(+), 22 deletions(-)
 
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 7fdd862..9dbebdd 100644
+index c8d5c26..4f2762b 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -415,34 +415,39 @@ macro(TEST_SSE_SUPPORT
+@@ -417,34 +417,39 @@ macro(TEST_SSE_SUPPORT
  
  	set(CMAKE_REQUIRED_FLAGS "${${_sse_flags}} ${${_sse2_flags}}")
  
