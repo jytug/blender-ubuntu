@@ -86,6 +86,8 @@ Description: Very fast and versatile 3D modeller/renderer - data package
  Obj are implemented as scripts by the community. Stills, animations, models
  for games or other third party engines and interactive content in the form of
  a standalone binary are common products of Blender use.
+ .
+ This package contains documentation, libraries and images for blender.
 
 Package: blender-dbg
 Architecture: any
