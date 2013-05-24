@@ -7,3 +7,4 @@
 0007-do_not_use_version_number_in_system_path.patch
 0008-look_for_droid_ttf_with_fontconfig.patch
 0009-fix_illegal_hardware_instruction_due_to_SSE2.patch
+0010-fix_format-security_issue.patch
