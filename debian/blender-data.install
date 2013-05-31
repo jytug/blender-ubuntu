@@ -1,3 +1,10 @@
-usr/share
+usr/share/blender
+usr/share/doc
+usr/share/doc-base
+usr/share/icons
+usr/share/locale
+usr/share/man
+usr/share/pixmaps
+usr/share/thumbnailers
 debian/misc/blender-*.xpm usr/share/pixmaps
-blender.thumbnailer usr/share/thumbnailers/
+blender.thumbnailer usr/share/thumbnailers
