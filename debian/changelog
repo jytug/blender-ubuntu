@@ -1,4 +1,4 @@
-blender (2.67b-1) UNRELEASED; urgency=low
+blender (2.67b-1) experimental; urgency=low
 
   * New upstream bugfix release
     - debian/patches/: patchset re-worked against v2.67b
@@ -21,7 +21,7 @@ blender (2.67b-1) UNRELEASED; urgency=low
     - debian/rules: duplicate readme file removed
     - debian/control: python3 dependencies fixed
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 05 Jun 2013 16:10:35 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 05 Jun 2013 17:15:16 +0200
 
 blender (2.66a-3) experimental; urgency=low
 
