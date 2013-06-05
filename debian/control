@@ -41,7 +41,7 @@ Build-Depends: autotools-dev,
                libz-dev,
                libfontconfig-dev,
                pkg-config,
-               python3-dev (>= 3.3),
+               python3-all-dev (>= 3.3),
                python3.3-dev,
                subversion
 X-Python3-Version: >= 3.3
@@ -74,9 +74,9 @@ Description: Very fast and versatile 3D modeller/renderer
 
 Package: blender-data
 Architecture: all
-Depends: ${misc:Depends},
-         ${python3:Depends},
-         ${shlibs:Depends}
+Depends: python3.3,
+         ${misc:Depends},
+         ${python3:Depends}
 Description: Very fast and versatile 3D modeller/renderer - data package
  Blender is an integrated 3d suite for modelling, animation, rendering,
  post-production, interactive creation and playback (games). Blender has its
