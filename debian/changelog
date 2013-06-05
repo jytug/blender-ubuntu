@@ -1,13 +1,27 @@
-blender (2.67a-1) UNRELEASED; urgency=low
+blender (2.67b-1) UNRELEASED; urgency=low
 
   * New upstream bugfix release
+    - debian/patches/: patchset re-worked against v2.67b
+      - 0010-fix_format-security_issue.patch dropped (deeply modified)
+      - 0011-fix_FTBFS_on_big-endian.patch dropped (applied upstream)
   * debian/: Cycles support added to all architectures
     - debian/control: libopenimageio-dev versioning dropped
     - debian/rules: arch-parsing for Cycles dropped
-  * debian/rules: cosmetic cleanup
+  * debian/rules: cosmetic cleanup.
     All outdated/useless comments were removed.
+  * debian/: split of the original package
+    - debian/patches/: #0010 added to fix format-security issue
+    - debian/: install files updated
+      - blender.install: usr/share/applications added
+      - blender-data.install: all but usr/share/applications
+    - debian/blender-data.doc-base: path updated
+    - debian/blender-data.install: removed another useless path
+    - debian/: blender.docs => blender-data.docs
+    - debian/: blender.links => blender-data.links
+    - debian/rules: duplicate readme file removed
+    - debian/control: python3 dependencies fixed
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 22 May 2013 17:07:44 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 05 Jun 2013 16:10:35 +0200
 
 blender (2.66a-3) experimental; urgency=low
 
