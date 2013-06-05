@@ -26,27 +26,28 @@ class NodeCategory():
     def poll(cls, context):
         return True
 
-    @property
-    def items(self):
-        if hasattr(self, '_items'):
-            return self._items
-        elif hasattr(self, '_itemfunc'):
-            return self._itemfunc(self)
-
-    def __init__(self, identifier, name, description="", items=[]):
+    def __init__(self, identifier, name, description="", items=None):
         self.identifier = identifier
         self.name = name
         self.description = description
-        if callable(items):
-            self._itemfunc = items
+
+        if items is None:
+            self.items = lambda context: []
+        elif callable(items):
+            self.items = items
         else:
-            self._items = items
+            def items_gen(context):
+                for item in items:
+                    if item.poll is None or item.poll(context):
+                        yield item
+            self.items = items_gen
 
 class NodeItem():
-    def __init__(self, nodetype, label=None, settings={}):
+    def __init__(self, nodetype, label=None, settings={}, poll=None):
         self.nodetype = nodetype
         self._label = label
         self.settings = settings
+        self.poll = poll
 
     @property
     def label(self):
@@ -69,7 +70,7 @@ def register_node_categories(identifier, cat_list):
         layout = self.layout
         col = layout.column()
         default_context = bpy.app.translations.contexts.default
-        for item in self.category.items:
+        for item in self.category.items(context):
             op = col.operator("node.add_node", text=item.label, text_ctxt=default_context)
             op.type = item.nodetype
             op.use_transform = True

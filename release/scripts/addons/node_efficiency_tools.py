@@ -19,8 +19,8 @@
 bl_info = {
     'name': "Nodes Efficiency Tools",
     'author': "Bartek Skorupa",
-    'version': (2, 27),
-    'blender': (2, 6, 6),
+    'version': (2, 31),
+    'blender': (2, 6, 7),
     'location': "Node Editor Properties Panel (Ctrl-SPACE)",
     'description': "Nodes Efficiency Tools",
     'warning': "",
@@ -32,6 +32,7 @@ bl_info = {
 import bpy
 from bpy.types import Operator, Panel, Menu
 from bpy.props import FloatProperty, EnumProperty, BoolProperty
+from mathutils import Vector
 
 #################
 # rl_outputs:
@@ -299,7 +300,12 @@ class MergeNodes(Operator, NodeToolBase):
                 last_add = nodes[count_before]
                 # add links from last_add to all links 'to_socket' of out links of first selected.
                 for fs_link in first_selected.outputs[0].links:
-                    links.new(last_add.outputs[0], fs_link.to_socket)
+                    # Prevent cyclic dependencies when nodes to be marged are linked to one another.
+                    # Create list of invalid indexes.
+                    invalid_i = [n[0] for n in (selected_mix + selected_math + selected_shader)]
+                    # Link only if "to_node" index not in invalid indexes list.
+                    if fs_link.to_node not in [nodes[i] for i in invalid_i]:
+                        links.new(last_add.outputs[0], fs_link.to_socket)
                 # add link from "first" selected and "first" add node
                 links.new(first_selected.outputs[0], nodes[count_after - 1].inputs[first])
                 # add links between added ADD nodes and between selected and ADD nodes
@@ -1091,6 +1097,75 @@ class SelectParentChildren(Operator, NodeToolBase):
         return {'FINISHED'}
 
 
+class DetachOutputs(Operator, NodeToolBase):
+    bl_idname = "node.detach_outputs"
+    bl_label = "Detach Outputs"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        nodes, links = get_nodes_links(context)
+        selected = context.selected_nodes
+        bpy.ops.node.duplicate_move_keep_inputs()
+        new_nodes = context.selected_nodes
+        bpy.ops.node.select_all(action="DESELECT")
+        for node in selected:
+            node.select = True
+        bpy.ops.node.delete_reconnect()
+        for new_node in new_nodes:
+            new_node.select = True
+        bpy.ops.transform.translate('INVOKE_DEFAULT')
+        
+        return {'FINISHED'}
+
+
+class LinkToOutputNode(Operator, NodeToolBase):
+    bl_idname = "node.link_to_output_node"
+    bl_label = "Link to Output Node"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        space = context.space_data
+        valid = False
+        if (space.type == 'NODE_EDITOR' and
+                space.node_tree is not None and
+                context.active_node is not None and
+                ):
+            valid = True
+        return valid
+    
+    def execute(self, context):
+        nodes, links = get_nodes_links(context)
+        active = nodes.active
+        output_node = None
+        for node in nodes:
+            if (node.type == 'OUTPUT_MATERIAL' or\
+                    node.type == 'OUTPUT_WORLD' or\
+                    node.type == 'OUTPUT_LAMP' or\
+                    node.type == 'COMPOSITE'):
+                output_node = node
+                break
+        if not output_node:
+            bpy.ops.node.select_all(action="DESELECT")
+            type = context.space_data.tree_type
+            print(type)
+            if type == 'ShaderNodeTree':
+                output_node = nodes.new('ShaderNodeOutputMaterial')
+            elif type == 'CompositorNodeTree':
+                output_node = nodes.new('CompositorNodeComposite')
+            output_node.location = active.location + Vector((300.0, 0.0))
+            nodes.active = output_node
+        if (output_node and active.outputs):
+            output_index = 0
+            for i, output in enumerate(active.outputs):
+                if output.type == output_node.inputs[0].type:
+                    output_index = i
+                    break
+            links.new(active.outputs[output_index], output_node.inputs[0])
+
+        return {'FINISHED'}
+
+
 #############################################################
 #  P A N E L S
 #############################################################
@@ -1113,9 +1188,11 @@ class EfficiencyToolsPanel(Panel, NodeToolBase):
         box.menu(NodeAlignMenu.bl_idname, text="Align Nodes (Shift =)")
         box.menu(CopyToSelectedMenu.bl_idname, text="Copy to Selected (Shift-C)")
         box.operator(NodesClearLabel.bl_idname).option = True
+        box.operator(DetachOutputs.bl_idname)
         box.menu(AddReroutesMenu.bl_idname, text="Add Reroutes ( / )")
         box.menu(NodesSwapMenu.bl_idname, text="Swap Nodes (Shift-S)")
         box.menu(LinkActiveToSelectedMenu.bl_idname, text="Link Active To Selected ( \\ )")
+        box.operator(LinkToOutputNode.bl_idname)
 
 
 #############################################################
@@ -1136,9 +1213,11 @@ class EfficiencyToolsMenu(Menu, NodeToolBase):
         layout.menu(NodeAlignMenu.bl_idname, text="Align Nodes")
         layout.menu(CopyToSelectedMenu.bl_idname, text="Copy to Selected")
         layout.operator(NodesClearLabel.bl_idname).option = True
+        layout.operator(DetachOutputs.bl_idname)
         layout.menu(AddReroutesMenu.bl_idname, text="Add Reroutes")
         layout.menu(NodesSwapMenu.bl_idname, text="Swap Nodes")
         layout.menu(LinkActiveToSelectedMenu.bl_idname, text="Link Active To Selected")
+        layout.operator(LinkToOutputNode.bl_idname)
 
 
 class MergeNodesMenu(Menu, NodeToolBase):
@@ -1510,12 +1589,19 @@ kmi_defs = (
     (ChangeMixFactor.bl_idname, 'ONE', True, True, True, (('option', 1.0),)),
     # CLEAR LABEL (Alt L)
     (NodesClearLabel.bl_idname, 'L', False, False, True, (('option', False),)),
+    # DETACH OUTPUTS (Alt Shift D)
+    (DetachOutputs.bl_idname, 'D', False, True, True, None),
+    # LINK TO OUTPUT NODE (O)
+    (LinkToOutputNode.bl_idname, 'O', False, False, False, None),
     # SELECT PARENT/CHILDREN
     # Select Children
     (SelectParentChildren.bl_idname, 'RIGHT_BRACKET', False, False, False, (('option', 'CHILD'),)),
     # Select Parent
     (SelectParentChildren.bl_idname, 'LEFT_BRACKET', False, False, False, (('option', 'PARENT'),)),
+    # Add Texture Setup
     (NodesAddTextureSetup.bl_idname, 'T', True, False, False, None),
+    # Copy Label from active to selected
+    (NodesCopyLabel.bl_idname, 'V', False, True, False, (('option', 'FROM_ACTIVE'),)),
     # MENUS
     ('wm.call_menu', 'SPACE', True, False, False, (('name', EfficiencyToolsMenu.bl_idname),)),
     ('wm.call_menu', 'SLASH', False, False, False, (('name', AddReroutesMenu.bl_idname),)),

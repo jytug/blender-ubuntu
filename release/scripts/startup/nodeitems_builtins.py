@@ -47,18 +47,46 @@ class TextureNodeCategory(NodeCategory):
         return context.space_data.tree_type == 'TextureNodeTree'
 
 
-def compositor_node_group_items(self):
-    return [NodeItem('CompositorNodeGroup', group.name, { "node_tree" : "bpy.data.node_groups[%r]" % group.name })
-            for group in bpy.data.node_groups if group.bl_idname == 'CompositorNodeTree']
+# maps node tree type to group node type
+node_tree_group_type = {
+    'CompositorNodeTree'    : 'CompositorNodeGroup',
+    'ShaderNodeTree'        : 'ShaderNodeGroup',
+    'TextureNodeTree'       : 'TextureNodeGroup',
+    }
+# generic node group items generator for shader, compositor and texture node groups
+def node_group_items(context):
+    space = context.space_data
+    if not space:
+        return
+    ntree = space.edit_tree
+    if not ntree:
+        return
 
-# Note: node groups not distinguished by old/new shader nodes
-def shader_node_group_items(self):
-    return [NodeItem('ShaderNodeGroup', group.name, { "node_tree" : "bpy.data.node_groups[%r]" % group.name })
-            for group in bpy.data.node_groups if group.bl_idname == 'ShaderNodeTree']
+    def contains_group(nodetree, group):
+        if nodetree == group:
+            return True
+        else:
+            for node in nodetree.nodes:
+                if node.bl_idname in node_tree_group_type.values() and node.node_tree is not None:
+                    if contains_group(node.node_tree, group):
+                        return True
+        return False
 
-def texture_node_group_items(self):
-    return [NodeItem('TextureNodeGroup', group.name, { "node_tree" : "bpy.data.node_groups[%r]" % group.name })
-            for group in bpy.data.node_groups if group.bl_idname == 'TextureNodeTree']
+    for group in context.blend_data.node_groups:
+        if group.bl_idname != ntree.bl_idname:
+            continue
+        # filter out recursive groups
+        if contains_group(group, ntree):
+            continue
+
+        yield NodeItem(node_tree_group_type[group.bl_idname], group.name, { "node_tree" : "bpy.data.node_groups[%r]" % group.name })
+
+# only show input/output nodes inside node groups
+def group_input_output_item_poll(context):
+    space = context.space_data
+    if space.edit_tree in bpy.data.node_groups.values():
+        return True
+    return False
 
 
 # All standard node categories currently used in nodes.
@@ -73,9 +101,11 @@ shader_node_categories = [
         NodeItem("ShaderNodeTexture"),
         NodeItem("ShaderNodeGeometry"),
         NodeItem("ShaderNodeExtendedMaterial"),
+        NodeItem("NodeGroupInput", poll=group_input_output_item_poll),
         ]),
     ShaderOldNodeCategory("SH_OUTPUT", "Output", items=[
         NodeItem("ShaderNodeOutput"),
+        NodeItem("NodeGroupOutput", poll=group_input_output_item_poll),
         ]),
     ShaderOldNodeCategory("SH_OP_COLOR", "Color", items=[
         NodeItem("ShaderNodeMixRGB"),
@@ -99,7 +129,7 @@ shader_node_categories = [
         ]),
     ShaderOldNodeCategory("SH_SCRIPT", "Script", items=[
         ]),
-    ShaderOldNodeCategory("SH_GROUP", "Group", items=shader_node_group_items),
+    ShaderOldNodeCategory("SH_GROUP", "Group", items=node_group_items),
     ShaderOldNodeCategory("SH_LAYOUT", "Layout", items=[
         NodeItem("NodeFrame"),
         ]),
@@ -119,11 +149,13 @@ shader_node_categories = [
         NodeItem("ShaderNodeHairInfo"),
         NodeItem("ShaderNodeParticleInfo"),
         NodeItem("ShaderNodeCameraData"),
+        NodeItem("NodeGroupInput", poll=group_input_output_item_poll),
         ]),
     ShaderNewNodeCategory("SH_NEW_OUTPUT", "Output", items=[
         NodeItem("ShaderNodeOutputMaterial"),
         NodeItem("ShaderNodeOutputLamp"),
         NodeItem("ShaderNodeOutputWorld"),
+        NodeItem("NodeGroupOutput", poll=group_input_output_item_poll),
         ]),
     ShaderNewNodeCategory("SH_NEW_SHADER", "Shader", items=[
         NodeItem("ShaderNodeMixShader"),
@@ -182,7 +214,7 @@ shader_node_categories = [
     ShaderNewNodeCategory("SH_NEW_SCRIPT", "Script", items=[
         NodeItem("ShaderNodeScript"),
         ]),
-    ShaderNewNodeCategory("SH_NEW_GROUP", "Group", items=shader_node_group_items),
+    ShaderNewNodeCategory("SH_NEW_GROUP", "Group", items=node_group_items),
     ShaderNewNodeCategory("SH_NEW_LAYOUT", "Layout", items=[
         NodeItem("NodeFrame"),
         ]),
@@ -201,6 +233,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeBokehImage"),
         NodeItem("CompositorNodeTime"),
         NodeItem("CompositorNodeTrackPos"),
+        NodeItem("NodeGroupInput", poll=group_input_output_item_poll),
         ]),
     CompositorNodeCategory("CMP_OUTPUT", "Output", items = [
         NodeItem("CompositorNodeComposite"),
@@ -208,6 +241,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeSplitViewer"),
         NodeItem("CompositorNodeOutputFile"),
         NodeItem("CompositorNodeLevels"),
+        NodeItem("NodeGroupOutput", poll=group_input_output_item_poll),
         ]),
     CompositorNodeCategory("CMP_OP_COLOR", "Color", items = [
         NodeItem("CompositorNodeMixRGB"),
@@ -287,7 +321,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeTransform"),
         NodeItem("CompositorNodeStabilize"),
         ]),
-    CompositorNodeCategory("CMP_GROUP", "Group", items=compositor_node_group_items),
+    CompositorNodeCategory("CMP_GROUP", "Group", items=node_group_items),
     CompositorNodeCategory("CMP_LAYOUT", "Layout", items = [
         NodeItem("NodeFrame"),
         NodeItem("CompositorNodeSwitch"),
@@ -301,10 +335,12 @@ texture_node_categories = [
         NodeItem("TextureNodeCoordinates"),
         NodeItem("TextureNodeTexture"),
         NodeItem("TextureNodeImage"),
+        NodeItem("NodeGroupInput", poll=group_input_output_item_poll),
         ]),
     TextureNodeCategory("TEX_OUTPUT", "Output", items = [
         NodeItem("TextureNodeOutput"),
         NodeItem("TextureNodeViewer"),
+        NodeItem("NodeGroupOutput", poll=group_input_output_item_poll),
         ]),
     TextureNodeCategory("TEX_OP_COLOR", "Color", items = [
         NodeItem("TextureNodeMixRGB"),
@@ -342,7 +378,7 @@ texture_node_categories = [
         NodeItem("TextureNodeTranslate"),
         NodeItem("TextureNodeRotate"),
         ]),
-    TextureNodeCategory("TEX_GROUP", "Group", items=texture_node_group_items),
+    TextureNodeCategory("TEX_GROUP", "Group", items=node_group_items),
     TextureNodeCategory("TEX_LAYOUT", "Layout", items = [
         NodeItem("NodeFrame"),
         ]),
