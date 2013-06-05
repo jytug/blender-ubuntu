@@ -41,6 +41,7 @@ override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
 	find $(INSTDIR)/usr/share/blender/ -type d -empty -delete
 	rm $(INSTDIR)/usr/share/blender/scripts/addons/netrender/js/jquery.js
+	rm $(INSTDIR)/usr/share/doc/blender/readme.html
 
 override_dh_install:
 	dh_install --fail-missing --list-missing
