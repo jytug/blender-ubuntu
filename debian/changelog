@@ -1,5 +1,6 @@
 blender (2.67b-1) experimental; urgency=low
 
+  [ Matteo F. Vescovi ]
   * New upstream bugfix release
     - debian/patches/: patchset re-worked against v2.67b
       - 0010-fix_format-security_issue.patch dropped (deeply modified)
@@ -20,6 +21,9 @@ blender (2.67b-1) experimental; urgency=low
     - debian/: blender.links => blender-data.links
     - debian/rules: duplicate readme file removed
     - debian/control: python3 dependencies fixed
+
+  [ Reinhard Tartler ]
+  * Fix upgrade path from wheezy
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 05 Jun 2013 17:15:16 +0200
 
