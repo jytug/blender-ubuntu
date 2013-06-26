@@ -1,3 +1,11 @@
+blender (2.67b-3) UNRELEASED; urgency=low
+
+  * debian/patches/: patchset updated
+    - 0012-fix_FTBFS_on_non-linux_architectures.patch added
+      Thanks to Pino Toscano (pino) for the quick patch.
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 26 Jun 2013 11:45:34 +0200
+
 blender (2.67b-2) experimental; urgency=low
 
   * debian/patches/: patchset updated
