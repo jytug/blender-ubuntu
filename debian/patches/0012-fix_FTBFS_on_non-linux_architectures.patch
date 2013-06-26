@@ -1,4 +1,4 @@
-From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+From: Pino Toscano <pino@debian.org>
 Date: Wed, 26 Jun 2013 11:44:00 +0200
 Subject: fix_FTBFS_on_non-linux_architectures
 
