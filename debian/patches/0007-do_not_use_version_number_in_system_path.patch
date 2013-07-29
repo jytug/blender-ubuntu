@@ -30,7 +30,7 @@ index 35bebd5..e6fd170 100644
  	if (static_path) {
  		static char system_path[PATH_MAX];
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index ed48de0..d6633c8 100644
+index 647d0f3..55e9ac5 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -245,7 +245,7 @@ if(UNIX AND NOT APPLE)

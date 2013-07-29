@@ -14,10 +14,10 @@ Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
  1 file changed, 27 insertions(+), 22 deletions(-)
 
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index c8d5c26..4f2762b 100644
+index 9324dec..9d3414f 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -417,34 +417,39 @@ macro(TEST_SSE_SUPPORT
+@@ -423,34 +423,39 @@ macro(TEST_SSE_SUPPORT
  
  	set(CMAKE_REQUIRED_FLAGS "${${_sse_flags}} ${${_sse2_flags}}")
  

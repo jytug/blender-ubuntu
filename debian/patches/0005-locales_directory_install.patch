@@ -1,5 +1,5 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Thu, 16 May 2013 10:25:35 +0200
+Date: Mon, 29 Jul 2013 15:21:34 +0200
 Subject: locales_directory_install
 
 Change where locales are installed.
@@ -16,7 +16,7 @@ Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
  4 files changed, 11 insertions(+), 7 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 65abfc5..3dd9ed6 100644
+index 9649e5b..7f6e2d7 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
 @@ -76,9 +76,9 @@ static void free_locales(void)
@@ -55,7 +55,7 @@ index 65abfc5..3dd9ed6 100644
  	else {
  		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index a36627b..30a9a6f 100644
+index e0a34e3..1823849 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
 @@ -60,6 +60,7 @@ const char *BLI_get_folder_version(const int id, const int ver, const bool do_ch
@@ -67,21 +67,21 @@ index a36627b..30a9a6f 100644
  /* for BLI_get_folder_version only */
  #define BLENDER_RESOURCE_PATH_USER      0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 1f96c10..eee37dd 100644
+index 1e76a7f..3ce53cf 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -1222,6 +1222,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
- 			if (get_path_local(path, "python", subfolder, ver)) break;
+@@ -1227,6 +1227,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
  			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
  			return NULL;
-+
+ 
 +		case BLENDER_SYSTEM_LOCALE:
 +			BLI_strncpy(path, "/usr/share/locale", FILE_MAX); break;
++
+ 		default:
+ 			BLI_assert(0);
  	}
- 	
- 	return path;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 24c71be..23611b4 100644
+index 6bed8d2..4a80161 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -306,9 +306,9 @@ endif()

@@ -18,10 +18,10 @@ Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
  7 files changed, 85 insertions(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 40bf4d8..5ecb5f4 100644
+index b1a7830..0a58232 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -638,6 +638,13 @@ if(UNIX AND NOT APPLE)
+@@ -641,6 +641,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -36,7 +36,7 @@ index 40bf4d8..5ecb5f4 100644
  	if(WITH_CODEC_SNDFILE)
  		find_package_wrapper(SndFile)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 2b5cfbc..c8d5c26 100644
+index 854609f..9324dec 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
 @@ -284,6 +284,9 @@ macro(setup_liblinks
@@ -50,10 +50,10 @@ index 2b5cfbc..c8d5c26 100644
  		target_link_libraries(${target} ${BULLET_LIBRARIES})
  	endif()
 diff --git a/source/blender/blenfont/CMakeLists.txt b/source/blender/blenfont/CMakeLists.txt
-index 7bb80c3..6d5e22b 100644
+index 2debe51..b75cf9d 100644
 --- a/source/blender/blenfont/CMakeLists.txt
 +++ b/source/blender/blenfont/CMakeLists.txt
-@@ -59,6 +59,13 @@ if(WITH_INTERNATIONAL)
+@@ -58,6 +58,13 @@ if(WITH_INTERNATIONAL)
  	add_definitions(-DWITH_INTERNATIONAL)
  endif()
  
@@ -129,10 +129,10 @@ index 0a6d95d..f9a66aa 100644
  size_t BLI_file_descriptor_size(int file);
  size_t BLI_file_size(const char *file);
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index a8e233d..33d618c 100644
+index 26b9e08..f1198d5 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
-@@ -160,6 +160,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
+@@ -159,6 +159,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
  	return mem;
  }
  
@@ -184,7 +184,7 @@ index a8e233d..33d618c 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index d6633c8..56fcdca 100644
+index 55e9ac5..9c060d3 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -307,7 +307,6 @@ if(WITH_INTERNATIONAL)
