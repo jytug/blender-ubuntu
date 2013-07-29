@@ -1,6 +1,10 @@
 blender (2.68a-1) UNRELEASED; urgency=low
 
   * New upstream bugfix release
+    - debian/patches/: patchset re-worked against v2.68a
+      - 0010-fix_format-security_issue.patch dropped
+      - 0011-fix_FTBFS_on_non-SSE_architectures.patch applied upstream
+      - 0012-fix_FTBFS_on_non-linux_architectures.patch renamed to #0010
 
  -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 29 Jul 2013 14:55:47 +0200
 
