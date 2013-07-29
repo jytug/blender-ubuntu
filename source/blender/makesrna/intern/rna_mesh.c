@@ -42,6 +42,8 @@
 #include "BLI_math_rotation.h"
 #include "BLI_utildefines.h"
 
+#include "BKE_editmesh.h"
+
 #include "RNA_access.h"
 #include "RNA_define.h"
 #include "RNA_types.h"
@@ -49,6 +51,13 @@
 #include "rna_internal.h"
 
 #include "WM_types.h"
+
+EnumPropertyItem mesh_delimit_mode_items[] = {
+	{BMO_DELIM_NORMAL, "NORMAL", 0, "Normal", "Delimit by face directions"},
+	{BMO_DELIM_MATERIAL, "MATERIAL", 0, "Material", "Delimit by face material"},
+	{BMO_DELIM_SEAM, "SEAM", 0, "Seam", "Delimit by edge seams"},
+	{0, NULL, 0, NULL, NULL},
+};
 
 #ifdef RNA_RUNTIME
 
@@ -60,7 +69,6 @@
 #include "BKE_depsgraph.h"
 #include "BKE_main.h"
 #include "BKE_mesh.h"
-#include "BKE_editmesh.h"
 #include "BKE_report.h"
 
 #include "ED_mesh.h" /* XXX Bad level call */
@@ -318,8 +326,15 @@ static void rna_MeshPolygon_normal_get(PointerRNA *ptr, float *values)
 	Mesh *me = rna_mesh(ptr);
 	MPoly *mp = (MPoly *)ptr->data;
 
-	/* BMESH_TODO: might be faster to look for a CD_NORMALS layer and use that */
 	BKE_mesh_calc_poly_normal(mp, me->mloop + mp->loopstart, me->mvert, values);
+}
+
+static void rna_MeshPolygon_center_get(PointerRNA *ptr, float *values)
+{
+	Mesh *me = rna_mesh(ptr);
+	MPoly *mp = (MPoly *)ptr->data;
+
+	BKE_mesh_calc_poly_center(mp, me->mloop + mp->loopstart, me->mvert, values);
 }
 
 static float rna_MeshPolygon_area_get(PointerRNA *ptr)
@@ -1541,6 +1556,13 @@ static PointerRNA rna_Mesh_tessface_uv_texture_new(struct Mesh *me, ReportList *
 	return ptr;
 }
 
+
+static int rna_Mesh_is_editmode_get(PointerRNA *ptr)
+{
+	Mesh *me = rna_mesh(ptr);
+	return (me->edit_btmesh != NULL);
+}
+
 /* only to quiet warnings */
 static void UNUSED_FUNCTION(rna_mesh_unused)(void)
 {
@@ -1658,7 +1680,9 @@ static void rna_def_mvert(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "undeformed_co", PROP_FLOAT, PROP_TRANSLATION);
 	RNA_def_property_array(prop, 3);
-	RNA_def_property_ui_text(prop, "Undeformed Location", "For meshes with modifiers applied, the coordinate of the vertex with no deforming modifiers applied, as used for generated texture coordinates. ");
+	RNA_def_property_ui_text(prop, "Undeformed Location",
+	                         "For meshes with modifiers applied, the coordinate of the vertex with no deforming "
+	                         "modifiers applied, as used for generated texture coordinates");
 	RNA_def_property_float_funcs(prop, "rna_MeshVertex_undeformed_co_get", NULL, NULL);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 }
@@ -1869,6 +1893,12 @@ static void rna_def_mpolygon(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_float_funcs(prop, "rna_MeshPolygon_normal_get", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Face normal", "Local space unit length normal vector for this polygon");
+
+	prop = RNA_def_property(srna, "center", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_array(prop, 3);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_float_funcs(prop, "rna_MeshPolygon_center_get", NULL, NULL);
+	RNA_def_property_ui_text(prop, "Face center", "Center of the polygon");
 
 	prop = RNA_def_property(srna, "area", PROP_FLOAT, PROP_UNSIGNED);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
@@ -2344,14 +2374,14 @@ void rna_def_texmat_common(StructRNA *srna, const char *texspace_editable)
 	RNA_def_property_ui_text(prop, "Texture Space Location", "Texture space location");
 	RNA_def_property_float_funcs(prop, "rna_Mesh_texspace_loc_get", NULL, NULL);
 	RNA_def_property_editable_func(prop, texspace_editable);
-	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 
 	prop = RNA_def_property(srna, "texspace_size", PROP_FLOAT, PROP_XYZ);
 	RNA_def_property_float_sdna(prop, NULL, "size");
 	RNA_def_property_ui_text(prop, "Texture Space Size", "Texture space size");
 	RNA_def_property_float_funcs(prop, "rna_Mesh_texspace_size_get", NULL, NULL);
 	RNA_def_property_editable_func(prop, texspace_editable);
-	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 
 	/* not supported yet */
 #if 0
@@ -2359,7 +2389,7 @@ void rna_def_texmat_common(StructRNA *srna, const char *texspace_editable)
 	RNA_def_property_float(prop, NULL, "rot");
 	RNA_def_property_ui_text(prop, "Texture Space Rotation", "Texture space rotation");
 	RNA_def_property_editable_func(prop, texspace_editable);
-	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 #endif
 
 	/* materials */
@@ -3187,6 +3217,11 @@ static void rna_def_mesh(BlenderRNA *brna)
 	RNA_def_property_int_funcs(prop, "rna_Mesh_tot_face_get", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Selected Face Total", "Selected face count in editmode");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+
+	prop = RNA_def_property(srna, "is_editmode", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_funcs(prop, "rna_Mesh_is_editmode_get", NULL);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Is Editmode", "True when used in editmode");
 
 	/* pointers */
 	rna_def_animdata_common(srna);

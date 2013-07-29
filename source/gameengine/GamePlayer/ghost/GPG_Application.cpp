@@ -260,14 +260,14 @@ bool GPG_Application::startScreenSaverPreview(
 		}
 
 		SetParent(ghost_hwnd, parentWindow);
-		LONG style = GetWindowLong(ghost_hwnd, GWL_STYLE);
-		LONG exstyle = GetWindowLong(ghost_hwnd, GWL_EXSTYLE);
+		LONG_PTR style = GetWindowLongPtr(ghost_hwnd, GWL_STYLE);
+		LONG_PTR exstyle = GetWindowLongPtr(ghost_hwnd, GWL_EXSTYLE);
 
 		RECT adjrc = { 0, 0, windowWidth, windowHeight };
 		AdjustWindowRectEx(&adjrc, style, FALSE, exstyle);
 
 		style = (style & (~(WS_POPUP|WS_OVERLAPPEDWINDOW|WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_MINIMIZEBOX|WS_MAXIMIZEBOX|WS_TILEDWINDOW ))) | WS_CHILD;
-		SetWindowLong(ghost_hwnd, GWL_STYLE, style);
+		SetWindowLongPtr(ghost_hwnd, GWL_STYLE, style);
 		SetWindowPos(ghost_hwnd, NULL, adjrc.left, adjrc.top, 0, 0, SWP_NOZORDER|SWP_NOSIZE|SWP_NOACTIVATE);
 
 		/* Check the size of the client rectangle of the window and resize the window
@@ -554,12 +554,11 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		GameData *gm= &m_startScene->gm;
 		bool properties	= (SYS_GetCommandLineInt(syshandle, "show_properties", 0) != 0);
 		bool profile = (SYS_GetCommandLineInt(syshandle, "show_profile", 0) != 0);
-		bool fixedFr = (gm->flag & GAME_ENABLE_ALL_FRAMES);
 
 		bool showPhysics = (gm->flag & GAME_SHOW_PHYSICS);
 		SYS_WriteCommandLineInt(syshandle, "show_physics", showPhysics);
 
-		bool fixed_framerate= (SYS_GetCommandLineInt(syshandle, "fixedtime", fixedFr) != 0);
+		bool fixed_framerate= (SYS_GetCommandLineInt(syshandle, "fixedtime", (gm->flag & GAME_ENABLE_ALL_FRAMES)) != 0);
 		bool frameRate = (SYS_GetCommandLineInt(syshandle, "show_framerate", 0) != 0);
 		bool useLists = (SYS_GetCommandLineInt(syshandle, "displaylists", gm->flag & GAME_DISPLAY_LISTS) != 0);
 		bool nodepwarnings = (SYS_GetCommandLineInt(syshandle, "ignore_deprecation_warnings", 1) != 0);
@@ -631,8 +630,6 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		m_ketsjiengine->SetCanvas(m_canvas);
 		m_ketsjiengine->SetRenderTools(m_rendertools);
 		m_ketsjiengine->SetRasterizer(m_rasterizer);
-
-		m_ketsjiengine->SetTimingDisplay(frameRate, false, false);
 
 		KX_KetsjiEngine::SetExitKey(ConvertKeyCode(gm->exitkey));
 #ifdef WITH_PYTHON

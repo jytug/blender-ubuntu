@@ -257,6 +257,8 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->grid; break;
 				case TH_WIRE:
 					cp = ts->wire; break;
+				case TH_WIRE_EDIT:
+					cp = ts->wire_edit; break;
 				case TH_LAMP:
 					cp = ts->lamp; break;
 				case TH_SPEAKER:
@@ -736,6 +738,7 @@ void ui_theme_init_default(void)
 
 	rgba_char_args_set_fl(btheme->tv3d.grid,     0.251, 0.251, 0.251, 1.0);
 	rgba_char_args_set(btheme->tv3d.wire,       0x0, 0x0, 0x0, 255);
+	rgba_char_args_set(btheme->tv3d.wire_edit,  0x0, 0x0, 0x0, 255);
 	rgba_char_args_set(btheme->tv3d.lamp,       0, 0, 0, 40);
 	rgba_char_args_set(btheme->tv3d.speaker,    0, 0, 0, 255);
 	rgba_char_args_set(btheme->tv3d.camera,    0, 0, 0, 255);
@@ -895,6 +898,7 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tseq.transition, 162, 95, 111, 255);
 	rgba_char_args_set(btheme->tseq.meta,   109, 145, 131, 255);
 	rgba_char_args_set(btheme->tseq.preview_back,   0, 0, 0, 255);
+	rgba_char_args_set(btheme->tseq.grid,   64, 64, 64, 255);
 
 	/* space image */
 	btheme->tima = btheme->tv3d;
@@ -1001,19 +1005,33 @@ void ui_theme_init_default(void)
 	btheme->tclip.handle_vertex_size = 4;
 }
 
+void ui_style_init_default(void)
+{
+	BLI_freelistN(&U.uistyles);
+	/* gets automatically re-allocated */
+	uiStyleInit();
+}
+
 
 void UI_SetTheme(int spacetype, int regionid)
 {
-	if (spacetype == 0) {  /* called for safety, when delete themes */
-		theme_active = U.themes.first;
-		theme_spacetype = SPACE_VIEW3D;
-		theme_regionid = RGN_TYPE_WINDOW;
-	}
-	else {
+	if (spacetype) {
 		/* later on, a local theme can be found too */
 		theme_active = U.themes.first;
 		theme_spacetype = spacetype;
 		theme_regionid = regionid;
+	}
+	else if (regionid) {
+		/* popups */
+		theme_active = U.themes.first;
+		theme_spacetype = SPACE_BUTS;
+		theme_regionid = regionid;
+	}
+	else {
+		/* for safety, when theme was deleted */
+		theme_active = U.themes.first;
+		theme_spacetype = SPACE_VIEW3D;
+		theme_regionid = RGN_TYPE_WINDOW;
 	}
 }
 
@@ -1055,7 +1073,6 @@ void UI_ThemeColorShade(int colorid, int offset)
 	CLAMP(g, 0, 255);
 	b = offset + (int) cp[2];
 	CLAMP(b, 0, 255);
-	//glColor3ub(r, g, b);
 	glColor4ub(r, g, b, cp[3]);
 }
 void UI_ThemeColorShadeAlpha(int colorid, int coloffset, int alphaoffset)
@@ -2031,8 +2048,8 @@ void init_userdef_do_versions(void)
 		}
 	}
 
-	/* Freestyle color settings */
-	{
+	if (U.versionfile < 267) {
+		/* Freestyle color settings */
 		bTheme *btheme;
 
 		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
@@ -2041,51 +2058,54 @@ void init_userdef_do_versions(void)
 				rgba_char_args_set(btheme->tv3d.freestyle_edge_mark, 0x7f, 0xff, 0x7f, 255);
 				rgba_char_args_set(btheme->tv3d.freestyle_face_mark, 0x7f, 0xff, 0x7f, 51);
 			}
+
+			if (btheme->tv3d.wire_edit[3] == 0) {
+				rgba_char_args_set(btheme->tv3d.wire_edit,  0x0, 0x0, 0x0, 255);
+			}
 		}
-	}
 
-	/* GL Texture Garbage Collection (variable abused above!) */
-	if (U.textimeout == 0) {
-		U.texcollectrate = 60;
-		U.textimeout = 120;
-	}
-	if (U.memcachelimit <= 0) {
-		U.memcachelimit = 32;
-	}
-	if (U.frameserverport == 0) {
-		U.frameserverport = 8080;
-	}
-	if (U.dbl_click_time == 0) {
-		U.dbl_click_time = 350;
-	}
-	if (U.scrcastfps == 0) {
-		U.scrcastfps = 10;
-		U.scrcastwait = 50;
-	}
-	if (U.v2d_min_gridsize == 0) {
-		U.v2d_min_gridsize = 35;
-	}
-	if (U.dragthreshold == 0)
-		U.dragthreshold = 5;
-	if (U.widget_unit == 0)
-		U.widget_unit = 20;
-	if (U.anisotropic_filter <= 0)
-		U.anisotropic_filter = 1;
+		/* GL Texture Garbage Collection */
+		if (U.textimeout == 0) {
+			U.texcollectrate = 60;
+			U.textimeout = 120;
+		}
+		if (U.memcachelimit <= 0) {
+			U.memcachelimit = 32;
+		}
+		if (U.frameserverport == 0) {
+			U.frameserverport = 8080;
+		}
+		if (U.dbl_click_time == 0) {
+			U.dbl_click_time = 350;
+		}
+		if (U.scrcastfps == 0) {
+			U.scrcastfps = 10;
+			U.scrcastwait = 50;
+		}
+		if (U.v2d_min_gridsize == 0) {
+			U.v2d_min_gridsize = 35;
+		}
+		if (U.dragthreshold == 0)
+			U.dragthreshold = 5;
+		if (U.widget_unit == 0)
+			U.widget_unit = 20;
+		if (U.anisotropic_filter <= 0)
+			U.anisotropic_filter = 1;
 
-	if (U.ndof_sensitivity == 0.0f) {
-		U.ndof_sensitivity = 1.0f;
-		U.ndof_flag = NDOF_LOCK_HORIZON |
-		              NDOF_SHOULD_PAN | NDOF_SHOULD_ZOOM | NDOF_SHOULD_ROTATE;
-	}
-	
-	if (U.ndof_orbit_sensitivity == 0.0f) {
-		U.ndof_orbit_sensitivity = U.ndof_sensitivity;
+		if (U.ndof_sensitivity == 0.0f) {
+			U.ndof_sensitivity = 1.0f;
+			U.ndof_flag = (NDOF_LOCK_HORIZON | NDOF_SHOULD_PAN | NDOF_SHOULD_ZOOM | NDOF_SHOULD_ROTATE);
+		}
+		
+		if (U.ndof_orbit_sensitivity == 0.0f) {
+			U.ndof_orbit_sensitivity = U.ndof_sensitivity;
 
-		if (!(U.flag & USER_TRACKBALL))
-			U.ndof_flag |= NDOF_TURNTABLE;
+			if (!(U.flag & USER_TRACKBALL))
+				U.ndof_flag |= NDOF_TURNTABLE;
+		}
+		if (U.tweak_threshold == 0)
+			U.tweak_threshold = 10;
 	}
-	if (U.tweak_threshold == 0)
-		U.tweak_threshold = 10;
 
 	if (bmain->versionfile < 265 || (bmain->versionfile == 265 && bmain->subversionfile < 1)) {
 		bTheme *btheme;

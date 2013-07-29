@@ -113,7 +113,7 @@ typedef struct bNodeSocketTemplate {
 typedef struct bNodeSocketType {
 	char idname[64];				/* identifier name */
 	
-	void (*draw)(struct bContext *C, struct uiLayout *layout, struct PointerRNA *ptr, struct PointerRNA *node_ptr);
+	void (*draw)(struct bContext *C, struct uiLayout *layout, struct PointerRNA *ptr, struct PointerRNA *node_ptr, const char *text);
 	void (*draw_color)(struct bContext *C, struct PointerRNA *ptr, struct PointerRNA *node_ptr, float *r_color);
 	
 	void (*interface_draw)(struct bContext *C, struct uiLayout *layout, struct PointerRNA *ptr);
@@ -131,7 +131,7 @@ typedef struct bNodeSocketType {
 	int type, subtype;
 } bNodeSocketType;
 
-typedef void (*NodeSocketDrawFunction)(struct bContext *C, struct uiLayout *layout, struct PointerRNA *ptr, struct PointerRNA *node_ptr, int linked);
+typedef void (*NodeSocketDrawFunction)(struct bContext *C, struct uiLayout *layout, struct PointerRNA *ptr, struct PointerRNA *node_ptr);
 
 typedef void *(*NodeInitExecFunction)(struct bNodeExecContext *context, struct bNode *node, bNodeInstanceKey key);
 typedef void (*NodeFreeExecFunction)(struct bNode *node, void *nodedata);
@@ -279,6 +279,7 @@ typedef struct bNodeType {
 typedef enum eNodeSizePreset {
 	NODE_SIZE_DEFAULT,
 	NODE_SIZE_SMALL,
+	NODE_SIZE_MIDDLE,
 	NODE_SIZE_LARGE
 } eNodeSizePreset;
 
@@ -330,7 +331,7 @@ struct GHashIterator *ntreeTypeGetIterator(void);
 #define NODE_TREE_TYPES_BEGIN(ntype) \
 { \
 	GHashIterator *__node_tree_type_iter__ = ntreeTypeGetIterator(); \
-	for (; BLI_ghashIterator_notDone(__node_tree_type_iter__); BLI_ghashIterator_step(__node_tree_type_iter__)) { \
+	for (; !BLI_ghashIterator_done(__node_tree_type_iter__); BLI_ghashIterator_step(__node_tree_type_iter__)) { \
 		bNodeTreeType *ntype = BLI_ghashIterator_getValue(__node_tree_type_iter__);
 
 #define NODE_TREE_TYPES_END \
@@ -406,7 +407,7 @@ struct GHashIterator *nodeTypeGetIterator(void);
 #define NODE_TYPES_BEGIN(ntype) \
 { \
 	GHashIterator *__node_type_iter__ = nodeTypeGetIterator(); \
-	for (; BLI_ghashIterator_notDone(__node_type_iter__); BLI_ghashIterator_step(__node_type_iter__)) { \
+	for (; !BLI_ghashIterator_done(__node_type_iter__); BLI_ghashIterator_step(__node_type_iter__)) { \
 		bNodeType *ntype = BLI_ghashIterator_getValue(__node_type_iter__);
 
 #define NODE_TYPES_END \
@@ -426,7 +427,7 @@ const char *	nodeStaticSocketInterfaceType(int type, int subtype);
 #define NODE_SOCKET_TYPES_BEGIN(stype) \
 { \
 	GHashIterator *__node_socket_type_iter__ = nodeSocketTypeGetIterator(); \
-	for (; BLI_ghashIterator_notDone(__node_socket_type_iter__); BLI_ghashIterator_step(__node_socket_type_iter__)) { \
+	for (; !BLI_ghashIterator_done(__node_socket_type_iter__); BLI_ghashIterator_step(__node_socket_type_iter__)) { \
 		bNodeSocketType *stype = BLI_ghashIterator_getValue(__node_socket_type_iter__);
 
 #define NODE_SOCKET_TYPES_END \
@@ -534,11 +535,11 @@ BLI_INLINE void                       BKE_node_instance_hash_iterator_free(bNode
 BLI_INLINE bNodeInstanceKey           BKE_node_instance_hash_iterator_get_key(bNodeInstanceHashIterator *iter) { return *(bNodeInstanceKey *)BLI_ghashIterator_getKey(iter); }
 BLI_INLINE void                      *BKE_node_instance_hash_iterator_get_value(bNodeInstanceHashIterator *iter) { return BLI_ghashIterator_getValue(iter); }
 BLI_INLINE void                       BKE_node_instance_hash_iterator_step(bNodeInstanceHashIterator *iter) { BLI_ghashIterator_step(iter); }
-BLI_INLINE bool                       BKE_node_instance_hash_iterator_not_done(bNodeInstanceHashIterator *iter) { return BLI_ghashIterator_notDone(iter); }
+BLI_INLINE bool                       BKE_node_instance_hash_iterator_done(bNodeInstanceHashIterator *iter) { return BLI_ghashIterator_done(iter); }
 
 #define NODE_INSTANCE_HASH_ITER(iter_, hash_) \
 	for (BKE_node_instance_hash_iterator_init(&iter_, hash_); \
-	     BKE_node_instance_hash_iterator_not_done(&iter_); \
+	     BKE_node_instance_hash_iterator_done(&iter_) == false; \
 	     BKE_node_instance_hash_iterator_step(&iter_))
 
 
@@ -738,6 +739,9 @@ struct ShadeResult;
 #define SH_NODE_NORMAL_MAP				175
 #define SH_NODE_HAIR_INFO				176
 #define SH_NODE_SUBSURFACE_SCATTERING	177
+#define SH_NODE_WIREFRAME				178
+#define SH_NODE_BSDF_TOON				179
+#define SH_NODE_WAVELENGTH				180
 
 /* custom defines options for Material node */
 #define SH_NODE_MAT_DIFF   1
@@ -913,6 +917,11 @@ void            ntreeGPUMaterialNodes(struct bNodeTree *ntree, struct GPUMateria
 #define CMP_SCALE_RENDERSIZE_FRAME_ASPECT  (1 << 0)
 #define CMP_SCALE_RENDERSIZE_FRAME_CROP    (1 << 1)
 
+/* track position node, in custom1 */
+#define CMP_TRACKPOS_ABSOLUTE			0
+#define CMP_TRACKPOS_RELATIVE_START	1
+#define CMP_TRACKPOS_RELATIVE_FRAME	2
+#define CMP_TRACKPOS_ABSOLUTE_FRAME	3
 
 /* API */
 struct CompBuf;
@@ -921,7 +930,7 @@ void ntreeCompositExecTree(struct bNodeTree *ntree, struct RenderData *rd, int r
 void ntreeCompositTagRender(struct Scene *sce);
 int ntreeCompositTagAnimated(struct bNodeTree *ntree);
 void ntreeCompositTagGenerators(struct bNodeTree *ntree);
-void ntreeCompositForceHidden(struct bNodeTree *ntree, struct Scene *scene);
+void ntreeCompositForceHidden(struct bNodeTree *ntree);
 void ntreeCompositClearTags(struct bNodeTree *ntree);
 
 struct bNodeSocket *ntreeCompositOutputFileAddSocket(struct bNodeTree *ntree, struct bNode *node,

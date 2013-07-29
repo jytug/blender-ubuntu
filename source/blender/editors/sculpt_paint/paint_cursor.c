@@ -35,6 +35,7 @@
 #include "BLI_utildefines.h"
 
 #include "DNA_brush_types.h"
+#include "DNA_customdata_types.h"
 #include "DNA_color_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
@@ -77,12 +78,6 @@ typedef struct TexSnapshot {
 	float old_zoom;
 	bool old_col;
 } TexSnapshot;
-
-typedef struct CurveSnapshot {
-	int BKE_brush_size_get;
-	int curve_changed_timestamp;
-	bool init;
-} CurveSnapshot;
 
 static int same_tex_snap(TexSnapshot *snap, MTex *mtex, ViewContext *vc, bool col, float zoom)
 {

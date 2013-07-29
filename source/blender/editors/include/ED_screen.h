@@ -50,7 +50,7 @@ struct uiBlock;
 struct rcti;
 
 /* regions */
-void    ED_region_do_listen(struct ARegion *ar, struct wmNotifier *note);
+void    ED_region_do_listen(struct bScreen *sc, struct ScrArea *sa, struct ARegion *ar, struct wmNotifier *note);
 void    ED_region_do_draw(struct bContext *C, struct ARegion *ar);
 void    ED_region_exit(struct bContext *C, struct ARegion *ar);
 void    ED_region_pixelspace(struct ARegion *ar);
@@ -80,7 +80,7 @@ int     ED_area_header_standardbuttons(const struct bContext *C, struct uiBlock 
 void    ED_area_initialize(struct wmWindowManager *wm, struct wmWindow *win, struct ScrArea *sa);
 void    ED_area_exit(struct bContext *C, struct ScrArea *sa);
 int     ED_screen_area_active(const struct bContext *C);
-void    ED_area_do_listen(ScrArea *sa, struct wmNotifier *note);
+void    ED_area_do_listen(struct bScreen *sc, ScrArea *sa, struct wmNotifier *note);
 void    ED_area_tag_redraw(ScrArea *sa);
 void    ED_area_tag_redraw_regiontype(ScrArea *sa, int type);
 void    ED_area_tag_refresh(ScrArea *sa);
@@ -142,6 +142,7 @@ int     ED_operator_file_active(struct bContext *C);
 int     ED_operator_action_active(struct bContext *C);
 int     ED_operator_buttons_active(struct bContext *C);
 int     ED_operator_node_active(struct bContext *C);
+int     ED_operator_node_editable(struct bContext *C);
 int     ED_operator_graphedit_active(struct bContext *C);
 int     ED_operator_sequencer_active(struct bContext *C);
 int     ED_operator_image_active(struct bContext *C);

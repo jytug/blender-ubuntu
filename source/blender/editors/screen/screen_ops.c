@@ -260,6 +260,16 @@ int ED_operator_node_active(bContext *C)
 	return 0;
 }
 
+int ED_operator_node_editable(bContext *C)
+{
+	SpaceNode *snode = CTX_wm_space_node(C);
+	
+	if (snode && snode->edittree && snode->edittree->id.lib == NULL)
+		return 1;
+	
+	return 0;
+}
+
 /* XXX rename */
 int ED_operator_graphedit_active(bContext *C)
 {
@@ -589,13 +599,12 @@ static int actionzone_area_poll(bContext *C)
 	wmWindow *win = CTX_wm_window(C);
 	ScrArea *sa = CTX_wm_area(C);
 	
-	if (sa && win) {
+	if (sa && win && win->eventstate) {
+		const int *xy = &win->eventstate->x;
 		AZone *az;
-		int x = win->eventstate->x;
-		int y = win->eventstate->y;
 		
 		for (az = sa->actionzones.first; az; az = az->next)
-			if (BLI_rcti_isect_pt(&az->rect, x, y))
+			if (BLI_rcti_isect_pt_v(&az->rect, xy))
 				return 1;
 	}
 	return 0;
@@ -2707,6 +2716,22 @@ static void view3d_localview_update_rv3d(struct RegionView3D *rv3d)
 	}
 }
 
+static void region_quadview_init_rv3d(ScrArea *sa, ARegion *ar,
+                                      const char viewlock, const char view, const char persp)
+{
+	RegionView3D *rv3d = ar->regiondata;
+
+	rv3d->viewlock = viewlock;
+	rv3d->view = view;
+	rv3d->persp = persp;
+
+	ED_view3d_lock(rv3d);
+	view3d_localview_update_rv3d(rv3d);
+	if ((viewlock & RV3D_BOXCLIP) && (persp == RV3D_ORTHO)) {
+		ED_view3d_quadview_update(sa, ar, true);
+	}
+}
+
 /* insert a region in the area region list */
 static int region_quadview_exec(bContext *C, wmOperator *op)
 {
@@ -2724,6 +2749,7 @@ static int region_quadview_exec(bContext *C, wmOperator *op)
 		
 		if (sa->spacetype == SPACE_VIEW3D) {
 			RegionView3D *rv3d = ar->regiondata;
+			rv3d->viewlock_quad = rv3d->viewlock | RV3D_VIEWLOCK_INIT;
 			rv3d->viewlock = 0;
 			rv3d->rflag &= ~RV3D_CLIPPING;
 		}
@@ -2764,38 +2790,16 @@ static int region_quadview_exec(bContext *C, wmOperator *op)
 			 *
 			 * We could avoid manipulating rv3d->localvd here if exiting
 			 * localview with a 4-split would assign these view locks */
-			RegionView3D *rv3d;
+			RegionView3D *rv3d = ar->regiondata;
+			const char viewlock = (rv3d->viewlock_quad & RV3D_VIEWLOCK_INIT) ?
+			                      (rv3d->viewlock_quad & ~RV3D_VIEWLOCK_INIT) : RV3D_LOCKED;
 
-			rv3d = ar->regiondata;
-			rv3d->viewlock = RV3D_LOCKED; rv3d->view = RV3D_VIEW_FRONT; rv3d->persp = RV3D_ORTHO;
-			ED_view3d_lock(rv3d);
-			view3d_localview_update_rv3d(rv3d);
-			
-			ar = ar->next;
-			rv3d = ar->regiondata;
-			rv3d->viewlock = RV3D_LOCKED; rv3d->view = RV3D_VIEW_TOP; rv3d->persp = RV3D_ORTHO;
-			ED_view3d_lock(rv3d);
-			view3d_localview_update_rv3d(rv3d);
-			
-			ar = ar->next;
-			rv3d = ar->regiondata;
-			rv3d->viewlock = RV3D_LOCKED; rv3d->view = RV3D_VIEW_RIGHT; rv3d->persp = RV3D_ORTHO;
-			ED_view3d_lock(rv3d);
-			view3d_localview_update_rv3d(rv3d);
-			
-			ar = ar->next;
-			rv3d = ar->regiondata;
+			region_quadview_init_rv3d(sa, ar,              viewlock, RV3D_VIEW_FRONT, RV3D_ORTHO);
+			region_quadview_init_rv3d(sa, (ar = ar->next), viewlock, RV3D_VIEW_TOP,   RV3D_ORTHO);
+			region_quadview_init_rv3d(sa, (ar = ar->next), viewlock, RV3D_VIEW_RIGHT, RV3D_ORTHO);
+			if (v3d->camera) region_quadview_init_rv3d(sa, (ar = ar->next), 0, RV3D_VIEW_CAMERA,     RV3D_CAMOB);
+			else             region_quadview_init_rv3d(sa, (ar = ar->next), 0, RV3D_VIEW_PERSPORTHO, RV3D_PERSP);
 
-			/* check if we have a camera */
-			if (v3d->camera) {
-				rv3d->view = RV3D_VIEW_CAMERA; rv3d->persp = RV3D_CAMOB;
-			}
-			else {
-				rv3d->view = RV3D_VIEW_PERSPORTHO; rv3d->persp = RV3D_PERSP;
-			}
-
-			ED_view3d_lock(rv3d);
-			view3d_localview_update_rv3d(rv3d);
 		}
 		ED_area_tag_redraw(sa);
 		WM_event_add_notifier(C, NC_SCREEN | NA_EDITED, NULL);

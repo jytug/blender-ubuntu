@@ -64,6 +64,8 @@
 #include "RNA_access.h"
 #include "RNA_define.h"
 
+#include "bmesh.h"
+
 #include "paint_intern.h"
 #include "sculpt_intern.h" /* for undo push */
 
@@ -414,9 +416,7 @@ static int hide_show_exec(bContext *C, wmOperator *op)
 	/* ensure that edges and faces get hidden as well (not used by
 	 * sculpt but it looks wrong when entering editmode otherwise) */
 	if (pbvh_type == PBVH_FACES) {
-		BKE_mesh_flush_hidden_from_verts(me->mvert, me->mloop,
-		                                 me->medge, me->totedge,
-		                                 me->mpoly, me->totpoly);
+		BKE_mesh_flush_hidden_from_verts(me);
 	}
 
 	ED_region_tag_redraw(ar);

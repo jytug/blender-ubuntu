@@ -87,7 +87,6 @@
 #include "BKE_fcurve.h"
 #include "BKE_group.h"
 #include "BKE_icons.h"
-#include "BKE_image.h"
 #include "BKE_key.h"
 #include "BKE_lamp.h"
 #include "BKE_lattice.h"
@@ -121,9 +120,6 @@
 #endif
 
 #include "GPU_material.h"
-
-/* Local function protos */
-float originmat[3][3];  /* after BKE_object_where_is_calc(), can be used in other functions (bad!) */
 
 void BKE_object_workob_clear(Object *workob)
 {
@@ -242,108 +238,44 @@ void BKE_object_link_modifiers(struct Object *ob_dst, struct Object *ob_src)
 	/* TODO: smoke?, cloth? */
 }
 
-/* here we will collect all local displist stuff */
-/* also (ab)used in depsgraph */
-void BKE_object_free_display(Object *ob)
+/* free data derived from mesh, called when mesh changes or is freed */
+void BKE_object_free_derived_caches(Object *ob)
 {
-	if (ob->derivedDeform) {
-		ob->derivedDeform->needsFree = 1;
-		ob->derivedDeform->release(ob->derivedDeform);
-		ob->derivedDeform = NULL;
+	/* also serves as signal to remake texspace */
+	if (ob->type == OB_MESH) {
+		Mesh *me = ob->data;
+
+		if (me->bb) {
+			MEM_freeN(me->bb);
+			me->bb = NULL;
+		}
 	}
+
+	if (ob->bb) {
+		MEM_freeN(ob->bb);
+		ob->bb = NULL;
+	}
+
 	if (ob->derivedFinal) {
 		ob->derivedFinal->needsFree = 1;
 		ob->derivedFinal->release(ob->derivedFinal);
 		ob->derivedFinal = NULL;
 	}
+	if (ob->derivedDeform) {
+		ob->derivedDeform->needsFree = 1;
+		ob->derivedDeform->release(ob->derivedDeform);
+		ob->derivedDeform = NULL;
+	}
 	
 	BKE_displist_free(&ob->disp);
 }
-
-void free_sculptsession_deformMats(SculptSession *ss)
-{
-	if (ss->orig_cos) MEM_freeN(ss->orig_cos);
-	if (ss->deform_cos) MEM_freeN(ss->deform_cos);
-	if (ss->deform_imats) MEM_freeN(ss->deform_imats);
-
-	ss->orig_cos = NULL;
-	ss->deform_cos = NULL;
-	ss->deform_imats = NULL;
-}
-
-/* Write out the sculpt dynamic-topology BMesh to the Mesh */
-void sculptsession_bm_to_me(struct Object *ob, int reorder)
-{
-	if (ob && ob->sculpt) {
-		SculptSession *ss = ob->sculpt;
-
-		if (ss->bm) {
-			if (ob->data) {
-				BMIter iter;
-				BMFace *efa;
-				BM_ITER_MESH (efa, &iter, ss->bm, BM_FACES_OF_MESH) {
-					BM_elem_flag_set(efa, BM_ELEM_SMOOTH,
-					                 ss->bm_smooth_shading);
-				}
-				if (reorder)
-					BM_log_mesh_elems_reorder(ss->bm, ss->bm_log);
-				BM_mesh_bm_to_me(ss->bm, ob->data, FALSE);
-			}
-		}
-
-		/* ensure the objects DerivedMesh mesh doesn't hold onto arrays now realloc'd in the mesh [#34473] */
-		DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-	}
-}
-
-void free_sculptsession(Object *ob)
-{
-	if (ob && ob->sculpt) {
-		SculptSession *ss = ob->sculpt;
-		DerivedMesh *dm = ob->derivedFinal;
-
-		if (ss->bm) {
-			sculptsession_bm_to_me(ob, TRUE);
-			BM_mesh_free(ss->bm);
-		}
-
-		if (ss->pbvh)
-			BKE_pbvh_free(ss->pbvh);
-		if (ss->bm_log)
-			BM_log_free(ss->bm_log);
-
-		if (dm && dm->getPBVH)
-			dm->getPBVH(NULL, dm);  /* signal to clear */
-
-		if (ss->texcache)
-			MEM_freeN(ss->texcache);
-
-		if (ss->tex_pool)
-			BKE_image_pool_free(ss->tex_pool);
-
-		if (ss->layer_co)
-			MEM_freeN(ss->layer_co);
-
-		if (ss->orig_cos)
-			MEM_freeN(ss->orig_cos);
-		if (ss->deform_cos)
-			MEM_freeN(ss->deform_cos);
-		if (ss->deform_imats)
-			MEM_freeN(ss->deform_imats);
-
-		MEM_freeN(ss);
-
-		ob->sculpt = NULL;
-	}
-}
-
 
 /* do not free object itself */
 void BKE_object_free(Object *ob)
 {
 	int a;
 	
-	BKE_object_free_display(ob);
+	BKE_object_free_derived_caches(ob);
 	
 	/* disconnect specific data, but not for lib data (might be indirect data, can get relinked) */
 	if (ob->data) {
@@ -829,6 +761,24 @@ bool BKE_object_is_in_editmode(Object *ob)
 	return false;
 }
 
+bool BKE_object_is_in_editmode_vgroup(Object *ob)
+{
+	return (OB_TYPE_SUPPORT_VGROUP(ob->type) &&
+	        BKE_object_is_in_editmode(ob));
+}
+
+bool BKE_object_is_in_wpaint_select_vert(Object *ob)
+{
+	if (ob->type == OB_MESH) {
+		Mesh *me = ob->data;
+		return ( (ob->mode & OB_MODE_WEIGHT_PAINT) &&
+		         (me->edit_btmesh == NULL) &&
+		         (ME_EDIT_PAINT_SEL_MODE(me) == SCE_SELECT_VERTEX) );
+	}
+
+	return false;
+}
+
 bool BKE_object_exists_check(Object *obtest)
 {
 	Object *ob;
@@ -988,7 +938,7 @@ Object *BKE_object_add(Main *bmain, Scene *scene, int type)
 	base = BKE_scene_base_add(scene, ob);
 	BKE_scene_base_deselect_all(scene);
 	BKE_scene_base_select(scene, base);
-	DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
+	DAG_id_tag_update_ex(bmain, &ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 
 	return ob;
 }
@@ -1204,7 +1154,7 @@ static void copy_object_pose(Object *obn, Object *ob)
 	}
 }
 
-int BKE_object_pose_context_check(Object *ob)
+bool BKE_object_pose_context_check(Object *ob)
 {
 	if ((ob) &&
 	    (ob->type == OB_ARMATURE) &&
@@ -1509,7 +1459,7 @@ void BKE_object_make_proxy(Object *ob, Object *target, Object *gob)
 	 *   this is closer to making a copy of the object - in-place. */
 	if (gob) {
 		ob->rotmode = target->rotmode;
-		mult_m4_m4m4(ob->obmat, gob->obmat, target->obmat);
+		mul_m4_m4m4(ob->obmat, gob->obmat, target->obmat);
 		if (gob->dup_group) { /* should always be true */
 			float tvec[3];
 			copy_v3_v3(tvec, gob->dup_group->dupli_ofs);
@@ -1738,9 +1688,9 @@ void BKE_object_apply_mat4(Object *ob, float mat[4][4], const bool use_compat, c
 
 	if (use_parent && ob->parent) {
 		float rmat[4][4], diff_mat[4][4], imat[4][4];
-		mult_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
+		mul_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
 		invert_m4_m4(imat, diff_mat);
-		mult_m4_m4m4(rmat, imat, mat); /* get the parent relative matrix */
+		mul_m4_m4m4(rmat, imat, mat); /* get the parent relative matrix */
 		BKE_object_apply_mat4(ob, rmat, use_compat, FALSE);
 		
 		/* same as below, use rmat rather than mat */
@@ -1784,6 +1734,18 @@ void BKE_object_to_mat4(Object *ob, float mat[4][4])
 	copy_m4_m3(mat, tmat);
 
 	add_v3_v3v3(mat[3], ob->loc, ob->dloc);
+}
+
+void BKE_object_matrix_local_get(struct Object *ob, float mat[4][4])
+{
+	if (ob->parent) {
+		float invmat[4][4]; /* for inverse of parent's matrix */
+		invert_m4_m4(invmat, ob->parent->obmat);
+		mul_m4_m4m4(mat, invmat, ob->obmat);
+	}
+	else {
+		copy_m4_m4(mat, ob->obmat);
+	}
 }
 
 /* extern */
@@ -1864,7 +1826,7 @@ static void ob_parcurve(Scene *scene, Object *ob, Object *par, float mat[4][4])
 		if (cu->flag & CU_PATH_RADIUS) {
 			float tmat[4][4], rmat[4][4];
 			scale_m4_fl(tmat, radius);
-			mult_m4_m4m4(rmat, tmat, mat);
+			mul_m4_m4m4(rmat, tmat, mat);
 			copy_m4_m4(mat, rmat);
 		}
 
@@ -2038,7 +2000,11 @@ static void ob_parvert3(Object *ob, Object *par, float mat[4][4])
 	}
 }
 
-static void solve_parenting(Scene *scene, Object *ob, Object *par, float obmat[4][4], float slowmat[4][4], int simul)
+/**
+ * \param r_originmat  Optional matrix that stores the space the object is in (without its own matrix applied)
+ */
+static void solve_parenting(Scene *scene, Object *ob, Object *par, float obmat[4][4], float slowmat[4][4],
+                            float r_originmat[3][3], const bool simul)
 {
 	float totmat[4][4];
 	float tmat[4][4];
@@ -2103,8 +2069,10 @@ static void solve_parenting(Scene *scene, Object *ob, Object *par, float obmat[4
 
 	}
 	else {
-		/* external usable originmat */
-		copy_m3_m4(originmat, tmat);
+		if (r_originmat) {
+			/* usable originmat */
+			copy_m3_m4(r_originmat, tmat);
+		}
 		
 		/* origin, for help line */
 		if ((ob->partype & PARTYPE) == PARSKEL) {
@@ -2138,7 +2106,7 @@ static int where_is_object_parslow(Object *ob, float obmat[4][4], float slowmat[
 
 /* note, scene is the active scene while actual_scene is the scene the object resides in */
 void BKE_object_where_is_calc_time_ex(Scene *scene, Object *ob, float ctime,
-                                      RigidBodyWorld *rbw)
+                                      RigidBodyWorld *rbw, float r_originmat[3][3])
 {
 	if (ob == NULL) return;
 	
@@ -2150,7 +2118,7 @@ void BKE_object_where_is_calc_time_ex(Scene *scene, Object *ob, float ctime,
 		float slowmat[4][4] = MAT4_UNITY;
 		
 		/* calculate parent matrix */
-		solve_parenting(scene, ob, par, ob->obmat, slowmat, 0);
+		solve_parenting(scene, ob, par, ob->obmat, slowmat, r_originmat, false);
 		
 		/* "slow parent" is definitely not threadsafe, and may also give bad results jumping around 
 		 * An old-fashioned hack which probably doesn't really cut it anymore
@@ -2185,7 +2153,7 @@ void BKE_object_where_is_calc_time_ex(Scene *scene, Object *ob, float ctime,
 
 void BKE_object_where_is_calc_time(Scene *scene, Object *ob, float ctime)
 {
-	BKE_object_where_is_calc_time_ex(scene, ob, ctime, NULL);
+	BKE_object_where_is_calc_time_ex(scene, ob, ctime, NULL, NULL);
 }
 
 /* get object transformation matrix without recalculating dependencies and
@@ -2199,7 +2167,7 @@ void BKE_object_where_is_calc_mat4(Scene *scene, Object *ob, float obmat[4][4])
 	if (ob->parent) {
 		Object *par = ob->parent;
 		
-		solve_parenting(scene, ob, par, obmat, slowmat, 1);
+		solve_parenting(scene, ob, par, obmat, slowmat, NULL, true);
 		
 		if (ob->partype & PARSLOW)
 			where_is_object_parslow(ob, obmat, slowmat);
@@ -2209,13 +2177,13 @@ void BKE_object_where_is_calc_mat4(Scene *scene, Object *ob, float obmat[4][4])
 	}
 }
 
-void BKE_object_where_is_calc_ex(Scene *scene, RigidBodyWorld *rbw, Object *ob)
+void BKE_object_where_is_calc_ex(Scene *scene, RigidBodyWorld *rbw, Object *ob, float r_originmat[3][3])
 {
-	BKE_object_where_is_calc_time_ex(scene, ob, BKE_scene_frame_get(scene), rbw);
+	BKE_object_where_is_calc_time_ex(scene, ob, BKE_scene_frame_get(scene), rbw, r_originmat);
 }
 void BKE_object_where_is_calc(Scene *scene, Object *ob)
 {
-	BKE_object_where_is_calc_time_ex(scene, ob, BKE_scene_frame_get(scene), NULL);
+	BKE_object_where_is_calc_time_ex(scene, ob, BKE_scene_frame_get(scene), NULL, NULL);
 }
 
 /* was written for the old game engine (until 2.04) */
@@ -2233,7 +2201,7 @@ void BKE_object_where_is_calc_simul(Scene *scene, Object *ob)
 	if (ob->parent) {
 		par = ob->parent;
 		
-		solve_parenting(scene, ob, par, ob->obmat, slowmat, 1);
+		solve_parenting(scene, ob, par, ob->obmat, slowmat, NULL, true);
 		
 		if (ob->partype & PARSLOW) {
 			fac1 = (float)(1.0 / (1.0 + fabs(ob->sf)));
@@ -2288,7 +2256,7 @@ void BKE_object_workob_calc_parent(Scene *scene, Object *ob, Object *workob)
 BoundBox *BKE_boundbox_alloc_unit(void)
 {
 	BoundBox *bb;
-	float min[3] = {-1.0f, -1.0f, -1.0f}, max[3] = {-1.0f, -1.0f, -1.0f};
+	const float min[3] = {-1.0f, -1.0f, -1.0f}, max[3] = {-1.0f, -1.0f, -1.0f};
 
 	bb = MEM_callocN(sizeof(BoundBox), "OB-BoundBox");
 	BKE_boundbox_init_from_minmax(bb, min, max);
@@ -2296,7 +2264,7 @@ BoundBox *BKE_boundbox_alloc_unit(void)
 	return bb;
 }
 
-void BKE_boundbox_init_from_minmax(BoundBox *bb, float min[3], float max[3])
+void BKE_boundbox_init_from_minmax(BoundBox *bb, const float min[3], const float max[3])
 {
 	bb->vec[0][0] = bb->vec[1][0] = bb->vec[2][0] = bb->vec[3][0] = min[0];
 	bb->vec[4][0] = bb->vec[5][0] = bb->vec[6][0] = bb->vec[7][0] = max[0];
@@ -2378,7 +2346,7 @@ void BKE_object_minmax(Object *ob, float min_r[3], float max_r[3], const bool us
 	BoundBox bb;
 	float vec[3];
 	int a;
-	short change = FALSE;
+	bool change = false;
 	
 	switch (ob->type) {
 		case OB_CURVE:
@@ -2455,6 +2423,17 @@ void BKE_object_minmax(Object *ob, float min_r[3], float max_r[3], const bool us
 			}
 		}
 		break;
+		case OB_MBALL:
+		{
+			float ob_min[3], ob_max[3];
+
+			change = BKE_mball_minmax_ex(ob->data, ob_min, ob_max, ob->obmat, 0);
+			if (change) {
+				minmax_v3v3_v3(min_r, max_r, ob_min);
+				minmax_v3v3_v3(min_r, max_r, ob_max);
+			}
+			break;
+		}
 	}
 
 	if (change == FALSE) {
@@ -2477,9 +2456,9 @@ void BKE_object_minmax(Object *ob, float min_r[3], float max_r[3], const bool us
 	}
 }
 
-int BKE_object_minmax_dupli(Scene *scene, Object *ob, float r_min[3], float r_max[3], const bool use_hidden)
+bool BKE_object_minmax_dupli(Scene *scene, Object *ob, float r_min[3], float r_max[3], const bool use_hidden)
 {
-	int ok = FALSE;
+	bool ok = false;
 	if ((ob->transflag & OB_DUPLI) == 0) {
 		return ok;
 	}
@@ -2685,7 +2664,7 @@ void BKE_object_handle_update_ex(Scene *scene, Object *ob,
 				if (ob->proxy_from->proxy_group) { /* transform proxy into group space */
 					Object *obg = ob->proxy_from->proxy_group;
 					invert_m4_m4(obg->imat, obg->obmat);
-					mult_m4_m4m4(ob->obmat, obg->imat, ob->proxy_from->obmat);
+					mul_m4_m4m4(ob->obmat, obg->imat, ob->proxy_from->obmat);
 					if (obg->dup_group) { /* should always be true */
 						add_v3_v3(ob->obmat[3], obg->dup_group->dupli_ofs);
 					}
@@ -2694,7 +2673,7 @@ void BKE_object_handle_update_ex(Scene *scene, Object *ob,
 					copy_m4_m4(ob->obmat, ob->proxy_from->obmat);
 			}
 			else
-				BKE_object_where_is_calc_ex(scene, rbw, ob);
+				BKE_object_where_is_calc_ex(scene, rbw, ob, NULL);
 		}
 		
 		if (ob->recalc & OB_RECALC_DATA) {
@@ -2869,27 +2848,29 @@ void BKE_object_sculpt_modifiers_changed(Object *ob)
 {
 	SculptSession *ss = ob->sculpt;
 
-	if (!ss->cache) {
-		/* we free pbvh on changes, except during sculpt since it can't deal with
-		 * changing PVBH node organization, we hope topology does not change in
-		 * the meantime .. weak */
-		if (ss->pbvh) {
-			BKE_pbvh_free(ss->pbvh);
-			ss->pbvh = NULL;
+	if (ss) {
+		if (!ss->cache) {
+			/* we free pbvh on changes, except during sculpt since it can't deal with
+			 * changing PVBH node organization, we hope topology does not change in
+			 * the meantime .. weak */
+			if (ss->pbvh) {
+				BKE_pbvh_free(ss->pbvh);
+				ss->pbvh = NULL;
+			}
+
+			free_sculptsession_deformMats(ob->sculpt);
 		}
+		else {
+			PBVHNode **nodes;
+			int n, totnode;
 
-		free_sculptsession_deformMats(ob->sculpt);
-	}
-	else {
-		PBVHNode **nodes;
-		int n, totnode;
+			BKE_pbvh_search_gather(ss->pbvh, NULL, NULL, &nodes, &totnode);
 
-		BKE_pbvh_search_gather(ss->pbvh, NULL, NULL, &nodes, &totnode);
+			for (n = 0; n < totnode; n++)
+				BKE_pbvh_node_mark_update(nodes[n]);
 
-		for (n = 0; n < totnode; n++)
-			BKE_pbvh_node_mark_update(nodes[n]);
-
-		MEM_freeN(nodes);
+			MEM_freeN(nodes);
+		}
 	}
 }
 
@@ -2937,15 +2918,17 @@ int BKE_object_obdata_texspace_get(Object *ob, short **r_texflag, float **r_loc,
  * Test a bounding box for ray intersection
  * assumes the ray is already local to the boundbox space
  */
-int BKE_boundbox_ray_hit_check(struct BoundBox *bb, float ray_start[3], float ray_normal[3])
+bool BKE_boundbox_ray_hit_check(struct BoundBox *bb, const float ray_start[3], const float ray_normal[3])
 {
-	static int triangle_indexes[12][3] = {{0, 1, 2}, {0, 2, 3},
-	                                      {3, 2, 6}, {3, 6, 7},
-	                                      {1, 2, 6}, {1, 6, 5},
-	                                      {5, 6, 7}, {4, 5, 7},
-	                                      {0, 3, 7}, {0, 4, 7},
-	                                      {0, 1, 5}, {0, 4, 5}};
-	int result = 0;
+	const int triangle_indexes[12][3] = {
+	    {0, 1, 2}, {0, 2, 3},
+	    {3, 2, 6}, {3, 6, 7},
+	    {1, 2, 6}, {1, 6, 5},
+	    {5, 6, 7}, {4, 5, 7},
+	    {0, 3, 7}, {0, 4, 7},
+	    {0, 1, 5}, {0, 4, 5}};
+
+	bool result = false;
 	int i;
 	
 	for (i = 0; i < 12 && result == 0; i++) {

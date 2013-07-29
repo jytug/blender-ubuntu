@@ -162,12 +162,7 @@ static void get_seq_color3ubv(Scene *curscene, Sequence *seq, unsigned char col[
 			break;
 
 		case SEQ_TYPE_COLOR:
-			if (colvars->col) {
-				rgb_float_to_uchar(col, colvars->col);
-			}
-			else {
-				col[0] = col[1] = col[2] = 128;
-			}
+			rgb_float_to_uchar(col, colvars->col);
 			break;
 
 		case SEQ_TYPE_SOUND_RAM:
@@ -403,7 +398,7 @@ static void draw_seq_handle(View2D *v2d, Sequence *seq, const float handsize_cla
 		glDisable(GL_BLEND);
 	}
 	
-	if (G.moving || (seq->flag & whichsel)) {
+	if ((G.moving & G_TRANSFORM_SEQ) || (seq->flag & whichsel)) {
 		const char col[4] = {255, 255, 255, 255};
 		if (direction == SEQ_LEFTHANDLE) {
 			BLI_snprintf(numstr, sizeof(numstr), "%d", seq->startdisp);
@@ -760,7 +755,7 @@ static void draw_seq_strip(Scene *scene, ARegion *ar, Sequence *seq, int outline
 	}
 
 	get_seq_color3ubv(scene, seq, col);
-	if (G.moving && (seq->flag & SELECT)) {
+	if ((G.moving & G_TRANSFORM_SEQ) && (seq->flag & SELECT)) {
 		if (seq->flag & SEQ_OVERLAP) {
 			col[0] = 255; col[1] = col[2] = 40;
 		}
@@ -823,7 +818,7 @@ ImBuf *sequencer_ibuf_get(struct Main *bmain, Scene *scene, SpaceSeq *sseq, int 
 	SeqRenderData context;
 	ImBuf *ibuf;
 	int rectx, recty;
-	float render_size = 0.0;
+	float render_size;
 	float proxy_size = 100.0;
 	short is_break = G.is_break;
 
@@ -1383,7 +1378,7 @@ static void seq_draw_sfra_efra(Scene *scene, View2D *v2d)
 
 	if (PSFRA < PEFRA + 1) {
 		glRectf(v2d->cur.xmin, v2d->cur.ymin, (float)PSFRA, v2d->cur.ymax);
-		glRectf((float)(PEFRA+1), v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
+		glRectf((float)(PEFRA + 1), v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
 	}
 	else {
 		glRectf(v2d->cur.xmin, v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
@@ -1392,7 +1387,7 @@ static void seq_draw_sfra_efra(Scene *scene, View2D *v2d)
 	UI_ThemeColorShade(TH_BACK, -60);
 	/* thin lines where the actual frames are */
 	fdrawline((float)PSFRA, v2d->cur.ymin, (float)PSFRA, v2d->cur.ymax);
-	fdrawline((float)(PEFRA+1), v2d->cur.ymin, (float)(PEFRA+1), v2d->cur.ymax);
+	fdrawline((float)(PEFRA + 1), v2d->cur.ymin, (float)(PEFRA + 1), v2d->cur.ymax);
 	
 	glDisable(GL_BLEND);
 }

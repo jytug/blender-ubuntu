@@ -1129,7 +1129,7 @@ class LinkToOutputNode(Operator, NodeToolBase):
         valid = False
         if (space.type == 'NODE_EDITOR' and
                 space.node_tree is not None and
-                context.active_node is not None and
+                context.active_node is not None
                 ):
             valid = True
         return valid
@@ -1148,7 +1148,6 @@ class LinkToOutputNode(Operator, NodeToolBase):
         if not output_node:
             bpy.ops.node.select_all(action="DESELECT")
             type = context.space_data.tree_type
-            print(type)
             if type == 'ShaderNodeTree':
                 output_node = nodes.new('ShaderNodeOutputMaterial')
             elif type == 'CompositorNodeTree':

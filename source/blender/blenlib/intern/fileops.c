@@ -65,8 +65,7 @@
 #include "BLI_string.h"
 #include "BLI_path_util.h"
 #include "BLI_fileops.h"
-
-#include "MEM_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
 
 
 /* gzip the file in from and write it to "to". 
@@ -200,7 +199,7 @@ bool BLI_file_touch(const char *file)
 {
 	FILE *f = BLI_fopen(file, "r+b");
 	if (f != NULL) {
-		char c = getc(f);
+		int c = getc(f);
 		rewind(f);
 		putc(c, f);
 	}
@@ -252,8 +251,8 @@ void *BLI_gzopen(const char *filename, const char *mode)
 			fclose(ufopen(filename, "a"));
 
 		/* temporary #if until we update all libraries to 1.2.7
-		 * for  correct wide char path handling */
-#if ZLIB_VERNUM >= 0x1270
+		 * for correct wide char path handling */
+#if ZLIB_VERNUM >= 0x1270 && !defined(FREE_WINDOWS)
 		UTF16_ENCODE(filename);
 
 		gzfile = gzopen_w(filename_16, mode);

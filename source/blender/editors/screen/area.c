@@ -38,7 +38,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BLF_translation.h"
@@ -46,6 +45,9 @@
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_screen.h"
+
+#include "RNA_access.h"
+#include "RNA_types.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -114,7 +116,7 @@ void ED_region_pixelspace(ARegion *ar)
 }
 
 /* only exported for WM */
-void ED_region_do_listen(ARegion *ar, wmNotifier *note)
+void ED_region_do_listen(bScreen *sc, ScrArea *sa, ARegion *ar, wmNotifier *note)
 {
 	/* generic notes first */
 	switch (note->category) {
@@ -128,15 +130,15 @@ void ED_region_do_listen(ARegion *ar, wmNotifier *note)
 	}
 
 	if (ar->type && ar->type->listener)
-		ar->type->listener(ar, note);
+		ar->type->listener(sc, sa, ar, note);
 }
 
 /* only exported for WM */
-void ED_area_do_listen(ScrArea *sa, wmNotifier *note)
+void ED_area_do_listen(bScreen *sc, ScrArea *sa, wmNotifier *note)
 {
 	/* no generic notes? */
 	if (sa->type && sa->type->listener) {
-		sa->type->listener(sa, note);
+		sa->type->listener(sc, sa, note);
 	}
 }
 
@@ -444,7 +446,7 @@ void ED_region_do_draw(bContext *C, ARegion *ar)
 	glEnable(GL_BLEND);
 	glColor4f(drand48(), drand48(), drand48(), 0.1f);
 	glRectf(ar->drawrct.xmin - ar->winrct.xmin, ar->drawrct.ymin - ar->winrct.ymin,
-			ar->drawrct.xmax - ar->winrct.xmin, ar->drawrct.ymax - ar->winrct.ymin);
+	        ar->drawrct.xmax - ar->winrct.xmin, ar->drawrct.ymax - ar->winrct.ymin);
 	glDisable(GL_BLEND);
 #endif
 
@@ -574,8 +576,8 @@ static void area_azone_initialize(bScreen *screen, ScrArea *sa)
 	az = (AZone *)MEM_callocN(sizeof(AZone), "actionzone");
 	BLI_addtail(&(sa->actionzones), az);
 	az->type = AZONE_AREA;
-	az->x1 = sa->totrct.xmax + 1;
-	az->y1 = sa->totrct.ymax + 1;
+	az->x1 = sa->totrct.xmax;
+	az->y1 = sa->totrct.ymax;
 	az->x2 = sa->totrct.xmax - (AZONESPOT - 1);
 	az->y2 = sa->totrct.ymax - (AZONESPOT - 1);
 	BLI_rcti_init(&az->rect, az->x1, az->x2, az->y1, az->y2);
@@ -906,11 +908,19 @@ static void region_overlap_fix(ScrArea *sa, ARegion *ar)
 /* overlapping regions only in the following restricted cases */
 static int region_is_overlap(wmWindow *win, ScrArea *sa, ARegion *ar)
 {
-	if (U.uiflag2 & USER_REGION_OVERLAP)
-		if (WM_is_draw_triple(win))
-			if (ELEM4(sa->spacetype, SPACE_VIEW3D, SPACE_IMAGE, SPACE_SEQ, SPACE_CLIP))
+	if (U.uiflag2 & USER_REGION_OVERLAP) {
+		if (WM_is_draw_triple(win)) {
+			if (ELEM(sa->spacetype, SPACE_VIEW3D, SPACE_SEQ)) {
 				if (ELEM3(ar->regiontype, RGN_TYPE_TOOLS, RGN_TYPE_UI, RGN_TYPE_TOOL_PROPS))
 					return 1;
+			}
+			else if (ELEM(sa->spacetype, SPACE_IMAGE, SPACE_CLIP)) {
+				if (ELEM4(ar->regiontype, RGN_TYPE_TOOLS, RGN_TYPE_UI, RGN_TYPE_TOOL_PROPS, RGN_TYPE_PREVIEW))
+					return 1;
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -1337,6 +1347,7 @@ void area_copy_data(ScrArea *sa1, ScrArea *sa2, int swap_space)
 	
 	sa1->headertype = sa2->headertype;
 	sa1->spacetype = sa2->spacetype;
+	sa1->type = sa2->type;
 	sa1->butspacetype = sa2->butspacetype;
 	
 	if (swap_space == 1) {
@@ -1495,71 +1506,19 @@ void ED_area_prevspace(bContext *C, ScrArea *sa)
 	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_CHANGED, sa);
 }
 
-static const char *editortype_pup(void)
-{
-	const char *types = N_(
-	    "Editor type: %t"
-	    "|3D View %x1"
-
-	    "|%l"
-
-	    "|Timeline %x15"
-	    "|Graph Editor %x2"
-	    "|DopeSheet %x12"
-	    "|NLA Editor %x13"
-
-	    "|%l"
-
-	    "|UV/Image Editor %x6"
-
-	    "|Video Sequence Editor %x8"
-	    "|Movie Clip Editor %x20"
-	    "|Text Editor %x9"
-	    "|Node Editor %x16"
-	    "|Logic Editor %x17"
-
-	    "|%l"
-
-	    "|Properties %x4"
-	    "|Outliner %x3"
-	    "|User Preferences %x19"
-	    "|Info %x7"
-
-	    "|%l"
-
-	    "|File Browser %x5"
-
-	    "|%l"
-
-	    "|Python Console %x18"
-	    );
-
-	return IFACE_(types);
-}
-
-static void spacefunc(struct bContext *C, void *UNUSED(arg1), void *UNUSED(arg2))
-{
-	ED_area_newspace(C, CTX_wm_area(C), CTX_wm_area(C)->butspacetype);
-	ED_area_tag_redraw(CTX_wm_area(C));
-
-	/* send space change notifier */
-	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_CHANGED, CTX_wm_area(C));
-}
-
 /* returns offset for next button in header */
 int ED_area_header_switchbutton(const bContext *C, uiBlock *block, int yco)
 {
 	ScrArea *sa = CTX_wm_area(C);
-	uiBut *but;
+	bScreen *scr = CTX_wm_screen(C);
+	PointerRNA areaptr;
 	int xco = 0.4 * U.widget_unit;
-	
-	but = uiDefIconTextButC(block, ICONTEXTROW, 0, ICON_VIEW3D, 
-	                        editortype_pup(), xco, yco, 1.5 * U.widget_unit, U.widget_unit,
-	                        &(sa->butspacetype), 1.0, SPACEICONMAX, 0, 0,
-	                        TIP_("Display current editor type (click for a menu of available types)"));
-	uiButSetFunc(but, spacefunc, NULL, NULL);
-	uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
-	
+
+	RNA_pointer_create(&(scr->id), &RNA_Area, sa, &areaptr);
+
+	uiDefButR(block, MENU, 0, NULL, xco, yco, 1.5 * U.widget_unit, U.widget_unit,
+	          &areaptr, "type", 0, 0.0f, 0.0f, 0.0f, 0.0f, "");
+
 	return xco + 1.7 * U.widget_unit;
 }
 

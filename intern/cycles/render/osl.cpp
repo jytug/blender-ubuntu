@@ -100,7 +100,7 @@ void OSLShaderManager::device_update(Device *device, DeviceScene *dscene, Scene 
 		compiler.background = (shader == scene->shaders[scene->default_background]);
 		compiler.compile(og, shader);
 
-		if(shader->sample_as_light && shader->has_surface_emission)
+		if(shader->use_mis && shader->has_surface_emission)
 			scene->light_manager->need_update = true;
 	}
 
@@ -122,6 +122,12 @@ void OSLShaderManager::device_update(Device *device, DeviceScene *dscene, Scene 
 	scene->image_manager->set_osl_texture_system((void*)ts);
 
 	device_update_common(device, dscene, scene, progress);
+
+	/* greedyjit test
+	{
+		thread_scoped_lock lock(ss_shared_mutex);
+		ss->optimize_all_groups();
+	}*/
 }
 
 void OSLShaderManager::device_free(Device *device, DeviceScene *dscene, Scene *scene)
@@ -186,10 +192,8 @@ void OSLShaderManager::shading_system_init()
 		ss_shared = OSL::ShadingSystem::create(services_shared, ts_shared, &errhandler);
 		ss_shared->attribute("lockgeom", 1);
 		ss_shared->attribute("commonspace", "world");
-		ss_shared->attribute("optimize", 2);
-		//ss_shared->attribute("debug", 1);
-		//ss_shared->attribute("statistics:level", 1);
 		ss_shared->attribute("searchpath:shader", path_get("shader"));
+		//ss_shared->attribute("greedyjit", 1);
 
 		/* our own ray types */
 		static const char *raytypes[] = {
@@ -347,43 +351,9 @@ const char *OSLShaderManager::shader_load_filepath(string filepath)
 	return shader_load_bytecode(bytecode_hash, bytecode);
 }
 
-/* don't try this at home .. this is a template trick to use either
- * LoadMemoryShader or LoadMemoryCompiledShader which are the function
- * names in our custom branch and the official repository. */
-
-template<bool C, typename T = void> struct enable_if { typedef T type; };
-template<typename T> struct enable_if<false, T> { };
-
-template<typename T, typename Sign>
-struct has_LoadMemoryCompiledShader {
-	typedef int yes;
-	typedef char no;
-	
-	template<typename U, U> struct type_check;
-	template<typename _1> static yes &chk(type_check<Sign, &_1::LoadMemoryCompiledShader>*);
-	template<typename   > static no  &chk(...);
-	static bool const value = sizeof(chk<T>(0)) == sizeof(yes);
-};
-
-template<typename T>
-typename enable_if<has_LoadMemoryCompiledShader<T, 
-	bool(T::*)(const char*, const char*)>::value, bool>::type
-load_memory_shader(T *ss, const char *name, const char *buffer)
-{
-	return ss->LoadMemoryCompiledShader(name, buffer);
-}
-
-template<typename T>
-typename enable_if<!has_LoadMemoryCompiledShader<T, 
-	bool(T::*)(const char*, const char*)>::value, bool>::type
-load_memory_shader(T *ss, const char *name, const char *buffer)
-{
-	return ss->LoadMemoryShader(name, buffer);
-}
-
 const char *OSLShaderManager::shader_load_bytecode(const string& hash, const string& bytecode)
 {
-	load_memory_shader(ss, hash.c_str(), bytecode.c_str());
+	ss->LoadMemoryCompiledShader(hash.c_str(), bytecode.c_str());
 
 	/* this is a bit weak, but works */
 	OSLShaderInfo info;
@@ -751,7 +721,7 @@ void OSLCompiler::compile_type(Shader *shader, ShaderGraph *graph, ShaderType ty
 
 	current_type = type;
 
-	ss->ShaderGroupBegin();
+	ss->ShaderGroupBegin(shader->name.c_str());
 
 	ShaderNode *output = graph->output();
 	set<ShaderNode*> dependencies;
@@ -814,9 +784,11 @@ void OSLCompiler::compile(OSLGlobals *og, Shader *shader)
 			if(shader->graph_bump) {
 				ss->clear_state();
 				compile_type(shader, shader->graph_bump, SHADER_TYPE_SURFACE);
+				shader->osl_surface_bump_ref = ss->state();
 			}
+			else
+				shader->osl_surface_bump_ref = shader->osl_surface_ref;
 
-			shader->osl_surface_bump_ref = ss->state();
 			ss->clear_state();
 
 			shader->has_surface = true;

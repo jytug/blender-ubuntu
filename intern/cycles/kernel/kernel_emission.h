@@ -52,7 +52,7 @@ __device_noinline float3 direct_emissive_eval(KernelGlobals *kg, float rando,
 			shader_setup_from_sample(kg, &sd, ls->P, ls->Ng, I, ls->shader, ls->object, ls->prim, u, v, t, time, ls->prim);
 		else
 #endif
-			shader_setup_from_sample(kg, &sd, ls->P, ls->Ng, I, ls->shader, ls->object, ls->prim, u, v, t, time);
+			shader_setup_from_sample(kg, &sd, ls->P, ls->Ng, I, ls->shader, ls->object, ls->prim, u, v, t, time, ~0);
 
 		ls->Ng = sd.Ng;
 
@@ -102,8 +102,6 @@ __device_noinline bool direct_emission(KernelGlobals *kg, ShaderData *sd, int li
 	if(is_zero(light_eval))
 		return false;
 
-	/* todo: use visbility flag to skip lights */
-
 	/* evaluate BSDF at shading point */
 	float bsdf_pdf;
 
@@ -116,6 +114,18 @@ __device_noinline bool direct_emission(KernelGlobals *kg, ShaderData *sd, int li
 	}
 	
 	bsdf_eval_mul(eval, light_eval/ls.pdf);
+
+#ifdef __PASSES__
+	/* use visibility flag to skip lights */
+	if(ls.shader & SHADER_EXCLUDE_ANY) {
+		if(ls.shader & SHADER_EXCLUDE_DIFFUSE)
+			eval->diffuse = make_float3(0.0f, 0.0f, 0.0f);
+		if(ls.shader & SHADER_EXCLUDE_GLOSSY)
+			eval->glossy = make_float3(0.0f, 0.0f, 0.0f);
+		if(ls.shader & SHADER_EXCLUDE_TRANSMIT)
+			eval->transmission = make_float3(0.0f, 0.0f, 0.0f);
+	}
+#endif
 
 	if(bsdf_eval_is_zero(eval))
 		return false;
@@ -158,9 +168,9 @@ __device_noinline float3 indirect_primitive_emission(KernelGlobals *kg, ShaderDa
 	float3 L = shader_emissive_eval(kg, sd);
 
 #ifdef __HAIR__
-	if(!(path_flag & PATH_RAY_MIS_SKIP) && (sd->flag & SD_SAMPLE_AS_LIGHT) && (sd->segment == ~0)) {
+	if(!(path_flag & PATH_RAY_MIS_SKIP) && (sd->flag & SD_USE_MIS) && (sd->segment == ~0)) {
 #else
-	if(!(path_flag & PATH_RAY_MIS_SKIP) && (sd->flag & SD_SAMPLE_AS_LIGHT)) {
+	if(!(path_flag & PATH_RAY_MIS_SKIP) && (sd->flag & SD_USE_MIS)) {
 #endif
 		/* multiple importance sampling, get triangle light pdf,
 		 * and compute weight with respect to BSDF pdf */
@@ -185,7 +195,17 @@ __device_noinline bool indirect_lamp_emission(KernelGlobals *kg, Ray *ray, int p
 
 	if(!lamp_light_eval(kg, lamp, ray->P, ray->D, ray->t, &ls))
 		return false;
-	
+
+#ifdef __PASSES__
+	/* use visibility flag to skip lights */
+	if(ls.shader & SHADER_EXCLUDE_ANY) {
+		if(((ls.shader & SHADER_EXCLUDE_DIFFUSE) && (path_flag & PATH_RAY_DIFFUSE)) ||
+		   ((ls.shader & SHADER_EXCLUDE_GLOSSY) && (path_flag & PATH_RAY_GLOSSY)) ||
+		   ((ls.shader & SHADER_EXCLUDE_TRANSMIT) && (path_flag & PATH_RAY_TRANSMIT)))
+			return false;
+	}
+#endif
+
 	/* todo: missing texture coordinates */
 	float u = 0.0f;
 	float v = 0.0f;
@@ -207,9 +227,21 @@ __device_noinline bool indirect_lamp_emission(KernelGlobals *kg, Ray *ray, int p
 __device_noinline float3 indirect_background(KernelGlobals *kg, Ray *ray, int path_flag, float bsdf_pdf)
 {
 #ifdef __BACKGROUND__
+	int shader = kernel_data.background.shader;
+
+	/* use visibility flag to skip lights */
+	if(shader & SHADER_EXCLUDE_ANY) {
+		if(((shader & SHADER_EXCLUDE_DIFFUSE) && (path_flag & PATH_RAY_DIFFUSE)) ||
+		   ((shader & SHADER_EXCLUDE_GLOSSY) && (path_flag & PATH_RAY_GLOSSY)) ||
+		   ((shader & SHADER_EXCLUDE_TRANSMIT) && (path_flag & PATH_RAY_TRANSMIT)) ||
+		   ((shader & SHADER_EXCLUDE_CAMERA) && (path_flag & PATH_RAY_CAMERA)))
+			return make_float3(0.0f, 0.0f, 0.0f);
+	}
+
 	/* evaluate background closure */
 	ShaderData sd;
 	shader_setup_from_background(kg, &sd, ray);
+
 	float3 L = shader_eval_background(kg, &sd, path_flag, SHADER_CONTEXT_EMISSION);
 
 #ifdef __BACKGROUND_MIS__

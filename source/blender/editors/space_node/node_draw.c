@@ -119,11 +119,11 @@ void ED_node_tag_update_id(ID *id)
 		DAG_id_tag_update(id, 0);
 		
 		if (GS(id->name) == ID_MA)
-			WM_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, id);
+			WM_main_add_notifier(NC_MATERIAL | ND_SHADING, id);
 		else if (GS(id->name) == ID_LA)
-			WM_main_add_notifier(NC_LAMP | ND_LIGHTING_DRAW, id);
+			WM_main_add_notifier(NC_LAMP | ND_LIGHTING, id);
 		else if (GS(id->name) == ID_WO)
-			WM_main_add_notifier(NC_WORLD | ND_WORLD_DRAW, id);
+			WM_main_add_notifier(NC_WORLD | ND_WORLD, id);
 	}
 	else if (ntree->type == NTREE_COMPOSIT) {
 		WM_main_add_notifier(NC_SCENE | ND_NODES, id);
@@ -351,13 +351,13 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 		row = uiLayoutRow(layout, 1);
 		uiLayoutSetAlignment(row, UI_LAYOUT_ALIGN_RIGHT);
 		
-		node->typeinfo->drawoutputfunc((bContext *)C, row, &sockptr, &nodeptr, (nsock->flag & SOCK_IN_USE));
+		node->typeinfo->drawoutputfunc((bContext *)C, row, &sockptr, &nodeptr);
 		
 		uiBlockEndAlign(node->block);
 		uiBlockLayoutResolve(node->block, NULL, &buty);
 		
 		/* ensure minimum socket height in case layout is empty */
-		buty = MIN2(buty, dy - NODE_DY);
+		buty = min_ii(buty, dy - NODE_DY);
 		
 		nsock->locx = locx + NODE_WIDTH(node);
 		/* place the socket circle in the middle of the layout */
@@ -402,8 +402,7 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 	}
 
 	/* buttons rect? */
-	/* TODO: NODE_OPTION shall be cleaned up */
-	if (/*(node->flag & NODE_OPTIONS) && */node->typeinfo->uifunc) {
+	if (node->typeinfo->uifunc && (node->flag & NODE_OPTIONS)) {
 		dy -= NODE_DYS / 2;
 
 		/* set this for uifunc() that don't use layout engine yet */
@@ -438,13 +437,13 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 		uiLayoutSetContextPointer(layout, "node", &nodeptr);
 		uiLayoutSetContextPointer(layout, "socket", &sockptr);
 		
-		node->typeinfo->drawinputfunc((bContext *)C, layout, &sockptr, &nodeptr, (nsock->flag & SOCK_IN_USE));
+		node->typeinfo->drawinputfunc((bContext *)C, layout, &sockptr, &nodeptr);
 		
 		uiBlockEndAlign(node->block);
 		uiBlockLayoutResolve(node->block, NULL, &buty);
 		
 		/* ensure minimum socket height in case layout is empty */
-		buty = MIN2(buty, dy - NODE_DY);
+		buty = min_ii(buty, dy - NODE_DY);
 		
 		nsock->locx = locx;
 		/* place the socket circle in the middle of the layout */
@@ -1200,7 +1199,7 @@ static void draw_tree_path(SpaceNode *snode)
 	BLF_draw_default(1.5f * UI_UNIT_X, 1.5f * UI_UNIT_Y, 0.0f, info, sizeof(info));
 }
 
-static void snode_setup_v2d(SpaceNode *snode, ARegion *ar, float center[2])
+static void snode_setup_v2d(SpaceNode *snode, ARegion *ar, const float center[2])
 {
 	View2D *v2d = &ar->v2d;
 	

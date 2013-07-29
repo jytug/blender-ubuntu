@@ -42,7 +42,6 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BLF_translation.h"
@@ -776,7 +775,7 @@ static void graph_panel_modifiers(const bContext *C, Panel *pa)
 		 * a menu might be nicer but would be tricky as we need some custom filtering
 		 */
 		uiDefButO(block, BUT, "GRAPH_OT_fmodifier_add", WM_OP_INVOKE_REGION_WIN, IFACE_("Add Modifier"),
-		          10, 0, 150, 20, TIP_("Adds a new F-Curve Modifier for the active F-Curve"));
+		          0.5 * UI_UNIT_X, 0, 7.5 * UI_UNIT_X, UI_UNIT_Y, TIP_("Adds a new F-Curve Modifier for the active F-Curve"));
 		
 		/* copy/paste (as sub-row)*/
 		row = uiLayoutRow(row, TRUE);

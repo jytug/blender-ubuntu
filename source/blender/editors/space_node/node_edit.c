@@ -222,7 +222,7 @@ static void compo_updatejob(void *cjv)
 		cj->need_sync = FALSE;
 	}
 
-	WM_main_add_notifier(NC_WINDOW | ND_DRAW, NULL);
+	WM_main_add_notifier(NC_SCENE | ND_COMPO_RESULT, NULL);
 }
 
 static void compo_progressjob(void *cjv, float progress)
@@ -299,7 +299,7 @@ void ED_node_composite_job(const bContext *C, struct bNodeTree *nodetree, Scene 
 
 	/* setup job */
 	WM_jobs_customdata_set(wm_job, cj, compo_freejob);
-	WM_jobs_timer(wm_job, 0.1, NC_SCENE, NC_SCENE | ND_COMPO_RESULT);
+	WM_jobs_timer(wm_job, 0.1, NC_SCENE | ND_COMPO_RESULT, NC_SCENE | ND_COMPO_RESULT);
 	WM_jobs_callbacks(wm_job, compo_startjob, compo_initjob, compo_updatejob, NULL);
 
 	WM_jobs_start(CTX_wm_manager(C), wm_job);
@@ -311,6 +311,17 @@ void ED_node_composite_job(const bContext *C, struct bNodeTree *nodetree, Scene 
 int composite_node_active(bContext *C)
 {
 	if (ED_operator_node_active(C)) {
+		SpaceNode *snode = CTX_wm_space_node(C);
+		if (ED_node_is_compositor(snode))
+			return 1;
+	}
+	return 0;
+}
+
+/* operator poll callback */
+int composite_node_editable(bContext *C)
+{
+	if (ED_operator_node_editable(C)) {
 		SpaceNode *snode = CTX_wm_space_node(C);
 		if (ED_node_is_compositor(snode))
 			return 1;
@@ -566,9 +577,10 @@ void snode_set_context(const bContext *C)
 	if (!treetype ||
 	    (treetype->poll && !treetype->poll(C, treetype)))
 	{
-		/* invalid tree type, disable */
-		snode->tree_idname[0] = '\0';
-		ED_node_tree_start(snode, NULL, NULL, NULL);
+		/* invalid tree type, skip
+		 * NB: not resetting the node path here, invalid bNodeTreeType
+		 * may still be registered at a later point.
+		 */
 		return;
 	}
 	
@@ -1239,7 +1251,7 @@ void NODE_OT_duplicate(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = node_duplicate_exec;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1411,7 +1423,7 @@ static void node_flag_toggle_exec(SpaceNode *snode, int toggle_flag)
 			
 			if (toggle_flag == NODE_PREVIEW && (node->typeinfo->flag & NODE_PREVIEW) == 0)
 				continue;
-			if (toggle_flag == NODE_OPTIONS && (node->typeinfo->flag & NODE_OPTIONS) == 0)
+			if (toggle_flag == NODE_OPTIONS && !(node->typeinfo->uifunc || node->typeinfo->uifuncbut))
 				continue;
 			
 			if (node->flag & toggle_flag)
@@ -1425,7 +1437,7 @@ static void node_flag_toggle_exec(SpaceNode *snode, int toggle_flag)
 			
 			if (toggle_flag == NODE_PREVIEW && (node->typeinfo->flag & NODE_PREVIEW) == 0)
 				continue;
-			if (toggle_flag == NODE_OPTIONS && (node->typeinfo->flag & NODE_OPTIONS) == 0)
+			if (toggle_flag == NODE_OPTIONS && !(node->typeinfo->uifunc || node->typeinfo->uifuncbut))
 				continue;
 			
 			if ((tot_eq && tot_neq) || tot_eq == 0)
@@ -1611,7 +1623,7 @@ void NODE_OT_mute_toggle(wmOperatorType *ot)
 	
 	/* callbacks */
 	ot->exec = node_mute_exec;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1653,7 +1665,7 @@ void NODE_OT_delete(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = node_delete_exec;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1696,7 +1708,7 @@ void NODE_OT_delete_reconnect(wmOperatorType *ot)
 
 	/* api callbacks */
 	ot->exec = node_delete_reconnect_exec;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1743,7 +1755,7 @@ void NODE_OT_output_file_add_socket(wmOperatorType *ot)
 
 	/* callbacks */
 	ot->exec = node_output_file_add_socket_exec;
-	ot->poll = composite_node_active;
+	ot->poll = composite_node_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1789,7 +1801,7 @@ void NODE_OT_output_file_remove_active_socket(wmOperatorType *ot)
 	
 	/* callbacks */
 	ot->exec = node_output_file_remove_active_socket_exec;
-	ot->poll = composite_node_active;
+	ot->poll = composite_node_editable;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1859,7 +1871,7 @@ void NODE_OT_output_file_move_active_socket(wmOperatorType *ot)
 	
 	/* callbacks */
 	ot->exec = node_output_file_move_active_socket_exec;
-	ot->poll = composite_node_active;
+	ot->poll = composite_node_editable;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1907,7 +1919,7 @@ void NODE_OT_node_copy_color(wmOperatorType *ot)
 
 	/* api callbacks */
 	ot->exec = node_copy_color_exec;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -2100,7 +2112,7 @@ void NODE_OT_clipboard_paste(wmOperatorType *ot)
 	/* api callbacks */
 	ot->exec = node_clipboard_paste_exec;
 	ot->invoke = node_clipboard_paste_invoke;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -2172,7 +2184,7 @@ void NODE_OT_tree_socket_add(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = ntree_socket_add_exec;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -2218,7 +2230,7 @@ void NODE_OT_tree_socket_remove(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = ntree_socket_remove_exec;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -2286,7 +2298,7 @@ void NODE_OT_tree_socket_move(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = ntree_socket_move_exec;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -2318,7 +2330,7 @@ static int node_shader_script_update_poll(bContext *C)
 		NodeShaderScript *nss = node->storage;
 
 		if (node->id || nss->filepath[0]) {
-			return 1;
+			return ED_operator_node_editable(C);
 		}
 	}
 

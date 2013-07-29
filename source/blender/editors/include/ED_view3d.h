@@ -215,7 +215,7 @@ void ED_view3d_unproject(struct bglMats *mats, float out[3], const float x, cons
 bool ED_view3d_clip_range_get(struct View3D *v3d, struct RegionView3D *rv3d,
                               float *r_clipsta, float *r_clipend, const bool use_ortho_factor);
 bool ED_view3d_viewplane_get(struct View3D *v3d, struct RegionView3D *rv3d, int winxi, int winyi,
-                             struct rctf *r_viewplane, float *r_clipsta, float *r_clipend);
+                             struct rctf *r_viewplane, float *r_clipsta, float *r_clipend, float *r_pixsize);
 void ED_view3d_calc_camera_border(struct Scene *scene, struct ARegion *ar,
                                   struct View3D *v3d, struct RegionView3D *rv3d,
                                   struct rctf *r_viewborder, const bool no_shift);
@@ -276,7 +276,13 @@ int ED_operator_rv3d_user_region_poll(struct bContext *C);
 
 void ED_view3d_init_mats_rv3d(struct Object *ob, struct RegionView3D *rv3d);
 void ED_view3d_init_mats_rv3d_gl(struct Object *ob, struct RegionView3D *rv3d);
-
+#ifdef DEBUG
+void ED_view3d_clear_mats_rv3d(struct RegionView3D *rv3d);
+void ED_view3d_check_mats_rv3d(struct RegionView3D *rv3d);
+#else
+#  define ED_view3d_clear_mats_rv3d(rv3d) (void)(rv3d)
+#  define ED_view3d_check_mats_rv3d(rv3d) (void)(rv3d)
+#endif
 int ED_view3d_scene_layer_set(int lay, const int *values, int *active);
 
 bool ED_view3d_context_activate(struct bContext *C);

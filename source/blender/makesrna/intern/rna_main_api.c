@@ -335,6 +335,8 @@ Mesh *rna_Main_meshes_new_from_object(
 				return NULL;
 			}
 
+			BKE_mesh_texspace_copy_from_object(tmpmesh, ob);
+
 			BKE_libblock_free_us(&bmain->object, tmpobj);
 			break;
 		}
@@ -361,6 +363,8 @@ Mesh *rna_Main_meshes_new_from_object(
 			}
 			else
 				BKE_mesh_from_metaball(&ob->disp, tmpmesh);
+
+			BKE_mesh_texspace_copy_from_object(tmpmesh, ob);
 
 			break;
 
@@ -725,12 +729,12 @@ static void rna_Main_texts_remove(Main *bmain, PointerRNA *text_ptr)
 	RNA_POINTER_INVALIDATE(text_ptr);
 }
 
-static Text *rna_Main_texts_load(Main *bmain, ReportList *reports, const char *filepath)
+static Text *rna_Main_texts_load(Main *bmain, ReportList *reports, const char *filepath, int is_internal)
 {
 	Text *txt;
 
 	errno = 0;
-	txt = BKE_text_load(bmain, filepath, bmain->name);
+	txt = BKE_text_load_ex(bmain, filepath, bmain->name, is_internal);
 
 	if (!txt)
 		BKE_reportf(reports, RPT_ERROR, "Cannot read '%s': %s", filepath,
@@ -1701,6 +1705,7 @@ void RNA_def_main_texts(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_function_ui_description(func, "Add a new text to the main database from a file");
 	parm = RNA_def_string_file_path(func, "filepath", "Path", FILE_MAX, "", "path for the datablock");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_boolean(func, "internal", 0, "Make internal", "Make text file internal after loading");
 	/* return type */
 	parm = RNA_def_pointer(func, "text", "Text", "", "New text datablock");
 	RNA_def_function_return(func, parm);

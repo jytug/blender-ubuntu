@@ -28,6 +28,8 @@
 
 /** \file blender/blenlib/intern/BLI_ghash.c
  *  \ingroup bli
+ *
+ * \note edgehash.c is based on this, make sure they stay in sync.
  */
 
 #include <string.h>
@@ -35,14 +37,22 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_sys_types.h"  /* for intptr_t support */
 #include "BLI_utildefines.h"
 #include "BLI_mempool.h"
 #include "BLI_ghash.h"
 
-#include "MEM_sys_types.h"  /* for intptr_t support */
 /***/
 
-unsigned int hashsizes[] = {
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#  if (__GNUC__ * 100 + __GNUC_MINOR__) >= 406  /* gcc4.6+ only */
+#    pragma GCC diagnostic error "-Wsign-compare"
+#    pragma GCC diagnostic error "-Wconversion"
+#  endif
+#endif
+
+const unsigned int hashsizes[] = {
 	5, 11, 17, 37, 67, 131, 257, 521, 1031, 2053, 4099, 8209, 
 	16411, 32771, 65537, 131101, 262147, 524309, 1048583, 2097169, 
 	4194319, 8388617, 16777259, 33554467, 67108879, 134217757, 
@@ -69,7 +79,7 @@ GHash *BLI_ghash_new(GHashHashFP hashfp, GHashCmpFP cmpfp, const char *info)
 
 int BLI_ghash_size(GHash *gh)
 {
-	return gh->nentries;
+	return (int)gh->nentries;
 }
 
 void BLI_ghash_insert(GHash *gh, void *key, void *val)
@@ -82,22 +92,21 @@ void BLI_ghash_insert(GHash *gh, void *key, void *val)
 	e->val = val;
 	gh->buckets[hash] = e;
 
-	if (++gh->nentries > (float)gh->nbuckets / 2) {
+	if (UNLIKELY(++gh->nentries > gh->nbuckets / 2)) {
 		Entry **old = gh->buckets;
-		int i, nold = gh->nbuckets;
+		const unsigned nold = gh->nbuckets;
+		unsigned int i;
 
 		gh->nbuckets = hashsizes[++gh->cursize];
 		gh->buckets = (Entry **)MEM_callocN(gh->nbuckets * sizeof(*gh->buckets), "buckets");
 
 		for (i = 0; i < nold; i++) {
-			for (e = old[i]; e; ) {
-				Entry *n = e->next;
-
+			Entry *e_next;
+			for (e = old[i]; e; e = e_next) {
+				e_next = e->next;
 				hash = gh->hashfp(e->key) % gh->nbuckets;
 				e->next = gh->buckets[hash];
 				gh->buckets[hash] = e;
-
-				e = n;
 			}
 		}
 
@@ -148,7 +157,7 @@ bool BLI_ghash_remove(GHash *gh, void *key, GHashKeyFreeFP keyfreefp, GHashValFr
 
 void BLI_ghash_clear(GHash *gh, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfreefp)
 {
-	int i;
+	unsigned int i;
 
 	if (keyfreefp || valfreefp) {
 		for (i = 0; i < gh->nbuckets; i++) {
@@ -216,7 +225,7 @@ bool BLI_ghash_haskey(GHash *gh, const void *key)
 
 void BLI_ghash_free(GHash *gh, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfreefp)
 {
-	int i;
+	unsigned int i;
 
 	if (keyfreefp || valfreefp) {
 		for (i = 0; i < gh->nbuckets; i++) {
@@ -248,7 +257,7 @@ GHashIterator *BLI_ghashIterator_new(GHash *gh)
 	GHashIterator *ghi = MEM_mallocN(sizeof(*ghi), "ghash iterator");
 	ghi->gh = gh;
 	ghi->curEntry = NULL;
-	ghi->curBucket = -1;
+	ghi->curBucket = (unsigned int)-1;
 	while (!ghi->curEntry) {
 		ghi->curBucket++;
 		if (ghi->curBucket == ghi->gh->nbuckets)
@@ -261,7 +270,7 @@ void BLI_ghashIterator_init(GHashIterator *ghi, GHash *gh)
 {
 	ghi->gh = gh;
 	ghi->curEntry = NULL;
-	ghi->curBucket = -1;
+	ghi->curBucket = (unsigned int)-1;
 	while (!ghi->curEntry) {
 		ghi->curBucket++;
 		if (ghi->curBucket == ghi->gh->nbuckets)
@@ -295,9 +304,9 @@ void BLI_ghashIterator_step(GHashIterator *ghi)
 		}
 	}
 }
-bool BLI_ghashIterator_notDone(GHashIterator *ghi)
+bool BLI_ghashIterator_done(GHashIterator *ghi)
 {
-	return ghi->curEntry != NULL;
+	return ghi->curEntry == NULL;
 }
 
 /***/
@@ -351,7 +360,7 @@ unsigned int BLI_ghashutil_strhash(const void *ptr)
 	unsigned int h = 5381;
 
 	for (p = ptr; *p != '\0'; p++) {
-		h = (h << 5) + h + *p;
+		h = (h << 5) + h + (unsigned int)*p;
 	}
 
 	return h;
@@ -406,5 +415,5 @@ int BLI_ghashutil_paircmp(const void *a, const void *b)
 
 void BLI_ghashutil_pairfree(void *ptr)
 {
-	MEM_freeN((void *)ptr);
+	MEM_freeN(ptr);
 }

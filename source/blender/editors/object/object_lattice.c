@@ -154,6 +154,7 @@ void load_editLatt(Object *obedit)
 		lt->typeu = editlt->typeu;
 		lt->typev = editlt->typev;
 		lt->typew = editlt->typew;
+		lt->actbp = editlt->actbp;
 	}
 
 	if (lt->dvert) {
@@ -180,7 +181,8 @@ void ED_setflagsLatt(Object *obedit, int flag)
 	bp = lt->editlatt->latt->def;
 	
 	a = lt->editlatt->latt->pntsu * lt->editlatt->latt->pntsv * lt->editlatt->latt->pntsw;
-	
+	lt->editlatt->latt->actbp = LT_ACTBP_NONE;
+
 	while (a--) {
 		if (bp->hide == 0) {
 			bp->f1 = flag;
@@ -224,6 +226,7 @@ static int lattice_select_all_exec(bContext *C, wmOperator *op)
 		case SEL_INVERT:
 			bp = lt->editlatt->latt->def;
 			a = lt->editlatt->latt->pntsu * lt->editlatt->latt->pntsv * lt->editlatt->latt->pntsw;
+			lt->editlatt->latt->actbp = LT_ACTBP_NONE;
 
 			while (a--) {
 				if (bp->hide == 0) {
@@ -365,22 +368,6 @@ typedef enum eLattice_FlipAxes {
 	LATTICE_FLIP_W = 2
 } eLattice_FlipAxes;
 
-/* Helper macro for accessing item at index (u, v, w) 
- * < lt: (Lattice)
- * < U: (int) u-axis coordinate of point
- * < V: (int) v-axis coordinate of point
- * < W: (int) w-axis coordinate of point
- * < dimU: (int) number of points per row or number of columns (U-Axis)
- * < dimV: (int) number of rows (V-Axis)
- * > returns: (BPoint *) pointer to BPoint at this index
- */
-#define LATTICE_PT(lt, U, V, W, dimU, dimV)       \
-	( (lt)->def               +                   \
-	  ((dimU) * (dimV)) * (W) +                   \
-	  (dimU) * (V)            +                   \
-	  (U)                                         \
-	)
-	
 /* Flip midpoint value so that relative distances between midpoint and neighbour-pair is maintained
  * ! Assumes that uvw <=> xyz (i.e. axis-aligned index-axes with coordinate-axes)
  * - Helper for lattice_flip_exec()
@@ -391,7 +378,7 @@ static void lattice_flip_point_value(Lattice *lt, int u, int v, int w, float mid
 	float diff;
 	
 	/* just the point in the middle (unpaired) */
-	bp = LATTICE_PT(lt, u, v, w, lt->pntsu, lt->pntsv);
+	bp = &lt->def[BKE_lattice_index_from_uvw(lt, u, v, w)];
 	
 	/* flip over axis */
 	diff = mid - bp->vec[axis];
@@ -429,8 +416,8 @@ static void lattice_swap_point_pairs(Lattice *lt, int u, int v, int w, float mid
 	}
 	
 	/* get points to operate on */
-	bpA = LATTICE_PT(lt, u0, v0, w0, numU, numV);
-	bpB = LATTICE_PT(lt, u1, v1, w1, numU, numV);
+	bpA = &lt->def[BKE_lattice_index_from_uvw(lt, u0, v0, w0)];
+	bpB = &lt->def[BKE_lattice_index_from_uvw(lt, u1, v1, w1)];
 	
 	/* Swap all coordinates, so that flipped coordinates belong to
 	 * the indices on the correct side of the lattice.
@@ -642,8 +629,10 @@ bool mouse_lattice(bContext *C, const int mval[2], bool extend, bool deselect, b
 {
 	ViewContext vc;
 	BPoint *bp = NULL;
+	Lattice *lt;
 
 	view3d_set_viewcontext(C, &vc);
+	lt = ((Lattice *)vc.obedit->data)->editlatt->latt;
 	bp = findnearestLattvert(&vc, mval, TRUE);
 
 	if (bp) {
@@ -661,6 +650,13 @@ bool mouse_lattice(bContext *C, const int mval[2], bool extend, bool deselect, b
 			bp->f1 |= SELECT;
 		}
 
+		if (bp->f1 & SELECT) {
+			lt->actbp = bp - lt->def;
+		}
+		else {
+			lt->actbp = LT_ACTBP_NONE;
+		}
+
 		WM_event_add_notifier(C, NC_GEOM | ND_SELECT, vc.obedit->data);
 
 		return true;
@@ -673,7 +669,7 @@ bool mouse_lattice(bContext *C, const int mval[2], bool extend, bool deselect, b
 
 typedef struct UndoLattice {
 	BPoint *def;
-	int pntsu, pntsv, pntsw;
+	int pntsu, pntsv, pntsw, actbp;
 } UndoLattice;
 
 static void undoLatt_to_editLatt(void *data, void *edata, void *UNUSED(obdata))
@@ -683,6 +679,7 @@ static void undoLatt_to_editLatt(void *data, void *edata, void *UNUSED(obdata))
 	int a = editlatt->latt->pntsu * editlatt->latt->pntsv * editlatt->latt->pntsw;
 
 	memcpy(editlatt->latt->def, ult->def, a * sizeof(BPoint));
+	editlatt->latt->actbp = ult->actbp;
 }
 
 static void *editLatt_to_undoLatt(void *edata, void *UNUSED(obdata))
@@ -694,6 +691,7 @@ static void *editLatt_to_undoLatt(void *edata, void *UNUSED(obdata))
 	ult->pntsu = editlatt->latt->pntsu;
 	ult->pntsv = editlatt->latt->pntsv;
 	ult->pntsw = editlatt->latt->pntsw;
+	ult->actbp = editlatt->latt->actbp;
 	
 	return ult;
 }

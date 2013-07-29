@@ -145,7 +145,7 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 
 		/* derivedMesh might be needed for solving parenting,
 		 * so re-create it here */
-		makeDerivedMesh(scene, obedit, em, CD_MASK_BAREMESH|CD_MASK_ORIGINDEX, 0);
+		makeDerivedMesh(scene, obedit, em, CD_MASK_BAREMESH | CD_MASK_ORIGINDEX, 0);
 
 		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
@@ -1430,12 +1430,13 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	const int type = RNA_enum_get(op->ptr, "type");
 	Object *ob_src;
-	ID *id;
+	ID *obdata_id;
 	int a;
 
 	/* group */
 	LinkNode *ob_groups = NULL;
-	int is_cycle = FALSE;
+	bool is_cycle = false;
+	bool is_lib = false;
 
 	ob_src = ED_object_active_context(C);
 
@@ -1450,14 +1451,15 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 
 		if (ob_src != ob_dst) {
 			if (allow_make_links_data(type, ob_src, ob_dst)) {
+				obdata_id = ob_dst->data;
+
 				switch (type) {
 					case MAKE_LINKS_OBDATA: /* obdata */
-						id = ob_dst->data;
-						id->us--;
+						obdata_id->us--;
 
-						id = ob_src->data;
-						id_us_plus(id);
-						ob_dst->data = id;
+						obdata_id = ob_src->data;
+						id_us_plus(obdata_id);
+						ob_dst->data = obdata_id;
 
 						/* if amount of material indices changed: */
 						test_object_materials(bmain, ob_dst->data);
@@ -1470,10 +1472,18 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 							Material *ma = give_current_material(ob_src, a + 1);
 							assign_material(ob_dst, ma, a + 1, BKE_MAT_ASSIGN_USERPREF); /* also works with ma==NULL */
 						}
+						DAG_id_tag_update(&ob_dst->id, 0);
 						break;
 					case MAKE_LINKS_ANIMDATA:
 						BKE_copy_animdata_id((ID *)ob_dst, (ID *)ob_src, FALSE);
-						BKE_copy_animdata_id((ID *)ob_dst->data, (ID *)ob_src->data, FALSE);
+						if (ob_dst->data && ob_src->data) {
+							if (obdata_id->lib) {
+								is_lib = true;
+								break;
+							}
+							BKE_copy_animdata_id((ID *)ob_dst->data, (ID *)ob_src->data, FALSE);
+						}
+						DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 						break;
 					case MAKE_LINKS_GROUP:
 					{
@@ -1491,6 +1501,7 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 								is_cycle = TRUE;
 							}
 						}
+						break;
 					}
 					case MAKE_LINKS_DUPLIGROUP:
 						ob_dst->dup_group = ob_src->dup_group;
@@ -1507,6 +1518,11 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 					{
 						Curve *cu_src = ob_src->data;
 						Curve *cu_dst = ob_dst->data;
+
+						if (obdata_id->lib) {
+							is_lib = true;
+							break;
+						}
 
 						if (cu_dst->vfont) cu_dst->vfont->id.us--;
 						cu_dst->vfont = cu_src->vfont;
@@ -1538,6 +1554,10 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 		if (is_cycle) {
 			BKE_report(op->reports, RPT_WARNING, "Skipped some groups because of cycle detected");
 		}
+	}
+
+	if (is_lib) {
+		BKE_report(op->reports, RPT_WARNING, "Skipped editing library object data");
 	}
 
 	DAG_relations_tag_update(bmain);
@@ -1712,6 +1732,7 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 	//Camera *cam;
 	Base *base;
 	Mesh *me;
+	Lattice *lat;
 	ID *id;
 	int a;
 
@@ -1722,9 +1743,7 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 			
 			if (id && id->us > 1 && id->lib == NULL) {
 				DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-				
-				BKE_copy_animdata_id_action(id);
-				
+
 				switch (ob->type) {
 					case OB_LAMP:
 						ob->data = la = BKE_lamp_copy(ob->data);
@@ -1738,10 +1757,9 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 						ob->data = BKE_camera_copy(ob->data);
 						break;
 					case OB_MESH:
-						ob->data = BKE_mesh_copy(ob->data);
-						//me = ob->data;
-						//if (me && me->key)
-						//	ipo_idnew(me->key->ipo);	/* drivers */
+						ob->data = me = BKE_mesh_copy(ob->data);
+						if (me->key)
+							BKE_copy_animdata_id_action((ID *)me->key);
 						break;
 					case OB_MBALL:
 						ob->data = BKE_mball_copy(ob->data);
@@ -1752,9 +1770,13 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 						ob->data = cu = BKE_curve_copy(ob->data);
 						ID_NEW(cu->bevobj);
 						ID_NEW(cu->taperobj);
+						if (cu->key)
+							BKE_copy_animdata_id_action((ID *)cu->key);
 						break;
 					case OB_LATTICE:
-						ob->data = BKE_lattice_copy(ob->data);
+						ob->data = lat = BKE_lattice_copy(ob->data);
+						if (lat->key)
+							BKE_copy_animdata_id_action((ID *)lat->key);
 						break;
 					case OB_ARMATURE:
 						DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
@@ -1769,7 +1791,14 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 							printf("ERROR %s: can't copy %s\n", __func__, id->name);
 						return;
 				}
-				
+
+				/* Copy animation data after object data became local,
+				 * otherwise old and new object data will share the same
+				 * AnimData structure, which is not what we want.
+				 *                                             (sergey)
+				 */
+				BKE_copy_animdata_id_action((ID *)ob->data);
+
 				id->us--;
 				id->newid = ob->data;
 				

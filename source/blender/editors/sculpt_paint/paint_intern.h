@@ -54,6 +54,7 @@ struct wmOperator;
 struct wmOperatorType;
 struct ImagePaintState;
 struct wmWindowManager;
+struct DMCoNo;
 enum PaintMode;
 
 /* paint_stroke.c */
@@ -115,6 +116,20 @@ void PAINT_OT_vertex_paint(struct wmOperatorType *ot);
 
 unsigned int vpaint_get_current_col(struct VPaint *vp);
 
+
+/* paint_vertex_proj.c */
+struct VertProjHandle;
+struct VertProjHandle *ED_vpaint_proj_handle_create(
+        struct Scene *scene, struct Object *ob,
+        struct DMCoNo **r_vcosnos);
+void  ED_vpaint_proj_handle_update(
+        struct VertProjHandle *vp_handle,
+        /* runtime vars */
+        struct ARegion *ar, const float mval_fl[2]);
+void  ED_vpaint_proj_handle_free(
+        struct VertProjHandle *vp_handle);
+
+
 /* paint_image.c */
 typedef struct ImagePaintPartialRedraw {
 	int x1, y1, x2, y2;  /* XXX, could use 'rcti' */
@@ -124,8 +139,6 @@ typedef struct ImagePaintPartialRedraw {
 #define IMAPAINT_TILE_BITS          6
 #define IMAPAINT_TILE_SIZE          (1 << IMAPAINT_TILE_BITS)
 #define IMAPAINT_TILE_NUMBER(size)  (((size) + IMAPAINT_TILE_SIZE - 1) >> IMAPAINT_TILE_BITS)
-
-#define IMAPAINT_CHAR_TO_FLOAT(c) ((c) / 255.0f)
 
 int image_texture_paint_poll(struct bContext *C);
 void *image_undo_find_tile(struct Image *ima, struct ImBuf *ibuf, int x_tile, int y_tile, unsigned short **mask);

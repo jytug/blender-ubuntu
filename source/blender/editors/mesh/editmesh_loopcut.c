@@ -42,6 +42,7 @@
 #include "BKE_modifier.h"
 #include "BKE_report.h"
 #include "BKE_editmesh.h"
+#include "BKE_DerivedMesh.h"
 
 #include "BIF_gl.h"
 
@@ -53,6 +54,7 @@
 
 #include "RNA_access.h"
 #include "RNA_define.h"
+#include "RNA_enum_types.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -60,6 +62,7 @@
 #include "mesh_intern.h"  /* own include */
 
 #define SUBD_SMOOTH_MAX 4.0f
+#define SUBD_CUTS_MAX 500
 
 /* ringsel operator */
 
@@ -154,9 +157,30 @@ static void edgering_find_order(BMEdge *lasteed, BMEdge *eed,
 	}
 }
 
+static void edgering_vcos_get(DerivedMesh *dm, BMVert *v[2][2], float r_cos[2][2][3])
+{
+	if (dm) {
+		int j, k;
+		for (j = 0; j < 2; j++) {
+			for (k = 0; k < 2; k++) {
+				dm->getVertCo(dm, BM_elem_index_get(v[j][k]), r_cos[j][k]);
+			}
+		}
+	}
+	else {
+		int j, k;
+		for (j = 0; j < 2; j++) {
+			for (k = 0; k < 2; k++) {
+				copy_v3_v3(r_cos[j][k], v[j][k]->co);
+			}
+		}
+	}
+}
+
 static void edgering_sel(RingSelOpData *lcd, int previewlines, bool select)
 {
 	BMEditMesh *em = lcd->em;
+	DerivedMesh *dm = EDBM_mesh_deform_dm_get(em);
 	BMEdge *eed_start = lcd->eed;
 	BMEdge *eed, *eed_last;
 	BMVert *v[2][2], *v_last;
@@ -194,6 +218,10 @@ static void edgering_sel(RingSelOpData *lcd, int previewlines, bool select)
 		return;
 	}
 
+	if (dm) {
+		EDBM_index_arrays_ensure(lcd->em, BM_VERT);
+	}
+
 	BMW_init(&walker, em->bm, BMW_EDGERING,
 	         BMW_MASK_NOP, BMW_MASK_NOP, BMW_MASK_NOP,
 	         BMW_FLAG_TEST_HIDDEN,
@@ -221,8 +249,12 @@ static void edgering_sel(RingSelOpData *lcd, int previewlines, bool select)
 
 			for (i = 1; i <= previewlines; i++) {
 				const float fac = (i / ((float)previewlines + 1));
-				interp_v3_v3v3(edges[tot][0], v[0][0]->co, v[0][1]->co, fac);
-				interp_v3_v3v3(edges[tot][1], v[1][0]->co, v[1][1]->co, fac);
+				float v_cos[2][2][3];
+
+				edgering_vcos_get(dm, v, v_cos);
+
+				interp_v3_v3v3(edges[tot][0], v_cos[0][0], v_cos[0][1], fac);
+				interp_v3_v3v3(edges[tot][1], v_cos[1][0], v_cos[1][1], fac);
 				tot++;
 			}
 		}
@@ -243,13 +275,16 @@ static void edgering_sel(RingSelOpData *lcd, int previewlines, bool select)
 
 		for (i = 1; i <= previewlines; i++) {
 			const float fac = (i / ((float)previewlines + 1));
+			float v_cos[2][2][3];
 
 			if (!v[0][0] || !v[0][1] || !v[1][0] || !v[1][1]) {
 				continue;
 			}
 
-			interp_v3_v3v3(edges[tot][0], v[0][0]->co, v[0][1]->co, fac);
-			interp_v3_v3v3(edges[tot][1], v[1][0]->co, v[1][1]->co, fac);
+			edgering_vcos_get(dm, v, v_cos);
+
+			interp_v3_v3v3(edges[tot][0], v_cos[0][0], v_cos[0][1], fac);
+			interp_v3_v3v3(edges[tot][1], v_cos[1][0], v_cos[1][1], fac);
 			tot++;
 		}
 	}
@@ -276,6 +311,7 @@ static void ringsel_finish(bContext *C, wmOperator *op)
 	RingSelOpData *lcd = op->customdata;
 	const int cuts = RNA_int_get(op->ptr, "number_cuts");
 	const float smoothness = 0.292f * RNA_float_get(op->ptr, "smoothness");
+	const int smooth_falloff = RNA_enum_get(op->ptr, "falloff");
 #ifdef BMW_EDGERING_NGON
 	const bool use_only_quads = false;
 #else
@@ -293,7 +329,8 @@ static void ringsel_finish(bContext *C, wmOperator *op)
 			 * Note though that it will break edgeslide in this specific case.
 			 * See [#31939]. */
 			BM_mesh_esubdivide(em->bm, BM_ELEM_SELECT,
-			                   smoothness, 0.0f, 0.0f,
+			                   smoothness, smooth_falloff, true,
+			                   0.0f, 0.0f,
 			                   cuts,
 			                   SUBDIV_SELECT_LOOPCUT, SUBD_PATH, 0, true,
 			                   use_only_quads, 0);
@@ -542,6 +579,7 @@ static int loopcut_modal(bContext *C, wmOperator *op, const wmEvent *event)
 				break;
 			if (event->alt == 0) {
 				cuts++;
+				cuts = CLAMPIS(cuts, 0, SUBD_CUTS_MAX);
 				RNA_int_set(op->ptr, "number_cuts", cuts);
 				ringsel_find_edge(lcd, cuts);
 				show_cuts = true;
@@ -595,7 +633,7 @@ static int loopcut_modal(bContext *C, wmOperator *op, const wmEvent *event)
 			
 			/* allow zero so you can backspace and type in a value
 			 * otherwise 1 as minimum would make more sense */
-			cuts = CLAMPIS(value, 0, 130);
+			cuts = CLAMPIS(value, 0, SUBD_CUTS_MAX);
 			
 			RNA_int_set(op->ptr, "number_cuts", cuts);
 			ringsel_find_edge(lcd, cuts);
@@ -664,6 +702,12 @@ void MESH_OT_loopcut(wmOperatorType *ot)
 	prop = RNA_def_float(ot->srna, "smoothness", 0.0f, -FLT_MAX, FLT_MAX,
 	                     "Smoothness", "Smoothness factor", -SUBD_SMOOTH_MAX, SUBD_SMOOTH_MAX);
 	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+
+	prop = RNA_def_property(ot->srna, "falloff", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(prop, proportional_falloff_curve_only_items);
+	RNA_def_property_enum_default(prop, PROP_ROOT);
+	RNA_def_property_ui_text(prop, "Falloff", "Falloff type the feather");
+	RNA_def_property_translation_context(prop, BLF_I18NCONTEXT_ID_CURVE); /* Abusing id_curve :/ */
 
 	prop = RNA_def_int(ot->srna, "edge_index", -1, -1, INT_MAX, "Number of Cuts", "", 0, INT_MAX);
 	RNA_def_property_flag(prop, PROP_HIDDEN);

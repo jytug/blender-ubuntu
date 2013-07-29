@@ -109,7 +109,7 @@ void ArmatureImporter::create_bone(SkinInfo *skin, COLLADAFW::Node *node, EditBo
 
 		// get world-space
 		if (parent) {
-			mult_m4_m4m4(mat, parent_mat, obmat);
+			mul_m4_m4m4(mat, parent_mat, obmat);
 		}
 		else {
 			copy_m4_m4(mat, obmat);
@@ -133,24 +133,28 @@ void ArmatureImporter::create_bone(SkinInfo *skin, COLLADAFW::Node *node, EditBo
 	add_v3_v3v3(bone->tail, bone->head, vec);
 
 	// set parent tail
-	if (parent && totchild == 1) {
-		copy_v3_v3(parent->tail, bone->head);
-
-		// not setting BONE_CONNECTED because this would lock child bone location with respect to parent
-		bone->flag |= BONE_CONNECTED;
+	if (parent) {
 
 		// XXX increase this to prevent "very" small bones?
 		const float epsilon = 0.000001f;
 
 		// derive leaf bone length
-		float length = len_v3v3(parent->head, parent->tail);
+		float length = len_v3v3(parent->head, bone->head);
 		if ((length < leaf_bone_length || totbone == 0) && length > epsilon) {
 			leaf_bone_length = length;
 		}
 
-		// treat zero-sized bone like a leaf bone
-		if (length <= epsilon) {
-			add_leaf_bone(parent_mat, parent, node);
+		if (totchild == 1) {
+			copy_v3_v3(parent->tail, bone->head);
+
+			// not setting BONE_CONNECTED because this would lock child bone location with respect to parent
+			bone->flag |= BONE_CONNECTED;
+
+
+			// treat zero-sized bone like a leaf bone
+			if (length <= epsilon) {
+				add_leaf_bone(parent_mat, parent, node);
+			}
 		}
 
 	}
@@ -166,7 +170,7 @@ void ArmatureImporter::create_bone(SkinInfo *skin, COLLADAFW::Node *node, EditBo
 	}
 
 	bone->length = len_v3v3(bone->head, bone->tail);
-
+	joint_by_uid[node->getUniqueId()] = node;
 	finished_joints.push_back(node);
 }
 
@@ -486,10 +490,10 @@ void ArmatureImporter::set_pose(Object *ob_arm,  COLLADAFW::Node *root_node, con
 
 	// get world-space
 	if (parentname) {
-		mult_m4_m4m4(mat, parent_mat, obmat);
+		mul_m4_m4m4(mat, parent_mat, obmat);
 		bPoseChannel *parchan = BKE_pose_channel_find_name(ob_arm->pose, parentname);
 
-		mult_m4_m4m4(pchan->pose_mat, parchan->pose_mat, mat);
+		mul_m4_m4m4(pchan->pose_mat, parchan->pose_mat, mat);
 
 	}
 	else {
@@ -497,7 +501,7 @@ void ArmatureImporter::set_pose(Object *ob_arm,  COLLADAFW::Node *root_node, con
 		copy_m4_m4(mat, obmat);
 		float invObmat[4][4];
 		invert_m4_m4(invObmat, ob_arm->obmat);
-		mult_m4_m4m4(pchan->pose_mat, invObmat, mat);
+		mul_m4_m4m4(pchan->pose_mat, invObmat, mat);
 		
 	}
 
@@ -517,16 +521,11 @@ void ArmatureImporter::set_pose(Object *ob_arm,  COLLADAFW::Node *root_node, con
 // root - if this joint is the top joint in hierarchy, if a joint
 // is a child of a node (not joint), root should be true since
 // this is where we build armature bones from
-void ArmatureImporter::add_joint(COLLADAFW::Node *node, bool root, Object *parent, Scene *sce)
+void ArmatureImporter::add_root_joint(COLLADAFW::Node *node, Object *parent)
 {
-	joint_by_uid[node->getUniqueId()] = node;
-	if (root) {
-		root_joints.push_back(node);
-
-		if (parent) {
-					
-			joint_parent_map[node->getUniqueId()] = parent;
-		}
+	root_joints.push_back(node);
+	if (parent) {
+		joint_parent_map[node->getUniqueId()] = parent;
 	}
 }
 

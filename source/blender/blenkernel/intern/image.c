@@ -89,7 +89,7 @@
 
 #include "GPU_draw.h"
 
-#include "BLO_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
 
 /* for image user iteration */
 #include "DNA_node_types.h"
@@ -633,7 +633,7 @@ Image *BKE_image_load_exists(const char *filepath)
 	for (ima = G.main->image.first; ima; ima = ima->id.next) {
 		if (ima->source != IMA_SRC_VIEWER && ima->source != IMA_SRC_GENERATED) {
 			BLI_strncpy(strtest, ima->name, sizeof(ima->name));
-			BLI_path_abs(strtest, G.main->name);
+			BLI_path_abs(strtest, ID_BLEND_PATH(G.main, &ima->id));
 
 			if (BLI_path_cmp(strtest, str) == 0) {
 				if (ima->anim == NULL || ima->id.us == 0) {
@@ -2718,8 +2718,8 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	re = RE_GetRender(iuser->scene->id.name);
 
 	channels = 4;
-	layer = (iuser) ? iuser->layer : 0;
-	pass = (iuser) ? iuser->pass : 0;
+	layer = iuser->layer;
+	pass = iuser->pass;
 
 	if (from_render) {
 		RE_AcquireResultImage(re, &rres);
@@ -3303,6 +3303,19 @@ void BKE_image_user_check_frame_calc(ImageUser *iuser, int cfra, int fieldnr)
 
 		iuser->flag &= ~IMA_NEED_FRAME_RECALC;
 	}
+}
+
+/* goes over all ImageUsers, and sets frame numbers if auto-refresh is set */
+static void image_update_frame(struct Image *UNUSED(ima), struct ImageUser *iuser, void *customdata)
+{
+	int cfra = *(int *)customdata;
+
+	BKE_image_user_check_frame_calc(iuser, cfra, 0);
+}
+
+void BKE_image_update_frame(const Main *bmain, int cfra)
+{
+	BKE_image_walk_all_users(bmain, &cfra, image_update_frame);
 }
 
 void BKE_image_user_file_path(ImageUser *iuser, Image *ima, char *filepath)

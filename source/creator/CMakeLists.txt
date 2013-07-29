@@ -488,18 +488,16 @@ elseif(WIN32)
 	)
 
 	if(WITH_PYTHON)
-		set_lib_path(PYLIB "python")
-
 		string(REPLACE "." "" _PYTHON_VERSION_NO_DOTS ${PYTHON_VERSION})
 
 		install(
-			FILES ${PYLIB}/lib/python${_PYTHON_VERSION_NO_DOTS}.dll
+			FILES ${LIBDIR}/python/lib/python${_PYTHON_VERSION_NO_DOTS}.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
 		)
 
 		install(
-			FILES ${PYLIB}/lib/python${_PYTHON_VERSION_NO_DOTS}_d.dll
+			FILES ${LIBDIR}/python/lib/python${_PYTHON_VERSION_NO_DOTS}_d.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Debug
 		)
@@ -538,23 +536,6 @@ elseif(WIN32)
 		unset(_PYTHON_VERSION_NO_DOTS)
 	endif()
 
-	if(CMAKE_CL_64)
-		# png is statically linked on win64
-		install(
-			FILES ${LIBDIR}/zlib/lib/zlib.dll
-			DESTINATION ${TARGETDIR}
-		)
-	else()
-		#not needed since we link statically, maybe also unneeded for MinGW?
-		if(NOT WITH_MINGW64)
-			install(
-				FILES
-					${LIBDIR}/zlib/lib/zlib.dll
-				DESTINATION ${TARGETDIR}
-			)
-		endif()
-	endif()
-
 	if(MSVC)
 		install(
 			FILES ${LIBDIR}/pthreads/lib/pthreadVC2.dll
@@ -587,15 +568,29 @@ elseif(WIN32)
 	endif()
 
 	if(WITH_CODEC_FFMPEG)
-		install(
-			FILES
-				${LIBDIR}/ffmpeg/lib/avcodec-53.dll
-				${LIBDIR}/ffmpeg/lib/avformat-53.dll
-				${LIBDIR}/ffmpeg/lib/avdevice-53.dll
-				${LIBDIR}/ffmpeg/lib/avutil-51.dll
-				${LIBDIR}/ffmpeg/lib/swscale-2.dll
-			DESTINATION ${TARGETDIR}
-		)
+		if(MSVC11)
+			install(
+				FILES
+					${LIBDIR}/ffmpeg/lib/avcodec-54.dll
+					${LIBDIR}/ffmpeg/lib/avformat-54.dll
+					${LIBDIR}/ffmpeg/lib/avdevice-54.dll
+					${LIBDIR}/ffmpeg/lib/avutil-52.dll
+					${LIBDIR}/ffmpeg/lib/avfilter-3.dll
+					${LIBDIR}/ffmpeg/lib/swresample-0.dll
+					${LIBDIR}/ffmpeg/lib/swscale-2.dll
+				DESTINATION ${TARGETDIR}
+			)
+		else()
+			install(
+				FILES
+					${LIBDIR}/ffmpeg/lib/avcodec-53.dll
+					${LIBDIR}/ffmpeg/lib/avformat-53.dll
+					${LIBDIR}/ffmpeg/lib/avdevice-53.dll
+					${LIBDIR}/ffmpeg/lib/avutil-51.dll
+					${LIBDIR}/ffmpeg/lib/swscale-2.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 		if(WITH_MINGW64)
 		install(
 			FILES
@@ -614,13 +609,37 @@ elseif(WIN32)
 	endif()
 
 	if(WITH_OPENAL)
-		install(
-			FILES
-				${LIBDIR}/openal/lib/OpenAL32.dll
-				${LIBDIR}/openal/lib/wrap_oal.dll
-			DESTINATION ${TARGETDIR}
-		)
+		if(MSVC11)
+			install(
+				FILES
+					${LIBDIR}/openal/lib/OpenAL32.dll
+				DESTINATION ${TARGETDIR}
+			)
+		else()
+			install(
+				FILES
+					${LIBDIR}/openal/lib/OpenAL32.dll
+					${LIBDIR}/openal/lib/wrap_oal.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 	endif()
+
+#	if(WITH_JACK AND MSVC11)
+#		if(CMAKE_CL_64)
+#			install(
+#				FILES
+#					${LIBDIR}/jack/lib/libjack64.dll
+#				DESTINATION ${TARGETDIR}
+#			)
+#		else()
+#			install(
+#				FILES
+#					${LIBDIR}/jack/lib/libjack.dll
+#				DESTINATION ${TARGETDIR}
+#			)
+#		endif()
+#	endif()
 
 	if(WITH_SDL)
 		if(NOT CMAKE_CL_64)
@@ -932,6 +951,7 @@ endif()
 		bf_intern_opencolorio
 		extern_rangetree
 		extern_wcwidth
+		extern_libmv
 	)
 
 	if(WITH_COMPOSITOR)
@@ -941,7 +961,6 @@ endif()
 	endif()
 
 	if(WITH_LIBMV)
-		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
 		list(APPEND BLENDER_SORTED_LIBS extern_ceres)
 	endif()
 

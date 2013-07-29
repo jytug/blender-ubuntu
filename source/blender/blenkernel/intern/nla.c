@@ -503,7 +503,7 @@ float nlastrip_get_frame(NlaStrip *strip, float cframe, short mode)
 
 
 /* Non clipped mapping for strip-time <-> global time
- *	mode = eNlaTime_ConvertModesp[] -> NLATIME_CONVERT_*
+ *	mode = eNlaTime_ConvertModes -> NLATIME_CONVERT_*
  *
  * Public API method - perform this mapping using the given AnimData block
  * and perform any necessary sanity checks on the value
@@ -1350,7 +1350,7 @@ void BKE_nlastrip_validate_name(AnimData *adt, NlaStrip *strip)
 	}
 	
 	/* build a hash-table of all the strips in the tracks 
-	 *	- this is easier than iterating over all the tracks+strips hierarchy everytime
+	 *	- this is easier than iterating over all the tracks+strips hierarchy every time
 	 *	  (and probably faster)
 	 */
 	gh = BLI_ghash_str_new("nlastrip_validate_name gh");

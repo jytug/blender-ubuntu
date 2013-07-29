@@ -149,14 +149,14 @@ MINLINE void star_m3_v3(float rmat[3][3], float a[3]);
 MINLINE float len_squared_v2(const float v[2]);
 MINLINE float len_squared_v3(const float v[3]);
 MINLINE float len_manhattan_v2(const float v[2]);
-MINLINE float len_manhattan_v2_int(const int v[2]);
+MINLINE int   len_manhattan_v2_int(const int v[2]);
 MINLINE float len_manhattan_v3(const float v[3]);
 MINLINE float len_v2(const float a[2]);
 MINLINE float len_v2v2(const float a[2], const float b[2]);
 MINLINE float len_squared_v2v2(const float a[2], const float b[2]);
 MINLINE float len_squared_v3v3(const float a[3], const float b[3]);
 MINLINE float len_manhattan_v2v2(const float a[2], const float b[2]);
-MINLINE float len_manhattan_v2v2_int(const int a[2], const int b[2]);
+MINLINE int   len_manhattan_v2v2_int(const int a[2], const int b[2]);
 MINLINE float len_manhattan_v3v3(const float a[3], const float b[3]);
 MINLINE float len_v3(const float a[3]);
 MINLINE float len_v3v3(const float a[3], const float b[3]);
@@ -181,6 +181,9 @@ void interp_v3_v3v3v3_uv(float p[3], const float v1[3], const float v2[3], const
 void mid_v3_v3v3(float r[3], const float a[3], const float b[3]);
 void mid_v2_v2v2(float r[2], const float a[2], const float b[2]);
 void mid_v3_v3v3v3(float v[3], const float v1[3], const float v2[3], const float v3[3]);
+
+void mid_v3_v3v3_angle_weighted(float r[3], const float a[3], const float b[3]);
+void mid_v3_angle_weighted(float r[3]);
 
 void flip_v4_v4v4(float v[4], const float v1[4], const float v2[4]);
 void flip_v3_v3v3(float v[3], const float v1[3], const float v2[3]);
@@ -237,6 +240,7 @@ void rotate_normalized_v3_v3v3fl(float v[3], const float p[3], const float axis[
 void print_v2(const char *str, const float a[2]);
 void print_v3(const char *str, const float a[3]);
 void print_v4(const char *str, const float a[4]);
+void print_vn(const char *str, const float v[], const int n);
 
 MINLINE void normal_short_to_float_v3(float r[3], const short n[3]);
 MINLINE void normal_float_to_short_v3(short r[3], const float n[3]);

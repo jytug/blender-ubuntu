@@ -142,7 +142,7 @@ void swap_m4m4(float m1[4][4], float m2[4][4])
 
 /******************************** Arithmetic *********************************/
 
-void mult_m4_m4m4(float m1[4][4], float m3_[4][4], float m2_[4][4])
+void mul_m4_m4m4(float m1[4][4], float m3_[4][4], float m2_[4][4])
 {
 	float m2[4][4], m3[4][4];
 
@@ -215,7 +215,7 @@ void mul_m4_m4m3(float m1[4][4], float m3_[4][4], float m2_[3][3])
 }
 
 /* m1 = m2 * m3, ignore the elements on the 4th row/column of m3 */
-void mult_m3_m3m4(float m1[3][3], float m3_[4][4], float m2_[3][3])
+void mul_m3_m3m4(float m1[3][3], float m3_[4][4], float m2_[3][3])
 {
 	float m2[3][3], m3[4][4];
 
@@ -298,19 +298,19 @@ void mul_serie_m4(float answ[4][4], float m1[4][4],
 
 	if (m1 == NULL || m2 == NULL) return;
 
-	mult_m4_m4m4(answ, m1, m2);
+	mul_m4_m4m4(answ, m1, m2);
 	if (m3) {
-		mult_m4_m4m4(temp, answ, m3);
+		mul_m4_m4m4(temp, answ, m3);
 		if (m4) {
-			mult_m4_m4m4(answ, temp, m4);
+			mul_m4_m4m4(answ, temp, m4);
 			if (m5) {
-				mult_m4_m4m4(temp, answ, m5);
+				mul_m4_m4m4(temp, answ, m5);
 				if (m6) {
-					mult_m4_m4m4(answ, temp, m6);
+					mul_m4_m4m4(answ, temp, m6);
 					if (m7) {
-						mult_m4_m4m4(temp, answ, m7);
+						mul_m4_m4m4(temp, answ, m7);
 						if (m8) {
-							mult_m4_m4m4(answ, temp, m8);
+							mul_m4_m4m4(answ, temp, m8);
 						}
 						else copy_m4_m4(answ, temp);
 					}
@@ -344,6 +344,15 @@ void mul_v3_m4v3(float r[3], float mat[4][4], const float vec[3])
 	r[2] = x * mat[0][2] + y * mat[1][2] + mat[2][2] * vec[2] + mat[3][2];
 }
 
+void mul_v2_m4v3(float r[2], float mat[4][4], const float vec[3])
+{
+	float x;
+
+	x = vec[0];
+	r[0] = x * mat[0][0] + vec[1] * mat[1][0] + mat[2][0] * vec[2] + mat[3][0];
+	r[1] = x * mat[0][1] + vec[1] * mat[1][1] + mat[2][1] * vec[2] + mat[3][1];
+}
+
 void mul_v2_m2v2(float r[2], float mat[2][2], const float vec[2])
 {
 	float x;
@@ -373,6 +382,15 @@ void mul_project_m4_v3(float mat[4][4], float vec[3])
 	vec[0] /= w;
 	vec[1] /= w;
 	vec[2] /= w;
+}
+
+void mul_v2_project_m4_v3(float r[2], float mat[4][4], const float vec[3])
+{
+	const float w = mul_project_m4_v3_zfac(mat, vec);
+	mul_v2_m4v3(r, mat, vec);
+
+	r[0] /= w;
+	r[1] /= w;
 }
 
 void mul_v4_m4v4(float r[4], float mat[4][4], const float v[4])
@@ -772,6 +790,7 @@ void orthogonalize_m3(float mat[3][3], int axis)
 				normalize_v3(mat[2]);
 				cross_v3_v3v3(mat[1], mat[2], mat[0]);
 			}
+			break;
 		case 1:
 			if (dot_v3v3(mat[1], mat[0]) < 1) {
 				cross_v3_v3v3(mat[2], mat[0], mat[1]);
@@ -794,6 +813,7 @@ void orthogonalize_m3(float mat[3][3], int axis)
 				normalize_v3(mat[0]);
 				cross_v3_v3v3(mat[2], mat[0], mat[1]);
 			}
+			break;
 		case 2:
 			if (dot_v3v3(mat[2], mat[0]) < 1) {
 				cross_v3_v3v3(mat[1], mat[2], mat[0]);
@@ -816,6 +836,9 @@ void orthogonalize_m3(float mat[3][3], int axis)
 				normalize_v3(mat[0]);
 				cross_v3_v3v3(mat[1], mat[2], mat[0]);
 			}
+			break;
+		default:
+			BLI_assert(0);
 	}
 	mul_v3_fl(mat[0], size[0]);
 	mul_v3_fl(mat[1], size[1]);
@@ -850,8 +873,8 @@ void orthogonalize_m4(float mat[4][4], int axis)
 				normalize_v3(mat[2]);
 				cross_v3_v3v3(mat[1], mat[2], mat[0]);
 			}
+			break;
 		case 1:
-			normalize_v3(mat[0]);
 			if (dot_v3v3(mat[1], mat[0]) < 1) {
 				cross_v3_v3v3(mat[2], mat[0], mat[1]);
 				normalize_v3(mat[2]);
@@ -873,6 +896,7 @@ void orthogonalize_m4(float mat[4][4], int axis)
 				normalize_v3(mat[0]);
 				cross_v3_v3v3(mat[2], mat[0], mat[1]);
 			}
+			break;
 		case 2:
 			if (dot_v3v3(mat[2], mat[0]) < 1) {
 				cross_v3_v3v3(mat[1], mat[2], mat[0]);
@@ -895,6 +919,9 @@ void orthogonalize_m4(float mat[4][4], int axis)
 				normalize_v3(mat[0]);
 				cross_v3_v3v3(mat[1], mat[2], mat[0]);
 			}
+			break;
+		default:
+			BLI_assert(0);
 	}
 	mul_v3_fl(mat[0], size[0]);
 	mul_v3_fl(mat[1], size[1]);
@@ -1189,16 +1216,19 @@ void mat4_to_size(float size[3], float mat[4][4])
 float mat3_to_scale(float mat[3][3])
 {
 	/* unit length vector */
-	float unit_vec[3] = {0.577350269189626f, 0.577350269189626f, 0.577350269189626f};
+	float unit_vec[3];
+	copy_v3_fl(unit_vec, 0.577350269189626f);
 	mul_m3_v3(mat, unit_vec);
 	return len_v3(unit_vec);
 }
 
 float mat4_to_scale(float mat[4][4])
 {
-	float tmat[3][3];
-	copy_m3_m4(tmat, mat);
-	return mat3_to_scale(tmat);
+	/* unit length vector */
+	float unit_vec[3];
+	copy_v3_fl(unit_vec, 0.577350269189626f);
+	mul_mat3_m4_v3(mat, unit_vec);
+	return len_v3(unit_vec);
 }
 
 void mat3_to_rot_size(float rot[3][3], float size[3], float mat3[3][3])

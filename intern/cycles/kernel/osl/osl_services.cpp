@@ -43,6 +43,7 @@
 #include "kernel_primitive.h"
 #include "kernel_projection.h"
 #include "kernel_accumulate.h"
+#include "kernel_camera.h"
 #include "kernel_shader.h"
 
 CCL_NAMESPACE_BEGIN
@@ -103,9 +104,10 @@ OSLRenderServices::~OSLRenderServices()
 {
 }
 
-void OSLRenderServices::thread_init(KernelGlobals *kernel_globals_)
+void OSLRenderServices::thread_init(KernelGlobals *kernel_globals_, OSL::TextureSystem *osl_ts_)
 {
 	kernel_globals = kernel_globals_;
+	osl_ts = osl_ts_;
 }
 
 bool OSLRenderServices::get_matrix(OSL::Matrix44 &result, OSL::TransformationPtr xform, float time)
@@ -653,12 +655,36 @@ bool OSLRenderServices::get_object_standard_attribute(KernelGlobals *kg, ShaderD
 bool OSLRenderServices::get_background_attribute(KernelGlobals *kg, ShaderData *sd, ustring name,
                                                  TypeDesc type, bool derivatives, void *val)
 {
-	/* Ray Length */
 	if (name == u_path_ray_length) {
+		/* Ray Length */
 		float f = sd->ray_length;
 		return set_attribute_float(f, type, derivatives, val);
 	}
-	
+	else if (name == u_ndc) {
+		/* NDC coordinates with special exception for otho */
+		OSLThreadData *tdata = kg->osl_tdata;
+		OSL::ShaderGlobals *globals = &tdata->globals;
+		float3 ndc[3];
+
+		if((globals->raytype & PATH_RAY_CAMERA) && sd->object == ~0 && kernel_data.cam.type == CAMERA_ORTHOGRAPHIC) {
+			ndc[0] = camera_world_to_ndc(kg, sd, sd->ray_P);
+
+			if(derivatives) {
+				ndc[1] = camera_world_to_ndc(kg, sd, sd->ray_P + sd->ray_dP.dx) - ndc[0];
+				ndc[2] = camera_world_to_ndc(kg, sd, sd->ray_P + sd->ray_dP.dy) - ndc[0];
+			}
+		}
+		else {
+			ndc[0] = camera_world_to_ndc(kg, sd, sd->P);
+
+			if(derivatives) {
+				ndc[1] = camera_world_to_ndc(kg, sd, sd->P + sd->dP.dx) - ndc[0];
+				ndc[2] = camera_world_to_ndc(kg, sd, sd->P + sd->dP.dy) - ndc[0];
+			}
+		}
+
+		return set_attribute_float3(ndc, type, derivatives, val);
+	}
 	else
 		return false;
 }
@@ -742,7 +768,7 @@ bool OSLRenderServices::texture(ustring filename, TextureOpt &options,
                                 float s, float t, float dsdx, float dtdx,
                                 float dsdy, float dtdy, float *result)
 {
-	OSL::TextureSystem *ts = kernel_globals->osl->ts;
+	OSL::TextureSystem *ts = osl_ts;
 	bool status = ts->texture(filename, options, s, t, dsdx, dtdx, dsdy, dtdy, result);
 
 	if(!status) {
@@ -764,7 +790,7 @@ bool OSLRenderServices::texture3d(ustring filename, TextureOpt &options,
                                   const OSL::Vec3 &dPdx, const OSL::Vec3 &dPdy,
                                   const OSL::Vec3 &dPdz, float *result)
 {
-	OSL::TextureSystem *ts = kernel_globals->osl->ts;
+	OSL::TextureSystem *ts = osl_ts;
 	bool status = ts->texture3d(filename, options, P, dPdx, dPdy, dPdz, result);
 
 	if(!status) {
@@ -786,7 +812,7 @@ bool OSLRenderServices::environment(ustring filename, TextureOpt &options,
                                     OSL::ShaderGlobals *sg, const OSL::Vec3 &R,
                                     const OSL::Vec3 &dRdx, const OSL::Vec3 &dRdy, float *result)
 {
-	OSL::TextureSystem *ts = kernel_globals->osl->ts;
+	OSL::TextureSystem *ts = osl_ts;
 	bool status = ts->environment(filename, options, R, dRdx, dRdy, result);
 
 	if(!status) {
@@ -807,7 +833,7 @@ bool OSLRenderServices::get_texture_info(ustring filename, int subimage,
                                          ustring dataname,
                                          TypeDesc datatype, void *data)
 {
-	OSL::TextureSystem *ts = kernel_globals->osl->ts;
+	OSL::TextureSystem *ts = osl_ts;
 	return ts->get_texture_info(filename, subimage, dataname, datatype, data);
 }
 
@@ -865,7 +891,11 @@ bool OSLRenderServices::trace(TraceOpt &options, OSL::ShaderGlobals *sg,
 	tracedata->init = true;
 
 	/* raytrace */
+#ifdef __HAIR__
+	return scene_intersect(sd->osl_globals, &ray, ~0, &tracedata->isect, NULL, 0.0f, 0.0f);
+#else
 	return scene_intersect(sd->osl_globals, &ray, ~0, &tracedata->isect);
+#endif
 }
 
 

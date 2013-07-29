@@ -1639,8 +1639,46 @@ static NlaEvalChannel *nlaevalchan_find_match(ListBase *channels, PointerRNA *pt
 	return NULL;
 }
 
+/* initialise default value for NlaEvalChannel, so that it doesn't blend things wrong */
+static void nlaevalchan_value_init(NlaEvalChannel *nec)
+{
+	PointerRNA *ptr = &nec->ptr;
+	PropertyRNA *prop = nec->prop;
+	int index = nec->index;
+	
+	/* NOTE: while this doesn't work for all RNA properties as default values aren't in fact 
+	 * set properly for most of them, at least the common ones (which also happen to get used 
+	 * in NLA strips a lot, e.g. scale) are set correctly.
+	 */
+	switch (RNA_property_type(prop)) {
+		case PROP_BOOLEAN:
+			if (RNA_property_array_length(ptr, prop))
+				nec->value = (float)RNA_property_boolean_get_default_index(ptr, prop, index);
+			else
+				nec->value = (float)RNA_property_boolean_get_default(ptr, prop);
+			break;
+		case PROP_INT:
+			if (RNA_property_array_length(ptr, prop))
+				nec->value = (float)RNA_property_int_get_default_index(ptr, prop, index);
+			else
+				nec->value = (float)RNA_property_int_get_default(ptr, prop);
+			break;
+		case PROP_FLOAT:
+			if (RNA_property_array_length(ptr, prop))
+				nec->value = RNA_property_float_get_default_index(ptr, prop, index);
+			else
+				nec->value = RNA_property_float_get_default(ptr, prop);
+			break;
+		case PROP_ENUM:
+			nec->value = (float)RNA_property_enum_get_default(ptr, prop);
+			break;
+		default:
+			break;
+	}
+}
+
 /* verify that an appropriate NlaEvalChannel for this F-Curve exists */
-static NlaEvalChannel *nlaevalchan_verify(PointerRNA *ptr, ListBase *channels, NlaEvalStrip *nes, FCurve *fcu, short *newChan)
+static NlaEvalChannel *nlaevalchan_verify(PointerRNA *ptr, ListBase *channels, NlaEvalStrip *nes, FCurve *fcu)
 {
 	NlaEvalChannel *nec;
 	NlaStrip *strip = nes->strip;
@@ -1674,58 +1712,55 @@ static NlaEvalChannel *nlaevalchan_verify(PointerRNA *ptr, ListBase *channels, N
 	/* allocate a new struct for this if none found */
 	if (nec == NULL) {
 		nec = MEM_callocN(sizeof(NlaEvalChannel), "NlaEvalChannel");
-		*newChan = 1;
 		BLI_addtail(channels, nec);
 		
+		/* store property links for writing to the property later */
 		nec->ptr = new_ptr;
 		nec->prop = prop;
 		nec->index = fcu->array_index;
+		
+		/* initialise value using default value of property [#35856] */
+		nlaevalchan_value_init(nec);
 	}
-	else
-		*newChan = 0;
 	
 	/* we can now return */
 	return nec;
 }
 
 /* accumulate (i.e. blend) the given value on to the channel it affects */
-static void nlaevalchan_accumulate(NlaEvalChannel *nec, NlaEvalStrip *nes, short newChan, float value)
+static void nlaevalchan_accumulate(NlaEvalChannel *nec, NlaEvalStrip *nes, float value)
 {
 	NlaStrip *strip = nes->strip;
 	short blendmode = strip->blendmode;
 	float inf = strip->influence;
 	
-	/* if channel is new, just store value regardless of blending factors, etc. */
-	if (newChan) {
-		nec->value = value;
-		return;
-	}
-		
 	/* if this is being performed as part of transition evaluation, incorporate
 	 * an additional weighting factor for the influence
 	 */
 	if (nes->strip_mode == NES_TIME_TRANSITION_END) 
 		inf *= nes->strip_time;
 	
-	/* premultiply the value by the weighting factor */
+	/* optimisation: no need to try applying if there is no influence */
 	if (IS_EQ(inf, 0)) return;
-	value *= inf;
 	
 	/* perform blending */
 	switch (blendmode) {
 		case NLASTRIP_MODE_ADD:
 			/* simply add the scaled value on to the stack */
-			nec->value += value;
+			nec->value += (value * inf);
 			break;
 			
 		case NLASTRIP_MODE_SUBTRACT:
 			/* simply subtract the scaled value from the stack */
-			nec->value -= value;
+			nec->value -= (value * inf);
 			break;
 			
 		case NLASTRIP_MODE_MULTIPLY:
 			/* multiply the scaled value with the stack */
-			nec->value *= value;
+			/* Formula Used: 
+			 *     result = fac * (a * b) + (1 - fac) * a 
+			 */
+			nec->value = inf * (nec->value * value)  +   (1 - inf) * nec->value;
 			break;
 		
 		case NLASTRIP_MODE_REPLACE:
@@ -1734,7 +1769,7 @@ static void nlaevalchan_accumulate(NlaEvalChannel *nec, NlaEvalStrip *nes, short
 			 *	- the influence of the accumulated data (elsewhere, that is called dstweight) 
 			 *	  is 1 - influence, since the strip's influence is srcweight
 			 */
-			nec->value = nec->value * (1.0f - inf)   +   value;
+			nec->value = nec->value * (1.0f - inf)   +   (value * inf);
 			break;
 	}
 }
@@ -1760,7 +1795,7 @@ static void nlaevalchan_buffers_accumulate(ListBase *channels, ListBase *tmp_buf
 		 * otherwise, add the current channel to the buffer for efficiency
 		 */
 		if (necd)
-			nlaevalchan_accumulate(necd, nes, 0, nec->value);
+			nlaevalchan_accumulate(necd, nes, nec->value);
 		else {
 			BLI_remlink(tmp_buffer, nec);
 			BLI_addtail(channels, nec);
@@ -1857,7 +1892,6 @@ static void nlastrip_evaluate_actionclip(PointerRNA *ptr, ListBase *channels, Li
 	for (fcu = strip->act->curves.first; fcu; fcu = fcu->next) {
 		NlaEvalChannel *nec;
 		float value = 0.0f;
-		short newChan = -1;
 		
 		/* check if this curve should be skipped */
 		if (fcu->flag & (FCURVE_MUTED | FCURVE_DISABLED))
@@ -1879,9 +1913,9 @@ static void nlastrip_evaluate_actionclip(PointerRNA *ptr, ListBase *channels, Li
 		/* get an NLA evaluation channel to work with, and accumulate the evaluated value with the value(s)
 		 * stored in this channel if it has been used already
 		 */
-		nec = nlaevalchan_verify(ptr, channels, nes, fcu, &newChan);
+		nec = nlaevalchan_verify(ptr, channels, nes, fcu);
 		if (nec)
-			nlaevalchan_accumulate(nec, nes, newChan, value);
+			nlaevalchan_accumulate(nec, nes, value);
 	}
 	
 	/* unlink this strip's modifiers from the parent's modifiers again */
@@ -2296,7 +2330,7 @@ void BKE_animsys_evaluate_animdata(Scene *scene, ID *id, AnimData *adt, float ct
 	 *	- Overrides allow editing, by overwriting the value(s) set from animation-data, with the
 	 *	  value last set by the user (and not keyframed yet). 
 	 *	- Overrides are cleared upon frame change and/or keyframing
-	 *	- It is best that we execute this everytime, so that no errors are likely to occur.
+	 *	- It is best that we execute this every time, so that no errors are likely to occur.
 	 */
 	animsys_evaluate_overrides(&id_ptr, adt);
 	

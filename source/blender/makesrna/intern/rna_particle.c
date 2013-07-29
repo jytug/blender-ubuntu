@@ -1887,6 +1887,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	static EnumPropertyItem rot_mode_items[] = {
 		{0, "NONE", 0, "None", ""},
 		{PART_ROT_NOR, "NOR", 0, "Normal", ""},
+		{PART_ROT_NOR_TAN, "NOR_TAN", 0, "Normal-Tangent", ""},
 		{PART_ROT_VEL, "VEL", 0, "Velocity / Hair", ""},
 		{PART_ROT_GLOB_X, "GLOB_X", 0, "Global X", ""},
 		{PART_ROT_GLOB_Y, "GLOB_Y", 0, "Global Y", ""},
@@ -2294,7 +2295,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "hair_step", PROP_INT, PROP_NONE);
 	RNA_def_property_range(prop, 2, 50);
 	RNA_def_property_ui_text(prop, "Segments", "Number of hair segments");
-	RNA_def_property_update(prop, 0, "rna_Particle_redo");
+	RNA_def_property_update(prop, 0, "rna_Particle_reset");
 
 
 	/*TODO: not found in UI, readonly? */
@@ -2916,6 +2917,13 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Loop count", "Number of times the keys are looped");
 	RNA_def_property_update(prop, 0, "rna_Particle_redo");
 	
+	/* modified dm support */
+	prop = RNA_def_property(srna, "use_modifier_stack", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "use_modifier_stack", 0);
+	RNA_def_property_ui_text(prop, "Use Modifier Stack", "Emit particles from mesh with modifiers applied "
+	                               "(must use same subsurf level for viewport and render for correct results)");
+	RNA_def_property_update(prop, 0, "rna_Particle_change_type");
+
 	/* draw objects & groups */
 	prop = RNA_def_property(srna, "dupli_group", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "dup_group");

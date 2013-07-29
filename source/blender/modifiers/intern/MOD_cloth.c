@@ -82,7 +82,7 @@ static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, 
 			return;
 	}
 
-	dm = get_dm(ob, NULL, derivedData, NULL, 0);
+	dm = get_dm(ob, NULL, derivedData, NULL, false, false);
 	if (dm == derivedData)
 		dm = CDDM_copy(dm);
 
@@ -159,9 +159,9 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tclmd->clothObject = NULL;
 }
 
-static int dependsOnTime(ModifierData *UNUSED(md))
+static bool dependsOnTime(ModifierData *UNUSED(md))
 {
-	return 1;
+	return true;
 }
 
 static void freeData(ModifierData *md)

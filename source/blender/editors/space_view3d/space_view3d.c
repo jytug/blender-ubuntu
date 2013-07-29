@@ -40,7 +40,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -227,8 +226,8 @@ bool ED_view3d_context_user_region(bContext *C, View3D **r_v3d, ARegion **r_ar)
 void ED_view3d_init_mats_rv3d(struct Object *ob, struct RegionView3D *rv3d)
 {
 	/* local viewmat and persmat, to calculate projections */
-	mult_m4_m4m4(rv3d->viewmatob, rv3d->viewmat, ob->obmat);
-	mult_m4_m4m4(rv3d->persmatob, rv3d->persmat, ob->obmat);
+	mul_m4_m4m4(rv3d->viewmatob, rv3d->viewmat, ob->obmat);
+	mul_m4_m4m4(rv3d->persmatob, rv3d->persmat, ob->obmat);
 
 	/* initializes object space clipping, speeds up clip tests */
 	ED_view3d_clipping_local(rv3d, ob->obmat);
@@ -243,6 +242,21 @@ void ED_view3d_init_mats_rv3d_gl(struct Object *ob, struct RegionView3D *rv3d)
 	 * override the dupli-matrix */
 	glMultMatrixf(ob->obmat);
 }
+
+#ifdef DEBUG
+/* ensure we correctly initialize */
+void ED_view3d_clear_mats_rv3d(struct RegionView3D *rv3d)
+{
+	zero_m4(rv3d->viewmatob);
+	zero_m4(rv3d->persmatob);
+}
+
+void ED_view3d_check_mats_rv3d(struct RegionView3D *rv3d)
+{
+	BLI_ASSERT_ZERO_M4(rv3d->viewmatob);
+	BLI_ASSERT_ZERO_M4(rv3d->persmatob);
+}
+#endif
 
 /* ******************** default callbacks for view3d space ***************** */
 
@@ -366,11 +380,10 @@ static SpaceLink *view3d_duplicate(SpaceLink *sl)
 	
 // XXX	BIF_view3d_previewrender_free(v3do);
 	
-	if (v3do->localvd) {
-		v3do->localvd = NULL;
-		v3do->properties_storage = NULL;
-		v3do->lay = v3dn->localvd->lay;
-		v3do->lay &= 0xFFFFFF;
+	if (v3dn->localvd) {
+		v3dn->localvd = NULL;
+		v3dn->properties_storage = NULL;
+		v3dn->lay = v3do->localvd->lay & 0xFFFFFF;
 	}
 
 	if (v3dn->drawtype == OB_RENDER)
@@ -696,8 +709,10 @@ static void view3d_recalc_used_layers(ARegion *ar, wmNotifier *wmn, Scene *scene
 	}
 }
 
-static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
+static void view3d_main_area_listener(bScreen *sc, ScrArea *sa, ARegion *ar, wmNotifier *wmn)
 {
+	Scene *scene = sc->scene;
+	View3D *v3d = sa->spacedata.first;
 	
 	/* context changes */
 	switch (wmn->category) {
@@ -786,6 +801,14 @@ static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
 			break;
 		case NC_MATERIAL:
 			switch (wmn->data) {
+				case ND_SHADING:
+				case ND_NODES:
+					if ((v3d->drawtype == OB_MATERIAL) ||
+					    (v3d->drawtype == OB_TEXTURE && scene->gm.matmode == GAME_MAT_GLSL))
+					{
+						ED_region_tag_redraw(ar);
+					}
+					break;
 				case ND_SHADING_DRAW:
 				case ND_SHADING_LINKS:
 					ED_region_tag_redraw(ar);
@@ -808,6 +831,13 @@ static void view3d_main_area_listener(ARegion *ar, wmNotifier *wmn)
 			break;
 		case NC_LAMP:
 			switch (wmn->data) {
+				case ND_LIGHTING:
+					if ((v3d->drawtype == OB_MATERIAL) ||
+					    (v3d->drawtype == OB_TEXTURE && (scene->gm.matmode == GAME_MAT_GLSL)))
+					{
+						ED_region_tag_redraw(ar);
+					}
+					break;
 				case ND_LIGHTING_DRAW:
 					ED_region_tag_redraw(ar);
 					break;
@@ -894,7 +924,7 @@ static void view3d_header_area_draw(const bContext *C, ARegion *ar)
 	ED_region_header(C, ar);
 }
 
-static void view3d_header_area_listener(ARegion *ar, wmNotifier *wmn)
+static void view3d_header_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
@@ -935,7 +965,7 @@ static void view3d_buttons_area_draw(const bContext *C, ARegion *ar)
 	ED_region_panels(C, ar, 1, NULL, -1);
 }
 
-static void view3d_buttons_area_listener(ARegion *ar, wmNotifier *wmn)
+static void view3d_buttons_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
@@ -1035,7 +1065,7 @@ static void view3d_tools_area_draw(const bContext *C, ARegion *ar)
 	ED_region_panels(C, ar, 1, CTX_data_mode_string(C), -1);
 }
 
-static void view3d_props_area_listener(ARegion *ar, wmNotifier *wmn)
+static void view3d_props_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
@@ -1055,7 +1085,7 @@ static void view3d_props_area_listener(ARegion *ar, wmNotifier *wmn)
 }
 
 /*area (not region) level listener*/
-static void space_view3d_listener(ScrArea *sa, struct wmNotifier *wmn)
+static void space_view3d_listener(bScreen *UNUSED(sc), ScrArea *sa, struct wmNotifier *wmn)
 {
 	View3D *v3d = sa->spacedata.first;
 

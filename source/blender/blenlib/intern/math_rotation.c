@@ -573,21 +573,15 @@ void interp_qt_qtqt(float result[4], const float quat1[4], const float quat2[4],
 {
 	float quat[4], omega, cosom, sinom, sc1, sc2;
 
-	cosom = quat1[0] * quat2[0] + quat1[1] * quat2[1] + quat1[2] * quat2[2] + quat1[3] * quat2[3];
+	cosom = dot_qtqt(quat1, quat2);
 
 	/* rotate around shortest angle */
 	if (cosom < 0.0f) {
 		cosom = -cosom;
-		quat[0] = -quat1[0];
-		quat[1] = -quat1[1];
-		quat[2] = -quat1[2];
-		quat[3] = -quat1[3];
+		negate_v4_v4(quat, quat1);
 	}
 	else {
-		quat[0] = quat1[0];
-		quat[1] = quat1[1];
-		quat[2] = quat1[2];
-		quat[3] = quat1[3];
+		copy_qt_qt(quat, quat1);
 	}
 
 	if ((1.0f - cosom) > 0.0001f) {
@@ -640,7 +634,7 @@ void tri_to_quat_ex(float quat[4], const float v1[3], const float v2[3], const f
 		n[0] = 1.0f;
 	}
 
-	angle = -0.5f * (float)saacos(vec[2]);
+	angle = -0.5f * saacos(vec[2]);
 	co = cosf(angle);
 	si = sinf(angle);
 	q1[0] = co;
@@ -865,35 +859,6 @@ void single_axis_angle_to_mat3(float mat[3][3], const char axis, const float ang
 		default:
 			assert(0);
 	}
-}
-
-/****************************** Vector/Rotation ******************************/
-/* TODO: the following calls should probably be deprecated sometime         */
-
-/* TODO, replace use of this function with axis_angle_to_mat3() */
-void vec_rot_to_mat3(float mat[3][3], const float vec[3], const float phi)
-{
-	/* rotation of phi radials around vec */
-	float vx, vx2, vy, vy2, vz, vz2, co, si;
-
-	vx = vec[0];
-	vy = vec[1];
-	vz = vec[2];
-	vx2 = vx * vx;
-	vy2 = vy * vy;
-	vz2 = vz * vz;
-	co = cosf(phi);
-	si = sinf(phi);
-
-	mat[0][0] = vx2 + co * (1.0f - vx2);
-	mat[0][1] = vx * vy * (1.0f - co) + vz * si;
-	mat[0][2] = vz * vx * (1.0f - co) - vy * si;
-	mat[1][0] = vx * vy * (1.0f - co) - vz * si;
-	mat[1][1] = vy2 + co * (1.0f - vy2);
-	mat[1][2] = vy * vz * (1.0f - co) + vx * si;
-	mat[2][0] = vz * vx * (1.0f - co) + vy * si;
-	mat[2][1] = vy * vz * (1.0f - co) - vx * si;
-	mat[2][2] = vz2 + co * (1.0f - vz2);
 }
 
 /******************************** XYZ Eulers *********************************/
@@ -1465,7 +1430,7 @@ void mat4_to_dquat(DualQuat *dq, float basemat[4][4], float mat[4][4])
 
 	/* split scaling and rotation, there is probably a faster way to do
 	 * this, it's done like this now to correctly get negative scaling */
-	mult_m4_m4m4(baseRS, mat, basemat);
+	mul_m4_m4m4(baseRS, mat, basemat);
 	mat4_to_size(scale, baseRS);
 
 	dscale[0] = scale[0] - 1.0f;
@@ -1485,10 +1450,10 @@ void mat4_to_dquat(DualQuat *dq, float basemat[4][4], float mat[4][4])
 		copy_v3_v3(baseR[3], baseRS[3]);
 
 		invert_m4_m4(baseinv, basemat);
-		mult_m4_m4m4(R, baseR, baseinv);
+		mul_m4_m4m4(R, baseR, baseinv);
 
 		invert_m4_m4(baseRinv, baseR);
-		mult_m4_m4m4(S, baseRinv, baseRS);
+		mul_m4_m4m4(S, baseRinv, baseRS);
 
 		/* set scaling part */
 		mul_serie_m4(dq->scale, basemat, S, baseinv, NULL, NULL, NULL, NULL, NULL);

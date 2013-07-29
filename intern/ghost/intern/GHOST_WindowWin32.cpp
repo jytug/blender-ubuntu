@@ -50,14 +50,6 @@
 #define WGL_SAMPLE_BUFFERS_ARB  0x2041
 #define WGL_SAMPLES_ARB         0x2042
 
-// win64 doesn't define GWL_USERDATA
-#ifdef WIN32  /* why? - probably should remove */
-#  ifndef GWL_USERDATA
-#    define GWL_USERDATA GWLP_USERDATA
-#    define GWL_WNDPROC GWLP_WNDPROC
-#  endif
-#endif
-
 const wchar_t *GHOST_WindowWin32::s_windowClassName = L"GHOST_WindowClass";
 const int GHOST_WindowWin32::s_maxTitleLength = 128;
 HGLRC GHOST_WindowWin32::s_firsthGLRc = NULL;
@@ -114,6 +106,11 @@ static int is_crappy_intel_card(void)
 	return is_crappy;
 }
 
+/* force NVidia Optimus to used dedicated graphics */
+extern "C" {
+	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+}
+
 GHOST_WindowWin32::GHOST_WindowWin32(
     GHOST_SystemWin32 *system,
     const STR_String& title,
@@ -154,7 +151,8 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 	m_normal_state(GHOST_kWindowStateNormal),
 	m_stereo(stereoVisual),
 	m_nextWindow(NULL),
-	m_parentWindowHwnd(parentwindowhwnd)
+	m_parentWindowHwnd(parentwindowhwnd),
+	m_inLiveResize(false)
 {
 	OSVERSIONINFOEX versionInfo;
 	bool hasMinVersionForTaskbar = false;
@@ -270,10 +268,7 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 		}
 
 		// Store a pointer to this class in the window structure
-		::SetWindowLongPtr(m_hWnd, GWL_USERDATA, (LONG_PTR) this);
-
-		m_wsh.setHWND(m_hWnd);
-		m_wsh.setMinSize(320, 240);
+		::SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR) this);
 
 		// Store the device context
 		m_hDC = ::GetDC(m_hWnd);
@@ -895,7 +890,7 @@ GHOST_TSuccess GHOST_WindowWin32::installDrawingContext(GHOST_TDrawingContextTyp
 					}
 					else {
 						m_multisampleEnabled = GHOST_kSuccess;
-						printf("Multisample failed to initialized\n");
+						printf("Multisample failed to initialize\n");
 						success = GHOST_kSuccess;
 					}
 				}

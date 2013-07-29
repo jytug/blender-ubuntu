@@ -201,14 +201,14 @@ typedef struct EdgeSlideData {
 	TransDataEdgeSlideVert *sv;
 	int totsv;
 	
-	struct SmallHash vhash;
-	struct SmallHash origfaces;
+	struct GHash *origfaces;
 
 	int mval_start[2], mval_end[2];
 	struct BMEditMesh *em;
 
 	/* flag that is set when origfaces is initialized */
-	bool origfaces_init;
+	bool use_origfaces;
+	struct BMesh *bm_origfaces;
 
 	float perc;
 
@@ -319,7 +319,6 @@ typedef struct TransInfo {
 	float		vec[3];			/* translation, to show for widget   	*/
 	float		mat[3][3];		/* rot/rescale, to show for widget   	*/
 
-	char		*undostr;		/* if set, uses this string for undo		*/
 	float		spacemtx[3][3];	/* orientation matrix of the current space	*/
 	char		spacename[64];	/* name of the current space, MAX_NAME		*/
 
@@ -395,6 +394,8 @@ typedef struct TransInfo {
 
 #define T_PROP_EDIT			(1 << 11)
 #define T_PROP_CONNECTED	(1 << 12)
+#define T_PROP_PROJECTED	(1 << 25)
+#define T_PROP_EDIT_ALL		(T_PROP_EDIT | T_PROP_CONNECTED | T_PROP_PROJECTED)
 
 #define T_V3D_ALIGN			(1 << 14)
 	/* for 2d views like uv or ipo */
@@ -531,10 +532,6 @@ int Trackball(TransInfo *t, const int mval[2]);
 void initPushPull(TransInfo *t);
 int PushPull(TransInfo *t, const int mval[2]);
 
-void initBevel(TransInfo *t);
-int handleEventBevel(TransInfo *t, const struct wmEvent *event);
-int Bevel(TransInfo *t, const int mval[2]);
-
 void initBevelWeight(TransInfo *t);
 int BevelWeight(TransInfo *t, const int mval[2]);
 
@@ -607,6 +604,7 @@ int calc_manipulator_stats(const struct bContext *C);
 void createTransData(struct bContext *C, TransInfo *t);
 void sort_trans_data_dist(TransInfo *t);
 void special_aftertrans_update(struct bContext *C, TransInfo *t);
+int  special_transform_moving(TransInfo *t);
 
 void transform_autoik_update(TransInfo *t, short mode);
 
@@ -724,10 +722,6 @@ void getViewVector(TransInfo *t, float coord[3], float vec[3]);
 /*********************** Transform Orientations ******************************/
 
 void initTransformOrientation(struct bContext *C, TransInfo *t);
-
-struct TransformOrientation *createObjectSpace(struct bContext *C, struct ReportList *reports, char *name, int overwrite);
-struct TransformOrientation *createMeshSpace(struct bContext *C, struct ReportList *reports, char *name, int overwrite);
-struct TransformOrientation *createBoneSpace(struct bContext *C, struct ReportList *reports, char *name, int overwrite);
 
 /* Those two fill in mat and return non-zero on success */
 bool createSpaceNormal(float mat[3][3], const float normal[3]);

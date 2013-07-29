@@ -324,21 +324,26 @@ float dist_to_plane_v3(const float p[3], const float plane_co[3], const float pl
 	return line_point_factor_v3(p, plane_co, plane_co_other);
 }
 
-/* distance v1 to line-piece v2-v3 in 3D */
-float dist_to_line_segment_v3(const float v1[3], const float v2[3], const float v3[3])
+/* distance v1 to line-piece l1-l2 in 3D */
+float dist_squared_to_line_segment_v3(const float p[3], const float l1[3], const float l2[3])
 {
 	float closest[3];
 
-	closest_to_line_segment_v3(closest, v1, v2, v3);
+	closest_to_line_segment_v3(closest, p, l1, l2);
 
-	return len_v3v3(closest, v1);
+	return len_squared_v3v3(closest, p);
 }
 
-float dist_to_line_v3(const float v1[3], const float v2[3], const float v3[3])
+float dist_to_line_segment_v3(const float p[3], const float l1[3], const float l2[3])
+{
+	return sqrtf(dist_squared_to_line_segment_v3(p, l1, l2));
+}
+
+float dist_to_line_v3(const float v1[3], const float l1[3], const float l2[3])
 {
 	float closest[3];
 
-	closest_to_line_v3(closest, v1, v2, v3);
+	closest_to_line_v3(closest, v1, l1, l2);
 
 	return len_v3v3(closest, v1);
 }
@@ -888,9 +893,9 @@ int isect_point_quad_v2(const float pt[2], const float v1[2], const float v2[2],
  * test if the line starting at p1 ending at p2 intersects the triangle v0..v2
  * return non zero if it does
  */
-int isect_line_tri_v3(const float p1[3], const float p2[3],
-                      const float v0[3], const float v1[3], const float v2[3],
-                      float *r_lambda, float r_uv[2])
+bool isect_line_tri_v3(const float p1[3], const float p2[3],
+                       const float v0[3], const float v1[3], const float v2[3],
+                       float *r_lambda, float r_uv[2])
 {
 
 	float p[3], s[3], d[3], e1[3], e2[3], q[3];
@@ -930,9 +935,9 @@ int isect_line_tri_v3(const float p1[3], const float p2[3],
  * test if the ray starting at p1 going in d direction intersects the triangle v0..v2
  * return non zero if it does
  */
-int isect_ray_tri_v3(const float p1[3], const float d[3],
-                     const float v0[3], const float v1[3], const float v2[3],
-                     float *r_lambda, float r_uv[2])
+bool isect_ray_tri_v3(const float p1[3], const float d[3],
+                      const float v0[3], const float v1[3], const float v2[3],
+                      float *r_lambda, float r_uv[2])
 {
 	float p[3], s[3], e1[3], e2[3], q[3];
 	float a, f, u, v;
@@ -972,9 +977,9 @@ int isect_ray_tri_v3(const float p1[3], const float d[3],
  * if clip is nonzero, will only return true if lambda is >= 0.0
  * (i.e. intersection point is along positive d)
  */
-int isect_ray_plane_v3(const float p1[3], const float d[3],
-                       const float v0[3], const float v1[3], const float v2[3],
-                       float *r_lambda, const int clip)
+bool isect_ray_plane_v3(const float p1[3], const float d[3],
+                        const float v0[3], const float v1[3], const float v2[3],
+                        float *r_lambda, const int clip)
 {
 	float p[3], s[3], e1[3], e2[3], q[3];
 	float a, f;
@@ -1004,9 +1009,9 @@ int isect_ray_plane_v3(const float p1[3], const float d[3],
 	return 1;
 }
 
-int isect_ray_tri_epsilon_v3(const float p1[3], const float d[3],
-                             const float v0[3], const float v1[3], const float v2[3],
-                             float *r_lambda, float uv[2], const float epsilon)
+bool isect_ray_tri_epsilon_v3(const float p1[3], const float d[3],
+                              const float v0[3], const float v1[3], const float v2[3],
+                              float *r_lambda, float uv[2], const float epsilon)
 {
 	float p[3], s[3], e1[3], e2[3], q[3];
 	float a, f, u, v;
@@ -1040,9 +1045,9 @@ int isect_ray_tri_epsilon_v3(const float p1[3], const float d[3],
 	return 1;
 }
 
-int isect_ray_tri_threshold_v3(const float p1[3], const float d[3],
-                               const float v0[3], const float v1[3], const float v2[3],
-                               float *r_lambda, float r_uv[2], const float threshold)
+bool isect_ray_tri_threshold_v3(const float p1[3], const float d[3],
+                                const float v0[3], const float v1[3], const float v2[3],
+                                float *r_lambda, float r_uv[2], const float threshold)
 {
 	float p[3], s[3], e1[3], e2[3], q[3];
 	float a, f, u, v;
@@ -1100,9 +1105,9 @@ int isect_ray_tri_threshold_v3(const float p1[3], const float d[3],
  * \param plane_no The direction of the plane (does not need to be normalized).
  * \param no_flip When true, the intersection point will always be from l1 to l2, even if this is not on the plane.
  */
-int isect_line_plane_v3(float out[3],
-                        const float l1[3], const float l2[3],
-                        const float plane_co[3], const float plane_no[3], const bool no_flip)
+bool isect_line_plane_v3(float out[3],
+                         const float l1[3], const float l2[3],
+                         const float plane_co[3], const float plane_no[3], const bool no_flip)
 {
 	float l_vec[3]; /* l1 -> l2 normalized vector */
 	float p_no[3]; /* 'plane_no' normalized */
@@ -1174,7 +1179,7 @@ void isect_plane_plane_v3(float r_isect_co[3], float r_isect_no[3],
 /* Adapted from the paper by Kasper Fauerby */
 
 /* "Improved Collision detection and Response" */
-static int getLowestRoot(const float a, const float b, const float c, const float maxR, float *root)
+static bool getLowestRoot(const float a, const float b, const float c, const float maxR, float *root)
 {
 	/* Check if a solution exists */
 	float determinant = b * b - 4.0f * a * c;
@@ -1208,15 +1213,15 @@ static int getLowestRoot(const float a, const float b, const float c, const floa
 	return 0;
 }
 
-int isect_sweeping_sphere_tri_v3(const float p1[3], const float p2[3], const float radius,
-                                 const float v0[3], const float v1[3], const float v2[3],
-                                 float *r_lambda, float ipoint[3])
+bool isect_sweeping_sphere_tri_v3(const float p1[3], const float p2[3], const float radius,
+                                  const float v0[3], const float v1[3], const float v2[3],
+                                  float *r_lambda, float ipoint[3])
 {
 	float e1[3], e2[3], e3[3], point[3], vel[3], /*dist[3],*/ nor[3], temp[3], bv[3];
 	float a, b, c, d, e, x, y, z, radius2 = radius * radius;
 	float elen2, edotv, edotbv, nordotv;
 	float newLambda;
-	int found_by_sweep = 0;
+	bool found_by_sweep = false;
 
 	sub_v3_v3v3(e1, v1, v0);
 	sub_v3_v3v3(e2, v2, v0);
@@ -1396,8 +1401,8 @@ int isect_sweeping_sphere_tri_v3(const float p1[3], const float p2[3], const flo
 	return found_by_sweep;
 }
 
-int isect_axial_line_tri_v3(const int axis, const float p1[3], const float p2[3],
-                            const float v0[3], const float v1[3], const float v2[3], float *r_lambda)
+bool isect_axial_line_tri_v3(const int axis, const float p1[3], const float p2[3],
+                             const float v0[3], const float v1[3], const float v2[3], float *r_lambda)
 {
 	float p[3], e1[3], e2[3];
 	float u, v, f;
@@ -1452,7 +1457,7 @@ int isect_axial_line_tri_v3(const int axis, const float p1[3], const float p2[3]
 int isect_line_line_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3], float i1[3], float i2[3])
 {
 	float a[3], b[3], c[3], ab[3], cb[3], dir1[3], dir2[3];
-	float d;
+	float d, div;
 
 	sub_v3_v3v3(c, v3, v1);
 	sub_v3_v3v3(a, v2, v1);
@@ -1468,12 +1473,17 @@ int isect_line_line_v3(const float v1[3], const float v2[3], const float v3[3], 
 
 	cross_v3_v3v3(ab, a, b);
 	d = dot_v3v3(c, ab);
+	div = dot_v3v3(ab, ab);
 
+	/* test zero length line */
+	if (UNLIKELY(div == 0.0f)) {
+		return 0;
+	}
 	/* test if the two lines are coplanar */
-	if (d > -0.000001f && d < 0.000001f) {
+	else if (d > -0.000001f && d < 0.000001f) {
 		cross_v3_v3v3(cb, c, b);
 
-		mul_v3_fl(a, dot_v3v3(cb, ab) / dot_v3v3(ab, ab));
+		mul_v3_fl(a, dot_v3v3(cb, ab) / div);
 		add_v3_v3v3(i1, v1, a);
 		copy_v3_v3(i2, i1);
 
@@ -1513,10 +1523,12 @@ int isect_line_line_v3(const float v1[3], const float v2[3], const float v3[3], 
 /* Intersection point strictly between the two lines
  * 0 when no intersection is found
  * */
-int isect_line_line_strict_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3], float vi[3], float *r_lambda)
+bool isect_line_line_strict_v3(const float v1[3], const float v2[3],
+                               const float v3[3], const float v4[3],
+                               float vi[3], float *r_lambda)
 {
 	float a[3], b[3], c[3], ab[3], cb[3], ca[3], dir1[3], dir2[3];
-	float d;
+	float d, div;
 
 	sub_v3_v3v3(c, v3, v1);
 	sub_v3_v3v3(a, v2, v1);
@@ -1532,15 +1544,20 @@ int isect_line_line_strict_v3(const float v1[3], const float v2[3], const float 
 
 	cross_v3_v3v3(ab, a, b);
 	d = dot_v3v3(c, ab);
+	div = dot_v3v3(ab, ab);
 
+	/* test zero length line */
+	if (UNLIKELY(div == 0.0f)) {
+		return 0;
+	}
 	/* test if the two lines are coplanar */
-	if (d > -0.000001f && d < 0.000001f) {
+	else if (d > -0.000001f && d < 0.000001f) {
 		float f1, f2;
 		cross_v3_v3v3(cb, c, b);
 		cross_v3_v3v3(ca, c, a);
 
-		f1 = dot_v3v3(cb, ab) / dot_v3v3(ab, ab);
-		f2 = dot_v3v3(ca, ab) / dot_v3v3(ab, ab);
+		f1 = dot_v3v3(cb, ab) / div;
+		f2 = dot_v3v3(ca, ab) / div;
 
 		if (f1 >= 0 && f1 <= 1 &&
 		    f2 >= 0 && f2 <= 1)
@@ -1561,7 +1578,7 @@ int isect_line_line_strict_v3(const float v1[3], const float v2[3], const float 
 	}
 }
 
-int isect_aabb_aabb_v3(const float min1[3], const float max1[3], const float min2[3], const float max2[3])
+bool isect_aabb_aabb_v3(const float min1[3], const float max1[3], const float min2[3], const float max2[3])
 {
 	return (min1[0] < max2[0] && min1[1] < max2[1] && min1[2] < max2[2] &&
 	        min2[0] < max1[0] && min2[1] < max1[1] && min2[2] < max1[2]);
@@ -1581,8 +1598,8 @@ void isect_ray_aabb_initialize(IsectRayAABBData *data, const float ray_start[3],
 }
 
 /* Adapted from http://www.gamedev.net/community/forums/topic.asp?topic_id=459973 */
-int isect_ray_aabb(const IsectRayAABBData *data, const float bb_min[3],
-                   const float bb_max[3], float *tmin_out)
+bool isect_ray_aabb(const IsectRayAABBData *data, const float bb_min[3],
+                    const float bb_max[3], float *tmin_out)
 {
 	float bbox[2][3];
 	float tmin, tmax, tymin, tymax, tzmin, tzmax;
@@ -1913,7 +1930,7 @@ int isect_point_tri_v2_int(const int x1, const int y1, const int x2, const int y
 	return isect_point_tri_v2(p, v1, v2, v3);
 }
 
-static int point_in_slice(const float p[3], const float v1[3], const float l1[3], const float l2[3])
+static bool point_in_slice(const float p[3], const float v1[3], const float l1[3], const float l2[3])
 {
 	/*
 	 * what is a slice ?
@@ -1962,7 +1979,7 @@ static int point_in_slice_m(float p[3], float origin[3], float normal[3], float 
 }
 #endif
 
-int isect_point_tri_prism_v3(const float p[3], const float v1[3], const float v2[3], const float v3[3])
+bool isect_point_tri_prism_v3(const float p[3], const float v1[3], const float v2[3], const float v3[3])
 {
 	if (!point_in_slice(p, v1, v2, v3)) return 0;
 	if (!point_in_slice(p, v2, v3, v1)) return 0;
@@ -2586,45 +2603,62 @@ static float mean_value_half_tan_v2(const float v1[2], const float v2[2], const 
 
 void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[3])
 {
-	/* TODO: t1 and t2 overlap each iter, we could call this only once per iter and reuse previous value */
-	float totweight, t1, t2, len, *vmid, *vprev, *vnext;
-	int i, i_next, i_curr;
+	const float eps = 0.00001f;  /* take care, low values cause [#36105] */
+	const float eps_sq = eps * eps;
+	float *v_curr, *v_next;
+	float ht_prev, ht;  /* half tangents */
+	float totweight = 0.0f;
+	int i = 0;
+	bool vert_interp = false;
 	bool edge_interp = false;
 
-	totweight = 0.0f;
+	v_curr = v[0];
+	v_next = v[1];
 
-	for (i = 0; i < n; i++) {
-		i_curr = i;
-		i_next = (i == n - 1) ? 0 : i + 1;
+	ht_prev = mean_value_half_tan_v3(co, v[n - 1], v_curr);
 
-		vmid = v[i];
-		vprev = (i == 0) ? v[n - 1] : v[i - 1];
-		vnext = v[i_next];
+	while (i < n) {
+		const float len_sq = len_squared_v3v3(co, v_curr);
 
 		/* Mark Mayer et al algorithm that is used here does not operate well if vertex is close
 		 * to borders of face. In that case, do simple linear interpolation between the two edge vertices */
-		if (dist_to_line_segment_v3(co, vmid, vnext) < 10 * FLT_EPSILON) {
+		if (len_sq < eps_sq) {
+			vert_interp = true;
+			break;
+		}
+		else if (dist_squared_to_line_segment_v3(co, v_curr, v_next) < eps_sq) {
 			edge_interp = true;
 			break;
 		}
 
-		t1 = mean_value_half_tan_v3(co, vprev, vmid);
-		t2 = mean_value_half_tan_v3(co, vmid, vnext);
-
-		len = len_v3v3(co, vmid);
-		w[i] = (len != 0.0f) ? (t1 + t2) / len: 0.0f;
+		ht = mean_value_half_tan_v3(co, v_curr, v_next);
+		w[i] = (ht_prev + ht) / sqrtf(len_sq);
 		totweight += w[i];
+
+		/* step */
+		i++;
+		v_curr = v_next;
+		v_next = v[(i + 1) % n];
+
+		ht_prev = ht;
 	}
 
-	if (edge_interp) {
-		float len_curr = len_v3v3(co, vmid);
-		float len_next = len_v3v3(co, vnext);
+	if (vert_interp) {
+		const int i_curr = i;
+		for (i = 0; i < n; i++)
+			w[i] = 0.0;
+		w[i_curr] = 1.0f;
+	}
+	else if (edge_interp) {
+		const int i_curr = i;
+		float len_curr = len_v3v3(co, v_curr);
+		float len_next = len_v3v3(co, v_next);
 		float edge_len = len_curr + len_next;
 		for (i = 0; i < n; i++)
 			w[i] = 0.0;
 
 		w[i_curr] = len_next / edge_len;
-		w[i_next] = len_curr / edge_len;
+		w[(i_curr + 1) % n] = len_curr / edge_len;
 	}
 	else {
 		if (totweight != 0.0f) {
@@ -2638,45 +2672,62 @@ void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[
 
 void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[2])
 {
-	/* TODO: t1 and t2 overlap each iter, we could call this only once per iter and reuse previous value */
-	float totweight, t1, t2, len, *vmid, *vprev, *vnext;
-	int i, i_next, i_curr;
+	const float eps = 0.00001f;  /* take care, low values cause [#36105] */
+	const float eps_sq = eps * eps;
+	float *v_curr, *v_next;
+	float ht_prev, ht;  /* half tangents */
+	float totweight = 0.0f;
+	int i = 0;
+	bool vert_interp = false;
 	bool edge_interp = false;
 
-	totweight = 0.0f;
+	v_curr = v[0];
+	v_next = v[1];
 
-	for (i = 0; i < n; i++) {
-		i_curr = i;
-		i_next = (i == n - 1) ? 0 : i + 1;
+	ht_prev = mean_value_half_tan_v2(co, v[n - 1], v_curr);
 
-		vmid = v[i];
-		vprev = (i == 0) ? v[n - 1] : v[i - 1];
-		vnext = v[i_next];
+	while (i < n) {
+		const float len_sq = len_squared_v2v2(co, v_curr);
 
 		/* Mark Mayer et al algorithm that is used here does not operate well if vertex is close
 		 * to borders of face. In that case, do simple linear interpolation between the two edge vertices */
-		if (dist_to_line_segment_v2(co, vmid, vnext) < 10 * FLT_EPSILON) {
+		if (len_sq < eps_sq) {
+			vert_interp = true;
+			break;
+		}
+		else if (dist_squared_to_line_segment_v2(co, v_curr, v_next) < eps_sq) {
 			edge_interp = true;
 			break;
 		}
 
-		t1 = mean_value_half_tan_v2(co, vprev, vmid);
-		t2 = mean_value_half_tan_v2(co, vmid, vnext);
-
-		len = len_v2v2(co, vmid);
-		w[i] = (len != 0.0f) ? (t1 + t2) / len: 0.0f;
+		ht = mean_value_half_tan_v2(co, v_curr, v_next);
+		w[i] = (ht_prev + ht) / sqrtf(len_sq);
 		totweight += w[i];
+
+		/* step */
+		i++;
+		v_curr = v_next;
+		v_next = v[(i + 1) % n];
+
+		ht_prev = ht;
 	}
 
-	if (edge_interp) {
-		float len_curr = len_v2v2(co, vmid);
-		float len_next = len_v2v2(co, vnext);
+	if (vert_interp) {
+		const int i_curr = i;
+		for (i = 0; i < n; i++)
+			w[i] = 0.0;
+		w[i_curr] = 1.0f;
+	}
+	else if (edge_interp) {
+		const int i_curr = i;
+		float len_curr = len_v2v2(co, v_curr);
+		float len_next = len_v2v2(co, v_next);
 		float edge_len = len_curr + len_next;
 		for (i = 0; i < n; i++)
 			w[i] = 0.0;
 
 		w[i_curr] = len_next / edge_len;
-		w[i_next] = len_curr / edge_len;
+		w[(i_curr + 1) % n] = len_curr / edge_len;
 	}
 	else {
 		if (totweight != 0.0f) {
@@ -3107,8 +3158,8 @@ void accumulate_vertex_normals(float n1[3], float n2[3], float n3[3],
 
 /* Add weighted face normal component into normals of the face vertices.
  * Caller must pass pre-allocated vdiffs of nverts length. */
-void accumulate_vertex_normals_poly(float **vertnos, float polyno[3],
-                                    float **vertcos, float vdiffs[][3], int nverts)
+void accumulate_vertex_normals_poly(float **vertnos, const float polyno[3],
+                                    const float **vertcos, float vdiffs[][3], const int nverts)
 {
 	int i;
 
@@ -3619,7 +3670,7 @@ static float ff_quad_form_factor(float *p, float *n, float *q0, float *q1, float
 static __m128 sse_approx_acos(__m128 x)
 {
 	/* needs a better approximation than taylor expansion of acos, since that
-	 * gives big erros for near 1.0 values, sqrt(2 * x) * acos(1 - x) should work
+	 * gives big errors for near 1.0 values, sqrt(2 * x) * acos(1 - x) should work
 	 * better, see http://www.tom.womack.net/projects/sse-fast-arctrig.html */
 
 	return _mm_set_ps1(1.0f);

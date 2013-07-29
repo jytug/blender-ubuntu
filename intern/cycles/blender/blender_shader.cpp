@@ -354,6 +354,19 @@ static ShaderNode *add_node(Scene *scene, BL::BlendData b_data, BL::Scene b_scen
 		}
 		node = refraction;
 	}
+	else if (b_node.is_a(&RNA_ShaderNodeBsdfToon)) {
+		BL::ShaderNodeBsdfToon b_toon_node(b_node);
+		ToonBsdfNode *toon = new ToonBsdfNode();
+		switch(b_toon_node.component()) {
+			case BL::ShaderNodeBsdfToon::component_DIFFUSE:
+				toon->component = ustring("Diffuse");
+				break;
+			case BL::ShaderNodeBsdfToon::component_GLOSSY:
+				toon->component = ustring("Glossy");
+				break;
+		}
+		node = toon;
+	}
 	else if (b_node.is_a(&RNA_ShaderNodeBsdfTranslucent)) {
 		node = new TranslucentBsdfNode();
 	}
@@ -378,6 +391,15 @@ static ShaderNode *add_node(Scene *scene, BL::BlendData b_data, BL::Scene b_scen
 	else if (b_node.is_a(&RNA_ShaderNodeNewGeometry)) {
 		node = new GeometryNode();
 	}
+	else if (b_node.is_a(&RNA_ShaderNodeWireframe)) {
+		BL::ShaderNodeWireframe b_wireframe_node(b_node);
+		WireframeNode *wire = new WireframeNode();
+		wire->use_pixel_size = b_wireframe_node.use_pixel_size();
+		node = wire;
+	}
+	else if (b_node.is_a(&RNA_ShaderNodeWavelength)) {
+		node = new WavelengthNode();
+	}
 	else if (b_node.is_a(&RNA_ShaderNodeLightPath)) {
 		node = new LightPathNode();
 	}
@@ -394,7 +416,10 @@ static ShaderNode *add_node(Scene *scene, BL::BlendData b_data, BL::Scene b_scen
 		node = new HairInfoNode();
 	}
 	else if (b_node.is_a(&RNA_ShaderNodeBump)) {
-		node = new BumpNode();
+		BL::ShaderNodeBump b_bump_node(b_node);
+		BumpNode *bump = new BumpNode();
+		bump->invert = b_bump_node.invert();
+		node = bump;
 	}
 	else if (b_node.is_a(&RNA_ShaderNodeScript)) {
 #ifdef WITH_OSL
@@ -683,10 +708,13 @@ static void add_nodes(Scene *scene, BL::BlendData b_data, BL::Scene b_scene, Sha
 				graph->add(proxy);
 			}
 		}
-		else if (b_node->is_a(&RNA_ShaderNodeGroup)) {
+		else if (b_node->is_a(&RNA_ShaderNodeGroup) || b_node->is_a(&RNA_NodeCustomGroup)) {
 			
-			BL::NodeGroup b_gnode(*b_node);
-			BL::ShaderNodeTree b_group_ntree(b_gnode.node_tree());
+			BL::ShaderNodeTree b_group_ntree(PointerRNA_NULL);
+			if (b_node->is_a(&RNA_ShaderNodeGroup))
+				b_group_ntree = BL::ShaderNodeTree(((BL::NodeGroup)(*b_node)).node_tree());
+			else
+				b_group_ntree = BL::ShaderNodeTree(((BL::NodeCustomGroup)(*b_node)).node_tree());
 			ProxyMap group_proxy_input_map, group_proxy_output_map;
 			
 			/* Add a proxy node for each socket
@@ -832,7 +860,8 @@ void BlenderSync::sync_materials(bool update_all)
 
 			/* settings */
 			PointerRNA cmat = RNA_pointer_get(&b_mat->ptr, "cycles");
-			shader->sample_as_light = get_boolean(cmat, "sample_as_light");
+			shader->use_mis = get_boolean(cmat, "sample_as_light");
+			shader->use_transparent_shadow = get_boolean(cmat, "use_transparent_shadow");
 			shader->homogeneous_volume = get_boolean(cmat, "homogeneous_volume");
 
 			shader->set_graph(graph);
@@ -870,8 +899,8 @@ void BlenderSync::sync_world(bool update_all)
 			graph->connect(closure->output("Background"), out->input("Surface"));
 		}
 
-		/* AO */
 		if(b_world) {
+			/* AO */
 			BL::WorldLighting b_light = b_world.light_settings();
 
 			if(b_light.use_ambient_occlusion())
@@ -880,6 +909,17 @@ void BlenderSync::sync_world(bool update_all)
 				background->ao_factor = 0.0f;
 
 			background->ao_distance = b_light.distance();
+
+			/* visibility */
+			PointerRNA cvisibility = RNA_pointer_get(&b_world.ptr, "cycles_visibility");
+			uint visibility = 0;
+
+			visibility |= get_boolean(cvisibility, "camera")? PATH_RAY_CAMERA: 0;
+			visibility |= get_boolean(cvisibility, "diffuse")? PATH_RAY_DIFFUSE: 0;
+			visibility |= get_boolean(cvisibility, "glossy")? PATH_RAY_GLOSSY: 0;
+			visibility |= get_boolean(cvisibility, "transmission")? PATH_RAY_TRANSMIT: 0;
+
+			background->visibility = visibility;
 		}
 
 		shader->set_graph(graph);
