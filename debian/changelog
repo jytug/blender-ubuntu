@@ -1,3 +1,9 @@
+blender (2.68a-1) UNRELEASED; urgency=low
+
+  * New upstream bugfix release
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 29 Jul 2013 14:55:47 +0200
+
 blender (2.67b-3) experimental; urgency=low
 
   * debian/patches/: patchset updated
