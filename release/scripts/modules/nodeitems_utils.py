@@ -42,6 +42,7 @@ class NodeCategory():
                         yield item
             self.items = items_gen
 
+
 class NodeItem():
     def __init__(self, nodetype, label=None, settings={}, poll=None):
         self.nodetype = nodetype
@@ -57,8 +58,30 @@ class NodeItem():
             # if no custom label is defined, fall back to the node type UI name
             return getattr(bpy.types, self.nodetype).bl_rna.name
 
+    # NB: is a staticmethod because called with an explicit self argument
+    # NodeItemCustom sets this as a variable attribute in __init__
+    @staticmethod
+    def draw(self, layout, context):
+        default_context = bpy.app.translations.contexts.default
+
+        props = layout.operator("node.add_node", text=self.label, text_ctxt=default_context)
+        props.type = self.nodetype
+        props.use_transform = True
+
+        for setting in self.settings.items():
+            ops = props.settings.add()
+            ops.name = setting[0]
+            ops.value = setting[1]
+
+
+class NodeItemCustom():
+    def __init__(self, poll=None, draw=None):
+        self.poll = poll
+        self.draw = draw
+
 
 _node_categories = {}
+
 
 def register_node_categories(identifier, cat_list):
     if identifier in _node_categories:
@@ -71,33 +94,26 @@ def register_node_categories(identifier, cat_list):
         col = layout.column()
         default_context = bpy.app.translations.contexts.default
         for item in self.category.items(context):
-            op = col.operator("node.add_node", text=item.label, text_ctxt=default_context)
-            op.type = item.nodetype
-            op.use_transform = True
-
-            for setting in item.settings.items():
-                ops = op.settings.add()
-                ops.name = setting[0]
-                ops.value = setting[1]
+            item.draw(item, col, context)
 
     menu_types = []
     panel_types = []
     for cat in cat_list:
-        menu_type = type("NODE_MT_category_"+cat.identifier, (bpy.types.Menu,), {
-            "bl_space_type" : 'NODE_EDITOR',
-            "bl_label" : cat.name,
-            "category" : cat,
-            "poll" : cat.poll,
-            "draw" : draw_node_item,
+        menu_type = type("NODE_MT_category_" + cat.identifier, (bpy.types.Menu,), {
+            "bl_space_type": 'NODE_EDITOR',
+            "bl_label": cat.name,
+            "category": cat,
+            "poll": cat.poll,
+            "draw": draw_node_item,
             })
-        panel_type = type("NODE_PT_category_"+cat.identifier, (bpy.types.Panel,), {
-            "bl_space_type" : 'NODE_EDITOR',
-            "bl_region_type" : 'TOOLS',
-            "bl_label" : cat.name,
-            "bl_options" : {'DEFAULT_CLOSED'},
-            "category" : cat,
-            "poll" : cat.poll,
-            "draw" : draw_node_item,
+        panel_type = type("NODE_PT_category_" + cat.identifier, (bpy.types.Panel,), {
+            "bl_space_type": 'NODE_EDITOR',
+            "bl_region_type": 'TOOLS',
+            "bl_label": cat.name,
+            "bl_options": {'DEFAULT_CLOSED'},
+            "category": cat,
+            "poll": cat.poll,
+            "draw": draw_node_item,
             })
 
         menu_types.append(menu_type)
@@ -117,6 +133,19 @@ def register_node_categories(identifier, cat_list):
 
     # stores: (categories list, menu draw function, submenu types, panel types)
     _node_categories[identifier] = (cat_list, draw_add_menu, menu_types, panel_types)
+
+
+def node_categories_iter(context):
+    for cat_type in _node_categories.values():
+        for cat in cat_type[0]:
+            if cat.poll and cat.poll(context):
+                yield cat
+
+
+def node_items_iter(context):
+    for cat in node_categories_iter(context):
+        for item in cat.items(context):
+            yield item
 
 
 def unregister_node_cat_types(cats):
@@ -139,4 +168,3 @@ def unregister_node_categories(identifier=None):
         for cat_types in _node_categories.values():
             unregister_node_cat_types(cat_types)
         _node_categories.clear()
-

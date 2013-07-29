@@ -31,6 +31,10 @@
 #include "FreestyleConfig.h"
 #include "Precision.h"
 
+#ifdef WITH_CXX_GUARDEDALLOC
+#include "MEM_guardedalloc.h"
+#endif
+
 namespace Freestyle {
 
 class LIB_SYSTEM_EXPORT PseudoNoise
@@ -51,6 +55,11 @@ public:
 protected:
 	static const unsigned NB_VALUE_NOISE = 512;
 	static real _values[NB_VALUE_NOISE];
+
+#ifdef WITH_CXX_GUARDEDALLOC
+public:
+	MEM_CXX_CLASS_ALLOC_FUNCS("Freestyle:PseudoNoise")
+#endif
 };
 
 } /* namespace Freestyle */

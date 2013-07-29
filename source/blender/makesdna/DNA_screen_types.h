@@ -133,7 +133,7 @@ typedef struct uiList {				/* some list UI data need to be saved in file */
 typedef struct ScrArea {
 	struct ScrArea *next, *prev;
 	
-	ScrVert *v1, *v2, *v3, *v4;
+	ScrVert *v1, *v2, *v3, *v4;		/* ordered (bl, tl, tr, br) */
 	bScreen *full;			/* if area==full, this is the parent */
 
 	rcti totrct;			/* rect bound by v1 v2 v3 v4 */
@@ -195,7 +195,7 @@ typedef struct ARegion {
 /* swap */
 #define WIN_BACK_OK		1
 #define WIN_FRONT_OK	2
-#define WIN_EQUAL		3
+// #define WIN_EQUAL		3  // UNUSED
 
 /* area->flag */
 #define HEADER_NO_PULLDOWN		1
@@ -217,7 +217,6 @@ typedef struct ARegion {
 /* screen->full */
 #define SCREENNORMAL	0
 #define SCREENFULL		1
-#define SCREENFULLTEMP	2
 
 
 /* Panel->snap - for snapping to screen edges */

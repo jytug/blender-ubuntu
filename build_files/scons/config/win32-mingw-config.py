@@ -78,7 +78,7 @@ BF_TIFF_LIBPATH = '${BF_TIFF}/lib'
 WITH_BF_ZLIB = True
 BF_ZLIB = LIBDIR + '/zlib'
 BF_ZLIB_INC = '${BF_ZLIB}/include'
-BF_ZLIB_LIB = 'libz'
+BF_ZLIB_LIB = 'z'
 BF_ZLIB_LIBPATH = '${BF_ZLIB}/lib'
 
 WITH_BF_INTERNATIONAL = True
@@ -149,7 +149,7 @@ BF_OPENCOLLADA_LIBPATH = '${BF_OPENCOLLADA}/lib/opencollada'
 WITH_BF_CYCLES = True
 WITH_BF_CYCLES_CUDA_BINARIES = False
 BF_CYCLES_CUDA_NVCC = "" # Path to the NVIDIA CUDA compiler
-BF_CYCLES_CUDA_BINARIES_ARCH = ['sm_20', 'sm_21', 'sm_30']
+BF_CYCLES_CUDA_BINARIES_ARCH = ['sm_20', 'sm_21', 'sm_30', 'sm_35']
 
 WITH_BF_OIIO = True
 BF_OIIO = LIBDIR + '/openimageio'

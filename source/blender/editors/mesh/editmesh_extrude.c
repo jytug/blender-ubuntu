@@ -46,6 +46,7 @@
 
 #include "ED_mesh.h"
 #include "ED_screen.h"
+#include "ED_transform.h"
 #include "ED_view3d.h"
 
 #include "mesh_intern.h"  /* own include */
@@ -165,7 +166,7 @@ static short edbm_extrude_edge(Object *obedit, BMEditMesh *em, const char hflag,
 				if (mmd->mirror_ob) {
 					float imtx[4][4];
 					invert_m4_m4(imtx, mmd->mirror_ob->obmat);
-					mult_m4_m4m4(mtx, imtx, obedit->obmat);
+					mul_m4_m4m4(mtx, imtx, obedit->obmat);
 				}
 
 				BM_ITER_MESH (edge, &iter, bm, BM_EDGES_OF_MESH) {
@@ -329,36 +330,27 @@ static int edbm_extrude_mesh(Scene *scene, Object *obedit, BMEditMesh *em, wmOpe
 
 	zero_v3(nor);
 
-	/* XXX If those popup menus were to be enabled again, please get rid of this "menu string" syntax! */
 	if (em->selectmode & SCE_SELECT_VERTEX) {
 		if (em->bm->totvertsel == 0) nr = 0;
 		else if (em->bm->totvertsel == 1) nr = 4;
 		else if (em->bm->totedgesel == 0) nr = 4;
 		else if (em->bm->totfacesel == 0)
-			nr = 3;  /* pupmenu("Extrude %t|Only Edges %x3|Only Vertices %x4"); */
+			nr = 3;
 		else if (em->bm->totfacesel == 1)
-			nr = 1;  /* pupmenu("Extrude %t|Region %x1|Only Edges% x3|Only Vertices %x4"); */
+			nr = 1;
 		else
-			nr = 1;  /* pupmenu("Extrude %t|Region %x1|Individual Faces %x2|Only Edges %x3|Only Vertices %x4"); */
+			nr = 1;
 	}
 	else if (em->selectmode & SCE_SELECT_EDGE) {
 		if (em->bm->totedgesel == 0) nr = 0;
 		
 		nr = 1;
-#if 0
-		else if (em->totedgesel == 1) nr = 3;
-		else if (em->totfacesel == 0) nr = 3;
-		else if (em->totfacesel == 1)
-			nr = 1;  /* pupmenu("Extrude %t|Region %x1|Only Edges %x3"); */
-		else
-			nr = 1;  /* pupmenu("Extrude %t|Region %x1|Individual Faces %x2|Only Edges %x3"); */
-#endif
 	}
 	else {
 		if (em->bm->totfacesel == 0) nr = 0;
 		else if (em->bm->totfacesel == 1) nr = 1;
 		else
-			nr = 1;  /* pupmenu("Extrude %t|Region %x1|Individual Faces %x2"); */
+			nr = 1;
 	}
 
 	if (nr < 1) return 'g';
@@ -438,7 +430,7 @@ void MESH_OT_extrude_region(wmOperatorType *ot)
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+	Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
 static int edbm_extrude_verts_exec(bContext *C, wmOperator *op)
@@ -469,7 +461,7 @@ void MESH_OT_extrude_verts_indiv(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* to give to transform */
-	RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+	Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
 static int edbm_extrude_edges_exec(bContext *C, wmOperator *op)
@@ -500,7 +492,7 @@ void MESH_OT_extrude_edges_indiv(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* to give to transform */
-	RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+	Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
 static int edbm_extrude_faces_exec(bContext *C, wmOperator *op)
@@ -530,7 +522,7 @@ void MESH_OT_extrude_faces_indiv(wmOperatorType *ot)
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+	Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
 /* *************** add-click-mesh (extrude) operator ************** */

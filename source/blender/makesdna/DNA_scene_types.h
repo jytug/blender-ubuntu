@@ -1076,11 +1076,11 @@ typedef struct ToolSettings {
 	short proportional, prop_mode;
 	char proportional_objects; /* proportional edit, object mode */
 	char proportional_mask; /* proportional edit, object mode */
-	char pad4[1];
 
 	char auto_normalize; /*auto normalizing mode in wpaint*/
 	char multipaint; /* paint multiple bones in wpaint */
 	char weightuser;
+	char vgroupsubset; /* subset selection filter in wpaint */
 
 	/* UV painting */
 	int use_uv_sculpt;
@@ -1300,7 +1300,7 @@ typedef struct Scene {
 #define R_BG_RENDER			0x0002
 		/* passepartout is camera option now, keep this for backward compatibility */
 #define R_PASSEPARTOUT		0x0004
-#define R_PREVIEWBUTS		0x0008
+#define R_BUTS_PREVIEW		0x0008
 #define R_EXTENSION			0x0010
 #define R_MATNODE_PREVIEW	0x0020
 #define R_DOCOMP			0x0040
@@ -1316,6 +1316,7 @@ typedef struct Scene {
 /* #define R_DEPRECATED		0x10000 */
 /* #define R_RECURS_PROTECTION	0x20000 */
 #define R_TEXNODE_PREVIEW	0x40000
+#define R_VIEWPORT_PREVIEW	0x80000
 
 /* r->stamp */
 #define R_STAMP_TIME 	0x0001
@@ -1500,7 +1501,8 @@ typedef struct Scene {
 /* toolsettings->proportional */
 #define PROP_EDIT_OFF			0
 #define PROP_EDIT_ON			1
-#define PROP_EDIT_CONNECTED	2
+#define PROP_EDIT_CONNECTED		2
+#define PROP_EDIT_PROJECTED		3
 
 /* toolsettings->weightuser */
 enum {
@@ -1508,6 +1510,24 @@ enum {
 	OB_DRAW_GROUPUSER_ACTIVE    = 1,
 	OB_DRAW_GROUPUSER_ALL       = 2
 };
+
+/* toolsettings->vgroupsubset */
+/* object_vgroup.c */
+typedef enum eVGroupSelect {
+	WT_VGROUP_ALL = 0,
+	WT_VGROUP_ACTIVE = 1,
+	WT_VGROUP_BONE_SELECT = 2,
+	WT_VGROUP_BONE_DEFORM = 3,
+	WT_VGROUP_BONE_DEFORM_OFF = 4
+} eVGroupSelect;
+
+#define WT_VGROUP_MASK_ALL \
+	((1 << WT_VGROUP_ACTIVE) | \
+	 (1 << WT_VGROUP_BONE_SELECT) | \
+	 (1 << WT_VGROUP_BONE_DEFORM) | \
+	 (1 << WT_VGROUP_BONE_DEFORM_OFF) | \
+	 (1 << WT_VGROUP_ALL))
+
 
 /* sce->flag */
 #define SCE_DS_SELECTED			(1<<0)

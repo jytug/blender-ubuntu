@@ -80,7 +80,7 @@ enum TfmMode {
 	TFM_TIME_EXTEND,
 	TFM_TIME_DUPLICATE,
 	TFM_BAKE_TIME,
-	TFM_BEVEL,
+	TFM_DEPRECATED,  /* was BEVEL */
 	TFM_BWEIGHT,
 	TFM_ALIGN,
 	TFM_EDGE_SLIDE,
@@ -123,23 +123,21 @@ struct ReportList;
 void BIF_clearTransformOrientation(struct bContext *C);
 void BIF_removeTransformOrientation(struct bContext *C, struct TransformOrientation *ts);
 void BIF_removeTransformOrientationIndex(struct bContext *C, int index);
-void BIF_createTransformOrientation(struct bContext *C, struct ReportList *reports, char *name, int use, int overwrite);
+void BIF_createTransformOrientation(struct bContext *C, struct ReportList *reports, char *name, int use_view,
+                                    int use, int overwrite);
 void BIF_selectTransformOrientation(struct bContext *C, struct TransformOrientation *ts);
 void BIF_selectTransformOrientationValue(struct bContext *C, int orientation);
 
 void ED_getTransformOrientationMatrix(const struct bContext *C, float orientation_mat[3][3], const bool activeOnly);
 
-struct EnumPropertyItem *BIF_enumTransformOrientation(struct bContext *C);
-const char *BIF_menustringTransformOrientation(const struct bContext *C, const char *title);  /* the returned value was allocated and needs to be freed after use */
 int BIF_countTransformOrientation(const struct bContext *C);
 
 void BIF_TransformSetUndo(const char *str);
 
-void BIF_selectOrientation(void);
-
 /* to be able to add operator properties to other operators */
 
 #define P_MIRROR        (1 << 0)
+#define P_MIRROR_DUMMY  (P_MIRROR | (1 << 9))
 #define P_PROPORTIONAL  (1 << 1)
 #define P_AXIS          (1 << 2)
 #define P_SNAP          (1 << 3)
@@ -148,6 +146,7 @@ void BIF_selectOrientation(void);
 #define P_CONSTRAINT    (1 << 6)
 #define P_OPTIONS       (1 << 7)
 #define P_CORRECT_UV    (1 << 8)
+#define P_NO_DEFAULTS   (1 << 10)
 
 void Transform_Properties(struct wmOperatorType *ot, int flags);
 

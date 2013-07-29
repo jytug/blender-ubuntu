@@ -105,8 +105,8 @@ typedef enum eWireDrawMode {
 typedef struct drawDMVerts_userData {
 	BMEditMesh *em;
 
-	int sel;
 	BMVert *eve_act;
+	char sel;
 
 	/* cached theme values */
 	unsigned char th_editmesh_active[4];
@@ -116,7 +116,7 @@ typedef struct drawDMVerts_userData {
 	float th_vertex_size;
 
 	/* for skin node drawing */
-	int has_vskin;
+	int cd_vskin_offset;
 	float imat[4][4];
 } drawDMVerts_userData;
 
@@ -155,6 +155,11 @@ typedef struct bbsObmodeMeshVerts_userData {
 	MVert *mvert;
 } bbsObmodeMeshVerts_userData;
 
+typedef struct drawDMLayer_userData {
+	BMEditMesh *em;
+	int cd_layer_offset;
+} drawDMLayer_userData;
+
 static void draw_bounding_volume(Scene *scene, Object *ob, char type);
 
 static void drawcube_size(float size);
@@ -174,7 +179,7 @@ static void ob_wire_color_blend_theme_id(const unsigned char ob_wire_col[4], con
 }
 
 /* this condition has been made more complex since editmode can draw textures */
-static bool check_object_draw_texture(Scene *scene, View3D *v3d, int drawtype)
+static bool check_object_draw_texture(Scene *scene, View3D *v3d, const char drawtype)
 {
 	/* texture and material draw modes */
 	if (ELEM(v3d->drawtype, OB_TEXTURE, OB_MATERIAL) && drawtype > OB_SOLID) {
@@ -193,6 +198,18 @@ static bool check_object_draw_texture(Scene *scene, View3D *v3d, int drawtype)
 		return true;
 	}
 	
+	return false;
+}
+
+static bool check_object_draw_editweight(Mesh *me, DerivedMesh *finalDM)
+{
+	if (me->drawflag & ME_DRAWEIGHT) {
+		/* editmesh handles its own weight drawing */
+		if (finalDM->type != DM_TYPE_EDITBMESH) {
+			return true;
+		}
+	}
+
 	return false;
 }
 
@@ -258,18 +275,6 @@ static bool check_alpha_pass(Base *base)
 /***/
 static const unsigned int colortab[] = {
 	0x0, 0x403000, 0xFFFF88
-};
-
-
-static float cube[8][3] = {
-	{-1.0, -1.0, -1.0},
-	{-1.0, -1.0,  1.0},
-	{-1.0,  1.0,  1.0},
-	{-1.0,  1.0, -1.0},
-	{ 1.0, -1.0, -1.0},
-	{ 1.0, -1.0,  1.0},
-	{ 1.0,  1.0,  1.0},
-	{ 1.0,  1.0, -1.0},
 };
 
 /* ----------------- OpenGL Circle Drawing - Tables for Optimized Drawing Speed ------------------ */
@@ -864,28 +869,6 @@ void view3d_cached_text_draw_end(View3D *v3d, ARegion *ar, bool depth_write, flo
 
 /* ******************** primitive drawing ******************* */
 
-static void drawcube(void)
-{
-
-	glBegin(GL_LINE_STRIP);
-	glVertex3fv(cube[0]); glVertex3fv(cube[1]); glVertex3fv(cube[2]); glVertex3fv(cube[3]);
-	glVertex3fv(cube[0]); glVertex3fv(cube[4]); glVertex3fv(cube[5]); glVertex3fv(cube[6]);
-	glVertex3fv(cube[7]); glVertex3fv(cube[4]);
-	glEnd();
-
-	glBegin(GL_LINE_STRIP);
-	glVertex3fv(cube[1]); glVertex3fv(cube[5]);
-	glEnd();
-
-	glBegin(GL_LINE_STRIP);
-	glVertex3fv(cube[2]); glVertex3fv(cube[6]);
-	glEnd();
-
-	glBegin(GL_LINE_STRIP);
-	glVertex3fv(cube[3]); glVertex3fv(cube[7]);
-	glEnd();
-}
-
 /* draws a cube on given the scaling of the cube, assuming that
  * all required matrices have been set (used for drawing empties)
  */
@@ -1189,8 +1172,8 @@ static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 		short axis;
 		
 		/* setup a 45 degree rotation matrix */
-		vec_rot_to_mat3(mat, imat[2], (float)M_PI / 4.0f);
-		
+		axis_angle_normalized_to_mat3(mat, imat[2], (float)M_PI / 4.0f);
+
 		/* vectors */
 		mul_v3_v3fl(v1, imat[0], circrad * 1.2f);
 		mul_v3_v3fl(v2, imat[0], circrad * 2.5f);
@@ -1482,11 +1465,19 @@ static void draw_viewport_object_reconstruction(Scene *scene, Base *base, View3D
 	unsigned char col_unsel[4], col_sel[4];
 	int tracknr = *global_track_index;
 	ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, tracking_object);
+	float camera_size[3];
 
 	UI_GetThemeColor4ubv(TH_TEXT, col_unsel);
 	UI_GetThemeColor4ubv(TH_SELECT, col_sel);
 
 	BKE_tracking_get_camera_object_matrix(scene, base->object, mat);
+
+	/* we're compensating camera size for bundles size,
+	 * to make it so bundles are always displayed with the same size
+	 */
+	copy_v3_v3(camera_size, base->object->size);
+	if ((tracking_object->flag & TRACKING_OBJECT_CAMERA) == 0)
+		mul_v3_fl(camera_size, tracking_object->scale);
 
 	glPushMatrix();
 
@@ -1522,7 +1513,9 @@ static void draw_viewport_object_reconstruction(Scene *scene, Base *base, View3D
 
 		glPushMatrix();
 		glTranslatef(track->bundle_pos[0], track->bundle_pos[1], track->bundle_pos[2]);
-		glScalef(v3d->bundle_size / 0.05f, v3d->bundle_size / 0.05f, v3d->bundle_size / 0.05f);
+		glScalef(v3d->bundle_size / 0.05f / camera_size[0],
+		         v3d->bundle_size / 0.05f / camera_size[1],
+		         v3d->bundle_size / 0.05f / camera_size[2]);
 
 		if (v3d->drawtype == OB_WIRE) {
 			glDisable(GL_LIGHTING);
@@ -1837,13 +1830,15 @@ static void drawspeaker(Scene *UNUSED(scene), View3D *UNUSED(v3d), RegionView3D 
 	glDisable(GL_BLEND);
 }
 
-static void lattice_draw_verts(Lattice *lt, DispList *dl, short sel)
+static void lattice_draw_verts(Lattice *lt, DispList *dl, BPoint *actbp, short sel)
 {
 	BPoint *bp = lt->def;
 	float *co = dl ? dl->verts : NULL;
 	int u, v, w;
 
-	UI_ThemeColor(sel ? TH_VERTEX_SELECT : TH_VERTEX);
+	const int color = sel ? TH_VERTEX_SELECT : TH_VERTEX;
+	UI_ThemeColor(color);
+
 	glPointSize(UI_GetThemeValuef(TH_VERTEX_SIZE));
 	bglBegin(GL_POINTS);
 
@@ -1855,7 +1850,13 @@ static void lattice_draw_verts(Lattice *lt, DispList *dl, short sel)
 				int uxt = (u == 0 || u == lt->pntsu - 1);
 				if (!(lt->flag & LT_OUTSIDE) || uxt || vxt || wxt) {
 					if (bp->hide == 0) {
-						if ((bp->f1 & SELECT) == sel) {
+						/* check for active BPoint and ensure selected */
+						if ((bp == actbp) && (bp->f1 & SELECT)) {
+							UI_ThemeColor(TH_LASTSEL_POINT);
+							bglVertex3fv(dl ? co : bp->vec);
+							UI_ThemeColor(color);
+						}
+						else if ((bp->f1 & SELECT) == sel) {
 							bglVertex3fv(dl ? co : bp->vec);
 						}
 					}
@@ -1906,7 +1907,7 @@ static void drawlattice(Scene *scene, View3D *v3d, Object *ob)
 	if (is_edit) {
 		lt = lt->editlatt->latt;
 
-		cpack(0x004000);
+		UI_ThemeColor(TH_WIRE_EDIT);
 		
 		if (ob->defbase.first && lt->dvert) {
 			actdef_wcol = ob->actdef;
@@ -1944,10 +1945,12 @@ static void drawlattice(Scene *scene, View3D *v3d, Object *ob)
 		glShadeModel(GL_FLAT);
 
 	if (is_edit) {
+		BPoint *actbp = BKE_lattice_active_point_get(lt);
+
 		if (v3d->zbuf) glDisable(GL_DEPTH_TEST);
 		
-		lattice_draw_verts(lt, dl, 0);
-		lattice_draw_verts(lt, dl, 1);
+		lattice_draw_verts(lt, dl, actbp, 0);
+		lattice_draw_verts(lt, dl, actbp, 1);
 		
 		if (v3d->zbuf) glEnable(GL_DEPTH_TEST);
 	}
@@ -1956,20 +1959,25 @@ static void drawlattice(Scene *scene, View3D *v3d, Object *ob)
 /* ***************** ******************** */
 
 /*  draw callback */
+
+typedef struct drawDMVertSel_userData {
+	MVert *mvert;
+	int active;
+	unsigned char *col[3];  /* (base, sel, act) */
+	char sel_prev;
+} drawDMVertSel_userData;
+
 static void drawSelectedVertices__mapFunc(void *userData, int index, const float co[3],
                                           const float UNUSED(no_f[3]), const short UNUSED(no_s[3]))
 {
-	MVert *mv = &((MVert *)userData)[index];
+	drawDMVertSel_userData *data = userData;
+	MVert *mv = &data->mvert[index];
 
 	if (!(mv->flag & ME_HIDE)) {
-		const char sel = mv->flag & SELECT;
-
-		/* TODO define selected color */
-		if (sel) {
-			glColor3f(1.0f, 1.0f, 0.0f);
-		}
-		else {
-			glColor3f(0.0f, 0.0f, 0.0f);
+		const char sel = (index == data->active) ? 2 : (mv->flag & SELECT);
+		if (sel != data->sel_prev) {
+			glColor3ubv(data->col[sel]);
+			data->sel_prev = sel;
 		}
 
 		glVertex3fv(co);
@@ -1978,8 +1986,23 @@ static void drawSelectedVertices__mapFunc(void *userData, int index, const float
 
 static void drawSelectedVertices(DerivedMesh *dm, Mesh *me)
 {
+	drawDMVertSel_userData data;
+
+	/* TODO define selected color */
+	unsigned char base_col[3] = {0x0, 0x0, 0x0};
+	unsigned char sel_col[3] = {0xd8, 0xb8, 0x0};
+	unsigned char act_col[3] = {0xff, 0xff, 0xff};
+
+	data.mvert = me->mvert;
+	data.active = BKE_mesh_mselect_active_get(me, ME_VSEL);
+	data.sel_prev = 0xff;
+
+	data.col[0] = base_col;
+	data.col[1] = sel_col;
+	data.col[2] = act_col;
+
 	glBegin(GL_POINTS);
-	dm->foreachMappedVert(dm, drawSelectedVertices__mapFunc, me->mvert);
+	dm->foreachMappedVert(dm, drawSelectedVertices__mapFunc, &data);
 	glEnd();
 }
 
@@ -2052,13 +2075,15 @@ static void draw_dm_face_normals(BMEditMesh *em, Scene *scene, Object *ob, Deriv
 static void draw_dm_face_centers__mapFunc(void *userData, int index, const float cent[3], const float UNUSED(no[3]))
 {
 	BMFace *efa = EDBM_face_at_index(((void **)userData)[0], index);
-	int sel = *(((int **)userData)[1]);
+	const char sel = *(((char **)userData)[1]);
 	
-	if (efa && !BM_elem_flag_test(efa, BM_ELEM_HIDDEN) && BM_elem_flag_test(efa, BM_ELEM_SELECT) == sel) {
+	if (!BM_elem_flag_test(efa, BM_ELEM_HIDDEN) &&
+	    (BM_elem_flag_test(efa, BM_ELEM_SELECT) == sel))
+	{
 		bglVertex3fv(cent);
 	}
 }
-static void draw_dm_face_centers(BMEditMesh *em, DerivedMesh *dm, int sel)
+static void draw_dm_face_centers(BMEditMesh *em, DerivedMesh *dm, char sel)
 {
 	void *ptrs[2] = {em, &sel};
 
@@ -2079,9 +2104,7 @@ static void draw_dm_vert_normals__mapFunc(void *userData, int index, const float
 			copy_v3_v3(no, no_f);
 		}
 		else {
-			no[0] = no_s[0] / 32767.0f;
-			no[1] = no_s[1] / 32767.0f;
-			no[2] = no_s[2] / 32767.0f;
+			normal_short_to_float_v3(no, no_s);
 		}
 
 		if (!data->uniform_scale) {
@@ -2124,10 +2147,8 @@ static void draw_dm_verts__mapFunc(void *userData, int index, const float co[3],
 	if (!BM_elem_flag_test(eve, BM_ELEM_HIDDEN) && BM_elem_flag_test(eve, BM_ELEM_SELECT) == data->sel) {
 		/* skin nodes: draw a red circle around the root
 		 * node(s) */
-		if (data->has_vskin) {
-			const MVertSkin *vs = CustomData_bmesh_get(&data->em->bm->vdata,
-			                                           eve->head.data,
-			                                           CD_MVERT_SKIN);
+		if (data->cd_vskin_offset != -1) {
+			const MVertSkin *vs = BM_ELEM_CD_GET_VOID_P(eve, data->cd_vskin_offset);
 			if (vs->flag & MVERT_SKIN_ROOT) {
 				float radius = (vs->radius[0] + vs->radius[1]) * 0.5f;
 				bglEnd();
@@ -2161,7 +2182,7 @@ static void draw_dm_verts__mapFunc(void *userData, int index, const float co[3],
 	}
 }
 
-static void draw_dm_verts(BMEditMesh *em, DerivedMesh *dm, int sel, BMVert *eve_act,
+static void draw_dm_verts(BMEditMesh *em, DerivedMesh *dm, const char sel, BMVert *eve_act,
                           RegionView3D *rv3d)
 {
 	drawDMVerts_userData data;
@@ -2177,9 +2198,9 @@ static void draw_dm_verts(BMEditMesh *em, DerivedMesh *dm, int sel, BMVert *eve_
 	data.th_vertex_size = UI_GetThemeValuef(TH_VERTEX_SIZE);
 
 	/* For skin root drawing */
-	data.has_vskin = CustomData_has_layer(&em->bm->vdata, CD_MVERT_SKIN);
+	data.cd_vskin_offset = CustomData_get_offset(&em->bm->vdata, CD_MVERT_SKIN);
 	/* view-aligned matrix */
-	mult_m4_m4m4(data.imat, rv3d->viewmat, em->ob->obmat);
+	mul_m4_m4m4(data.imat, rv3d->viewmat, em->ob->obmat);
 	invert_m4(data.imat);
 
 	bglBegin(GL_POINTS);
@@ -2322,9 +2343,6 @@ static DMDrawOption draw_dm_edges_freestyle__setDrawOptions(void *userData, int 
 {
 	BMEdge *eed = EDBM_edge_at_index(userData, index);
 
-	if (!eed)
-		return DM_DRAW_OPTION_SKIP;
-
 	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN) && draw_dm_test_freestyle_edge_mark(userData, eed))
 		return DM_DRAW_OPTION_NORMAL;
 	else
@@ -2354,9 +2372,6 @@ static DMDrawOption draw_dm_faces_sel__setDrawOptions(void *userData, int index)
 	BMFace *efa = EDBM_face_at_index(data->em, index);
 	unsigned char *col;
 	
-	if (!efa)
-		return DM_DRAW_OPTION_SKIP;
-	
 	if (!BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
 		if (efa == data->efa_act) {
 			glColor4ubv(data->cols[2]);
@@ -2381,6 +2396,7 @@ static int draw_dm_faces_sel__compareDrawOptions(void *userData, int index, int 
 {
 
 	drawDMFacesSel_userData *data = userData;
+	int i;
 	BMFace *efa;
 	BMFace *next_efa;
 
@@ -2389,8 +2405,13 @@ static int draw_dm_faces_sel__compareDrawOptions(void *userData, int index, int 
 	if (!data->orig_index_mf_to_mpoly)
 		return 0;
 
-	efa = EDBM_face_at_index(data->em, DM_origindex_mface_mpoly(data->orig_index_mf_to_mpoly, data->orig_index_mp_to_orig, index));
-	next_efa = EDBM_face_at_index(data->em, DM_origindex_mface_mpoly(data->orig_index_mf_to_mpoly, data->orig_index_mp_to_orig, next_index));
+	i = DM_origindex_mface_mpoly(data->orig_index_mf_to_mpoly, data->orig_index_mp_to_orig, index);
+	efa = (i != ORIGINDEX_NONE) ? EDBM_face_at_index(data->em, i) : NULL;
+	i = DM_origindex_mface_mpoly(data->orig_index_mf_to_mpoly, data->orig_index_mp_to_orig, next_index);
+	next_efa = (i != ORIGINDEX_NONE) ? EDBM_face_at_index(data->em, i) : NULL;
+
+	if (ELEM(NULL, efa, next_efa))
+		return 0;
 
 	if (efa == next_efa)
 		return 1;
@@ -2443,58 +2464,61 @@ static void draw_dm_faces_sel(BMEditMesh *em, DerivedMesh *dm, unsigned char *ba
 
 static DMDrawOption draw_dm_creases__setDrawOptions(void *userData, int index)
 {
-	BMEditMesh *em = userData;
-	BMEdge *eed = EDBM_edge_at_index(userData, index);
-	float *crease = eed ? (float *)CustomData_bmesh_get(&em->bm->edata, eed->head.data, CD_CREASE) : NULL;
+	drawDMLayer_userData *data = userData;
+	BMEditMesh *em = data->em;
+	BMEdge *eed = EDBM_edge_at_index(em, index);
 	
-	if (!crease)
-		return DM_DRAW_OPTION_SKIP;
-	
-	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN) && *crease != 0.0f) {
-		UI_ThemeColorBlend(TH_WIRE, TH_EDGE_CREASE, *crease);
-		return DM_DRAW_OPTION_NORMAL;
+	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
+		const float crease = BM_ELEM_CD_GET_FLOAT(eed, data->cd_layer_offset);
+		if (crease != 0.0f) {
+			UI_ThemeColorBlend(TH_WIRE_EDIT, TH_EDGE_CREASE, crease);
+			return DM_DRAW_OPTION_NORMAL;
+		}
 	}
-	else {
-		return DM_DRAW_OPTION_SKIP;
-	}
+	return DM_DRAW_OPTION_SKIP;
 }
 static void draw_dm_creases(BMEditMesh *em, DerivedMesh *dm)
 {
-	glLineWidth(3.0);
-	dm->drawMappedEdges(dm, draw_dm_creases__setDrawOptions, em);
-	glLineWidth(1.0);
+	drawDMLayer_userData data;
+
+	data.em = em;
+	data.cd_layer_offset = CustomData_get_offset(&em->bm->edata, CD_CREASE);
+
+	if (data.cd_layer_offset != -1) {
+		glLineWidth(3.0);
+		dm->drawMappedEdges(dm, draw_dm_creases__setDrawOptions, &data);
+		glLineWidth(1.0);
+	}
 }
 
 static DMDrawOption draw_dm_bweights__setDrawOptions(void *userData, int index)
 {
-	BMEditMesh *em = userData;
-	BMEdge *eed = EDBM_edge_at_index(userData, index);
-	float *bweight = (float *)CustomData_bmesh_get(&em->bm->edata, eed->head.data, CD_BWEIGHT);
+	drawDMLayer_userData *data = userData;
+	BMEditMesh *em = data->em;
+	BMEdge *eed = EDBM_edge_at_index(em, index);
 
-	if (!bweight)
-		return DM_DRAW_OPTION_SKIP;
-	
-	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN) && *bweight != 0.0f) {
-		UI_ThemeColorBlend(TH_WIRE, TH_EDGE_SELECT, *bweight);
-		return DM_DRAW_OPTION_NORMAL;
+	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
+		const float bweight = BM_ELEM_CD_GET_FLOAT(eed, data->cd_layer_offset);
+		if (bweight != 0.0f) {
+			UI_ThemeColorBlend(TH_WIRE_EDIT, TH_EDGE_SELECT, bweight);
+			return DM_DRAW_OPTION_NORMAL;
+		}
 	}
-	else {
-		return DM_DRAW_OPTION_SKIP;
-	}
+	return DM_DRAW_OPTION_SKIP;
 }
 static void draw_dm_bweights__mapFunc(void *userData, int index, const float co[3],
                                       const float UNUSED(no_f[3]), const short UNUSED(no_s[3]))
 {
-	BMEditMesh *em = userData;
-	BMVert *eve = EDBM_vert_at_index(userData, index);
-	float *bweight = (float *)CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_BWEIGHT);
-	
-	if (!bweight)
-		return;
-	
-	if (!BM_elem_flag_test(eve, BM_ELEM_HIDDEN) && *bweight != 0.0f) {
-		UI_ThemeColorBlend(TH_VERTEX, TH_VERTEX_SELECT, *bweight);
-		bglVertex3fv(co);
+	drawDMLayer_userData *data = userData;
+	BMEditMesh *em = data->em;
+	BMVert *eve = EDBM_vert_at_index(em, index);
+
+	if (!BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
+		const float bweight = BM_ELEM_CD_GET_FLOAT(eve, data->cd_layer_offset);
+		if (bweight != 0.0f) {
+			UI_ThemeColorBlend(TH_VERTEX, TH_VERTEX_SELECT, bweight);
+			bglVertex3fv(co);
+		}
 	}
 }
 static void draw_dm_bweights(BMEditMesh *em, Scene *scene, DerivedMesh *dm)
@@ -2502,15 +2526,29 @@ static void draw_dm_bweights(BMEditMesh *em, Scene *scene, DerivedMesh *dm)
 	ToolSettings *ts = scene->toolsettings;
 
 	if (ts->selectmode & SCE_SELECT_VERTEX) {
-		glPointSize(UI_GetThemeValuef(TH_VERTEX_SIZE) + 2);
-		bglBegin(GL_POINTS);
-		dm->foreachMappedVert(dm, draw_dm_bweights__mapFunc, em);
-		bglEnd();
+		drawDMLayer_userData data;
+
+		data.em = em;
+		data.cd_layer_offset = CustomData_get_offset(&em->bm->vdata, CD_BWEIGHT);
+
+		if (data.cd_layer_offset != -1) {
+			glPointSize(UI_GetThemeValuef(TH_VERTEX_SIZE) + 2);
+			bglBegin(GL_POINTS);
+			dm->foreachMappedVert(dm, draw_dm_bweights__mapFunc, &data);
+			bglEnd();
+		}
 	}
 	else {
-		glLineWidth(3.0);
-		dm->drawMappedEdges(dm, draw_dm_bweights__setDrawOptions, em);
-		glLineWidth(1.0);
+		drawDMLayer_userData data;
+
+		data.em = em;
+		data.cd_layer_offset = CustomData_get_offset(&em->bm->edata, CD_BWEIGHT);
+
+		if (data.cd_layer_offset != -1) {
+			glLineWidth(3.0);
+			dm->drawMappedEdges(dm, draw_dm_bweights__setDrawOptions, &data);
+			glLineWidth(1.0);
+		}
 	}
 }
 
@@ -2537,7 +2575,7 @@ static void draw_em_fancy_verts(Scene *scene, View3D *v3d, Object *obedit,
 		int pass;
 
 		UI_GetThemeColor3ubv(sel ? TH_VERTEX_SELECT : TH_VERTEX, col);
-		UI_GetThemeColor3ubv(sel ? TH_FACE_DOT : TH_WIRE, fcol);
+		UI_GetThemeColor3ubv(sel ? TH_FACE_DOT : TH_WIRE_EDIT, fcol);
 
 		for (pass = 0; pass < 2; pass++) {
 			float size = UI_GetThemeValuef(TH_VERTEX_SIZE);
@@ -2594,7 +2632,7 @@ static void draw_em_fancy_edges(BMEditMesh *em, Scene *scene, View3D *v3d,
 
 	/* since this function does transparent... */
 	UI_GetThemeColor4ubv(TH_EDGE_SELECT, selCol);
-	UI_GetThemeColor4ubv(TH_WIRE, wireCol);
+	UI_GetThemeColor4ubv(TH_WIRE_EDIT, wireCol);
 	UI_GetThemeColor4ubv(TH_EDITMESH_ACTIVE, actCol);
 	
 	/* when sel only is used, don't render wire, only selected, this is used for
@@ -2647,7 +2685,7 @@ static void draw_em_fancy_edges(BMEditMesh *em, Scene *scene, View3D *v3d,
 	}
 }
 
-static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitSettings *unit)
+static void draw_em_measure_stats(ARegion *ar, View3D *v3d, Object *ob, BMEditMesh *em, UnitSettings *unit)
 {
 	const short txt_flag = V3D_CACHE_TEXT_ASCII | V3D_CACHE_TEXT_LOCALCLIP;
 	Mesh *me = ob->data;
@@ -2659,8 +2697,10 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 	float grid = unit->system ? unit->scale_length : v3d->grid;
 	const bool do_split = (unit->flag & USER_UNIT_OPT_SPLIT) != 0;
 	const bool do_global = (v3d->flag & V3D_GLOBAL_STATS) != 0;
-	const bool do_moving = G.moving;
-
+	const bool do_moving = (G.moving & G_TRANSFORM_EDIT) != 0;
+	float clip_planes[4][4];
+	/* allow for displaying shape keys and deform mods */
+	DerivedMesh *dm = EDBM_mesh_deform_dm_get(em);
 	BMIter iter;
 	int i;
 
@@ -2671,39 +2711,64 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 	else if (grid <= 1.0f) conv_float = "%.4g";
 	else if (grid <= 10.0f) conv_float = "%.3g";
 	else conv_float = "%.2g";
-	
+
+	if (me->drawflag & (ME_DRAWEXTRA_EDGELEN | ME_DRAWEXTRA_EDGEANG)) {
+		BoundBox bb;
+		bglMats mats = {{0}};
+		const rcti rect = {0, ar->winx, 0, ar->winy};
+
+		view3d_get_transformation(ar, ar->regiondata, em->ob, &mats);
+		ED_view3d_clipping_calc(&bb, clip_planes, &mats, &rect);
+	}
+
 	if (me->drawflag & ME_DRAWEXTRA_EDGELEN) {
 		BMEdge *eed;
 
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_EDGELEN, col);
 
-		eed = BM_iter_new(&iter, em->bm, BM_EDGES_OF_MESH, NULL);
-		for (; eed; eed = BM_iter_step(&iter)) {
+		if (dm) {
+			BM_mesh_elem_index_ensure(em->bm, BM_VERT);
+		}
+
+		BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
 			/* draw selected edges, or edges next to selected verts while draging */
 			if (BM_elem_flag_test(eed, BM_ELEM_SELECT) ||
 			    (do_moving && (BM_elem_flag_test(eed->v1, BM_ELEM_SELECT) ||
 			                   BM_elem_flag_test(eed->v2, BM_ELEM_SELECT))))
 			{
+				float v1_clip[3], v2_clip[3];
 
-				copy_v3_v3(v1, eed->v1->co);
-				copy_v3_v3(v2, eed->v2->co);
-
-				mid_v3_v3v3(vmid, v1, v2);
-
-				if (do_global) {
-					mul_mat3_m4_v3(ob->obmat, v1);
-					mul_mat3_m4_v3(ob->obmat, v2);
-				}
-
-				if (unit->system) {
-					bUnit_AsString(numstr, sizeof(numstr), len_v3v3(v1, v2) * unit->scale_length, 3,
-					               unit->system, B_UNIT_LENGTH, do_split, false);
+				if (dm) {
+					dm->getVertCo(dm, BM_elem_index_get(eed->v1), v1);
+					dm->getVertCo(dm, BM_elem_index_get(eed->v2), v2);
 				}
 				else {
-					BLI_snprintf(numstr, sizeof(numstr), conv_float, len_v3v3(v1, v2));
+					copy_v3_v3(v1, eed->v1->co);
+					copy_v3_v3(v2, eed->v2->co);
 				}
 
-				view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+				copy_v3_v3(v1_clip, v1);
+				copy_v3_v3(v2_clip, v2);
+
+				if (clip_segment_v3_plane_n(v1_clip, v2_clip, clip_planes, 4)) {
+
+					mid_v3_v3v3(vmid, v1_clip, v2_clip);
+
+					if (do_global) {
+						mul_mat3_m4_v3(ob->obmat, v1);
+						mul_mat3_m4_v3(ob->obmat, v2);
+					}
+
+					if (unit->system) {
+						bUnit_AsString(numstr, sizeof(numstr), len_v3v3(v1, v2) * unit->scale_length, 3,
+						               unit->system, B_UNIT_LENGTH, do_split, false);
+					}
+					else {
+						BLI_snprintf(numstr, sizeof(numstr), conv_float, len_v3v3(v1, v2));
+					}
+
+					view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+				}
 			}
 		}
 	}
@@ -2714,10 +2779,13 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_EDGEANG, col);
 
+		if (dm) {
+			BM_mesh_elem_index_ensure(em->bm, BM_VERT | BM_FACE);
+		}
+
 		// invert_m4_m4(ob->imat, ob->obmat);  // this is already called
 
-		eed = BM_iter_new(&iter, em->bm, BM_EDGES_OF_MESH, NULL);
-		for (; eed; eed = BM_iter_step(&iter)) {
+		BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
 			BMLoop *l_a, *l_b;
 			if (BM_edge_loop_pair(eed, &l_a, &l_b)) {
 				/* draw selected edges, or edges next to selected verts while draging */
@@ -2732,28 +2800,48 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 				                   BM_elem_flag_test(l_b->prev->v, BM_ELEM_SELECT)
 				                   )))
 				{
-					float angle;
-					copy_v3_v3(v1, eed->v1->co);
-					copy_v3_v3(v2, eed->v2->co);
+					float v1_clip[3], v2_clip[3];
 
-					mid_v3_v3v3(vmid, v1, v2);
-
-					if (do_global) {
-						float no_a[3];
-						float no_b[3];
-						copy_v3_v3(no_a, l_a->f->no);
-						copy_v3_v3(no_b, l_b->f->no);
-						mul_mat3_m4_v3(ob->imat, no_a);
-						mul_mat3_m4_v3(ob->imat, no_b);
-						angle = angle_v3v3(no_a, no_b);
+					if (dm) {
+						dm->getVertCo(dm, BM_elem_index_get(eed->v1), v1);
+						dm->getVertCo(dm, BM_elem_index_get(eed->v2), v2);
 					}
 					else {
-						angle = angle_normalized_v3v3(l_a->f->no, l_b->f->no);
+						copy_v3_v3(v1, eed->v1->co);
+						copy_v3_v3(v2, eed->v2->co);
 					}
 
-					BLI_snprintf(numstr, sizeof(numstr), "%.3f", is_rad ? angle : RAD2DEGF(angle));
+					copy_v3_v3(v1_clip, v1);
+					copy_v3_v3(v2_clip, v2);
 
-					view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+					if (clip_segment_v3_plane_n(v1_clip, v2_clip, clip_planes, 4)) {
+						float no_a[3], no_b[3];
+						float angle;
+
+						mid_v3_v3v3(vmid, v1_clip, v2_clip);
+
+						if (dm) {
+							dm->getPolyNo(dm, BM_elem_index_get(l_a->f), no_a);
+							dm->getPolyNo(dm, BM_elem_index_get(l_b->f), no_b);
+						}
+						else {
+							copy_v3_v3(no_a, l_a->f->no);
+							copy_v3_v3(no_b, l_b->f->no);
+						}
+
+						if (do_global) {
+							mul_mat3_m4_v3(ob->imat, no_a);
+							mul_mat3_m4_v3(ob->imat, no_b);
+							normalize_v3(no_a);
+							normalize_v3(no_b);
+						}
+
+						angle = angle_normalized_v3v3(no_a, no_b);
+
+						BLI_snprintf(numstr, sizeof(numstr), "%.3f", is_rad ? angle : RAD2DEGF(angle));
+
+						view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+					}
 				}
 			}
 		}
@@ -2784,6 +2872,10 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_FACEAREA, col);
 		
+		if (dm) {
+			BM_mesh_elem_index_ensure(em->bm, BM_VERT);
+		}
+
 		f = NULL;
 		area = 0.0;
 		zero_v3(vmid);
@@ -2798,9 +2890,18 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 			}
 
 			f = l[0]->f;
-			copy_v3_v3(v1, l[0]->v->co);
-			copy_v3_v3(v2, l[1]->v->co);
-			copy_v3_v3(v3, l[2]->v->co);
+
+			if (dm) {
+				dm->getVertCo(dm, BM_elem_index_get(l[0]->v), v1);
+				dm->getVertCo(dm, BM_elem_index_get(l[1]->v), v2);
+				dm->getVertCo(dm, BM_elem_index_get(l[2]->v), v3);
+			}
+			else {
+				copy_v3_v3(v1, l[0]->v->co);
+				copy_v3_v3(v2, l[1]->v->co);
+				copy_v3_v3(v3, l[2]->v->co);
+			}
+
 			add_v3_v3(vmid, v1);
 			add_v3_v3(vmid, v2);
 			add_v3_v3(vmid, v3);
@@ -2825,6 +2926,9 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_FACEANG, col);
 
+		if (dm) {
+			BM_mesh_elem_index_ensure(em->bm, BM_VERT);
+		}
 
 		BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
 			const int is_face_sel = BM_elem_flag_test(efa, BM_ELEM_SELECT);
@@ -2837,35 +2941,50 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 				BM_ITER_ELEM (loop, &liter, efa, BM_LOOPS_OF_FACE) {
 					if (is_face_sel || (do_moving && BM_elem_flag_test(loop->v, BM_ELEM_SELECT))) {
 						float angle;
+						float v2_local[3];
 
 						/* lazy init center calc */
 						if (is_first) {
-							BM_face_calc_center_bounds(efa, vmid);
-							/* Avoid triple matrix multiply every vertex for 'global' */
-							if (do_global) {
-								copy_v3_v3(v1, loop->prev->v->co);
-								copy_v3_v3(v2, loop->v->co);
-								mul_mat3_m4_v3(ob->obmat, v1);
-								mul_mat3_m4_v3(ob->obmat, v2);
+							if (dm) {
+								BMLoop *l_iter, *l_first;
+								float tvec[3];
+								zero_v3(vmid);
+								l_iter = l_first = BM_FACE_FIRST_LOOP(efa);
+								do {
+									dm->getVertCo(dm, BM_elem_index_get(l_iter->v), tvec);
+									add_v3_v3(vmid, tvec);
+								} while ((l_iter = l_iter->next) != l_first);
+								mul_v3_fl(vmid, 1.0f / (float)efa->len);
+							}
+							else {
+								BM_face_calc_center_bounds(efa, vmid);
 							}
 							is_first = false;
 						}
 
-						if (do_global) {
-							copy_v3_v3(v3, loop->next->v->co);
-
-							mul_mat3_m4_v3(ob->obmat, v3);
-
-							angle = angle_v3v3v3(v1, v2, v3);
-							copy_v3_v3(v1, v2);
-							copy_v3_v3(v2, v3);
+						if (dm) {
+							dm->getVertCo(dm, BM_elem_index_get(loop->prev->v), v1);
+							dm->getVertCo(dm, BM_elem_index_get(loop->v),       v2);
+							dm->getVertCo(dm, BM_elem_index_get(loop->next->v), v3);
 						}
 						else {
-							angle = angle_v3v3v3(loop->prev->v->co, loop->v->co, loop->next->v->co);
+							copy_v3_v3(v1, loop->prev->v->co);
+							copy_v3_v3(v2, loop->v->co);
+							copy_v3_v3(v3, loop->next->v->co);
 						}
 
+						copy_v3_v3(v2_local, v2);
+
+						if (do_global) {
+							mul_mat3_m4_v3(ob->obmat, v1);
+							mul_mat3_m4_v3(ob->obmat, v2);
+							mul_mat3_m4_v3(ob->obmat, v3);
+						}
+
+						angle = angle_v3v3v3(v1, v2, v3);
+
 						BLI_snprintf(numstr, sizeof(numstr), "%.3f", is_rad ? angle : RAD2DEGF(angle));
-						interp_v3_v3v3(fvec, vmid, loop->v->co, 0.8f);
+						interp_v3_v3v3(fvec, vmid, v2_local, 0.8f);
 						view3d_cached_text_draw_add(fvec, numstr, 0, txt_flag, col);
 					}
 				}
@@ -2930,35 +3049,53 @@ static void draw_em_indices(BMEditMesh *em)
 
 static DMDrawOption draw_em_fancy__setFaceOpts(void *userData, int index)
 {
-	BMFace *efa = EDBM_face_at_index(userData, index);
+	BMEditMesh *em = userData;
+	BMFace *efa;
 
-	if (efa && !BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
+	if (UNLIKELY(index >= em->bm->totface))
+		return DM_DRAW_OPTION_NORMAL;
+
+	efa = EDBM_face_at_index(em, index);
+	if (!BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
 		GPU_enable_material(efa->mat_nr + 1, NULL);
 		return DM_DRAW_OPTION_NORMAL;
 	}
-	else
+	else {
 		return DM_DRAW_OPTION_SKIP;
+	}
 }
 
 static DMDrawOption draw_em_fancy__setGLSLFaceOpts(void *userData, int index)
 {
-	BMFace *efa = EDBM_face_at_index(userData, index);
+	BMEditMesh *em = userData;
+	BMFace *efa;
 
-	if (BM_elem_flag_test(efa, BM_ELEM_HIDDEN))
-		return DM_DRAW_OPTION_SKIP;
-	else
+	if (UNLIKELY(index >= em->bm->totface))
 		return DM_DRAW_OPTION_NORMAL;
+
+	efa = EDBM_face_at_index(em, index);
+
+	if (!BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
+		return DM_DRAW_OPTION_NORMAL;
+	}
+	else {
+		return DM_DRAW_OPTION_SKIP;
+	}
 }
 
-static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
+static void draw_em_fancy(Scene *scene, ARegion *ar, View3D *v3d,
                           Object *ob, BMEditMesh *em, DerivedMesh *cageDM, DerivedMesh *finalDM, const char dt)
 
 {
+	RegionView3D *rv3d = ar->regiondata;
 	Mesh *me = ob->data;
-	BMFace *efa_act = BM_active_face_get(em->bm, false, false); /* annoying but active faces is stored differently */
+	BMFace *efa_act = BM_mesh_active_face_get(em->bm, false, true); /* annoying but active faces is stored differently */
 	BMEdge *eed_act = NULL;
 	BMVert *eve_act = NULL;
 	
+	// if (cageDM)  BLI_assert(!(cageDM->dirty & DM_DIRTY_NORMALS));
+	if (finalDM) BLI_assert(!(finalDM->dirty & DM_DIRTY_NORMALS));
+
 	if (em->bm->selected.last) {
 		BMEditSelection *ese = em->bm->selected.last;
 		/* face is handeled above */
@@ -2978,7 +3115,21 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 	
 	EDBM_index_arrays_ensure(em, BM_VERT | BM_EDGE | BM_FACE);
 
-	if (dt > OB_WIRE) {
+	if (check_object_draw_editweight(me, finalDM)) {
+		if (dt > OB_WIRE) {
+			draw_mesh_paint_weight_faces(finalDM, true, draw_em_fancy__setFaceOpts, me->edit_btmesh);
+
+			bglPolygonOffset(rv3d->dist, 1.0);
+			glDepthMask(0);
+		}
+		else {
+			glEnable(GL_DEPTH_TEST);
+			draw_mesh_paint_weight_faces(finalDM, false, draw_em_fancy__setFaceOpts, me->edit_btmesh);
+			draw_mesh_paint_weight_edges(rv3d, finalDM, true, draw_dm_edges__setDrawOptions, me->edit_btmesh);
+			glDisable(GL_DEPTH_TEST);
+		}
+	}
+	else if (dt > OB_WIRE) {
 		if (check_object_draw_texture(scene, v3d, dt)) {
 			if (draw_glsl_material(scene, ob, v3d, dt)) {
 				glFrontFace((ob->transflag & OB_NEG_SCALE) ? GL_CW : GL_CCW);
@@ -3009,14 +3160,14 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 
 		/* Setup for drawing wire over, disable zbuffer
 		 * write to show selected edge wires better */
-		UI_ThemeColor(TH_WIRE);
+		UI_ThemeColor(TH_WIRE_EDIT);
 
 		bglPolygonOffset(rv3d->dist, 1.0);
 		glDepthMask(0);
 	}
 	else {
 		if (cageDM != finalDM) {
-			UI_ThemeColorBlend(TH_WIRE, TH_BACK, 0.7);
+			UI_ThemeColorBlend(TH_WIRE_EDIT, TH_BACK, 0.7);
 			finalDM->drawEdges(finalDM, 1, 0);
 		}
 	}
@@ -3117,7 +3268,7 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 		}
 #endif
 	
-		if (me->drawflag & ME_DRAWCREASES && CustomData_has_layer(&em->bm->edata, CD_CREASE)) {
+		if (me->drawflag & ME_DRAWCREASES) {
 			draw_dm_creases(em, cageDM);
 		}
 		if (me->drawflag & ME_DRAWBWEIGHTS) {
@@ -3145,7 +3296,7 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 		                     ME_DRAWEXTRA_EDGEANG)) &&
 		    !(v3d->flag2 & V3D_RENDER_OVERRIDE))
 		{
-			draw_em_measure_stats(v3d, ob, em, &scene->unit);
+			draw_em_measure_stats(ar, v3d, ob, em, &scene->unit);
 		}
 
 		if ((G.debug & G_DEBUG) && (me->drawflag & ME_DRAWEXTRA_INDICES) &&
@@ -3195,7 +3346,7 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 	Object *ob = base->object;
 	Mesh *me = ob->data;
 	Material *ma = give_current_material(ob, 1);
-	const short hasHaloMat = (ma && (ma->material_type == MA_TYPE_HALO));
+	const short hasHaloMat = (ma && (ma->material_type == MA_TYPE_HALO) && !BKE_scene_use_new_shading_nodes(scene));
 	eWireDrawMode draw_wire = OBDRAW_WIRE_OFF;
 	int /* totvert,*/ totedge, totface;
 	DerivedMesh *dm = mesh_get_derived_final(scene, ob, scene->customdata_mask);
@@ -3204,6 +3355,8 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 
 	if (!dm)
 		return;
+
+	if (dm)  BLI_assert(!(dm->dirty & DM_DIRTY_NORMALS));
 
 	/* Check to draw dynamic paint colors (or weights from WeightVG modifiers).
 	 * Note: Last "preview-active" modifier in stack will win! */
@@ -3475,7 +3628,7 @@ static bool draw_mesh_object(Scene *scene, ARegion *ar, View3D *v3d, RegionView3
 			GPU_begin_object_materials(v3d, rv3d, scene, ob, glsl, NULL);
 		}
 
-		draw_em_fancy(scene, v3d, rv3d, ob, em, cageDM, finalDM, dt);
+		draw_em_fancy(scene, ar, v3d, ob, em, cageDM, finalDM, dt);
 
 		GPU_end_object_materials();
 
@@ -3959,7 +4112,7 @@ static void draw_particle_arrays(int draw_as, int totpoint, int ob_dt, int selec
 	}
 }
 static void draw_particle(ParticleKey *state, int draw_as, short draw, float pixsize,
-                          float imat[4][4], float *draw_line, ParticleBillboardData *bb, ParticleDrawData *pdd)
+                          float imat[4][4], const float draw_line[2], ParticleBillboardData *bb, ParticleDrawData *pdd)
 {
 	float vec[3], vec2[3];
 	float *vd = NULL;
@@ -4108,6 +4261,42 @@ static void draw_particle(ParticleKey *state, int draw_as, short draw, float pix
 		}
 	}
 }
+static void draw_particle_data(ParticleSystem *psys, RegionView3D *rv3d,
+                               ParticleKey *state, int draw_as,
+                               float imat[4][4], ParticleBillboardData *bb, ParticleDrawData *pdd,
+                               const float ct, const float pa_size, const float r_tilt, const float pixsize_scale)
+{
+	ParticleSettings *part = psys->part;
+	float pixsize;
+
+	if (psys->parent)
+		mul_m4_v3(psys->parent->obmat, state->co);
+
+	/* create actiual particle data */
+	if (draw_as == PART_DRAW_BB) {
+		bb->offset[0] = part->bb_offset[0];
+		bb->offset[1] = part->bb_offset[1];
+		bb->size[0] = part->bb_size[0] * pa_size;
+		if (part->bb_align == PART_BB_VEL) {
+			float pa_vel = len_v3(state->vel);
+			float head = part->bb_vel_head * pa_vel;
+			float tail = part->bb_vel_tail * pa_vel;
+			bb->size[1] = part->bb_size[1] * pa_size + head + tail;
+			/* use offset to adjust the particle center. this is relative to size, so need to divide! */
+			if (bb->size[1] > 0.0f)
+				bb->offset[1] += (head - tail) / bb->size[1];
+		}
+		else {
+			bb->size[1] = part->bb_size[1] * pa_size;
+		}
+		bb->tilt = part->bb_tilt * (1.0f - part->bb_rand_tilt * r_tilt);
+		bb->time = ct;
+	}
+
+	pixsize = ED_view3d_pixel_size(rv3d, state->co) * pixsize_scale;
+
+	draw_particle(state, draw_as, part->draw, pixsize, imat, part->draw_line, bb, pdd);
+}
 /* unified drawing of all new particle systems draw types except dupli ob & group	*/
 /* mostly tries to use vertex arrays for speed										*/
 
@@ -4202,7 +4391,7 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 	if ((base->flag & OB_FROMDUPLI) && (ob->flag & OB_FROMGROUP)) {
 		float mat[4][4];
-		mult_m4_m4m4(mat, ob->obmat, psys->imat);
+		mul_m4_m4m4(mat, ob->obmat, psys->imat);
 		glMultMatrixf(mat);
 	}
 
@@ -4430,7 +4619,6 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 					ct += dt;
 					for (i = 0; i < trail_count; i++, ct += dt) {
-						float pixsize;
 
 						if (part->draw & PART_ABS_PATH_TIME) {
 							if (ct < pa_birthtime || ct > pa_dietime)
@@ -4442,32 +4630,9 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 						state.time = (part->draw & PART_ABS_PATH_TIME) ? -ct : -(pa_birthtime + ct * (pa_dietime - pa_birthtime));
 						psys_get_particle_on_path(&sim, a, &state, need_v);
 
-						if (psys->parent)
-							mul_m4_v3(psys->parent->obmat, state.co);
-
-						/* create actiual particle data */
-						if (draw_as == PART_DRAW_BB) {
-							bb.offset[0] = part->bb_offset[0];
-							bb.offset[1] = part->bb_offset[1];
-							bb.size[0] = part->bb_size[0] * pa_size;
-							if (part->bb_align == PART_BB_VEL) {
-								float pa_vel = len_v3(state.vel);
-								float head = part->bb_vel_head * pa_vel;
-								float tail = part->bb_vel_tail * pa_vel;
-								bb.size[1] = part->bb_size[1] * pa_size + head + tail;
-								/* use offset to adjust the particle center. this is relative to size, so need to divide! */
-								if (bb.size[1] > 0.0f)
-									bb.offset[1] += (head - tail) / bb.size[1];
-							}
-							else
-								bb.size[1] = part->bb_size[1] * pa_size;
-							bb.tilt = part->bb_tilt * (1.0f - part->bb_rand_tilt * r_tilt);
-							bb.time = ct;
-						}
-
-						pixsize = ED_view3d_pixel_size(rv3d, state.co) * pixsize_scale;
-
-						draw_particle(&state, draw_as, part->draw, pixsize, imat, part->draw_line, &bb, psys->pdd);
+						draw_particle_data(psys, rv3d,
+						                   &state, draw_as, imat, &bb, psys->pdd,
+						                   ct, pa_size, r_tilt, pixsize_scale);
 
 						totpoint++;
 						drawn = 1;
@@ -4476,34 +4641,10 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 				else {
 					state.time = cfra;
 					if (psys_get_particle_state(&sim, a, &state, 0)) {
-						float pixsize;
 
-						if (psys->parent)
-							mul_m4_v3(psys->parent->obmat, state.co);
-
-						/* create actiual particle data */
-						if (draw_as == PART_DRAW_BB) {
-							bb.offset[0] = part->bb_offset[0];
-							bb.offset[1] = part->bb_offset[1];
-							bb.size[0] = part->bb_size[0] * pa_size;
-							if (part->bb_align == PART_BB_VEL) {
-								float pa_vel = len_v3(state.vel);
-								float head = part->bb_vel_head * pa_vel;
-								float tail = part->bb_vel_tail * pa_vel;
-								bb.size[1] = part->bb_size[1] * pa_size + head + tail;
-								/* use offset to adjust the particle center. this is relative to size, so need to divide! */
-								if (bb.size[1] > 0.0f)
-									bb.offset[1] += (head - tail) / bb.size[1];
-							}
-							else
-								bb.size[1] = part->bb_size[1] * pa_size;
-							bb.tilt = part->bb_tilt * (1.0f - part->bb_rand_tilt * r_tilt);
-							bb.time = pa_time;
-						}
-
-						pixsize = ED_view3d_pixel_size(rv3d, state.co) * pixsize_scale;
-
-						draw_particle(&state, draw_as, part->draw, pixsize, imat, part->draw_line, &bb, pdd);
+						draw_particle_data(psys, rv3d,
+						                   &state, draw_as, imat, &bb, psys->pdd,
+						                   pa_time, pa_size, r_tilt, pixsize_scale);
 
 						totpoint++;
 						drawn = 1;
@@ -4787,11 +4928,10 @@ static void draw_ptcache_edit(Scene *scene, View3D *v3d, PTCacheEdit *edit)
 	UI_GetThemeColor3fv(TH_VERTEX, nosel_col);
 
 	/* draw paths */
-	if (timed) {
-		glEnable(GL_BLEND);
-		steps = (*edit->pathcache)->steps + 1;
-		pathcol = MEM_callocN(steps * 4 * sizeof(float), "particle path color data");
-	}
+	steps = (*edit->pathcache)->steps + 1;
+
+	glEnable(GL_BLEND);
+	pathcol = MEM_callocN(steps * 4 * sizeof(float), "particle path color data");
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
@@ -4806,11 +4946,19 @@ static void draw_ptcache_edit(Scene *scene, View3D *v3d, PTCacheEdit *edit)
 	}
 
 	cache = edit->pathcache;
-	for (i = 0; i < totpoint; i++) {
+	for (i = 0, point = edit->points; i < totpoint; i++, point++) {
 		path = cache[i];
 		glVertexPointer(3, GL_FLOAT, sizeof(ParticleCacheKey), path->co);
 
-		if (timed) {
+		if (point->flag & PEP_HIDE) {
+			for (k = 0, pcol = pathcol; k < steps; k++, pcol += 4) {
+				copy_v3_v3(pcol, path->col);
+				pcol[3] = 0.25f;
+			}
+
+			glColorPointer(4, GL_FLOAT, 4 * sizeof(float), pathcol);
+		}
+		else if (timed) {
 			for (k = 0, pcol = pathcol, pkey = path; k < steps; k++, pkey++, pcol += 4) {
 				copy_v3_v3(pcol, pkey->col);
 				pcol[3] = 1.0f - fabsf((float)(CFRA) -pkey->time) / (float)pset->fade_frames;
@@ -5083,7 +5231,7 @@ static void ob_draw_RE_motion(float com[3], float rotscale[3][3], float itw, flo
 
 /* place to add drawers */
 
-static void drawhandlesN(Nurb *nu, short sel, short hide_handles)
+static void drawhandlesN(Nurb *nu, const char sel, const bool hide_handles)
 {
 	BezTriple *bezt;
 	float *fp;
@@ -5178,7 +5326,7 @@ static void drawhandlesN_active(Nurb *nu)
 	glLineWidth(1);
 }
 
-static void drawvertsN(Nurb *nu, short sel, short hide_handles, void *lastsel)
+static void drawvertsN(Nurb *nu, const char sel, const bool hide_handles, void *lastsel)
 {
 	BezTriple *bezt;
 	BPoint *bp;
@@ -5441,17 +5589,17 @@ static void drawnurb(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base, 
 	Curve *cu = ob->data;
 	Nurb *nu;
 	BevList *bl;
-	short hide_handles = (cu->drawflag & CU_HIDE_HANDLES);
+	const bool hide_handles = (cu->drawflag & CU_HIDE_HANDLES) != 0;
 	int index;
 	unsigned char wire_col[3];
 
 	/* DispList */
-	UI_GetThemeColor3ubv(TH_WIRE, wire_col);
+	UI_GetThemeColor3ubv(TH_WIRE_EDIT, wire_col);
 	glColor3ubv(wire_col);
 
 	drawDispList(scene, v3d, rv3d, base, dt, dflag, ob_wire_col);
 
-	if (v3d->zbuf) glDisable(GL_DEPTH_TEST);
+	if (v3d->zbuf) glDepthFunc(GL_ALWAYS);
 	
 	/* first non-selected and active handles */
 	index = 0;
@@ -5472,13 +5620,13 @@ static void drawnurb(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base, 
 		drawvertsN(nu, 0, hide_handles, NULL);
 	}
 	
-	if (v3d->zbuf) glEnable(GL_DEPTH_TEST);
+	if (v3d->zbuf) glDepthFunc(GL_LEQUAL);
 
 	/* direction vectors for 3d curve paths
 	 * when at its lowest, don't render normals */
 	if ((cu->flag & CU_3D) && (ts->normalsize > 0.0015f) && (cu->drawflag & CU_HIDE_NORMALS) == 0) {
 
-		UI_ThemeColor(TH_WIRE);
+		UI_ThemeColor(TH_WIRE_EDIT);
 		for (bl = cu->bev.first, nu = nurb; nu && bl; bl = bl->next, nu = nu->next) {
 			BevPoint *bevp = (BevPoint *)(bl + 1);
 			int nr = bl->nr;
@@ -5517,13 +5665,13 @@ static void drawnurb(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base, 
 		}
 	}
 
-	if (v3d->zbuf) glDisable(GL_DEPTH_TEST);
+	if (v3d->zbuf) glDepthFunc(GL_ALWAYS);
 	
 	for (nu = nurb; nu; nu = nu->next) {
 		drawvertsN(nu, 1, hide_handles, cu->lastsel);
 	}
 	
-	if (v3d->zbuf) glEnable(GL_DEPTH_TEST);
+	if (v3d->zbuf) glDepthFunc(GL_LEQUAL);
 }
 
 /* draw a sphere for use as an empty drawtype */
@@ -5745,7 +5893,7 @@ static bool drawmball(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 	if (mb->editelems) {
 		if ((G.f & G_PICKSEL) == 0) {
 			unsigned char wire_col[4];
-			UI_GetThemeColor4ubv(TH_WIRE, wire_col);
+			UI_GetThemeColor4ubv(TH_WIRE_EDIT, wire_col);
 			glColor3ubv(wire_col);
 
 			drawDispList(scene, v3d, rv3d, base, dt, dflag, wire_col);
@@ -6078,6 +6226,7 @@ static void draw_bb_quadric(BoundBox *bb, char type)
 
 static void draw_bounding_volume(Scene *scene, Object *ob, char type)
 {
+	BoundBox  bb_local;
 	BoundBox *bb = NULL;
 	
 	if (ob->type == OB_MESH) {
@@ -6099,8 +6248,9 @@ static void draw_bounding_volume(Scene *scene, Object *ob, char type)
 		bb = BKE_armature_boundbox_get(ob);
 	}
 	else {
-		drawcube();
-		return;
+		const float min[3] = {-1.0f, -1.0f, -1.0f}, max[3] = {1.0f, 1.0f, 1.0f};
+		bb = &bb_local;
+		BKE_boundbox_init_from_minmax(bb, min, max);
 	}
 	
 	if (bb == NULL) return;
@@ -6200,7 +6350,7 @@ static void draw_wire_extra(Scene *scene, RegionView3D *rv3d, Object *ob, unsign
 	if (ELEM4(ob->type, OB_FONT, OB_CURVE, OB_SURF, OB_MBALL)) {
 
 		if (scene->obedit == ob) {
-			UI_ThemeColor(TH_WIRE);
+			UI_ThemeColor(TH_WIRE_EDIT);
 		}
 		else {
 			glColor3ubv(ob_wire_col);
@@ -6304,12 +6454,12 @@ static void draw_object_wire_color(Scene *scene, Base *base, unsigned char r_ob_
 {
 	Object *ob = base->object;
 	int colindex = 0;
-
+	const bool is_edit = (ob->mode & OB_MODE_EDIT) != 0;
 	/* confusing logic here, there are 2 methods of setting the color
 	 * 'colortab[colindex]' and 'theme_id', colindex overrides theme_id.
 	 *
 	 * note: no theme yet for 'colindex' */
-	int theme_id = TH_WIRE;
+	int theme_id = is_edit ? TH_WIRE_EDIT : TH_WIRE;
 	int theme_shade = 0;
 
 	if ((scene->obedit == NULL) &&
@@ -6572,7 +6722,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 				}
 
 				if (cu->linewidth != 0.0f) {
-					UI_ThemeColor(TH_WIRE);
+					UI_ThemeColor(TH_WIRE_EDIT);
 					copy_v3_v3(vec1, ob->orig);
 					copy_v3_v3(vec2, ob->orig);
 					vec1[0] += cu->linewidth;
@@ -6711,7 +6861,15 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 			break;
 		case OB_LATTICE:
 			if ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
-				drawlattice(scene, v3d, ob);
+				/* Do not allow boundbox in edit nor pose mode! */
+				if ((dt == OB_BOUNDBOX) && (ob->mode & OB_MODE_EDIT))
+					dt = OB_WIRE;
+				if (dt == OB_BOUNDBOX) {
+					draw_bounding_volume(scene, ob, ob->boundtype);
+				}
+				else {
+					drawlattice(scene, v3d, ob);
+				}
 			}
 			break;
 		case OB_ARMATURE:
@@ -7013,6 +7171,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	if ((base->flag & OB_FROMDUPLI) ||
 	    (v3d->flag2 & V3D_RENDER_OVERRIDE))
 	{
+		ED_view3d_clear_mats_rv3d(rv3d);
 		return;
 	}
 
@@ -7156,6 +7315,8 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	}
 
 	free_old_images();
+
+	ED_view3d_clear_mats_rv3d(rv3d);
 }
 
 /* ***************** BACKBUF SEL (BBS) ********* */
@@ -7234,7 +7395,7 @@ static DMDrawOption bbs_mesh_solid__setSolidDrawOptions(void *userData, int inde
 {
 	BMFace *efa = EDBM_face_at_index(((void **)userData)[0], index);
 	
-	if (efa && !BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
+	if (!BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
 		if (((void **)userData)[1]) {
 			WM_framebuffer_index_set(index + 1);
 		}

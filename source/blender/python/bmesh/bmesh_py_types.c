@@ -401,6 +401,15 @@ static PyObject *bpy_bmvert_is_wire_get(BPy_BMVert *self)
 	return PyBool_FromLong(BM_vert_is_wire(self->v));
 }
 
+PyDoc_STRVAR(bpy_bmvert_is_boundary_doc,
+"True when this vertex connected to any boundary edges (read-only).\n\n:type: boolean"
+);
+static PyObject *bpy_bmvert_is_boundary_get(BPy_BMVert *self)
+{
+	BPY_BM_CHECK_OBJ(self);
+	return PyBool_FromLong(BM_vert_is_boundary(self->v));
+}
+
 
 /* Edge
  * ^^^^ */
@@ -685,6 +694,7 @@ static PyGetSetDef bpy_bmvert_getseters[] = {
 	/* readonly checks */
 	{(char *)"is_manifold",  (getter)bpy_bmvert_is_manifold_get,  (setter)NULL, (char *)bpy_bmvert_is_manifold_doc, NULL},
 	{(char *)"is_wire",      (getter)bpy_bmvert_is_wire_get,      (setter)NULL, (char *)bpy_bmvert_is_wire_doc, NULL},
+	{(char *)"is_boundary",  (getter)bpy_bmvert_is_boundary_get,  (setter)NULL, (char *)bpy_bmvert_is_boundary_doc, NULL},
 	{(char *)"is_valid",     (getter)bpy_bm_is_valid_get,         (setter)NULL, (char *)bpy_bm_is_valid_doc, NULL},
 
 	{NULL, NULL, NULL, NULL, NULL} /* Sentinel */
@@ -897,6 +907,9 @@ static PyObject *bpy_bmesh_to_mesh(BPy_BMesh *self, PyObject *args)
 
 	bm = self->bm;
 
+	/* python won't ensure matching uv/mtex */
+	BM_mesh_cd_validate(bm);
+
 	BM_mesh_bm_to_me(bm, me, false);
 
 	/* we could have the user do this but if they forget blender can easy crash
@@ -907,7 +920,7 @@ static PyObject *bpy_bmesh_to_mesh(BPy_BMesh *self, PyObject *args)
 }
 
 PyDoc_STRVAR(bpy_bmesh_from_object_doc,
-".. method:: from_object(object, scene, deform=True, render=False, cage=False)\n"
+".. method:: from_object(object, scene, deform=True, render=False, cage=False, face_normals=True)\n"
 "\n"
 "   Initialize this bmesh from existing object datablock (currently only meshes are supported).\n"
 "\n"
@@ -919,6 +932,8 @@ PyDoc_STRVAR(bpy_bmesh_from_object_doc,
 "   :type render: boolean\n"
 "   :arg cage: Get the mesh as a deformed cage.\n"
 "   :type cage: boolean\n"
+"   :arg face_normals: Calculate face normals.\n"
+"   :type face_normals: boolean\n"
 );
 static PyObject *bpy_bmesh_from_object(BPy_BMesh *self, PyObject *args)
 {
@@ -930,12 +945,13 @@ static PyObject *bpy_bmesh_from_object(BPy_BMesh *self, PyObject *args)
 	int use_deform = true;
 	int use_render = false;
 	int use_cage   = false;
+	int use_fnorm  = true;
 	DerivedMesh *dm;
 	const int mask = CD_MASK_BMESH;
 
 	BPY_BM_CHECK_OBJ(self);
 
-	if (!PyArg_ParseTuple(args, "OO|iii:from_object", &py_object, &py_scene, &use_render, &use_cage) ||
+	if (!PyArg_ParseTuple(args, "OO|iiii:from_object", &py_object, &py_scene, &use_render, &use_cage, &use_fnorm) ||
 	    !(ob    = PyC_RNA_AsPointer(py_object, "Object")) ||
 	    !(scene = PyC_RNA_AsPointer(py_scene,  "Scene")))
 	{
@@ -1001,7 +1017,7 @@ static PyObject *bpy_bmesh_from_object(BPy_BMesh *self, PyObject *args)
 
 	bm = self->bm;
 
-	DM_to_bmesh_ex(dm, bm);
+	DM_to_bmesh_ex(dm, bm, use_fnorm);
 
 	dm->release(dm);
 
@@ -1010,7 +1026,7 @@ static PyObject *bpy_bmesh_from_object(BPy_BMesh *self, PyObject *args)
 
 
 PyDoc_STRVAR(bpy_bmesh_from_mesh_doc,
-".. method:: from_mesh(mesh, use_shape_key=False, shape_key_index=0)\n"
+".. method:: from_mesh(mesh, face_normals=True, use_shape_key=False, shape_key_index=0)\n"
 "\n"
 "   Initialize this bmesh from existing mesh datablock.\n"
 "\n"
@@ -1023,15 +1039,16 @@ PyDoc_STRVAR(bpy_bmesh_from_mesh_doc,
 );
 static PyObject *bpy_bmesh_from_mesh(BPy_BMesh *self, PyObject *args, PyObject *kw)
 {
-	static const char *kwlist[] = {"mesh", "use_shape_key", "shape_key_index", NULL};
+	static const char *kwlist[] = {"mesh", "face_normals", "use_shape_key", "shape_key_index", NULL};
 	BMesh *bm;
 	PyObject *py_mesh;
 	Mesh *me;
+	int use_fnorm  = true;
 	int use_shape_key = false;
 	int shape_key_index = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:from_mesh", (char **)kwlist,
-	                                 &py_mesh, &use_shape_key, &shape_key_index) ||
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|iii:from_mesh", (char **)kwlist,
+	                                 &py_mesh, &use_fnorm, &use_shape_key, &shape_key_index) ||
 	    !(me = PyC_RNA_AsPointer(py_mesh, "Mesh")))
 	{
 		return NULL;
@@ -1039,7 +1056,7 @@ static PyObject *bpy_bmesh_from_mesh(BPy_BMesh *self, PyObject *args, PyObject *
 
 	bm = self->bm;
 
-	BM_mesh_bm_from_me(bm, me, use_shape_key, shape_key_index + 1);
+	BM_mesh_bm_from_me(bm, me, use_fnorm, use_shape_key, shape_key_index + 1);
 
 	Py_RETURN_NONE;
 }
@@ -1161,7 +1178,7 @@ static PyObject *bpy_bmesh_transform(BPy_BMElem *self, PyObject *args, PyObject 
 		else {
 			char filter_flags_ch = (char)filter_flags;
 			BM_ITER_MESH (eve, &iter, self->bm, BM_VERTS_OF_MESH) {
-				if (eve->head.hflag & filter_flags_ch) {
+				if (BM_elem_flag_test(eve, filter_flags_ch)) {
 					mul_m4_v3((float (*)[4])mat_ptr, eve->co);
 				}
 			}
@@ -1599,7 +1616,7 @@ static PyObject *bpy_bmface_copy(BPy_BMFace *self, PyObject *args, PyObject *kw)
 		return NULL;
 	}
 
-	f_cpy = BM_face_copy(bm, self->f, do_verts, do_edges);
+	f_cpy = BM_face_copy(bm, bm, self->f, do_verts, do_edges);
 
 	if (f_cpy) {
 		return BPy_BMFace_CreatePyObject(bm, f_cpy);
@@ -1974,10 +1991,8 @@ static PyObject *bpy_bmfaceseq_new(BPy_BMElemSeq *self, PyObject *args)
 	else {
 		BMesh *bm = self->bm;
 		Py_ssize_t vert_seq_len;
-		Py_ssize_t i, i_next;
 
 		BMVert **vert_array = NULL;
-		BMEdge **edge_array = NULL;
 
 		PyObject *ret = NULL;
 
@@ -2005,14 +2020,7 @@ static PyObject *bpy_bmfaceseq_new(BPy_BMElemSeq *self, PyObject *args)
 		/* Go ahead and make the face!
 		 * --------------------------- */
 
-		edge_array = (BMEdge **)PyMem_MALLOC(vert_seq_len * sizeof(BMEdge **));
-
-		/* ensure edges */
-		for (i = vert_seq_len - 1, i_next = 0; i_next < vert_seq_len; (i = i_next++)) {
-			edge_array[i] = BM_edge_create(bm, vert_array[i], vert_array[i_next], NULL, BM_CREATE_NO_DOUBLE);
-		}
-
-		f_new = BM_face_create(bm, vert_array, edge_array, vert_seq_len, 0);
+		f_new = BM_face_create_ngon_verts(bm, vert_array, vert_seq_len, 0, false, true);
 
 		if (UNLIKELY(f_new == NULL)) {
 			PyErr_SetString(PyExc_ValueError,
@@ -2029,7 +2037,6 @@ static PyObject *bpy_bmfaceseq_new(BPy_BMElemSeq *self, PyObject *args)
 		/* pass through */
 cleanup:
 		if (vert_array) PyMem_FREE(vert_array);
-		if (edge_array) PyMem_FREE(edge_array);
 		return ret;
 	}
 }

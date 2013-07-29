@@ -36,7 +36,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -263,7 +262,7 @@ static void outliner_main_area_free(ARegion *UNUSED(ar))
 	
 }
 
-static void outliner_main_area_listener(ARegion *ar, wmNotifier *wmn)
+static void outliner_main_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
@@ -379,7 +378,7 @@ static void outliner_header_area_free(ARegion *UNUSED(ar))
 {
 }
 
-static void outliner_header_area_listener(ARegion *ar, wmNotifier *wmn)
+static void outliner_header_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {

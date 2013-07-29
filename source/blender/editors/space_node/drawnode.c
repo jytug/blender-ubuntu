@@ -80,24 +80,22 @@
 
 /* ****************** SOCKET BUTTON DRAW FUNCTIONS ***************** */
 
-static void node_socket_button_label(bContext *UNUSED(C), uiLayout *layout, PointerRNA *ptr, PointerRNA *UNUSED(node_ptr))
+static void node_socket_button_label(bContext *UNUSED(C), uiLayout *layout, PointerRNA *UNUSED(ptr), PointerRNA *UNUSED(node_ptr),
+                                     const char *text)
 {
-	bNodeSocket *sock = (bNodeSocket *)ptr->data;
-	uiItemL(layout, IFACE_(sock->name), 0);
+	uiItemL(layout, text, 0);
 }
 
-static void node_draw_input_default(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, int linked)
+static void node_draw_input_default(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr)
 {
 	bNodeSocket *sock = (bNodeSocket *)ptr->data;
-	if (linked || (sock->flag & SOCK_HIDE_VALUE))
-		node_socket_button_label(C, layout, ptr, node_ptr);
-	else
-		sock->typeinfo->draw(C, layout, ptr, node_ptr);
+	sock->typeinfo->draw(C, layout, ptr, node_ptr, IFACE_(sock->name));
 }
 
-static void node_draw_output_default(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, int UNUSED(linked))
+static void node_draw_output_default(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr)
 {
-	node_socket_button_label(C, layout, ptr, node_ptr);
+	bNodeSocket *sock = ptr->data;
+	node_socket_button_label(C, layout, ptr, node_ptr, IFACE_(sock->name));
 }
 
 
@@ -179,7 +177,7 @@ static void node_buts_mix_rgb(uiLayout *layout, bContext *UNUSED(C), PointerRNA 
 	col = uiLayoutColumn(layout, FALSE);
 	row = uiLayoutRow(col, TRUE);
 	uiItemR(row, ptr, "blend_type", 0, "", ICON_NONE);
-	if (ntree->type == NTREE_COMPOSIT)
+	if (ELEM(ntree->type, NTREE_COMPOSIT, NTREE_TEXTURE))
 		uiItemR(row, ptr, "use_alpha", 0, "", ICON_IMAGE_RGB_ALPHA);
 
 	uiItemR(col, ptr, "use_clamp", 0, NULL, ICON_NONE);
@@ -761,6 +759,11 @@ static void node_shader_buts_attribute(uiLayout *layout, bContext *UNUSED(C), Po
 	uiItemR(layout, ptr, "attribute_name", 0, IFACE_("Name"), ICON_NONE);
 }
 
+static void node_shader_buts_wireframe(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "use_pixel_size", 0, NULL, 0);
+}
+
 static void node_shader_buts_tex_image(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	PointerRNA imaptr = RNA_pointer_get(ptr, "image");
@@ -841,6 +844,11 @@ static void node_shader_buts_tex_coord(uiLayout *layout, bContext *UNUSED(C), Po
 	uiItemR(layout, ptr, "from_dupli", 0, NULL, 0);
 }
 
+static void node_shader_buts_bump(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "invert", 0, NULL, 0);
+}
+
 static void node_shader_buts_normal_map(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "space", 0, "", 0);
@@ -884,6 +892,11 @@ static void node_shader_buts_tangent(uiLayout *layout, bContext *C, PointerRNA *
 static void node_shader_buts_glossy(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "distribution", 0, "", ICON_NONE);
+}
+
+static void node_shader_buts_toon(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "component", 0, "", ICON_NONE);
 }
 
 static void node_shader_buts_script(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
@@ -962,6 +975,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_ATTRIBUTE:
 			ntype->uifunc = node_shader_buts_attribute;
 			break;
+		case SH_NODE_WIREFRAME:
+			ntype->uifunc = node_shader_buts_wireframe;
+			break;
 		case SH_NODE_TEX_SKY:
 			ntype->uifunc = node_shader_buts_tex_sky;
 			break;
@@ -992,6 +1008,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_TEX_COORD:
 			ntype->uifunc = node_shader_buts_tex_coord;
 			break;
+		case SH_NODE_BUMP:
+			ntype->uifunc = node_shader_buts_bump;
+			break;
 		case SH_NODE_NORMAL_MAP:
 			ntype->uifunc = node_shader_buts_normal_map;
 			break;
@@ -1002,6 +1021,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_BSDF_GLASS:
 		case SH_NODE_BSDF_REFRACTION:
 			ntype->uifunc = node_shader_buts_glossy;
+			break;
+		case SH_NODE_BSDF_TOON:
+			ntype->uifunc = node_shader_buts_toon;
 			break;
 		case SH_NODE_SCRIPT:
 			ntype->uifunc = node_shader_buts_script;
@@ -1357,6 +1379,7 @@ static void node_composit_buts_zcombine(uiLayout *layout, bContext *UNUSED(C), P
 	
 	col = uiLayoutColumn(layout, TRUE);
 	uiItemR(col, ptr, "use_alpha", 0, NULL, ICON_NONE);
+	uiItemR(col, ptr, "use_antialias_z", 0, NULL, ICON_NONE);
 }
 
 
@@ -1518,7 +1541,7 @@ static void node_composit_buts_id_mask(uiLayout *layout, bContext *UNUSED(C), Po
 }
 
 /* draw function for file output node sockets, displays only sub-path and format, no value button */
-static void node_draw_input_file_output(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, int UNUSED(linked))
+static void node_draw_input_file_output(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr)
 {
 	bNodeTree *ntree = ptr->id.data;
 	bNodeSocket *sock = ptr->data;
@@ -1999,9 +2022,6 @@ static void node_composit_backdrop_boxmask(SpaceNode *snode, ImBuf *backdrop, bN
 	float y1, y2, y3, y4;
 
 
-	/* keep this, saves us from a version patch */
-	if (snode->zoom == 0.0f) snode->zoom = 1.0f;
-
 	glColor3f(1.0, 1.0, 1.0);
 
 	cx  = x + snode->zoom * backdropWidth * boxmask->x;
@@ -2039,9 +2059,6 @@ static void node_composit_backdrop_ellipsemask(SpaceNode *snode, ImBuf *backdrop
 	float cx, cy, x1, x2, x3, x4;
 	float y1, y2, y3, y4;
 
-
-	/* keep this, saves us from a version patch */
-	if (snode->zoom == 0.0f) snode->zoom = 1.0f;
 
 	glColor3f(1.0, 1.0, 1.0);
 
@@ -2194,7 +2211,7 @@ static void node_composit_buts_trackpos(uiLayout *layout, bContext *C, PointerRN
 
 		uiItemR(layout, ptr, "position", 0, NULL, ICON_NONE);
 
-		if (node->custom1 == 2) {
+		if (ELEM(node->custom1, CMP_TRACKPOS_RELATIVE_FRAME, CMP_TRACKPOS_ABSOLUTE_FRAME)) {
 			uiItemR(layout, ptr, "frame_relative", 0, NULL, ICON_NONE);
 		}
 	}
@@ -2606,7 +2623,8 @@ static void node_template_properties_update(bNodeType *ntype)
 	}
 }
 
-static void node_socket_undefined_draw(bContext *UNUSED(C), uiLayout *layout, PointerRNA *UNUSED(ptr), PointerRNA *UNUSED(node_ptr))
+static void node_socket_undefined_draw(bContext *UNUSED(C), uiLayout *layout, PointerRNA *UNUSED(ptr), PointerRNA *UNUSED(node_ptr),
+                                       const char *UNUSED(text))
 {
 	uiItemL(layout, "Undefined Socket Type", ICON_ERROR);
 }
@@ -2730,39 +2748,44 @@ static void std_node_socket_interface_draw_color(bContext *UNUSED(C), PointerRNA
 	copy_v4_v4(r_color, std_node_socket_colors[type]);
 }
 
-static void std_node_socket_draw(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr)
+static void std_node_socket_draw(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, const char *text)
 {
 	bNodeSocket *sock = ptr->data;
 	int type = sock->typeinfo->type;
 	/*int subtype = sock->typeinfo->subtype;*/
 	
+	if ((sock->flag & SOCK_IN_USE) || (sock->flag & SOCK_HIDE_VALUE)) {
+		node_socket_button_label(C, layout, ptr, node_ptr, text);
+		return;
+	}
+	
 	switch (type) {
 		case SOCK_FLOAT:
 		case SOCK_INT:
 		case SOCK_BOOLEAN:
-			uiItemR(layout, ptr, "default_value", 0, IFACE_(sock->name), 0);
+			uiItemR(layout, ptr, "default_value", 0, text, 0);
 			break;
 		case SOCK_VECTOR:
-			uiTemplateComponentMenu(layout, ptr, "default_value", IFACE_(sock->name));
+			uiTemplateComponentMenu(layout, ptr, "default_value", text);
 			break;
 		case SOCK_RGBA: {
 			uiLayout *row = uiLayoutRow(layout, false);
 			uiLayoutSetAlignment(row, UI_LAYOUT_ALIGN_LEFT);
 			/* draw the socket name right of the actual button */
 			uiItemR(row, ptr, "default_value", 0, "", 0);
-			uiItemL(row, IFACE_(sock->name), 0);
+			uiItemL(row, text, 0);
 			break;
 		}
 		case SOCK_STRING: {
 			uiLayout *row = uiLayoutRow(layout, true);
 			/* draw the socket name right of the actual button */
 			uiItemR(row, ptr, "default_value", 0, "", 0);
-			uiItemL(row, IFACE_(sock->name), 0);
+			uiItemL(row, text, 0);
 			break;
 		}
 		
 		default:
-			node_socket_button_label(C, layout, ptr, node_ptr);
+			node_socket_button_label(C, layout, ptr, node_ptr, text);
 			break;
 	}
 }
@@ -2857,9 +2880,6 @@ void draw_nodespace_back_pix(const bContext *C, ARegion *ar, SpaceNode *snode, b
 		glPushMatrix();
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		
-		/* keep this, saves us from a version patch */
-		if (snode->zoom == 0.0f) snode->zoom = 1.0f;
 		
 		/* somehow the offset has to be calculated inverse */
 		

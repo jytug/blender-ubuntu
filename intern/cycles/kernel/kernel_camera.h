@@ -109,8 +109,7 @@ __device void camera_sample_orthographic(KernelGlobals *kg, float raster_x, floa
 		float2 lensuv = camera_sample_aperture(kg, lens_u, lens_v)*aperturesize;
 
 		/* compute point on plane of focus */
-		float ft = kernel_data.cam.focaldistance/ray->D.z;
-		float3 Pfocus = ray->D*ft;
+		float3 Pfocus = ray->D * kernel_data.cam.focaldistance;
 
 		/* update ray for effect of lens */
 		float3 lensuvw = make_float3(lensuv.x, lensuv.y, 0.0f);
@@ -167,6 +166,12 @@ __device void camera_sample_panorama(KernelGlobals *kg, float raster_x, float ra
 
 	ray->D = panorama_to_direction(kg, Pcamera.x, Pcamera.y);
 
+	/* indicates ray should not receive any light, outside of the lens */
+	if(is_zero(ray->D)) {	
+		ray->t = 0.0f;
+		return;
+	}
+
 	/* modify ray for depth of field */
 	float aperturesize = kernel_data.cam.aperturesize;
 
@@ -185,12 +190,6 @@ __device void camera_sample_panorama(KernelGlobals *kg, float raster_x, float ra
 		/* update ray for effect of lens */
 		ray->P = U * lensuv.x + V * lensuv.y;
 		ray->D = normalize(Pfocus - ray->P);
-	}
-
-	/* indicates ray should not receive any light, outside of the lens */
-	if(len_squared(ray->D) == 0.0f) {
-		ray->t = 0.0f;
-		return;
 	}
 
 	/* transform ray from camera to world */
@@ -246,6 +245,12 @@ __device void camera_sample(KernelGlobals *kg, int x, int y, float filter_u, flo
 
 /* Utilities */
 
+__device_inline float3 camera_position(KernelGlobals *kg)
+{
+	Transform cameratoworld = kernel_data.cam.cameratoworld;
+	return make_float3(cameratoworld.x.w, cameratoworld.y.w, cameratoworld.z.w);
+}
+
 __device_inline float camera_distance(KernelGlobals *kg, float3 P)
 {
 	Transform cameratoworld = kernel_data.cam.cameratoworld;
@@ -257,6 +262,31 @@ __device_inline float camera_distance(KernelGlobals *kg, float3 P)
 	}
 	else
 		return len(P - camP);
+}
+
+__device_inline float3 camera_world_to_ndc(KernelGlobals *kg, ShaderData *sd, float3 P)
+{
+	if(kernel_data.cam.type != CAMERA_PANORAMA) {
+		/* perspective / ortho */
+		if(sd->object == ~0 && kernel_data.cam.type == CAMERA_PERSPECTIVE)
+			P += camera_position(kg);
+
+		Transform tfm = kernel_data.cam.worldtondc;
+		return transform_perspective(&tfm, P);
+	}
+	else {
+		/* panorama */
+		Transform tfm = kernel_data.cam.worldtocamera;
+
+		if(sd->object != ~0)
+			P = normalize(transform_point(&tfm, P));
+		else
+			P = normalize(transform_direction(&tfm, P));
+
+		float2 uv = direction_to_panorama(kg, P);
+
+		return make_float3(uv.x, uv.y, 0.0f);
+	}
 }
 
 CCL_NAMESPACE_END

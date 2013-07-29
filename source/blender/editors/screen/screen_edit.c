@@ -370,6 +370,10 @@ ScrArea *area_split(bScreen *sc, ScrArea *sa, char dir, float fac, int merge)
 	split = testsplitpoint(sa, dir, fac);
 	if (split == 0) return NULL;
 	
+	/* note regarding (fac > 0.5f) checks below.
+	 * notmally it shouldn't matter which is used since the copy should match the original
+	 * however with viewport rendering and python console this isn't the case. - campbell */
+
 	if (dir == 'h') {
 		/* new vertices */
 		sv1 = screen_addvert(sc, sa->v1->vec.x, split);
@@ -382,13 +386,24 @@ ScrArea *area_split(bScreen *sc, ScrArea *sa, char dir, float fac, int merge)
 		screen_addedge(sc, sv2, sa->v4);
 		screen_addedge(sc, sv1, sv2);
 		
-		/* new areas: top */
-		newa = screen_addarea(sc, sv1, sa->v2, sa->v3, sv2, sa->headertype, sa->spacetype);
+		if (fac > 0.5f) {
+			/* new areas: top */
+			newa = screen_addarea(sc, sv1, sa->v2, sa->v3, sv2, sa->headertype, sa->spacetype);
+
+			/* area below */
+			sa->v2 = sv1;
+			sa->v3 = sv2;
+		}
+		else {
+			/* new areas: bottom */
+			newa = screen_addarea(sc, sa->v1, sv1, sv2, sa->v4, sa->headertype, sa->spacetype);
+
+			/* area above */
+			sa->v1 = sv1;
+			sa->v4 = sv2;
+		}
+
 		area_copy_data(newa, sa, 0);
-		
-		/* area below */
-		sa->v2 = sv1;
-		sa->v3 = sv2;
 		
 	}
 	else {
@@ -403,13 +418,24 @@ ScrArea *area_split(bScreen *sc, ScrArea *sa, char dir, float fac, int merge)
 		screen_addedge(sc, sv2, sa->v3);
 		screen_addedge(sc, sv1, sv2);
 		
-		/* new areas: left */
-		newa = screen_addarea(sc, sa->v1, sa->v2, sv2, sv1, sa->headertype, sa->spacetype);
+		if (fac > 0.5f) {
+			/* new areas: right */
+			newa = screen_addarea(sc, sv1, sv2, sa->v3, sa->v4, sa->headertype, sa->spacetype);
+
+			/* area left */
+			sa->v3 = sv2;
+			sa->v4 = sv1;
+		}
+		else {
+			/* new areas: left */
+			newa = screen_addarea(sc, sa->v1, sa->v2, sv2, sv1, sa->headertype, sa->spacetype);
+
+			/* area right */
+			sa->v1 = sv1;
+			sa->v2 = sv2;
+		}
+
 		area_copy_data(newa, sa, 0);
-		
-		/* area right */
-		sa->v1 = sv1;
-		sa->v2 = sv2;
 	}
 	
 	/* remove double vertices en edges */
@@ -664,15 +690,15 @@ static void screen_test_scale(bScreen *sc, int winsizex, int winsizey)
 			 * need some way to store these as floats internally and re-apply from there. */
 			tempf = ((float)sv->vec.x) * facx;
 			sv->vec.x = (short)(tempf + 0.5f);
-			sv->vec.x += AREAGRID - 1;
-			sv->vec.x -=  (sv->vec.x % AREAGRID);
+			//sv->vec.x += AREAGRID - 1;
+			//sv->vec.x -=  (sv->vec.x % AREAGRID);
 
 			CLAMP(sv->vec.x, 0, winsizex);
 			
 			tempf = ((float)sv->vec.y) * facy;
 			sv->vec.y = (short)(tempf + 0.5f);
-			sv->vec.y += AREAGRID - 1;
-			sv->vec.y -=  (sv->vec.y % AREAGRID);
+			//sv->vec.y += AREAGRID - 1;
+			//sv->vec.y -=  (sv->vec.y % AREAGRID);
 
 			CLAMP(sv->vec.y, 0, winsizey);
 		}
@@ -1609,23 +1635,17 @@ void ED_screen_full_restore(bContext *C, ScrArea *sa)
 	if (sl->next) {
 		/* specific checks for space types */
 
-		int sima_restore = 0;
-
 		/* Special check added for non-render image window (back from fullscreen through "Back to Previous" button) */
 		if (sl->spacetype == SPACE_IMAGE) {
 			SpaceImage *sima = sa->spacedata.first;
-			if (!(sima->flag & SI_PREVSPACE) && !(sima->flag & SI_FULLWINDOW))
-				sima_restore = 1;
-		}
 
-		if (sl->spacetype == SPACE_IMAGE && !sima_restore) {
-			SpaceImage *sima = sa->spacedata.first;
-			if (sima->flag & SI_PREVSPACE)
+			if (sima->flag & (SI_PREVSPACE | SI_FULLWINDOW)) {
 				sima->flag &= ~SI_PREVSPACE;
-			if (sima->flag & SI_FULLWINDOW) {
 				sima->flag &= ~SI_FULLWINDOW;
 				ED_screen_full_prevspace(C, sa);
 			}
+			else
+				ED_screen_full_toggle(C, win, sa);
 		}
 		else if (sl->spacetype == SPACE_FILE) {
 			ED_screen_full_prevspace(C, sa);
@@ -1880,10 +1900,6 @@ void ED_update_for_newframe(Main *bmain, Scene *scene, int UNUSED(mute))
 
 	//extern void audiostream_scrub(unsigned int frame);	/* seqaudio.c */
 	
-	/* update animated image textures for gpu, etc,
-	 * call before BKE_scene_update_for_newframe so modifiers with textures don't lag 1 frame */
-	ED_image_update_frame(bmain, scene->r.cfra);
-
 	ED_clip_update_frame(bmain, scene->r.cfra);
 
 	/* get layers from all windows */

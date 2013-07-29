@@ -74,10 +74,11 @@ typedef struct EditDerivedBMesh {
 	float (*polyNos)[3];
 } EditDerivedBMesh;
 
-static void emDM_calcNormals(DerivedMesh *UNUSED(dm))
+static void emDM_calcNormals(DerivedMesh *dm)
 {
 	/* Nothing to do: normals are already calculated and stored on the
 	 * BMVerts and BMFaces */
+	dm->dirty &= ~DM_DIRTY_NORMALS;
 }
 
 static void emDM_recalcTessellation(DerivedMesh *UNUSED(dm))
@@ -221,33 +222,28 @@ static void emDM_drawUVEdges(DerivedMesh *dm)
 	BMFace *efa;
 	BMIter iter;
 
+	const int cd_loop_uv_offset = CustomData_get_offset(&bm->ldata, CD_MLOOPUV);
+
+	if (UNLIKELY(cd_loop_uv_offset == -1)) {
+		return;
+	}
+
 	glBegin(GL_LINES);
 	BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
-		BMIter liter;
-		BMLoop *l;
-		MLoopUV *lastluv = NULL, *firstluv = NULL;
+		BMLoop *l_iter, *l_first;
+		const float *uv, *uv_prev;
 
 		if (BM_elem_flag_test(efa, BM_ELEM_HIDDEN))
 			continue;
 
-		BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
-			MLoopUV *luv = CustomData_bmesh_get(&bm->ldata, l->head.data, CD_MLOOPUV);
-
-			if (luv) {
-				if (lastluv)
-					glVertex2fv(luv->uv);
-				glVertex2fv(luv->uv);
-
-				lastluv = luv;
-				if (!firstluv)
-					firstluv = luv;
-			}
-		}
-
-		if (lastluv) {
-			glVertex2fv(lastluv->uv);
-			glVertex2fv(firstluv->uv);
-		}
+		l_iter = l_first = BM_FACE_FIRST_LOOP(efa);
+		uv_prev = ((MLoopUV *)BM_ELEM_CD_GET_VOID_P(l_iter->prev, cd_loop_uv_offset))->uv;
+		do {
+			uv = ((MLoopUV *)BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset))->uv;
+			glVertex2fv(uv);
+			glVertex2fv(uv_prev);
+			uv_prev = uv;
+		} while ((l_iter = l_iter->next) != l_first);
 	}
 	glEnd();
 }
@@ -782,7 +778,7 @@ static void emdm_pass_attrib_vertex_glsl(DMVertexAttribs *attribs, BMLoop *loop,
 	}
 	if (attribs->tottang) {
 		const float *tang = attribs->tang.array[i * 4 + index_in_face];
-		glVertexAttrib3fvARB(attribs->tang.gl_index, tang);
+		glVertexAttrib4fvARB(attribs->tang.gl_index, tang);
 	}
 }
 
@@ -1113,6 +1109,66 @@ static void emDM_getVert(DerivedMesh *dm, int index, MVert *r_vert)
 		copy_v3_v3(r_vert->co, bmdm->vertexCos[index]);
 }
 
+static void emDM_getVertCo(DerivedMesh *dm, int index, float r_co[3])
+{
+	EditDerivedBMesh *bmdm = (EditDerivedBMesh *)dm;
+	BMesh *bm = bmdm->em->bm;
+
+	if (UNLIKELY(index < 0 || index >= bm->totvert)) {
+		BLI_assert(!"error in emDM_getVertCo");
+		return;
+	}
+
+	if (bmdm->vertexCos) {
+		copy_v3_v3(r_co, bmdm->vertexCos[index]);
+	}
+	else {
+		BMVert *ev = bmdm->em->vert_index[index];  /* should be EDBM_vert_at_index() */
+		// ev = BM_vert_at_index(bm, index); /* warning, does list loop, _not_ ideal */
+		copy_v3_v3(r_co, ev->co);
+	}
+}
+
+static void emDM_getVertNo(DerivedMesh *dm, int index, float r_no[3])
+{
+	EditDerivedBMesh *bmdm = (EditDerivedBMesh *)dm;
+	BMesh *bm = bmdm->em->bm;
+
+	if (UNLIKELY(index < 0 || index >= bm->totvert)) {
+		BLI_assert(!"error in emDM_getVertNo");
+		return;
+	}
+
+	if (bmdm->vertexNos) {
+		copy_v3_v3(r_no, bmdm->vertexNos[index]);
+	}
+	else {
+		BMVert *ev = bmdm->em->vert_index[index];  /* should be EDBM_vert_at_index() */
+		// ev = BM_vert_at_index(bm, index); /* warning, does list loop, _not_ ideal */
+		copy_v3_v3(r_no, ev->no);
+	}
+}
+
+static void emDM_getPolyNo(DerivedMesh *dm, int index, float r_no[3])
+{
+	EditDerivedBMesh *bmdm = (EditDerivedBMesh *)dm;
+	BMesh *bm = bmdm->em->bm;
+
+	if (UNLIKELY(index < 0 || index >= bm->totface)) {
+		BLI_assert(!"error in emDM_getPolyNo");
+		return;
+	}
+
+	if (bmdm->polyNos) {
+		copy_v3_v3(r_no, bmdm->polyNos[index]);
+	}
+	else {
+		BMFace *efa = bmdm->em->face_index[index];  /* should be EDBM_vert_at_index() */
+		// efa = BM_face_at_index(bm, index); /* warning, does list loop, _not_ ideal */
+		copy_v3_v3(r_no, efa->no);
+	}
+}
+
 static void emDM_getEdge(DerivedMesh *dm, int index, MEdge *r_edge)
 {
 	EditDerivedBMesh *bmdm = (EditDerivedBMesh *)dm;
@@ -1312,6 +1368,7 @@ static void *emDM_getTessFaceDataArray(DerivedMesh *dm, int type)
 
 		if (index != -1) {
 			/* offset = bm->pdata.layers[index].offset; */ /* UNUSED */
+			BMLoop *(*looptris)[3] = bmdm->em->looptris;
 			const int size = CustomData_sizeof(type);
 			int i, j;
 
@@ -1322,20 +1379,29 @@ static void *emDM_getTessFaceDataArray(DerivedMesh *dm, int type)
 			data = datalayer = DM_get_tessface_data_layer(dm, type);
 
 			if (type == CD_MTFACE) {
+				const int cd_loop_uv_offset  = CustomData_get_offset(&bm->ldata, CD_MLOOPUV);
+				const int cd_poly_tex_offset = CustomData_get_offset(&bm->pdata, CD_MTEXPOLY);
+
 				for (i = 0; i < bmdm->em->tottri; i++, data += size) {
-					BMFace *efa = bmdm->em->looptris[i][0]->f;
-					bmdata = CustomData_bmesh_get(&bm->pdata, efa->head.data, CD_MTEXPOLY);
+					BMFace *efa = looptris[i][0]->f;
+
+					// bmdata = CustomData_bmesh_get(&bm->pdata, efa->head.data, CD_MTEXPOLY);
+					bmdata = BM_ELEM_CD_GET_VOID_P(efa, cd_poly_tex_offset);
+
 					ME_MTEXFACE_CPY(((MTFace *)data), ((MTexPoly *)bmdata));
 					for (j = 0; j < 3; j++) {
-						bmdata = CustomData_bmesh_get(&bm->ldata, bmdm->em->looptris[i][j]->head.data, CD_MLOOPUV);
+						// bmdata = CustomData_bmesh_get(&bm->ldata, looptris[i][j]->head.data, CD_MLOOPUV);
+						bmdata = BM_ELEM_CD_GET_VOID_P(looptris[i][j], cd_loop_uv_offset);
 						copy_v2_v2(((MTFace *)data)->uv[j], ((MLoopUV *)bmdata)->uv);
 					}
 				}
 			}
 			else {
+				const int cd_loop_color_offset  = CustomData_get_offset(&bm->ldata, CD_MLOOPCOL);
 				for (i = 0; i < bmdm->em->tottri; i++, data += size) {
 					for (j = 0; j < 3; j++) {
-						bmdata = CustomData_bmesh_get(&bm->ldata, bmdm->em->looptris[i][j]->head.data, CD_MLOOPCOL);
+						// bmdata = CustomData_bmesh_get(&bm->ldata, looptris[i][j]->head.data, CD_MLOOPCOL);
+						bmdata = BM_ELEM_CD_GET_VOID_P(looptris[i][j], cd_loop_color_offset);
 						MESH_MLOOPCOL_TO_MCOL(((MLoopCol *)bmdata), (((MCol *)data) + j));
 					}
 				}
@@ -1423,6 +1489,8 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 {
 	EditDerivedBMesh *bmdm = MEM_callocN(sizeof(*bmdm), __func__);
 	BMesh *bm = em->bm;
+	const int cd_dvert_offset = CustomData_get_offset(&bm->vdata, CD_MDEFORMVERT);
+	const int cd_skin_offset = CustomData_get_offset(&bm->vdata, CD_MVERT_SKIN);
 
 	bmdm->em = em;
 
@@ -1448,6 +1516,9 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 	bmdm->dm.getNumPolys = emDM_getNumPolys;
 
 	bmdm->dm.getVert = emDM_getVert;
+	bmdm->dm.getVertCo = emDM_getVertCo;
+	bmdm->dm.getVertNo = emDM_getVertNo;
+	bmdm->dm.getPolyNo = emDM_getPolyNo;
 	bmdm->dm.getEdge = emDM_getEdge;
 	bmdm->dm.getTessFace = emDM_getTessFace;
 	bmdm->dm.copyVertArray = emDM_copyVertArray;
@@ -1479,8 +1550,9 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 	bmdm->dm.release = emDM_release;
 
 	bmdm->vertexCos = vertexCos;
+	bmdm->dm.deformedOnly = (vertexCos != NULL);
 
-	if (CustomData_has_layer(&bm->vdata, CD_MDEFORMVERT)) {
+	if (cd_dvert_offset != -1) {
 		BMIter iter;
 		BMVert *eve;
 		int i;
@@ -1489,11 +1561,11 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 
 		BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
 			DM_set_vert_data(&bmdm->dm, i, CD_MDEFORMVERT,
-			                 CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MDEFORMVERT));
+			                 BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset));
 		}
 	}
 
-	if (CustomData_has_layer(&bm->vdata, CD_MVERT_SKIN)) {
+	if (cd_skin_offset != -1) {
 		BMIter iter;
 		BMVert *eve;
 		int i;
@@ -1502,8 +1574,7 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 
 		BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
 			DM_set_vert_data(&bmdm->dm, i, CD_MVERT_SKIN,
-			                 CustomData_bmesh_get(&bm->vdata, eve->head.data,
-			                                      CD_MVERT_SKIN));
+			                 BM_ELEM_CD_GET_VOID_P(eve, cd_skin_offset));
 		}
 	}
 
@@ -1533,9 +1604,8 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 
 			/* following Mesh convention; we use vertex coordinate itself
 			 * for normal in this case */
-			if (normalize_v3(no) == 0.0f) {
-				copy_v3_v3(no, vertexCos[i]);
-				normalize_v3(no);
+			if (UNLIKELY(normalize_v3(no) == 0.0f)) {
+				normalize_v3_v3(no, vertexCos[i]);
 			}
 		}
 	}

@@ -34,6 +34,7 @@
 
 
 #include "DNA_curve_types.h"
+#include "DNA_scene_types.h"
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
@@ -223,7 +224,7 @@ void ED_keymap_curve(wmKeyConfig *keyconf)
 	
 	WM_keymap_add_item(keymap, "CURVE_OT_handle_type_set", VKEY, KM_PRESS, 0, 0);
 
-	WM_keymap_add_item(keymap, "CURVE_OT_vertex_add", LEFTMOUSE, KM_CLICK, KM_CTRL, 0);
+	WM_keymap_add_item(keymap, "CURVE_OT_vertex_add", ACTIONMOUSE, KM_CLICK, KM_CTRL, 0);
 
 	kmi = WM_keymap_add_item(keymap, "CURVE_OT_select_all", AKEY, KM_PRESS, 0, 0);
 	RNA_enum_set(kmi->ptr, "action", SEL_TOGGLE);
@@ -269,4 +270,3 @@ void ED_keymap_curve(wmKeyConfig *keyconf)
 	ED_keymap_proportional_cycle(keyconf, keymap);
 	ED_keymap_proportional_editmode(keyconf, keymap, TRUE);
 }
-

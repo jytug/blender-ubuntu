@@ -46,7 +46,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "BLO_sys_types.h"  /* for intptr_t support */
+#include "BLI_sys_types.h"  /* for intptr_t support */
 
 /* Utils */
 
@@ -250,7 +250,7 @@ static int PHashSizes[] = {
 };
 
 #define PHASH_hash(ph, item) (((uintptr_t) (item)) % ((unsigned int) (ph)->cursize))
-#define PHASH_edge(v1, v2)   ((v1) ^ (v2))
+#define PHASH_edge(v1, v2)   (((v1) < (v2)) ? ((v1) * 39) ^ ((v2) * 31) : ((v1) * 31) ^ ((v2) * 39))
 
 static PHash *phash_new(PHashLink **list, int sizehint)
 {
@@ -3682,8 +3682,8 @@ static SmoothNode *p_node_new(MemArena *arena, SmoothTriangle **tri, int ntri, f
 	if (ntri <= 10 || depth >= 15)
 		return node;
 	
-	t1 = MEM_mallocN(sizeof(SmoothTriangle) * ntri, "PNodeTri1");
-	t2 = MEM_mallocN(sizeof(SmoothTriangle) * ntri, "PNodeTri1");
+	t1 = MEM_mallocN(sizeof(*t1) * ntri, "PNodeTri1");
+	t2 = MEM_mallocN(sizeof(*t2) * ntri, "PNodeTri1");
 
 	axis = (bmax[0] - bmin[0] > bmax[1] - bmin[1]) ? 0 : 1;
 	split = 0.5f * (bmin[axis] + bmax[axis]);

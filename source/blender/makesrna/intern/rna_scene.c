@@ -120,6 +120,8 @@ EnumPropertyItem proportional_falloff_curve_only_items[] = {
 EnumPropertyItem proportional_editing_items[] = {
 	{PROP_EDIT_OFF, "DISABLED", ICON_PROP_OFF, "Disable", "Proportional Editing disabled"},
 	{PROP_EDIT_ON, "ENABLED", ICON_PROP_ON, "Enable", "Proportional Editing enabled"},
+	{PROP_EDIT_PROJECTED, "PROJECTED", ICON_PROP_ON, "Projected (2D)",
+	                      "Proportional Editing using screen space locations"},
 	{PROP_EDIT_CONNECTED, "CONNECTED", ICON_PROP_CON, "Connected",
 	                      "Proportional Editing using connected geometry only"},
 	{0, NULL, 0, NULL, NULL}
@@ -674,11 +676,18 @@ static char *rna_RenderSettings_path(PointerRNA *UNUSED(ptr))
 static int rna_RenderSettings_threads_get(PointerRNA *ptr)
 {
 	RenderData *rd = (RenderData *)ptr->data;
+	return BKE_render_num_threads(rd);
+}
 
-	if (rd->mode & R_FIXED_THREADS)
-		return rd->threads;
+static int rna_RenderSettings_threads_mode_get(PointerRNA *ptr)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	int override = BLI_system_num_threads_override_get();
+
+	if (override > 0)
+		return R_FIXED_THREADS;
 	else
-		return BLI_system_thread_count();
+		return (rd->mode & R_FIXED_THREADS);
 }
 
 static int rna_RenderSettings_is_movie_fomat_get(PointerRNA *ptr)
@@ -1188,7 +1197,7 @@ static void rna_SceneRenderLayer_pass_update(Main *bmain, Scene *activescene, Po
 	Scene *scene = (Scene *)ptr->id.data;
 
 	if (scene->nodetree)
-		ntreeCompositForceHidden(scene->nodetree, scene);
+		ntreeCompositForceHidden(scene->nodetree);
 	
 	rna_Scene_glsl_update(bmain, activescene, ptr);
 }
@@ -1248,6 +1257,12 @@ static void object_simplify_update(Object *ob)
 	ModifierData *md;
 	ParticleSystem *psys;
 
+	if ((ob->id.flag & LIB_DOIT) == 0) {
+		return;
+	}
+
+	ob->id.flag &= ~LIB_DOIT;
+
 	for (md = ob->modifiers.first; md; md = md->next) {
 		if (ELEM3(md->type, eModifierType_Subsurf, eModifierType_Multires, eModifierType_ParticleSystem)) {
 			ob->recalc |= PSYS_RECALC_CHILD;
@@ -1272,6 +1287,7 @@ static void rna_Scene_use_simplify_update(Main *bmain, Scene *UNUSED(scene), Poi
 	Scene *sce_iter;
 	Base *base;
 
+	tag_main_lb(&bmain->object, TRUE);
 	for (SETLOOPER(sce, sce_iter, base))
 		object_simplify_update(base->object);
 	
@@ -1624,6 +1640,14 @@ static void rna_def_tool_settings(BlenderRNA  *brna)
 		{0, NULL, 0, NULL, NULL}
 	};
 
+	static EnumPropertyItem vertex_group_select_items[] = {
+		{WT_VGROUP_ALL, "ALL", 0, "All", "All Vertex Groups"},
+		{WT_VGROUP_BONE_DEFORM, "BONE_DEFORM", 0, "Deform", "Vertex Groups assigned to Deform Bones"},
+		{WT_VGROUP_BONE_DEFORM_OFF, "OTHER_DEFORM", 0, "Other", "Vertex Groups assigned to non Deform Bones"},
+		{0, NULL, 0, NULL, NULL}
+	};
+
+
 	srna = RNA_def_struct(brna, "ToolSettings", NULL);
 	RNA_def_struct_path_func(srna, "rna_ToolSettings_path");
 	RNA_def_struct_ui_text(srna, "Tool Settings", "");
@@ -1652,10 +1676,14 @@ static void rna_def_tool_settings(BlenderRNA  *brna)
 	RNA_def_property_ui_text(prop, "Mask Non-Group Vertices", "Display unweighted vertices (multi-paint overrides)");
 	RNA_def_property_update(prop, 0, "rna_Scene_update_active_object_data");
 
+	prop = RNA_def_property(srna, "vertex_group_subset", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "vgroupsubset");
+	RNA_def_property_enum_items(prop, vertex_group_select_items);
+	RNA_def_property_ui_text(prop, "Subset", "Filter Vertex groups for Display");
+	RNA_def_property_update(prop, 0, "rna_Scene_update_active_object_data");
 
 	prop = RNA_def_property(srna, "vertex_paint", PROP_POINTER, PROP_NONE);
-	RNA_def_property_pointer_sdna(prop, NULL, "vpaint");
-	RNA_def_property_ui_text(prop, "Vertex Paint", "");
+	RNA_def_property_pointer_sdna(prop, NULL, "vpaint");	RNA_def_property_ui_text(prop, "Vertex Paint", "");
 
 	prop = RNA_def_property(srna, "weight_paint", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "wpaint");
@@ -1744,6 +1772,7 @@ static void rna_def_tool_settings(BlenderRNA  *brna)
 	prop = RNA_def_property(srna, "use_mesh_automerge", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "automerge", 0);
 	RNA_def_property_ui_text(prop, "AutoMerge Editing", "Automatically merge vertices moved to the same location");
+	RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
 	prop = RNA_def_property(srna, "use_snap", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP);
@@ -1862,7 +1891,7 @@ static void rna_def_tool_settings(BlenderRNA  *brna)
 	RNA_def_property_float_sdna(prop, NULL, "vgroup_weight");
 	RNA_def_property_ui_text(prop, "Vertex Group Weight", "Weight to assign in vertex groups");
 
-	/* use with MESH_OT_select_shortest_path */
+	/* use with MESH_OT_shortest_path_pick */
 	prop = RNA_def_property(srna, "edge_path_mode", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "edge_mode");
 	RNA_def_property_enum_items(prop, edge_tag_items);
@@ -3483,7 +3512,7 @@ static void rna_def_scene_render_layer(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Freestyle Settings", "");
 }
 
-/* curve.splines */
+/* Render Layers */
 static void rna_def_render_layers(BlenderRNA *brna, PropertyRNA *cprop)
 {
 	StructRNA *srna;
@@ -3516,7 +3545,7 @@ static void rna_def_render_layers(BlenderRNA *brna, PropertyRNA *cprop)
 	func = RNA_def_function(srna, "new", "rna_RenderLayer_new");
 	RNA_def_function_ui_description(func, "Add a render layer to scene");
 	RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-	parm = RNA_def_string(func, "name", "RenderLayer", 0, "", "New name for the marker (not unique)");
+	parm = RNA_def_string(func, "name", "RenderLayer", 0, "", "New name for the render layer (not unique)");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	parm = RNA_def_pointer(func, "result", "SceneRenderLayer", "", "Newly created render layer");
 	RNA_def_function_return(func, parm);
@@ -3524,7 +3553,7 @@ static void rna_def_render_layers(BlenderRNA *brna, PropertyRNA *cprop)
 	func = RNA_def_function(srna, "remove", "rna_RenderLayer_remove");
 	RNA_def_function_ui_description(func, "Remove a render layer");
 	RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS | FUNC_USE_SELF_ID);
-	parm = RNA_def_pointer(func, "layer", "SceneRenderLayer", "", "Timeline marker to remove");
+	parm = RNA_def_pointer(func, "layer", "SceneRenderLayer", "", "Render layer to remove");
 	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
 	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 }
@@ -4337,6 +4366,7 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "threads_mode", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_bitflag_sdna(prop, NULL, "mode");
 	RNA_def_property_enum_items(prop, threads_mode_items);
+	RNA_def_property_enum_funcs(prop, "rna_RenderSettings_threads_mode_get", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Threads Mode", "Determine the amount of render threads used");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 	

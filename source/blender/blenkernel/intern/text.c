@@ -362,7 +362,7 @@ int BKE_text_reload(Text *text)
 	return 1;
 }
 
-Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
+Text *BKE_text_load_ex(Main *bmain, const char *file, const char *relpath, const bool is_internal)
 {
 	FILE *fp;
 	int i, llen, len;
@@ -392,8 +392,13 @@ Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
 	len = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
 
-	ta->name = MEM_mallocN(strlen(file) + 1, "text_name");
-	strcpy(ta->name, file);
+	if (is_internal == false) {
+		ta->name = MEM_mallocN(strlen(file) + 1, "text_name");
+		strcpy(ta->name, file);
+	}
+	else {
+		ta->flags |= TXT_ISMEM | TXT_ISDIRTY;
+	}
 
 	init_undo_text(ta);
 	
@@ -458,6 +463,11 @@ Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
 	MEM_freeN(buffer);
 
 	return ta;
+}
+
+Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
+{
+	return BKE_text_load_ex(bmain, file, relpath, false);
 }
 
 Text *BKE_text_copy(Text *ta)
@@ -837,19 +847,6 @@ int txt_utf8_column_to_offset(const char *str, int column)
 	return offset;
 }
 
-/* returns the real number of characters in string */
-/* not the same as BLI_strlen_utf8, which returns length for wide characters */
-static int txt_utf8_len(const char *src)
-{
-	int len;
-
-	for (len = 0; *src; len++) {
-		src += BLI_str_utf8_size(src);
-	}
-
-	return len;
-}
-
 void txt_move_up(Text *text, short sel)
 {
 	TextLine **linep;
@@ -1147,9 +1144,6 @@ static void txt_pop_last(Text *text)
 	
 	txt_pop_sel(text);
 }
-
-/* never used: CVS 1.19 */
-/*  static void txt_pop_selr (Text *text) */
 
 void txt_pop_sel(Text *text)
 {
@@ -2052,7 +2046,7 @@ void txt_do_undo(Text *text)
 				text->undo_pos--;
 			}
 			buf[i] = 0;
-			linep = txt_utf8_len(buf);
+			linep = BLI_strlen_utf8(buf);
 			MEM_freeN(buf);
 			
 			/* skip over the length that was stored again */

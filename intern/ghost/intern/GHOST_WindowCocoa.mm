@@ -53,17 +53,7 @@ enum {
 #endif
 
 #pragma mark Cocoa window delegate object
-/* live resize ugly patch
-extern "C" {
-	struct bContext;
-	typedef struct bContext bContext;
-	bContext* ghostC;
-	extern int wm_window_timer(const bContext *C);
-	extern void wm_window_process_events(const bContext *C);
-	extern void wm_event_do_handlers(bContext *C);
-	extern void wm_event_do_notifiers(bContext *C);
-	extern void wm_draw_update(bContext *C);
-};*/
+
 @interface CocoaWindowDelegate : NSObject
 <NSWindowDelegate>
 {
@@ -125,14 +115,10 @@ extern "C" {
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
 	//}
 #endif
-	/* Live resize ugly patch. Needed because live resize runs in a modal loop, not letting main loop run
+	/* Live resize, send event, gets handled in wm_window.c. Needed because live resize runs in a modal loop, not letting main loop run */
 	 if ([[notification object] inLiveResize]) {
 		systemCocoa->dispatchEvents();
-		wm_window_timer(ghostC);
-		wm_event_do_handlers(ghostC);
-		wm_event_do_notifiers(ghostC);
-		wm_draw_update(ghostC);
-	}*/
+	}
 }
 
 - (void)windowDidChangeBackingProperties:(NSNotification *)notification
@@ -283,6 +269,8 @@ extern "C" {
 // The trick to prevent Cocoa from complaining (beeping)
 - (void)keyDown:(NSEvent *)event
 {
+	systemCocoa->handleKeyEvent(event);
+
 	/* Start or continue composing? */
 	if ([[event characters] length] == 0  ||
 	    [[event charactersIgnoringModifiers] length] == 0 ||
@@ -297,36 +285,104 @@ extern "C" {
 		[self interpretKeyEvents:events]; // calls insertText
 		[events removeObject:event];
 		[events release];
-
 		return;
 	}
 }
 
-#if MAC_OS_X_VERSION_MIN_REQUIRED <= 1040
-//Cmd+key are handled differently before 10.5
-- (BOOL)performKeyEquivalent:(NSEvent *)theEvent
+- (void)keyUp:(NSEvent *)event
 {
-	NSString *chars = [theEvent charactersIgnoringModifiers];
-	
-	if ([chars length] <1) 
-		return NO;
-	
-	//Let cocoa handle menu shortcuts
-	switch ([chars characterAtIndex:0]) {
-		case 'q':
-		case 'w':
-		case 'h':
-		case 'm':
-		case '<':
-		case '>':
-		case '~':
-		case '`':
-			return NO;
-		default:
-			return YES;
-	}
+	systemCocoa->handleKeyEvent(event);
 }
-#endif
+
+- (void)flagsChanged:(NSEvent *)event
+{
+	systemCocoa->handleKeyEvent(event);
+}
+
+- (void)mouseDown:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)mouseUp:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)rightMouseDown:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)rightMouseUp:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)mouseMoved:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)mouseDragged:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)rightMouseDragged:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)scrollWheel:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)otherMouseDown:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)otherMouseUp:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)otherMouseDragged:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)magnifyWithEvent:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)rotateWithEvent:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)beginGestureWithEvent:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)endGestureWithEvent:(NSEvent *)event
+{
+	systemCocoa->handleMouseEvent(event);
+}
+
+- (void)tabletPoint:(NSEvent *)event
+{
+	systemCocoa->handleTabletEvent(event,[event type]);
+}
+
+- (void)tabletProximity:(NSEvent *)event
+{
+	systemCocoa->handleTabletEvent(event,[event type]);
+}
 
 - (BOOL)isOpaque
 {

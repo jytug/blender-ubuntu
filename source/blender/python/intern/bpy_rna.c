@@ -250,7 +250,7 @@ static void id_release_weakref_list(struct ID *id, GHash *weakinfo_hash)
 	fprintf(stdout, "id_release_weakref: '%s', %d items\n", id->name, BLI_ghash_size(weakinfo_hash));
 #endif
 
-	while (BLI_ghashIterator_notDone(&weakinfo_hash_iter)) {
+	while (!BLI_ghashIterator_done(&weakinfo_hash_iter)) {
 		PyObject *weakref = (PyObject *)BLI_ghashIterator_getKey(&weakinfo_hash_iter);
 		PyObject *item = PyWeakref_GET_OBJECT(weakref);
 		if (item != Py_None) {
@@ -3425,11 +3425,14 @@ static void pyrna_dir_members_rna(PyObject *list, PointerRNA *ptr)
 
 		RNA_PROP_BEGIN (&tptr, itemptr, iterprop)
 		{
-			idname = RNA_function_identifier(itemptr.data);
+			FunctionRNA *func = itemptr.data;
+			if (RNA_function_defined(func)) {
+				idname = RNA_function_identifier(itemptr.data);
 
-			pystring = PyUnicode_FromString(idname);
-			PyList_Append(list, pystring);
-			Py_DECREF(pystring);
+				pystring = PyUnicode_FromString(idname);
+				PyList_Append(list, pystring);
+				Py_DECREF(pystring);
+			}
 		}
 		RNA_PROP_END;
 	}
@@ -5318,7 +5321,7 @@ static PyObject *pyrna_func_doc_get(BPy_FunctionRNA *self, void *UNUSED(closure)
 	PyObject *ret;
 	char *args;
 
-	args = RNA_function_as_string_keywords(NULL, self->func, NULL, true, true);
+	args = RNA_function_as_string_keywords(NULL, self->func, NULL, true, true, INT_MAX);
 
 	ret = PyUnicode_FromFormat("%.200s.%.200s(%.200s)\n%s",
 	                           RNA_struct_identifier(self->ptr.type),

@@ -56,6 +56,7 @@
 #include "BLI_utildefines.h"
 #include "BLI_callbacks.h"
 #include "BLI_string.h"
+#include "BLI_threads.h"
 
 #include "BLF_translation.h"
 
@@ -69,6 +70,7 @@
 #include "BKE_global.h"
 #include "BKE_group.h"
 #include "BKE_idprop.h"
+#include "BKE_image.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_mask.h"
@@ -682,12 +684,9 @@ void BKE_scene_set_background(Main *bmain, Scene *scene)
 		}
 	}
 
-	/* sort baselist */
-	DAG_scene_relations_rebuild(bmain, scene);
-	
-	/* ensure dags are built for sets */
+	/* sort baselist for scene and sets */
 	for (sce = scene; sce; sce = sce->set)
-		DAG_scene_relations_update(bmain, sce);
+		DAG_scene_relations_rebuild(bmain, sce);
 
 	/* copy layers and flags from bases to objects */
 	for (base = scene->base.first; base; base = base->next) {
@@ -744,17 +743,16 @@ void BKE_scene_unlink(Main *bmain, Scene *sce, Scene *newsce)
 /* used by metaballs
  * doesn't return the original duplicated object, only dupli's
  */
-int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
+int BKE_scene_base_iter_next(SceneBaseIter *iter, Scene **scene, int val, Base **base, Object **ob)
 {
-	static ListBase *duplilist = NULL;
-	static DupliObject *dupob;
-	static int fase = F_START, in_next_object = 0;
+	static int in_next_object = 0;
 	int run_again = 1;
 	
 	/* init */
 	if (val == 0) {
-		fase = F_START;
-		dupob = NULL;
+		iter->fase = F_START;
+		iter->dupob = NULL;
+		iter->duplilist = NULL;
 		
 		/* XXX particle systems with metas+dupligroups call this recursively */
 		/* see bug #18725 */
@@ -772,11 +770,11 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 			run_again = 0;
 
 			/* the first base */
-			if (fase == F_START) {
+			if (iter->fase == F_START) {
 				*base = (*scene)->base.first;
 				if (*base) {
 					*ob = (*base)->object;
-					fase = F_SCENE;
+					iter->fase = F_SCENE;
 				}
 				else {
 					/* exception: empty scene */
@@ -785,20 +783,20 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 						if ((*scene)->base.first) {
 							*base = (*scene)->base.first;
 							*ob = (*base)->object;
-							fase = F_SCENE;
+							iter->fase = F_SCENE;
 							break;
 						}
 					}
 				}
 			}
 			else {
-				if (*base && fase != F_DUPLI) {
+				if (*base && iter->fase != F_DUPLI) {
 					*base = (*base)->next;
 					if (*base) {
 						*ob = (*base)->object;
 					}
 					else {
-						if (fase == F_SCENE) {
+						if (iter->fase == F_SCENE) {
 							/* (*scene) is finished, now do the set */
 							while ((*scene)->set) {
 								(*scene) = (*scene)->set;
@@ -814,45 +812,45 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 			}
 			
 			if (*base == NULL) {
-				fase = F_START;
+				iter->fase = F_START;
 			}
 			else {
-				if (fase != F_DUPLI) {
+				if (iter->fase != F_DUPLI) {
 					if ( (*base)->object->transflag & OB_DUPLI) {
 						/* groups cannot be duplicated for mballs yet, 
 						 * this enters eternal loop because of 
 						 * makeDispListMBall getting called inside of group_duplilist */
 						if ((*base)->object->dup_group == NULL) {
-							duplilist = object_duplilist((*scene), (*base)->object, FALSE);
+							iter->duplilist = object_duplilist((*scene), (*base)->object, FALSE);
 							
-							dupob = duplilist->first;
+							iter->dupob = iter->duplilist->first;
 
-							if (!dupob)
-								free_object_duplilist(duplilist);
+							if (!iter->dupob)
+								free_object_duplilist(iter->duplilist);
 						}
 					}
 				}
 				/* handle dupli's */
-				if (dupob) {
+				if (iter->dupob) {
 					
-					copy_m4_m4(dupob->ob->obmat, dupob->mat);
+					copy_m4_m4(iter->dupob->ob->obmat, iter->dupob->mat);
 					
 					(*base)->flag |= OB_FROMDUPLI;
-					*ob = dupob->ob;
-					fase = F_DUPLI;
+					*ob = iter->dupob->ob;
+					iter->fase = F_DUPLI;
 					
-					dupob = dupob->next;
+					iter->dupob = iter->dupob->next;
 				}
-				else if (fase == F_DUPLI) {
-					fase = F_SCENE;
+				else if (iter->fase == F_DUPLI) {
+					iter->fase = F_SCENE;
 					(*base)->flag &= ~OB_FROMDUPLI;
 					
-					for (dupob = duplilist->first; dupob; dupob = dupob->next) {
-						copy_m4_m4(dupob->ob->obmat, dupob->omat);
+					for (iter->dupob = iter->duplilist->first; iter->dupob; iter->dupob = iter->dupob->next) {
+						copy_m4_m4(iter->dupob->ob->obmat, iter->dupob->omat);
 					}
 					
-					free_object_duplilist(duplilist);
-					duplilist = NULL;
+					free_object_duplilist(iter->duplilist);
+					iter->duplilist = NULL;
 					run_again = 1;
 				}
 			}
@@ -868,7 +866,7 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 	/* reset recursion test */
 	in_next_object = 0;
 	
-	return fase;
+	return iter->fase;
 }
 
 Object *BKE_scene_camera_find(Scene *sc)
@@ -1043,6 +1041,21 @@ float BKE_scene_frame_get_from_ctime(Scene *scene, const float frame)
 	return ctime;
 }
 
+/**
+ * Sets the frame int/float components.
+ */
+void BKE_scene_frame_set(struct Scene *scene, double cfra)
+{
+	double intpart;
+	scene->r.subframe = modf(cfra, &intpart);
+	scene->r.cfra = (int)intpart;
+
+	if (cfra < 0.0) {
+		scene->r.cfra -= 1;
+		scene->r.subframe = 1.0f + scene->r.subframe;
+	}
+}
+
 /* drivers support/hacks 
  *  - this method is called from scene_update_tagged_recursive(), so gets included in viewport + render
  *	- these are always run since the depsgraph can't handle non-object data
@@ -1179,7 +1192,7 @@ static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scen
 	sound_update_scene(scene);
 
 	/* update masking curves */
-	BKE_mask_update_scene(bmain, scene, FALSE);
+	BKE_mask_update_scene(bmain, scene);
 	
 }
 
@@ -1235,16 +1248,20 @@ void BKE_scene_update_for_newframe(Main *bmain, Scene *sce, unsigned int lay)
 {
 	float ctime = BKE_scene_frame_get(sce);
 	Scene *sce_iter;
+
+	/* keep this first */
+	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_FRAME_CHANGE_PRE);
+	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_SCENE_UPDATE_PRE);
+
+	/* update animated image textures for particles, modifiers, gpu, etc,
+	 * call this at the start so modifiers with textures don't lag 1 frame */
+	BKE_image_update_frame(bmain, sce->r.cfra);
 	
 	/* rebuild rigid body worlds before doing the actual frame update
 	 * this needs to be done on start frame but animation playback usually starts one frame later
 	 * we need to do it here to avoid rebuilding the world on every simulation change, which can be very expensive
 	 */
 	scene_rebuild_rbw_recursive(sce, ctime);
-
-	/* keep this first */
-	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_FRAME_CHANGE_PRE);
-	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_SCENE_UPDATE_PRE);
 
 	sound_set_cfra(sce->r.cfra);
 	
@@ -1462,6 +1479,16 @@ void BKE_scene_disable_color_management(Scene *scene)
 
 int BKE_scene_check_color_management_enabled(const Scene *scene)
 {
+	/* TODO(sergey): shouldn't be needed. but we're currently far to close to the release,
+	 *               so better be extra-safe than sorry.
+	 *
+	 *               Will remove the check after the release.
+	 */
+	if (!scene) {
+		BLI_assert(!"Shouldn't happen!");
+		return TRUE;
+	}
+
 	return strcmp(scene->display_settings.display_device, "None") != 0;
 }
 
@@ -1469,3 +1496,28 @@ int BKE_scene_check_rigidbody_active(const Scene *scene)
 {
 	return scene && scene->rigidbody_world && scene->rigidbody_world->group && !(scene->rigidbody_world->flag & RBW_FLAG_MUTED);
 }
+
+int BKE_render_num_threads(const RenderData *rd)
+{
+	int threads;
+
+	/* override set from command line? */
+	threads = BLI_system_num_threads_override_get();
+
+	if (threads > 0)
+		return threads;
+
+	/* fixed number of threads specified in scene? */
+	if (rd->mode & R_FIXED_THREADS)
+		threads = rd->threads;
+	else
+		threads = BLI_system_thread_count();
+	
+	return max_ii(threads, 1);
+}
+
+int BKE_scene_num_threads(const Scene *scene)
+{
+	return BKE_render_num_threads(&scene->r);
+}
+

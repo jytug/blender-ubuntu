@@ -164,21 +164,34 @@ void BM_mesh_data_free(BMesh *bm)
 	BMEdge *e;
 	BMLoop *l;
 	BMFace *f;
-	
 
 	BMIter iter;
 	BMIter itersub;
-	
-	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
-		CustomData_bmesh_free_block(&(bm->vdata), &(v->head.data));
+
+	const bool is_ldata_free = CustomData_bmesh_has_free(&bm->ldata);
+	const bool is_pdata_free = CustomData_bmesh_has_free(&bm->pdata);
+
+	/* Check if we have to call free, if not we can avoid a lot of looping */
+	if (CustomData_bmesh_has_free(&(bm->vdata))) {
+		BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+			CustomData_bmesh_free_block(&(bm->vdata), &(v->head.data));
+		}
 	}
-	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
-		CustomData_bmesh_free_block(&(bm->edata), &(e->head.data));
+	if (CustomData_bmesh_has_free(&(bm->edata))) {
+		BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+			CustomData_bmesh_free_block(&(bm->edata), &(e->head.data));
+		}
 	}
-	BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
-		CustomData_bmesh_free_block(&(bm->pdata), &(f->head.data));
-		BM_ITER_ELEM (l, &itersub, f, BM_LOOPS_OF_FACE) {
-			CustomData_bmesh_free_block(&(bm->ldata), &(l->head.data));
+
+	if (is_ldata_free || is_pdata_free) {
+		BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+			if (is_pdata_free)
+				CustomData_bmesh_free_block(&(bm->pdata), &(f->head.data));
+			if (is_ldata_free) {
+				BM_ITER_ELEM (l, &itersub, f, BM_LOOPS_OF_FACE) {
+					CustomData_bmesh_free_block(&(bm->ldata), &(l->head.data));
+				}
+			}
 		}
 	}
 
@@ -227,7 +240,7 @@ void BM_mesh_clear(BMesh *bm)
 	bm_mempool_init(bm, &bm_mesh_allocsize_default);
 
 	bm->stackdepth = 1;
-	bm->totflags = 1;
+	bm->totflags = 0;
 
 	CustomData_reset(&bm->vdata);
 	CustomData_reset(&bm->edata);
@@ -560,7 +573,7 @@ void BM_mesh_elem_index_validate(BMesh *bm, const char *location, const char *fu
 	bool is_any_error = 0;
 
 	for (i = 0; i < 3; i++) {
-		const bool is_dirty = (flag_types[i] & bm->elem_index_dirty);
+		const bool is_dirty = (flag_types[i] & bm->elem_index_dirty) != 0;
 		int index = 0;
 		bool is_error = false;
 		int err_val = 0;
@@ -615,6 +628,8 @@ void BM_mesh_elem_index_validate(BMesh *bm, const char *location, const char *fu
  */
 int BM_mesh_elem_count(BMesh *bm, const char htype)
 {
+	BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
+
 	switch (htype) {
 		case BM_VERT: return bm->totvert;
 		case BM_EDGE: return bm->totedge;

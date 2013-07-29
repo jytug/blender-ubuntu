@@ -2967,8 +2967,10 @@ static void lib_link_lamp(FileData *fd, Main *main)
 			
 			la->ipo = newlibadr_us(fd, la->id.lib, la->ipo); // XXX deprecated - old animation system
 			
-			if (la->nodetree)
+			if (la->nodetree) {
 				lib_link_ntree(fd, &la->id, la->nodetree);
+				la->nodetree->id.lib = la->id.lib;
+			}
 			
 			la->id.flag -= LIB_NEED_LINK;
 		}
@@ -3140,8 +3142,10 @@ static void lib_link_world(FileData *fd, Main *main)
 				}
 			}
 			
-			if (wrld->nodetree)
+			if (wrld->nodetree) {
 				lib_link_ntree(fd, &wrld->id, wrld->nodetree);
+				wrld->nodetree->id.lib = wrld->id.lib;
+			}
 			
 			wrld->id.flag -= LIB_NEED_LINK;
 		}
@@ -3429,8 +3433,10 @@ static void lib_link_texture(FileData *fd, Main *main)
 			if (tex->ot)
 				tex->ot->object = newlibadr(fd, tex->id.lib, tex->ot->object);
 			
-			if (tex->nodetree)
+			if (tex->nodetree) {
 				lib_link_ntree(fd, &tex->id, tex->nodetree);
+				tex->nodetree->id.lib = tex->id.lib;
+			}
 			
 			tex->id.flag -= LIB_NEED_LINK;
 		}
@@ -3511,8 +3517,10 @@ static void lib_link_material(FileData *fd, Main *main)
 				}
 			}
 			
-			if (ma->nodetree)
+			if (ma->nodetree) {
 				lib_link_ntree(fd, &ma->id, ma->nodetree);
+				ma->nodetree->id.lib = ma->id.lib;
+			}
 			
 			ma->id.flag -= LIB_NEED_LINK;
 		}
@@ -4140,6 +4148,11 @@ static void direct_link_mesh(FileData *fd, Mesh *mesh)
 	mesh->bb = NULL;
 	mesh->edit_btmesh = NULL;
 	
+	/* happens with old files */
+	if (mesh->mselect == NULL) {
+		mesh->totselect = 0;
+	}
+
 	/* Multires data */
 	mesh->mr= newdataadr(fd, mesh->mr);
 	if (mesh->mr) {
@@ -5160,6 +5173,7 @@ static void lib_link_scene(FileData *fd, Main *main)
 			
 			if (sce->nodetree) {
 				lib_link_ntree(fd, &sce->id, sce->nodetree);
+				sce->nodetree->id.lib = sce->id.lib;
 				composite_patch(sce->nodetree, sce);
 			}
 			
@@ -5694,8 +5708,9 @@ static void lib_link_screen(FileData *fd, Main *main)
 						ntree = nodetree_from_id(snode->id);
 						if (ntree)
 							snode->nodetree = ntree;
-						else
-							snode->nodetree = newlibadr(fd, sc->id.lib, snode->nodetree);
+						else {
+							snode->nodetree = newlibadr_us(fd, sc->id.lib, snode->nodetree);
+						}
 						
 						for (path = snode->treepath.first; path; path = path->next) {
 							if (path == snode->treepath.first) {
@@ -5703,7 +5718,7 @@ static void lib_link_screen(FileData *fd, Main *main)
 								path->nodetree = snode->nodetree;
 							}
 							else
-								path->nodetree = newlibadr(fd, sc->id.lib, path->nodetree);
+								path->nodetree = newlibadr_us(fd, sc->id.lib, path->nodetree);
 							
 							if (!path->nodetree)
 								break;
@@ -6032,7 +6047,7 @@ void blo_lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *cursc
 							path->nodetree = snode->nodetree;
 						}
 						else
-							path->nodetree= restore_pointer_by_name(newmain, (ID*)path->nodetree, 0);
+							path->nodetree= restore_pointer_by_name(newmain, (ID*)path->nodetree, 2);
 						
 						if (!path->nodetree)
 							break;
@@ -7770,20 +7785,20 @@ static void do_versions_nodetree_customnodes(bNodeTree *ntree, int UNUSED(is_gro
 		for (node=ntree->nodes.first; node; node=node->next) {
 			for (sock = node->inputs.first; sock; sock = sock->next) {
 				BLI_strncpy(sock->identifier, sock->name, sizeof(sock->identifier));
-				BLI_uniquename(&node->inputs, sock, sock->identifier, '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
+				BLI_uniquename(&node->inputs, sock, "socket", '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
 			}
 			for (sock = node->outputs.first; sock; sock = sock->next) {
 				BLI_strncpy(sock->identifier, sock->name, sizeof(sock->identifier));
-				BLI_uniquename(&node->outputs, sock, sock->identifier, '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
+				BLI_uniquename(&node->outputs, sock, "socket", '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
 			}
 		}
 		for (sock = ntree->inputs.first; sock; sock = sock->next) {
 			BLI_strncpy(sock->identifier, sock->name, sizeof(sock->identifier));
-			BLI_uniquename(&ntree->inputs, sock, sock->identifier, '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
+			BLI_uniquename(&ntree->inputs, sock, "socket", '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
 		}
 		for (sock = ntree->outputs.first; sock; sock = sock->next) {
 			BLI_strncpy(sock->identifier, sock->name, sizeof(sock->identifier));
-			BLI_uniquename(&ntree->outputs, sock, sock->identifier, '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
+			BLI_uniquename(&ntree->outputs, sock, "socket", '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
 		}
 	}
 }
@@ -9322,7 +9337,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 	}
 
 	if (main->versionfile < 267) {
-		//if(!DNA_struct_elem_find(fd->filesdna, "Brush", "int", "stencil_pos")) {
+		//if (!DNA_struct_elem_find(fd->filesdna, "Brush", "int", "stencil_pos")) {
 		Brush *brush;
 
 		for (brush = main->brush.first; brush; brush = brush->id.next) {
@@ -9341,10 +9356,10 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		}
 
 		/* TIP: to initialize new variables added, use the new function
-		   DNA_struct_elem_find(fd->filesdna, "structname", "typename", "varname")
-		   example: 
-				if (!DNA_struct_elem_find(fd->filesdna, "UserDef", "short", "image_gpubuffer_limit"))
-					user->image_gpubuffer_limit = 10;
+		 * DNA_struct_elem_find(fd->filesdna, "structname", "typename", "varname")
+		 * example:
+		 * if (!DNA_struct_elem_find(fd->filesdna, "UserDef", "short", "image_gpubuffer_limit"))
+		 *     user->image_gpubuffer_limit = 10;
 		 */
 		
 	}
@@ -9443,6 +9458,68 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		}
 	}
 
+	if (MAIN_VERSION_OLDER(main, 267, 1))
+	{
+		Object *ob;
+
+		for (ob = main->object.first; ob; ob = ob->id.next) {
+			ModifierData *md;
+			for (md = ob->modifiers.first; md; md = md->next) {
+				if (md->type == eModifierType_Smoke) {
+					SmokeModifierData *smd = (SmokeModifierData *)md;
+					if ((smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain) {
+						if (smd->domain->flags & MOD_SMOKE_HIGH_SMOOTH) {
+							smd->domain->highres_sampling = SM_HRES_LINEAR;
+						}
+						else {
+							smd->domain->highres_sampling = SM_HRES_NEAREST;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	{
+		bScreen *sc;
+		Object *ob;
+
+		for (ob = main->object.first; ob; ob = ob->id.next) {
+			ModifierData *md;
+			for (md = ob->modifiers.first; md; md = md->next) {
+				if (md->type == eModifierType_Smoke) {
+					SmokeModifierData *smd = (SmokeModifierData *)md;
+					if ((smd->type & MOD_SMOKE_TYPE_FLOW) && smd->flow) {
+						if (!smd->flow->particle_size) {
+							smd->flow->particle_size = 1.0f;
+						}
+					}
+				}
+			}
+		}
+
+		/*
+		 * FIX some files have a zoom level of 0, and was checked during the drawing of the node space
+		 *
+		 * We moved this check to the do versions to be sure the value makes any sense.
+		 */
+		for (sc = main->screen.first; sc; sc = sc->id.next) {
+			ScrArea *sa;
+			for (sa = sc->areabase.first; sa; sa = sa->next) {
+				SpaceLink *sl;
+				for (sl = sa->spacedata.first; sl; sl = sl->next) {
+					if (sl->spacetype == SPACE_NODE) {
+						SpaceNode *snode = (SpaceNode *)sl;
+						if (snode->zoom < 0.02f) {
+							snode->zoom = 1.0;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */
 	/* WATCH IT 2!: Userdef struct init see do_versions_userdef() above! */
 
@@ -9534,6 +9611,7 @@ static BHead *read_userdef(BlendFileData *bfd, FileData *fd, BHead *bhead)
 	link_list(fd, &user->themes);
 	link_list(fd, &user->user_keymaps);
 	link_list(fd, &user->addons);
+	link_list(fd, &user->autoexec_paths);
 	
 	for (keymap=user->user_keymaps.first; keymap; keymap=keymap->next) {
 		keymap->modal_items= NULL;

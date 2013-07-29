@@ -238,7 +238,7 @@ static int text_open_exec(bContext *C, wmOperator *op)
 
 	RNA_string_get(op->ptr, "filepath", str);
 
-	text = BKE_text_load(bmain, str, G.main->name);
+	text = BKE_text_load_ex(bmain, str, G.main->name, internal);
 
 	if (!text) {
 		if (op->customdata) MEM_freeN(op->customdata);
@@ -263,13 +263,6 @@ static int text_open_exec(bContext *C, wmOperator *op)
 	else if (st) {
 		st->text = text;
 		st->top = 0;
-	}
-	
-	if (internal) {
-		if (text->name)
-			MEM_freeN(text->name);
-		
-		text->name = NULL;
 	}
 
 	text_drawcache_tag_update(st, 1);
@@ -493,7 +486,7 @@ static void txt_write_file(Text *text, ReportList *reports)
 	
 	fclose(fp);
 
-	if (stat(filepath, &st) == 0) {
+	if (BLI_stat(filepath, &st) == 0) {
 		text->mtime = st.st_mtime;
 	}
 	else {
@@ -502,8 +495,7 @@ static void txt_write_file(Text *text, ReportList *reports)
 		            filepath, errno ? strerror(errno) : TIP_("unknown error stating file"));
 	}
 	
-	if (text->flags & TXT_ISDIRTY)
-		text->flags ^= TXT_ISDIRTY;
+	text->flags &= ~TXT_ISDIRTY;
 }
 
 static int text_save_exec(bContext *C, wmOperator *op)
@@ -3115,7 +3107,7 @@ int text_file_modified(Text *text)
 	if (!BLI_exists(file))
 		return 2;
 
-	result = stat(file, &st);
+	result = BLI_stat(file, &st);
 	
 	if (result == -1)
 		return -1;
@@ -3142,7 +3134,7 @@ static void text_ignore_modified(Text *text)
 
 	if (!BLI_exists(file)) return;
 
-	result = stat(file, &st);
+	result = BLI_stat(file, &st);
 	
 	if (result == -1 || (st.st_mode & S_IFMT) != S_IFREG)
 		return;

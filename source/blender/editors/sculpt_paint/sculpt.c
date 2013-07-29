@@ -41,10 +41,10 @@
 #include "BLI_dynstr.h"
 #include "BLI_ghash.h"
 #include "BLI_threads.h"
-#include "BLI_rand.h"
 
 #include "BLF_translation.h"
 
+#include "DNA_customdata_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_node_types.h"
@@ -120,7 +120,7 @@ float *ED_sculpt_get_last_stroke(struct Object *ob)
 
 void ED_sculpt_get_average_stroke(Object *ob, float stroke[3])
 {
-	if (ob->sculpt->last_stroke_valid) {
+	if (ob->sculpt->last_stroke_valid && ob->sculpt->average_stroke_counter > 0) {
 		float fac = 1.0f / ob->sculpt->average_stroke_counter;
 		mul_v3_v3fl(stroke, ob->sculpt->average_stroke_accum, fac);
 	}
@@ -1257,7 +1257,7 @@ static void calc_brush_local_mat(const Brush *brush, Object *ob,
 	/* Scale by brush radius */
 	normalize_m4(mat);
 	scale_m4_fl(scale, cache->radius);
-	mult_m4_m4m4(tmat, mat, scale);
+	mul_m4_m4m4(tmat, mat, scale);
 
 	/* Return inverse (for converting from modelspace coords to local
 	 * area coords) */
@@ -1528,6 +1528,7 @@ static void do_multires_smooth_brush(Sculpt *sd, SculptSession *ss, PBVHNode *no
 	float *tmpgrid_mask, *tmprow_mask;
 	int v1, v2, v3, v4;
 	int thread_num;
+	BLI_bitmap *grid_hidden;
 	int *grid_indices, totgrid, gridsize, i, x, y;
 
 	sculpt_brush_test_init(ss, &test);
@@ -1537,6 +1538,8 @@ static void do_multires_smooth_brush(Sculpt *sd, SculptSession *ss, PBVHNode *no
 	BKE_pbvh_node_get_grids(ss->pbvh, node, &grid_indices, &totgrid,
 	                        NULL, &gridsize, &griddata, &gridadj);
 	BKE_pbvh_get_grid_key(ss->pbvh, &key);
+
+	grid_hidden = BKE_pbvh_grid_hidden(ss->pbvh);
 
 	thread_num = 0;
 #ifdef _OPENMP
@@ -1549,8 +1552,10 @@ static void do_multires_smooth_brush(Sculpt *sd, SculptSession *ss, PBVHNode *no
 	tmprow_mask = ss->cache->tmprow_mask[thread_num];
 
 	for (i = 0; i < totgrid; ++i) {
-		data = griddata[grid_indices[i]];
-		adj = &gridadj[grid_indices[i]];
+		int gi = grid_indices[i];
+		BLI_bitmap gh = grid_hidden[gi];
+		data = griddata[gi];
+		adj = &gridadj[gi];
 
 		if (smooth_mask)
 			memset(tmpgrid_mask, 0, sizeof(float) * gridsize * gridsize);
@@ -1610,6 +1615,11 @@ static void do_multires_smooth_brush(Sculpt *sd, SculptSession *ss, PBVHNode *no
 				float *fno;
 				float *mask;
 				int index;
+
+				if (gh) {
+					if (BLI_BITMAP_GET(gh, y * gridsize + x))
+						continue;
+				}
 
 				if (x == 0 && adj->index[0] == -1)
 					continue;
@@ -2730,7 +2740,7 @@ static void do_clay_strips_brush(Sculpt *sd, Object *ob, PBVHNode **nodes, int t
 
 	/* scale mat */
 	scale_m4_fl(scale, ss->cache->radius);
-	mult_m4_m4m4(tmat, mat, scale);
+	mul_m4_m4m4(tmat, mat, scale);
 	invert_m4_m4(mat, tmat);
 
 	#pragma omp parallel for schedule(guided) if (sd->flags & SCULPT_USE_OPENMP)
@@ -2943,9 +2953,7 @@ void sculpt_vertcos_to_key(Object *ob, KeyBlock *kb, float (*vertCos)[3])
 		for (a = 0; a < me->totvert; a++, mvert++)
 			copy_v3_v3(mvert->co, vertCos[a]);
 
-		BKE_mesh_calc_normals_mapping(me->mvert, me->totvert, me->mloop,
-		                              me->mpoly, me->totloop, me->totpoly,
-		                              NULL, NULL, 0, NULL, NULL);
+		BKE_mesh_calc_normals(me);
 	}
 
 	/* apply new coords on active key block */
@@ -2982,6 +2990,7 @@ static void sculpt_topology_update(Sculpt *sd, Object *ob, Brush *brush)
 	/* Only act if some verts are inside the brush area */
 	if (totnode) {
 		PBVHTopologyUpdateMode mode = PBVH_Subdivide;
+		float location[3];
 
 		if ((sd->flags & SCULPT_DYNTOPO_COLLAPSE) ||
 			(brush->sculpt_tool == SCULPT_TOOL_SIMPLIFY))
@@ -3008,6 +3017,13 @@ static void sculpt_topology_update(Sculpt *sd, Object *ob, Brush *brush)
 		}
 
 		MEM_freeN(nodes);
+
+		/* update average stroke position */
+		copy_v3_v3(location, ss->cache->true_location);
+		mul_m4_v3(ob->obmat, location);
+
+		add_v3_v3(ob->sculpt->average_stroke_accum, location);
+		ob->sculpt->average_stroke_counter++;
 	}
 }
 
@@ -3279,7 +3295,7 @@ static void sculpt_flush_stroke_deform(Sculpt *sd, Object *ob)
 		/* Modifiers could depend on mesh normals, so we should update them/
 		 * Note, then if sculpting happens on locked key, normals should be re-calculated
 		 * after applying coords from keyblock on base mesh */
-		BKE_mesh_calc_normals(me->mvert, me->totvert, me->mloop, me->mpoly, me->totloop, me->totpoly, NULL);
+		BKE_mesh_calc_normals(me);
 	}
 	else if (ss->kb) {
 		sculpt_update_keyblock(ob);
@@ -3518,7 +3534,14 @@ int sculpt_mode_poll(bContext *C)
 
 int sculpt_mode_poll_view3d(bContext *C)
 {
-	return (sculpt_mode_poll(C) && CTX_wm_region_view3d(C));
+	return (sculpt_mode_poll(C) &&
+	        CTX_wm_region_view3d(C));
+}
+
+int sculpt_poll_view3d(bContext *C)
+{
+	return (sculpt_poll(C) &&
+	        CTX_wm_region_view3d(C));
 }
 
 int sculpt_poll(bContext *C)
@@ -4543,7 +4566,7 @@ void sculpt_pbvh_clear(Object *ob)
 	ss->pbvh = NULL;
 	if (dm)
 		dm->getPBVH(NULL, dm);
-	BKE_object_free_display(ob);
+	BKE_object_free_derived_caches(ob);
 }
 
 void sculpt_update_after_dynamic_topology_toggle(bContext *C)
@@ -4572,8 +4595,7 @@ void sculpt_dynamic_topology_enable(bContext *C)
 	/* Create triangles-only BMesh */
 	ss->bm = BM_mesh_create(&bm_mesh_allocsize_default);
 
-	BM_mesh_bm_from_me(ss->bm, me, TRUE, ob->shapenr);
-	BM_mesh_normals_update(ss->bm);
+	BM_mesh_bm_from_me(ss->bm, me, true, true, ob->shapenr);
 	sculpt_dynamic_topology_triangulate(ss->bm);
 	BM_data_layer_add(ss->bm, &ss->bm->vdata, CD_PAINT_MASK);
 	BM_mesh_normals_update(ss->bm);
@@ -4936,7 +4958,7 @@ static int sculpt_toggle_mode(bContext *C, wmOperator *UNUSED(op))
 
 		BKE_paint_init(&ts->sculpt->paint, PAINT_CURSOR_SCULPT);
 
-		paint_cursor_start(C, sculpt_poll);
+		paint_cursor_start(C, sculpt_poll_view3d);
 	}
 
 	WM_event_add_notifier(C, NC_SCENE | ND_MODE, scene);

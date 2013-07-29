@@ -192,14 +192,14 @@ void ShaderGraph::connect(ShaderOutput *from, ShaderInput *to)
 		/* for closures we can't do automatic conversion */
 		if(from->type == SHADER_SOCKET_CLOSURE || to->type == SHADER_SOCKET_CLOSURE) {
 			fprintf(stderr, "Cycles shader graph connect: can only connect closure to closure "
-			        "(ShaderNode:%s, ShaderOutput:%s , type:%d -> to ShaderNode:%s, ShaderInput:%s, type:%d).\n",
-			        from->parent->name.c_str(), from->name, (int)from->type,
-			        to->parent->name.c_str(),   to->name,   (int)to->type);
+			        "(%s.%s to %s.%s).\n",
+			        from->parent->name.c_str(), from->name,
+			        to->parent->name.c_str(), to->name);
 			return;
 		}
 
 		/* add automatic conversion node in case of type mismatch */
-		ShaderNode *convert = add(new ConvertNode(from->type, to->type));
+		ShaderNode *convert = add(new ConvertNode(from->type, to->type, true));
 
 		connect(from, convert->inputs[0]);
 		connect(convert->outputs[0], to);
@@ -341,6 +341,25 @@ void ShaderGraph::remove_unneeded_nodes()
 			}
 			else {
 				foreach(ShaderInput *to, links) {
+					/* remove any autoconvert nodes too if they lead to
+					 * sockets with an automatically set default value */
+					ShaderNode *tonode = to->parent;
+
+					if(tonode->special_type == SHADER_SPECIAL_TYPE_AUTOCONVERT) {
+						bool all_links_removed = true;
+						vector<ShaderInput*> links = tonode->outputs[0]->links;
+
+						foreach(ShaderInput *autoin, links) {
+							if(autoin->default_value == ShaderInput::NONE)
+								all_links_removed = false;
+							else
+								disconnect(autoin);
+						}
+
+						if(all_links_removed)
+							removed[tonode->id] = true;
+					}
+
 					disconnect(to);
 					
 					/* transfer the default input value to the target socket */
@@ -352,10 +371,10 @@ void ShaderGraph::remove_unneeded_nodes()
 			removed[proxy->id] = true;
 			any_node_removed = true;
 		}
-
-		/* remove useless mix closures nodes */
-		if(node->special_type == SHADER_SPECIAL_TYPE_MIX_CLOSURE) {
+		else if(node->special_type == SHADER_SPECIAL_TYPE_MIX_CLOSURE) {
 			MixClosureNode *mix = static_cast<MixClosureNode*>(node);
+
+			/* remove useless mix closures nodes */
 			if(mix->outputs[0]->links.size() && mix->inputs[1]->link == mix->inputs[2]->link) {
 				ShaderOutput *output = mix->inputs[1]->link;
 				vector<ShaderInput*> inputs = mix->outputs[0]->links;
@@ -370,15 +389,11 @@ void ShaderGraph::remove_unneeded_nodes()
 						connect(output, input);
 				}
 			}
-		}
 		
-		/* remove unused mix closure input when factor is 0.0 or 1.0 */
-		if(node->special_type == SHADER_SPECIAL_TYPE_MIX_CLOSURE) {
-			MixClosureNode *mix = static_cast<MixClosureNode*>(node);
-			/* Check for closure links and make sure factor link is disconnected */
+			/* remove unused mix closure input when factor is 0.0 or 1.0 */
+			/* check for closure links and make sure factor link is disconnected */
 			if(mix->outputs[0]->links.size() && mix->inputs[1]->link && mix->inputs[2]->link && !mix->inputs[0]->link) {
-			
-				/* Factor 0.0 */
+				/* factor 0.0 */
 				if(mix->inputs[0]->value.x == 0.0f) {
 					ShaderOutput *output = mix->inputs[1]->link;
 					vector<ShaderInput*> inputs = mix->outputs[0]->links;
@@ -393,7 +408,7 @@ void ShaderGraph::remove_unneeded_nodes()
 							connect(output, input);
 					}
 				}
-				/* Factor 1.0 */
+				/* factor 1.0 */
 				else if(mix->inputs[0]->value.x == 1.0f) {
 					ShaderOutput *output = mix->inputs[2]->link;
 					vector<ShaderInput*> inputs = mix->outputs[0]->links;
@@ -678,7 +693,7 @@ void ShaderGraph::bump_from_displacement()
 
 	/* for displacement bump, clear the normal input in case the above loop
 	 * connected the setnormal out to the bump normalin */
-	ShaderInput *bump_normal_in = bump->input("NormalIn");
+	ShaderInput *bump_normal_in = bump->input("Normal");
 	if(bump_normal_in)
 		bump_normal_in->link = NULL;
 

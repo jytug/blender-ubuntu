@@ -124,10 +124,7 @@
 /* here we store all renders */
 static struct {
 	ListBase renderlist;
-
-	/* commandline thread override */
-	int threads;
-} RenderGlobal = {{NULL, NULL}, -1}; 
+} RenderGlobal = {{NULL, NULL}}; 
 
 /* hardcopy of current render, used while rendering for speed */
 Render R;
@@ -351,6 +348,13 @@ void RE_ResultGet32(Render *re, unsigned int *rect)
 	RE_ReleaseResultImage(re);
 }
 
+/* caller is responsible for allocating rect in correct size! */
+/* Only for acquired results, for lock */
+void RE_AcquiredResultGet32(Render *re, RenderResult *result, unsigned int *rect)
+{
+	render_result_rect_get_pixels(result, rect, re->rectx, re->recty, &re->scene->view_settings, &re->scene->display_settings);
+}
+
 RenderStats *RE_GetStats(Render *re)
 {
 	return &re->i;
@@ -407,6 +411,7 @@ void RE_FreeRender(Render *re)
 	
 	/* main dbase can already be invalid now, some database-free code checks it */
 	re->main = NULL;
+	re->scene = NULL;
 	
 	RE_Database_Free(re);	/* view render can still have full database */
 	free_sample_tables(re);
@@ -463,12 +468,36 @@ void RE_FreePersistentData(void)
 
 /* ********* initialize state ******** */
 
+/* clear full sample and tile flags if needed */
+static int check_mode_full_sample(RenderData *rd)
+{
+	int scemode = rd->scemode;
+
+	if ((rd->mode & R_OSA) == 0)
+		scemode &= ~R_FULL_SAMPLE;
+
+#ifdef WITH_OPENEXR
+	if (scemode & R_FULL_SAMPLE)
+		scemode |= R_EXR_TILE_FILE;   /* enable automatic */
+
+	/* Until use_border is made compatible with save_buffers/full_sample, render without the later instead of not rendering at all.*/
+	if (rd->mode & R_BORDER) {
+		scemode &= ~(R_EXR_TILE_FILE | R_FULL_SAMPLE);
+	}
+
+#else
+	/* can't do this without openexr support */
+	scemode &= ~(R_EXR_TILE_FILE | R_FULL_SAMPLE);
+#endif
+
+	return scemode;
+}
 
 /* what doesn't change during entire render sequence */
 /* disprect is optional, if NULL it assumes full window render */
 void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *srl, int winx, int winy, rcti *disprect)
 {
-	bool had_freestyle = (re->r.mode & R_EDGE_FRS);
+	bool had_freestyle = (re->r.mode & R_EDGE_FRS) != 0;
 
 	re->ok = TRUE;   /* maybe flag */
 	
@@ -528,22 +557,7 @@ void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *
 		return;
 	}
 
-	if ((re->r.mode & (R_OSA)) == 0)
-		re->r.scemode &= ~R_FULL_SAMPLE;
-
-#ifdef WITH_OPENEXR
-	if (re->r.scemode & R_FULL_SAMPLE)
-		re->r.scemode |= R_EXR_TILE_FILE;   /* enable automatic */
-
-	/* Until use_border is made compatible with save_buffers/full_sample, render without the later instead of not rendering at all.*/
-	if (re->r.mode & R_BORDER) {
-		re->r.scemode &= ~(R_EXR_TILE_FILE | R_FULL_SAMPLE);
-	}
-
-#else
-	/* can't do this without openexr support */
-	re->r.scemode &= ~(R_EXR_TILE_FILE | R_FULL_SAMPLE);
-#endif
+	re->r.scemode = check_mode_full_sample(&re->r);
 	
 	/* fullsample wants uniform osa levels */
 	if (source && (re->r.scemode & R_FULL_SAMPLE)) {
@@ -576,7 +590,7 @@ void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *
 	/* if preview render, we try to keep old result */
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
-	if (re->r.scemode & R_PREVIEWBUTS) {
+	if (re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW)) {
 		if (had_freestyle || (re->r.mode & R_EDGE_FRS)) {
 			/* freestyle manipulates render layers so always have to free */
 			render_result_free(re->result);
@@ -698,7 +712,7 @@ void RE_progress_cb(Render *re, void *handle, void (*f)(void *handle, float))
 void RE_draw_lock_cb(Render *re, void *handle, void (*f)(void *handle, int i))
 {
 	re->draw_lock = f;
-	re->tbh = handle;
+	re->dlh = handle;
 }
 
 void RE_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
@@ -725,7 +739,7 @@ static int render_display_draw_enabled(Render *re)
 {
 	/* don't show preprocess for previewrender sss */
 	if (re->sss_points)
-		return !(re->r.scemode & R_PREVIEWBUTS);
+		return !(re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW));
 	else
 		return 1;
 }
@@ -762,7 +776,7 @@ static void *do_part_thread(void *pa_v)
 		}
 		else if (render_display_draw_enabled(&R)) {
 			/* on break, don't merge in result for preview renders, looks nicer */
-			if (R.test_break(R.tbh) && (R.r.scemode & R_PREVIEWBUTS)) {
+			if (R.test_break(R.tbh) && (R.r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))) {
 				/* pass */
 			}
 			else {
@@ -943,7 +957,7 @@ static void threaded_tile_processor(Render *re)
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
 	/* first step; free the entire render result, make new, and/or prepare exr buffer saving */
-	if (re->result == NULL || !(re->r.scemode & R_PREVIEWBUTS)) {
+	if (re->result == NULL || !(re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))) {
 		render_result_free(re->result);
 
 		if (re->sss_points && render_display_draw_enabled(re))
@@ -1077,7 +1091,7 @@ static void threaded_tile_processor(Render *re)
 }
 
 #ifdef WITH_FREESTYLE
-static void add_freestyle(Render *re);
+static void add_freestyle(Render *re, int render);
 static void free_all_freestyle_renders(void);
 #endif
 
@@ -1093,7 +1107,7 @@ void RE_TileProcessor(Render *re)
 	/* Freestyle */
 	if (re->r.mode & R_EDGE_FRS) {
 		if (!re->test_break(re->tbh)) {
-			add_freestyle(re);
+			add_freestyle(re, 1);
 	
 			free_all_freestyle_renders();
 			
@@ -1109,7 +1123,6 @@ void RE_TileProcessor(Render *re)
 
 static void do_render_3d(Render *re)
 {
-	float cfra;
 	int cfra_backup;
 
 	/* try external */
@@ -1122,19 +1135,20 @@ static void do_render_3d(Render *re)
 	/* add motion blur and fields offset to frames */
 	cfra_backup = re->scene->r.cfra;
 
-	cfra = re->scene->r.cfra + re->mblur_offs + re->field_offs;
-	re->scene->r.cfra = floorf(cfra);
-	re->scene->r.subframe = cfra - floorf(cfra);
+	BKE_scene_frame_set(re->scene, (double)re->scene->r.cfra + (double)re->mblur_offs + (double)re->field_offs);
 
 	/* lock drawing in UI during data phase */
 	if (re->draw_lock)
 		re->draw_lock(re->dlh, 1);
 	
 	/* make render verts/faces/halos/lamps */
-	if (render_scene_needs_vector(re))
+	if (render_scene_needs_vector(re)) {
 		RE_Database_FromScene_Vectors(re, re->main, re->scene, re->lay);
-	else
+	}
+	else {
 		RE_Database_FromScene(re, re->main, re->scene, re->lay, 1);
+		RE_Database_Preprocess(re);
+	}
 	
 	/* clear UI drawing locks */
 	if (re->draw_lock)
@@ -1146,7 +1160,7 @@ static void do_render_3d(Render *re)
 	/* Freestyle */
 	if (re->r.mode & R_EDGE_FRS)
 		if (!re->test_break(re->tbh))
-			add_freestyle(re);
+			add_freestyle(re, 1);
 #endif
 	
 	/* do left-over 3d post effects (flares) */
@@ -1405,6 +1419,16 @@ static void do_render_fields_3d(Render *re)
 	re->display_draw(re->ddh, re->result, NULL);
 }
 
+/* make sure disprect is not affected by the render border */
+static void render_result_disprect_to_full_resolution(Render *re)
+{
+	re->disprect.xmin = re->disprect.ymin = 0;
+	re->disprect.xmax = re->winx;
+	re->disprect.ymax = re->winy;
+	re->rectx = re->winx;
+	re->recty = re->winy;
+}
+
 /* main render routine, no compositing */
 static void do_render_fields_blur_3d(Render *re)
 {
@@ -1437,13 +1461,8 @@ static void do_render_fields_blur_3d(Render *re)
 				/* sub-rect for merge call later on */
 				re->result->tilerect = re->disprect;
 				
-				/* this copying sequence could become function? */
 				/* weak is: it chances disprect from border */
-				re->disprect.xmin = re->disprect.ymin = 0;
-				re->disprect.xmax = re->winx;
-				re->disprect.ymax = re->winy;
-				re->rectx = re->winx;
-				re->recty = re->winy;
+				render_result_disprect_to_full_resolution(re);
 				
 				rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS);
 				
@@ -1629,7 +1648,7 @@ static void render_composit_stats(void *UNUSED(arg), char *str)
 
 #ifdef WITH_FREESTYLE
 /* invokes Freestyle stroke rendering */
-static void add_freestyle(Render *re)
+static void add_freestyle(Render *re, int render)
 {
 	SceneRenderLayer *srl, *actsrl;
 	LinkData *link;
@@ -1655,11 +1674,14 @@ static void add_freestyle(Render *re)
 		if ((re->r.scemode & R_SINGLE_LAYER) && srl != actsrl)
 			continue;
 		if (FRS_is_freestyle_enabled(srl)) {
-			link->data = (void *)FRS_do_stroke_rendering(re, srl);
+			link->data = (void *)FRS_do_stroke_rendering(re, srl, render);
 		}
 	}
 
 	FRS_finish_stroke_rendering(re);
+
+	/* restore the global R value (invalidated by nested execution of the internal renderer) */
+	R = *re;
 }
 
 /* merges the results of Freestyle stroke rendering into a given render result */
@@ -1849,6 +1871,11 @@ void RE_MergeFullSample(Render *re, Main *bmain, Scene *sce, bNodeTree *ntree)
 	for (scene = re->main->scene.first; scene; scene = scene->id.next)
 		scene->id.flag |= LIB_DOIT;
 	
+#ifdef WITH_FREESTYLE
+	for (scene = re->freestyle_bmain.scene.first; scene; scene = scene->id.next)
+		scene->id.flag &= ~LIB_DOIT;
+#endif
+
 	for (node = ntree->nodes.first; node; node = node->next) {
 		if (node->type == CMP_NODE_R_LAYERS) {
 			Scene *nodescene = (Scene *)node->id;
@@ -1872,7 +1899,16 @@ void RE_MergeFullSample(Render *re, Main *bmain, Scene *sce, bNodeTree *ntree)
 	re->display_init(re->dih, re->result);
 	re->display_clear(re->dch, re->result);
 	
+#ifdef WITH_FREESTYLE
+	if (re->r.mode & R_EDGE_FRS)
+		add_freestyle(re, 0);
+#endif
+
 	do_merge_fullsample(re, ntree);
+
+#ifdef WITH_FREESTYLE
+	free_all_freestyle_renders();
+#endif
 }
 
 /* returns fully composited render-result on given time step (in RenderData) */
@@ -1895,6 +1931,9 @@ static void do_render_composite_fields_blur_3d(Render *re)
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 		
 		render_result_free(re->result);
+		if ((re->r.mode & R_CROP) == 0) {
+			render_result_disprect_to_full_resolution(re);
+		}
 		re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS);
 
 		BLI_rw_mutex_unlock(&re->resultmutex);
@@ -2175,7 +2214,7 @@ static int node_tree_has_composite_output(bNodeTree *ntree)
 	bNode *node;
 
 	for (node = ntree->nodes.first; node; node = node->next) {
-		if (node->type == CMP_NODE_COMPOSITE) {
+		if (ELEM(node->type, CMP_NODE_COMPOSITE, CMP_NODE_OUTPUT_FILE)) {
 			return TRUE;
 		}
 		else if (node->type == NODE_GROUP) {
@@ -2198,6 +2237,7 @@ static int check_composite_output(Scene *scene)
 int RE_is_rendering_allowed(Scene *scene, Object *camera_override, ReportList *reports)
 {
 	SceneRenderLayer *srl;
+	int scemode = check_mode_full_sample(&scene->r);
 	
 	if (scene->r.mode & R_BORDER) {
 		if (scene->r.border.xmax <= scene->r.border.xmin ||
@@ -2208,7 +2248,7 @@ int RE_is_rendering_allowed(Scene *scene, Object *camera_override, ReportList *r
 		}
 	}
 	
-	if (scene->r.scemode & (R_EXR_TILE_FILE | R_FULL_SAMPLE)) {
+	if (scemode & (R_EXR_TILE_FILE | R_FULL_SAMPLE)) {
 		char str[FILE_MAX];
 		
 		render_result_exr_file_path(scene, "", 0, str);
@@ -2219,16 +2259,14 @@ int RE_is_rendering_allowed(Scene *scene, Object *camera_override, ReportList *r
 		}
 		
 		/* no fullsample and edge */
-		if ((scene->r.scemode & R_FULL_SAMPLE) && (scene->r.mode & R_EDGE)) {
+		if ((scemode & R_FULL_SAMPLE) && (scene->r.mode & R_EDGE)) {
 			BKE_report(reports, RPT_ERROR, "Full sample does not support edge enhance");
 			return 0;
 		}
 		
 	}
-	else
-		scene->r.scemode &= ~R_FULL_SAMPLE;  /* clear to be sure */
 	
-	if (scene->r.scemode & R_DOCOMP) {
+	if (scemode & R_DOCOMP) {
 		if (scene->use_nodes) {
 			if (!scene->nodetree) {
 				BKE_report(reports, RPT_ERROR, "No node tree in scene");
@@ -2240,7 +2278,7 @@ int RE_is_rendering_allowed(Scene *scene, Object *camera_override, ReportList *r
 				return 0;
 			}
 			
-			if (scene->r.scemode & R_FULL_SAMPLE) {
+			if (scemode & R_FULL_SAMPLE) {
 				if (composite_needs_render(scene, 0) == 0) {
 					BKE_report(reports, RPT_ERROR, "Full sample AA not supported without 3D rendering");
 					return 0;
@@ -2264,10 +2302,17 @@ int RE_is_rendering_allowed(Scene *scene, Object *camera_override, ReportList *r
 			BKE_report(reports, RPT_ERROR, "No ortho render possible for panorama");
 			return 0;
 		}
+
+#ifdef WITH_FREESTYLE
+		if ((scene->r.mode & R_EDGE_FRS) && (!BKE_scene_use_new_shading_nodes(scene))) {
+			BKE_report(reports, RPT_ERROR, "Panoramic camera not supported in Freestyle");
+			return 0;
+		}
+#endif
 	}
 
 	/* layer flag tests */
-	if (scene->r.scemode & R_SINGLE_LAYER) {
+	if (scemode & R_SINGLE_LAYER) {
 		srl = BLI_findlink(&scene->r.layers, scene->r.actlay);
 		/* force layer to be enabled */
 		srl->layflag &= ~SCE_LAY_DISABLE;
@@ -2291,7 +2336,6 @@ static void validate_render_settings(Render *re)
 		if (re->r.osa == 0)
 			re->r.scemode &= ~R_FULL_SAMPLE;
 	}
-	else re->r.scemode &= ~R_FULL_SAMPLE;   /* clear to be sure */
 
 	if (RE_engine_is_external(re)) {
 		/* not supported yet */
@@ -2349,6 +2393,7 @@ static int render_initialize_from_main(Render *re, Main *bmain, Scene *scene, Sc
 	re->scene_color_manage = BKE_scene_check_color_management_enabled(scene);
 	re->camera_override = camera_override;
 	re->lay = lay;
+	re->i.localview = (lay & 0xFF000000) != 0;
 	
 	/* not too nice, but it survives anim-border render */
 	if (anim) {
@@ -2434,11 +2479,12 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 }
 
 #ifdef WITH_FREESTYLE
-void RE_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene)
+void RE_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene, int render)
 {
 	re->result_ok= 0;
 	if (render_initialize_from_main(re, bmain, scene, NULL, NULL, scene->lay, 0, 0)) {
-		do_render_fields_blur_3d(re);
+		if (render)
+			do_render_fields_blur_3d(re);
 	}
 	re->result_ok = 1;
 }
@@ -2463,7 +2509,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 		if (ibuf->rect == NULL) {
 			ibuf->rect = MEM_mapallocN(sizeof(int) * rres.rectx * rres.recty, "temp 32 bits rect");
 			ibuf->mall |= IB_rect;
-			RE_ResultGet32(re, ibuf->rect);
+			RE_AcquiredResultGet32(re, &rres, ibuf->rect);
 			do_free = TRUE;
 		}
 
@@ -2762,27 +2808,9 @@ int RE_ReadRenderResult(Scene *scene, Scene *scenode)
 	return success;
 }
 
-void RE_set_max_threads(int threads)
-{
-	if (threads == 0) {
-		RenderGlobal.threads = BLI_system_thread_count();
-	}
-	else if (threads >= 1 && threads <= BLENDER_MAX_THREADS) {
-		RenderGlobal.threads = threads;
-	}
-	else {
-		printf("Error, threads has to be in range 0-%d\n", BLENDER_MAX_THREADS);
-	}
-}
-
 void RE_init_threadcount(Render *re) 
 {
-	if (RenderGlobal.threads >= 1) { /* only set as an arg in background mode */
-		re->r.threads = MIN2(RenderGlobal.threads, BLENDER_MAX_THREADS);
-	}
-	else if ((re->r.mode & R_FIXED_THREADS) == 0 || RenderGlobal.threads == 0) { /* Automatic threads */
-		re->r.threads = BLI_system_thread_count();
-	}
+	re->r.threads = BKE_render_num_threads(&re->r);
 }
 
 /* loads in image into a result, size must match

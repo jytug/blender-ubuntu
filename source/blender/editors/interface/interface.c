@@ -138,15 +138,11 @@ void ui_block_to_window(const ARegion *ar, uiBlock *block, int *x, int *y)
 	*y = (int)(fy + 0.5f);
 }
 
-void ui_block_to_window_rct(const ARegion *ar, uiBlock *block, const rctf *graph, rcti *winr)
+void ui_block_to_window_rctf(const ARegion *ar, uiBlock *block, rctf *rct_dst, const rctf *rct_src)
 {
-	rctf tmpr;
-
-	tmpr = *graph;
-	ui_block_to_window_fl(ar, block, &tmpr.xmin, &tmpr.ymin);
-	ui_block_to_window_fl(ar, block, &tmpr.xmax, &tmpr.ymax);
-
-	BLI_rcti_rctf_copy(winr, &tmpr);
+	*rct_dst = *rct_src;
+	ui_block_to_window_fl(ar, block, &rct_dst->xmin, &rct_dst->ymin);
+	ui_block_to_window_fl(ar, block, &rct_dst->xmax, &rct_dst->ymax);
 }
 
 void ui_window_to_block_fl(const ARegion *ar, uiBlock *block, float *x, float *y)   /* for mouse cursor */
@@ -447,17 +443,24 @@ void uiExplicitBoundsBlock(uiBlock *block, int minx, int miny, int maxx, int max
 static int ui_but_float_precision(uiBut *but, double value)
 {
 	int prec;
+	const double pow10_neg[PRECISION_FLOAT_MAX + 1] = {1.0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001};
 
 	/* first check if prec is 0 and fallback to a simple default */
 	if ((prec = (int)but->a2) == -1) {
 		prec = (but->hardmax < 10.001f) ? 3 : 2;
 	}
 
+	BLI_assert(prec <= PRECISION_FLOAT_MAX);
+	BLI_assert(pow10_neg[prec] == pow(10, -prec));
+
 	/* check on the number of decimal places need to display
 	 * the number, this is so 0.00001 is not displayed as 0.00,
 	 * _but_, this is only for small values si 10.0001 will not get
 	 * the same treatment */
-	if (value != 0.0 && (value = ABS(value)) < 0.1) {
+	value = ABS(value);
+	if ((value < pow10_neg[prec]) &&
+	    (value > (1.0 / PRECISION_FLOAT_MAX_POW)))
+	{
 		int value_i = (int)((value * PRECISION_FLOAT_MAX_POW) + 0.5);
 		if (value_i != 0) {
 			const int prec_span = 3; /* show: 0.01001, 5 would allow 0.0100001 for eg. */
@@ -735,7 +738,7 @@ void uiButExecute(const bContext *C, uiBut *but)
 
 /* use to check if we need to disable undo, but don't make any changes
  * returns FALSE if undo needs to be disabled. */
-static int ui_but_is_rna_undo(uiBut *but)
+static int ui_is_but_rna_undo(uiBut *but)
 {
 	if (but->rnapoin.id.data) {
 		/* avoid undo push for buttons who's ID are screen or wm level
@@ -860,56 +863,170 @@ void ui_but_add_shortcut(uiBut *but, const char *shortcut_str, const bool do_str
 	}
 }
 
+static bool ui_but_event_operator_string(const bContext *C, uiBut *but, char *buf, const size_t buf_len)
+{
+	MenuType *mt;
+	bool found = false;
+
+	if (but->optype) {
+		IDProperty *prop = (but->opptr) ? but->opptr->data : NULL;
+
+		if (WM_key_event_operator_string(C, but->optype->idname, but->opcontext, prop, true,
+		                                 buf, buf_len))
+		{
+			found = true;
+		}
+	}
+	else if ((mt = uiButGetMenuType(but))) {
+		IDProperty *prop_menu;
+		IDProperty *prop_menu_name;
+
+		/* annoying, create a property */
+		IDPropertyTemplate val = {0};
+		prop_menu = IDP_New(IDP_GROUP, &val, __func__); /* dummy, name is unimportant  */
+		IDP_AddToGroup(prop_menu, (prop_menu_name = IDP_NewString("", "name", sizeof(mt->idname))));
+
+		IDP_AssignString(prop_menu_name, mt->idname, sizeof(mt->idname));
+
+		if (WM_key_event_operator_string(C, "WM_OT_call_menu", WM_OP_INVOKE_REGION_WIN, prop_menu, true,
+		                                 buf, buf_len))
+		{
+			found = true;
+		}
+
+		IDP_FreeProperty(prop_menu);
+		MEM_freeN(prop_menu);
+	}
+
+	return found;
+}
+
+static bool ui_but_event_property_operator_string(const bContext *C, uiBut *but, char *buf, const size_t buf_len)
+{	
+	/* context toggle operator names to check... */
+	const char *ctx_toggle_opnames[] = {
+		"WM_OT_context_toggle",
+		"WM_OT_context_toggle_enum",
+		"WM_OT_context_cycle_int",
+		"WM_OT_context_cycle_enum",
+		"WM_OT_context_cycle_array",
+		"WM_OT_context_menu_enum",
+		NULL
+	};		
+	const size_t num_ops = sizeof(ctx_toggle_opnames) / sizeof(const char *);
+	
+	bool found = false;
+	
+	/* this version is only for finding hotkeys for properties (which get set via context using operators) */
+	if (but->rnaprop) {
+		/* to avoid massive slowdowns on property panels, for now, we only check the 
+		 * hotkeys for Editor / Scene settings...
+		 *
+		 * TODO: userpref settings?
+		 */
+		// TODO: value (for enum stuff)?
+		char *data_path = NULL;
+		
+		if (but->rnapoin.id.data) {
+			ID *id = but->rnapoin.id.data;
+			
+			if (GS(id->name) == ID_SCR) {
+				/* screen/editor property 
+				 * NOTE: in most cases, there is actually no info for backwards tracing 
+				 * how to get back to ID from the editor data we may be dealing with
+				 */
+				if (RNA_struct_is_a(but->rnapoin.type, &RNA_Space)) {
+					/* data should be directly on here... */
+					data_path = BLI_sprintfN("space_data.%s", RNA_property_identifier(but->rnaprop));
+				}
+				else {
+					/* special exceptions for common nested data in editors... */
+					if (RNA_struct_is_a(but->rnapoin.type, &RNA_DopeSheet)) {
+						/* dopesheet filtering options... */
+						data_path = BLI_sprintfN("space_data.dopesheet.%s", RNA_property_identifier(but->rnaprop));
+					}
+				}
+			}
+			else if (GS(id->name) == ID_SCE) {
+				if (RNA_struct_is_a(but->rnapoin.type, &RNA_ToolSettings)) {
+					/* toolsettings property 
+					 * NOTE: toolsettings is usually accessed directly (i.e. not through scene)
+					 */
+					data_path = RNA_path_from_ID_to_property(&but->rnapoin, but->rnaprop);
+				}
+				else {
+					/* scene property */
+					char *path = RNA_path_from_ID_to_property(&but->rnapoin, but->rnaprop);
+					
+					if (path) {
+						data_path = BLI_sprintfN("scene.%s", path);
+						MEM_freeN(path);
+					}
+					/*else {
+						printf("ERROR in %s(): Couldn't get path for scene property - %s\n", 
+						       __func__, RNA_property_identifier(but->rnaprop));
+					}*/
+				}
+			}
+			else {
+				//puts("other id");
+			}
+			
+			//printf("prop shortcut: '%s' (%s)\n", RNA_property_identifier(but->rnaprop), data_path);
+		}
+		
+		/* we have a datapath! */
+		if (data_path) {
+			size_t i;
+			
+			/* create a property to host the "datapath" property we're sending to the operators */
+			IDProperty *prop_path;
+			IDProperty *prop_path_value;
+			
+			IDPropertyTemplate val = {0};
+			prop_path = IDP_New(IDP_GROUP, &val, __func__);
+			prop_path_value = IDP_NewString(data_path, "data_path", strlen(data_path) + 1); /* len + 1, or else will be truncated */
+			IDP_AddToGroup(prop_path, prop_path_value);
+			
+			/* check each until one works... */
+			for (i = 0; (i < num_ops) && (ctx_toggle_opnames[i]); i++) {
+				//printf("\t%s\n", ctx_toggle_opnames[i]);
+				if (WM_key_event_operator_string(C, ctx_toggle_opnames[i], WM_OP_INVOKE_REGION_WIN, prop_path, false,
+				                                 buf, buf_len))
+				{
+					found = true;
+					break;
+				}
+			}
+			
+			/* cleanup */
+			IDP_FreeProperty(prop_path);
+			MEM_freeN(prop_path);
+			MEM_freeN(data_path);
+		}
+	}
+	
+	return found;
+}
+
 static void ui_menu_block_set_keymaps(const bContext *C, uiBlock *block)
 {
 	uiBut *but;
 	char buf[128];
-
-	/* for menu's */
-	MenuType *mt;
-	IDProperty *prop_menu = NULL;
-	IDProperty *prop_menu_name = NULL;
 
 	/* only do it before bounding */
 	if (block->rect.xmin != block->rect.xmax)
 		return;
 
 	for (but = block->buttons.first; but; but = but->next) {
-		if (but->optype) {
-			IDProperty *prop = (but->opptr) ? but->opptr->data : NULL;
 
-			if (WM_key_event_operator_string(C, but->optype->idname, but->opcontext, prop, true,
-			                                 buf, sizeof(buf)))
-			{
-				ui_but_add_shortcut(but, buf, FALSE);
-			}
+		if (ui_but_event_operator_string(C, but, buf, sizeof(buf))) {
+			ui_but_add_shortcut(but, buf, FALSE);
 		}
-		else if ((mt = uiButGetMenuType(but))) {
-			/* only allocate menu property once */
-			if (prop_menu == NULL) {
-				/* annoying, create a property */
-				IDPropertyTemplate val = {0};
-				prop_menu = IDP_New(IDP_GROUP, &val, __func__); /* dummy, name is unimportant  */
-				IDP_AddToGroup(prop_menu, (prop_menu_name = IDP_NewString("", "name", sizeof(mt->idname))));
-			}
-
-			IDP_AssignString(prop_menu_name, mt->idname, sizeof(mt->idname));
-
-			if (WM_key_event_operator_string(C, "WM_OT_call_menu", WM_OP_INVOKE_REGION_WIN, prop_menu, true,
-			                                 buf, sizeof(buf)))
-			{
-				ui_but_add_shortcut(but, buf, FALSE);
-			}
+		else if (ui_but_event_property_operator_string(C, but, buf, sizeof(buf))) {
+			ui_but_add_shortcut(but, buf, FALSE);
 		}
 	}
-
-	if (prop_menu) {
-		IDP_FreeProperty(prop_menu);
-		MEM_freeN(prop_menu);
-	}
-
-#undef UI_MENU_KEY_STR_CAT
-
 }
 
 void uiEndBlock(const bContext *C, uiBlock *block)
@@ -1020,11 +1137,10 @@ void ui_fontscale(short *points, float aspect)
 /* project button or block (but==NULL) to pixels in regionspace */
 static void ui_but_to_pixelrect(rcti *rect, const ARegion *ar, uiBlock *block, uiBut *but)
 {
-	rctf rectf = (but) ? but->rect : block->rect;
-	
-	ui_block_to_window_fl(ar, block, &rectf.xmin, &rectf.ymin);
-	ui_block_to_window_fl(ar, block, &rectf.xmax, &rectf.ymax);
-	
+	rctf rectf;
+
+	ui_block_to_window_rctf(ar, block, &rectf, (but) ? &but->rect : &block->rect);
+
 	rectf.xmin -= ar->winrct.xmin;
 	rectf.ymin -= ar->winrct.ymin;
 	rectf.xmax -= ar->winrct.xmin;
@@ -1137,9 +1253,6 @@ int ui_is_but_push_ex(uiBut *but, double *value)
 				break;
 			case TOGBUT:
 			case TOG:
-			case TOGR:
-			case TOG3:
-			case BUT_TOGDUAL:
 			case ICONTOG:
 			case OPTION:
 				UI_GET_BUT_VALUE_INIT(but, *value);
@@ -1417,7 +1530,7 @@ bool ui_is_but_float(uiBut *but)
 
 bool ui_is_but_bool(uiBut *but)
 {
-	if (ELEM5(but->type, TOG, TOGN, TOGR, ICONTOG, ICONTOGN))
+	if (ELEM4(but->type, TOG, TOGN, ICONTOG, ICONTOGN))
 		return true;
 
 	if (but->rnaprop && RNA_property_type(but->rnaprop) == PROP_BOOLEAN)
@@ -1617,8 +1730,6 @@ int ui_get_but_string_max_length(uiBut *but)
 {
 	if (ELEM3(but->type, TEX, SEARCH_MENU, SEARCH_MENU_UNLINK))
 		return but->hardmax;
-	else if (but->type == IDPOIN)
-		return MAX_ID_NAME - 2;
 	else
 		return UI_MAX_DRAW_STR;
 }
@@ -1713,7 +1824,7 @@ static float ui_get_but_step_unit(uiBut *but, float step_default)
  */
 void ui_get_but_string_ex(uiBut *but, char *str, const size_t maxlen, const int float_precision)
 {
-	if (but->rnaprop && ELEM4(but->type, TEX, IDPOIN, SEARCH_MENU, SEARCH_MENU_UNLINK)) {
+	if (but->rnaprop && ELEM3(but->type, TEX, SEARCH_MENU, SEARCH_MENU_UNLINK)) {
 		PropertyType type;
 		const char *buf = NULL;
 		int buf_len;
@@ -1749,18 +1860,6 @@ void ui_get_but_string_ex(uiBut *but, char *str, const size_t maxlen, const int 
 			memcpy(str, buf, MIN2(maxlen, (size_t)buf_len + 1));
 			MEM_freeN((void *)buf);
 		}
-	}
-	else if (but->type == IDPOIN) {
-		/* ID pointer */
-		if (but->idpoin_idpp) { /* Can be NULL for ID properties by python */
-			ID *id = *(but->idpoin_idpp);
-			if (id) {
-				BLI_strncpy(str, id->name + 2, maxlen);
-				return;
-			}
-		}
-		str[0] = '\0';
-		return;
 	}
 	else if (but->type == TEX) {
 		/* string */
@@ -1862,7 +1961,7 @@ bool ui_set_but_string_eval_num(bContext *C, uiBut *but, const char *str, double
 
 bool ui_set_but_string(bContext *C, uiBut *but, const char *str)
 {
-	if (but->rnaprop && ELEM4(but->type, TEX, IDPOIN, SEARCH_MENU, SEARCH_MENU_UNLINK)) {
+	if (but->rnaprop && ELEM3(but->type, TEX, SEARCH_MENU, SEARCH_MENU_UNLINK)) {
 		if (RNA_property_editable(&but->rnapoin, but->rnaprop)) {
 			PropertyType type;
 
@@ -1907,11 +2006,6 @@ bool ui_set_but_string(bContext *C, uiBut *but, const char *str)
 			}
 		}
 	}
-	else if (but->type == IDPOIN) {
-		/* ID pointer */
-		but->idpoin_func(C, str, but->idpoin_idpp);
-		return true;
-	}
 	else if (but->type == TEX) {
 		/* string */
 		if (ui_is_but_utf8(but)) BLI_strncpy_utf8(but->poin, str, but->hardmax);
@@ -1941,7 +2035,6 @@ bool ui_set_but_string(bContext *C, uiBut *but, const char *str)
 		}
 
 		if (!ui_is_but_float(but)) value = (int)floor(value + 0.5);
-		if (but->type == NUMABS) value = fabs(value);
 
 		/* not that we use hard limits here */
 		if (value < (double)but->hardmin) value = but->hardmin;
@@ -2073,6 +2166,15 @@ static void ui_set_but_soft_range(uiBut *but)
 
 		but->softmin = softmin;
 		but->softmax = softmax;
+	}
+	else if (but->poin && (but->pointype & UI_BUT_POIN_TYPES)) {
+		float value = ui_get_but_val(but);
+		CLAMP(value, but->hardmin, but->hardmax);
+		but->softmin = min_ff(but->softmin, value);
+		but->softmax = max_ff(but->softmax, value);
+	}
+	else {
+		BLI_assert(0);
 	}
 }
 
@@ -2275,14 +2377,17 @@ void ui_check_but(uiBut *but)
 	ui_check_but_select(but, &value);
 	
 	/* only update soft range while not editing */
-	if (but->rnaprop && !(but->editval || but->editstr || but->editvec)) {
-		ui_set_but_soft_range(but);
+	if (!(but->editval || but->editstr || but->editvec)) {
+		if ((but->rnaprop != NULL) ||
+		    (but->poin && (but->pointype & UI_BUT_POIN_TYPES)))
+		{
+			ui_set_but_soft_range(but);
+		}
 	}
 
 	/* test for min and max, icon sliders, etc */
 	switch (but->type) {
 		case NUM:
-		case SLI:
 		case SCROLL:
 		case NUMSLI:
 			UI_GET_BUT_VALUE_INIT(but, value);
@@ -2290,15 +2395,6 @@ void ui_check_but(uiBut *but)
 			else if (value > (double)but->hardmax) ui_set_but_val(but, but->hardmax);
 			break;
 			
-		case NUMABS:
-		{
-			double value_abs;
-			UI_GET_BUT_VALUE_INIT(but, value);
-			value_abs = fabs(value);
-			if (value_abs < (double)but->hardmin) ui_set_but_val(but, but->hardmin);
-			else if (value_abs > (double)but->hardmax) ui_set_but_val(but, but->hardmax);
-			break;
-		}
 		case ICONTOG: 
 		case ICONTOGN:
 			if (!but->rnaprop || (RNA_property_flag(but->rnaprop) & PROP_ICONS_CONSECUTIVE)) {
@@ -2307,20 +2403,6 @@ void ui_check_but(uiBut *but)
 			}
 			break;
 			
-		case ICONROW:
-			if (!but->rnaprop || (RNA_property_flag(but->rnaprop) & PROP_ICONS_CONSECUTIVE)) {
-				UI_GET_BUT_VALUE_INIT(but, value);
-				but->iconadd = (int)value - (int)(but->hardmin);
-			}
-			break;
-			
-		case ICONTEXTROW:
-			if (!but->rnaprop || (RNA_property_flag(but->rnaprop) & PROP_ICONS_CONSECUTIVE)) {
-				UI_GET_BUT_VALUE_INIT(but, value);
-				but->iconadd = (int)value - (int)(but->hardmin);
-			}
-			break;
-
 			/* quiet warnings for unhandled types */
 		default:
 			break;
@@ -2334,7 +2416,6 @@ void ui_check_but(uiBut *but)
 	switch (but->type) {
 	
 		case MENU:
-		case ICONTEXTROW:
 		
 			if (BLI_rctf_size_x(&but->rect) > 24.0f) {
 				UI_GET_BUT_VALUE_INIT(but, value);
@@ -2344,7 +2425,6 @@ void ui_check_but(uiBut *but)
 	
 		case NUM:
 		case NUMSLI:
-		case NUMABS:
 
 			UI_GET_BUT_VALUE_INIT(but, value);
 
@@ -2391,7 +2471,6 @@ void ui_check_but(uiBut *but)
 		
 			break;
 
-		case IDPOIN:
 		case TEX:
 		case SEARCH_MENU:
 		case SEARCH_MENU_UNLINK:
@@ -2423,13 +2502,13 @@ void ui_check_but(uiBut *but)
 					char *str = but->drawstr;
 
 					if (but->modifier_key & KM_SHIFT)
-						str = strcat(str, "Shift ");
+						str += BLI_strcpy_rlen(str, "Shift ");
 					if (but->modifier_key & KM_CTRL)
-						str = strcat(str, "Ctrl ");
+						str += BLI_strcpy_rlen(str, "Ctrl ");
 					if (but->modifier_key & KM_ALT)
-						str = strcat(str, "Alt ");
+						str += BLI_strcpy_rlen(str, "Alt ");
 					if (but->modifier_key & KM_OSKEY)
-						str = strcat(str, "Cmd ");
+						str += BLI_strcpy_rlen(str, "Cmd ");
 
 					(void)str; /* UNUSED */
 				}
@@ -2441,14 +2520,6 @@ void ui_check_but(uiBut *but)
 
 			break;
 
-		case BUT_TOGDUAL:
-			/* trying to get the dual-icon to left of text... not very nice */
-			if (but->str[0]) {
-				BLI_strncpy(but->drawstr, "  ", UI_MAX_DRAW_STR);
-				BLI_strncpy(but->drawstr + 2, but->str, UI_MAX_DRAW_STR - 2);
-			}
-			break;
-		
 		case HSVCUBE:
 		case HSVCIRCLE:
 			break;
@@ -2699,13 +2770,10 @@ static uiBut *ui_def_but(uiBlock *block, int type, int retval, const char *str,
 	uiBut *but;
 	int slen;
 
-	BLI_assert(width >= 0);
-	BLI_assert(height >= 0);
+	BLI_assert(width >= 0 && height >= 0);
 	
 	/* we could do some more error checks here */
 	if ((type & BUTTYPE) == LABEL) {
-		if ((poin != NULL || min != 0.0f || max != 0.0f || (a1 == 0.0f && a2 != 0.0f) || (a1 != 0.0f && a1 != 1.0f)))
-			printf("blah\n");
 		BLI_assert((poin != NULL || min != 0.0f || max != 0.0f || (a1 == 0.0f && a2 != 0.0f) || (a1 != 0.0f && a1 != 1.0f)) == FALSE);
 	}
 
@@ -2768,7 +2836,7 @@ static uiBut *ui_def_but(uiBlock *block, int type, int retval, const char *str,
 	
 	but->pos = -1;   /* cursor invisible */
 
-	if (ELEM3(but->type, NUM, NUMABS, NUMSLI)) {    /* add a space to name */
+	if (ELEM(but->type, NUM, NUMSLI)) {    /* add a space to name */
 		/* slen remains unchanged from previous assignment, ensure this stays true */
 		if (slen > 0 && slen < UI_MAX_NAME_STR - 2) {
 			if (but->str[slen - 1] != ' ') {
@@ -2779,12 +2847,9 @@ static uiBut *ui_def_but(uiBlock *block, int type, int retval, const char *str,
 	}
 
 	if ((block->flag & UI_BLOCK_LOOP) ||
-	    ELEM9(but->type, MENU, TEX, LABEL, IDPOIN, BLOCK, BUTM, SEARCH_MENU, PROGRESSBAR, SEARCH_MENU_UNLINK))
+	    ELEM8(but->type, MENU, TEX, LABEL, BLOCK, BUTM, SEARCH_MENU, PROGRESSBAR, SEARCH_MENU_UNLINK))
 	{
 		but->flag |= (UI_TEXT_LEFT | UI_ICON_LEFT);
-	}
-	else if (but->type == BUT_TOGDUAL) {
-		but->flag |= UI_ICON_LEFT;
 	}
 
 	but->flag |= (block->flag & UI_BUT_ALIGN);
@@ -2796,7 +2861,7 @@ static uiBut *ui_def_but(uiBlock *block, int type, int retval, const char *str,
 	}
 
 	/* keep track of UI_interface.h */
-	if      (ELEM9(but->type, BLOCK, BUT, LABEL, PULLDOWN, ROUNDBOX, LISTBOX, BUTM, SCROLL, SEPR /* , FTPREVIEW */)) {}
+	if      (ELEM8(but->type, BLOCK, BUT, LABEL, PULLDOWN, ROUNDBOX, BUTM, SCROLL, SEPR)) {}
 	else if (but->type >= SEARCH_MENU) {}
 	else but->flag |= UI_BUT_UNDO;
 
@@ -2880,15 +2945,15 @@ static uiBut *ui_def_but_rna(uiBlock *block, int type, int retval, const char *s
 			freestr = 1;
 		}
 		else if (ELEM(type, ROW, LISTROW) && proptype == PROP_ENUM) {
-			EnumPropertyItem *item;
-			int i, totitem, free;
+			EnumPropertyItem *item, *item_array = NULL;
+			int free;
 
 			/* get untranslated, then translate the single string we need */
-			RNA_property_enum_items(block->evil_C, ptr, prop, &item, &totitem, &free);
-			for (i = 0; i < totitem; i++) {
-				if (item[i].identifier[0] && item[i].value == (int)max) {
-					str = CTX_IFACE_(RNA_property_translation_context(prop), item[i].name);
-					icon = item[i].icon;
+			RNA_property_enum_items(block->evil_C, ptr, prop, &item_array, NULL, &free);
+			for (item = item_array; item->identifier; item++) {
+				if (item->identifier[0] && item->value == (int)max) {
+					str = CTX_IFACE_(RNA_property_translation_context(prop), item->name);
+					icon = item->icon;
 					break;
 				}
 			}
@@ -2897,7 +2962,7 @@ static uiBut *ui_def_but_rna(uiBlock *block, int type, int retval, const char *s
 				str = RNA_property_ui_name(prop);
 			}
 			if (free) {
-				MEM_freeN(item);
+				MEM_freeN(item_array);
 			}
 		}
 		else {
@@ -2969,7 +3034,7 @@ static uiBut *ui_def_but_rna(uiBlock *block, int type, int retval, const char *s
 		ui_def_but_rna__disable(but);
 	}
 
-	if (but->flag & UI_BUT_UNDO && (ui_but_is_rna_undo(but) == FALSE)) {
+	if (but->flag & UI_BUT_UNDO && (ui_is_but_rna_undo(but) == FALSE)) {
 		but->flag &= ~UI_BUT_UNDO;
 	}
 
@@ -3020,7 +3085,7 @@ static uiBut *ui_def_but_operator_ptr(uiBlock *block, int type, wmOperatorType *
 	but = ui_def_but(block, type, -1, str, x, y, width, height, NULL, 0, 0, 0, 0, tip);
 	but->optype = ot;
 	but->opcontext = opcontext;
-	but->flag &= ~UI_BUT_UNDO; /* no need for ui_but_is_undo(), we never need undo here */
+	but->flag &= ~UI_BUT_UNDO; /* no need for ui_is_but_rna_undo(), we never need undo here */
 
 	if (!ot) {
 		but->flag |= UI_BUT_DISABLED;
@@ -3059,7 +3124,7 @@ static uiBut *ui_def_but_operator_text(uiBlock *block, int type, const char *opn
 	but = ui_def_but(block, type, -1, str, x, y, width, height, poin, min, max, a1, a2, tip);
 	but->optype = ot;
 	but->opcontext = opcontext;
-	but->flag &= ~UI_BUT_UNDO; /* no need for ui_but_is_undo(), we never need undo here */
+	but->flag &= ~UI_BUT_UNDO; /* no need for ui_is_but_rna_undo(), we never need undo here */
 
 	if (!ot) {
 		but->flag |= UI_BUT_DISABLED;
@@ -3149,36 +3214,21 @@ void autocomplete_do_name(AutoComplete *autocpl, const char *name)
 	}
 }
 
-void autocomplete_end(AutoComplete *autocpl, char *autoname)
+bool autocomplete_end(AutoComplete *autocpl, char *autoname)
 {	
-	if (autocpl->truncate[0])
+	bool change = false;
+	if (autocpl->truncate[0]) {
 		BLI_strncpy(autoname, autocpl->truncate, autocpl->maxlen);
+		change = true;
+	}
 	else {
-		if (autoname != autocpl->startname) /* don't copy a string over its self */
+		if (autoname != autocpl->startname) {  /* don't copy a string over its self */
 			BLI_strncpy(autoname, autocpl->startname, autocpl->maxlen);
+		}
 	}
 	MEM_freeN(autocpl->truncate);
 	MEM_freeN(autocpl);
-}
-
-/* autocomplete callback for ID buttons */
-static void autocomplete_id(bContext *C, char *str, void *arg_v)
-{
-	int blocktype = (intptr_t)arg_v;
-	ListBase *listb = which_libbase(CTX_data_main(C), blocktype);
-	
-	if (listb == NULL) return;
-	
-	/* search if str matches the beginning of an ID struct */
-	if (str[0]) {
-		AutoComplete *autocpl = autocomplete_begin(str, MAX_ID_NAME - 2);
-		ID *id;
-		
-		for (id = listb->first; id; id = id->next)
-			autocomplete_do_name(autocpl, id->name + 2);
-
-		autocomplete_end(autocpl, str);
-	}
+	return change;
 }
 
 static void ui_check_but_and_iconize(uiBut *but, int icon)
@@ -3672,19 +3722,6 @@ void uiButSetCompleteFunc(uiBut *but, uiButCompleteFunc func, void *arg)
 	but->autofunc_arg = arg;
 }
 
-uiBut *uiDefIDPoinBut(uiBlock *block, uiIDPoinFuncFP func, short blocktype, int retval, const char *str, int x, int y, short width, short height, void *idpp, const char *tip)
-{
-	uiBut *but = ui_def_but(block, IDPOIN, retval, str, x, y, width, height, NULL, 0.0, 0.0, 0.0, 0.0, tip);
-	but->idpoin_func = func;
-	but->idpoin_idpp = (ID **) idpp;
-	ui_check_but(but);
-	
-	if (blocktype)
-		uiButSetCompleteFunc(but, autocomplete_id, (void *)(intptr_t)blocktype);
-
-	return but;
-}
-
 uiBut *uiDefBlockBut(uiBlock *block, uiBlockCreateFunc func, void *arg, const char *str, int x, int y, short width, short height, const char *tip)
 {
 	uiBut *but = ui_def_but(block, BLOCK, 0, str, x, y, width, height, arg, 0.0, 0.0, 0.0, 0.0, tip);
@@ -4088,21 +4125,24 @@ void uiButGetStrInfo(bContext *C, uiBut *but, ...)
 			}
 		}
 		else if (type == BUT_GET_OP_KEYMAP) {
-			if (but->optype && !(but->block->flag & UI_BLOCK_LOOP)) {
-				/* operator keymap (not menus, they already have it) */
-				IDProperty *prop = (but->opptr) ? but->opptr->data : NULL;
-				char buf[512];
-
-				if (WM_key_event_operator_string(C, but->optype->idname, but->opcontext, prop, true,
-				                                 buf, sizeof(buf)))
-				{
+			if (!ui_block_is_menu(but->block)) {
+				char buf[128];
+				if (ui_but_event_operator_string(C, but, buf, sizeof(buf))) {
 					tmp = BLI_strdup(buf);
 				}
+			}
+		}
+		else if (type == BUT_GET_PROP_KEYMAP) {
+			/* for properties that are bound to one of the context cycle, etc. keys... */
+			char buf[128];
+			if (ui_but_event_property_operator_string(C, but, buf, sizeof(buf))) {
+				tmp = BLI_strdup(buf);
 			}
 		}
 
 		si->strinfo = tmp;
 	}
+	va_end(args);
 
 	if (free_items && items)
 		MEM_freeN(items);

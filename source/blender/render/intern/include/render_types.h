@@ -50,7 +50,7 @@
 #include "RE_shader_ext.h"	/* TexResult, ShadeResult, ShadeInput */
 #include "sunsky.h"
 
-#include "BLO_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
 
 struct Object;
 struct MemArena;
@@ -84,7 +84,7 @@ typedef struct QMCSampler {
 	double offs[BLENDER_MAX_THREADS][2];
 } QMCSampler;
 
-#define SAMP_TYPE_JITTERED		0
+// #define SAMP_TYPE_JITTERED		0  // UNUSED
 #define SAMP_TYPE_HALTON		1
 #define SAMP_TYPE_HAMMERSLEY	2
 
@@ -345,7 +345,8 @@ typedef struct ObjectInstanceRen {
 	Object *ob, *par;
 	int index, psysindex, lay;
 
-	float mat[4][4], nmat[3][3]; /* nmat is inverse mat tranposed */
+	float mat[4][4], imat[4][4];
+	float nmat[3][3]; /* nmat is inverse mat tranposed */
 	short flag;
 
 	float dupliorco[3], dupliuv[2];

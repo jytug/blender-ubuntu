@@ -478,7 +478,7 @@ void paint_brush_exit_tex(Brush *brush)
 }
 
 
-static PaintOperation *texture_paint_init(bContext *C, wmOperator *op, const wmEvent *event)
+static PaintOperation *texture_paint_init(bContext *C, wmOperator *op, float mouse[2])
 {
 	Scene *scene = CTX_data_scene(C);
 	ToolSettings *settings = scene->toolsettings;
@@ -486,11 +486,8 @@ static PaintOperation *texture_paint_init(bContext *C, wmOperator *op, const wmE
 	int mode = RNA_enum_get(op->ptr, "mode");
 	view3d_set_viewcontext(C, &pop->vc);
 
-	/* TODO Should avoid putting this here. Instead, last position should be requested
-	 * from stroke system. */
-	pop->prevmouse[0] = event->mval[0];
-	pop->prevmouse[1] = event->mval[1];
-
+	pop->prevmouse[0] = mouse[0];
+	pop->prevmouse[1] = mouse[1];
 
 	/* initialize from context */
 	if (CTX_wm_region_view3d(C)) {
@@ -526,7 +523,7 @@ static void paint_stroke_update_step(bContext *C, struct PaintStroke *stroke, Po
 	Brush *brush = BKE_paint_brush(&scene->toolsettings->imapaint.paint);
 
 	/* initial brush values. Maybe it should be considered moving these to stroke system */
-	float startsize = BKE_brush_size_get(scene, brush);
+	float startsize = (float)BKE_brush_size_get(scene, brush);
 	float startalpha = BKE_brush_alpha_get(scene, brush);
 
 	float mouse[2];
@@ -586,12 +583,13 @@ static void paint_stroke_done(const bContext *C, struct PaintStroke *stroke)
 
 	undo_paint_push_end(UNDO_PAINT_IMAGE);
 
-	/* duplicate warning, see texpaint_init
+	/* duplicate warning, see texpaint_init */
+#if 0
 	if (pop->s.warnmultifile)
 		BKE_reportf(op->reports, RPT_WARNING, "Image requires 4 color channels to paint: %s", pop->s.warnmultifile);
 	if (pop->s.warnpackedfile)
 		BKE_reportf(op->reports, RPT_WARNING, "Packed MultiLayer files cannot be painted: %s", pop->s.warnpackedfile);
-	*/
+#endif
 	MEM_freeN(pop);
 
 	{
@@ -609,18 +607,23 @@ static int paint_stroke_test_start(bContext *UNUSED(C), wmOperator *UNUSED(op), 
 static int paint_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	PaintOperation *pop;
-	struct PaintStroke *stroke;
+	float mouse[2];
 	int retval;
 
-	if (!(pop = texture_paint_init(C, op, event))) {
+	/* TODO Should avoid putting this here. Instead, last position should be requested
+	 * from stroke system. */
+	mouse[0] = event->mval[0];
+	mouse[1] = event->mval[1];
+
+	if (!(pop = texture_paint_init(C, op, mouse))) {
 		return OPERATOR_CANCELLED;
 	}
 
-	stroke = op->customdata = paint_stroke_new(C, NULL, paint_stroke_test_start,
+	op->customdata = paint_stroke_new(C, NULL, paint_stroke_test_start,
 	                                  paint_stroke_update_step,
 	                                  paint_stroke_redraw,
 	                                  paint_stroke_done, event->type);
-	paint_stroke_set_mode_data(stroke, pop);
+	paint_stroke_set_mode_data(op->customdata, pop);
 	/* add modal handler */
 	WM_event_add_modal_handler(C, op);
 
@@ -631,6 +634,35 @@ static int paint_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 	return OPERATOR_RUNNING_MODAL;
 }
 
+static int paint_exec(bContext *C, wmOperator *op)
+{
+	PaintOperation *pop;
+	PropertyRNA *strokeprop;
+	PointerRNA firstpoint;
+	float mouse[2];
+
+	strokeprop = RNA_struct_find_property(op->ptr, "stroke");
+
+	if (!RNA_property_collection_lookup_int(op->ptr, strokeprop, 0, &firstpoint))
+		return OPERATOR_CANCELLED;
+
+	RNA_float_get_array(&firstpoint, "mouse", mouse);
+
+	if (!(pop = texture_paint_init(C, op, mouse))) {
+		return OPERATOR_CANCELLED;
+	}
+
+	op->customdata = paint_stroke_new(C, NULL, paint_stroke_test_start,
+	                                  paint_stroke_update_step,
+	                                  paint_stroke_redraw,
+	                                  paint_stroke_done, 0);
+	paint_stroke_set_mode_data(op->customdata, pop);
+
+	/* frees op->customdata */
+	paint_stroke_exec(C, op);
+
+	return OPERATOR_FINISHED;
+}
 
 void PAINT_OT_image_paint(wmOperatorType *ot)
 {
@@ -648,7 +680,7 @@ void PAINT_OT_image_paint(wmOperatorType *ot)
 	/* api callbacks */
 	ot->invoke = paint_invoke;
 	ot->modal = paint_stroke_modal;
-	/* ot->exec = paint_exec; <-- needs stroke property */
+	ot->exec = paint_exec;
 	ot->poll = image_paint_poll;
 	ot->cancel = paint_stroke_cancel;
 

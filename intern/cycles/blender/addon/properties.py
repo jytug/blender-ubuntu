@@ -114,6 +114,11 @@ enum_use_layer_samples = (
     ('IGNORE', "Ignore", "Ignore per render layer number of samples"),
     )
 
+enum_sampling_pattern = (
+    ('SOBOL', "Sobol", "Use Sobol random sampling pattern"),
+    ('CORRELATED_MUTI_JITTER', "Correlated Multi-Jitter", "Use Correlated Multi-Jitter random sampling pattern"),
+    )
+
 
 class CyclesRenderSettings(bpy.types.PropertyGroup):
     @classmethod
@@ -217,6 +222,13 @@ class CyclesRenderSettings(bpy.types.PropertyGroup):
                 description="Number of subsurface scattering samples to render for each AA sample",
                 min=1, max=10000,
                 default=1,
+                )
+
+        cls.sampling_pattern = EnumProperty(
+                name="Sampling Pattern",
+                description="Random sampling pattern used by the integrator",
+                items=enum_sampling_pattern,
+                default='SOBOL',
                 )
 
         cls.use_layer_samples = EnumProperty(
@@ -492,6 +504,12 @@ class CyclesMaterialSettings(bpy.types.PropertyGroup):
                             "objects that emit little light compared to other light sources",
                 default=True,
                 )
+        cls.use_transparent_shadow = BoolProperty(
+                name="Transparent Shadows",
+                description="Use transparent shadows for this material if it contains a Transparent BSDF, "
+                            "disabling will render faster but not give accurate shadows",
+                default=True,
+                )
         cls.homogeneous_volume = BoolProperty(
                 name="Homogeneous Volume",
                 description="When using volume rendering, assume volume has the same density everywhere, "
@@ -572,6 +590,12 @@ class CyclesVisibilitySettings(bpy.types.PropertyGroup):
     @classmethod
     def register(cls):
         bpy.types.Object.cycles_visibility = PointerProperty(
+                name="Cycles Visibility Settings",
+                description="Cycles visibility settings",
+                type=cls,
+                )
+
+        bpy.types.World.cycles_visibility = PointerProperty(
                 name="Cycles Visibility Settings",
                 description="Cycles visibility settings",
                 type=cls,

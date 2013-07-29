@@ -44,7 +44,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_camera.h"
@@ -135,6 +134,8 @@ bool ED_view3d_camera_lock_sync(View3D *v3d, RegionView3D *rv3d)
 
 		if ((U.uiflag & USER_CAM_LOCK_NO_PARENT) == 0 && (root_parent = v3d->camera->parent)) {
 			Object *ob_update;
+			float tmat[4][4];
+			float imat[4][4];
 			float view_mat[4][4];
 			float diff_mat[4][4];
 			float parent_mat[4][4];
@@ -145,10 +146,12 @@ bool ED_view3d_camera_lock_sync(View3D *v3d, RegionView3D *rv3d)
 
 			ED_view3d_to_m4(view_mat, rv3d->ofs, rv3d->viewquat, rv3d->dist);
 
-			invert_m4_m4(v3d->camera->imat, v3d->camera->obmat);
-			mult_m4_m4m4(diff_mat, view_mat, v3d->camera->imat);
+			normalize_m4_m4(tmat, v3d->camera->obmat);
 
-			mult_m4_m4m4(parent_mat, diff_mat, root_parent->obmat);
+			invert_m4_m4(imat, tmat);
+			mul_m4_m4m4(diff_mat, view_mat, imat);
+
+			mul_m4_m4m4(parent_mat, diff_mat, root_parent->obmat);
 
 			BKE_object_tfm_protected_backup(root_parent, &obtfm);
 			BKE_object_apply_mat4(root_parent, parent_mat, true, false);
@@ -162,9 +165,11 @@ bool ED_view3d_camera_lock_sync(View3D *v3d, RegionView3D *rv3d)
 			}
 		}
 		else {
+			/* always maintain the same scale */
+			const short protect_scale_all = (OB_LOCK_SCALEX | OB_LOCK_SCALEY | OB_LOCK_SCALEZ);
 			BKE_object_tfm_protected_backup(v3d->camera, &obtfm);
 			ED_view3d_to_object(v3d->camera, rv3d->ofs, rv3d->viewquat, rv3d->dist);
-			BKE_object_tfm_protected_restore(v3d->camera, &obtfm, v3d->camera->protectflag);
+			BKE_object_tfm_protected_restore(v3d->camera, &obtfm, v3d->camera->protectflag | protect_scale_all);
 
 			DAG_id_tag_update(&v3d->camera->id, OB_RECALC_OB);
 			WM_main_add_notifier(NC_OBJECT | ND_TRANSFORM, v3d->camera);
@@ -683,7 +688,7 @@ static void viewrotate_apply(ViewOpsData *vod, int x, int y)
 {
 	RegionView3D *rv3d = vod->rv3d;
 
-	rv3d->view = RV3D_VIEW_USER; /* need to reset everytime because of view snapping */
+	rv3d->view = RV3D_VIEW_USER; /* need to reset every time because of view snapping */
 
 	if (U.flag & USER_TRACKBALL) {
 		float phi, si, q1[4], dvec[3], newvec[3];
@@ -3197,8 +3202,13 @@ static void axis_set_view(bContext *C, View3D *v3d, ARegion *ar,
 			align_active = false;
 		}
 		else {
+			const float z_flip_quat[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 			float obact_quat[4];
 			float twmat[3][3];
+
+			/* flip the input, the end result being that an object
+			 * with no rotation behaves as if 'align_active' is off */
+			mul_qt_qtqt(new_quat, new_quat, z_flip_quat);
 
 			/* same as transform manipulator when normal is set */
 			ED_getTransformOrientationMatrix(C, twmat, false);
@@ -3703,18 +3713,13 @@ void VIEW3D_OT_background_image_remove(wmOperatorType *ot)
 
 /* ********************* set clipping operator ****************** */
 
-static void calc_clipping_plane(float clip[6][4], BoundBox *clipbb)
+static void calc_clipping_plane(float clip[6][4], const BoundBox *clipbb)
 {
 	int val;
 
 	for (val = 0; val < 4; val++) {
-
 		normal_tri_v3(clip[val], clipbb->vec[val], clipbb->vec[val == 3 ? 0 : val + 1], clipbb->vec[val + 4]);
-
-		/* TODO - this is just '-dot_v3v3(clip[val], clipbb->vec[val])' isnt it? - sould replace */
-		clip[val][3] = -clip[val][0] * clipbb->vec[val][0] -
-		                clip[val][1] * clipbb->vec[val][1] -
-		                clip[val][2] * clipbb->vec[val][2];
+		clip[val][3] = -dot_v3v3(clip[val], clipbb->vec[val]);
 	}
 }
 
@@ -4168,7 +4173,8 @@ void ED_view3d_from_m4(float mat[4][4], float ofs[3], float quat[4], float *dist
 	/* Quat */
 	if (quat) {
 		float imat[4][4];
-		invert_m4_m4(imat, mat);
+		normalize_m4_m4(imat, mat);
+		invert_m4(imat);
 		mat4_to_quat(quat, imat);
 	}
 

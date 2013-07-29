@@ -170,7 +170,7 @@ static void joined_armature_fix_links(Object *tarArm, Object *srcArm, bPoseChann
 }
 
 /* join armature exec is exported for use in object->join objects operator... */
-int join_armature_exec(bContext *C, wmOperator *UNUSED(op))
+int join_armature_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
@@ -180,6 +180,7 @@ int join_armature_exec(bContext *C, wmOperator *UNUSED(op))
 	bPoseChannel *pchan, *pchann;
 	EditBone *curbone;
 	float mat[4][4], oimat[4][4];
+	bool ok = false;
 	
 	/*	Ensure we're not in editmode and that the active object is an armature*/
 	if (!ob || ob->type != OB_ARMATURE)
@@ -187,6 +188,21 @@ int join_armature_exec(bContext *C, wmOperator *UNUSED(op))
 	if (!arm || arm->edbo)
 		return OPERATOR_CANCELLED;
 	
+	CTX_DATA_BEGIN(C, Base *, base, selected_editable_bases)
+	{
+		if (base->object == ob) {
+			ok = true;
+			break;
+		}
+	}
+	CTX_DATA_END;
+
+	/* that way the active object is always selected */
+	if (ok == false) {
+		BKE_report(op->reports, RPT_WARNING, "Active object is not a selected armature");
+		return OPERATOR_CANCELLED;
+	}
+
 	/* Get editbones of active armature to add editbones to */
 	ED_armature_to_edit(ob);
 	
@@ -209,7 +225,7 @@ int join_armature_exec(bContext *C, wmOperator *UNUSED(op))
 			
 			/* Find the difference matrix */
 			invert_m4_m4(oimat, ob->obmat);
-			mult_m4_m4m4(mat, oimat, base->object->obmat);
+			mul_m4_m4m4(mat, oimat, base->object->obmat);
 			
 			/* Copy bones and posechannels from the object to the edit armature */
 			for (pchan = opose->chanbase.first; pchan; pchan = pchann) {
@@ -245,7 +261,7 @@ int join_armature_exec(bContext *C, wmOperator *UNUSED(op))
 					
 					/* Find the roll */
 					invert_m4_m4(imat, premat);
-					mult_m4_m4m4(difmat, imat, postmat);
+					mul_m4_m4m4(difmat, imat, postmat);
 					
 					curbone->roll -= (float)atan2(difmat[2][0], difmat[2][2]);
 				}
@@ -468,8 +484,8 @@ static int separate_armature_exec(bContext *C, wmOperator *UNUSED(op))
 	/* TODO: use context iterators for this? */
 	CTX_DATA_BEGIN(C, Base *, base, visible_bases)
 	{
-		if (base->object == obedit) base->flag |= 1;
-		else base->flag &= ~1;
+		if (base->object == obedit) base->flag |= SELECT;
+		else base->flag &= ~SELECT;
 	}
 	CTX_DATA_END;
 	

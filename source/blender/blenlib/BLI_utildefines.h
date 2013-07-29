@@ -32,45 +32,11 @@
  *  \ingroup bli
  */
 
+/* avoid many includes for now */
+#include "BLI_sys_types.h"
+
 #ifndef NDEBUG /* for BLI_assert */
 #include <stdio.h>
-#endif
-
-/* note: use of (int, TRUE / FALSE) is deprecated,
- * use (bool, true / false) instead */
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _BLI_Bool;
-#  else
-/* using char here may cause nasty tricky bugs, e.g.
- *     bool is_bit_flag = RNA_property_flag(prop) & PROP_ENUM_FLAG;
- * as PROP_ENUM_FLAG is farther than 8th bit, do_translate would be always false!
- */
-#   define _BLI_Bool unsigned int
-#  endif
-# else
-#  define _BLI_Bool _Bool
-# endif
-# define bool _BLI_Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
-/* remove this when we're ready to remove TRUE/FALSE completely */
-#ifdef WITH_BOOL_COMPAT
-/* interim until all occurrences of these can be updated to stdbool */
-/* XXX Why not use the true/false velues here? */
-# ifndef FALSE
-#   define FALSE 0
-# endif
-
-# ifndef TRUE
-#   define TRUE 1
-# endif
 #endif
 
 /* useful for finding bad use of min/max */
@@ -266,8 +232,6 @@ typedef bool _BLI_Bool;
 		*(v1 + 2) = *(v2 + 2) - *(v3 + 2) * (fac);                            \
 } (void)0
 
-#define INPR(v1, v2) ( (v1)[0] * (v2)[0] + (v1)[1] * (v2)[1] + (v1)[2] * (v2)[2])
-
 /* some misc stuff.... */
 #define CLAMP(a, b, c)  {           \
 	if ((a) < (b)) (a) = (b);       \
@@ -275,13 +239,6 @@ typedef bool _BLI_Bool;
 } (void)0
 
 #define CLAMPIS(a, b, c) ((a) < (b) ? (b) : (a) > (c) ? (c) : (a))
-#define CLAMPTEST(a, b, c)                                                    \
-	if ((b) < (c)) {                                                          \
-		CLAMP(a, b, c);                                                       \
-	}                                                                         \
-	else {                                                                    \
-		CLAMP(a, c, b);                                                       \
-	} (void)0
 
 #define IS_EQ(a, b) ((fabs((double)(a) - (b)) >= (double) FLT_EPSILON) ? 0 : 1)
 #define IS_EQF(a, b) ((fabsf((float)(a) - (b)) >= (float) FLT_EPSILON) ? 0 : 1)
@@ -298,6 +255,29 @@ typedef bool _BLI_Bool;
 #define UNPACK2OP(op, a)  op((a)[0]), op((a)[1])
 #define UNPACK3OP(op, a)  op((a)[0]), op((a)[1]), op((a)[2])
 #define UNPACK4OP(op, a)  op((a)[0]), op((a)[1]), op((a)[2]), op((a)[3])
+
+/* simple stack */
+#define STACK_DECLARE(stack)   unsigned int _##stack##_index
+#define STACK_INIT(stack)      ((void)stack, (void)((_##stack##_index) = 0))
+#define STACK_SIZE(stack)      ((void)stack, (_##stack##_index))
+#define STACK_PUSH(stack, val)  (void)((stack)[(_##stack##_index)++] = val)
+#define STACK_PUSH_RET(stack)  ((void)stack, ((stack)[(_##stack##_index)++]))
+#define STACK_PUSH_RET_PTR(stack)  ((void)stack, &((stack)[(_##stack##_index)++]))
+#define STACK_POP(stack)         ((_##stack##_index) ?  ((stack)[--(_##stack##_index)]) : NULL)
+#define STACK_POP_PTR(stack)     ((_##stack##_index) ? &((stack)[--(_##stack##_index)]) : NULL)
+#define STACK_POP_ELSE(stack, r) ((_##stack##_index) ?  ((stack)[--(_##stack##_index)]) : r)
+#define STACK_FREE(stack)      ((void)stack)
+#ifdef __GNUC__
+#define STACK_SWAP(stack_a, stack_b) { \
+	SWAP(typeof(stack_a), stack_a, stack_b); \
+	SWAP(unsigned int, _##stack_a##_index, _##stack_b##_index); \
+	} (void)0
+#else
+#define STACK_SWAP(stack_a, stack_b) { \
+	SWAP(void *, stack_a, stack_b); \
+	SWAP(unsigned int, _##stack_a##_index, _##stack_b##_index); \
+	} (void)0
+#endif
 
 /* array helpers */
 #define ARRAY_LAST_ITEM(arr_start, arr_dtype, elem_size, tot) \

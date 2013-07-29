@@ -102,11 +102,13 @@ static int return_editmesh_indexar(BMEditMesh *em, int *tot, int **indexar, floa
 	return totvert;
 }
 
-static int return_editmesh_vgroup(Object *obedit, BMEditMesh *em, char *name, float *cent)
+static bool return_editmesh_vgroup(Object *obedit, BMEditMesh *em, char *name, float *cent)
 {
+	const int cd_dvert_offset = obedit->actdef ? CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT) : -1;
+
 	zero_v3(cent);
 
-	if (obedit->actdef) {
+	if (cd_dvert_offset != -1) {
 		const int defgrp_index = obedit->actdef - 1;
 		int totvert = 0;
 
@@ -116,24 +118,22 @@ static int return_editmesh_vgroup(Object *obedit, BMEditMesh *em, char *name, fl
 
 		/* find the vertices */
 		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
-			dvert = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
+			dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
 
-			if (dvert) {
-				if (defvert_find_weight(dvert, defgrp_index) > 0.0f) {
-					add_v3_v3(cent, eve->co);
-					totvert++;
-				}
+			if (defvert_find_weight(dvert, defgrp_index) > 0.0f) {
+				add_v3_v3(cent, eve->co);
+				totvert++;
 			}
 		}
 		if (totvert) {
 			bDeformGroup *dg = BLI_findlink(&obedit->defbase, defgrp_index);
 			BLI_strncpy(name, dg->name, sizeof(dg->name));
 			mul_v3_fl(cent, 1.0f / (float)totvert);
-			return 1;
+			return true;
 		}
 	}
 	
-	return 0;
+	return false;
 }	
 
 static void select_editbmesh_hook(Object *ob, HookModifierData *hmd)
@@ -296,7 +296,7 @@ static int return_editcurve_indexar(Object *obedit, int *tot, int **indexar, flo
 	return totvert;
 }
 
-static int object_hook_index_array(Scene *scene, Object *obedit, int *tot, int **indexar, char *name, float *cent_r)
+static bool object_hook_index_array(Scene *scene, Object *obedit, int *tot, int **indexar, char *name, float *cent_r)
 {
 	*indexar = NULL;
 	*tot = 0;
@@ -319,11 +319,10 @@ static int object_hook_index_array(Scene *scene, Object *obedit, int *tot, int *
 
 			/* check selected vertices first */
 			if (return_editmesh_indexar(em, tot, indexar, cent_r)) {
-				return 1;
+				return true;
 			}
 			else {
-				int ret = return_editmesh_vgroup(obedit, em, name, cent_r);
-				return ret;
+				return return_editmesh_vgroup(obedit, em, name, cent_r);
 			}
 		}
 		case OB_CURVE:
@@ -335,7 +334,7 @@ static int object_hook_index_array(Scene *scene, Object *obedit, int *tot, int *
 			return return_editlattice_indexar(lt->editlatt->latt, tot, indexar, cent_r);
 		}
 		default:
-			return 0;
+			return false;
 	}
 }
 
@@ -461,6 +460,7 @@ static int add_hook_object(Main *bmain, Scene *scene, Object *obedit, Object *ob
 	ModifierData *md = NULL;
 	HookModifierData *hmd = NULL;
 	float cent[3];
+	float pose_mat[4][4];
 	int tot, ok, *indexar;
 	char name[MAX_NAME];
 	
@@ -495,11 +495,20 @@ static int add_hook_object(Main *bmain, Scene *scene, Object *obedit, Object *ob
 	hmd->totindex = tot;
 	BLI_strncpy(hmd->name, name, sizeof(hmd->name));
 	
+	unit_m4(pose_mat);
+
 	if (mode == OBJECT_ADDHOOK_SELOB_BONE) {
 		bArmature *arm = ob->data;
 		BLI_assert(ob->type == OB_ARMATURE);
 		if (arm->act_bone) {
+			bPoseChannel *pchan_act;
+
 			BLI_strncpy(hmd->subtarget, arm->act_bone->name, sizeof(hmd->subtarget));
+
+			pchan_act = BKE_pose_channel_active(ob);
+			if (LIKELY(pchan_act)) {
+				invert_m4_m4(pose_mat, pchan_act->pose_mat);
+			}
 		}
 		else {
 			BKE_report(reports, RPT_WARNING, "Armature has no active object bone");
@@ -513,7 +522,7 @@ static int add_hook_object(Main *bmain, Scene *scene, Object *obedit, Object *ob
 	
 	invert_m4_m4(ob->imat, ob->obmat);
 	/* apparently this call goes from right to left... */
-	mul_serie_m4(hmd->parentinv, ob->imat, obedit->obmat, NULL,
+	mul_serie_m4(hmd->parentinv, pose_mat, ob->imat, obedit->obmat,
 	             NULL, NULL, NULL, NULL, NULL);
 	
 	DAG_relations_tag_update(bmain);
@@ -703,7 +712,7 @@ static int object_hook_reset_exec(bContext *C, wmOperator *op)
 			float imat[4][4], mat[4][4];
 			
 			/* calculate the world-space matrix for the pose-channel target first, then carry on as usual */
-			mult_m4_m4m4(mat, hmd->object->obmat, pchan->pose_mat);
+			mul_m4_m4m4(mat, hmd->object->obmat, pchan->pose_mat);
 			
 			invert_m4_m4(imat, mat);
 			mul_serie_m4(hmd->parentinv, imat, ob->obmat, NULL, NULL, NULL, NULL, NULL, NULL);
