@@ -1,4 +1,4 @@
-blender (2.68a-1) UNRELEASED; urgency=low
+blender (2.68a-1) experimental; urgency=low
 
   * New upstream bugfix release
     - debian/patches/: patchset re-worked against v2.68a
@@ -7,7 +7,7 @@ blender (2.68a-1) UNRELEASED; urgency=low
       - 0012-fix_FTBFS_on_non-linux_architectures.patch renamed to #0010
   * debian/rules: Cycles' GPL license duplicate dropped
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Mon, 29 Jul 2013 14:55:47 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Tue, 30 Jul 2013 14:46:50 +0200
 
 blender (2.67b-3) experimental; urgency=low
 
