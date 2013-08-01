@@ -1,3 +1,10 @@
+blender (2.68a-2) UNRELEASED; urgency=low
+
+  * debian/patches/: patchset refreshed
+    - 0010-fix_FTBFS_on_non-linux_architectures.patch updated
+
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Thu, 01 Aug 2013 17:38:09 +0200
+
 blender (2.68a-1) experimental; urgency=low
 
   * New upstream bugfix release
