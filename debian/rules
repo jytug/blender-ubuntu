@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
 
 INSTDIR = debian/tmp
+PY3VERS = $(shell py3versions -dv)
 
 # Adapted from http://wiki.debian.org/SandroTosi/Svn_get-orig-source
 PACKAGE = blender
@@ -24,7 +25,7 @@ override_dh_auto_configure:
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_SKIP_RPATH=ON \
 		-DCMAKE_VERBOSE_MAKEFILE=ON \
-		-DPYTHON_VERSION=3.3 \
+		-DPYTHON_VERSION=$(PY3VERS) \
 		-DWITH_IMAGE_OPENJPEG=ON \
 		-DWITH_FFTW3=ON \
 		-DWITH_JACK=ON \
