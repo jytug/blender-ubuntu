@@ -1,4 +1,4 @@
-blender (2.68a-3) UNRELEASED; urgency=low
+blender (2.68a-3) unstable; urgency=low
 
   * Upload to unstable
   * debian/: python3.3 Depends simplified
@@ -7,7 +7,7 @@ blender (2.68a-3) UNRELEASED; urgency=low
     - 0001-blender_thumbnailer.patch refreshed
   * debian/control: libavcodec b-dep versioning dropped
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 14 Aug 2013 10:41:47 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Wed, 14 Aug 2013 10:43:49 +0200
 
 blender (2.68a-2) experimental; urgency=low
 
