@@ -25,7 +25,7 @@ index 0000000..05d4fae
 +Exec=/usr/share/blender/scripts/blender-thumbnailer.py %i %o
 +MimeType=application/x-blender;
 diff --git a/release/bin/blender-thumbnailer.py b/release/bin/blender-thumbnailer.py
-index 8b93eeb..6c2cf23 100755
+index 8b93eeb..ca4a38c 100755
 --- a/release/bin/blender-thumbnailer.py
 +++ b/release/bin/blender-thumbnailer.py
 @@ -1,4 +1,4 @@
