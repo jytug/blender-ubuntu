@@ -1,0 +1,139 @@
+From: Sergey Sharybin <sergey.vfx@gmail.com>
+Date: Tue, 20 Aug 2013 12:21:08 +0200
+Subject: fix_PATH_MAX_issue
+
+---
+ intern/ghost/intern/GHOST_SystemPathsX11.cpp | 50 ++++++++++++++++------------
+ source/blender/blenlib/BLI_fileops.h         |  6 ++++
+ source/blender/blenlib/BLI_winstuff.h        |  1 -
+ source/blender/blenlib/intern/storage.c      |  1 -
+ 4 files changed, 34 insertions(+), 24 deletions(-)
+
+diff --git a/intern/ghost/intern/GHOST_SystemPathsX11.cpp b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
+index e6fd170..e98c0c8 100644
+--- a/intern/ghost/intern/GHOST_SystemPathsX11.cpp
++++ b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
+@@ -42,7 +42,9 @@
+ #include <cstdlib>   /* for exit */
+ 
+ #include <pwd.h>     /* for get home without use getenv() */
+-#include <limits.h>  /* for PATH_MAX */
++#include <string>
++
++using std::string;
+ 
+ #ifdef PREFIX
+ static const char *static_path = PREFIX "/share";
+@@ -65,9 +67,8 @@ const GHOST_TUns8 *GHOST_SystemPathsX11::getSystemDir(int, const char *versionst
+ 
+ 	/* no prefix assumes a portable build which only uses bundled scripts */
+ 	if (static_path) {
+-		static char system_path[PATH_MAX];
+-		snprintf(system_path, sizeof(system_path), "%s/blender/%s", static_path, versionstr);
+-		return (GHOST_TUns8 *)system_path;
++		static string system_path = string(static_path) + "/blender/" + versionstr;
++		return (GHOST_TUns8 *)system_path.c_str();
+ 	}
+ 
+ 	return NULL;
+@@ -75,36 +76,41 @@ const GHOST_TUns8 *GHOST_SystemPathsX11::getSystemDir(int, const char *versionst
+ 
+ const GHOST_TUns8 *GHOST_SystemPathsX11::getUserDir(int version, const char *versionstr) const
+ {
+-	static char user_path[PATH_MAX];
++	static string user_path = "";
+ 
+ 	/* in blender 2.64, we migrate to XDG. to ensure the copy previous settings
+ 	 * operator works we give a different path depending on the requested version */
+ 	if (version < 264) {
+-		const char *home = getenv("HOME");
+-
+-		if (home) {
+-			snprintf(user_path, sizeof(user_path), "%s/.blender/%s", home, versionstr);
+-			return (GHOST_TUns8 *)user_path;
++		if (user_path.empty()) {
++			const char *home = getenv("HOME");
++
++			if (home) {
++				user_path = string(home) + "/.blender/" + versionstr;
++			}
++			else {
++				return NULL;
++			}
+ 		}
+-
+-		return NULL;
++		return (GHOST_TUns8 *)user_path.c_str();
+ 	}
+ 	else {
+-		const char *home = getenv("XDG_CONFIG_HOME");
++		if (user_path.empty()) {
++			const char *home = getenv("XDG_CONFIG_HOME");
+ 
+-		if (home) {
+-			snprintf(user_path, sizeof(user_path), "%s/blender/%s", home, versionstr);
+-		}
+-		else {
+-			home = getenv("HOME");
++			if (home) {
++				user_path = string(home) + "/blender/" + versionstr;
++			}
++			else {
++				home = getenv("HOME");
+ 
+-			if (home == NULL)
+-				home = getpwuid(getuid())->pw_dir;
++				if (home == NULL)
++					home = getpwuid(getuid())->pw_dir;
+ 
+-			snprintf(user_path, sizeof(user_path), "%s/.config/blender/%s", home, versionstr);
++				user_path = string(home) + "/.config/blender/" + versionstr;
++			}
+ 		}
+ 
+-		return (const GHOST_TUns8 *)user_path;
++		return (const GHOST_TUns8 *)user_path.c_str();
+ 	}
+ }
+ 
+diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
+index f9a66aa..fdba1ea 100644
+--- a/source/blender/blenlib/BLI_fileops.h
++++ b/source/blender/blenlib/BLI_fileops.h
+@@ -43,6 +43,12 @@ extern "C" {
+ /* for size_t (needed on windows) */
+ #include <stddef.h>
+ 
++#include <limits.h>  /* for PATH_MAX */
++
++#ifndef PATH_MAX
++#  define PATH_MAX 4096
++#endif
++
+ struct gzFile;
+ 
+ /* Common */
+diff --git a/source/blender/blenlib/BLI_winstuff.h b/source/blender/blenlib/BLI_winstuff.h
+index 20a4c3c..e75ec7e 100644
+--- a/source/blender/blenlib/BLI_winstuff.h
++++ b/source/blender/blenlib/BLI_winstuff.h
+@@ -100,7 +100,6 @@ extern "C" {
+ // not accepted by access() on windows
+ //#  define	X_OK	1
+ #  define	F_OK	0
+-#  define	PATH_MAX 4096
+ #endif
+ 
+ #ifndef FREE_WINDOWS
+diff --git a/source/blender/blenlib/intern/storage.c b/source/blender/blenlib/intern/storage.c
+index 6b45c6f..74bd683 100644
+--- a/source/blender/blenlib/intern/storage.c
++++ b/source/blender/blenlib/intern/storage.c
+@@ -70,7 +70,6 @@
+ #ifdef WIN32
+ #  include <io.h>
+ #  include <direct.h>
+-#  include <limits.h>  /* PATH_MAX */
+ #  include "BLI_winstuff.h"
+ #  include "utfconv.h"
+ #else

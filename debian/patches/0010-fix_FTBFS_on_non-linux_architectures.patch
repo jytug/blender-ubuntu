@@ -1,13 +1,11 @@
 From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
-Date: Mon, 19 Aug 2013 17:24:27 +0200
+Date: Tue, 20 Aug 2013 12:14:30 +0200
 Subject: fix_FTBFS_on_non-linux_architectures
 
 ---
- CMakeLists.txt                               | 3 +++
- intern/ghost/intern/GHOST_SystemPathsX11.cpp | 4 ++++
- source/blender/blenlib/BLI_sys_types.h       | 2 +-
- source/blender/blenlib/intern/storage.c      | 4 ++++
- 4 files changed, 12 insertions(+), 1 deletion(-)
+ CMakeLists.txt                         | 3 +++
+ source/blender/blenlib/BLI_sys_types.h | 2 +-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 0a58232..e4e6518 100644
@@ -23,21 +21,6 @@ index 0a58232..e4e6518 100644
  
  	# lfs on glibc, all compilers should use
  	add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE)
-diff --git a/intern/ghost/intern/GHOST_SystemPathsX11.cpp b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
-index e6fd170..22e3502 100644
---- a/intern/ghost/intern/GHOST_SystemPathsX11.cpp
-+++ b/intern/ghost/intern/GHOST_SystemPathsX11.cpp
-@@ -50,6 +50,10 @@ static const char *static_path = PREFIX "/share";
- static const char *static_path = NULL;
- #endif
- 
-+#ifndef PATH_MAX
-+# define PATH_MAX 4096
-+#endif
-+
- GHOST_SystemPathsX11::GHOST_SystemPathsX11()
- {
- }
 diff --git a/source/blender/blenlib/BLI_sys_types.h b/source/blender/blenlib/BLI_sys_types.h
 index e544006..4de1ddc 100644
 --- a/source/blender/blenlib/BLI_sys_types.h
@@ -51,18 +34,3 @@ index e544006..4de1ddc 100644
  
  /* Linux-i386, Linux-Alpha, Linux-ppc */
  #include <stdint.h>
-diff --git a/source/blender/blenlib/intern/storage.c b/source/blender/blenlib/intern/storage.c
-index 6b45c6f..901081a 100644
---- a/source/blender/blenlib/intern/storage.c
-+++ b/source/blender/blenlib/intern/storage.c
-@@ -93,6 +93,10 @@
- 
- #include "../imbuf/IMB_imbuf.h"
- 
-+#ifndef PATH_MAX
-+# define PATH_MAX 4096
-+#endif
-+
- /**
-  * Copies the current working directory into *dir (max size maxncpy), and
-  * returns a pointer to same.
