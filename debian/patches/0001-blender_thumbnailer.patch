@@ -30,7 +30,7 @@ index 8b93eeb..ca4a38c 100755
 +++ b/release/bin/blender-thumbnailer.py
 @@ -1,4 +1,4 @@
 -#!/usr/bin/python
-+#!/usr/bin/python3
++#!/usr/bin/python3.3
  
  # ##### BEGIN GPL LICENSE BLOCK #####
  #
