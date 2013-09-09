@@ -1,4 +1,4 @@
-blender (2.68a-4) UNRELEASED; urgency=low
+blender (2.68a-4) unstable; urgency=low
 
   * debian/control: subversion b-dep dropped
   * debian/patches/: patchset updated
@@ -6,7 +6,7 @@ blender (2.68a-4) UNRELEASED; urgency=low
     - 0011-fix_PATH_MAX_issue.patch added
       Thanks to Sergey Sharybin for the patch.
 
- -- Matteo F. Vescovi <mfv.debian@gmail.com>  Fri, 30 Aug 2013 18:13:45 +0200
+ -- Matteo F. Vescovi <mfv.debian@gmail.com>  Fri, 30 Aug 2013 18:16:04 +0200
 
 blender (2.68a-3) unstable; urgency=low
 
