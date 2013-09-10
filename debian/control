@@ -73,7 +73,8 @@ Description: Very fast and versatile 3D modeller/renderer
 
 Package: blender-data
 Architecture: all
-Depends: ${misc:Depends},
+Depends: python3,
+         ${misc:Depends},
          ${python3:Depends}
 Replaces: blender (<< 2.67b-1~)
 Description: Very fast and versatile 3D modeller/renderer - data package
