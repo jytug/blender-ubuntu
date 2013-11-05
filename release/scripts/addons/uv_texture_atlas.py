@@ -20,7 +20,7 @@
 bl_info = {
     "name": "Texture Atlas",
     "author": "Andreas Esau, Paul Geraskin, Campbell Barton",
-    "version": (0, 18),
+    "version": (0, 2, 0),
     "blender": (2, 6, 7),
     "location": "Properties > Render",
     "description": "A simple Texture Atlas for unwrapping many objects. It creates additional UV",
@@ -429,10 +429,9 @@ class AddLightmapGroup(Operator):
         item.resolution = '1024'
         scene.ms_lightmap_groups_index = len(scene.ms_lightmap_groups) - 1
 
-        # if len(context.selected_objects) > 0:
+        # Add selested objects to group
         for object in context.selected_objects:
-            # scene.objects.active = object
-            if context.active_object.type == 'MESH':
+            if object.type == 'MESH':
                 obj_group.objects.link(object)
 
         return {'FINISHED'}
@@ -493,24 +492,41 @@ class CreateLightmap(Operator):
         image.generated_type = 'COLOR_GRID'
         image.generated_width = self.resolution
         image.generated_height = self.resolution
+        obj_group = bpy.data.groups[self.group_name]
 
-        for object in bpy.data.groups[self.group_name].objects:
-            if object.data.uv_textures.active is None:
-                tex = object.data.uv_textures.new()
-                tex.name = self.group_name
+        # non MESH objects for removal list
+        NON_MESH_LIST = []
+
+        for object in obj_group.objects:
+            # Remove non MESH objects
+            if object.type != 'MESH':
+                NON_MESH_LIST.append(object)
+
             else:
-                if self.group_name not in object.data.uv_textures:
+                # Add Image to faces
+                if object.data.uv_textures.active is None:
                     tex = object.data.uv_textures.new()
                     tex.name = self.group_name
-                    tex.active = True
-                    tex.active_render = True
                 else:
-                    tex = object.data.uv_textures[self.group_name]
-                    tex.active = True
-                    tex.active_render = True
+                    if self.group_name not in object.data.uv_textures:
+                        tex = object.data.uv_textures.new()
+                        tex.name = self.group_name
+                        tex.active = True
+                        tex.active_render = True
+                    else:
+                        tex = object.data.uv_textures[self.group_name]
+                        tex.active = True
+                        tex.active_render = True
 
-            for face_tex in tex.data:
-                face_tex.image = image
+                for face_tex in tex.data:
+                    face_tex.image = image
+
+        # remove non NESH objects
+        for object in NON_MESH_LIST:
+            obj_group.objects.unlink(object)
+
+        NON_MESH_LIST.clear()  # clear array
+
         return{'FINISHED'}
 
 
@@ -599,6 +615,16 @@ class MergeObjects(Operator):
             item = ob_merge.ms_merged_objects.add()
             item.name = object.name
 
+            # Add material to a tempObject if there are no materialSlots on the object
+            if not activeNowObject.data.materials:
+                matName = "zz_TextureAtlas_NO_Material"
+                mat = bpy.data.materials.get(matName)
+
+                if mat is None:
+                    mat = bpy.data.materials.new(matName)
+
+                activeNowObject.data.materials.append(mat)
+
             # merge objects together
             bpy.ops.object.select_all(action='DESELECT')
             activeNowObject.select = True
@@ -612,21 +638,22 @@ class MergeObjects(Operator):
         bpy.ops.object.select_all(action='DESELECT')
         ob_merge.select = True
         scene.objects.active = ob_merge
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
 
-        if self.unwrap is True and scene.ms_lightmap_groups[self.group_name].unwrap_type == '0':
-            bpy.ops.uv.smart_project(
-                angle_limit=72.0, island_margin=0.2, user_area_weight=0.0)
-        elif self.unwrap is True and scene.ms_lightmap_groups[self.group_name].unwrap_type == '1':
-            bpy.ops.uv.lightmap_pack(
-                PREF_CONTEXT='ALL_FACES', PREF_PACK_IN_ONE=True, PREF_NEW_UVLAYER=False,
-                PREF_APPLY_IMAGE=False, PREF_IMG_PX_SIZE=1024, PREF_BOX_DIV=48, PREF_MARGIN_DIV=0.2)
-        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        if self.unwrap is True:
+            unwrapType = scene.ms_lightmap_groups[self.group_name].unwrap_type
 
-        # remove all materials
-        # for material in ob_merge.material_slots:
-            # bpy.ops.object.material_slot_remove()
+            if unwrapType == '0' or unwrapType == '1':
+                bpy.ops.object.mode_set(mode='EDIT')
+                bpy.ops.mesh.select_all(action='SELECT')
+
+            if unwrapType == '0':
+                bpy.ops.uv.smart_project(
+                    angle_limit=72.0, island_margin=0.2, user_area_weight=0.0)
+            elif unwrapType == '1':
+                bpy.ops.uv.lightmap_pack(
+                    PREF_CONTEXT='ALL_FACES', PREF_PACK_IN_ONE=True, PREF_NEW_UVLAYER=False,
+                    PREF_APPLY_IMAGE=False, PREF_IMG_PX_SIZE=1024, PREF_BOX_DIV=48, PREF_MARGIN_DIV=0.2)
+            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
         return{'FINISHED'}
 

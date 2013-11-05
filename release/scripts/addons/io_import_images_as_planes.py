@@ -453,7 +453,10 @@ class IMPORT_OT_image_to_plane(Operator, AddObjectHelper):
         image.use_fields = self.use_fields
 
         if self.relative:
-            image.filepath = bpy.path.relpath(image.filepath)
+            try:  # can't always find the relative path (between drive letters on windows)
+                image.filepath = bpy.path.relpath(image.filepath)
+            except ValueError:
+                pass
 
     def set_texture_options(self, context, texture):
         texture.image.use_alpha = self.use_transparency

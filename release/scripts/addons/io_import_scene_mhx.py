@@ -38,8 +38,8 @@ Alternatively, run the script in the script editor (Alt-P), and access from the 
 bl_info = {
     'name': 'Import: MakeHuman (.mhx)',
     'author': 'Thomas Larsson',
-    'version': (1, 16, 1),
-    "blender": (2, 67, 1),
+    'version': (1, 16, 7),
+    "blender": (2, 68, 0),
     'location': "File > Import > MakeHuman (.mhx)",
     'description': 'Import files in the MakeHuman eXchange format (.mhx)',
     'warning': '',
@@ -51,7 +51,7 @@ bl_info = {
 MAJOR_VERSION = 1
 MINOR_VERSION = 16
 FROM_VERSION = 13
-SUB_VERSION = 1
+SUB_VERSION = 7
 
 majorVersion = MAJOR_VERSION
 minorVersion = MINOR_VERSION
@@ -92,8 +92,6 @@ theTempDatum = None
 theMessage = ""
 theMhxFile = ""
 
-todo = []
-
 #
 #    toggle flags
 #
@@ -125,6 +123,39 @@ DefaultToggle = ( T_EnforceVersion + T_Mesh + T_Armature +
 
 toggle = DefaultToggle
 toggleSettings = toggle
+loadedData = None
+
+#
+#   mhxEval(expr) - an attempt at a reasonably safe eval.
+#   Note that expr never contains any whitespace due to the behavior
+#   of the mhx tokenizer.
+#
+
+def mhxEval(expr, locls={}):
+    globls = {
+        '__builtins__' : {},
+        'toggle' : toggle,
+        'theScale' : theScale,
+        'One' : One,
+        'T_EnforceVersion' : T_EnforceVersion,
+        'T_Clothes' : T_Clothes,
+        'T_HardParents' : T_HardParents,
+        'T_CrashSafe' : T_CrashSafe,
+        'T_Diamond' : T_Diamond,
+        'T_Replace' : T_Replace,
+        'T_Shapekeys' : T_Shapekeys,
+        'T_ShapeDrivers' : T_ShapeDrivers,
+        'T_Face' : T_Face,
+        'T_Shape' : T_Shape,
+        'T_Mesh' : T_Mesh,
+        'T_Armature' : T_Armature,
+        'T_Proxy' : T_Proxy,
+        'T_Cage' : T_Cage,
+        'T_Rigify' : T_Rigify,
+        'T_Opcns' : T_Opcns,
+        'T_Symm' : T_Symm,
+    }
+    return eval(expr, globls, locls)
 
 #
 #    Dictionaries
@@ -203,7 +234,7 @@ Plural = {
 #
 
 def readMhxFile(filePath):
-    global todo, nErrors, theScale, theArmature, defaultScale, One
+    global nErrors, theScale, theArmature, defaultScale, One
     global toggle, warnedVersion, theMessage, alpha7, theDir
 
     defaultScale = theScale
@@ -246,7 +277,7 @@ def readMhxFile(filePath):
             if lineSplit[0] == '#if':
                 if comment == nesting:
                     try:
-                        res = eval(lineSplit[1])
+                        res = mhxEval(lineSplit[1])
                     except:
                         res = False
                     if res:
@@ -295,17 +326,11 @@ def readMhxFile(filePath):
     print( "Parsing" )
     parse(tokens)
 
-    for (expr, glbals, lcals) in todo:
-        try:
-            print("Doing %s" % expr)
-            exec(expr, glbals, lcals)
-        except:
-            msg = "Failed: %s\n" % expr
-            print( msg )
-            nErrors += 1
-            #MyError(msg)
-
     scn.objects.active = theArmature
+    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.select_all(action='DESELECT')
+    theArmature.select = True
+    bpy.ops.object.mode_set(mode='POSE')
     theArmature.MhAlpha8 = not alpha7
     #bpy.ops.wm.properties_edit(data_path="object", property="MhxRig", value=theArmature["MhxRig"])
 
@@ -317,17 +342,14 @@ def readMhxFile(filePath):
     return
 
 #
-#    getObject(name, var, glbals, lcals):
+#    getObject(name, var):
 #
 
-def getObject(name, var, glbals, lcals):
+def getObject(name, var):
     try:
-        ob = loadedData['Object'][name]
+        return loadedData['Object'][name]
     except:
-        if name != "None":
-            pushOnTodoList(None, "ob = loadedData['Object'][name]" % globals(), locals())
-        ob = None
-    return ob
+        raise MhxError("Bug: object %s not found" % ob)
 
 #
 #    checkMhxVersion(major, minor):
@@ -381,7 +403,7 @@ def parse(tokens):
             minorVersion = int(val[1])
             checkMhxVersion(majorVersion, minorVersion)
         elif key == 'MHX249':
-            MHX249 = eval(val[0])
+            MHX249 = mhxEval(val[0])
             print("Blender 2.49 compatibility mode is %s\n" % MHX249)
         elif MHX249:
             pass
@@ -395,7 +417,7 @@ def parse(tokens):
             msg = concatList(val)
             MyError(msg)
         elif key == 'NoScale':
-            if eval(val[0]):
+            if mhxEval(val[0]):
                 theScale = 1.0
             else:
                 theScale = defaultScale
@@ -476,12 +498,10 @@ def parse(tokens):
 #
 
 def parseDefaultType(typ, args, tokens):
-    global todo
-
     name = args[0]
     data = None
     expr = "bpy.data.%s.new('%s')" % (Plural[typ], name)
-    data = eval(expr)
+    data = mhxEval(expr)
 
     bpyType = typ.capitalize()
     loadedData[bpyType][name] = data
@@ -489,7 +509,7 @@ def parseDefaultType(typ, args, tokens):
         return None
 
     for (key, val, sub) in tokens:
-        defaultKey(key, val, sub, 'data', [], globals(), locals())
+        defaultKey(key, val, sub, data)
     return data
 
 #
@@ -534,7 +554,7 @@ def parseAction(args, tokens):
         if key == 'FCurve':
             fcu = parseActionFCurve(act, ob, val, sub)
         else:
-            defaultKey(key, val, sub, 'act', [], globals(), locals())
+            defaultKey(key, val, sub, act)
     ob.animation_data.action = None
     bpy.ops.object.mode_set(mode='OBJECT')
     return act
@@ -557,7 +577,7 @@ def prepareActionFCurve(ob, created, args, tokens):
             times.append(int(val[0]))
 
     try:
-        data = eval(expr)
+        data = mhxEval(expr)
     except:
         print("Ignoring illegal expression: %s" % expr)
         return
@@ -622,7 +642,7 @@ def parseActionFCurve(act, ob, args, tokens):
                 #print(tokens)
                 #MyError("kp", fcu, n, len(fcu.keyframe_points), val)
         else:
-            defaultKey(key, val, sub, 'fcu', [], globals(), locals())
+            defaultKey(key, val, sub, fcu)
     return fcu
 
 def parseKeyFramePoint(pt, args, tokens):
@@ -639,7 +659,7 @@ def parseKeyFramePoint(pt, args, tokens):
 #
 
 def parseAnimationData(rna, args, tokens):
-    if not eval(args[1]):
+    if not mhxEval(args[1]):
         return
     if rna.animation_data is None:
         rna.animation_data_create()
@@ -648,7 +668,7 @@ def parseAnimationData(rna, args, tokens):
         if key == 'FCurve':
             fcu = parseAnimDataFCurve(adata, rna, val, sub)
         else:
-            defaultKey(key, val, sub, 'adata', [], globals(), locals())
+            defaultKey(key, val, sub, adata)
     return adata
 
 def parseAnimDataFCurve(adata, rna, args, tokens):
@@ -670,7 +690,7 @@ def parseAnimDataFCurve(adata, rna, args, tokens):
             pt = parseKeyFramePoint(pt, val, sub)
             n += 1
         else:
-            defaultKey(key, val, sub, 'fcu', [], globals(), locals())
+            defaultKey(key, val, sub, fcu)
     return fcu
 
 """
@@ -684,7 +704,7 @@ def parseDriver(adata, dataPath, index, rna, args, tokens):
         expr = "rna." + words[0] + ']'
         pwords = words[1].split('"')
         prop = pwords[1]
-        bone = eval(expr)
+        bone = mhxEval(expr)
         return None
     else:
         words = dataPath.split('.')
@@ -694,14 +714,14 @@ def parseDriver(adata, dataPath, index, rna, args, tokens):
             expr += "." + words[n]
         expr += ".driver_add('%s', index)" % channel
 
-    fcu = eval(expr)
+    fcu = mhxEval(expr, locals())
     drv = fcu.driver
     drv.type = args[0]
     for (key, val, sub) in tokens:
         if key == 'DriverVariable':
             var = parseDriverVariable(drv, rna, val, sub)
         else:
-            defaultKey(key, val, sub, 'drv', [], globals(), locals())
+            defaultKey(key, val, sub, drv)
     return fcu
 
 def parseDriverVariable(drv, rna, args, tokens):
@@ -714,14 +734,14 @@ def parseDriverVariable(drv, rna, args, tokens):
             parseDriverTarget(var, nTarget, rna, val, sub)
             nTarget += 1
         else:
-            defaultKey(key, val, sub, 'var', [], globals(), locals())
+            defaultKey(key, val, sub, var)
     return var
 
 def parseFModifier(fcu, args, tokens):
     fmod = fcu.modifiers.new(args[0])
     #fmod = fcu.modifiers[0]
     for (key, val, sub) in tokens:
-        defaultKey(key, val, sub, 'fmod', [], globals(), locals())
+        defaultKey(key, val, sub, fmod)
     return fmod
 
 """
@@ -746,7 +766,7 @@ def parseDriverTarget(var, nTarget, rna, args, tokens):
             else:
                 targ.data_path = propNames(val)[1]
         else:
-            defaultKey(key, val, sub, 'targ', [], globals(), locals())
+            defaultKey(key, val, sub, targ)
     return targ
 
 
@@ -757,7 +777,6 @@ def parseDriverTarget(var, nTarget, rna, args, tokens):
 #
 
 def parseMaterial(args, tokens):
-    global todo
     name = args[0]
     mat = bpy.data.materials.new(name)
     if mat is None:
@@ -783,12 +802,11 @@ def parseMaterial(args, tokens):
             parseAnimationData(mat, val, sub)
         else:
             exclude = ['specular_intensity', 'tangent_shading']
-            defaultKey(key, val, sub, 'mat', [], globals(), locals())
+            defaultKey(key, val, sub, mat)
 
     return mat
 
 def parseMTex(mat, args, tokens):
-    global todo
     index = int(args[0])
     texname = args[1]
     texco = args[2]
@@ -799,12 +817,11 @@ def parseMTex(mat, args, tokens):
     mtex.texture = tex
 
     for (key, val, sub) in tokens:
-        defaultKey(key, val, sub, "mtex", [], globals(), locals())
+        defaultKey(key, val, sub, mtex)
 
     return mtex
 
 def parseTexture(args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing texture %s" % args )
     name = args[0]
@@ -825,35 +842,32 @@ def parseTexture(args, tokens):
             tex.use_nodes = True
             parseNodeTree(tex.node_tree, val, sub)
         else:
-            defaultKey(key, val,  sub, "tex", ['use_nodes', 'use_textures', 'contrast', 'use_alpha'], globals(), locals())
+            defaultKey(key, val, sub, tex, ['use_nodes', 'use_textures', 'contrast', 'use_alpha'])
 
     return tex
 
 def parseRamp(data, args, tokens):
-    nvar = "data.%s" % args[0]
-    use = "data.use_%s = True" % args[0]
-    exec(use)
-    ramp = eval(nvar)
+    setattr(data, "use_%s" % args[0], True)
+    ramp = getattr(data, args[0])
     elts = ramp.elements
     n = 0
     for (key, val, sub) in tokens:
-        # print("Ramp", key, val)
         if key == 'Element':
-            elts[n].color = eval(val[0])
-            elts[n].position = eval(val[1])
+            elts[n].color = mhxEval(val[0], locals())
+            elts[n].position = mhxEval(val[1], locals())
             n += 1
         else:
-            defaultKey(key, val,  sub, "tex", ['use_nodes', 'use_textures', 'contrast'], globals(), locals())
+            defaultKey(key, val, sub, tex, ['use_nodes', 'use_textures', 'contrast'])
 
 def parseSSS(mat, args, tokens):
     sss = mat.subsurface_scattering
     for (key, val, sub) in tokens:
-        defaultKey(key, val, sub, "sss", [], globals(), locals())
+        defaultKey(key, val, sub, sss)
 
 def parseStrand(mat, args, tokens):
     strand = mat.strand
     for (key, val, sub) in tokens:
-        defaultKey(key, val, sub, "strand", [], globals(), locals())
+        defaultKey(key, val, sub, strand)
 
 #
 #    parseNodeTree(tree, args, tokens):
@@ -870,7 +884,7 @@ def parseNodeTree(tree, args, tokens):
         if key == 'Node':
             parseNodes(tree.nodes, val, sub)
         else:
-            defaultKey(key, val, sub, "tree", [], globals(), locals())
+            defaultKey(key, val, sub, tree)
 
 def parseNodes(nodes, args, tokens):
     print("Nodes", nodes, args)
@@ -882,7 +896,7 @@ def parseNodes(nodes, args, tokens):
         elif key == 'Outputs':
             parseSocket(node.outputs, val, sub)
         else:
-            defaultKey(key, val, sub, "node", [], globals(), locals())
+            defaultKey(key, val, sub, node)
 
 def parseNode(node, args, tokens):
     print("Node", node, args)
@@ -894,7 +908,7 @@ def parseNode(node, args, tokens):
         elif key == 'Outputs':
             parseSocket(node.outputs, val, sub)
         else:
-            defaultKey(key, val, sub, "node", [], globals(), locals())
+            defaultKey(key, val, sub, node)
 
 def parseSocket(socket, args, tokens):
     print("Socket", socket, args)
@@ -903,7 +917,7 @@ def parseSocket(socket, args, tokens):
         if key == 'Node':
             parseNode(tree.nodes, val, sub)
         else:
-            defaultKey(key, val, sub, "tree", [], globals(), locals())
+            defaultKey(key, val, sub, tree)
 
 
 
@@ -929,7 +943,6 @@ def loadImage(relFilepath):
 
 
 def parseImage(args, tokens):
-    global todo
     imgName = args[0]
     img = None
     for (key, val, sub) in tokens:
@@ -942,7 +955,7 @@ def parseImage(args, tokens):
                 return None
             img.name = imgName
         else:
-            defaultKey(key, val,  sub, "img", ['depth', 'dirty', 'has_data', 'size', 'type', 'use_premultiply'], globals(), locals())
+            defaultKey(key, val, sub, img, ['depth', 'dirty', 'has_data', 'size', 'type', 'use_premultiply'])
     print ("Image %s" % img )
     loadedData['Image'][imgName] = img
     return img
@@ -994,7 +1007,7 @@ def parseObject(args, tokens):
         elif key == 'FieldSettings':
             parseDefault(ob.field, sub, {}, [])
         else:
-            defaultKey(key, val, sub, "ob", ['type', 'data'], globals(), locals())
+            defaultKey(key, val, sub, ob, ['type', 'data'])
 
     if bpy.context.object == ob:
         if ob.type == 'MESH':
@@ -1058,7 +1071,7 @@ def parseModifier(ob, args, tokens):
             else:
                 MyError("Unknown hook %s" % val)
         else:
-            defaultKey(key, val, sub, 'mod', [], globals(), locals())
+            defaultKey(key, val, sub, mod)
     return mod
 
 def hookAssignNth(mod, n, select, points):
@@ -1103,7 +1116,7 @@ def parseParticleSystem(ob, args, tokens):
         if key == 'Particles':
             parseParticles(psys, val, sub)
         else:
-            defaultKey(key, val, sub, 'psys', [], globals(), locals())
+            defaultKey(key, val, sub, psys)
     return psys
 
 def parseParticles(psys, args, tokens):
@@ -1116,7 +1129,7 @@ def parseParticles(psys, args, tokens):
             n += 1
         else:
             for par in particles:
-                defaultKey(key, val, sub, 'par', [], globals(), locals())
+                defaultKey(key, val, sub, par)
     bpy.ops.particle.particle_edit_toggle()
     return particles
 
@@ -1125,12 +1138,12 @@ def parseParticle(par, args, tokens):
     for (key, val, sub) in tokens:
         if key == 'h':
             h = par.hair[n]
-            h.location = eval(val[0])
+            h.location = mhxEval(val[0], locals())
             h.time = int(val[1])
             h.weight = float(val[2])
             n += 1
         elif key == 'location':
-            par.location = eval(val[0])
+            par.location = mhxEval(val[0], locals())
     return
 
 #
@@ -1150,7 +1163,7 @@ def unpackList(list_of_tuples):
 #
 
 def parseMesh (args, tokens):
-    global todo, BMeshAware
+    global BMeshAware
     if verbosity > 2:
         print( "Parsing mesh %s" % args )
 
@@ -1211,7 +1224,7 @@ def parseMesh (args, tokens):
             if mat:
                 me.materials.append(mat)
         else:
-            defaultKey(key, val,  sub, "me", [], globals(), locals())
+            defaultKey(key, val, sub, me)
 
     for (key, val, sub) in tokens:
         if key == 'Faces':
@@ -1330,7 +1343,7 @@ def parseUvTextureBMesh(args, tokens, me):
         if key == 'Data':
             parseUvTexDataBMesh(val, sub, uvloop.data)
         else:
-            defaultKey(key, val,  sub, "uvtex", [], globals(), locals())
+            defaultKey(key, val, sub, uvtex)
     return
 
 def parseUvTexDataBMesh(args, tokens, data):
@@ -1356,7 +1369,7 @@ def parseUvTextureNoBMesh(args, tokens, me):
         if key == 'Data':
             parseUvTexDataNoBMesh(val, sub, uvtex.data)
         else:
-            defaultKey(key, val,  sub, "uvtex", [], globals(), locals())
+            defaultKey(key, val, sub, uvtex)
     return
 
 def parseUvTexDataNoBMesh(args, tokens, data):
@@ -1385,17 +1398,17 @@ def parseVertColorLayer(args, tokens, me):
         if key == 'Data':
             parseVertColorData(val, sub, vcol.data)
         else:
-            defaultKey(key, val,  sub, "vcol", [], globals(), locals())
+            defaultKey(key, val, sub, vcol)
     return
 
 def parseVertColorData(args, tokens, data):
     n = 0
     for (key, val, sub) in tokens:
         if key == 'cv':
-            data[n].color1 = eval(val[0])
-            data[n].color2 = eval(val[1])
-            data[n].color3 = eval(val[2])
-            data[n].color4 = eval(val[3])
+            data[n].color1 = mhxEval(val[0])
+            data[n].color2 = mhxEval(val[1])
+            data[n].color3 = mhxEval(val[2])
+            data[n].color4 = mhxEval(val[3])
             n += 1
     return
 
@@ -1410,7 +1423,7 @@ def parseVertexGroup(ob, me, args, tokens):
         print( "Parsing vertgroup %s" % args )
     grpName = args[0]
     try:
-        res = eval(args[1])
+        res = mhxEval(args[1])
     except:
         res = True
     if not res:
@@ -1506,7 +1519,7 @@ def addShapeKey(ob, name, vgroup, tokens):
             pt[1] += theScale*float(val[2])
             pt[2] += theScale*float(val[3])
         else:
-            defaultKey(key, val,  sub, "skey", [], globals(), locals())
+            defaultKey(key, val, sub, skey)
 
     return
 
@@ -1545,7 +1558,7 @@ def parseArmature (args, tokens):
             rolls = {}
             for bone in amt.edit_bones:
                 bone.select = False
-            blist = eval(val[0])
+            blist = mhxEval(val[0])
             for name in blist:
                 bone = amt.edit_bones[name]
                 bone.select = True
@@ -1557,7 +1570,7 @@ def parseArmature (args, tokens):
                 bone['Roll'] = rolls[bone.name]
             bpy.ops.object.mode_set(mode='EDIT')
         else:
-            defaultKey(key, val,  sub, "amt", ['MetaRig'], globals(), locals())
+            defaultKey(key, val, sub, amt, ['MetaRig'])
     bpy.ops.object.mode_set(mode='OBJECT')
 
     return amt
@@ -1567,8 +1580,6 @@ def parseArmature (args, tokens):
 #
 
 def parseBone(bone, amt, tokens, heads, tails):
-    global todo
-
     for (key, val, sub) in tokens:
         if key == "head":
             bone.head = (theScale*float(val[0]), theScale*float(val[1]), theScale*float(val[2]))
@@ -1579,7 +1590,7 @@ def parseBone(bone, amt, tokens, heads, tails):
         elif key == 'hide' and val[0] == 'True':
             name = bone.name
         else:
-            defaultKey(key, val,  sub, "bone", [], globals(), locals())
+            defaultKey(key, val, sub, bone)
     return bone
 
 #
@@ -1587,7 +1598,6 @@ def parseBone(bone, amt, tokens, heads, tails):
 #
 
 def parsePose (args, tokens):
-    global todo
     name = args[0]
     ob = loadedData['Object'][name]
     bpy.context.scene.objects.active = ob
@@ -1603,11 +1613,11 @@ def parsePose (args, tokens):
         elif key == 'SetProp':
             bone = val[0]
             prop = val[1]
-            value = eval(val[2])
+            value = mhxEval(val[2])
             pb = pbones[bone]
             pb[prop] = value
         else:
-            defaultKey(key, val,  sub, "ob.pose", [], globals(), locals())
+            defaultKey(key, val, sub, ob.pose)
     bpy.ops.object.mode_set(mode='OBJECT')
     return ob
 
@@ -1618,7 +1628,6 @@ def parsePose (args, tokens):
 #
 
 def parseBoneGroup(pose, nGrps, args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing bonegroup %s" % args )
     name = args[0]
@@ -1626,11 +1635,10 @@ def parseBoneGroup(pose, nGrps, args, tokens):
     bg = pose.bone_groups.active
     loadedData['BoneGroup'][name] = bg
     for (key, val, sub) in tokens:
-        defaultKey(key, val,  sub, "bg", [], globals(), locals())
+        defaultKey(key, val, sub, bg)
     return
 
 def parsePoseBone(pbones, ob, args, tokens):
-    global todo
     if invalid(args[1]):
         return
     name = args[0]
@@ -1645,8 +1653,7 @@ def parsePoseBone(pbones, ob, args, tokens):
         elif key == 'bpyops':
             amt.bones.active = pb.bone
             expr = "bpy.ops.%s" % val[0]
-            print(expr)
-            exec(expr)
+            raise MhxError("MHX bug: Must not exec %s" % expr)
         elif key == 'ik_dof':
             parseArray(pb, ["ik_dof_x", "ik_dof_y", "ik_dof_z"], val)
         elif key == 'ik_limit':
@@ -1659,20 +1666,17 @@ def parsePoseBone(pbones, ob, args, tokens):
             parseArray(pb, ["ik_stiffness_x", "ik_stiffness_y", "ik_stiffness_z"], val)
         elif key == 'hide':
             #bpy.ops.object.mode_set(mode='OBJECT')
-            amt.bones[name].hide = eval(val[0])
+            amt.bones[name].hide = mhxEval(val[0])
             #bpy.ops.object.mode_set(mode='POSE')
 
         else:
-            defaultKey(key, val,  sub, "pb", [], globals(), locals())
-    #print("pb %s done" % name)
+            defaultKey(key, val, sub, pb)
     return
 
 def parseArray(data, exts, args):
     n = 1
     for ext in exts:
-        expr = "data.%s = %s" % (ext, args[n])
-        # print(expr)
-        exec(expr)
+        setattr(data, ext, mhxEval(args[n]))
         n += 1
     return
 
@@ -1711,7 +1715,7 @@ def parseConstraint(constraints, pb, args, tokens):
         elif key == 'rot_lock':
             parseArray(cns, ["lock_rotation_x", "lock_rotation_y", "lock_rotation_z"], val)
         else:
-            defaultKey(key, val,  sub, "cns", ["use_target"], globals(), locals())
+            defaultKey(key, val, sub, cns, ["use_target"])
 
 
     #print("cns %s done" % cns.name)
@@ -1726,7 +1730,6 @@ def parseConstraint(constraints, pb, args, tokens):
 #
 
 def parseCurve (args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing curve %s" % args )
     bpy.ops.object.add(type='CURVE')
@@ -1736,11 +1739,10 @@ def parseCurve (args, tokens):
         if key == 'Spline':
             parseSpline(cu, val, sub)
         else:
-            defaultKey(key, val, sub, "cu", [], globals(), locals())
+            defaultKey(key, val, sub, cu)
     return
 
 def parseTextCurve (args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing text curve %s" % args )
     bpy.ops.object.text_add()
@@ -1758,7 +1760,7 @@ def parseTextCurve (args, tokens):
         elif key == 'TextBox':
             parseCollection(txt.body_format, sub, [])
         else:
-            defaultKey(key, val, sub, "txt", [], globals(), locals())
+            defaultKey(key, val, sub, txt)
     return
 
 
@@ -1783,20 +1785,20 @@ def parseSpline(cu, args, tokens):
             parsePoint(spline.points[n], val, sub)
             n += 1
         else:
-            defaultKey(key, val, sub, "spline", [], globals(), locals())
+            defaultKey(key, val, sub, spline)
     return
 
 def parseBezier(bez, args, tokens):
-    bez.co = eval(args[0])
+    bez.co = mhxEval(args[0])
     bez.co = theScale*bez.co
-    bez.handle1 = eval(args[1])
+    bez.handle1 = mhxEval(args[1])
     bez.handle1_type = args[2]
-    bez.handle2 = eval(args[3])
+    bez.handle2 = mhxEval(args[3])
     bez.handle2_type = args[4]
     return
 
 def parsePoint(pt, args, tokens):
-    pt.co = eval(args[0])
+    pt.co = mhxEval(args[0])
     pt.co = theScale*pt.co
     print(" pt", pt.co)
     return
@@ -1806,7 +1808,6 @@ def parsePoint(pt, args, tokens):
 #
 
 def parseLattice (args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing lattice %s" % args )
     bpy.ops.object.add(type='LATTICE')
@@ -1815,11 +1816,10 @@ def parseLattice (args, tokens):
         if key == 'Points':
             parseLatticePoints(val, sub, lat.points)
         else:
-            defaultKey(key, val, sub, "lat", [], globals(), locals())
+            defaultKey(key, val, sub, lat)
     return
 
 def parseLatticePoints(args, tokens, points):
-    global todo
     n = 0
     for (key, val, sub) in tokens:
         if key == 'pt':
@@ -1836,7 +1836,6 @@ def parseLatticePoints(args, tokens, points):
 #
 
 def parseLamp (args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing lamp %s" % args )
     bpy.ops.object.add(type='LAMP')
@@ -1845,7 +1844,7 @@ def parseLamp (args, tokens):
         if key == 'FalloffCurve':
             parseFalloffCurve(lamp.falloff_curve, val, sub)
         else:
-            defaultKey(key, val, sub, "lamp", [], globals(), locals())
+            defaultKey(key, val, sub, lamp)
     return
 
 def parseFalloffCurve(focu, args, tokens):
@@ -1857,7 +1856,6 @@ def parseFalloffCurve(focu, args, tokens):
 #
 
 def parseGroup (args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing group %s" % args )
 
@@ -1868,11 +1866,10 @@ def parseGroup (args, tokens):
         if key == 'Objects':
             parseGroupObjects(val, sub, grp)
         else:
-            defaultKey(key, val, sub, "grp", [], globals(), locals())
+            defaultKey(key, val, sub, grp)
     return
 
 def parseGroupObjects(args, tokens, grp):
-    global todo
     rig = None
     for (key, val, sub) in tokens:
         if key == 'ob':
@@ -1895,7 +1892,6 @@ def parseGroupObjects(args, tokens, grp):
 #
 
 def parseWorld (args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing world %s" % args )
     world = bpy.context.scene.world
@@ -1907,7 +1903,7 @@ def parseWorld (args, tokens):
         elif key == 'Stars':
             parseDefault(world.stars, sub, {}, [])
         else:
-            defaultKey(key, val, sub, "world", [], globals(), locals())
+            defaultKey(key, val, sub, world)
     return
 
 #
@@ -1917,7 +1913,6 @@ def parseWorld (args, tokens):
 #
 
 def parseScene (args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing scene %s" % args )
     scn = bpy.context.scene
@@ -1944,11 +1939,10 @@ def parseScene (args, tokens):
         elif key == 'UnitSettings':
             parseDefault(scn.unit_settings, sub, {}, [])
         else:
-            defaultKey(key, val, sub, "scn", [], globals(), locals())
+            defaultKey(key, val, sub, scn)
     return
 
 def parseRenderSettings(render, args, tokens):
-    global todo
     if verbosity > 2:
         print( "Parsing RenderSettings %s" % args )
     for (key, val, sub) in tokens:
@@ -1956,7 +1950,7 @@ def parseRenderSettings(render, args, tokens):
             pass
             #parseDefault(scn.layers, sub, [])
         else:
-            defaultKey(key, val, sub, "render", [], globals(), locals())
+            defaultKey(key, val, sub, render)
     return
 
 #
@@ -1964,15 +1958,13 @@ def parseRenderSettings(render, args, tokens):
 #
 
 def parseDefineProperty(args, tokens):
-    expr = "bpy.types.Object.%s = %sProperty" % (args[0], args[1])
+    prop = "%sProperty" % (args[1])
     c = '('
     for option in args[2:]:
-        expr += "%s %s" % (c, option)
+        prop += "%s %s" % (c, option)
         c = ','
-    expr += ')'
-    #print(expr)
-    exec(expr)
-    #print("Done")
+    prop += ')'
+    setattr(bpy.types.Object, args[0], prop)
     return
 
 #
@@ -2071,7 +2063,7 @@ def deleteDiamonds(ob):
     return
 
 #
-#    defaultKey(ext, args, tokens, var, exclude, glbals, lcals):
+#    defaultKey(ext, args, tokens, data, exclude):
 #
 
 theProperty = None
@@ -2104,7 +2096,7 @@ def propNames(string):
         return string, '["%s"]' % string
 
 
-def defProp(args, var, glbals, lcals):
+def defProp(args, var):
     proptype = args[0]
     name = propNames(args[1])[0]
     value = args[2]
@@ -2113,93 +2105,82 @@ def defProp(args, var, glbals, lcals):
         rest += ", " + args[4]
 
     if name:
-        #expr = 'bpy.types.Object.%s = %sProperty(%s)' % (name, proptype, rest)
-        expr = '%s["%s"] = %s' % (var, name, value)
-        exec(expr, glbals, lcals)
+        var[name] = value
 
 
 def defNewProp(name, proptype, rest):
-    expr = 'bpy.types.Object.%s = %sProperty(%s)' % (name, proptype, rest)
-    print(expr)
-    exec(expr)
+    prop = "%sProperty(%s)" % (proptype, rest)
+    setattr(bpy.types.Object, name, eval(prop)) # safe: only called from this file
 
 
-def setProperty(args, var, glbals, lcals):
+def setProperty(args, var):
     global theProperty
     tip = ""
     name = propNames(args[0])[0]
-    value = args[1]
+    value = mhxEval(args[1])
     if name:
-        expr = '%s["%s"] = %s' % (var, name, value)
-        exec(expr, glbals, lcals)
-
+        var[name] = value
         if len(args) > 2:
             tip = 'description="%s"' % args[2].replace("_", " ")
-        if value in ["True", "False"]:
-            proptype = "Bool"
-        elif value[0] in ["'",'"']:
-            proptype = "String"
-        elif "." in value:
-            proptype = "Float"
-        else:
-            proptype = "Int"
-        theProperty = (name, tip, proptype)
+        theProperty = (name, tip, value)
 
 
-def defineProperty(args):
+def setPropKeys(args):
     global theProperty
     if theProperty is None:
         return
-    (name, tip, proptype) = theProperty
-    if len(args) >= 2 and proptype != "Bool":
+    (name, tip, value) = theProperty
+    if len(args) >= 2 and not isinstance(value, bool):
         if "BOOLEAN" in args[1]:
-            proptype = "Bool"
+            value = bool(value)
         else:
             tip = tip + "," + args[1].replace(":", "=").replace('"', " ")
-    expr = "bpy.types.Object.%s = %sProperty(%s)" % (name, proptype, tip)
+    #expr = "bpy.types.Object.%s = %sProperty(%s)" % (name, proptype, tip)
+    if isinstance(value, bool):
+        prop = BoolProperty(tip)
+    elif isinstance(value, int):
+        prop = IntProperty(tip)
+    elif isinstance(value, float):
+        prop = FloatProperty(tip)
+    elif isinstance(value, string):
+        prop = StringProperty(tip)
+    setattr(bpy.types.Object, name, prop)
     theProperty = None
 
 
-def defaultKey(ext, args, tokens, var, exclude, glbals, lcals):
-    global todo
-
+def defaultKey(ext, args, tokens, var, exclude=[]):
     if ext == 'Property':
-        return setProperty(args, var, glbals, lcals)
+        return setProperty(args, var)
     elif ext == 'PropKeys':
-        return defineProperty(args)
+        return setPropKeys(args)
     elif ext == 'DefProp':
-        return defProp(args, var, glbals, lcals)
+        return defProp(args, var)
 
     if ext == 'bpyops':
         expr = "bpy.ops.%s" % args[0]
         print(expr)
-        exec(expr)
-        return
+        raise MhxError("MHX bug: calling %s" % expr)
 
-    nvar = "%s.%s" % (var, ext)
-    #print(ext)
     if ext in exclude:
         return
-    #print("D", nvar)
+    nvar = getattr(var, ext)
 
     if len(args) == 0:
         MyError("Key length 0: %s" % ext)
 
     rnaType = args[0]
-    if rnaType == 'Add':
-        print("*** Cannot Add yet ***")
-        return
-
-    elif rnaType == 'Refer':
+    if rnaType == 'Refer':
         typ = args[1]
         name = args[2]
-        data = "loadedData['%s']['%s']" % (typ, name)
+        setattr(var, ext, loadedData[typ][name])
+        return
 
     elif rnaType == 'Struct' or rnaType == 'Define':
+        raise MhxError("Struct/Define!")
         typ = args[1]
         name = args[2]
         try:
-            data = eval(nvar, glbals, lcals)
+            data = getattr(var, ext)
         except:
             data = None
         # print("Old structrna", nvar, data)
@@ -2209,11 +2190,10 @@ def defaultKey(ext, args, tokens, var, exclude, glbals, lcals):
                 creator = args[3]
             except:
                 creator = None
-            # print("Creator", creator, eval(var,glbals,lcals))
 
             try:
-                rna = eval(var,glbals,lcals)
-                data = eval(creator)
+                rna = mhxEval(var, locals())
+                data = mhxEval(creator)
             except:
                 data = None
             # print("New struct", nvar, typ, data)
@@ -2223,70 +2203,61 @@ def defaultKey(ext, args, tokens, var, exclude, glbals, lcals):
 
         if data:
             for (key, val, sub) in tokens:
-                defaultKey(key, val, sub, "data", [], globals(), locals())
-
-        print("Struct done", nvar)
+                defaultKey(key, val, sub, data)
         return
 
     elif rnaType == 'PropertyRNA':
-        MyError("PropertyRNA!")
+        raise MhxError("PropertyRNA!")
         #print("PropertyRNA ", ext, var)
         for (key, val, sub) in tokens:
-            defaultKey(ext, val, sub, nvar, [], glbals, lcals)
+            defaultKey(ext, val, sub, nvar, [])
         return
 
     elif rnaType == 'Array':
         for n in range(1, len(args)):
-            expr = "%s[%d] = %s" % (nvar, n-1, args[n])
-            exec(expr, glbals, lcals)
+            nvar[n-1] = mhxEval(args[n], locals())
         if len(args) > 0:
-            expr = "%s[0] = %s" % (nvar, args[1])
-            exec(expr, glbals, lcals)
+            nvar[0] = mhxEval(args[1], locals())
         return
 
     elif rnaType == 'List':
+        raise MhxError("List!")
         data = []
         for (key, val, sub) in tokens:
-            elt = eval(val[1], glbals, lcals)
+            elt = mhxEval(val[1], locals())
             data.append(elt)
+        setattr(var, ext, data)
+        return
 
     elif rnaType == 'Matrix':
-        return
+        raise MhxError("Matrix!")
         i = 0
         n = len(tokens)
         for (key, val, sub) in tokens:
             if key == 'row':
                 for j in range(n):
-                    expr = "%s[%d][%d] = %g" % (nvar, i, j, float(val[j]))
-                    exec(expr, glbals, lcals)
+                    nvar[i][j] = float(val[j])
                 i += 1
         return
 
     else:
         try:
             data = loadedData[rnaType][args[1]]
-            #print("From loaded", rnaType, args[1], data)
-            return data
-        except:
-            data = rnaType
+            raise MhxError("From loaded %s %s!" % (rnaType, args[1]))
+        except KeyError:
+            pass
+        data = mhxEval(rnaType, locals())
+        setattr(var, ext, data)
 
-    #print(var, ext, data)
-    expr = "%s = %s" % (nvar, data)
-    try:
-        exec(expr, glbals, lcals)
-    except:
-        pushOnTodoList(var, expr, glbals, lcals)
-    return
 
 #
 #
 #
 
-def pushOnTodoList(var, expr, glbals, lcals):
-    global todo
+def pushOnTodoList(var, expr):
     print("Unrecognized expression", expr)
     return
-    print(dir(eval(var, glbals, lcals)))
+    print(dir(mhxEval(var)))
     MyError(
         "Unrecognized expression %s.\n"  % expr +
         "This can mean that Blender's python API has changed\n" +
@@ -2294,8 +2265,6 @@ def pushOnTodoList(var, expr, glbals, lcals):
         "from an up-to-date MakeHuman nightly build.\n" +
         "Alternatively, your Blender version may be obsolete.\n" +
         "Download an up-to-date version from www.graphicall.org")
-    todo.append((expr, glbals, lcals))
-    return
 
 
 #
@@ -2334,9 +2303,10 @@ def parseDefault(data, tokens, subkeys, exclude):
     for (key, val, sub) in tokens:
         if key in subkeys.keys():
             for (key2, val2, sub2) in sub:
-                defaultKey(key2, val2, sub2, "data.%s" % subkeys[key], [], globals(), locals())
+                ndata = getattr(data, subkeys[key])
+                defaultKey(key2, val2, sub2, ndata)
         else:
-            defaultKey(key, val, sub, "data", exclude, globals(), locals())
+            defaultKey(key, val, sub, data, exclude)
 
 def parseCollection(data, tokens, exclude):
     return
@@ -2380,9 +2350,8 @@ def Bool(string):
 
 def invalid(condition):
     global rigLeg, rigArm, toggle
-    res = eval(condition, globals())
     try:
-        res = eval(condition, globals())
+        res = mhxEval(condition)
         #print("%s = %s" % (condition, res))
         return not res
     except:
@@ -2552,6 +2521,7 @@ class RigifyBone:
 
 
 def rigifyMhx(context):
+    global theArmature
     from collections import OrderedDict
 
     print("Modifying MHX rig to Rigify")
@@ -2687,7 +2657,7 @@ def rigifyMhx(context):
     if rig.animation_data:
         for fcu1 in rig.animation_data.drivers:
             rna,channel = fcu1.data_path.rsplit(".", 1)
-            pb = eval("gen.%s" % rna)
+            pb = mhxEval("gen.%s" % rna)
             fcu2 = pb.driver_add(channel, fcu1.array_index)
             copyDriver(fcu1, fcu2, gen)
 
@@ -2733,6 +2703,7 @@ def rigifyMhx(context):
     del rig
     gen.name = name
     bpy.ops.object.mode_set(mode='POSE')
+    theArmature = gen
     print("MHX rig %s successfully rigified" % name)
 
 
@@ -2784,7 +2755,7 @@ def fixConstraint(cns1, cns2, gen, bones):
         if ((key[0] != "_") and
             (key not in ["bl_rna", "type", "rna_type", "is_valid", "error_location", "error_rotation"])):
             expr = ("cns2.%s = cns1.%s" % (key, key))
-            exec(expr)
+            setattr(cns2, key, getattr(cns1, key))
 
     cns2.target = gen
 
@@ -2972,7 +2943,7 @@ class ImportMhx(bpy.types.Operator, ImportHelper):
     advanced = BoolProperty(name="Advanced settings", description="Use advanced import settings", default=False)
     for (prop, name, desc, flag) in MhxBoolProps:
         expr = '%s = BoolProperty(name="%s", description="%s", default=(toggleSettings&%s != 0))' % (prop, name, desc, flag)
-        exec(expr)
+        exec(expr)   # Trusted source: this file.
 
 
     def draw(self, context):
@@ -2992,7 +2963,7 @@ class ImportMhx(bpy.types.Operator, ImportHelper):
             toggle = T_Armature
             for (prop, name, desc, flag) in MhxBoolProps:
                 expr = '(%s if self.%s else 0)' % (flag, prop)
-                toggle |=  eval(expr)
+                toggle |=  eval(expr)   # trusted source: this file
             toggleSettings = toggle
         print("execute flags %x" % toggle)
         theScale = self.scale
@@ -3002,7 +2973,7 @@ class ImportMhx(bpy.types.Operator, ImportHelper):
             if not context.user_preferences.system.use_scripts_auto_execute:
                 MyError("Auto Run Python Scripts must be turned on.\nIt is found under\n File > User Preferences > File")
             readMhxFile(self.filepath)
-            bpy.ops.mhx.success('INVOKE_DEFAULT', message = self.filepath)
+            #bpy.ops.mhx.success('INVOKE_DEFAULT', message = self.filepath)
         except MhxError:
             print("Error when loading MHX file %s:\n" % self.filepath + theMessage)
 
@@ -3017,8 +2988,7 @@ class ImportMhx(bpy.types.Operator, ImportHelper):
         readDefaults()
         self.scale = theScale
         for (prop, name, desc, flag) in MhxBoolProps:
-            expr = 'self.%s = (toggle&%s != 0)' % (prop, flag)
-            exec(expr)
+            setattr(self, prop, mhxEval('(toggle&%s != 0)' % flag))
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -3032,89 +3002,6 @@ class ImportMhx(bpy.types.Operator, ImportHelper):
 #
 #    visemes
 #
-"""
-stopStaringVisemes = ({
-    'Rest' : [
-        ('PMouth', (0,0)),
-        ('PUpLip', (0,-0.1)),
-        ('PLoLip', (0,0.1)),
-        ('PJaw', (0,0.05)),
-        ('PTongue', (0,0.0))],
-    'Etc' : [
-        ('PMouth', (0,0)),
-        ('PUpLip', (0,-0.1)),
-        ('PLoLip', (0,0.1)),
-        ('PJaw', (0,0.15)),
-        ('PTongue', (0,0.0))],
-    'MBP' : [('PMouth', (-0.3,0)),
-        ('PUpLip', (0,1)),
-        ('PLoLip', (0,0)),
-        ('PJaw', (0,0.1)),
-        ('PTongue', (0,0.0))],
-    'OO' : [('PMouth', (-1.5,0)),
-        ('PUpLip', (0,0)),
-        ('PLoLip', (0,0)),
-        ('PJaw', (0,0.2)),
-        ('PTongue', (0,0.0))],
-    'O' : [('PMouth', (-1.1,0)),
-        ('PUpLip', (0,0)),
-        ('PLoLip', (0,0)),
-        ('PJaw', (0,0.5)),
-        ('PTongue', (0,0.0))],
-    'R' : [('PMouth', (-0.9,0)),
-        ('PUpLip', (0,-0.2)),
-        ('PLoLip', (0,0.2)),
-        ('PJaw', (0,0.2)),
-        ('PTongue', (0,0.0))],
-    'FV' : [('PMouth', (0,0)),
-        ('PUpLip', (0,0)),
-        ('PLoLip', (0,-0.8)),
-        ('PJaw', (0,0.1)),
-        ('PTongue', (0,0.0))],
-    'S' : [('PMouth', (0,0)),
-        ('PUpLip', (0,-0.2)),
-        ('PLoLip', (0,0.2)),
-        ('PJaw', (0,0.05)),
-        ('PTongue', (0,0.0))],
-    'SH' : [('PMouth', (-0.6,0)),
-        ('PUpLip', (0,-0.5)),
-        ('PLoLip', (0,0.5)),
-        ('PJaw', (0,0)),
-        ('PTongue', (0,0.0))],
-    'EE' : [('PMouth', (0.3,0)),
-        ('PUpLip', (0,-0.3)),
-        ('PLoLip', (0,0.3)),
-        ('PJaw', (0,0.025)),
-        ('PTongue', (0,0.0))],
-    'AH' : [('PMouth', (-0.1,0)),
-        ('PUpLip', (0,-0.4)),
-        ('PLoLip', (0,0)),
-        ('PJaw', (0,0.35)),
-        ('PTongue', (0,0.0))],
-    'EH' : [('PMouth', (0.1,0)),
-        ('PUpLip', (0,-0.2)),
-        ('PLoLip', (0,0.2)),
-        ('PJaw', (0,0.2)),
-        ('PTongue', (0,0.0))],
-    'TH' : [('PMouth', (0,0)),
-        ('PUpLip', (0,-0.5)),
-        ('PLoLip', (0,0.5)),
-        ('PJaw', (-0.2,0.1)),
-        ('PTongue', (0,-0.6))],
-    'L' : [('PMouth', (0,0)),
-        ('PUpLip', (0,-0.2)),
-        ('PLoLip', (0,0.2)),
-        ('PJaw', (0.2,0.2)),
-        ('PTongue', (0,-0.8))],
-    'G' : [('PMouth', (0,0)),
-        ('PUpLip', (0,-0.1)),
-        ('PLoLip', (0,0.1)),
-        ('PJaw', (-0.3,0.1)),
-        ('PTongue', (0,-0.6))],
-
-    'Blink' : [('PUpLid', (0,1.0)), ('PLoLid', (0,-1.0))],
-    'Unblink' : [('PUpLid', (0,0)), ('PLoLid', (0,0))],
-})
 
 bodyLanguageVisemes = ({
     'Rest' : [
@@ -3361,6 +3248,7 @@ VisemeList = [
 #
 
 def makeVisemes(ob, scn):
+    rig = ob.parent
     if ob.type != 'MESH':
         print("Active object %s is not a mesh" % ob)
         return
@@ -3371,8 +3259,13 @@ def makeVisemes(ob, scn):
         ob.data.shape_keys.key_blocks["VIS_Rest"]
         print("Visemes already created")
         return
-    except:
+    except KeyError:
         pass
+    try:
+        ob.data.shape_keys.key_blocks["MouthOpen"]
+    except KeyError:
+        print("Mesh does not have face shapes")
+        return
 
     verts = ob.data.vertices
     for (vis,shapes) in bodyLanguageVisemes.items():
@@ -3400,28 +3293,28 @@ class VIEW3D_OT_MhxMakeVisemesButton(bpy.types.Operator):
     def execute(self, context):
         makeVisemes(context.object, context.scene)
         return{'FINISHED'}
-"""
+
 #
 #    mohoVisemes
 #    magpieVisemes
 #
 
 MohoVisemes = dict({
-    'rest' : 'Rest',
-    'etc' : 'Etc',
-    'AI' : 'AH',
-    'O' : 'O',
-    'U' : 'OO',
-    'WQ' : 'AH',
-    'L' : 'L',
-    'E' : 'EH',
-    'MBP' : 'MBP',
-    'FV' : 'FV',
+    "rest" : "Rest",
+    "etc" : "Etc",
+    "AI" : "AH",
+    "O" : "O",
+    "U" : "OO",
+    "WQ" : "AH",
+    "L" : "L",
+    "E" : "EH",
+    "MBP" : "MBP",
+    "FV" : "FV",
 })
 
 MagpieVisemes = dict({
     "CONS" : "Etc",
-    "AI" : 'AH',
+    "AI" : "AH",
     "E" : "EH",
     "O" : "O",
     "UW" : "AH",
@@ -3436,15 +3329,11 @@ MagpieVisemes = dict({
 #    setBoneLocation(context, pbone, loc, mirror, setKey, frame):
 #    class VIEW3D_OT_MhxVisemeButton(bpy.types.Operator):
 #
-"""
+
 def getVisemeSet(context, rig):
-    try:
-        visset = rig['MhxVisemeSet']
-    except:
-        return bodyLanguageVisemes
-    if visset == 'StopStaring':
+    if rig.MhxVisemeSet == "StopStaring":
         return stopStaringVisemes
-    elif visset == 'BodyLanguage':
+    elif rig.MhxVisemeSet == "BodyLanguage":
         return bodyLanguageVisemes
     else:
         raise MhxError("Unknown viseme set %s" % visset)
@@ -3506,12 +3395,12 @@ class VIEW3D_OT_MhxVisemeButton(bpy.types.Operator):
         setVisemeAlpha7(context, self.viseme, visemes, False, context.scene.frame_current)
         return{'FINISHED'}
 
-"""
-
 
 def readLipsync(context, filepath, offs, struct):
     (rig, mesh) = getMhxRigMesh(context.object)
-    if rig.MhAlpha8:
+    if rig.MhxVisemeSet:
+        visemes = getVisemeSet(context, rig)
+    else:
         props = getProps(rig, "Mhv")
         visemes = {}
         oldKeys = []
@@ -3523,8 +3412,6 @@ def readLipsync(context, filepath, offs, struct):
         auto = True
         factor = rig.MhxStrength
         shapekeys = getMhmShapekeys(rig, mesh)
-    else:
-        visemes = getVisemeSet(context, rig)
     context.scene.objects.active = rig
     bpy.ops.object.mode_set(mode='POSE')
 
@@ -3534,12 +3421,12 @@ def readLipsync(context, filepath, offs, struct):
         if len(words) < 2:
             continue
         else:
-            vis = "Mhv" + struct[words[1]]
+            vis = struct[words[1]]
             frame = int(words[0])+offs
-        if rig.MhAlpha8:
-            setMhmProps(rig, shapekeys, "Mhsmouth", visemes[vis], factor, auto, frame)
-        else:
+        if rig.MhxVisemeSet:
             setVisemeAlpha7(context, vis, visemes, True, frame)
+        else:
+            setMhmProps(rig, shapekeys, "Mhsmouth", visemes["Mhv"+vis], factor, auto, frame)
     fp.close()
 
     #setInterpolation(rig)
@@ -3582,7 +3469,7 @@ class MhxLipsyncPanel(bpy.types.Panel):
             return
         layout = self.layout
 
-        if rig.MhAlpha8:
+        if not rig.MhxVisemeSet:
             visemes = getProps(rig, "Mhv")
             if not visemes:
                 layout.label("No visemes found")
@@ -3607,8 +3494,6 @@ class MhxLipsyncPanel(bpy.types.Panel):
             row.operator("mhx.pose_mhm", text="Blink").data="Mhsmouth;eye_left_closure:1;eye_right_closure:1"
             row.operator("mhx.pose_mhm", text="Unblink").data="Mhsmouth;eye_left_closure:0;eye_right_closure:0"
         else:
-            layout.label("Lipsync disabled for alpha7 mhx files")
-            return
             for (vis1, vis2, vis3) in VisemeList:
                 row = layout.row()
                 row.operator("mhx.pose_viseme", text=vis1).viseme = vis1
@@ -3939,6 +3824,51 @@ def insertRotation(pb, mat, auto):
     bpy.ops.object.mode_set(mode='POSE')
 
 
+def matchIkLeg(legIk, toeFk, mBall, mToe, mHeel, auto):
+    rmat = toeFk.matrix.to_3x3()
+    tHead = Vector(toeFk.matrix.col[3][:3])
+    ty = rmat.col[1]
+    tail = tHead + ty * toeFk.bone.length
+
+    try:
+        zBall = mBall.matrix.col[3][2]
+    except AttributeError:
+        return
+    zToe = mToe.matrix.col[3][2]
+    zHeel = mHeel.matrix.col[3][2]
+
+    x = Vector(rmat.col[0])
+    y = Vector(rmat.col[1])
+    z = Vector(rmat.col[2])
+
+    if zHeel > zBall and zHeel > zToe:
+        # 1. foot.ik is flat
+        if abs(y[2]) > abs(z[2]):
+            y = -z
+        y[2] = 0
+    else:
+        # 2. foot.ik starts at heel
+        hHead = Vector(mHeel.matrix.col[3][:3])
+        y = tail - hHead
+
+    y.normalize()
+    x -= x.dot(y)*y
+    x.normalize()
+    z = x.cross(y)
+    head = tail - y * legIk.bone.length
+
+    # Create matrix
+    gmat = Matrix()
+    gmat.col[0][:3] = x
+    gmat.col[1][:3] = y
+    gmat.col[2][:3] = z
+    gmat.col[3][:3] = head
+    pmat = getPoseMatrix(gmat, legIk)
+
+    insertLocation(legIk, pmat, auto)
+    insertRotation(legIk, pmat, auto)
+
+
 def matchPoleTarget(pb, above, below, auto):
     x = Vector(above.matrix.col[1][:3])
     y = Vector(below.matrix.col[1][:3])
@@ -3963,7 +3893,6 @@ def matchPoseReverse(pb, src, auto):
     rmat.transpose()
     pmat = getPoseMatrix(rmat, pb)
     pb.matrix_basis = pmat
-    insertLocation(pb, pmat, auto)
     insertRotation(pb, pmat, auto)
 
 
@@ -3983,7 +3912,7 @@ def snapFkArm(context, data):
 
     print("Snap FK Arm%s" % suffix)
     snapFk,cnsFk = getSnapBones(rig, "ArmFK", suffix)
-    (uparmFk, loarmFk, elbowPtFk, handFk) = snapFk
+    (uparmFk, loarmFk, handFk) = snapFk
     muteConstraints(cnsFk, True)
     snapIk,cnsIk = getSnapBones(rig, "ArmIK", suffix)
     (uparmIk, loarmIk, elbow, elbowPt, handIk) = snapIk
@@ -4017,7 +3946,7 @@ def snapIkArm(context, data):
     snapIk,cnsIk = getSnapBones(rig, "ArmIK", suffix)
     (uparmIk, loarmIk, elbow, elbowPt, handIk) = snapIk
     snapFk,cnsFk = getSnapBones(rig, "ArmFK", suffix)
-    (uparmFk, loarmFk, elbowPtFk, handFk) = snapFk
+    (uparmFk, loarmFk, handFk) = snapFk
     muteConstraints(cnsIk, True)
 
     matchPoseTranslation(handIk, handFk, auto)
@@ -4025,8 +3954,8 @@ def snapIkArm(context, data):
 
     matchPoleTarget(elbowPt, uparmFk, loarmFk, auto)
 
-    matchPoseRotation(uparmIk, uparmFk, auto)
-    matchPoseRotation(loarmIk, loarmFk, auto)
+    #matchPoseRotation(uparmIk, uparmFk, auto)
+    #matchPoseRotation(loarmIk, loarmFk, auto)
 
     restoreSnapProp(rig, prop, old, context)
     #muteConstraints(cnsIk, False)
@@ -4042,9 +3971,9 @@ def snapFkLeg(context, data):
     snap,_ = getSnapBones(rig, "Leg", suffix)
     (upleg, loleg, foot, toe) = snap
     snapIk,cnsIk = getSnapBones(rig, "LegIK", suffix)
-    (uplegIk, lolegIk, kneePt, ankleIk, legIk, legFk, footRev, toeRev) = snapIk
+    (uplegIk, lolegIk, kneePt, ankleIk, legIk, footRev, toeRev, mBall, mToe, mHeel) = snapIk
     snapFk,cnsFk = getSnapBones(rig, "LegFK", suffix)
-    (uplegFk, lolegFk, kneePtFk, footFk, toeFk) = snapFk
+    (uplegFk, lolegFk, footFk, toeFk) = snapFk
     muteConstraints(cnsFk, True)
 
     matchPoseRotation(uplegFk, uplegIk, auto)
@@ -4071,25 +4000,26 @@ def snapIkLeg(context, data):
 
     print("Snap IK Leg%s" % suffix)
     snapIk,cnsIk = getSnapBones(rig, "LegIK", suffix)
-    (uplegIk, lolegIk, kneePt, ankleIk, legIk, legFk, footIk, toeIk) = snapIk
+    (uplegIk, lolegIk, kneePt, ankleIk, legIk, footRev, toeRev, mBall, mToe, mHeel) = snapIk
     snapFk,cnsFk = getSnapBones(rig, "LegFK", suffix)
-    (uplegFk, lolegFk, kneePtFk, footFk, toeFk) = snapFk
+    (uplegFk, lolegFk, footFk, toeFk) = snapFk
     muteConstraints(cnsIk, True)
 
     legIkToAnkle = rig["MhaLegIkToAnkle" + suffix]
     if legIkToAnkle:
         matchPoseTranslation(ankleIk, footFk, auto)
 
-    matchPoseTranslation(legIk, legFk, auto)
-    matchPoseRotation(legIk, legFk, auto)
+    #matchPoseTranslation(legIk, legFk, auto)
+    #matchPoseRotation(legIk, legFk, auto)
+    matchIkLeg(legIk, toeFk, mBall, mToe, mHeel, auto)
 
-    matchPoseReverse(toeIk, toeFk, auto)
-    matchPoseReverse(footIk, footFk, auto)
+    matchPoseReverse(toeRev, toeFk, auto)
+    matchPoseReverse(footRev, footFk, auto)
 
     matchPoleTarget(kneePt, uplegFk, lolegFk, auto)
 
-    matchPoseRotation(uplegIk, uplegFk, auto)
-    matchPoseRotation(lolegIk, lolegFk, auto)
+    #matchPoseRotation(uplegIk, uplegFk, auto)
+    #matchPoseRotation(lolegIk, lolegFk, auto)
 
     if not legIkToAnkle:
         matchPoseTranslation(ankleIk, footFk, auto)
@@ -4099,71 +4029,48 @@ def snapIkLeg(context, data):
     return
 
 
-"""
-#
-#   setInverse(rig, pb):
-#
-
-def setInverse(rig, pb):
-    rig.data.bones.active = pb.bone
-    pb.bone.select = True
-    bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.ops.object.mode_set(mode='POSE')
-    for cns in pb.constraints:
-        if cns.type == 'CHILD_OF':
-            bpy.ops.constraint.childof_set_inverse(constraint=cns.name, owner='BONE')
-    bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.ops.object.mode_set(mode='POSE')
-    return
-"""
-#
-#
-#
-
-SnapBonesAlpha7 = {
-    "Arm"   : ["UpArm", "LoArm", "Hand"],
-    "ArmFK" : ["UpArm", "LoArm", "ElbowPTFK", "Hand"],
-    "ArmIK" : ["UpArmIK", "LoArmIK", "Elbow", "ElbowPT", "Wrist"],
-    "Leg"   : ["UpLeg", "LoLeg", "Foot", "Toe"],
-    "LegFK" : ["UpLeg", "LoLeg", "KneePTFK", "Foot", "Toe"],
-    "LegIK" : ["UpLegIK", "LoLegIK", "KneePT", "Ankle", "LegIK", "LegFK", "FootRev", "ToeRev"],
-}
-
 SnapBonesAlpha8 = {
     "Arm"   : ["upper_arm", "forearm", "hand"],
-    "ArmFK" : ["upper_arm.fk", "forearm.fk", "elbow.pt.fk", "hand.fk"],
+    "ArmFK" : ["upper_arm.fk", "forearm.fk", "hand.fk"],
     "ArmIK" : ["upper_arm.ik", "forearm.ik", None, "elbow.pt.ik", "hand.ik"],
     "Leg"   : ["thigh", "shin", "foot", "toe"],
-    "LegFK" : ["thigh.fk", "shin.fk", "knee.pt.fk", "foot.fk", "toe.fk"],
-    "LegIK" : ["thigh.ik", "shin.ik", "knee.pt.ik", "ankle.ik", "foot.ik", "foot_helper", "foot.rev", "toe.rev"],
+    "LegFK" : ["thigh.fk", "shin.fk", "foot.fk", "toe.fk"],
+    "LegIK" : ["thigh.ik", "shin.ik", "knee.pt.ik", "ankle.ik", "foot.ik", "foot.rev", "toe.rev", "ball.marker", "toe.marker", "heel.marker"],
 }
+
 
 def getSnapBones(rig, key, suffix):
     try:
-        rig.pose.bones["UpLeg_L"]
-        names = SnapBonesAlpha7[key]
+        pb = rig.pose.bones["UpLeg_L"]
+    except KeyError:
+        pb = None
+
+    if pb is not None:
+        raise NameError("MakeHuman alpha 7 not supported after Blender 2.68")
+
+    try:
+        rig.pose.bones["thigh.fk.L"]
+        names = SnapBonesAlpha8[key]
+        suffix = '.' + suffix[1:]
     except KeyError:
         names = None
 
     if not names:
-        try:
-            rig.pose.bones["thigh.L"]
-            names = SnapBonesAlpha8[key]
-            suffix = '.' + suffix[1:]
-        except KeyError:
-            names = None
-
-    if not names:
         raise NameError("Not an mhx armature")
+
     pbones = []
     constraints = []
     for name in names:
         if name:
-            pb = rig.pose.bones[name+suffix]
+            try:
+                pb = rig.pose.bones[name+suffix]
+            except KeyError:
+                pb = None
             pbones.append(pb)
-            for cns in pb.constraints:
-                if cns.type == 'LIMIT_ROTATION' and not cns.mute:
-                    constraints.append(cns)
+            if pb is not None:
+                for cns in pb.constraints:
+                    if cns.type == 'LIMIT_ROTATION' and not cns.mute:
+                        constraints.append(cns)
         else:
             pbones.append(None)
     return tuple(pbones),constraints
@@ -4534,8 +4441,8 @@ MhxLayers = [
     (( 9,    'Tweak', 'MhxTweak'),
      (10,    'Head', 'MhxHead')),
     (( 1,    'FK Spine', 'MhxFKSpine'),
-     (17,    'IK Spine', 'MhxIKSpine')),
-    ((13,    'Inv FK Spine', 'MhxInvFKSpine'),
+     #(17,    'IK Spine', 'MhxIKSpine')),
+     #((13,    'Inv FK Spine', 'MhxInvFKSpine'),
      (16,    'Clothes', 'MhxClothes')),
     ('Left', 'Right'),
     (( 2,    'IK Arm', 'MhxIKArm'),
@@ -4688,6 +4595,7 @@ def register():
     bpy.types.Object.MhAlpha8 = BoolProperty(default=True)
     bpy.types.Object.MhxMesh = BoolProperty(default=False)
     bpy.types.Object.MhxRig = StringProperty(default="")
+    bpy.types.Object.MhxVisemeSet = StringProperty(default="")
     bpy.types.Object.MhxRigify = BoolProperty(default=False)
     bpy.types.Object.MhxSnapExact = BoolProperty(default=False)
     bpy.types.Object.MhxShapekeyDrivers = BoolProperty(default=True)
