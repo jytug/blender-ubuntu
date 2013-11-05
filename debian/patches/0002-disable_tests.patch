@@ -1,5 +1,5 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Fri, 15 Apr 2011 19:44:00 +0200
+Date: Tue, 5 Nov 2013 16:56:45 +0100
 Subject: disable_tests
 
 Added WITH_TESTS condition to implicitly disable.
@@ -8,11 +8,11 @@ Added WITH_TESTS condition to implicitly disable.
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/source/CMakeLists.txt b/source/CMakeLists.txt
-index 529aaac..eb1f32a 100644
+index 391fdf4..691a411 100644
 --- a/source/CMakeLists.txt
 +++ b/source/CMakeLists.txt
-@@ -33,4 +33,6 @@ if(WINDOWS)
- 	add_subdirectory(icons)
+@@ -29,4 +29,6 @@ if(WITH_GAMEENGINE)
+ 	add_subdirectory(gameengine)
  endif()
  
 -add_subdirectory(tests)

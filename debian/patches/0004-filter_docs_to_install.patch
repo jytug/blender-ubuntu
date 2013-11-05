@@ -1,5 +1,5 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Thu, 22 Dec 2011 18:13:03 +0100
+Date: Tue, 5 Nov 2013 17:14:41 +0100
 Subject: filter_docs_to_install
 
 Install only relevant documentation.
@@ -8,7 +8,7 @@ Install only relevant documentation.
  1 file changed, 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index e8bf9e9..6bed8d2 100644
+index a0661bf..3abbcc7 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -230,8 +230,6 @@ else()
@@ -19,4 +19,4 @@ index e8bf9e9..6bed8d2 100644
 -	${CMAKE_SOURCE_DIR}/release/text/Python-license.txt
  	${CMAKE_SOURCE_DIR}/release/text/copyright.txt
  	${CMAKE_SOURCE_DIR}/release/text/readme.html
- )
+ 	${CMAKE_SOURCE_DIR}/release/datafiles/LICENSE-bfont.ttf.txt

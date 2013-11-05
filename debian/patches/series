@@ -8,4 +8,3 @@
 0008-look_for_droid_ttf_with_fontconfig.patch
 0009-fix_illegal_hardware_instruction_due_to_SSE2.patch
 0010-fix_FTBFS_on_non-linux_architectures.patch
-0011-fix_PATH_MAX_issue.patch

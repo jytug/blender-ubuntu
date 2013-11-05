@@ -1,5 +1,5 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Mon, 29 Jul 2013 15:21:34 +0200
+Date: Tue, 5 Nov 2013 17:31:34 +0100
 Subject: locales_directory_install
 
 Change where locales are installed.
@@ -55,10 +55,10 @@ index 9649e5b..7f6e2d7 100644
  	else {
  		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index e0a34e3..1823849 100644
+index d4c5d5f..fdebfe1 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
-@@ -60,6 +60,7 @@ const char *BLI_get_folder_version(const int id, const int ver, const bool do_ch
+@@ -62,6 +62,7 @@ const char *BLI_get_folder_version(const int id, const int ver, const bool do_ch
  #define BLENDER_SYSTEM_DATAFILES    52
  #define BLENDER_SYSTEM_SCRIPTS      53
  #define BLENDER_SYSTEM_PYTHON       54
@@ -67,10 +67,10 @@ index e0a34e3..1823849 100644
  /* for BLI_get_folder_version only */
  #define BLENDER_RESOURCE_PATH_USER      0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 1e76a7f..3ce53cf 100644
+index d323098..8e6c999 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -1227,6 +1227,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
+@@ -1220,6 +1220,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
  			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
  			return NULL;
  
@@ -79,12 +79,12 @@ index 1e76a7f..3ce53cf 100644
 +
  		default:
  			BLI_assert(0);
- 	}
+ 			break;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 6bed8d2..4a80161 100644
+index 3abbcc7..5e1d95e 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -306,9 +306,9 @@ endif()
+@@ -314,9 +314,9 @@ endif()
  if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY

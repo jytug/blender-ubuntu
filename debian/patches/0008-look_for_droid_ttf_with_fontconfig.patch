@@ -18,10 +18,10 @@ Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
  7 files changed, 85 insertions(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b1a7830..0a58232 100644
+index 8863c03..6e1f284 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -641,6 +641,13 @@ if(UNIX AND NOT APPLE)
+@@ -663,6 +663,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -36,7 +36,7 @@ index b1a7830..0a58232 100644
  	if(WITH_CODEC_SNDFILE)
  		find_package_wrapper(SndFile)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 854609f..9324dec 100644
+index 7dac80a..5a2b5bb 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
 @@ -284,6 +284,9 @@ macro(setup_liblinks
@@ -117,10 +117,10 @@ index 57f442f..cd21778 100644
  	}
  
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index 0a6d95d..f9a66aa 100644
+index ca82086..fdba1ea 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
-@@ -80,6 +80,7 @@ bool   BLI_file_touch(const char *file);
+@@ -86,6 +86,7 @@ bool   BLI_file_touch(const char *file);
  
  int    BLI_file_gzip(const char *from, const char *to);
  char  *BLI_file_ungzip_to_mem(const char *from_file, int *size_r);
@@ -129,7 +129,7 @@ index 0a6d95d..f9a66aa 100644
  size_t BLI_file_descriptor_size(int file);
  size_t BLI_file_size(const char *file);
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index 26b9e08..f1198d5 100644
+index 5572656..9c72300 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
 @@ -159,6 +159,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
@@ -184,10 +184,10 @@ index 26b9e08..f1198d5 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 55e9ac5..9c060d3 100644
+index b234113..2659c7f 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -307,7 +307,6 @@ if(WITH_INTERNATIONAL)
+@@ -315,7 +315,6 @@ if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY
  			${CMAKE_SOURCE_DIR}/release/datafiles/locale/
