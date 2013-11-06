@@ -1,3 +1,17 @@
+blender (2.69-1) UNRELEASED; urgency=low
+
+  [ Ross Gammon ]
+  * debian/copyright: massive update (Closes: #683042)
+
+  [ Matteo F. Vescovi ]
+  * New upstream release
+    - debian/rules: Cycles' GPL license file removal dropped
+    - debian/patches/: patchset refreshed
+      - 0011-fix_PATH_MAX_issue.patch dropped (applied upstream)
+  * debian/control: OpenColorIO support added
+
+ -- Ross Gammon <rossgammon@mail.dk>  Wed, 06 Nov 2013 09:10:42 +0100
+
 blender (2.68a-4) unstable; urgency=low
 
   * debian/control: subversion b-dep dropped
