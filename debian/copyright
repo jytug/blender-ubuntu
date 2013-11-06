@@ -68,6 +68,7 @@ Copyright: 2001-2013, Blender Foundation
 License: GPL-2+
 
 Files: build_files/cmake/clang_array_check.py
+Copyright: 2012-2013, Campbell Burton
 License: Apache-2.0
 
 Files: build_files/cmake/Modules/*
@@ -522,7 +523,7 @@ License: LGPL-2.1+
 Files: intern/opencolorio/ocio_impl_glsl.cc
 Copyright: 2003-2010, Sony Pictures Imageworks Inc.
            2013, Blender Foundation
-License: License: BSD New (Sony)
+License: BSD New (Sony)
 
 Files: release/scripts/addons/io_export_unreal_psk_psa.py
 Copyright: None
@@ -557,15 +558,16 @@ Copyright: 2003, Bitstream, Inc.
            2005-2006, Pravin Satpute
            2005-2006, Sandeep Shedmake
 License: permissive
-Comment: Blender Main I18n font ("droidsans.ttf") includes glyphs imported from the following fonts:
+ Comment: Blender Main I18n font ("droidsans.ttf") includes glyphs imported
+ from the following fonts:
  1. DejaVu Sans
  2. Droid Sans Regular
  3. Samyak-devanagari
  4. Droid Sans Hebrew Regular
  5. Droid Sans Ethiopic Regular
  .
- These were merged using FontForge in (approximately) the above order. For each glyph,
- a license of the font from which it was imported is applied.
+ These were merged using FontForge in (approximately) the above order.
+ For each glyph, a license of the font from which it was imported is applied.
  .
  ----------------------------------------------------------------------
  Summary of Copyrights and Licenses
