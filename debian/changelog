@@ -1,4 +1,4 @@
-blender (2.69-2) UNRELEASED; urgency=low
+blender (2.69-2) unstable; urgency=low
 
   * debian/rules: -DFREETYPE_INCLUDE_DIRS variable set.
     This should fix the massive FTBFS on recent rebuilds.
@@ -7,7 +7,7 @@ blender (2.69-2) UNRELEASED; urgency=low
     this prevents Blender to build on those arches.
   * debian/control: Uploader e-mail address updated
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Thu, 05 Dec 2013 09:48:43 +0100
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Thu, 05 Dec 2013 09:49:36 +0100
 
 blender (2.69-1) unstable; urgency=low
 
