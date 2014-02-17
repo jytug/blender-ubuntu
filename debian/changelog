@@ -1,3 +1,13 @@
+blender (2.69-4) UNRELEASED; urgency=medium
+
+  * debian/patches/: patchset re-worked
+    - 0011-fix_FTBFS_on_armel.patch refreshed
+    - 0012-fix_FTBFS_on_unofficial_64bit_archs.patch added
+      Thanks to Aurelien Jarno (aurel32) for the hint. (Closes: #739118)
+  * debian/control: S-V bump 3.9.4 => 3.9.5 (no changes needed)
+
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Mon, 17 Feb 2014 14:35:10 +0100
+
 blender (2.69-3) unstable; urgency=low
 
   * debian/patches/: patchset updated
