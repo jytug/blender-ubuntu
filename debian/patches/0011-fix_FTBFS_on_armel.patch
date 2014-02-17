@@ -1,6 +1,6 @@
 From: Sergey Sharybin <sergey.vfx@gmail.com>
 Date: Thu, 12 Dec 2013 14:41:06 +0100
-Subject: fix_ftbfs_on_armel
+Subject: fix_FTBFS_on_armel
 
 ---
  intern/atomic/atomic_ops.h | 9 +++++++++
