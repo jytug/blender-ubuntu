@@ -1,12 +1,12 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Thu, 16 May 2013 10:42:38 +0200
+Date: Wed, 26 Feb 2014 15:15:51 +0100
 Subject: look_for_droid_ttf_with_fontconfig
 
  * Remove bad installation of fonts directory into locales.
  * Avoid using the droid font shipped with upstream source
    and use fontconfig to get it.
 
-Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
+Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
 ---
  CMakeLists.txt                                   |  7 ++++
  build_files/cmake/macros.cmake                   |  3 ++
@@ -14,11 +14,11 @@ Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
  source/blender/blenfont/intern/blf_translation.c | 23 +++++++++++++
  source/blender/blenlib/BLI_fileops.h             |  1 +
  source/blender/blenlib/intern/fileops.c          | 44 ++++++++++++++++++++++++
- source/creator/CMakeLists.txt                    |  1 -
- 7 files changed, 85 insertions(+), 1 deletion(-)
+ source/creator/CMakeLists.txt                    |  6 ----
+ 7 files changed, 85 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8863c03..6e1f284 100644
+index 3e7ac95..0f58189 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -663,6 +663,13 @@ if(UNIX AND NOT APPLE)
@@ -36,10 +36,10 @@ index 8863c03..6e1f284 100644
  	if(WITH_CODEC_SNDFILE)
  		find_package_wrapper(SndFile)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 7dac80a..5a2b5bb 100644
+index 28af1c1..e4ac326 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -284,6 +284,9 @@ macro(setup_liblinks
+@@ -307,6 +307,9 @@ macro(setup_liblinks
  	if(WITH_SYSTEM_GLEW)
  		target_link_libraries(${target} ${GLEW_LIBRARY})
  	endif()
@@ -68,10 +68,10 @@ index 2debe51..b75cf9d 100644
  
  blender_add_lib(bf_blenfont "${SRC}" "${INC}" "${INC_SYS}")
 diff --git a/source/blender/blenfont/intern/blf_translation.c b/source/blender/blenfont/intern/blf_translation.c
-index 57f442f..cd21778 100644
+index dc9baf8..8d688c5 100644
 --- a/source/blender/blenfont/intern/blf_translation.c
 +++ b/source/blender/blenfont/intern/blf_translation.c
-@@ -47,7 +47,11 @@
+@@ -50,7 +50,11 @@
  
  #include "boost_locale_wrapper.h"
  
@@ -83,7 +83,7 @@ index 57f442f..cd21778 100644
  static unsigned char *unifont_ttf = NULL;
  static int unifont_size = 0;
  static const char unifont_mono_filename[] = "bmonofont-i18n.ttf.gz";
-@@ -59,6 +63,24 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
+@@ -62,6 +66,24 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
  {
  #ifdef WITH_INTERNATIONAL
  	if (unifont_ttf == NULL) {
@@ -108,7 +108,7 @@ index 57f442f..cd21778 100644
  		const char * const fontpath = BLI_get_folder(BLENDER_DATAFILES, "fonts");
  		if (fontpath) {
  			char unifont_path[1024];
-@@ -69,6 +91,7 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
+@@ -72,6 +94,7 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
  		}
  		else {
  			printf("%s: 'fonts' data path not found for international font, continuing\n", __func__);
@@ -184,14 +184,19 @@ index 5572656..9c72300 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index b234113..2659c7f 100644
+index 82a86fe..fbfe4be 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -315,7 +315,6 @@ if(WITH_INTERNATIONAL)
- 	install(
- 		DIRECTORY
- 			${CMAKE_SOURCE_DIR}/release/datafiles/locale/
+@@ -316,12 +316,6 @@ endif()
+ 
+ # localization
+ if(WITH_INTERNATIONAL)
+-	install(
+-		DIRECTORY
 -			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
- 		DESTINATION ${CMAKE_INSTALL_PREFIX}/share/locale
- 		PATTERN ".svn" EXCLUDE
- 	)
+-		DESTINATION ${CMAKE_INSTALL_PREFIX}/share/locale
+-	)
+-
+ 	set(_locale_dir "${CMAKE_SOURCE_DIR}/release/datafiles/locale")
+ 	set(_locale_target_dir ${CMAKE_INSTALL_PREFIX}/share/locale)
+ 

@@ -1,4 +1,4 @@
-From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
+From: "Matteo F. Vescovi" <mfvescovi@gmail.com>
 Date: Tue, 20 Aug 2013 12:14:30 +0200
 Subject: fix_FTBFS_on_non-linux_architectures
 
@@ -8,10 +8,10 @@ Subject: fix_FTBFS_on_non-linux_architectures
  2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 6e1f284..d7ef86e 100644
+index 0f58189..c0ee39f 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -921,6 +921,9 @@ if(UNIX AND NOT APPLE)
+@@ -931,6 +931,9 @@ if(UNIX AND NOT APPLE)
  	endif()
  
  	set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -pthread")
@@ -22,10 +22,10 @@ index 6e1f284..d7ef86e 100644
  	# lfs on glibc, all compilers should use
  	add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE)
 diff --git a/source/blender/blenlib/BLI_sys_types.h b/source/blender/blenlib/BLI_sys_types.h
-index e544006..4de1ddc 100644
+index b7a70a8..e35086d 100644
 --- a/source/blender/blenlib/BLI_sys_types.h
 +++ b/source/blender/blenlib/BLI_sys_types.h
-@@ -82,7 +82,7 @@ typedef unsigned long uintptr_t;
+@@ -167,7 +167,7 @@ typedef unsigned long uintptr_t;
  #define _UINTPTR_T_DEFINED
  #endif
  

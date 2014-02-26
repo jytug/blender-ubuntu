@@ -9,7 +9,7 @@ without version numbers.
 Contributions by:
  Antonio Ospite <ospite@studenti.unina.it>
 
-Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
+Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
 ---
  intern/ghost/intern/GHOST_SystemPathsX11.cpp | 3 +++
  source/creator/CMakeLists.txt                | 2 +-
@@ -30,10 +30,10 @@ index e2d9733..ec0e691 100644
  	if (static_path) {
  		static string system_path = string(static_path) + "/blender/" + versionstr;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index aa717ed..b234113 100644
+index 96b3e17..82a86fe 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -253,7 +253,7 @@ if(UNIX AND NOT APPLE)
+@@ -257,7 +257,7 @@ if(UNIX AND NOT APPLE)
  		if(WITH_PYTHON_MODULE)
  			set(TARGETDIR_VER ${PYTHON_LIBPATH}/python${PYTHON_VERSION}/site-packages/${BLENDER_VERSION})
  		else()

@@ -1,17 +1,17 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Mon, 30 Jul 2012 10:53:09 +0200
+Date: Mon, 24 Feb 2014 17:43:49 +0100
 Subject: blender_thumbnailer
 
 * Move thumbnailer script to an appropriate destination
 * Add blender.thumbnailer file
 * Change to python 3.3 since lintian is messing around with that
 
-Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
+Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
 ---
  blender.thumbnailer                | 4 ++++
- release/bin/blender-thumbnailer.py | 4 ++--
+ release/bin/blender-thumbnailer.py | 2 +-
  source/creator/CMakeLists.txt      | 2 +-
- 3 files changed, 7 insertions(+), 3 deletions(-)
+ 3 files changed, 6 insertions(+), 2 deletions(-)
  create mode 100644 blender.thumbnailer
 
 diff --git a/blender.thumbnailer b/blender.thumbnailer
@@ -25,29 +25,20 @@ index 0000000..05d4fae
 +Exec=/usr/share/blender/scripts/blender-thumbnailer.py %i %o
 +MimeType=application/x-blender;
 diff --git a/release/bin/blender-thumbnailer.py b/release/bin/blender-thumbnailer.py
-index 8b93eeb..ca4a38c 100755
+index 91aeb7a..10b292f 100755
 --- a/release/bin/blender-thumbnailer.py
 +++ b/release/bin/blender-thumbnailer.py
 @@ -1,4 +1,4 @@
--#!/usr/bin/python
-+#!/usr/bin/python3
+-#!/usr/bin/env python
++#!/usr/bin/env python3
  
  # ##### BEGIN GPL LICENSE BLOCK #####
  #
-@@ -24,7 +24,7 @@
- Thumbnailer runs with python 2.6 and 3.x.
- To run automatically with nautilus:
-    gconftool --type boolean --set /desktop/gnome/thumbnailers/application@x-blender/enable true
--   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "blender-thumbnailer.py %u %o"
-+   gconftool --type string --set /desktop/gnome/thumbnailers/application@x-blender/command "/usr/share/blender/scripts/blender-thumbnailer.py %i %o"
- """
- 
- import struct
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index b24339c..af4799f 100644
+index 4d12040..a99a9c6 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -414,7 +414,7 @@ if(UNIX AND NOT APPLE)
+@@ -453,7 +453,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py

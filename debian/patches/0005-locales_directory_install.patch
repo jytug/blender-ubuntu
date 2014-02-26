@@ -1,5 +1,5 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Tue, 5 Nov 2013 17:31:34 +0100
+Date: Wed, 26 Feb 2014 14:46:09 +0100
 Subject: locales_directory_install
 
 Change where locales are installed.
@@ -7,7 +7,7 @@ Change where locales are installed.
 Contributions by:
  Antonio Ospite <ospite@studenti.unina.it>
 
-Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
+Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
 ---
  source/blender/blenfont/intern/blf_lang.c | 10 +++++-----
  source/blender/blenlib/BLI_path_util.h    |  1 +
@@ -16,10 +16,10 @@ Signed-off-by: Matteo F. Vescovi <mfv.debian@gmail.com>
  4 files changed, 11 insertions(+), 7 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 9649e5b..7f6e2d7 100644
+index 623d8b7..37c9c2a 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
-@@ -76,9 +76,9 @@ static void free_locales(void)
+@@ -78,9 +78,9 @@ static void free_locales(void)
  	num_locales = num_locales_menu = 0;
  }
  
@@ -31,7 +31,7 @@ index 9649e5b..7f6e2d7 100644
  	char languages[FILE_MAX];
  	LinkNode *lines = NULL, *line;
  	char *str;
-@@ -86,7 +86,7 @@ static void fill_locales(void)
+@@ -88,7 +88,7 @@ static void fill_locales(void)
  
  	free_locales();
  
@@ -40,7 +40,7 @@ index 9649e5b..7f6e2d7 100644
  	line = lines = BLI_file_read_as_lines(languages);
  
  	/* This whole "parsing" code is a bit weak, in that it expects strictly formated input file...
-@@ -186,11 +186,11 @@ EnumPropertyItem *BLF_RNA_lang_enum_properties(void)
+@@ -188,11 +188,11 @@ EnumPropertyItem *BLF_RNA_lang_enum_properties(void)
  void BLF_lang_init(void)
  {
  #ifdef WITH_INTERNATIONAL
@@ -55,7 +55,7 @@ index 9649e5b..7f6e2d7 100644
  	else {
  		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index d4c5d5f..fdebfe1 100644
+index efc5731..9774af2 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
 @@ -62,6 +62,7 @@ const char *BLI_get_folder_version(const int id, const int ver, const bool do_ch
@@ -67,10 +67,10 @@ index d4c5d5f..fdebfe1 100644
  /* for BLI_get_folder_version only */
  #define BLENDER_RESOURCE_PATH_USER      0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index d323098..8e6c999 100644
+index e56ac6f..8be23d6 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -1220,6 +1220,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
+@@ -1210,6 +1210,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
  			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
  			return NULL;
  
@@ -81,18 +81,20 @@ index d323098..8e6c999 100644
  			BLI_assert(0);
  			break;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 3abbcc7..5e1d95e 100644
+index 1abd078..0000316 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -314,9 +314,9 @@ endif()
- if(WITH_INTERNATIONAL)
+@@ -319,11 +319,11 @@ if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY
--			${CMAKE_SOURCE_DIR}/release/datafiles/locale
-+			${CMAKE_SOURCE_DIR}/release/datafiles/locale/
  			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
 -		DESTINATION ${TARGETDIR_VER}/datafiles
 +		DESTINATION ${CMAKE_INSTALL_PREFIX}/share/locale
- 		PATTERN ".svn" EXCLUDE
  	)
- endif()
+ 
+ 	set(_locale_dir "${CMAKE_SOURCE_DIR}/release/datafiles/locale")
+-	set(_locale_target_dir ${TARGETDIR_VER}/datafiles/locale)
++	set(_locale_target_dir ${CMAKE_INSTALL_PREFIX}/share/locale)
+ 
+ 	file(GLOB _po_files "${_locale_dir}/po/*.po")
+ 	foreach(_po_file ${_po_files})

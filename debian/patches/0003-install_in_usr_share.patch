@@ -1,5 +1,5 @@
-From: "Matteo F. Vescovi" <mfv.debian@gmail.com>
-Date: Sat, 28 Apr 2012 10:50:34 +0200
+From: "Matteo F. Vescovi" <mfvescovi@gmail.com>
+Date: Mon, 24 Feb 2014 17:45:50 +0100
 Subject: install_in_usr_share
 
  * Arch-specific files go to /usr/share
@@ -9,10 +9,10 @@ Subject: install_in_usr_share
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index af4799f..a0661bf 100644
+index a99a9c6..52c4420 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -300,8 +300,8 @@ if(WITH_PYTHON)
+@@ -304,8 +304,8 @@ if(WITH_PYTHON)
  	endif()
  
  	install(
@@ -20,6 +20,6 @@ index af4799f..a0661bf 100644
 -		DESTINATION ${TARGETDIR_VER}
 +		DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts/
 +		DESTINATION ${CMAKE_INSTALL_PREFIX}/share/blender/scripts/
- 		PATTERN ".svn" EXCLUDE
+ 		PATTERN ".git" EXCLUDE
  		PATTERN "__pycache__" EXCLUDE
  		PATTERN "${ADDON_EXCLUDE_CONDITIONAL}" EXCLUDE
