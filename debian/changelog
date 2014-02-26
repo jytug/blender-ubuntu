@@ -1,4 +1,4 @@
-blender (2.69+git20140225.cef73d54-1) UNRELEASED; urgency=medium
+blender (2.69+git20140225.cef73d54-1) experimental; urgency=low
 
   * Upstream snapshot (based on commit ef73d54) (Closes: #739238)
     - debian/control: b-dep bump libavcodec-dev (>> 6:10~beta1)
@@ -9,7 +9,7 @@ blender (2.69+git20140225.cef73d54-1) UNRELEASED; urgency=medium
   * debian/control: OpenColorIO support added
   * debian/gbp.conf: compression bzip2 => xz
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Wed, 26 Feb 2014 16:52:15 +0100
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Wed, 26 Feb 2014 16:54:34 +0100
 
 blender (2.69-4) unstable; urgency=medium
 
