@@ -318,9 +318,11 @@ void          modifier_free(struct ModifierData *md);
 
 void          modifier_unique_name(struct ListBase *modifiers, struct ModifierData *md);
 
+void          modifier_copyData_generic(const struct ModifierData *md, struct ModifierData *target);
 void          modifier_copyData(struct ModifierData *md, struct ModifierData *target);
 bool          modifier_dependsOnTime(struct ModifierData *md);
 bool          modifier_supportsMapping(struct ModifierData *md);
+bool          modifier_supportsCage(struct Scene *scene, struct ModifierData *md);
 bool          modifier_couldBeCage(struct Scene *scene, struct ModifierData *md);
 bool          modifier_isCorrectableDeformed(struct ModifierData *md);
 bool          modifier_isSameTopology(ModifierData *md);
@@ -357,6 +359,7 @@ bool          modifiers_usesArmature(struct Object *ob, struct bArmature *arm);
 bool          modifiers_isCorrectableDeformed(struct Scene *scene, struct Object *ob);
 void          modifier_freeTemporaryData(struct ModifierData *md);
 bool          modifiers_isPreview(struct Object *ob);
+void          modifier_skin_customdata_ensure(struct Object *ob);
 
 typedef struct CDMaskLink {
 	struct CDMaskLink *next;

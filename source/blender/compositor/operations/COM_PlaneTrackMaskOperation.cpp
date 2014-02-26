@@ -28,11 +28,11 @@
 #include "BLI_math_color.h"
 
 extern "C" {
-	#include "BLI_jitter.h"
+#  include "BLI_jitter.h"
 
-	#include "BKE_movieclip.h"
-	#include "BKE_node.h"
-	#include "BKE_tracking.h"
+#  include "BKE_movieclip.h"
+#  include "BKE_node.h"
+#  include "BKE_tracking.h"
 }
 
 PlaneTrackMaskOperation::PlaneTrackMaskOperation() : PlaneTrackCommonOperation()
@@ -50,7 +50,7 @@ void PlaneTrackMaskOperation::initExecution()
 	BLI_jitter_init(this->m_jitter[0], this->m_osa);
 }
 
-void PlaneTrackMaskOperation::executePixel(float output[4], float x, float y, PixelSampler sampler)
+void PlaneTrackMaskOperation::executePixelSampled(float output[4], float x, float y, PixelSampler sampler)
 {
 	float point[2];
 

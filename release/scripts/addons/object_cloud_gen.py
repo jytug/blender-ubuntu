@@ -27,8 +27,7 @@ bl_info = {
     "description": "Creates Volumetric Clouds",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"
                 "Scripts/Object/Cloud_Gen",
-    "tracker_url": "https://projects.blender.org/tracker/index.php?"
-                   "func=detail&aid=22015",
+    "tracker_url": "https://developer.blender.org/T22015",
     "category": "Object"}
 
 import bpy
@@ -301,6 +300,7 @@ def getActionToDo(obj):
 class VIEW3D_PT_tools_cloud(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
+    bl_category = 'Create'
     bl_label = "Cloud Generator"
     bl_context = "objectmode"
     bl_options = {'DEFAULT_CLOSED'}

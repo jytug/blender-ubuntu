@@ -137,13 +137,23 @@ const GLubyte stipple_diag_stripes_neg[128] = {
 	0x0f, 0xf0, 0x0f, 0xf0, 0x1f, 0xe0, 0x1f, 0xe0,
 	0x3f, 0xc0, 0x3f, 0xc0, 0x7f, 0x80, 0x7f, 0x80};
 
+const GLubyte stipple_checker_8px[128] = {
+	255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
+	255,  0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
+	0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
+	0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
+	255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
+	255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
+	0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
+	0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255};
+
 
 void fdrawbezier(float vec[4][3])
 {
 	float dist;
 	float curve_res = 24, spline_step = 0.0f;
 	
-	dist = 0.5f * ABS(vec[0][0] - vec[3][0]);
+	dist = 0.5f * fabsf(vec[0][0] - vec[3][0]);
 	
 	/* check direction later, for top sockets */
 	vec[1][0] = vec[0][0] + dist;
@@ -204,22 +214,12 @@ void fdrawcheckerboard(float x1, float y1, float x2, float y2)
 {
 	unsigned char col1[4] = {40, 40, 40}, col2[4] = {50, 50, 50};
 
-	GLubyte checker_stipple[32 * 32 / 8] = {
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255,  0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
-		0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0,
-		0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
-		0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255};
-	
 	glColor3ubv(col1);
 	glRectf(x1, y1, x2, y2);
 	glColor3ubv(col2);
 
 	glEnable(GL_POLYGON_STIPPLE);
-	glPolygonStipple(checker_stipple);
+	glPolygonStipple(stipple_checker_8px);
 	glRectf(x1, y1, x2, y2);
 	glDisable(GL_POLYGON_STIPPLE);
 }
@@ -531,7 +531,7 @@ void glaDrawPixelsTexScaled(float x, float y, int img_w, int img_h, int format, 
 		components = 4;
 	else if (format == GL_RGB)
 		components = 3;
-	else if (format == GL_LUMINANCE)
+	else if (ELEM(format,  GL_LUMINANCE, GL_ALPHA))
 		components = 1;
 	else {
 		BLI_assert(!"Incompatible format passed to glaDrawPixelsTexScaled");
@@ -874,7 +874,7 @@ void bglBegin(int mode)
 		glGetFloatv(GL_POINT_SIZE_RANGE, value);
 		if (value[1] < 2.0f) {
 			glGetFloatv(GL_POINT_SIZE, value);
-			pointhack = floor(value[0] + 0.5f);
+			pointhack = iroundf(value[0]);
 			if (pointhack > 4) pointhack = 4;
 		}
 		else {
@@ -981,7 +981,9 @@ void bgl_get_mats(bglMats *mats)
 
 /* *************** glPolygonOffset hack ************* */
 
-/* dist is only for ortho now... */
+/**
+ * \note \a viewdist is only for ortho at the moment.
+ */
 void bglPolygonOffset(float viewdist, float dist) 
 {
 	static float winmat[16], offset = 0.0;
@@ -1042,47 +1044,11 @@ void glaDrawImBuf_glsl(ImBuf *ibuf, float x, float y, int zoomfilter,
 	if (ibuf->rect == NULL && ibuf->rect_float == NULL)
 		return;
 
-	/* Dithering is not supported on GLSL yet */
-	force_fallback |= ibuf->dither != 0.0f;
-
 	/* Single channel images could not be transformed using GLSL yet */
 	force_fallback |= ibuf->channels == 1;
 
 	/* If user decided not to use GLSL, fallback to glaDrawPixelsAuto */
 	force_fallback |= (U.image_draw_method != IMAGE_DRAW_METHOD_GLSL);
-
-	/* This is actually lots of crap, but currently not sure about
-	 * more clear way to bypass partial buffer update crappyness
-	 * while rendering.
-	 *
-	 * The thing is -- render engines are only updating byte and
-	 * display buffers for active render result opened in image
-	 * editor. This works fine to show render progress without
-	 * switching render layers in image editor user, but this is
-	 * completely useless for GLSL display, where we need to have
-	 * original buffer which we could color manage.
-	 *
-	 * For the time of rendering, we'll stick back to slower CPU
-	 * display buffer update. GLSL could be used as soon as some
-	 * fixes (?) are done in render itself, so we'll always have
-	 * image buffer with relevant float buffer opened while
-	 * rendering.
-	 *
-	 * On the other hand, when using Cycles, stressing GPU with
-	 * GLSL could backfire on a performance.
-	 *                                         - sergey -
-	 */
-	if (G.is_rendering) {
-		/* Try to detect whether we're drawing render result,
-		 * other images could have both rect and rect_float
-		 * but they'll be synchronized
-		 */
-		if (ibuf->rect_float && ibuf->rect &&
-		    ((ibuf->mall & IB_rectfloat) == 0))
-		{
-			force_fallback = true;
-		}
-	}
 
 	/* Try to draw buffer using GLSL display transform */
 	if (force_fallback == false) {
@@ -1092,17 +1058,17 @@ void glaDrawImBuf_glsl(ImBuf *ibuf, float x, float y, int zoomfilter,
 			if (ibuf->float_colorspace) {
 				ok = IMB_colormanagement_setup_glsl_draw_from_space(view_settings, display_settings,
 				                                                    ibuf->float_colorspace,
-				                                                    true, false);
+				                                                    ibuf->dither, true);
 			}
 			else {
 				ok = IMB_colormanagement_setup_glsl_draw(view_settings, display_settings,
-				                                         true, false);
+				                                         ibuf->dither, true);
 			}
 		}
 		else {
 			ok = IMB_colormanagement_setup_glsl_draw_from_space(view_settings, display_settings,
 			                                                    ibuf->rect_colorspace,
-			                                                    false, false);
+			                                                    ibuf->dither, false);
 		}
 
 		if (ok) {
@@ -1159,4 +1125,11 @@ void glaDrawImBuf_glsl_ctx(const bContext *C, ImBuf *ibuf, float x, float y, int
 	IMB_colormanagement_display_settings_from_ctx(C, &view_settings, &display_settings);
 
 	glaDrawImBuf_glsl(ibuf, x, y, zoomfilter, view_settings, display_settings);
+}
+
+void cpack(unsigned int x)
+{
+	glColor3ub( ( (x)        & 0xFF),
+	            (((x) >>  8) & 0xFF),
+	            (((x) >> 16) & 0xFF) );
 }

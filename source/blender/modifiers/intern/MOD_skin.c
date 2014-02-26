@@ -76,6 +76,7 @@
 #include "BKE_deform.h"
 #include "BKE_DerivedMesh.h"
 #include "BKE_mesh.h"
+#include "BKE_mesh_mapping.h"
 #include "BKE_modifier.h"
 
 #include "bmesh.h"
@@ -140,8 +141,8 @@ static void add_poly(SkinOutput *so,
 
 /***************************** Convex Hull ****************************/
 
-static int is_quad_symmetric(BMVert *quad[4],
-                             const SkinModifierData *smd)
+static bool is_quad_symmetric(BMVert *quad[4],
+                              const SkinModifierData *smd)
 {
 	const float threshold = 0.0001f;
 	const float threshold_squared = threshold * threshold;
@@ -310,10 +311,10 @@ static int build_hull(SkinOutput *so, Frame **frames, int totframe)
 	/* Check if removing triangles above will create wire triangles,
 	 * mark them too */
 	BMO_ITER (e, &oiter, op.slots_out, "geom.out", BM_EDGE) {
-		int is_wire = TRUE;
+		bool is_wire = true;
 		BM_ITER_ELEM (f, &iter, e, BM_FACES_OF_EDGE) {
 			if (!BM_elem_flag_test(f, BM_ELEM_TAG)) {
-				is_wire = FALSE;
+				is_wire = false;
 				break;
 			}
 		}
@@ -323,9 +324,7 @@ static int build_hull(SkinOutput *so, Frame **frames, int totframe)
 
 	BMO_op_finish(bm, &op);
 
-	BMO_op_callf(bm, BMO_FLAG_DEFAULTS,
-	             "delete geom=%hef context=%i",
-	             BM_ELEM_TAG, DEL_ONLYTAGGED);
+	BM_mesh_delete_hflag_tagged(bm, BM_ELEM_TAG, BM_EDGE | BM_FACE);
 
 	return TRUE;
 }
@@ -754,10 +753,13 @@ static EMat *build_edge_mats(const MVertSkin *vs,
 static int calc_edge_subdivisions(const MVert *mvert, const MVertSkin *nodes,
                                   const MEdge *e, int *degree)
 {
+	/* prevent memory errors [#38003] */
+#define NUM_SUBDIVISIONS_MAX 128
+
 	const MVertSkin *evs[2] = {&nodes[e->v1], &nodes[e->v2]};
-	float edge_len, avg[2];
-	int v1_branch = degree[e->v1] > 2;
-	int v2_branch = degree[e->v2] > 2;
+	float avg_radius;
+	const bool v1_branch = degree[e->v1] > 2;
+	const bool v2_branch = degree[e->v2] > 2;
 	int num_subdivisions;
 
 	/* If either end is a branch node marked 'loose', don't subdivide
@@ -771,11 +773,23 @@ static int calc_edge_subdivisions(const MVert *mvert, const MVertSkin *nodes,
 			return 0;
 	}
 
-	edge_len = len_v3v3(mvert[e->v1].co, mvert[e->v2].co);
+	avg_radius = half_v2(evs[0]->radius) + half_v2(evs[1]->radius);
 
-	avg[0] = half_v2(evs[0]->radius);
-	avg[1] = half_v2(evs[1]->radius);
-	num_subdivisions = (int)((float)edge_len / (avg[0] + avg[1]));
+	if (avg_radius != 0.0f) {
+		/* possible (but unlikely) that we overflow INT_MAX */
+		float num_subdivisions_fl;
+		const float edge_len = len_v3v3(mvert[e->v1].co, mvert[e->v2].co);
+		num_subdivisions_fl = (edge_len / avg_radius);
+		if (num_subdivisions_fl < NUM_SUBDIVISIONS_MAX) {
+			num_subdivisions = (int)num_subdivisions_fl;
+		}
+		else {
+			num_subdivisions = NUM_SUBDIVISIONS_MAX;
+		}
+	}
+	else {
+		num_subdivisions = 0;
+	}
 
 	/* If both ends are branch nodes, two intermediate nodes are
 	 * required */
@@ -783,6 +797,8 @@ static int calc_edge_subdivisions(const MVert *mvert, const MVertSkin *nodes,
 		num_subdivisions = 2;
 
 	return num_subdivisions;
+
+#undef NUM_SUBDIVISIONS_MAX
 }
 
 /* Take a DerivedMesh and subdivide its edges to keep skin nodes
@@ -1425,11 +1441,10 @@ static void hull_merge_triangles(SkinOutput *so, const SkinModifierData *smd)
 		}
 	}
 
-	BMO_op_callf(so->bm, BMO_FLAG_DEFAULTS,
-	             "delete geom=%hef context=%i",
-	             BM_ELEM_TAG, DEL_ONLYTAGGED);
-
 	BLI_heap_free(heap, NULL);
+
+	BM_mesh_delete_hflag_tagged(so->bm, BM_ELEM_TAG, BM_EDGE | BM_FACE);
+
 }
 
 static void skin_merge_close_frame_verts(SkinNode *skin_nodes, int totvert,
@@ -1789,7 +1804,7 @@ static DerivedMesh *base_skin(DerivedMesh *origdm,
 	if (!bm)
 		return NULL;
 	
-	result = CDDM_from_bmesh(bm, FALSE);
+	result = CDDM_from_bmesh(bm, false);
 	BM_mesh_free(bm);
 
 	CDDM_calc_edges(result);
@@ -1834,10 +1849,11 @@ static void initData(ModifierData *md)
 
 static void copyData(ModifierData *md, ModifierData *target)
 {
+#if 0
 	SkinModifierData *smd = (SkinModifierData *) md;
 	SkinModifierData *tsmd = (SkinModifierData *) target;
-
-	*tsmd = *smd;
+#endif
+	modifier_copyData_generic(md, target);
 }
 
 static DerivedMesh *applyModifier(ModifierData *md,

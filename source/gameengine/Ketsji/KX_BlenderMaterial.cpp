@@ -129,13 +129,13 @@ KX_BlenderMaterial::~KX_BlenderMaterial()
 		OnExit();
 }
 
-MTFace* KX_BlenderMaterial::GetMTFace(void) const 
+MTFace* KX_BlenderMaterial::GetMTFace() const
 {
 	// fonts on polys
 	return &mMaterial->tface;
 }
 
-unsigned int* KX_BlenderMaterial::GetMCol(void) const 
+unsigned int* KX_BlenderMaterial::GetMCol() const
 {
 	// fonts on polys
 	return mMaterial->rgb;
@@ -968,7 +968,7 @@ KX_PYMETHODDEF_DOC( KX_BlenderMaterial, setTexture , "setTexture( index, tex)")
 	return NULL;
 }
 
-static unsigned int GL_array[11] = {
+static const unsigned int GL_array[11] = {
 	GL_ZERO,
 	GL_ONE,
 	GL_SRC_COLOR,

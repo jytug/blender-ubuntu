@@ -36,7 +36,6 @@
 #include "BLI_blenlib.h"
 #include "BLI_bitmap.h"
 #include "BLI_math.h"
-#include "BLI_utildefines.h"
 
 #include "DNA_material_types.h"
 #include "DNA_mesh_types.h"
@@ -82,8 +81,8 @@ typedef struct drawMeshFaceSelect_userData {
 
 typedef struct drawEMTFMapped_userData {
 	BMEditMesh *em;
-	short has_mcol;
-	short has_mtface;
+	bool has_mcol;
+	bool has_mtface;
 	MFace *mf;
 	MTFace *tf;
 } drawEMTFMapped_userData;
@@ -170,7 +169,7 @@ void draw_mesh_face_select(RegionView3D *rv3d, Mesh *me, DerivedMesh *dm)
 
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
-	bglPolygonOffset(rv3d->dist, 1.0);
+	ED_view3d_polygon_offset(rv3d, 1.0);
 
 	/* Draw (Hidden) Edges */
 	setlinestyle(1);
@@ -188,7 +187,7 @@ void draw_mesh_face_select(RegionView3D *rv3d, Mesh *me, DerivedMesh *dm)
 		glDisable(GL_BLEND);
 	}
 	
-	bglPolygonOffset(rv3d->dist, 1.0);
+	ED_view3d_polygon_offset(rv3d, 1.0);
 
 	/* Draw Stippled Outline for selected faces */
 	glColor3ub(255, 255, 255);
@@ -196,7 +195,7 @@ void draw_mesh_face_select(RegionView3D *rv3d, Mesh *me, DerivedMesh *dm)
 	dm->drawMappedEdges(dm, draw_mesh_face_select__setSelectOpts, &data);
 	setlinestyle(0);
 
-	bglPolygonOffset(rv3d->dist, 0.0);  /* resets correctly now, even after calling accumulated offsets */
+	ED_view3d_polygon_offset(rv3d, 0.0);  /* resets correctly now, even after calling accumulated offsets */
 
 	MEM_freeN(data.edge_flags);
 }
@@ -345,7 +344,10 @@ static void draw_textured_begin(Scene *scene, View3D *v3d, RegionView3D *rv3d, O
 	else {
 		/* draw with lights in the scene otherwise */
 		solidtex = false;
-		Gtexdraw.is_lit = GPU_scene_object_lights(scene, ob, v3d->lay, rv3d->viewmat, !rv3d->is_persp);
+		if (v3d->flag2 & V3D_SHADELESS_TEX)
+			Gtexdraw.is_lit = 0;
+		else
+			Gtexdraw.is_lit = GPU_scene_object_lights(scene, ob, v3d->lay, rv3d->viewmat, !rv3d->is_persp);
 	}
 	
 	rgba_float_to_uchar(obcol, ob->col);
@@ -390,7 +392,7 @@ static void draw_textured_end(void)
 	glPopMatrix();
 }
 
-static DMDrawOption draw_tface__set_draw_legacy(MTFace *tface, int has_mcol, int matnr)
+static DMDrawOption draw_tface__set_draw_legacy(MTFace *tface, const bool has_mcol, int matnr)
 {
 	Material *ma = give_current_material(Gtexdraw.ob, matnr + 1);
 	bool invalidtexture = false;
@@ -431,7 +433,7 @@ static DMDrawOption draw_tface__set_draw_legacy(MTFace *tface, int has_mcol, int
 	}
 }
 
-static DMDrawOption draw_mcol__set_draw_legacy(MTFace *UNUSED(tface), int has_mcol, int UNUSED(matnr))
+static DMDrawOption draw_mcol__set_draw_legacy(MTFace *UNUSED(tface), const bool has_mcol, int UNUSED(matnr))
 {
 	if (has_mcol)
 		return DM_DRAW_OPTION_NORMAL;
@@ -439,7 +441,7 @@ static DMDrawOption draw_mcol__set_draw_legacy(MTFace *UNUSED(tface), int has_mc
 		return DM_DRAW_OPTION_NO_MCOL;
 }
 
-static DMDrawOption draw_tface__set_draw(MTFace *tface, int UNUSED(has_mcol), int matnr)
+static DMDrawOption draw_tface__set_draw(MTFace *tface, const bool UNUSED(has_mcol), int matnr)
 {
 	Material *ma = give_current_material(Gtexdraw.ob, matnr + 1);
 
@@ -571,7 +573,7 @@ static DMDrawOption draw_em_tf_mapped__set_draw(void *userData, int index)
 	if (UNLIKELY(index >= em->bm->totface))
 		return DM_DRAW_OPTION_NORMAL;
 
-	efa = EDBM_face_at_index(em, index);
+	efa = BM_face_at_index(em->bm, index);
 
 	if (BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
 		return DM_DRAW_OPTION_SKIP;
@@ -933,7 +935,7 @@ static bool tex_mat_set_face_editmesh_cb(void *userData, int index)
 	if (UNLIKELY(index >= em->bm->totface))
 		return DM_DRAW_OPTION_NORMAL;
 
-	efa = EDBM_face_at_index(em, index);
+	efa = BM_face_at_index(em->bm, index);
 
 	return !BM_elem_flag_test(efa, BM_ELEM_HIDDEN);
 }
@@ -955,7 +957,10 @@ void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 	if (ob->transflag & OB_NEG_SCALE) glFrontFace(GL_CW);
 	else glFrontFace(GL_CCW);
 
-	glEnable(GL_LIGHTING);
+	if ((v3d->drawtype == OB_TEXTURE) && (v3d->flag2 & V3D_SHADELESS_TEX))
+		glColor3f(1.0f, 1.0f, 1.0f);
+	else
+		glEnable(GL_LIGHTING);
 
 	{
 		Mesh *me = ob->data;
@@ -977,7 +982,7 @@ void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 		GPU_begin_object_materials(v3d, rv3d, scene, ob, glsl, NULL);
 
 		if (glsl || picking) {
-			/* draw glsl */
+			/* draw glsl or solid */
 			dm->drawMappedFacesMat(dm,
 			                       tex_mat_set_material_cb,
 			                       set_face_cb, &data);
@@ -1049,7 +1054,7 @@ void draw_mesh_paint_weight_edges(RegionView3D *rv3d, DerivedMesh *dm, const boo
 	 * rather than the shading, this is also forced in wire view */
 
 	if (use_depth) {
-		bglPolygonOffset(rv3d->dist, 1.0);
+		ED_view3d_polygon_offset(rv3d, 1.0);
 		glDepthMask(0);  /* disable write in zbuffer, selected edge wires show better */
 	}
 	else {
@@ -1064,7 +1069,7 @@ void draw_mesh_paint_weight_edges(RegionView3D *rv3d, DerivedMesh *dm, const boo
 	dm->drawMappedEdges(dm, (DMSetDrawOptions)edgemask_cb, user_data);
 
 	if (use_depth) {
-		bglPolygonOffset(rv3d->dist, 0.0);
+		ED_view3d_polygon_offset(rv3d, 0.0);
 		glDepthMask(1);
 	}
 	else {

@@ -58,7 +58,9 @@
 #include "UI_view2d.h"
 
 #include "ED_anim_api.h"
+#include "ED_armature.h"
 #include "ED_keyframes_edit.h" // XXX move the select modes out of there!
+#include "ED_object.h"
 #include "ED_screen.h"
 
 #include "WM_api.h"
@@ -78,7 +80,7 @@ void ANIM_set_active_channel(bAnimContext *ac, void *data, short datatype, int f
 	
 	/* try to build list of filtered items */
 	ANIM_animdata_filter(ac, &anim_data, filter, data, datatype);
-	if (anim_data.first == NULL)
+	if (BLI_listbase_is_empty(&anim_data))
 		return;
 		
 	/* only clear the 'active' flag for the channels of the same type */
@@ -213,10 +215,10 @@ void ANIM_deselect_anim_channels(bAnimContext *ac, void *data, short datatype, s
 						sel = ACHANNEL_SETFLAG_CLEAR;
 					break;
 				case ANIMTYPE_OBJECT:
-				#if 0   /* for now, do not take object selection into account, since it gets too annoying */
+#if 0   /* for now, do not take object selection into account, since it gets too annoying */
 					if (ale->flag & SELECT)
 						sel = ACHANNEL_SETFLAG_CLEAR;
-				#endif
+#endif
 					break;
 				case ANIMTYPE_GROUP:
 					if (ale->flag & AGRP_SELECTED)
@@ -284,7 +286,7 @@ void ANIM_deselect_anim_channels(bAnimContext *ac, void *data, short datatype, s
 			}
 			case ANIMTYPE_OBJECT:
 			{
-			#if 0   /* for now, do not take object selection into account, since it gets too annoying */
+#if 0   /* for now, do not take object selection into account, since it gets too annoying */
 				Base *base = (Base *)ale->data;
 				Object *ob = base->object;
 
@@ -294,7 +296,7 @@ void ANIM_deselect_anim_channels(bAnimContext *ac, void *data, short datatype, s
 				if (ob->adt) {
 					ACHANNEL_SET_FLAG(ob, sel, ADT_UI_SELECTED);
 				}
-			#endif
+#endif
 				break;
 			}
 			case ANIMTYPE_GROUP:
@@ -548,7 +550,7 @@ void ANIM_fcurve_delete_from_animdata(bAnimContext *ac, AnimData *adt, FCurve *f
 			/* if group has no more channels, remove it too, 
 			 * otherwise can have many dangling groups [#33541]
 			 */
-			if (agrp->channels.first == NULL) {
+			if (BLI_listbase_is_empty(&agrp->channels)) {
 				BLI_freelinkN(&act->groups, agrp);
 			}
 		}
@@ -563,7 +565,7 @@ void ANIM_fcurve_delete_from_animdata(bAnimContext *ac, AnimData *adt, FCurve *f
 		 * channel list that are empty, and linger around long after the data they
 		 * are for has disappeared (and probably won't come back).
 		 */
-		if ((act->curves.first == NULL) && (adt->flag & ADT_NLA_EDIT_ON) == 0) {
+		if (BLI_listbase_is_empty(&act->curves) && (adt->flag & ADT_NLA_EDIT_ON) == 0) {
 			id_us_min(&act->id);
 			adt->action = NULL;
 		}
@@ -657,7 +659,7 @@ typedef enum eReorderIslandFlag {
 
 /* Rearrange Methods --------------------------------------------- */
 
-static short rearrange_island_ok(tReorderChannelIsland *island)
+static bool rearrange_island_ok(tReorderChannelIsland *island)
 {
 	/* island must not be untouchable */
 	if (island->flag & REORDER_ISLAND_UNTOUCHABLE)
@@ -669,7 +671,7 @@ static short rearrange_island_ok(tReorderChannelIsland *island)
 
 /* ............................. */
 
-static short rearrange_island_top(ListBase *list, tReorderChannelIsland *island)
+static bool rearrange_island_top(ListBase *list, tReorderChannelIsland *island)
 {
 	if (rearrange_island_ok(island)) {
 		/* remove from current position */
@@ -684,7 +686,7 @@ static short rearrange_island_top(ListBase *list, tReorderChannelIsland *island)
 	return 0;
 }
 
-static short rearrange_island_up(ListBase *list, tReorderChannelIsland *island)
+static bool rearrange_island_up(ListBase *list, tReorderChannelIsland *island)
 {
 	if (rearrange_island_ok(island)) {
 		/* moving up = moving before the previous island, otherwise we're in the same place */
@@ -704,7 +706,7 @@ static short rearrange_island_up(ListBase *list, tReorderChannelIsland *island)
 	return 0;
 }
 
-static short rearrange_island_down(ListBase *list, tReorderChannelIsland *island)
+static bool rearrange_island_down(ListBase *list, tReorderChannelIsland *island)
 {
 	if (rearrange_island_ok(island)) {
 		/* moving down = moving after the next island, otherwise we're in the same place */
@@ -728,7 +730,7 @@ static short rearrange_island_down(ListBase *list, tReorderChannelIsland *island
 	return 0;
 }
 
-static short rearrange_island_bottom(ListBase *list, tReorderChannelIsland *island)
+static bool rearrange_island_bottom(ListBase *list, tReorderChannelIsland *island)
 {
 	if (rearrange_island_ok(island)) {
 		tReorderChannelIsland *last = list->last;
@@ -760,7 +762,7 @@ static short rearrange_island_bottom(ListBase *list, tReorderChannelIsland *isla
  * < island: island to be moved
  * > return[0]: whether operation was a success
  */
-typedef short (*AnimChanRearrangeFp)(ListBase *list, tReorderChannelIsland *island);
+typedef bool (*AnimChanRearrangeFp)(ListBase *list, tReorderChannelIsland *island);
 
 /* get rearranging function, given 'rearrange' mode */
 static AnimChanRearrangeFp rearrange_get_mode_func(short mode)
@@ -785,7 +787,7 @@ static AnimChanRearrangeFp rearrange_get_mode_func(short mode)
 static void rearrange_animchannel_add_to_islands(ListBase *islands, ListBase *srcList, Link *channel, short type)
 {
 	tReorderChannelIsland *island = islands->last;  /* always try to add to last island if possible */
-	short is_sel = 0, is_untouchable = 0;
+	bool is_sel = false, is_untouchable = false;
 	
 	/* get flags - selected and untouchable from the channel */
 	switch (type) {
@@ -842,7 +844,7 @@ static void rearrange_animchannel_flatten_islands(ListBase *islands, ListBase *s
 	tReorderChannelIsland *island, *isn = NULL;
 	
 	/* make sure srcList is empty now */
-	BLI_assert(srcList->first == NULL);
+	BLI_assert(BLI_listbase_is_empty(srcList));
 	
 	/* go through merging islands */
 	for (island = islands->first; island; island = isn) {
@@ -857,14 +859,14 @@ static void rearrange_animchannel_flatten_islands(ListBase *islands, ListBase *s
 /* ............................. */
 
 /* performing rearranging of channels using islands */
-static short rearrange_animchannel_islands(ListBase *list, AnimChanRearrangeFp rearrange_func, short mode, short type)
+static bool rearrange_animchannel_islands(ListBase *list, AnimChanRearrangeFp rearrange_func, short mode, short type)
 {
 	ListBase islands = {NULL, NULL};
 	Link *channel, *chanNext = NULL;
 	short done = FALSE;
 	
 	/* don't waste effort on an empty list */
-	if (list->first == NULL)
+	if (BLI_listbase_is_empty(list))
 		return 0;
 	
 	/* group channels into islands */
@@ -1025,7 +1027,7 @@ static void join_groups_action_temp(bAction *act)
 static void rearrange_action_channels(bAnimContext *ac, bAction *act, short mode)
 {
 	bActionGroup tgrp;
-	short do_channels;
+	bool do_channels;
 	
 	/* get rearranging function */
 	AnimChanRearrangeFp rearrange_func = rearrange_get_mode_func(mode);
@@ -1106,7 +1108,6 @@ static int animchannels_rearrange_exec(bContext *C, wmOperator *op)
 					break;
 				
 				case ANIMCONT_SHAPEKEY: // DOUBLE CHECK ME...
-					
 				default: /* some collection of actions */
 					if (adt->action)
 						rearrange_action_channels(&ac, adt->action, mode);
@@ -1220,7 +1221,7 @@ static void animchannels_group_channels(bAnimContext *ac, bAnimListElem *adt_ref
 				/* remove F-Curve from group, then group too if it is now empty */
 				action_groups_remove_channel(act, fcu);
 				
-				if ((grp) && (grp->channels.first == NULL)) {
+				if ((grp) && BLI_listbase_is_empty(&grp->channels)) {
 					BLI_freelinkN(&act->groups, grp);
 				}
 				
@@ -1325,7 +1326,7 @@ static int animchannels_ungroup_exec(bContext *C, wmOperator *UNUSED(op))
 				BLI_addtail(&act->curves, fcu);
 				
 				/* delete group if it is now empty */
-				if (agrp->channels.first == NULL) {
+				if (BLI_listbase_is_empty(&agrp->channels)) {
 					BLI_freelinkN(&act->groups, agrp);
 				}
 			}
@@ -2120,6 +2121,32 @@ static void borderselect_anim_channels(bAnimContext *ac, rcti *rect, short selec
 				{
 					bActionGroup *agrp = (bActionGroup *)ale->data;
 					
+					/* Armatures-Specific Feature:
+					 * See mouse_anim_channels() -> ANIMTYPE_GROUP case for more details (T38737)
+					 */
+					if ((ac->ads->filterflag & ADS_FILTER_ONLYSEL) == 0) {
+						if ((ale->id) && (GS(ale->id->name) == ID_OB)) {
+							Object *ob = (Object *)ale->id;
+							
+							if (ob->type == OB_ARMATURE) {
+								/* Assume for now that any group with corresponding name is what we want
+								 * (i.e. for an armature whose location is animated, things would break
+								 * if the user were to add a bone named "Location").
+								 *
+								 * TODO: check the first F-Curve or so to be sure...
+								 */
+								bPoseChannel *pchan = BKE_pose_channel_find_name(ob->pose, agrp->name);
+								
+								if (agrp->flag & AGRP_SELECTED) {
+									ED_pose_bone_select(ob, pchan, true);
+								}
+								else {
+									ED_pose_bone_select(ob, pchan, false);
+								}
+							}
+						}
+					}
+					
 					/* always clear active flag after doing this */
 					agrp->flag &= ~AGRP_ACTIVE;
 					break;
@@ -2152,7 +2179,8 @@ static int animchannels_borderselect_exec(bContext *C, wmOperator *op)
 	bAnimContext ac;
 	rcti rect;
 	short selectmode = 0;
-	int gesture_mode, extend;
+	int gesture_mode;
+	bool extend;
 	
 	/* get editor data */
 	if (ANIM_animdata_get_context(C, &ac) == 0)
@@ -2307,7 +2335,7 @@ static void ANIM_OT_channels_rename(wmOperatorType *ot)
 /* ******************** Mouse-Click Operator *********************** */
 /* Handle selection changes due to clicking on channels. Settings will get caught by UI code... */
 
-static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_index, short selectmode)
+static int mouse_anim_channels(bContext *C, bAnimContext *ac, int channel_index, short selectmode)
 {
 	ListBase anim_data = {NULL, NULL};
 	bAnimListElem *ale;
@@ -2393,6 +2421,9 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 				if (adt) adt->flag |= ADT_UI_SELECTED;
 			}
 			
+			/* change active object - regardless of whether it is now selected [T37883] */
+			ED_base_object_activate(C, base); /* adds notifier */
+			
 			if ((adt) && (adt->flag & ADT_UI_SELECTED))
 				adt->flag |= ADT_UI_ACTIVE;
 			
@@ -2441,6 +2472,35 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 		{
 			bActionGroup *agrp = (bActionGroup *)ale->data;
 			
+			Object *ob = NULL;
+			bPoseChannel *pchan = NULL;
+			
+			
+			/* Armatures-Specific Feature:
+			 * Since groups are used to collect F-Curves of the same Bone by default
+			 * (via Keying Sets) so that they can be managed better, we try to make
+			 * things here easier for animators by mapping group selection to bone
+			 * selection. 
+			 *
+			 * Only do this if "Only Selected" dopesheet filter is not active, or else it
+			 * becomes too unpredictable/tricky to manage
+			 */
+			if ((ac->ads->filterflag & ADS_FILTER_ONLYSEL) == 0) {
+				if ((ale->id) && (GS(ale->id->name) == ID_OB)) {
+					ob = (Object *)ale->id;
+					
+					if (ob->type == OB_ARMATURE) {
+						/* Assume for now that any group with corresponding name is what we want
+						 * (i.e. for an armature whose location is animated, things would break
+						 * if the user were to add a bone named "Location").
+						 *
+						 * TODO: check the first F-Curve or so to be sure...
+						 */
+						pchan = BKE_pose_channel_find_name(ob->pose, agrp->name);
+					}	
+				}
+			}
+			
 			/* select/deselect group */
 			if (selectmode == SELECT_INVERT) {
 				/* inverse selection status of this group only */
@@ -2452,6 +2512,7 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 				
 				/* deselect all other channels */
 				ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+				if (pchan) ED_pose_deselectall(ob, 0);
 				
 				/* only select channels in group and group itself */
 				for (fcu = agrp->channels.first; fcu && fcu->grp == agrp; fcu = fcu->next)
@@ -2461,14 +2522,20 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			else {
 				/* select group by itself */
 				ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+				if (pchan) ED_pose_deselectall(ob, 0);
+				
 				agrp->flag |= AGRP_SELECTED;
 			}
 			
 			/* if group is selected now, make group the 'active' one in the visible list */
-			if (agrp->flag & AGRP_SELECTED)
+			if (agrp->flag & AGRP_SELECTED) {
 				ANIM_set_active_channel(ac, ac->data, ac->datatype, filter, agrp, ANIMTYPE_GROUP);
-			else
+				if (pchan) ED_pose_bone_select(ob, pchan, true);
+			}
+			else {
 				ANIM_set_active_channel(ac, ac->data, ac->datatype, filter, NULL, ANIMTYPE_GROUP);
+				if (pchan) ED_pose_bone_select(ob, pchan, false);
+			}
 				
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
 			break;
@@ -2625,7 +2692,7 @@ static int animchannels_mouseclick_invoke(bContext *C, wmOperator *op, const wmE
 	UI_view2d_listview_view_to_cell(v2d, ACHANNEL_NAMEWIDTH, ACHANNEL_STEP, 0, (float)ACHANNEL_HEIGHT_HALF, x, y, NULL, &channel_index);
 	
 	/* handle mouse-click in the relevant channel then */
-	notifierFlags = mouse_anim_channels(&ac, x, channel_index, selectmode);
+	notifierFlags = mouse_anim_channels(C, &ac, channel_index, selectmode);
 	
 	/* set notifier that things have changed */
 	WM_event_add_notifier(C, NC_ANIMATION | notifierFlags, NULL);

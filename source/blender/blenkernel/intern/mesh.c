@@ -154,7 +154,7 @@ static int customdata_compare(CustomData *c1, CustomData *c2, Mesh *m1, Mesh *m2
 			int vtot = m1->totvert;
 			
 			for (j = 0; j < vtot; j++, v1++, v2++) {
-				if (len_v3v3(v1->co, v2->co) > thresh)
+				if (len_squared_v3v3(v1->co, v2->co) > thresh_sq)
 					return MESHCMP_VERTCOMISMATCH;
 				/* I don't care about normals, let's just do coodinates */
 			}
@@ -251,7 +251,7 @@ static int customdata_compare(CustomData *c1, CustomData *c2, Mesh *m1, Mesh *m2
 				for (k = 0; k < dv1->totweight; k++, dw1++, dw2++) {
 					if (dw1->def_nr != dw2->def_nr)
 						return MESHCMP_DVERT_GROUPMISMATCH;
-					if (ABS(dw1->weight - dw2->weight) > thresh)
+					if (fabsf(dw1->weight - dw2->weight) > thresh)
 						return MESHCMP_DVERT_WEIGHTMISMATCH;
 				}
 			}
@@ -444,12 +444,16 @@ Mesh *BKE_mesh_add(Main *bmain, const char *name)
 {
 	Mesh *me;
 	
-	me = BKE_libblock_alloc(&bmain->mesh, ID_ME, name);
+	me = BKE_libblock_alloc(bmain, ID_ME, name);
 	
 	me->size[0] = me->size[1] = me->size[2] = 1.0;
 	me->smoothresh = 30;
 	me->texflag = ME_AUTOSPACE;
+
+	/* disable because its slow on many GPU's, see [#37518] */
+#if 0
 	me->flag = ME_TWOSIDED;
+#endif
 	me->drawflag = ME_DRAWEDGES | ME_DRAWFACES | ME_DRAWCREASES;
 
 	CustomData_reset(&me->vdata);
@@ -647,8 +651,13 @@ bool BKE_mesh_uv_cdlayer_rename_index(Mesh *me, const int poly_index, const int 
 	cdlu = &ldata->layers[loop_index];
 	cdlf = fdata && do_tessface ? &fdata->layers[face_index] : NULL;
 
-	BLI_strncpy(cdlp->name, new_name, sizeof(cdlp->name));
-	CustomData_set_layer_unique_name(pdata, cdlp - pdata->layers);
+	if (cdlp->name != new_name) {
+		/* Mesh validate passes a name from the CD layer as the new name,
+		 * Avoid memcpy from self to self in this case.
+		 */
+		BLI_strncpy(cdlp->name, new_name, sizeof(cdlp->name));
+		CustomData_set_layer_unique_name(pdata, cdlp - pdata->layers);
+	}
 
 	/* Loop until we do have exactly the same name for all layers! */
 	for (i = 1; (strcmp(cdlp->name, cdlu->name) != 0 || (cdlf && strcmp(cdlp->name, cdlf->name) != 0)); i++) {
@@ -708,25 +717,31 @@ bool BKE_mesh_uv_cdlayer_rename(Mesh *me, const char *old_name, const char *new_
 					return false;
 				}
 				else {
-					lidx = lidx_start + (fidx - fidx_start);
+					lidx = fidx;
 				}
 			}
-			pidx = pidx_start + (lidx - lidx_start);
+			pidx = lidx;
 		}
 		else {
 			if (lidx == -1) {
-				lidx = lidx_start + (pidx - pidx_start);
+				lidx = pidx;
 			}
 			if (fidx == -1 && do_tessface) {
-				fidx = fidx_start + (pidx - pidx_start);
+				fidx = pidx;
 			}
 		}
 #if 0
 		/* For now, we do not consider mismatch in indices (i.e. same name leading to (relative) different indices). */
-		else if ((pidx - pidx_start) != (lidx - lidx_start)) {
-			lidx = lidx_start + (pidx - pidx_start);
+		else if (pidx != lidx) {
+			lidx = pidx;
 		}
 #endif
+
+		/* Go back to absolute indices! */
+		pidx += pidx_start;
+		lidx += lidx_start;
+		if (fidx != -1)
+			fidx += fidx_start;
 
 		return BKE_mesh_uv_cdlayer_rename_index(me, pidx, lidx, fidx, new_name, do_tessface);
 	}
@@ -1145,7 +1160,7 @@ int BKE_mesh_nurbs_displist_to_mdata(Object *ob, ListBase *dispbase,
 	float *data;
 	int a, b, ofs, vertcount, startvert, totvert = 0, totedge = 0, totloop = 0, totvlak = 0;
 	int p1, p2, p3, p4, *index;
-	const bool conv_polys = ((cu->flag & CU_3D) ||    /* 2d polys are filled with DL_INDEX3 displists */
+	const bool conv_polys = ((CU_DO_2DFILL(cu) == false) ||  /* 2d polys are filled with DL_INDEX3 displists */
 	                         (ob->type == OB_SURF));  /* surf polys are never filled */
 
 	/* count */
@@ -1336,6 +1351,9 @@ int BKE_mesh_nurbs_displist_to_mdata(Object *ob, ListBase *dispbase,
 							if (dl->flag & DL_CYCL_V)
 								orco_sizev++;
 						}
+						else if (dl->flag & DL_CYCL_V) {
+							orco_sizev++;
+						}
 
 						for (i = 0; i < 4; i++, mloopuv++) {
 							/* find uv based on vertex index into grid array */
@@ -1345,6 +1363,8 @@ int BKE_mesh_nurbs_displist_to_mdata(Object *ob, ListBase *dispbase,
 							mloopuv->uv[1] = (v % dl->nr) / (float)orco_sizeu;
 
 							/* cyclic correction */
+							if ((i == 1 || i == 2) && mloopuv->uv[0] == 0.0f)
+								mloopuv->uv[0] = 1.0f;
 							if ((i == 0 || i == 1) && mloopuv->uv[1] == 0.0f)
 								mloopuv->uv[1] = 1.0f;
 						}
@@ -1440,7 +1460,7 @@ void BKE_mesh_from_nurbs_displist(Object *ob, ListBase *dispbase, const bool use
 	cu->totcol = 0;
 
 	if (ob->data) {
-		BKE_libblock_free(&bmain->curve, ob->data);
+		BKE_libblock_free(bmain, ob->data);
 	}
 	ob->data = me;
 	ob->type = OB_MESH;
@@ -1986,7 +2006,7 @@ int BKE_mesh_mselect_find(Mesh *me, int index, int type)
 
 	for (i = 0; i < me->totselect; i++) {
 		if ((me->mselect[i].index == index) &&
-			(me->mselect[i].type == type))
+		    (me->mselect[i].type == type))
 		{
 			return i;
 		}
