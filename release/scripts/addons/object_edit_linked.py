@@ -25,7 +25,7 @@ bl_info = {
     "location": "View3D > Toolshelf > Edit Linked Library",
     "description": "Allows editing of objects linked from a .blend library.",
     "wiki_url": "http://wiki.blender.org/index.php?title=Extensions:2.6/Py/Scripts/Object/Edit_Linked_Library",
-    "tracker_url": "http://projects.blender.org/tracker/index.php?func=detail&aid=29630",
+    "tracker_url": "https://developer.blender.org/T29630",
     "category": "Object"}
 
 
@@ -158,6 +158,7 @@ class PanelLinkedEdit(bpy.types.Panel):
     bl_label = "Edit Linked Library"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
+    bl_category = "Relations"
 
     @classmethod
     def poll(cls, context):

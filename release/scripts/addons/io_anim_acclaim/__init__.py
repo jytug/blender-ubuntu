@@ -30,9 +30,8 @@ bl_info = {
     "location": "File > Import-Export",
     "description": "Imports Acclaim Skeleton and Motion Capture Files",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"
-                "Scripts/Import-Export/Acclaim_Importer",
-    "tracker_url": "http://projects.blender.org/tracker/index.php?"
-                   "func=detail&aid=27127&group_id=153&atid=467",
+        "Scripts/Import-Export/Acclaim_Importer",
+    "tracker_url": "https://developer.blender.org/T27127",
     "category": "Import-Export"}
 
 
@@ -399,7 +398,6 @@ class AmcAnimator(bpy.types.Operator):
         bpy.context.scene.frame_set(bpy.context.scene.frame_current)
         context.window_manager.event_timer_remove(self.timer)
         bpy.ops.object.mode_set(mode='OBJECT')
-        return {'CANCELLED'}
 
 
 class AmcImporter(bpy.types.Operator):

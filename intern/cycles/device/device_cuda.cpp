@@ -171,7 +171,8 @@ public:
 		cuda_assert(cuCtxSetCurrent(NULL));
 	}
 
-	CUDADevice(DeviceInfo& info, Stats &stats, bool background_) : Device(stats)
+    CUDADevice(DeviceInfo& info, Stats &stats, bool background_)
+	: Device(info, stats, background_)
 	{
 		first_error = true;
 		background = background_;
@@ -227,14 +228,12 @@ public:
 
 	bool support_device(bool experimental)
 	{
-		if(!experimental) {
-			int major, minor;
-			cuDeviceComputeCapability(&major, &minor, cuDevId);
+		int major, minor;
+		cuDeviceComputeCapability(&major, &minor, cuDevId);
 
-			if(major < 2) {
-				cuda_error_message(string_printf("CUDA device supported only with compute capability 2.0 or up, found %d.%d.", major, minor));
-				return false;
-			}
+		if(major < 2) {
+			cuda_error_message(string_printf("CUDA device supported only with compute capability 2.0 or up, found %d.%d.", major, minor));
+			return false;
 		}
 
 		return true;
@@ -286,8 +285,12 @@ public:
 			cuda_error_message("CUDA nvcc compiler version could not be parsed.");
 			return "";
 		}
+		if(cuda_version < 50) {
+			printf("Unsupported CUDA version %d.%d detected, you need CUDA 5.0.\n", cuda_version/10, cuda_version%10);
+			return "";
+		}
 
-		if(cuda_version != 50)
+		else if(cuda_version > 50)
 			printf("CUDA version %d.%d detected, build may succeed but only CUDA 5.0 is officially supported.\n", cuda_version/10, cuda_version%10);
 
 		/* compile */
@@ -296,36 +299,14 @@ public:
 		const int machine = system_cpu_bits();
 		string arch_flags;
 
-		/* build flags depending on CUDA version and arch */
-		if(cuda_version < 50) {
-			/* CUDA 4.x */
-			if(major == 1) {
-				/* sm_1x */
-				arch_flags = "--maxrregcount=24 --opencc-options -OPT:Olimit=0";
-			}
-			else if(major == 2) {
-				/* sm_2x */
-				arch_flags = "--maxrregcount=24";
-			}
-			else {
-				/* sm_3x */
-				arch_flags = "--maxrregcount=32";
-			}
+		/* CUDA 5.x build flags for different archs */
+		if(major == 2) {
+			/* sm_2x */
+			arch_flags = "--maxrregcount=32 --use_fast_math";
 		}
-		else {
-			/* CUDA 5.x */
-			if(major == 1) {
-				/* sm_1x */
-				arch_flags = "--maxrregcount=24 --opencc-options -OPT:Olimit=0 --use_fast_math";
-			}
-			else if(major == 2) {
-				/* sm_2x */
-				arch_flags = "--maxrregcount=32 --use_fast_math";
-			}
-			else {
-				/* sm_3x */
-				arch_flags = "--maxrregcount=32 --use_fast_math";
-			}
+		else if(major == 3) {
+			/* sm_3x */
+			arch_flags = "--maxrregcount=32 --use_fast_math";
 		}
 
 		double starttime = time_dt();
@@ -374,7 +355,14 @@ public:
 		/* open module */
 		cuda_push_context();
 
-		CUresult result = cuModuleLoad(&cuModule, cubin.c_str());
+		string cubin_data;
+		CUresult result;
+
+		if (path_read_text(cubin, cubin_data))
+			result = cuModuleLoadData(&cuModule, cubin_data.c_str());
+		else
+			result = CUDA_ERROR_FILE_NOT_FOUND;
+
 		if(cuda_error_(result, "cuModuleLoad"))
 			cuda_error_message(string_printf("Failed loading CUDA kernel %s.", cubin.c_str()));
 

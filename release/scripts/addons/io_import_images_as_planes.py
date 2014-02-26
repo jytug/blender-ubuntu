@@ -19,14 +19,14 @@
 bl_info = {
     "name": "Import Images as Planes",
     "author": "Florian Meyer (tstscr), mont29, matali",
-    "version": (1, 9),
-    "blender": (2, 66, 4),
+    "version": (1, 9, 1),
+    "blender": (2, 69, 0),
     "location": "File > Import > Images as Planes or Add > Mesh > Images as Planes",
     "description": "Imports images and creates planes with the appropriate aspect ratio. "
                    "The images are mapped to the planes.",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Add_Mesh/Planes_from_Images",
-    "tracker_url": "https://projects.blender.org/tracker/index.php?func=detail&aid=21751",
+    "tracker_url": "https://developer.blender.org/T21751",
     "category": "Import-Export"}
 
 import bpy
@@ -52,7 +52,7 @@ from bpy_extras.image_utils import load_image
 DEFAULT_EXT = "*"
 
 EXT_FILTER = getattr(collections, "OrderedDict", dict)((
-    (DEFAULT_EXT, ((), "All image formats", "Import all know image (or movie) formats.")),
+    (DEFAULT_EXT, ((), "All image formats", "Import all known image (or movie) formats.")),
     ("jpeg", (("jpeg", "jpg", "jpe"), "JPEG ({})", "Joint Photographic Experts Group")),
     ("png", (("png", ), "PNG ({})", "Portable Network Graphics")),
     ("tga", (("tga", "tpic"), "Truevision TGA ({})", "")),
@@ -386,6 +386,7 @@ class IMPORT_OT_image_to_plane(Operator, AddObjectHelper):
         if plane.mode is not 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
         plane.dimensions = x, y, 0.0
+        plane.name = material.name
         bpy.ops.object.transform_apply(scale=True)
         plane.data.uv_textures.new()
         plane.data.materials.append(material)

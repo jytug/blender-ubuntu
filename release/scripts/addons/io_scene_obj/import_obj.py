@@ -379,8 +379,8 @@ def split_mesh(verts_loc, faces, unique_materials, filepath, SPLIT_OB_OR_GROUP):
 
     filename = os.path.splitext((os.path.basename(filepath)))[0]
 
-    if not SPLIT_OB_OR_GROUP:
-        # use the filename for the object name since we arnt chopping up the mesh.
+    if not SPLIT_OB_OR_GROUP or not faces:
+        # use the filename for the object name since we aren't chopping up the mesh.
         return [(verts_loc, faces, unique_materials, filename)]
 
     def key_to_name(key):
@@ -592,7 +592,7 @@ def create_mesh(new_objects,
 
     for i, face in enumerate(faces):
         if len(face[0]) < 2:
-            pass  # raise "bad face"
+            pass  # raise Exception("bad face")
         elif len(face[0]) == 2:
             if use_edges:
                 edges.append(face[0])
@@ -991,7 +991,8 @@ def load(operator, context, filepath,
             # isline = line_start == b'l'  # UNUSED
 
             for v in line_split:
-                vert_loc_index = int(v) - 1
+                obj_vert = v.split(b'/')
+                vert_loc_index = int(obj_vert[0]) - 1
 
                 # Make relative negative vert indices absolute
                 if vert_loc_index < 0:

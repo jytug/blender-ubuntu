@@ -76,7 +76,7 @@ void free_anim_drivers_copybuf(void);
  *	
  *	- add:	0 - don't add anything if not found, 
  *			1 - add new Driver FCurve (with keyframes for visual tweaking),
- *			2 - add new Driver FCurve (with generator, for script backwards compatability) 
+ *			2 - add new Driver FCurve (with generator, for script backwards compatibility)
  *			-1 - add new Driver FCurve without driver stuff (for pasting)
  */
 FCurve *verify_driver_fcurve(ID *id, const char rna_path[], const int array_index, short add)
@@ -125,7 +125,7 @@ FCurve *verify_driver_fcurve(ID *id, const char rna_path[], const int array_inde
 			/* F-Modifier or Keyframes? */
 			// FIXME: replace these magic numbers with defines
 			if (add == 2) {
-				/* Python API Backwards compatability hack:
+				/* Python API Backwards compatibility hack:
 				 * Create FModifier so that old scripts won't break
 				 * for now before 2.7 series -- (September 4, 2013)
 				 */
@@ -502,7 +502,8 @@ static int add_driver_button_exec(bContext *C, wmOperator *op)
 	PointerRNA ptr = {{NULL}};
 	PropertyRNA *prop = NULL;
 	short success = 0;
-	int index, all = RNA_boolean_get(op->ptr, "all");
+	int index;
+	const bool all = RNA_boolean_get(op->ptr, "all");
 	
 	/* try to create driver using property retrieved from UI */
 	uiContextActiveProperty(C, &ptr, &prop, &index);
@@ -556,7 +557,8 @@ static int remove_driver_button_exec(bContext *C, wmOperator *op)
 	PointerRNA ptr = {{NULL}};
 	PropertyRNA *prop = NULL;
 	short success = 0;
-	int index, all = RNA_boolean_get(op->ptr, "all");
+	int index;
+	const bool all = RNA_boolean_get(op->ptr, "all");
 	
 	/* try to find driver using property retrieved from UI */
 	uiContextActiveProperty(C, &ptr, &prop, &index);

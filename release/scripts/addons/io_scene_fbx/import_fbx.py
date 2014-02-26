@@ -431,8 +431,9 @@ def blen_read_geom_array_mapped_polyloop(
         if fbx_layer_ref == b'IndexToDirect':
             assert(fbx_layer_index is not None)
             for i, j in enumerate(fbx_layer_index):
-                setattr(blen_data[i], blend_attr,
-                        fbx_layer_data[(j * stride): (j * stride) + item_size])
+                if j != -1:
+                    setattr(blen_data[i], blend_attr,
+                            fbx_layer_data[(j * stride): (j * stride) + item_size])
             return True
         else:
             print("warning layer %r ref type unsupported: %r" % (descr, fbx_layer_ref))
@@ -498,7 +499,7 @@ def blen_read_geom_layer_uv(fbx_obj, mesh):
             blen_data = uv_lay.data[:]
 
             # some valid files omit this data
-            if fbx_layer_data is None or fbx_layer_index is None:
+            if fbx_layer_data is None:
                 print("%r %r missing data" % (layer_id, fbx_layer_name))
                 continue
 
@@ -527,7 +528,7 @@ def blen_read_geom_layer_color(fbx_obj, mesh):
             blen_data = color_lay.data[:]
 
             # some valid files omit this data
-            if fbx_layer_data is None or fbx_layer_index is None:
+            if fbx_layer_data is None:
                 print("%r %r missing data" % (layer_id, fbx_layer_name))
                 continue
 
@@ -925,9 +926,11 @@ def load(operator, context, filepath="",
     fbx_connections = elem_find_first(elem_root, b'Connections')
 
     if fbx_nodes is None:
-        return print("no 'Objects' found")
+        operator.report({'ERROR'}, "No 'Objects' found in file %r" % filepath)
+        return {'CANCELLED'}
     if fbx_connections is None:
-        return print("no 'Connections' found")
+        operator.report({'ERROR'}, "No 'Connections' found in file %r" % filepath)
+        return {'CANCELLED'}
 
     # ----
     # First load property templates

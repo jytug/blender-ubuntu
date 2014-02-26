@@ -59,11 +59,9 @@ static const unsigned int _ehash_hashsizes[] = {
 #endif
 
 /* ensure v0 is smaller */
-#define EDGE_ORD(v0, v1) \
-	if (v0 > v1) {       \
-		v0 ^= v1;        \
-		v1 ^= v0;        \
-		v0 ^= v1;        \
+#define EDGE_ORD(v0, v1)            \
+	if (v0 > v1) {                  \
+		SWAP(unsigned int, v0, v1); \
 	} (void)0
 
 /***/
@@ -137,7 +135,7 @@ BLI_INLINE void edgehash_resize_buckets(EdgeHash *eh, const unsigned int nbucket
 }
 
 /**
- * Increase initial bucket size to match a reserved ammount.
+ * Increase initial bucket size to match a reserved amount.
  */
 BLI_INLINE void edgehash_buckets_reserve(EdgeHash *eh, const unsigned int nentries_reserve)
 {

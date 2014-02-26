@@ -121,14 +121,17 @@ void ED_undo_push(bContext *C, const char *str)
 
 /* note: also check undo_history_exec() in bottom if you change notifiers */
 static int ed_undo_step(bContext *C, int step, const char *undoname)
-{	
+{
+	wmWindowManager *wm = CTX_wm_manager(C);
+	wmWindow *win = CTX_wm_window(C);
+	Scene *scene = CTX_data_scene(C);
 	Object *obedit = CTX_data_edit_object(C);
 	Object *obact = CTX_data_active_object(C);
 	ScrArea *sa = CTX_wm_area(C);
 
 	/* undo during jobs are running can easily lead to freeing data using by jobs,
 	 * or they can just lead to freezing job in some other cases */
-	if (WM_jobs_test(CTX_wm_manager(C), CTX_data_scene(C), WM_JOB_TYPE_ANY)) {
+	if (WM_jobs_test(wm, scene, WM_JOB_TYPE_ANY)) {
 		return OPERATOR_CANCELLED;
 	}
 
@@ -182,9 +185,9 @@ static int ed_undo_step(bContext *C, int step, const char *undoname)
 		}
 		else if (obact && obact->mode & OB_MODE_PARTICLE_EDIT) {
 			if (step == 1)
-				PE_undo(CTX_data_scene(C));
+				PE_undo(scene);
 			else
-				PE_redo(CTX_data_scene(C));
+				PE_redo(scene);
 		}
 		else if (U.uiflag & USER_GLOBALUNDO) {
 			// note python defines not valid here anymore.
@@ -202,12 +205,18 @@ static int ed_undo_step(bContext *C, int step, const char *undoname)
 				BKE_undo_name(C, undoname);
 			else
 				BKE_undo_step(C, step);
+
+			scene = CTX_data_scene(C);
 				
-			WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, CTX_data_scene(C));
+			WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
 		}
 	}
 	
 	WM_event_add_notifier(C, NC_WINDOW, NULL);
+
+	if (win) {
+		win->addmousemove = true;
+	}
 	
 	return OPERATOR_FINISHED;
 }
@@ -358,14 +367,14 @@ int ED_undo_operator_repeat(bContext *C, struct wmOperator *op)
 		if (ar1)
 			CTX_wm_region_set(C, ar1);
 
-		if ( (WM_operator_repeat_check(C, op)) &&
-		     (WM_operator_poll(C, op->type)) &&
+		if ((WM_operator_repeat_check(C, op)) &&
+		    (WM_operator_poll(C, op->type)) &&
 		     /* note, undo/redo cant run if there are jobs active,
 		      * check for screen jobs only so jobs like material/texture/world preview
 		      * (which copy their data), wont stop redo, see [#29579]],
 		      *
 		      * note, - WM_operator_check_ui_enabled() jobs test _must_ stay in sync with this */
-		     (WM_jobs_test(wm, scene, WM_JOB_TYPE_ANY) == 0))
+		    (WM_jobs_test(wm, scene, WM_JOB_TYPE_ANY) == 0))
 		{
 			int retval;
 

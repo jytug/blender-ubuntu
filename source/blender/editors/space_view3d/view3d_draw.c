@@ -55,6 +55,7 @@
 #include "BKE_customdata.h"
 #include "BKE_image.h"
 #include "BKE_key.h"
+#include "BKE_main.h"
 #include "BKE_object.h"
 #include "BKE_global.h"
 #include "BKE_paint.h"
@@ -64,7 +65,6 @@
 #include "BKE_movieclip.h"
 
 #include "RE_engine.h"
-#include "RE_pipeline.h"  /* make_stars */
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
@@ -105,22 +105,8 @@ static void bl_debug_draw(void);
 extern void bl_debug_draw_quad_clear(void);
 extern void bl_debug_draw_quad_add(const float v0[3], const float v1[3], const float v2[3], const float v3[3]);
 extern void bl_debug_draw_edge_add(const float v0[3], const float v1[3]);
+extern void bl_debug_color_set(const unsigned int col);
 #endif
-
-static void star_stuff_init_func(void)
-{
-	cpack(0xFFFFFF);
-	glPointSize(1.0);
-	glBegin(GL_POINTS);
-}
-static void star_stuff_vertex_func(float *i)
-{
-	glVertex3fv(i);
-}
-static void star_stuff_term_func(void)
-{
-	glEnd();
-}
 
 void circf(float x, float y, float rad)
 {
@@ -567,7 +553,7 @@ static void drawcursor(Scene *scene, ARegion *ar, View3D *v3d)
 	int co[2];
 
 	/* we don't want the clipping for cursor */
-	if (ED_view3d_project_int_global(ar, give_cursor(scene, v3d), co, V3D_PROJ_TEST_NOP) == V3D_PROJ_RET_OK) {
+	if (ED_view3d_project_int_global(ar, ED_view3d_cursor3d_get(scene, v3d), co, V3D_PROJ_TEST_NOP) == V3D_PROJ_RET_OK) {
 		const float f5 = 0.25f * U.widget_unit;
 		const float f10 = 0.5f * U.widget_unit;
 		const float f20 = U.widget_unit;
@@ -599,7 +585,9 @@ static void draw_view_axis(RegionView3D *rv3d, rcti *rect)
 	float ydisp = 0.0;          /* vertical displacement to allow obj info text */
 	int bright = - 20 * (10 - U.rvibright); /* axis alpha offset (rvibright has range 0-10) */
 	float vec[3];
+	char axis_text[2] = "x";
 	float dx, dy;
+	int i;
 	
 	startx += rect->xmin;
 	starty += rect->ymin;
@@ -610,60 +598,27 @@ static void draw_view_axis(RegionView3D *rv3d, rcti *rect)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	/* X */
-	vec[0] = 1;
-	vec[1] = vec[2] = 0;
-	mul_qt_v3(rv3d->viewquat, vec);
-	dx = vec[0] * k;
-	dy = vec[1] * k;
-	
-	UI_ThemeColorShadeAlpha(TH_AXIS_X, 0, bright);
-	glBegin(GL_LINES);
-	glVertex2f(startx, starty + ydisp);
-	glVertex2f(startx + dx, starty + dy + ydisp);
-	glEnd();
+	for (i = 0; i < 3; i++) {
+		zero_v3(vec);
+		vec[i] = 1.0f;
+		mul_qt_v3(rv3d->viewquat, vec);
+		dx = vec[0] * k;
+		dy = vec[1] * k;
 
-	if (fabsf(dx) > toll || fabsf(dy) > toll) {
-		BLF_draw_default_ascii(startx + dx + 2, starty + dy + ydisp + 2, 0.0f, "x", 1);
-	}
-	
-	/* BLF_draw_default disables blending */
-	glEnable(GL_BLEND);
+		UI_ThemeColorShadeAlpha(TH_AXIS_X + i, 0, bright);
+		glBegin(GL_LINES);
+		glVertex2f(startx, starty + ydisp);
+		glVertex2f(startx + dx, starty + dy + ydisp);
+		glEnd();
 
-	/* Y */
-	vec[1] = 1;
-	vec[0] = vec[2] = 0;
-	mul_qt_v3(rv3d->viewquat, vec);
-	dx = vec[0] * k;
-	dy = vec[1] * k;
-	
-	UI_ThemeColorShadeAlpha(TH_AXIS_Y, 0, bright);
-	glBegin(GL_LINES);
-	glVertex2f(startx, starty + ydisp);
-	glVertex2f(startx + dx, starty + dy + ydisp);
-	glEnd();
+		if (fabsf(dx) > toll || fabsf(dy) > toll) {
+			BLF_draw_default_ascii(startx + dx + 2, starty + dy + ydisp + 2, 0.0f, axis_text, 1);
+		}
 
-	if (fabsf(dx) > toll || fabsf(dy) > toll) {
-		BLF_draw_default_ascii(startx + dx + 2, starty + dy + ydisp + 2, 0.0f, "y", 1);
-	}
+		axis_text[0]++;
 
-	glEnable(GL_BLEND);
-	
-	/* Z */
-	vec[2] = 1;
-	vec[1] = vec[0] = 0;
-	mul_qt_v3(rv3d->viewquat, vec);
-	dx = vec[0] * k;
-	dy = vec[1] * k;
-
-	UI_ThemeColorShadeAlpha(TH_AXIS_Z, 0, bright);
-	glBegin(GL_LINES);
-	glVertex2f(startx, starty + ydisp);
-	glVertex2f(startx + dx, starty + dy + ydisp);
-	glEnd();
-
-	if (fabsf(dx) > toll || fabsf(dy) > toll) {
-		BLF_draw_default_ascii(startx + dx + 2, starty + dy + ydisp + 2, 0.0f, "z", 1);
+		/* BLF_draw_default disables blending */
+		glEnable(GL_BLEND);
 	}
 
 	/* restore line-width */
@@ -1340,7 +1295,8 @@ static void backdrawview3d(Scene *scene, ARegion *ar, View3D *v3d)
 		return;
 	}
 
-	if (!(v3d->flag & V3D_INVALID_BACKBUF) ) return;
+	if (!(v3d->flag & V3D_INVALID_BACKBUF))
+		return;
 
 #if 0
 	if (test) {
@@ -2003,6 +1959,8 @@ static void draw_dupli_objects_color(Scene *scene, ARegion *ar, View3D *v3d, Bas
 {
 	RegionView3D *rv3d = ar->regiondata;
 	ListBase *lb;
+	LodLevel *savedlod;
+	float savedobmat[4][4];
 	DupliObject *dob_prev = NULL, *dob, *dob_next = NULL;
 	Base tbase = {NULL};
 	BoundBox bb, *bb_tmp; /* use a copy because draw_object, calls clear_mesh_caches */
@@ -2014,7 +1972,7 @@ static void draw_dupli_objects_color(Scene *scene, ARegion *ar, View3D *v3d, Bas
 	if (base->object->restrictflag & OB_RESTRICT_VIEW) return;
 	
 	tbase.flag = OB_FROMDUPLI | base->flag;
-	lb = object_duplilist(scene, base->object, false);
+	lb = object_duplilist(G.main->eval_ctx, scene, base->object);
 	// BLI_sortlist(lb, dupli_ob_sort); /* might be nice to have if we have a dupli list with mixed objects. */
 
 	dob = dupli_step(lb->first);
@@ -2022,6 +1980,14 @@ static void draw_dupli_objects_color(Scene *scene, ARegion *ar, View3D *v3d, Bas
 
 	for (; dob; dob_prev = dob, dob = dob_next, dob_next = dob_next ? dupli_step(dob_next->next) : NULL) {
 		tbase.object = dob->ob;
+
+		/* Make sure lod is updated from dupli's position */
+
+		copy_m4_m4(savedobmat, dob->ob->obmat);
+		copy_m4_m4(dob->ob->obmat, dob->mat);
+		savedlod = dob->ob->currentlod;
+		BKE_object_lod_update(dob->ob, rv3d->viewinv[3]);
+		
 
 		/* extra service: draw the duplicator in drawtype of parent, minimum taken
 		 * to allow e.g. boundbox box objects in groups for LOD */
@@ -2037,8 +2003,11 @@ static void draw_dupli_objects_color(Scene *scene, ARegion *ar, View3D *v3d, Bas
 
 		/* negative scale flag has to propagate */
 		transflag = tbase.object->transflag;
-		if (base->object->transflag & OB_NEG_SCALE)
-			tbase.object->transflag ^= OB_NEG_SCALE;
+
+		if (is_negative_m4(dob->mat))
+			tbase.object->transflag |= OB_NEG_SCALE;
+		else
+			tbase.object->transflag &= ~OB_NEG_SCALE;
 
 		UI_ThemeColorBlend(color, TH_BACK, 0.5);
 
@@ -2063,7 +2032,10 @@ static void draw_dupli_objects_color(Scene *scene, ARegion *ar, View3D *v3d, Bas
 			    /* lamp drawing messes with matrices, could be handled smarter... but this works */
 			    (dob->ob->type == OB_LAMP) ||
 			    (dob->type == OB_DUPLIGROUP && dob->animated) ||
-			    !(bb_tmp = BKE_object_boundbox_get(dob->ob)))
+			    !(bb_tmp = BKE_object_boundbox_get(dob->ob)) ||
+			    draw_glsl_material(scene, dob->ob, v3d, dt) ||
+			    check_object_draw_texture(scene, v3d, dt) ||
+			    (base->object == OBACT && v3d->flag2 & V3D_SOLID_MATCAP))
 			{
 				// printf("draw_dupli_objects_color: skipping displist for %s\n", dob->ob->id.name + 2);
 				use_displist = false;
@@ -2093,18 +2065,19 @@ static void draw_dupli_objects_color(Scene *scene, ARegion *ar, View3D *v3d, Bas
 			glLoadMatrixf(rv3d->viewmat);
 		}
 		else {
-			copy_m4_m4(dob->ob->obmat, dob->mat);
 			draw_object(scene, ar, v3d, &tbase, DRAW_CONSTCOLOR);
 		}
 
 		tbase.object->dt = dt;
 		tbase.object->dtx = dtx;
 		tbase.object->transflag = transflag;
+		tbase.object->currentlod = savedlod;
+		copy_m4_m4(tbase.object->obmat, savedobmat);
 	}
 	
 	/* Transp afterdraw disabled, afterdraw only stores base pointers, and duplis can be same obj */
 	
-	free_object_duplilist(lb);  /* does restore */
+	free_object_duplilist(lb);
 	
 	if (use_displist)
 		glDeleteLists(displist, 1);
@@ -2425,7 +2398,7 @@ static void gpu_update_lamps_shadows(Scene *scene, View3D *v3d)
 	Base *base;
 	Object *ob;
 	
-	shadows.first = shadows.last = NULL;
+	BLI_listbase_clear(&shadows);
 	
 	/* update lamp transform and gather shadow lamps */
 	for (SETLOOPER(scene, sce_iter, base)) {
@@ -2436,7 +2409,7 @@ static void gpu_update_lamps_shadows(Scene *scene, View3D *v3d)
 		
 		if (ob->transflag & OB_DUPLI) {
 			DupliObject *dob;
-			ListBase *lb = object_duplilist(scene, ob, false);
+			ListBase *lb = object_duplilist(G.main->eval_ctx, scene, ob);
 			
 			for (dob = lb->first; dob; dob = dob->next)
 				if (dob->ob->type == OB_LAMP)
@@ -2857,7 +2830,7 @@ ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Scene *scene, Object *camera, int w
 /* NOTE: the info that this uses is updated in ED_refresh_viewport_fps(), 
  * which currently gets called during SCREEN_OT_animation_step.
  */
-static void draw_viewport_fps(Scene *scene, rcti *rect)
+void ED_scene_draw_fps(Scene *scene, rcti *rect)
 {
 	ScreenFrameRateInfo *fpsi = scene->fps_info;
 	float fps;
@@ -3038,12 +3011,12 @@ static void view3d_main_area_draw_engine_info(View3D *v3d, RegionView3D *rv3d, A
 		/* draw darkened background color. no alpha because border render does
 		 * partial redraw and will not redraw the area behind this info bar */
 		float alpha = 1.0f - fill_color[3];
-	
-		if (rv3d->persp == RV3D_CAMOB && v3d->camera && v3d->camera->type == OB_CAMERA) {
-			Camera *ca = v3d->camera->data;
+		Camera *camera = ED_view3d_camera_data_get(v3d, rv3d);
 
-			if (ca && (ca->flag & CAM_SHOWPASSEPARTOUT))
-				alpha *= (1.0f - ca->passepartalpha);
+		if (camera) {
+			if (camera->flag & CAM_SHOWPASSEPARTOUT) {
+				alpha *= (1.0f - camera->passepartalpha);
+			}
 		}
 
 		UI_GetThemeColor3fv(TH_HIGH_GRAD, fill_color);
@@ -3225,6 +3198,18 @@ static void view3d_main_area_clear(Scene *scene, View3D *v3d, ARegion *ar)
 	}
 }
 
+static void update_lods(Scene *scene, float camera_pos[3])
+{
+	Scene *sce_iter;
+	Base *base;
+	Object *ob;
+
+	for (SETLOOPER(scene, sce_iter, base)) {
+		ob = base->object;
+		BKE_object_lod_update(ob, camera_pos);
+	}
+}
+
 /* warning: this function has duplicate drawing in ED_view3d_draw_offscreen() */
 static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const char **grid_unit)
 {
@@ -3246,6 +3231,9 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 
 	/* setup view matrices */
 	view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);
+
+	/* Make sure LoDs are up to date */
+	update_lods(scene, rv3d->viewinv[3]);
 
 	/* clear the background */
 	view3d_main_area_clear(scene, v3d, ar);
@@ -3275,14 +3263,6 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 	if ((rv3d->view == RV3D_VIEW_USER) || (rv3d->persp != RV3D_ORTHO)) {
 		if ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
 			drawfloor(scene, v3d, grid_unit);
-		}
-		if (rv3d->persp == RV3D_CAMOB) {
-			if (scene->world) {
-				if (scene->world->mode & WO_STARS) {
-					RE_make_stars(NULL, scene, star_stuff_init_func, star_stuff_vertex_func,
-					              star_stuff_term_func);
-				}
-			}
 		}
 	}
 	else {
@@ -3351,8 +3331,9 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 	/* draw selected and editmode */
 	for (base = scene->base.first; base; base = base->next) {
 		if (v3d->lay & base->lay) {
-			if (base->object == scene->obedit || (base->flag & SELECT) )
+			if (base->object == scene->obedit || (base->flag & SELECT)) {
 				draw_object(scene, ar, v3d, base, 0);
+			}
 		}
 	}
 
@@ -3395,7 +3376,7 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 		BDR_drawSketch(C);
 	}
 
-	if ((U.ndof_flag & NDOF_SHOW_GUIDE) && (rv3d->viewlock != RV3D_LOCKED) && (rv3d->persp != RV3D_CAMOB))
+	if ((U.ndof_flag & NDOF_SHOW_GUIDE) && ((rv3d->viewlock & RV3D_LOCKED) == 0) && (rv3d->persp != RV3D_CAMOB))
 		/* TODO: draw something else (but not this) during fly mode */
 		draw_rotation_guide(rv3d);
 
@@ -3454,7 +3435,7 @@ static void view3d_main_area_draw_info(const bContext *C, ARegion *ar, const cha
 
 	if ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
 		if ((U.uiflag & USER_SHOW_FPS) && ED_screen_animation_playing(wm)) {
-			draw_viewport_fps(scene, &rect);
+			ED_scene_draw_fps(scene, &rect);
 		}
 		else if (U.uiflag & USER_SHOW_VIEWPORTNAME) {
 			draw_viewport_name(ar, v3d, &rect);
@@ -3514,11 +3495,19 @@ static float _bl_debug_draw_quads[_DEBUG_DRAW_QUAD_TOT][4][3];
 static int   _bl_debug_draw_quads_tot = 0;
 static float _bl_debug_draw_edges[_DEBUG_DRAW_QUAD_TOT][2][3];
 static int   _bl_debug_draw_edges_tot = 0;
+static unsigned int _bl_debug_draw_quads_color[_DEBUG_DRAW_QUAD_TOT];
+static unsigned int _bl_debug_draw_edges_color[_DEBUG_DRAW_EDGE_TOT];
+static unsigned int _bl_debug_draw_color;
 
 void bl_debug_draw_quad_clear(void)
 {
 	_bl_debug_draw_quads_tot = 0;
 	_bl_debug_draw_edges_tot = 0;
+	_bl_debug_draw_color = 0x00FF0000;
+}
+void bl_debug_color_set(const unsigned int color)
+{
+	_bl_debug_draw_color = color;
 }
 void bl_debug_draw_quad_add(const float v0[3], const float v1[3], const float v2[3], const float v3[3])
 {
@@ -3531,6 +3520,7 @@ void bl_debug_draw_quad_add(const float v0[3], const float v1[3], const float v2
 		copy_v3_v3(pt, v1); pt += 3;
 		copy_v3_v3(pt, v2); pt += 3;
 		copy_v3_v3(pt, v3); pt += 3;
+		_bl_debug_draw_quads_color[_bl_debug_draw_quads_tot] = _bl_debug_draw_color;
 		_bl_debug_draw_quads_tot++;
 	}
 }
@@ -3543,15 +3533,22 @@ void bl_debug_draw_edge_add(const float v0[3], const float v1[3])
 		float *pt = &_bl_debug_draw_edges[_bl_debug_draw_edges_tot][0][0];
 		copy_v3_v3(pt, v0); pt += 3;
 		copy_v3_v3(pt, v1); pt += 3;
+		_bl_debug_draw_edges_color[_bl_debug_draw_edges_tot] = _bl_debug_draw_color;
 		_bl_debug_draw_edges_tot++;
 	}
 }
 static void bl_debug_draw(void)
 {
+	unsigned int color;
 	if (_bl_debug_draw_quads_tot) {
 		int i;
-		cpack(0x00FF0000);
+		color = _bl_debug_draw_quads_color[0];
+		cpack(color);
 		for (i = 0; i < _bl_debug_draw_quads_tot; i ++) {
+			if (_bl_debug_draw_quads_color[i] != color) {
+				color = _bl_debug_draw_quads_color[i];
+				cpack(color);
+			}
 			glBegin(GL_LINE_LOOP);
 			glVertex3fv(_bl_debug_draw_quads[i][0]);
 			glVertex3fv(_bl_debug_draw_quads[i][1]);
@@ -3562,16 +3559,27 @@ static void bl_debug_draw(void)
 	}
 	if (_bl_debug_draw_edges_tot) {
 		int i;
-		cpack(0x00FFFF00);
+		color = _bl_debug_draw_edges_color[0];
+		cpack(color);
 		glBegin(GL_LINES);
 		for (i = 0; i < _bl_debug_draw_edges_tot; i ++) {
+			if (_bl_debug_draw_edges_color[i] != color) {
+				color = _bl_debug_draw_edges_color[i];
+				cpack(color);
+			}
 			glVertex3fv(_bl_debug_draw_edges[i][0]);
 			glVertex3fv(_bl_debug_draw_edges[i][1]);
 		}
 		glEnd();
+		color = _bl_debug_draw_edges_color[0];
+		cpack(color);
 		glPointSize(4.0);
 		glBegin(GL_POINTS);
 		for (i = 0; i < _bl_debug_draw_edges_tot; i ++) {
+			if (_bl_debug_draw_edges_color[i] != color) {
+				color = _bl_debug_draw_edges_color[i];
+				cpack(color);
+			}
 			glVertex3fv(_bl_debug_draw_edges[i][0]);
 			glVertex3fv(_bl_debug_draw_edges[i][1]);
 		}
