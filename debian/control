@@ -42,7 +42,6 @@ Build-Depends: autotools-dev,
                libz-dev,
                libfontconfig-dev,
                pkg-config,
-               python3-all-dev,
                python3-dev
 X-Python3-Version: >= 3.3
 Build-Conflicts: nvidia-glx
