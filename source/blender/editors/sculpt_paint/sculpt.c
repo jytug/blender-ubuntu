@@ -638,9 +638,9 @@ static bool sculpt_brush_test_cube(SculptBrushTest *test, float co[3], float loc
 
 	mul_v3_m4v3(local_co, local, co);
 
-	local_co[0] = fabs(local_co[0]);
-	local_co[1] = fabs(local_co[1]);
-	local_co[2] = fabs(local_co[2]);
+	local_co[0] = fabsf(local_co[0]);
+	local_co[1] = fabsf(local_co[1]);
+	local_co[2] = fabsf(local_co[2]);
 
 	if (local_co[0] <= side && local_co[1] <= side && local_co[2] <= side) {
 		float p = 4.0f;
@@ -719,7 +719,7 @@ static float overlapped_curve(Brush *br, float x)
 	for (i = 0; i < n; i++) {
 		float xx;
 
-		xx = fabs(x0 + i * h);
+		xx = fabsf(x0 + i * h);
 
 		if (xx < 1.0f)
 			sum += BKE_brush_curve_strength(br, xx, 1);
@@ -2195,7 +2195,7 @@ static void do_layer_brush(Sculpt *sd, Object *ob, PBVHNode **nodes, int totnode
 
 				mul_v3_v3fl(val, offset, *disp);
 
-				if (ss->layer_co && (brush->flag & BRUSH_PERSISTENT)) {
+				if (!ss->multires && !ss->bm && ss->layer_co && (brush->flag & BRUSH_PERSISTENT)) {
 					int index = vd.vert_indices[vd.i];
 
 					/* persistent base */
@@ -3915,7 +3915,8 @@ static void sculpt_update_cache_invariants(bContext *C, Sculpt *sd, SculptSessio
 	mul_m3_v3(mat, viewDir);
 	normalize_v3_v3(cache->true_view_normal, viewDir);
 
-	cache->supports_gravity = !ELEM(brush->sculpt_tool, SCULPT_TOOL_MASK, SCULPT_TOOL_SMOOTH) && sd->gravity_factor > 0.0f;
+	cache->supports_gravity = !ELEM3(brush->sculpt_tool, SCULPT_TOOL_MASK, SCULPT_TOOL_SMOOTH, SCULPT_TOOL_SIMPLIFY)
+							  && sd->gravity_factor > 0.0f;
 	/* get gravity vector in world space */
 	if (cache->supports_gravity) {
 		if (sd->gravity_object) {
@@ -3951,6 +3952,12 @@ static void sculpt_update_cache_invariants(bContext *C, Sculpt *sd, SculptSessio
 					copy_v3_v3(ss->layer_co[i], ss->mvert[i].co);
 				}
 			}
+		}
+
+		if (ss->bm) {
+			/* Free any remaining layer displacements from nodes. If not and topology changes
+			 * from using another tool, then next layer toolstroke can access past disp array bounds */
+			BKE_pbvh_free_layer_disp(ss->pbvh);
 		}
 	}
 
@@ -4483,8 +4490,7 @@ static void sculpt_stroke_update_step(bContext *C, struct PaintStroke *UNUSED(st
 		do_symmetrical_brush_actions(sd, ob, sculpt_topology_update);
 	}
 
-	if (BKE_paint_brush(&sd->paint)->sculpt_tool != SCULPT_TOOL_SIMPLIFY)
-		do_symmetrical_brush_actions(sd, ob, do_brush_action);
+	do_symmetrical_brush_actions(sd, ob, do_brush_action);
 
 	sculpt_combine_proxies(sd, ob);
 
@@ -5119,6 +5125,7 @@ static int sculpt_mode_toggle_exec(bContext *C, wmOperator *op)
 
 			/* Turn on X plane mirror symmetry by default */
 			ts->sculpt->paint.symmetry_flags |= PAINT_SYMM_X;
+			ts->sculpt->paint.flags |= PAINT_SHOW_BRUSH;
 
 			/* Make sure at least dyntopo subdivision is enabled */
 			ts->sculpt->flags |= SCULPT_DYNTOPO_SUBDIVIDE;

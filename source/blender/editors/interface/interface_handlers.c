@@ -1754,7 +1754,7 @@ static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data,
 			/* pass */
 		}
 		else if (mode == 'c') {
-			if (RNA_property_array_length(&but->rnapoin, but->rnaprop) == 4)
+			if (but->rnaprop && RNA_property_array_length(&but->rnapoin, but->rnaprop) == 4)
 				rgba[3] = RNA_property_float_get_index(&but->rnapoin, but->rnaprop, 3);
 			else
 				rgba[3] = 1.0f;
@@ -1776,7 +1776,7 @@ static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data,
 
 				button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
 				ui_set_but_vectorf(but, rgba);
-				if (RNA_property_array_length(&but->rnapoin, but->rnaprop) == 4)
+				if (but->rnaprop && RNA_property_array_length(&but->rnapoin, but->rnaprop) == 4)
 					RNA_property_float_set_index(&but->rnapoin, but->rnaprop, 3, rgba[3]);
 
 				button_activate_state(C, but, BUTTON_STATE_EXIT);
@@ -2911,7 +2911,7 @@ static uiBut *ui_but_list_row_text_activate(bContext *C, uiBut *but, uiHandleBut
 	ARegion *ar = CTX_wm_region(C);
 	uiBut *labelbut = ui_but_find_mouse_over_ex(ar, event->x, event->y, true);
 
-	if (labelbut && labelbut->type == TEX) {
+	if (labelbut && labelbut->type == TEX && !(labelbut->flag & UI_BUT_DISABLED)) {
 		/* exit listrow */
 		data->cancel = true;
 		button_activate_exit(C, but, data, false, false);
@@ -3364,11 +3364,11 @@ static bool ui_numedit_but_NUM(uiBut *but, uiHandleButtonData *data,
 
 		if ((is_float == true) && (softrange > 11)) {
 			/* non linear change in mouse input- good for high precicsion */
-			data->dragf += (((float)(mx - data->draglastx)) / deler) * (fabsf(mx - data->dragstartx) / 500.0f);
+			data->dragf += (((float)(mx - data->draglastx)) / deler) * ((float)abs(mx - data->dragstartx) / 500.0f);
 		}
 		else if ((is_float == false) && (softrange > 129)) { /* only scale large int buttons */
 			/* non linear change in mouse input- good for high precicsionm ints need less fine tuning */
-			data->dragf += (((float)(mx - data->draglastx)) / deler) * (fabsf(mx - data->dragstartx) / 250.0f);
+			data->dragf += (((float)(mx - data->draglastx)) / deler) * ((float)abs(mx - data->dragstartx) / 250.0f);
 		}
 		else {
 			/*no scaling */
@@ -3487,8 +3487,8 @@ static int ui_do_but_NUM(bContext *C, uiBlock *block, uiBut *but, uiHandleButton
 			float fac;
 
 #ifdef USE_DRAG_MULTINUM
-			data->multi_data.drag_dir[0] += fabsf(data->draglastx - mx);
-			data->multi_data.drag_dir[1] += fabsf(data->draglasty - my);
+			data->multi_data.drag_dir[0] += abs(data->draglastx - mx);
+			data->multi_data.drag_dir[1] += abs(data->draglasty - my);
 #endif
 
 			fac = 1.0f;
@@ -3770,8 +3770,8 @@ static int ui_do_but_SLI(bContext *C, uiBlock *block, uiBut *but, uiHandleButton
 		}
 		else if (event->type == MOUSEMOVE) {
 #ifdef USE_DRAG_MULTINUM
-			data->multi_data.drag_dir[0] += fabsf(data->draglastx - mx);
-			data->multi_data.drag_dir[1] += fabsf(data->draglasty - my);
+			data->multi_data.drag_dir[0] += abs(data->draglastx - mx);
+			data->multi_data.drag_dir[1] += abs(data->draglasty - my);
 #endif
 			if (ui_numedit_but_SLI(but, data, mx, true, event->ctrl != 0, event->shift != 0))
 				ui_numedit_apply(C, block, but, data);
