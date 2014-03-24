@@ -109,6 +109,8 @@
 
 #endif // WITH_MOD_FLUID
 
+static ThreadRWMutex psys_bvhtree_rwlock = BLI_RWLOCK_INITIALIZER;
+
 /************************************************/
 /*			Reacting to system events			*/
 /************************************************/
@@ -660,9 +662,9 @@ static void distribute_grid(DerivedMesh *dm, ParticleSystem *psys)
 			if (pa->flag & PARS_UNEXIST)
 				continue;
 
-			pa->fuv[0] += rfac * (PSYS_FRAND(p + 31) - 0.5f);
-			pa->fuv[1] += rfac * (PSYS_FRAND(p + 32) - 0.5f);
-			pa->fuv[2] += rfac * (PSYS_FRAND(p + 33) - 0.5f);
+			pa->fuv[0] += rfac * (psys_frand(psys, p + 31) - 0.5f);
+			pa->fuv[1] += rfac * (psys_frand(psys, p + 32) - 0.5f);
+			pa->fuv[2] += rfac * (psys_frand(psys, p + 33) - 0.5f);
 		}
 	}
 }
@@ -1549,7 +1551,7 @@ static void initialize_particle_texture(ParticleSimulationData *sim, ParticleDat
 	if (part->type != PART_FLUID) {
 		psys_get_texture(sim, pa, &ptex, PAMAP_INIT, 0.f);
 
-		if (ptex.exist < PSYS_FRAND(p+125))
+		if (ptex.exist < psys_frand(psys, p+125))
 			pa->flag |= PARS_UNEXIST;
 
 		pa->time = (part->type == PART_HAIR) ? 0.f : part->sta + (part->end - part->sta)*ptex.time;
@@ -1714,9 +1716,9 @@ void psys_get_birth_coordinates(ParticleSimulationData *sim, ParticleData *pa, P
 
 	/* -velocity (boids need this even if there's no random velocity) */
 	if (part->randfac != 0.0f || (part->phystype==PART_PHYS_BOIDS && pa->boid)) {
-		r_vel[0] = 2.0f * (PSYS_FRAND(p + 10) - 0.5f);
-		r_vel[1] = 2.0f * (PSYS_FRAND(p + 11) - 0.5f);
-		r_vel[2] = 2.0f * (PSYS_FRAND(p + 12) - 0.5f);
+		r_vel[0] = 2.0f * (psys_frand(psys, p + 10) - 0.5f);
+		r_vel[1] = 2.0f * (psys_frand(psys, p + 11) - 0.5f);
+		r_vel[2] = 2.0f * (psys_frand(psys, p + 12) - 0.5f);
 
 		mul_mat3_m4_v3(ob->obmat, r_vel);
 		normalize_v3(r_vel);
@@ -1724,9 +1726,9 @@ void psys_get_birth_coordinates(ParticleSimulationData *sim, ParticleData *pa, P
 
 	/* -angular velocity					*/
 	if (part->avemode==PART_AVE_RAND) {
-		r_ave[0] = 2.0f * (PSYS_FRAND(p + 13) - 0.5f);
-		r_ave[1] = 2.0f * (PSYS_FRAND(p + 14) - 0.5f);
-		r_ave[2] = 2.0f * (PSYS_FRAND(p + 15) - 0.5f);
+		r_ave[0] = 2.0f * (psys_frand(psys, p + 13) - 0.5f);
+		r_ave[1] = 2.0f * (psys_frand(psys, p + 14) - 0.5f);
+		r_ave[2] = 2.0f * (psys_frand(psys, p + 15) - 0.5f);
 
 		mul_mat3_m4_v3(ob->obmat,r_ave);
 		normalize_v3(r_ave);
@@ -1734,10 +1736,10 @@ void psys_get_birth_coordinates(ParticleSimulationData *sim, ParticleData *pa, P
 		
 	/* -rotation							*/
 	if (part->randrotfac != 0.0f) {
-		r_rot[0] = 2.0f * (PSYS_FRAND(p + 16) - 0.5f);
-		r_rot[1] = 2.0f * (PSYS_FRAND(p + 17) - 0.5f);
-		r_rot[2] = 2.0f * (PSYS_FRAND(p + 18) - 0.5f);
-		r_rot[3] = 2.0f * (PSYS_FRAND(p + 19) - 0.5f);
+		r_rot[0] = 2.0f * (psys_frand(psys, p + 16) - 0.5f);
+		r_rot[1] = 2.0f * (psys_frand(psys, p + 17) - 0.5f);
+		r_rot[2] = 2.0f * (psys_frand(psys, p + 18) - 0.5f);
+		r_rot[3] = 2.0f * (psys_frand(psys, p + 19) - 0.5f);
 		normalize_qt(r_rot);
 
 		mat4_to_quat(rot,ob->obmat);
@@ -1940,7 +1942,7 @@ void psys_get_birth_coordinates(ParticleSimulationData *sim, ParticleData *pa, P
 			/* rotation phase */
 			phasefac = part->phasefac;
 			if (part->randphasefac != 0.0f)
-				phasefac += part->randphasefac * PSYS_FRAND(p + 20);
+				phasefac += part->randphasefac * psys_frand(psys, p + 20);
 			axis_angle_to_quat( q_phase,x_vec, phasefac*(float)M_PI);
 
 			/* combine base rotation & phase */
@@ -2019,7 +2021,7 @@ void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, 
 		/* initialize the lifetime, in case the texture coordinates
 		 * are from Particles/Strands, which would cause undefined values
 		 */
-		pa->lifetime = part->lifetime * (1.0f - part->randlife * PSYS_FRAND(p + 21));
+		pa->lifetime = part->lifetime * (1.0f - part->randlife * psys_frand(psys, p + 21));
 		pa->dietime = pa->time + pa->lifetime;
 
 		/* get possible textural influence */
@@ -2028,7 +2030,7 @@ void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, 
 		pa->lifetime = part->lifetime * ptex.life;
 
 		if (part->randlife != 0.0f)
-			pa->lifetime *= 1.0f - part->randlife * PSYS_FRAND(p + 21);
+			pa->lifetime *= 1.0f - part->randlife * psys_frand(psys, p + 21);
 	}
 
 	pa->dietime = pa->time + pa->lifetime;
@@ -2209,15 +2211,22 @@ static void psys_update_particle_bvhtree(ParticleSystem *psys, float cfra)
 	if (psys) {
 		PARTICLE_P;
 		int totpart = 0;
+		bool need_rebuild;
 
-		if (!psys->bvhtree || psys->bvhtree_frame != cfra) {
+		BLI_rw_mutex_lock(&psys_bvhtree_rwlock, THREAD_LOCK_READ);
+		need_rebuild = !psys->bvhtree || psys->bvhtree_frame != cfra;
+		BLI_rw_mutex_unlock(&psys_bvhtree_rwlock);
+		
+		if (need_rebuild) {
 			LOOP_SHOWN_PARTICLES {
 				totpart++;
 			}
 			
+			BLI_rw_mutex_lock(&psys_bvhtree_rwlock, THREAD_LOCK_WRITE);
+			
 			BLI_bvhtree_free(psys->bvhtree);
 			psys->bvhtree = BLI_bvhtree_new(totpart, 0.0, 4, 6);
-
+			
 			LOOP_SHOWN_PARTICLES {
 				if (pa->alive == PARS_ALIVE) {
 					if (pa->state.time == cfra)
@@ -2227,8 +2236,10 @@ static void psys_update_particle_bvhtree(ParticleSystem *psys, float cfra)
 				}
 			}
 			BLI_bvhtree_balance(psys->bvhtree);
-
+			
 			psys->bvhtree_frame = cfra;
+			
+			BLI_rw_mutex_unlock(&psys_bvhtree_rwlock);
 		}
 	}
 }
@@ -2546,7 +2557,11 @@ static void sph_evaluate_func(BVHTree *tree, ParticleSystem **psys, float co[3],
 			break;
 		}
 		else {
+			BLI_rw_mutex_lock(&psys_bvhtree_rwlock, THREAD_LOCK_READ);
+			
 			BLI_bvhtree_range_query(psys[i]->bvhtree, co, interaction_radius, callback, pfr);
+			
+			BLI_rw_mutex_unlock(&psys_bvhtree_rwlock);
 		}
 	}
 }
@@ -4093,9 +4108,9 @@ static void hair_step(ParticleSimulationData *sim, float cfra)
 	LOOP_PARTICLES {
 		pa->size = part->size;
 		if (part->randsize > 0.0f)
-			pa->size *= 1.0f - part->randsize * PSYS_FRAND(p + 1);
+			pa->size *= 1.0f - part->randsize * psys_frand(psys, p + 1);
 
-		if (PSYS_FRAND(p) > disp)
+		if (psys_frand(psys, p) > disp)
 			pa->flag |= PARS_NO_DISP;
 		else
 			pa->flag &= ~PARS_NO_DISP;
@@ -4254,7 +4269,7 @@ static void dynamics_step(ParticleSimulationData *sim, float cfra)
 			psys_get_texture(sim, pa, &ptex, PAMAP_SIZE, cfra);
 			pa->size = part->size*ptex.size;
 			if (part->randsize > 0.0f)
-				pa->size *= 1.0f - part->randsize * PSYS_FRAND(p + 1);
+				pa->size *= 1.0f - part->randsize * psys_frand(psys, p + 1);
 
 			reset_particle(sim, pa, dtime, cfra);
 		}
@@ -4312,7 +4327,7 @@ static void dynamics_step(ParticleSimulationData *sim, float cfra)
 
 		pa->size = part->size*ptex.size;
 		if (part->randsize > 0.0f)
-			pa->size *= 1.0f - part->randsize * PSYS_FRAND(p + 1);
+			pa->size *= 1.0f - part->randsize * psys_frand(psys, p + 1);
 
 		birthtime = pa->time;
 		dietime = pa->dietime;
@@ -4498,7 +4513,7 @@ static void cached_step(ParticleSimulationData *sim, float cfra)
 		psys_get_texture(sim, pa, &ptex, PAMAP_SIZE, cfra);
 		pa->size = part->size*ptex.size;
 		if (part->randsize > 0.0f)
-			pa->size *= 1.0f - part->randsize * PSYS_FRAND(p + 1);
+			pa->size *= 1.0f - part->randsize * psys_frand(psys, p + 1);
 
 		psys->lattice_deform_data = psys_create_lattice_deform_data(sim);
 
@@ -4520,7 +4535,7 @@ static void cached_step(ParticleSimulationData *sim, float cfra)
 			psys->lattice_deform_data = NULL;
 		}
 
-		if (PSYS_FRAND(p) > disp)
+		if (psys_frand(psys, p) > disp)
 			pa->flag |= PARS_NO_DISP;
 		else
 			pa->flag &= ~PARS_NO_DISP;
@@ -4744,7 +4759,7 @@ static void system_step(ParticleSimulationData *sim, float cfra)
 	disp= psys_get_current_display_percentage(psys);
 
 	LOOP_PARTICLES {
-		if (PSYS_FRAND(p) > disp)
+		if (psys_frand(psys, p) > disp)
 			pa->flag |= PARS_NO_DISP;
 		else
 			pa->flag &= ~PARS_NO_DISP;
@@ -5055,11 +5070,11 @@ void particle_system_update(Scene *scene, Object *ob, ParticleSystem *psys)
 					LOOP_EXISTING_PARTICLES {
 						pa->size = part->size;
 						if (part->randsize > 0.0f)
-							pa->size *= 1.0f - part->randsize * PSYS_FRAND(p + 1);
+							pa->size *= 1.0f - part->randsize * psys_frand(psys, p + 1);
 
 						reset_particle(&sim, pa, 0.0, cfra);
 
-						if (PSYS_FRAND(p) > disp)
+						if (psys_frand(psys, p) > disp)
 							pa->flag |= PARS_NO_DISP;
 						else
 							pa->flag &= ~PARS_NO_DISP;
