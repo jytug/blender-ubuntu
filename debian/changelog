@@ -1,4 +1,4 @@
-blender (2.70-1) UNRELEASED; urgency=medium
+blender (2.70-1) experimental; urgency=low
 
   * New upstream release
     - debian/patches/: #0011 patch updated (Closes: #742371)
@@ -6,7 +6,7 @@ blender (2.70-1) UNRELEASED; urgency=medium
   * debian/rules: python3-all-dev b-dep dropped (Closes: #739623)
   * debian/control: libav10 b-dep bumped
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Mon, 24 Mar 2014 08:52:57 +0100
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Mon, 24 Mar 2014 10:54:54 +0100
 
 blender (2.69+git20140225.cef73d54-1) experimental; urgency=low
 
