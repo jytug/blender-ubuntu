@@ -1,4 +1,4 @@
-blender (2.70a-1) UNRELEASED; urgency=medium
+blender (2.70a-1) unstable; urgency=medium
 
   * New upstream bugfix release
     - debian/patches/: patchset re-worked against v2.70a
@@ -7,7 +7,7 @@ blender (2.70a-1) UNRELEASED; urgency=medium
       - 0013-fix_FTBFS_on_kFreeBSD.patch added (Closes: #748322)
         Thanks to Sebastian Ramacher (sramacher) for the patch.
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Sun, 18 May 2014 17:13:21 +0200
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Sun, 18 May 2014 17:16:51 +0200
 
 blender (2.70-2) unstable; urgency=medium
 
