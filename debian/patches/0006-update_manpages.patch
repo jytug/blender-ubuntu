@@ -148,7 +148,7 @@ index 0000000..d15b0c9
 +.SH AUTHORS
 +This manpage was written for a Debian GNU/Linux by Kevin Roy <kiniou@gmail.com>.
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 0000316..96b3e17 100644
+index ca5b172..db3a7cd 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -392,6 +392,7 @@ if(UNIX AND NOT APPLE)

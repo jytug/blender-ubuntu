@@ -8,10 +8,10 @@ Subject: fix_FTBFS_on_non-linux_architectures
  2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0f58189..c0ee39f 100644
+index 1feaa4b..3db7971 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -931,6 +931,9 @@ if(UNIX AND NOT APPLE)
+@@ -935,6 +935,9 @@ if(UNIX AND NOT APPLE)
  	endif()
  
  	set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -pthread")

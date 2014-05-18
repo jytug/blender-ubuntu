@@ -81,7 +81,7 @@ index e56ac6f..8be23d6 100644
  			BLI_assert(0);
  			break;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 1abd078..0000316 100644
+index 19d408a..ca5b172 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -319,11 +319,11 @@ if(WITH_INTERNATIONAL)

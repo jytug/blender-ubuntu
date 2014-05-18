@@ -18,10 +18,10 @@ Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
  7 files changed, 85 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3e7ac95..0f58189 100644
+index 169aeff..1feaa4b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -663,6 +663,13 @@ if(UNIX AND NOT APPLE)
+@@ -667,6 +667,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -184,7 +184,7 @@ index 5572656..9c72300 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 82a86fe..fbfe4be 100644
+index 926072f..b3082a5 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -316,12 +316,6 @@ endif()
