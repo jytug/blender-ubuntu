@@ -1,3 +1,14 @@
+Repacking the upstream tarball due to javascripts:
+--------------------------------------------------
+
+Upstream tarball provides minified versions of
+a couple of javascripts (said, jquery and jquery-ui).
+These modifications, combined with a repacked tarball,
+try to fix the issue.
+
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Mon, 26 May 2014 09:44:39 +0200
+
+
 Upgrading to a newer upstream release:
 --------------------------------------
 
