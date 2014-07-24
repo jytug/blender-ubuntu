@@ -30,8 +30,7 @@ class VIEW3D_HT_header(Header):
         layout = self.layout
 
         view = context.space_data
-        mode_string = context.mode
-        edit_object = context.edit_object
+        # mode_string = context.mode
         obj = context.active_object
         toolsettings = context.tool_settings
 
@@ -127,7 +126,7 @@ class VIEW3D_MT_editor_menus(Menu):
                 layout.menu("VIEW3D_MT_select_paint_mask")
             elif mesh.use_paint_mask_vertex and mode_string == 'PAINT_WEIGHT':
                 layout.menu("VIEW3D_MT_select_paint_mask_vertex")
-        elif mode_string not in {'EDIT_TEXT', 'SCULPT'}:
+        elif mode_string != 'SCULPT':
             layout.menu("VIEW3D_MT_select_%s" % mode_string.lower())
 
         if mode_string == 'OBJECT':
@@ -197,6 +196,7 @@ class VIEW3D_MT_transform_base(Menu):
         layout.operator("transform.bend", text="Bend")
         layout.operator("transform.push_pull", text="Push/Pull")
         layout.operator("object.vertex_warp", text="Warp")
+        layout.operator("object.vertex_random", text="Randomize")
 
 
 # Generic transform menu - geometry types
@@ -477,7 +477,7 @@ class VIEW3D_MT_view_align(Menu):
 
 
 class VIEW3D_MT_view_align_selected(Menu):
-    bl_label = "Align View to Selected"
+    bl_label = "Align View to Active"
 
     def draw(self, context):
         layout = self.layout
@@ -662,8 +662,8 @@ class VIEW3D_MT_select_edit_mesh(Menu):
 
         layout.operator("mesh.select_linked", text="Linked")
         layout.operator("mesh.shortest_path_select", text="Shortest Path")
-        layout.operator("mesh.loop_multi_select", text="Edge Loop").ring = False
-        layout.operator("mesh.loop_multi_select", text="Edge Ring").ring = True
+        layout.operator("mesh.loop_multi_select", text="Edge Loops").ring = False
+        layout.operator("mesh.loop_multi_select", text="Edge Rings").ring = True
 
         layout.separator()
 
@@ -880,20 +880,13 @@ class INFO_MT_mesh_add(Menu):
     bl_label = "Mesh"
 
     def draw(self, context):
+        from .space_view3d_toolbar import VIEW3D_PT_tools_add_object
+
         layout = self.layout
 
         layout.operator_context = 'INVOKE_REGION_WIN'
-        layout.operator("mesh.primitive_plane_add", icon='MESH_PLANE', text="Plane")
-        layout.operator("mesh.primitive_cube_add", icon='MESH_CUBE', text="Cube")
-        layout.operator("mesh.primitive_circle_add", icon='MESH_CIRCLE', text="Circle")
-        layout.operator("mesh.primitive_uv_sphere_add", icon='MESH_UVSPHERE', text="UV Sphere")
-        layout.operator("mesh.primitive_ico_sphere_add", icon='MESH_ICOSPHERE', text="Icosphere")
-        layout.operator("mesh.primitive_cylinder_add", icon='MESH_CYLINDER', text="Cylinder")
-        layout.operator("mesh.primitive_cone_add", icon='MESH_CONE', text="Cone")
-        layout.separator()
-        layout.operator("mesh.primitive_grid_add", icon='MESH_GRID', text="Grid")
-        layout.operator("mesh.primitive_monkey_add", icon='MESH_MONKEY', text="Monkey")
-        layout.operator("mesh.primitive_torus_add", icon='MESH_TORUS', text="Torus")
+
+        VIEW3D_PT_tools_add_object.draw_add_mesh(layout)
 
 
 class INFO_MT_curve_add(Menu):
@@ -901,14 +894,12 @@ class INFO_MT_curve_add(Menu):
     bl_label = "Curve"
 
     def draw(self, context):
+        from .space_view3d_toolbar import VIEW3D_PT_tools_add_object
         layout = self.layout
 
         layout.operator_context = 'INVOKE_REGION_WIN'
-        layout.operator("curve.primitive_bezier_curve_add", icon='CURVE_BEZCURVE', text="Bezier")
-        layout.operator("curve.primitive_bezier_circle_add", icon='CURVE_BEZCIRCLE', text="Circle")
-        layout.operator("curve.primitive_nurbs_curve_add", icon='CURVE_NCURVE', text="Nurbs Curve")
-        layout.operator("curve.primitive_nurbs_circle_add", icon='CURVE_NCIRCLE', text="Nurbs Circle")
-        layout.operator("curve.primitive_nurbs_path_add", icon='CURVE_PATH', text="Path")
+
+        VIEW3D_PT_tools_add_object.draw_add_curve(layout)
 
 
 class INFO_MT_surface_add(Menu):
@@ -916,15 +907,12 @@ class INFO_MT_surface_add(Menu):
     bl_label = "Surface"
 
     def draw(self, context):
+        from .space_view3d_toolbar import VIEW3D_PT_tools_add_object
         layout = self.layout
 
         layout.operator_context = 'INVOKE_REGION_WIN'
-        layout.operator("surface.primitive_nurbs_surface_curve_add", icon='SURFACE_NCURVE', text="NURBS Curve")
-        layout.operator("surface.primitive_nurbs_surface_circle_add", icon='SURFACE_NCIRCLE', text="NURBS Circle")
-        layout.operator("surface.primitive_nurbs_surface_surface_add", icon='SURFACE_NSURFACE', text="NURBS Surface")
-        layout.operator("surface.primitive_nurbs_surface_cylinder_add", icon='SURFACE_NCYLINDER', text="NURBS Cylinder")
-        layout.operator("surface.primitive_nurbs_surface_sphere_add", icon='SURFACE_NSPHERE', text="NURBS Sphere")
-        layout.operator("surface.primitive_nurbs_surface_torus_add", icon='SURFACE_NTORUS', text="NURBS Torus")
+
+        VIEW3D_PT_tools_add_object.draw_add_surface(layout)
 
 
 class INFO_MT_metaball_add(Menu):
@@ -1798,7 +1786,7 @@ class VIEW3D_MT_pose(Menu):
         layout.separator()
 
         layout.operator_context = 'INVOKE_AREA'
-        layout.operator("pose.armature_layers", text="Change Armature Layers...")
+        layout.operator("armature.armature_layers", text="Change Armature Layers...")
         layout.operator("pose.bone_layers", text="Change Bone Layers...")
 
         layout.separator()
@@ -2172,10 +2160,18 @@ class VIEW3D_MT_edit_mesh_vertices(Menu):
         layout.operator("mesh.merge")
         layout.operator("mesh.rip_move")
         layout.operator("mesh.rip_move_fill")
+        layout.operator("mesh.rip_edge_move")
         layout.operator("mesh.split")
         layout.operator_menu_enum("mesh.separate", "type")
         layout.operator("mesh.vert_connect", text="Connect")
         layout.operator("transform.vert_slide", text="Slide")
+
+        layout.separator()
+
+        op = layout.operator("mesh.mark_sharp", text="Shade Smooth")
+        op.use_verts = True
+        op.clear = True
+        layout.operator("mesh.mark_sharp", text="Shade Sharp").use_verts = True
 
         layout.separator()
 
@@ -2222,7 +2218,7 @@ class VIEW3D_MT_edit_mesh_edges(Menu):
 
         layout.separator()
 
-        layout.operator("mesh.mark_sharp").clear = False
+        layout.operator("mesh.mark_sharp")
         layout.operator("mesh.mark_sharp", text="Clear Sharp").clear = True
 
         layout.separator()
@@ -2244,8 +2240,8 @@ class VIEW3D_MT_edit_mesh_edges(Menu):
         layout.separator()
 
         layout.operator("transform.edge_slide")
-        layout.operator("mesh.loop_multi_select", text="Edge Loop").ring = False
-        layout.operator("mesh.loop_multi_select", text="Edge Ring").ring = True
+        layout.operator("mesh.loop_multi_select", text="Edge Loops").ring = False
+        layout.operator("mesh.loop_multi_select", text="Edge Rings").ring = True
         layout.operator("mesh.loop_to_region")
         layout.operator("mesh.region_to_loop")
 
@@ -2351,7 +2347,7 @@ class VIEW3D_MT_edit_mesh_delete(Menu):
         layout.separator()
 
         layout.operator("mesh.edge_collapse")
-        layout.operator("mesh.delete_edgeloop", text="Edge Loop")
+        layout.operator("mesh.delete_edgeloop", text="Edge Loops")
 
 
 class VIEW3D_MT_edit_mesh_showhide(ShowHideMenu, Menu):
@@ -2486,32 +2482,32 @@ class VIEW3D_MT_edit_text_chars(Menu):
     def draw(self, context):
         layout = self.layout
 
-        layout.operator("font.text_insert", text="Copyright|Alt C").text = "\u00A9"
-        layout.operator("font.text_insert", text="Registered Trademark|Alt R").text = "\u00AE"
+        layout.operator("font.text_insert", text="Copyright").text = "\u00A9"
+        layout.operator("font.text_insert", text="Registered Trademark").text = "\u00AE"
 
         layout.separator()
 
-        layout.operator("font.text_insert", text="Degree Sign|Alt G").text = "\u00B0"
-        layout.operator("font.text_insert", text="Multiplication Sign|Alt x").text = "\u00D7"
-        layout.operator("font.text_insert", text="Circle|Alt .").text = "\u008A"
-        layout.operator("font.text_insert", text="Superscript 1|Alt 1").text = "\u00B9"
-        layout.operator("font.text_insert", text="Superscript 2|Alt 2").text = "\u00B2"
-        layout.operator("font.text_insert", text="Superscript 3|Alt 3").text = "\u00B3"
-        layout.operator("font.text_insert", text="Double >>|Alt >").text = "\u00BB"
-        layout.operator("font.text_insert", text="Double <<|Alt <").text = "\u00AB"
-        layout.operator("font.text_insert", text="Promillage|Alt %").text = "\u2030"
+        layout.operator("font.text_insert", text="Degree Sign").text = "\u00B0"
+        layout.operator("font.text_insert", text="Multiplication Sign").text = "\u00D7"
+        layout.operator("font.text_insert", text="Circle").text = "\u008A"
+        layout.operator("font.text_insert", text="Superscript 1").text = "\u00B9"
+        layout.operator("font.text_insert", text="Superscript 2").text = "\u00B2"
+        layout.operator("font.text_insert", text="Superscript 3").text = "\u00B3"
+        layout.operator("font.text_insert", text="Double >>").text = "\u00BB"
+        layout.operator("font.text_insert", text="Double <<").text = "\u00AB"
+        layout.operator("font.text_insert", text="Promillage").text = "\u2030"
 
         layout.separator()
 
-        layout.operator("font.text_insert", text="Dutch Florin|Alt F").text = "\u00A4"
-        layout.operator("font.text_insert", text="British Pound|Alt L").text = "\u00A3"
-        layout.operator("font.text_insert", text="Japanese Yen|Alt Y").text = "\u00A5"
+        layout.operator("font.text_insert", text="Dutch Florin").text = "\u00A4"
+        layout.operator("font.text_insert", text="British Pound").text = "\u00A3"
+        layout.operator("font.text_insert", text="Japanese Yen").text = "\u00A5"
 
         layout.separator()
 
-        layout.operator("font.text_insert", text="German S|Alt S").text = "\u00DF"
-        layout.operator("font.text_insert", text="Spanish Question Mark|Alt ?").text = "\u00BF"
-        layout.operator("font.text_insert", text="Spanish Exclamation Mark|Alt !").text = "\u00A1"
+        layout.operator("font.text_insert", text="German S").text = "\u00DF"
+        layout.operator("font.text_insert", text="Spanish Question Mark").text = "\u00BF"
+        layout.operator("font.text_insert", text="Spanish Exclamation Mark").text = "\u00A1"
 
 
 class VIEW3D_MT_edit_meta(Menu):
@@ -2698,8 +2694,7 @@ class VIEW3D_PT_view3d_properties(Panel):
         view = context.space_data
 
         col = layout.column()
-        col.active = bool(view.region_3d.view_perspective != 'CAMERA' or
-                          view.region_quadview)
+        col.active = bool(view.region_3d.view_perspective != 'CAMERA' or view.region_quadviews)
         col.prop(view, "lens")
         col.label(text="Lock to Object:")
         col.prop(view, "lock_object", text="")
@@ -2789,8 +2784,6 @@ class VIEW3D_PT_view3d_display(Panel):
 
         view = context.space_data
         scene = context.scene
-        gs = scene.game_settings
-        obj = context.object
 
         col = layout.column()
         col.prop(view, "show_only_render")
@@ -2822,11 +2815,10 @@ class VIEW3D_PT_view3d_display(Panel):
 
         layout.separator()
 
-        region = view.region_quadview
-
         layout.operator("screen.region_quadview", text="Toggle Quad View")
 
-        if region:
+        if view.region_quadviews:
+            region = view.region_quadviews[2]
             col = layout.column()
             col.prop(region, "lock_rotation")
             row = col.row()
@@ -2949,14 +2941,14 @@ class VIEW3D_PT_view3d_meshdisplay(Panel):
 
         col.separator()
         col.label(text="Normals:")
-        row = col.row()
+        row = col.row(align=True)
+
+        row.prop(mesh, "show_normal_vertex", text="", icon='VERTEXSEL')
+        row.prop(mesh, "show_normal_loop", text="", icon='VERTEXSEL')
+        row.prop(mesh, "show_normal_face", text="", icon='FACESEL')
 
         sub = row.row(align=True)
-        sub.prop(mesh, "show_normal_vertex", text="", icon='VERTEXSEL')
-        sub.prop(mesh, "show_normal_face", text="", icon='FACESEL')
-
-        sub = row.row(align=True)
-        sub.active = mesh.show_normal_vertex or mesh.show_normal_face
+        sub.active = mesh.show_normal_vertex or mesh.show_normal_face or mesh.show_normal_loop
         sub.prop(context.scene.tool_settings, "normal_size", text="Size")
 
         col.separator()
@@ -3151,7 +3143,7 @@ class VIEW3D_PT_transform_orientations(Panel):
         if orientation:
             row = layout.row(align=True)
             row.prop(orientation, "name", text="")
-            row.operator("transform.delete_orientation", text="", icon="X")
+            row.operator("transform.delete_orientation", text="", icon='X')
 
 
 class VIEW3D_PT_etch_a_ton(Panel):
@@ -3232,10 +3224,12 @@ class VIEW3D_PT_context_properties(Panel):
 
     @classmethod
     def poll(cls, context):
+        import rna_prop_ui
         member = cls._active_context_member(context)
+
         if member:
-            context_member = getattr(context, member)
-            return context_member and context_member.keys()
+            context_member, member = rna_prop_ui.rna_idprop_context_value(context, member, object)
+            return context_member and rna_prop_ui.rna_idprop_has_properties(context_member)
 
         return False
 

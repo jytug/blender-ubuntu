@@ -37,6 +37,8 @@
 #include <iostream>
 #include <stdio.h>
 
+#include "BLI_task.h"
+
 #include "KX_KetsjiEngine.h"
 
 #include "ListValue.h"
@@ -49,6 +51,7 @@
 #include "RAS_Rect.h"
 #include "RAS_IRasterizer.h"
 #include "RAS_ICanvas.h"
+#include "RAS_ILightObject.h"
 #include "MT_Vector3.h"
 #include "MT_Transform.h"
 #include "SCA_IInputDevice.h"
@@ -142,8 +145,7 @@ KX_KetsjiEngine::KX_KetsjiEngine(KX_ISystem* system)
 
 	m_exitcode(KX_EXIT_REQUEST_NO_REQUEST),
 	m_exitstring(""),
-	
-	m_drawingmode(5),
+
 	m_cameraZoom(1.0),
 	
 	m_overrideCam(false),
@@ -184,6 +186,8 @@ KX_KetsjiEngine::KX_KetsjiEngine(KX_ISystem* system)
 #ifdef WITH_PYTHON
 	m_pyprofiledict = PyDict_New();
 #endif
+
+	m_taskscheduler = BLI_task_scheduler_create(TASK_SCHEDULER_AUTO_THREADS);
 }
 
 
@@ -200,6 +204,9 @@ KX_KetsjiEngine::~KX_KetsjiEngine()
 #ifdef WITH_PYTHON
 	Py_CLEAR(m_pyprofiledict);
 #endif
+
+	if (m_taskscheduler)
+		BLI_task_scheduler_free(m_taskscheduler);
 }
 
 
@@ -487,7 +494,7 @@ bool KX_KetsjiEngine::BeginFrame()
 	{
 		ClearFrame();
 
-		m_rasterizer->BeginFrame(m_drawingmode , m_kxsystem->GetTimeInSeconds());
+		m_rasterizer->BeginFrame(m_kxsystem->GetTimeInSeconds());
 
 		return true;
 	}
@@ -507,13 +514,13 @@ void KX_KetsjiEngine::EndFrame()
 		RenderDebugProperties();
 	}
 
-	double tottime = m_logger->GetAverage(), time;
+	double tottime = m_logger->GetAverage();
 	if (tottime < 1e-6)
 		tottime = 1e-6;
 
 #ifdef WITH_PYTHON
 	for (int i = tc_first; i < tc_numCategories; ++i) {
-		time = m_logger->GetAverage((KX_TimeCategory)i);
+		double time = m_logger->GetAverage((KX_TimeCategory)i);
 		PyObject *val = PyTuple_New(2);
 		PyTuple_SetItem(val, 0, PyFloat_FromDouble(time*1000.f));
 		PyTuple_SetItem(val, 1, PyFloat_FromDouble(time/tottime * 100.f));
@@ -679,6 +686,9 @@ bool KX_KetsjiEngine::NextFrame()
 				SG_SetActiveStage(SG_STAGE_ACTUATOR_UPDATE);
 				scene->UpdateParents(m_frameTime);
 
+				// update levels of detail
+				scene->UpdateObjectLods();
+
 				if (!GetRestrictAnimationFPS())
 				{
 					m_logger->StartLog(tc_animations, m_kxsystem->GetTimeInSeconds(), true);
@@ -837,7 +847,7 @@ void KX_KetsjiEngine::Render()
 	// clear the entire game screen with the border color
 	// only once per frame
 	m_canvas->BeginDraw();
-	if (m_drawingmode == RAS_IRasterizer::KX_TEXTURED) {
+	if (m_rasterizer->GetDrawingMode() == RAS_IRasterizer::KX_TEXTURED) {
 		m_canvas->SetViewPort(0, 0, m_canvas->GetWidth(), m_canvas->GetHeight());
 		if (m_overrideFrameColor)
 		{
@@ -1018,7 +1028,7 @@ void KX_KetsjiEngine::SetBackGround(KX_WorldInfo* wi)
 {
 	if (wi->hasWorld())
 	{
-		if (m_drawingmode == RAS_IRasterizer::KX_TEXTURED)
+		if (m_rasterizer->GetDrawingMode() == RAS_IRasterizer::KX_TEXTURED)
 		{
 			m_rasterizer->SetBackColor(
 				wi->getBackColorRed(),
@@ -1043,7 +1053,7 @@ void KX_KetsjiEngine::SetWorldSettings(KX_WorldInfo* wi)
 			wi->getAmbientColorBlue()
 		);
 
-		if (m_drawingmode >= RAS_IRasterizer::KX_SOLID)
+		if (m_rasterizer->GetDrawingMode() >= RAS_IRasterizer::KX_SOLID)
 		{
 			if (wi->hasMist())
 			{
@@ -1057,13 +1067,6 @@ void KX_KetsjiEngine::SetWorldSettings(KX_WorldInfo* wi)
 			}
 		}
 	}
-}
-
-
-
-void KX_KetsjiEngine::SetDrawType(int drawingmode)
-{
-	m_drawingmode = drawingmode;
 }
 
 
@@ -1163,10 +1166,11 @@ void KX_KetsjiEngine::RenderShadowBuffers(KX_Scene *scene)
 		KX_GameObject *gameobj = (KX_GameObject*)lightlist->GetValue(i);
 
 		KX_LightObject *light = (KX_LightObject*)gameobj;
+		RAS_ILightObject *raslight = light->GetLightData();
 
-		light->Update();
+		raslight->Update();
 
-		if (m_drawingmode == RAS_IRasterizer::KX_TEXTURED && light->HasShadowBuffer()) {
+		if (m_rasterizer->GetDrawingMode() == RAS_IRasterizer::KX_TEXTURED && raslight->HasShadowBuffer()) {
 			/* make temporary camera */
 			RAS_CameraData camdata = RAS_CameraData();
 			KX_Camera *cam = new KX_Camera(scene, scene->m_callbacks, camdata, true, true);
@@ -1179,10 +1183,10 @@ void KX_KetsjiEngine::RenderShadowBuffers(KX_Scene *scene)
 			m_rasterizer->SetDrawingMode(RAS_IRasterizer::KX_SHADOW);
 
 			/* binds framebuffer object, sets up camera .. */
-			light->BindShadowBuffer(m_rasterizer, m_canvas, cam, camtrans);
+			raslight->BindShadowBuffer(m_canvas, cam, camtrans);
 
 			/* update scene */
-			scene->CalculateVisibleMeshes(m_rasterizer, cam, light->GetShadowLayer());
+			scene->CalculateVisibleMeshes(m_rasterizer, cam, raslight->GetShadowLayer());
 
 			/* render */
 			m_rasterizer->ClearDepthBuffer();
@@ -1190,7 +1194,7 @@ void KX_KetsjiEngine::RenderShadowBuffers(KX_Scene *scene)
 			scene->RenderBuckets(camtrans, m_rasterizer);
 
 			/* unbind framebuffer object, restore drawmode, free camera */
-			light->UnbindShadowBuffer(m_rasterizer);
+			raslight->UnbindShadowBuffer();
 			m_rasterizer->SetDrawingMode(drawmode);
 			cam->Release();
 		}
@@ -1314,9 +1318,6 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	SG_SetActiveStage(SG_STAGE_CULLING);
 
 	scene->CalculateVisibleMeshes(m_rasterizer,cam);
-
-	// update levels of detail
-	scene->UpdateObjectLods();
 
 	m_logger->StartLog(tc_rasterizer, m_kxsystem->GetTimeInSeconds(), true);
 	SG_SetActiveStage(SG_STAGE_RENDER);

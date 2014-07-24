@@ -25,9 +25,9 @@ bl_info = {
     "description": "Add a landscape primitive",
     "warning": "", # used for warning icon and text in addons panel
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"
-        "Scripts/Add_Mesh/ANT_Landscape",
-    "tracker_url": "https://developer.blender.org/T23130",
-    "category": "Add Mesh"}
+                "Scripts/Add_Mesh/ANT_Landscape",
+    "category": "Add Mesh",
+}
 
 """
 Another Noise Tool: Landscape mesh generator
@@ -332,7 +332,7 @@ def landscape_gen(x,y,z,falloffsize,options=[0,1.0,1, 0,0,1.0,0,6,1.0,2.0,1.0,2.
     # edge falloff
     if sphere == 0: # no edge falloff if spherical
         if falloff != 0:
-            fallofftypes = [ 0, sqrt((x*x)**2+(y*y)**2), sqrt(x*x+y*y), sqrt(y*y), sqrt(x*x) ]
+            fallofftypes = [0, hypot(x * x, y * y), hypot(x, y), abs(y), abs(x)]
             dist = fallofftypes[ falloff]
             if falloff ==1:
                 radius = (falloffsize/2)**2
@@ -775,7 +775,7 @@ class landscape_add(bpy.types.Operator):
             # create mesh object
             obj = create_mesh_object(context, verts, [], faces, "Landscape")
             bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.normals_make_consistent(inside=False)
+            bpy.ops.mesh.normals_make_consistent(inside=True)
             bpy.ops.object.mode_set(mode='OBJECT')
             # sphere, remove doubles
             if self.SphereMesh !=0:

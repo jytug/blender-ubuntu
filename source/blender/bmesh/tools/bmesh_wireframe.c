@@ -20,7 +20,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-/** \file blender/bmesh/operators/bmesh_wireframe.c
+/** \file blender/bmesh/tools/bmesh_wireframe.c
  *  \ingroup bmesh
  *
  * Creates a solid wireframe from connected faces.
@@ -227,16 +227,18 @@ void BM_mesh_wireframe(
 		cd_edge_crease_offset = CustomData_get_offset(&bm->edata, CD_CREASE);
 	}
 
-	BM_mesh_elem_index_ensure(bm, BM_VERT);
-
 	BM_ITER_MESH_INDEX (v_src, &iter, bm, BM_VERTS_OF_MESH, i) {
-		BM_elem_flag_disable(v_src, BM_ELEM_TAG);
+		BM_elem_index_set(v_src, i); /* set_inline */
+
 		verts_src[i] = v_src;
+		BM_elem_flag_disable(v_src, BM_ELEM_TAG);
 	}
+	bm->elem_index_dirty &= ~BM_VERT;
 
 	/* setup tags, all faces and verts will be tagged which will be duplicated */
 
-	BM_ITER_MESH (f_src, &iter, bm, BM_FACES_OF_MESH) {
+	BM_ITER_MESH_INDEX (f_src, &iter, bm, BM_FACES_OF_MESH, i) {
+		BM_elem_index_set(f_src, i); /* set_inline */
 
 		if (use_tag) {
 			if (!BM_elem_flag_test(f_src, BM_ELEM_TAG)) {
@@ -256,6 +258,7 @@ void BM_mesh_wireframe(
 			BM_elem_flag_set(l->e, BM_ELEM_TAG, bm_loop_is_radial_boundary(l));
 		}
 	}
+	bm->elem_index_dirty &= ~BM_FACE;
 
 	/* duplicate tagged verts */
 	for (i = 0; i < totvert_orig; i++) {
@@ -331,7 +334,7 @@ void BM_mesh_wireframe(
 		}
 
 		BM_ITER_ELEM (l, &itersub, f_src, BM_LOOPS_OF_FACE) {
-			BM_elem_index_set(l, verts_loop_tot); /* set_loop */
+			BM_elem_index_set(l, verts_loop_tot); /* set_dirty */  /* Because some faces might be skipped! */
 
 			BM_loop_calc_face_tangent(l, tvec);
 
@@ -404,6 +407,7 @@ void BM_mesh_wireframe(
 			verts_loop_tot++;
 		}
 	}
+	bm->elem_index_dirty |= BM_LOOP;
 
 	BM_ITER_MESH (f_src, &iter, bm, BM_FACES_OF_MESH) {
 

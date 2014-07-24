@@ -25,9 +25,9 @@ bl_info = {
     "description": "Export Skeleletal Mesh/Animation Data",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"
-        "Scripts/Import-Export/Unreal_psk_psa",
-    "tracker_url": "https://developer.blender.org/T21366",
-    "category": "Import-Export"}
+                "Scripts/Import-Export/Unreal_psk_psa",
+    "category": "Import-Export",
+}
 
 """
 -- Unreal Skeletal Mesh and Animation Export (.psk  and .psa) export script v0.0.1 --<br>
@@ -1206,7 +1206,9 @@ def parse_mesh( mesh, psk ):
                 mesh.data.vertices[dindex1].select = True
                 mesh.data.vertices[dindex2].select = True
 
-                raise Error("Normal coplanar with face! points:", mesh.data.vertices[dindex0].co, mesh.data.vertices[dindex1].co, mesh.data.vertices[dindex2].co)
+                raise Error("Normal coplanar with face! points: %s, %s, %s" % (str(mesh.data.vertices[dindex0].co),
+                                                                               str(mesh.data.vertices[dindex1].co),
+                                                                               str(mesh.data.vertices[dindex2].co)))
 
             face.select = True
             if face.use_smooth == True:

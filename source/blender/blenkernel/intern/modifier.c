@@ -57,7 +57,6 @@
 
 #include "BLF_translation.h"
 
-#include "BKE_cloth.h"
 #include "BKE_key.h"
 #include "BKE_multires.h"
 #include "BKE_DerivedMesh.h"
@@ -173,12 +172,12 @@ bool modifier_isPreview(ModifierData *md)
 	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
 
 	if (!(mti->flags & eModifierTypeFlag_UsesPreview))
-		return FALSE;
+		return false;
 
 	if (md->mode & eModifierMode_Realtime)
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }
 
 ModifierData *modifiers_findByType(Object *ob, ModifierType type)
@@ -337,15 +336,15 @@ void modifier_setError(ModifierData *md, const char *_format, ...)
  * then is NULL) 
  * also used for some mesh tools to give warnings
  */
-int modifiers_getCageIndex(struct Scene *scene, Object *ob, int *lastPossibleCageIndex_r, int virtual_)
+int modifiers_getCageIndex(struct Scene *scene, Object *ob, int *r_lastPossibleCageIndex, bool is_virtual)
 {
 	VirtualModifierData virtualModifierData;
-	ModifierData *md = (virtual_) ? modifiers_getVirtualModifierList(ob, &virtualModifierData) : ob->modifiers.first;
+	ModifierData *md = (is_virtual) ? modifiers_getVirtualModifierList(ob, &virtualModifierData) : ob->modifiers.first;
 	int i, cageIndex = -1;
 
-	if (lastPossibleCageIndex_r) {
+	if (r_lastPossibleCageIndex) {
 		/* ensure the value is initialized */
-		*lastPossibleCageIndex_r = -1;
+		*r_lastPossibleCageIndex = -1;
 	}
 
 	/* Find the last modifier acting on the cage. */
@@ -358,13 +357,15 @@ int modifiers_getCageIndex(struct Scene *scene, Object *ob, int *lastPossibleCag
 		if (!(mti->flags & eModifierTypeFlag_SupportsEditmode)) continue;
 		if (md->mode & eModifierMode_DisableTemporary) continue;
 
+		if (!(md->mode & eModifierMode_Realtime)) continue;
+		if (!(md->mode & eModifierMode_Editmode)) continue;
+
 		if (!modifier_supportsMapping(md))
 			break;
 
-		if (lastPossibleCageIndex_r) *lastPossibleCageIndex_r = i;
-
-		if (!(md->mode & eModifierMode_Realtime)) continue;
-		if (!(md->mode & eModifierMode_Editmode)) continue;
+		if (r_lastPossibleCageIndex) {
+			*r_lastPossibleCageIndex = i;
+		}
 
 		if (md->mode & eModifierMode_OnCage)
 			cageIndex = i;
@@ -708,7 +709,7 @@ const char *modifier_path_relbase(Object *ob)
 	else {
 		/* last resort, better then using "" which resolves to the current
 		 * working directory */
-		return BLI_temporary_dir();
+		return BLI_temp_dir_session();
 	}
 }
 
@@ -718,7 +719,7 @@ void modifier_path_init(char *path, int path_maxlen, const char *name)
 	/* elubie: changed this to default to the same dir as the render output
 	 * to prevent saving to C:\ on Windows */
 	BLI_join_dirfile(path, path_maxlen,
-	                 G.relbase_valid ? "//" : BLI_temporary_dir(),
+	                 G.relbase_valid ? "//" : BLI_temp_dir_session(),
 	                 name);
 }
 

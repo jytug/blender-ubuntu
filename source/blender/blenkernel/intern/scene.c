@@ -34,12 +34,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef WIN32
-#  include <unistd.h>
-#else
-#  include <io.h>
-#endif
-
 #include "MEM_guardedalloc.h"
 
 #include "DNA_anim_types.h"
@@ -80,7 +74,6 @@
 #include "BKE_node.h"
 #include "BKE_object.h"
 #include "BKE_paint.h"
-#include "BKE_pointcache.h"
 #include "BKE_rigidbody.h"
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
@@ -476,6 +469,23 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	sce->r.bake_normal_space = R_BAKE_SPACE_TANGENT;
 	sce->r.bake_samples = 256;
 	sce->r.bake_biasdist = 0.001;
+
+	sce->r.bake.flag = R_BAKE_CLEAR;
+	sce->r.bake.width = 512;
+	sce->r.bake.height = 512;
+	sce->r.bake.margin = 16;
+	sce->r.bake.normal_space = R_BAKE_SPACE_TANGENT;
+	sce->r.bake.normal_swizzle[0] = R_BAKE_POSX;
+	sce->r.bake.normal_swizzle[1] = R_BAKE_POSY;
+	sce->r.bake.normal_swizzle[2] = R_BAKE_POSZ;
+	BLI_strncpy(sce->r.bake.filepath, U.renderdir, sizeof(sce->r.bake.filepath));
+
+	sce->r.bake.im_format.planes = R_IMF_PLANES_RGBA;
+	sce->r.bake.im_format.imtype = R_IMF_IMTYPE_PNG;
+	sce->r.bake.im_format.depth = R_IMF_CHAN_DEPTH_8;
+	sce->r.bake.im_format.quality = 90;
+	sce->r.bake.im_format.compress = 15;
+
 	sce->r.scemode = R_DOCOMP | R_DOSEQ | R_EXTENSION;
 	sce->r.stamp = R_STAMP_TIME | R_STAMP_FRAME | R_STAMP_DATE | R_STAMP_CAMERA | R_STAMP_SCENE | R_STAMP_FILENAME | R_STAMP_RENDERTIME;
 	sce->r.stamp_font_id = 12;
@@ -740,6 +750,13 @@ static void scene_unlink_space_node(SpaceNode *snode, Scene *sce)
 	}
 }
 
+static void scene_unlink_space_buts(SpaceButs *sbuts, Scene *sce)
+{
+	if (sbuts->pinid == &sce->id) {
+		sbuts->pinid = NULL;
+	}
+}
+
 void BKE_scene_unlink(Main *bmain, Scene *sce, Scene *newsce)
 {
 	Scene *sce1;
@@ -772,8 +789,14 @@ void BKE_scene_unlink(Main *bmain, Scene *sce, Scene *newsce)
 		for (area = screen->areabase.first; area; area = area->next) {
 			SpaceLink *space_link;
 			for (space_link = area->spacedata.first; space_link; space_link = space_link->next) {
-				if (space_link->spacetype == SPACE_NODE)
-					scene_unlink_space_node((SpaceNode *)space_link, sce);
+				switch (space_link->spacetype) {
+					case SPACE_NODE:
+						scene_unlink_space_node((SpaceNode *)space_link, sce);
+						break;
+					case SPACE_BUTS:
+						scene_unlink_space_buts((SpaceButs *)space_link, sce);
+						break;
+				}
 			}
 		}
 	}
@@ -1439,41 +1462,13 @@ static void scene_update_objects(EvaluationContext *eval_ctx, Main *bmain, Scene
 	bool need_singlethread_pass;
 
 	/* Early check for whether we need to invoke all the task-based
-	 * tihngs (spawn new ppol, traverse dependency graph and so on).
+	 * things (spawn new ppol, traverse dependency graph and so on).
 	 *
 	 * Basically if there's no ID datablocks tagged for update which
 	 * corresponds to object->recalc flags (which are checked in
 	 * BKE_object_handle_update() then we do nothing here.
 	 */
 	if (!scene_need_update_objects(bmain)) {
-		/* For debug builds we check whether early return didn't give
-		 * us any regressions in terms of missing updates.
-		 *
-		 * TODO(sergey): Remove once we're sure the check above is correct.
-		 */
-#ifndef NDEBUG
-		Base *base;
-
-		for (base = scene->base.first; base; base = base->next) {
-			Object *object = base->object;
-
-			BLI_assert((object->recalc & OB_RECALC_ALL) == 0);
-
-			if (object->proxy) {
-				BLI_assert((object->proxy->recalc & OB_RECALC_ALL) == 0);
-			}
-
-			if (object->dup_group && (object->transflag & OB_DUPLIGROUP)) {
-				GroupObject *go;
-				for (go = object->dup_group->gobject.first; go; go = go->next) {
-					if (go->ob) {
-						BLI_assert((go->ob->recalc & OB_RECALC_ALL) == 0);
-					}
-				}
-			}
-		}
-#endif
-
 		return;
 	}
 
@@ -1586,10 +1581,10 @@ void BKE_scene_update_tagged(EvaluationContext *eval_ctx, Main *bmain, Scene *sc
 			BKE_animsys_evaluate_animdata(scene, &scene->id, adt, ctime, 0);
 	}
 
-	/* Extra call here to recalc aterial animation.
+	/* Extra call here to recalc material animation.
 	 *
 	 * Need to do this so changing material settings from the graph/dopesheet
-	 * will update suff in the viewport.
+	 * will update stuff in the viewport.
 	 */
 	if (DAG_id_type_tagged(bmain, ID_MA)) {
 		Material *material;
@@ -1604,10 +1599,23 @@ void BKE_scene_update_tagged(EvaluationContext *eval_ctx, Main *bmain, Scene *sc
 				BKE_animsys_evaluate_animdata(scene, &material->id, adt, ctime, 0);
 		}
 	}
-	
+
+	/* Also do the same for node trees. */
+	if (DAG_id_type_tagged(bmain, ID_NT)) {
+		float ctime = BKE_scene_frame_get(scene);
+
+		FOREACH_NODETREE(bmain, ntree, id)
+		{
+			AnimData *adt = BKE_animdata_from_id(&ntree->id);
+			if (adt && (adt->recalc & ADT_RECALC_ANIM))
+				BKE_animsys_evaluate_animdata(scene, &ntree->id, adt, ctime, 0);
+		}
+		FOREACH_NODETREE_END
+	}
+
 	/* notify editors and python about recalc */
 	BLI_callback_exec(bmain, &scene->id, BLI_CB_EVT_SCENE_UPDATE_POST);
-	DAG_ids_check_recalc(bmain, scene, FALSE);
+	DAG_ids_check_recalc(bmain, scene, false);
 
 	/* clear recalc flags */
 	DAG_ids_clear_recalc(bmain);
@@ -1690,7 +1698,7 @@ void BKE_scene_update_for_newframe_ex(EvaluationContext *eval_ctx, Main *bmain, 
 	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_SCENE_UPDATE_POST);
 	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_FRAME_CHANGE_POST);
 
-	DAG_ids_check_recalc(bmain, sce, TRUE);
+	DAG_ids_check_recalc(bmain, sce, true);
 
 	/* clear recalc flags */
 	DAG_ids_clear_recalc(bmain);
@@ -1895,4 +1903,3 @@ int BKE_scene_num_threads(const Scene *scene)
 {
 	return BKE_render_num_threads(&scene->r);
 }
-

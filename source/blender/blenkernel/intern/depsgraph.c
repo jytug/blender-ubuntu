@@ -64,7 +64,6 @@
 #include "BKE_effect.h"
 #include "BKE_fcurve.h"
 #include "BKE_global.h"
-#include "BKE_group.h"
 #include "BKE_image.h"
 #include "BKE_key.h"
 #include "BKE_library.h"
@@ -508,7 +507,7 @@ static void build_dag_object(DagForest *dag, DagNode *scenenode, Scene *scene, O
 			
 			for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next) {
 				for (con = pchan->constraints.first; con; con = con->next) {
-					bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+					bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 					ListBase targets = {NULL, NULL};
 					bConstraintTarget *ct;
 					
@@ -796,7 +795,7 @@ static void build_dag_object(DagForest *dag, DagNode *scenenode, Scene *scene, O
 	
 	/* object constraints */
 	for (con = ob->constraints.first; con; con = con->next) {
-		bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+		bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 		ListBase targets = {NULL, NULL};
 		bConstraintTarget *ct;
 		
@@ -1978,7 +1977,7 @@ static void dag_object_time_update_flags(Main *bmain, Scene *scene, Object *ob)
 	if (ob->constraints.first) {
 		bConstraint *con;
 		for (con = ob->constraints.first; con; con = con->next) {
-			bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+			bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 			ListBase targets = {NULL, NULL};
 			bConstraintTarget *ct;
 			
@@ -2481,7 +2480,7 @@ static void dag_id_flush_update(Main *bmain, Scene *sce, ID *id)
 			for (obt = bmain->object.first; obt; obt = obt->id.next) {
 				bConstraint *con;
 				for (con = obt->constraints.first; con; con = con->next) {
-					bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+					bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 					if (ELEM3(cti->type, CONSTRAINT_TYPE_FOLLOWTRACK, CONSTRAINT_TYPE_CAMERASOLVER,
 					          CONSTRAINT_TYPE_OBJECTSOLVER))
 					{
@@ -2535,7 +2534,8 @@ void DAG_ids_flush_tagged(Main *bmain)
 	ListBase listbase;
 	DagSceneLayer *dsl;
 	ListBase *lbarray[MAX_LIBARRAY];
-	int a, do_flush = FALSE;
+	int a;
+	bool do_flush = false;
 	
 	/* get list of visible scenes and layers */
 	dag_current_scene_layers(bmain, &listbase);
@@ -2559,7 +2559,7 @@ void DAG_ids_flush_tagged(Main *bmain)
 					for (dsl = listbase.first; dsl; dsl = dsl->next)
 						dag_id_flush_update(bmain, dsl->scene, id);
 					
-					do_flush = TRUE;
+					do_flush = true;
 				}
 			}
 		}
@@ -2574,10 +2574,11 @@ void DAG_ids_flush_tagged(Main *bmain)
 	BLI_freelistN(&listbase);
 }
 
-void DAG_ids_check_recalc(Main *bmain, Scene *scene, int time)
+void DAG_ids_check_recalc(Main *bmain, Scene *scene, bool time)
 {
 	ListBase *lbarray[MAX_LIBARRAY];
-	int a, updated = 0;
+	int a;
+	bool updated = false;
 
 	/* loop over all ID types */
 	a  = set_listbasepointers(bmain, lbarray);
@@ -2588,14 +2589,8 @@ void DAG_ids_check_recalc(Main *bmain, Scene *scene, int time)
 
 		/* we tag based on first ID type character to avoid 
 		 * looping over all ID's in case there are no tags */
-		if (id &&
-#ifdef WITH_FREESTYLE
-		    /* XXX very weak... added check for '27' to ignore freestyle added objects */
-		    id->name[2] > 27 &&
-#endif
-		    bmain->id_tag_update[id->name[0]])
-		{
-			updated = 1;
+		if (id && bmain->id_tag_update[id->name[0]]) {
+			updated = true;
 			break;
 		}
 	}
@@ -2852,7 +2847,7 @@ void DAG_pose_sort(Object *ob)
 			addtoroot = 0;
 		}
 		for (con = pchan->constraints.first; con; con = con->next) {
-			bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+			bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 			ListBase targets = {NULL, NULL};
 			bConstraintTarget *ct;
 			

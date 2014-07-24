@@ -39,9 +39,11 @@ class SpellChecker():
         "decrement",
         "derivate",
         "doesn",  # doesn't
+        "equi",  # equi-angular, etc.
         "fader",
         "globbing",
         "hasn",  # hasn't
+        "hetero",
         "hoc",  # ad-hoc
         "indices",
         "iridas",
@@ -51,6 +53,7 @@ class SpellChecker():
         "latin",
         "merchantability",
         "mplayer",
+        "pong",  # ping pong
         "teleport", "teleporting",
         "vertices",
 
@@ -88,8 +91,10 @@ class SpellChecker():
         "customdata",
         "dataset", "datasets",
         "de",
+        "deconstruct",
         "defocus",
         "denoise",
+        "deselect", "deselecting", "deselection",
         "despill", "despilling",
         "editcurve",
         "editmesh",
@@ -107,6 +112,7 @@ class SpellChecker():
         "libdata",
         "lightless",
         "lineset",
+        "linestyle",
         "localview",
         "lookup", "lookups",
         "mathutils",
@@ -121,8 +127,8 @@ class SpellChecker():
         "multiuser",
         "namespace",
         "keyconfig",
+        "online",
         "playhead",
-        "polyline",
         "popup", "popups",
         "pre",
         "precache", "precaching",
@@ -133,6 +139,8 @@ class SpellChecker():
         "prepend",
         "preprocess", "preprocessing",
         "preseek",
+        "promillage",
+        "pushdown",
         "raytree",
         "readonly",
         "realtime",
@@ -219,6 +227,9 @@ class SpellChecker():
         "rasterized", "rasterization", "rasterizer",
         "renderer", "renderable", "renderability",
 
+        # Really bad!!!
+        "convertor",
+
         # Abbreviations
         "aero",
         "amb",
@@ -229,6 +240,7 @@ class SpellChecker():
         "const",
         "coord", "coords",
         "degr",
+        "diff",
         "dof",
         "dupli", "duplis",
         "eg",
@@ -275,6 +287,7 @@ class SpellChecker():
         "vel",  # velocity!
         "vert", "verts",
         "vis",
+        "xor",
         "xyz", "xzy", "yxz", "yzx", "zxy", "zyx",
         "xy", "xz", "yx", "yz", "zx", "zy",
 
@@ -286,6 +299,7 @@ class SpellChecker():
         "fribidi",
         "gettext",
         "hashable",
+        "hotspot",
         "intrinsics",
         "isosurface",
         "jitter", "jittering", "jittered",
@@ -298,7 +312,11 @@ class SpellChecker():
         "normals",
         "numpad",
         "octree",
+        "omnidirectional",
         "opengl",
+        "openmp",
+        "photoreceptor",
+        "poly",
         "polyline", "polylines",
         "pulldown", "pulldowns",
         "quantized",
@@ -321,6 +339,7 @@ class SpellChecker():
         "bezier", "beziers",
         "bicubic",
         "bilinear",
+        "binormal",
         "blackpoint", "whitepoint",
         "blinn",
         "bokeh",
@@ -362,6 +381,7 @@ class SpellChecker():
         "specular", "specularity",
         "spillmap",
         "sobel",
+        "texel",
         "tonemap",
         "toon",
         "timecode",
@@ -387,6 +407,7 @@ class SpellChecker():
         "dupliobject", "dupliob",
         "dupligroup",
         "duplivert",
+        "dyntopo",
         "editbone",
         "editmode",
         "fcurve", "fcurves",
@@ -412,6 +433,7 @@ class SpellChecker():
         "poselib",
         "pushpull",
         "pyconstraint", "pyconstraints",
+        "qe",  # keys...
         "shapekey", "shapekeys",
         "shrinkfatten",
         "shrinkwrap",
@@ -427,6 +449,7 @@ class SpellChecker():
         "vcol", "vcols",
         "vgroup", "vgroups",
         "vinterlace",
+        "wasd", "wasdqe",  # keys...
         "wetmap", "wetmaps",
         "wpaint",
         "uvwarp",
@@ -489,7 +512,7 @@ class SpellChecker():
         "hdc",
         "hdr",
         "hh", "mm", "ss", "ff",  # hh:mm:ss:ff timecode
-        "hsv", "hsva",
+        "hsv", "hsva", "hsl",
         "id",
         "ior",
         "itu",

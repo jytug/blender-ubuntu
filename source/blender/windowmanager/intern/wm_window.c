@@ -254,8 +254,8 @@ wmWindow *wm_window_copy(bContext *C, wmWindow *winorig)
 	BLI_strncpy(win->screenname, win->screen->id.name + 2, sizeof(win->screenname));
 	win->screen->winid = win->winid;
 
-	win->screen->do_refresh = TRUE;
-	win->screen->do_draw = TRUE;
+	win->screen->do_refresh = true;
+	win->screen->do_draw = true;
 
 	win->drawmethod = U.wmdrawmethod;
 	win->drawdata = NULL;
@@ -374,8 +374,9 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 			win->eventstate = MEM_callocN(sizeof(wmEvent), "window event state");
 		
 #ifdef __APPLE__
-		/* set the state here, else OSX would nor recignize changed screen resolution */
-		GHOST_SetWindowState(ghostwin, (GHOST_TWindowState)win->windowstate);
+		/* set the state here, else OSX would not recognize changed screen resolution */
+		/* we agreed to not set any fullscreen or iconized state on startup */
+		GHOST_SetWindowState(ghostwin, GHOST_kWindowStateNormal);
 #endif
 		/* store actual window size in blender window */
 		bounds = GHOST_GetClientBounds(win->ghostwin);
@@ -746,7 +747,16 @@ static int ghost_event_proc(GHOST_EventHandle evt, GHOST_TUserDataPtr C_void_ptr
 				GHOST_TEventKeyData kdata;
 				wmEvent event;
 				int wx, wy;
-				
+				const int keymodifier = ((query_qual(SHIFT)     ? KM_SHIFT : 0) |
+				                         (query_qual(CONTROL)   ? KM_CTRL  : 0) |
+				                         (query_qual(ALT)       ? KM_ALT   : 0) |
+				                         (query_qual(OS)        ? KM_OSKEY : 0));
+
+				/* Win23/GHOST modifier bug, see T40317 */
+#ifndef WIN32
+//#  define USE_WIN_ACTIVATE
+#endif
+
 				wm->winactive = win; /* no context change! c->wm->windrawable is drawable, or for area queues */
 				
 				win->active = 1;
@@ -755,25 +765,69 @@ static int ghost_event_proc(GHOST_EventHandle evt, GHOST_TUserDataPtr C_void_ptr
 				/* bad ghost support for modifier keys... so on activate we set the modifiers again */
 
 				/* TODO: This is not correct since a modifier may be held when a window is activated...
-				 * better solve this at ghost level. attempted fix r54450 but it caused bug [#34255] */
+				 * better solve this at ghost level. attempted fix r54450 but it caused bug [#34255]
+				 *
+				 * For now don't send GHOST_kEventKeyDown events, just set the 'eventstate'.
+				 */
 				kdata.ascii = '\0';
 				kdata.utf8_buf[0] = '\0';
-				if (win->eventstate->shift && !query_qual(SHIFT)) {
-					kdata.key = GHOST_kKeyLeftShift;
-					wm_event_add_ghostevent(wm, win, GHOST_kEventKeyUp, time, &kdata);
+
+				if (win->eventstate->shift) {
+					if ((keymodifier & KM_SHIFT) == 0) {
+						kdata.key = GHOST_kKeyLeftShift;
+						wm_event_add_ghostevent(wm, win, GHOST_kEventKeyUp, time, &kdata);
+					}
 				}
-				if (win->eventstate->ctrl && !query_qual(CONTROL)) {
-					kdata.key = GHOST_kKeyLeftControl;
-					wm_event_add_ghostevent(wm, win, GHOST_kEventKeyUp, time, &kdata);
+#ifdef USE_WIN_ACTIVATE
+				else {
+					if (keymodifier & KM_SHIFT) {
+						win->eventstate->shift = KM_MOD_FIRST;
+					}
 				}
-				if (win->eventstate->alt && !query_qual(ALT)) {
-					kdata.key = GHOST_kKeyLeftAlt;
-					wm_event_add_ghostevent(wm, win, GHOST_kEventKeyUp, time, &kdata);
+#endif
+				if (win->eventstate->ctrl) {
+					if ((keymodifier & KM_CTRL) == 0) {
+						kdata.key = GHOST_kKeyLeftControl;
+						wm_event_add_ghostevent(wm, win, GHOST_kEventKeyUp, time, &kdata);
+					}
 				}
-				if (win->eventstate->oskey && !query_qual(OS)) {
-					kdata.key = GHOST_kKeyOS;
-					wm_event_add_ghostevent(wm, win, GHOST_kEventKeyUp, time, &kdata);
+#ifdef USE_WIN_ACTIVATE
+				else {
+					if (keymodifier & KM_CTRL) {
+						win->eventstate->ctrl = KM_MOD_FIRST;
+					}
 				}
+#endif
+				if (win->eventstate->alt) {
+					if ((keymodifier & KM_ALT) == 0) {
+						kdata.key = GHOST_kKeyLeftAlt;
+						wm_event_add_ghostevent(wm, win, GHOST_kEventKeyUp, time, &kdata);
+					}
+				}
+#ifdef USE_WIN_ACTIVATE
+				else {
+					if (keymodifier & KM_ALT) {
+						win->eventstate->alt = KM_MOD_FIRST;
+					}
+				}
+#endif
+				if (win->eventstate->oskey) {
+					if ((keymodifier & KM_OSKEY) == 0) {
+						kdata.key = GHOST_kKeyOS;
+						wm_event_add_ghostevent(wm, win, GHOST_kEventKeyUp, time, &kdata);
+					}
+				}
+#ifdef USE_WIN_ACTIVATE
+				else {
+					if (keymodifier & KM_OSKEY) {
+						win->eventstate->oskey = KM_MOD_FIRST;
+					}
+				}
+#endif
+
+#undef USE_WIN_ACTIVATE
+
+
 				/* keymodifier zero, it hangs on hotkeys that open windows otherwise */
 				win->eventstate->keymodifier = 0;
 				
@@ -830,7 +884,7 @@ static int ghost_event_proc(GHOST_EventHandle evt, GHOST_TUserDataPtr C_void_ptr
 
 				/* stop screencast if resize */
 				if (type == GHOST_kEventWindowSize) {
-					WM_jobs_stop(CTX_wm_manager(C), win->screen, NULL);
+					WM_jobs_stop(wm, win->screen, NULL);
 				}
 				
 				/* win32: gives undefined window size when minimized */
@@ -917,7 +971,7 @@ static int ghost_event_proc(GHOST_EventHandle evt, GHOST_TUserDataPtr C_void_ptr
 			{
 				PointerRNA props_ptr;
 				wmWindow *oldWindow;
-				char *path = GHOST_GetEventData(evt);
+				const char *path = GHOST_GetEventData(evt);
 				
 				if (path) {
 					/* operator needs a valid window in context, ensures
@@ -1411,6 +1465,9 @@ void WM_cursor_warp(wmWindow *win, int x, int y)
 
 		win->eventstate->prevx = oldx;
 		win->eventstate->prevy = oldy;
+
+		win->eventstate->x = oldx;
+		win->eventstate->y = oldy;
 	}
 }
 

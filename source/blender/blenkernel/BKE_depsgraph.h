@@ -57,7 +57,7 @@ struct ListBase;
  */
 typedef struct EvaluationContext {
 	bool for_render;  /* Set to true if evaluation shall be performed for render purposes,
-	                     keep at false if update shall happen for the viewport. */
+	                   * keep at false if update shall happen for the viewport. */
 } EvaluationContext;
 
 /* DagNode->eval_flags */
@@ -127,7 +127,7 @@ int  DAG_id_type_tagged(struct Main *bmain, short idtype);
 
 void DAG_scene_flush_update(struct Main *bmain, struct Scene *sce, unsigned int lay, const short do_time);
 void DAG_ids_flush_tagged(struct Main *bmain);
-void DAG_ids_check_recalc(struct Main *bmain, struct Scene *scene, int time);
+void DAG_ids_check_recalc(struct Main *bmain, struct Scene *scene, bool time);
 void DAG_ids_clear_recalc(struct Main *bmain);
 
 /* Armature: sorts the bones according to dependencies between them */
