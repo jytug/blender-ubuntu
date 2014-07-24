@@ -1,10 +1,10 @@
 From: Kevin Roy <kiniou@gmail.com>
-Date: Wed, 26 Feb 2014 15:15:51 +0100
+Date: Wed, 23 Jul 2014 12:07:04 +0200
 Subject: look_for_droid_ttf_with_fontconfig
 
- * Remove bad installation of fonts directory into locales.
- * Avoid using the droid font shipped with upstream source
-   and use fontconfig to get it.
+* Remove bad installation of fonts directory into locales.
+* Avoid using the droid font shipped with upstream source
+  and use fontconfig to get it.
 
 Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
 ---
@@ -18,10 +18,10 @@ Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
  7 files changed, 85 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 169aeff..1feaa4b 100644
+index 10182f9..3933806 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -667,6 +667,13 @@ if(UNIX AND NOT APPLE)
+@@ -662,6 +662,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -36,7 +36,7 @@ index 169aeff..1feaa4b 100644
  	if(WITH_CODEC_SNDFILE)
  		find_package_wrapper(SndFile)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 28af1c1..e4ac326 100644
+index c6caef4..f19c23f 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
 @@ -307,6 +307,9 @@ macro(setup_liblinks
@@ -68,7 +68,7 @@ index 2debe51..b75cf9d 100644
  
  blender_add_lib(bf_blenfont "${SRC}" "${INC}" "${INC_SYS}")
 diff --git a/source/blender/blenfont/intern/blf_translation.c b/source/blender/blenfont/intern/blf_translation.c
-index dc9baf8..8d688c5 100644
+index 150ff1b..477c735 100644
 --- a/source/blender/blenfont/intern/blf_translation.c
 +++ b/source/blender/blenfont/intern/blf_translation.c
 @@ -50,7 +50,11 @@
@@ -83,7 +83,7 @@ index dc9baf8..8d688c5 100644
  static unsigned char *unifont_ttf = NULL;
  static int unifont_size = 0;
  static const char unifont_mono_filename[] = "bmonofont-i18n.ttf.gz";
-@@ -62,6 +66,24 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
+@@ -62,6 +66,24 @@ unsigned char *BLF_get_unifont(int *r_unifont_size)
  {
  #ifdef WITH_INTERNATIONAL
  	if (unifont_ttf == NULL) {
@@ -108,7 +108,7 @@ index dc9baf8..8d688c5 100644
  		const char * const fontpath = BLI_get_folder(BLENDER_DATAFILES, "fonts");
  		if (fontpath) {
  			char unifont_path[1024];
-@@ -72,6 +94,7 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
+@@ -72,6 +94,7 @@ unsigned char *BLF_get_unifont(int *r_unifont_size)
  		}
  		else {
  			printf("%s: 'fonts' data path not found for international font, continuing\n", __func__);
@@ -117,22 +117,22 @@ index dc9baf8..8d688c5 100644
  	}
  
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index ca82086..fdba1ea 100644
+index 2d1e1d8..860f182 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
-@@ -86,6 +86,7 @@ bool   BLI_file_touch(const char *file);
- 
- int    BLI_file_gzip(const char *from, const char *to);
- char  *BLI_file_ungzip_to_mem(const char *from_file, int *size_r);
+@@ -87,6 +87,7 @@ bool   BLI_is_file(const char *path);
+ void   BLI_dir_create_recursive(const char *dir);
+ double BLI_dir_free_space(const char *dir);
+ char  *BLI_current_working_dir(char *dir, const size_t maxlen);
 +char  *BLI_file_to_mem(const char *from_file, int *size_r);
  
- size_t BLI_file_descriptor_size(int file);
- size_t BLI_file_size(const char *file);
+ unsigned int BLI_dir_contents(const char *dir, struct direntry **filelist);
+ void BLI_free_filelist(struct direntry *filelist, unsigned int nrentries);
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index 5572656..9c72300 100644
+index 6f65847..b2693c1 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
-@@ -159,6 +159,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *size_r)
+@@ -158,6 +158,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *r_size)
  	return mem;
  }
  
@@ -184,10 +184,10 @@ index 5572656..9c72300 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 926072f..b3082a5 100644
+index 9bc05aa..a93ca38 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -316,12 +316,6 @@ endif()
+@@ -319,12 +319,6 @@ endif()
  
  # localization
  if(WITH_INTERNATIONAL)
