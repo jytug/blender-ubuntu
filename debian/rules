@@ -52,5 +52,7 @@ override_dh_install:
 override_dh_strip:
 	dh_strip --dbg-package=blender-dbg
 
+override_dh_auto_test:
+
 %:
 	dh $@ --buildsystem=cmake --parallel --with python3
