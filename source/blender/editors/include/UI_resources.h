@@ -48,6 +48,9 @@ typedef enum {
 #undef DEF_ICON
 #undef DEF_VICO
 
+/* use to denote intentionally unset theme color */
+#define TH_UNDEFINED -1
+
 enum {
 	TH_REDALERT,
 
@@ -275,7 +278,8 @@ enum {
 	TH_INFO_INFO,
 	TH_INFO_INFO_TEXT,
 	TH_INFO_DEBUG,
-	TH_INFO_DEBUG_TEXT
+	TH_INFO_DEBUG_TEXT,
+	TH_VIEW_OVERLAY,
 };
 /* XXX WARNING: previous is saved in file, so do not change order! */
 
@@ -310,6 +314,7 @@ int     UI_GetThemeValue(int colorid);
 
 // get three color values, scaled to 0.0-1.0 range
 void    UI_GetThemeColor3fv(int colorid, float col[3]);
+void    UI_GetThemeColorBlend3ubv(int colorid1, int colorid2, float fac, unsigned char col[3]);
 // get the color, range 0.0-1.0, complete with shading offset
 void    UI_GetThemeColorShade3fv(int colorid, int offset, float col[3]);
 void    UI_GetThemeColorShade3ubv(int colorid, int offset, unsigned char col[3]);

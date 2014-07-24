@@ -21,41 +21,51 @@
 bl_info = {
     "name": "Layer Management",
     "author": "Alfonso Annarumma",
-    "version": (1, 5),
-    "blender": (2, 65, 4),
+    "version": (1, 5,1),
+    "blender": (2, 70, 0),
     "location": "View3D > Properties panel > Layer Management",
     "warning": "",
     "description": "Display and Edit Layer Name",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"
                 "Scripts/3D_interaction/layer_manager",
-    "tracker_url": "https://developer.blender.org/T32472",
+    "tracker_url": "http://projects.blender.org/tracker/index.php?"
+                   "func=detail&aid=32472",
     "category": "3D View"}
 
 import bpy
+from bpy.types import Menu, Panel, UIList
 from bpy.props import StringProperty, BoolProperty, IntProperty, CollectionProperty, BoolVectorProperty
 
-EDIT = {"EDIT_MESH", "EDIT_CURVE", "EDIT_SURFACE", "EDIT_METABALL", "EDIT_TEXT", "EDIT_ARMATURE"}
+EDIT = ["EDIT_MESH", "EDIT_CURVE", "EDIT_SURFACE", "EDIT_METABALL", "EDIT_TEXT", "EDIT_ARMATURE"]
 
 class LayerGroups(bpy.types.PropertyGroup):
 
     toggle = BoolProperty(name="", default=False)
+    wire = BoolProperty(name="", default=False)
+    
+    
 
     lock = BoolProperty(name="", default=False)
 
-    layer_groups = BoolVectorProperty(name="Layer Groups", default=([False]*20), size=20, subtype='LAYER')
+    layer_groups = BoolVectorProperty(name="Layer Groups", default = ([False]*20), size=20, subtype='LAYER')
 
     # A list of identifiers (colon-separated strings) which property’s controls should be displayed
     # in a template_list.
     # Note that the order is respected.
     #template_list_controls = StringProperty(default="toggle", options={"HIDDEN"})
 
+bpy.utils.register_class(LayerGroups)
+
+bpy.types.Scene.layergroups = CollectionProperty(type=LayerGroups)
+# Unused, but this is needed for the TemplateList to work…
+bpy.types.Scene.layergroups_index = IntProperty(default=-1)
 
 class RemoveLayerGroup(bpy.types.Operator):
     '''Tooltip'''
     bl_idname = "object.layergroup_remove"
     bl_label = "Remove select Layer Group"
 
-    index_group = IntProperty()
+    index_group = bpy.props.IntProperty()
 
     @classmethod
     def poll(cls, context):
@@ -78,8 +88,8 @@ class AddLayerGroup(bpy.types.Operator):
     bl_idname = "object.layergroup_add"
     bl_label = "Add select Layer group"
 
-    index = IntProperty()
-    layer = layer = BoolVectorProperty(name="Layer", default=([False]*20), size=20)
+    index = bpy.props.IntProperty()
+    layer = layer = BoolVectorProperty(name="Layer", default = ([False]*20), size=20)
 
     @classmethod
     def poll(cls, context):
@@ -94,15 +104,15 @@ class AddLayerGroup(bpy.types.Operator):
         layer = self.layer
 
         item = layergroups.add()
-        index_number = str(index)
+        index_number= str(index)
 
-        if len(index_number) == 2:
-            index_number = "0" + index_number
-            if len(index_number) == 3:
+        if len(index_number)==2:
+            index_number = "0"+index_number
+            if len(index_number)==3:
                 index_number = index_number
         else:
-            index_number = "00" + index_number
-        item.name = 'LayerGroup.' + index_number
+            index_number = "00"+index_number
+        item.name= 'LayerGroup.'+index_number
         #item.use=True
         scene.layergroups_index = index
         scene.layergroups[index].layer_groups = layer
@@ -148,19 +158,19 @@ class LayerToggle(bpy.types.Operator):
             union = [False]*20
 
             if not layergroups.toggle:
-                for i in range(0, 20):
+                for i in range(0,20):
 
                     union[i] = groups[i] or layers[i]
 
                 space.layers = union
                 layergroups.toggle = True
             else:
-                for i in range(0, 20):
+                for i in range(0,20):
 
-                    union[i] = not groups[i] and layers[i]
+                    union[i] =  not groups[i]  and layers[i]
 
-                space.layers = union
-                layergroups.toggle = False
+                space.layers=union
+                layergroups.toggle=False
 
         else:
 
@@ -175,7 +185,7 @@ class LayerToggle(bpy.types.Operator):
 
             else:
 
-                layer = [False] * 20
+                layer = [False]*20
                 layer[layerN] = True
                 space.layers = layer
 
@@ -183,12 +193,10 @@ class LayerToggle(bpy.types.Operator):
                     toggle = False
 
         return {'FINISHED'}
-        
     def invoke(self, context, event):
         self.shift = event.shift
 
         return self.execute(context)
-
 
 class MergeSelected(bpy.types.Operator):
     '''Move Selected Objects in this Layer Shift-Click to select multiple layers'''
@@ -218,7 +226,7 @@ class MergeSelected(bpy.types.Operator):
             if obj.select:
                 visible = False
 
-                for i in range(0, 20):
+                for i in range(0,20):
                     if obj.layers[i] and scene.layers[i]:
                         visible = True
                         break
@@ -230,12 +238,12 @@ class MergeSelected(bpy.types.Operator):
                             toggle = False
                         else:
 
-                            toggle = True
-                        obj.layers[layerN] = toggle
+                            toggle= True
+                        obj.layers[layerN]=toggle
 
                     else:
 
-                        layer = [False] * 20
+                        layer = [False]*20
                         layer[layerN] = True
                         obj.layers = layer
 
@@ -249,9 +257,79 @@ class MergeSelected(bpy.types.Operator):
 
         return self.execute(context)
 
+class MakeWireLayer(bpy.types.Operator):
+    '''Make Wire All Objects on this Layer'''
+    bl_idname = "object.wirelayer"
+    bl_label = "Make Wire Draw the object on this layer"
+
+    #prop definition
+    #layer number
+    layerN = IntProperty()
+
+    #lock status
+    wire = BoolProperty()
+
+    index_group = IntProperty()
+
+    @classmethod
+
+    def poll(cls, context):
+
+        return context.scene
+
+    def execute(self, context):
+
+        scene = context.scene
+        layerN = self.layerN
+        wire = self.wire
+
+        view_3d = context.area.spaces.active
+
+        #check if layer have some thing
+        if view_3d.layers_used[layerN] or  layerN == -1:
+        
+            if wire:
+                display = 'WIRE'
+                
+            else:
+                display = 'TEXTURED'
+            #cyecle all object in the layer
+            for obj in context.scene.objects:
+
+                if layerN == -1:
+
+                    index = self.index_group
+                    groups = scene.layergroups[index].layer_groups
+                    layers = obj.layers
+
+                    layergroup = [False]*20
+
+                    for i in range (0,20):
+                        layergroup[i] = layers[i] and groups[i]
+
+                    if True in layergroup:
+                        obj.draw_type = display
+                        
+
+                        scene.layergroups[index].wire = not wire
+
+                else:
+                    if obj.layers[layerN]:
+                        
+                        obj.draw_type = display
+                        
+
+                        scene.WireLayer[layerN] = not wire
+
+        return {'FINISHED'}
+
+
+
+
+
 
 class LockSelected(bpy.types.Operator):
-    '''Loock All Objects on this Layer'''
+    '''Lock All Objects on this Layer'''
     bl_idname = "object.lockselected"
     bl_label = "Hide Select of Selected"
 
@@ -279,7 +357,7 @@ class LockSelected(bpy.types.Operator):
         view_3d = context.area.spaces.active
 
         #check if layer have some thing
-        if view_3d.layers_used[layerN] or layerN == -1:
+        if view_3d.layers_used[layerN] or  layerN == -1:
 
             #cyecle all object in the layer
             for obj in context.scene.objects:
@@ -290,9 +368,9 @@ class LockSelected(bpy.types.Operator):
                     groups = scene.layergroups[index].layer_groups
                     layers = obj.layers
 
-                    layergroup=[False] * 20
+                    layergroup = [False]*20
 
-                    for i in range (0, 20):
+                    for i in range (0,20):
                         layergroup[i] = layers[i] and groups[i]
 
                     if True in layergroup:
@@ -310,9 +388,8 @@ class LockSelected(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
 class SelectObjectsLayer(bpy.types.Operator):
-    '''Select All the Objects on this Layer'''
+    '''Select All the Objects on this Layer - Hold SHIFT for multy selection - Hold CTRL to make active the last selected object'''
     bl_idname = "object.selectobjectslayer"
     bl_label = "Select objects in Layer"
 
@@ -326,32 +403,45 @@ class SelectObjectsLayer(bpy.types.Operator):
     def execute(self, context):
 
         view_3d = context.area.spaces.active
-        select_obj= self.select_obj
+        select_obj = self.select_obj
         layerN = self.layerN
         scene = context.scene
         i = 0
         s = 0
         #check if layer have some thing
         if view_3d.layers_used[layerN]:
+            
+            
+                
 
             for obj in context.scene.objects:
 
                 if obj.layers[layerN]:
                     i += 1
+                    if self.ctrl:
+                        context.scene.objects.active = obj
                 if obj.layers[layerN] and obj.select:
                     s += 1
-
+                    #context.scene.objects.active = obj
             if s == i:
                 for obj in context.scene.objects:
+                    #context.scene.objects.active = obj
 
                     if obj.layers[layerN]:
                         obj.select = False
+                    
 
             else:
-                bpy.ops.object.select_by_layer(extend=True, layers=layerN+1)
+                shift = self.shift
+                bpy.ops.object.select_by_layer(extend=shift, layers=layerN+1)
+                
 
         return {'FINISHED'}
-
+    
+    def invoke(self, context, event):
+        self.shift = event.shift
+        self.ctrl = event.ctrl
+        return self.execute(context)
 
 class AllLayersSelect(bpy.types.Operator):
     '''Active all Layer in scene'''
@@ -374,112 +464,40 @@ class AllLayersSelect(bpy.types.Operator):
         view_3d = context.area.spaces.active
                 #check for lock camera and layer is active
         if view_3d.lock_camera_and_layers is True:
-            space = scene
+            space= scene
 
         else:
             space = view_3d
 
         if not vis:
-            for i in range (0, 20):
+            for i in range (0,20):
 
                  #keep selection of active layer
                 if active == i:
-                    space.layers[i] = True
+                    space.layers[i]= True
 
                 #deselect the other...
                 else:
-                    space.layers[i] = False
+                    space.layers[i]= False
 
         else:
-            for i in range (0, 20):
+            for i in range (0,20):
                 #select all layer
-                space.layers[i] = True
+                space.layers[i]=True
 
             #after the cycle, deselect and select the previus active layer
-            space.layers[active] = False
-            space.layers[active] = True
+            space.layers[active]=False
+            space.layers[active]=True
         return {'FINISHED'}
-
-
-class LayerGroupsUI(bpy.types.Panel):
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_label = "Layer Groups"
-    bl_idname = "VIEW3D_PT_layer_groups"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    @classmethod
-    def poll(self, context):
-        try:
-            return (context.mode not in EDIT)
-        except (AttributeError, KeyError, TypeError):
-            return False
-
-    def draw(self, context):
-
-        scene = context.scene
-        view_3d = context.area.spaces.active
-
-        #check for lock camera and layer is active
-        if view_3d.lock_camera_and_layers is True:
-            space = scene
-            spacecheck = False
-        else:
-            space = view_3d
-            spacecheck = True
-        #######################
-
-        index_group = scene.layergroups_index
-        items =len(scene.layergroups)
-        viewIcon = 'RESTRICT_VIEW_OFF'
-        layout = self.layout
-        row = layout.row()
-        row.template_list("UI_UL_list", "ui_layer_groups", context.scene, "layergroups",
-                          context.scene, "layergroups_index", rows=items)
-        col = row.column(align=True)
-        add = col.operator("object.layergroup_add", icon='ZOOMIN', text="")
-        add.index = items
-        add.layer = scene.layers
-        remove = col.operator("object.layergroup_remove", icon='ZOOMOUT', text="")
-        remove.index_group = index_group
-        if items > 0:
-
-            lock = scene.layergroups[index_group].lock
-            toggle = scene.layergroups[index_group].toggle
-            if lock:
-                iconLock= 'LOCKED'
-            else:
-                iconLock='UNLOCKED'
-
-            lk = col.operator("object.lockselected", text="", emboss=True, icon= iconLock)
-            lk.index_group = index_group
-            lk.lock = lock
-            lk.layerN = -1
-
-            #set icon for layer view
-            if toggle:
-                iconLayer = 'RESTRICT_VIEW_OFF'
-                #noitem = True
-            else:
-                iconLayer = 'RESTRICT_VIEW_ON'
-                #noitem = False
-
-            view = col.operator("object.layertoggle", text="", icon= iconLayer, emboss=True)
-            view.index_group = index_group
-            view.layerN = -1
-            view.spacecheck = spacecheck
-
-            layout.prop(scene.layergroups[index_group], "layer_groups", text="", toggle=True)
-            layout.prop(scene.layergroups[index_group], "name", text="Name:")
-
 
 class LayerName(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_label = "Layer Management"
-    bl_idname = "VIEW3D_PT_layer_management"
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_region_type = "TOOLS"
 
+    bl_label = "Layer Management"
+    bl_idname = "_PT_rig_layers"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_category = "Layer"
     # layer name prop definition
     bpy.types.Scene.LayerName1 = StringProperty(name="Layer Name", default='layer1')
     bpy.types.Scene.LayerName2 = StringProperty(name="Layer Name", default='layer2')
@@ -509,7 +527,7 @@ class LayerName(bpy.types.Panel):
     bpy.types.Scene.ExtraOptions = BoolProperty(name="Show extra options", default=True)
 
     #lock layer status
-    bpy.types.Scene.LockLayer = BoolVectorProperty(name="Lock Layer", default=([False]*20), size=20)
+    bpy.types.Scene.LockLayer = BoolVectorProperty(name="Lock Layer", default = ([False]*20), size=20)
 
     #prop for show index
     bpy.types.Scene.LayerIndex = BoolProperty(name="Show Index", default=False)
@@ -517,10 +535,14 @@ class LayerName(bpy.types.Panel):
     #prop for show classic
     bpy.types.Scene.Classic = BoolProperty(name="Classic", default=False,description="Use a classic layer selection visibility")
     #Select object Status
-    bpy.types.Scene.ObjectSelect = BoolVectorProperty(name="Object Select", default=([True]*20), size=20)
+    bpy.types.Scene.ObjectSelect = BoolVectorProperty(name="Object Select", default = ([True]*20), size=20)
+   
+    #wire set up
+    bpy.types.Scene.WireLayer = BoolVectorProperty(name="Wire Layer", default = ([True]*20), size=20)
 
+    
     #toggle for merge
-    #bpy.types.Scene.MergeToggle = BoolVectorProperty(name="Merge Toggle", default=(False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False), size=20)
+    #bpy.types.Scene.MergeToggle = bpy.props.BoolVectorProperty(name="Merge Toggle", default = (False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False), size=20)
 
     @classmethod
     def poll(self, context):
@@ -572,13 +594,14 @@ class LayerName(bpy.types.Panel):
         allView.vis = vis
 
         col = row.column()
-        #col.alignment = 'RIGHT'
+        col.alignment = 'RIGHT'
+        
         #classic
         col.prop(scene, "Classic", text="Classic")
 
         #show extra option checkbox
 
-        #col.alignment='RIGHT'
+        col.alignment = 'RIGHT'
         col.prop(scene, "ExtraOptions", text="Options")
 
         col1 = row.column()
@@ -595,10 +618,10 @@ class LayerName(bpy.types.Panel):
         ##########
 
         #list the layer
-        for i in range(0, 20):
+        for i in range(0,20):
 
             #inizializing the icon
-            #lockIcon = 'UNLOCKED'
+            #lockIcon='UNLOCKED'
             iconUsed = 'RADIOBUT_OFF'
             iconAc = 'NONE'
             iconLayer = 'NONE'
@@ -623,25 +646,31 @@ class LayerName(bpy.types.Panel):
                     #print (i)
                     layer = i
 
-                    'Add ad object to see the layer'
+                    'Add an object to see the layer'
             else:
                 layer = i
                 #the layer number
-
+            #set icon for wire layer
+            wire = scene.WireLayer[i]
+            wireIcon = 'POTATO'
+            if not wire:
+                wireIcon = 'WIRE'
+            else:
+                wireIcon = 'POTATO'
             #set icon for lock layer
             lock = scene.LockLayer[i]
 
             if lock:
-                lockIcon= 'LOCKED'
+                lockIcon = 'LOCKED'
             else:
-                lockIcon= 'UNLOCKED'
+                lockIcon = 'UNLOCKED'
 
             #check if there are Selected obj in the layer
 
             #check if layer have some thing
             if layer_used:
 
-                iconUsed= 'LAYER_USED'
+                iconUsed = 'LAYER_USED'
 
                 active_object = context.object
 
@@ -659,7 +688,7 @@ class LayerName(bpy.types.Panel):
                 #check for active layer and set the icon
                 if view_3d.lock_camera_and_layers:
 
-                    if scene.active_layer==layer:
+                    if scene.active_layer == layer:
                         iconAc = 'FILE_TICK'
                         noitem = True
 
@@ -689,7 +718,7 @@ class LayerName(bpy.types.Panel):
                 # layer index
                 if scene.LayerIndex:
 
-                    col6 = row2.column(align=True)
+                    col6 = row2.column()
                     col6.scale_x = 0.14
                     col6.label(text=str(i+1)+".")
 
@@ -697,60 +726,192 @@ class LayerName(bpy.types.Panel):
                 classic = scene.Classic
                 if not classic:
 
-                    colb2= row2.column(align=True)
+                    colb2 = row2.column()
                     colb2.prop(space, "layers", index=layer, emboss=True, icon=iconLayer, toggle=True, text="")
                 else:
-                    colb6 = row2.column(align=True)
+                    colb6 = row2.column()
                     used = colb6.operator("object.layertoggle", text="", icon= iconLayer, emboss=True)
                     used.layerN = i
-                    used.spacecheck = spacecheck
+                    used.spacecheck=spacecheck
 
                 #text prop
-                s = "LayerName" + str(i+1)
-                colb3= row2.column(align=True)
-                colb3.prop(scene, s, text="", icon=iconAc)
+                s = "LayerName"+str(i+1)
+                colb3 = row2.column()
+                colb3.prop(scene, s, text="",icon=iconAc)
 
                 if extra:
 
                     #Select by type operator
-                    colb4 = row2.column(align=True)
-                    select = colb4.operator("object.selectobjectslayer", icon='RESTRICT_SELECT_OFF', text="", emboss=True)
+                    colb4 = row2.column()
+                    select = colb4.operator("object.selectobjectslayer", icon='RESTRICT_SELECT_OFF',text="", emboss=True )
                     select.layerN = i
                     #select.select_obj= selobj
 
                     #lock operator
-                    colb5 = row2.column(align=True)
-                    lk = colb5.operator("object.lockselected", text="", emboss=True, icon= lockIcon)
+                    colb5 = row2.column()
+                    lk = colb5.operator("object.lockselected", text="", emboss=True, icon=lockIcon)
 
                     lk.layerN = i
-                    lk.lock=lock
+                    lk.lock = lock
 
     #                #occuped layer
     #                colb6.label(text="", icon=iconUsed)
 
                     #merge layer
-                    colb7 = row2.column(align=True)
-                    merge = colb7.operator("object.mergeselected", text="", emboss=True, icon= iconUsed)
+                    colb7 = row2.column()
+                    merge = colb7.operator("object.mergeselected", text="", emboss=True, icon=iconUsed)
                     merge.layerN = i
-
+                    
+                    #wire view:
+                    colb8 = row2.column()
+                    wirecol = colb8.operator("object.wirelayer", text="", emboss=True, icon=wireIcon)
+                    wirecol.layerN = i
+                    wirecol.wire = wire
+                    
                 if not scene.LayerVisibility:
                     if i == 4 or i == 9 or i == 14 or i == 19:
-                        row3 = column.row(align=True)
+                        row3 = column.row()
                         row3.separator()
         if len(scene.objects) == 0:
             layout.label(text='No objects in scene')
 
+class UI_UL_layergroups(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # assert(isinstance(item, bpy.types.VertexGroup)
+        lgroup = item
+        
+        scene = context.scene
+        view_3d = context.area.spaces.active
+
+        #check for lock camera and layer is active
+        if view_3d.lock_camera_and_layers is True:
+            space = scene
+            spacecheck = False
+        else:
+            space = view_3d
+            spacecheck = True
+        #######################
+        
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            
+            layout.prop(lgroup, "name", text="", emboss=False)
+            #set icon for view
+            if lgroup.toggle:
+                iconLayer = 'RESTRICT_VIEW_OFF'
+            
+            else:
+                iconLayer = 'RESTRICT_VIEW_ON'
+            
+            #set icon for lock
+            if lgroup.lock:
+                iconLock = 'LOCKED'
+            else:
+                iconLock = 'UNLOCKED'
+            
+            #set icon for wire layer
+            
+            wireIcon = 'POTATO'
+            if not lgroup.wire:
+                wireIcon = 'WIRE'
+            else:
+                wireIcon = 'POTATO'
+            #lock operato
+            lk = layout.operator("object.lockselected", text="", emboss=False, icon= iconLock)
+            lk.index_group = index
+            lk.lock = lgroup.lock
+            lk.layerN = -1
+            
+            #viwe operator
+            view = layout.operator("object.layertoggle", text="", emboss=False, icon= iconLayer)
+            view.index_group = index
+            view.layerN = -1
+            view.spacecheck = spacecheck
+            
+            #wire operator
+            wirecol = layout.operator("object.wirelayer", text="", emboss=False, icon= wireIcon)
+            wirecol.index_group = index
+            wirecol.wire = lgroup.wire
+            wirecol.layerN = -1
+            
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+          
+
+
+
+
+class LayerGroupsUI(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = "TOOLS"
+    bl_category = "Layer"
+    bl_label = "Layer Groups"
+    bl_idname = "_PT_layer_group"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(self, context):
+        try:
+            return (context.mode not in EDIT)
+        except (AttributeError, KeyError, TypeError):
+            return False
+
+    def draw(self, context):
+
+        scene = context.scene
+      
+
+        index_group =  scene.layergroups_index
+        items = len(scene.layergroups)
+        viewIcon = 'RESTRICT_VIEW_OFF'
+        layout = self.layout
+        row = layout.row()
+        row.template_list("UI_UL_layergroups", "", context.scene, "layergroups", context.scene, "layergroups_index", rows=items)
+        col = row.column(align =True)
+        add = col.operator("object.layergroup_add", icon='ZOOMIN', text="")
+        add.index = items
+        add.layer = scene.layers
+        remove = col.operator("object.layergroup_remove", icon='ZOOMOUT', text="")
+        remove.index_group = index_group
+        
+        if items > 0:
+
+
+
+            layout.prop(scene.layergroups[index_group], "layer_groups", text="", toggle=True)
+            layout.prop(scene.layergroups[index_group], "name", text="Name:")
 
 def register():
-    bpy.utils.register_module(__name__)
-    bpy.types.Scene.layergroups = CollectionProperty(type=LayerGroups)
-    # Unused, but this is needed for the TemplateList to work...
-    bpy.types.Scene.layergroups_index = IntProperty(default=-1)
 
+
+    bpy.utils.register_module(__name__)
+    
+    '''bpy.utils.register_class(LayerGroupsUI)
+    bpy.utils.register_class(UI_UL_layergroups)
+    bpy.utils.register_class(LayerName)
+    bpy.utils.register_class(AllLayersSelect)
+    bpy.utils.register_class(SelectObjectsLayer)
+    bpy.utils.register_class(MakeWireLayer)
+    bpy.utils.register_class(LockSelected)
+    bpy.utils.register_class(MergeSelected)
+    bpy.utils.register_class(LayerToggle)
+    bpy.utils.register_class(AddLayerGroup)
+    bpy.utils.register_class(RemoveLayerGroup)
+    bpy.utils.register_class(LayerGroup)'''
 def unregister():
-    bpy.utils.register_module(__name__)
-    del bpy.types.Scene.layergroups
-    del bpy.types.Scene.layergroups_index
-
+  
+    bpy.utils.unregister_module(__name__)
+    
+    '''bpy.utils.unregister_class(LayerGroupsUI)
+    bpy.utils.unregister_class(UI_UL_layergroups)
+    bpy.utils.unregister_class(LayerName)
+    bpy.utils.unregister_class(AllLayersSelect)
+    bpy.utils.unregister_class(SelectObjectsLayer)
+    bpy.utils.unregister_class(MakeWireLayer)
+    bpy.utils.unregister_class(LockSelected)
+    bpy.utils.unregister_class(MergeSelected)
+    bpy.utils.unregister_class(LayerToggle)
+    bpy.utils.unregister_class(AddLayerGroup)
+    bpy.utils.unregister_class(RemoveLayerGroup)
+    bpy.utils.unregister_class(LayerGroup)'''
 if __name__ == "__main__":
     register()

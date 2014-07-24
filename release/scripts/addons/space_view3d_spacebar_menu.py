@@ -27,9 +27,9 @@ bl_info = {
     "description": "Context Sensitive Spacebar Menu",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"
-        "Scripts/3D_interaction/Dynamic_Spacebar_Menu",
-    "tracker_url": "https://developer.blender.org/T22060",
-    "category": "3D View"}
+                "Scripts/3D_interaction/Dynamic_Spacebar_Menu",
+    "category": "3D View",
+}
 
 import bpy
 from bpy import *
@@ -508,8 +508,8 @@ class VIEW3D_MT_Space_Dynamic_Menu(bpy.types.Menu):
             layout.operator("object.mode_set", text="Enter Object Mode",
                             icon='OBJECT_DATA')
 
-        elif ob.mode == 'EDIT':
-            # Armature menu
+        elif ob.mode == 'EDIT_ARMATURE':
+            # Armature Edit menu
 
             # Search Menu
             layout.operator("wm.search_menu", text="Search", icon='VIEWZOOM')
@@ -611,7 +611,7 @@ class VIEW3D_MT_Space_Dynamic_Menu(bpy.types.Menu):
             layout.operator("pose.quaternions_flip")
 
             layout.operator_context = 'INVOKE_AREA'
-            layout.operator("pose.armature_layers",
+            layout.operator("armature.armature_layers",
                             text="Change Armature Layers...")
             layout.operator("pose.bone_layers", text="Change Bone Layers...")
 

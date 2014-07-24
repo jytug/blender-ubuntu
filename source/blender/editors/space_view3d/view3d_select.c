@@ -66,7 +66,6 @@
 #include "BKE_depsgraph.h"
 #include "BKE_mball.h"
 #include "BKE_mesh.h"
-#include "BKE_movieclip.h"
 #include "BKE_object.h"
 #include "BKE_paint.h"
 #include "BKE_editmesh.h"
@@ -97,6 +96,11 @@
 #include "UI_resources.h"
 
 #include "view3d_intern.h"  /* own include */
+
+float ED_view3d_select_dist_px(void)
+{
+	return 75.0f * U.pixelsize;
+}
 
 /* TODO: should return whether there is valid context to continue */
 void view3d_set_viewcontext(bContext *C, ViewContext *vc)
@@ -1061,7 +1065,7 @@ void VIEW3D_OT_select_menu(wmOperatorType *ot)
 	/* keyingset to use (dynamic enum) */
 	prop = RNA_def_enum(ot->srna, "name", DummyRNA_NULL_items, 0, "Object Name", "");
 	RNA_def_enum_funcs(prop, object_select_menu_enum_itemf);
-	RNA_def_property_flag(prop, PROP_HIDDEN);
+	RNA_def_property_flag(prop, PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE);
 	ot->prop = prop;
 
 	RNA_def_boolean(ot->srna, "toggle", 0, "Toggle", "Toggle selection instead of deselecting everything first");
@@ -1136,7 +1140,7 @@ static Base *object_mouse_select_menu(bContext *C, ViewContext *vc, unsigned int
 		for (node = linklist, i = 0; node; node = node->next, i++) {
 			Base *base = node->link;
 			Object *ob = base->object;
-			char *name = ob->id.name + 2;
+			const char *name = ob->id.name + 2;
 
 			BLI_strncpy(object_mouse_select_menu_data[i].idname, name, MAX_ID_NAME - 2);
 			object_mouse_select_menu_data[i].icon = uiIconFromID(&ob->id);
@@ -1382,8 +1386,8 @@ static bool mouse_select(bContext *C, const int mval[2],
 	Scene *scene = CTX_data_scene(C);
 	Base *base, *startbase = NULL, *basact = NULL, *oldbasact = NULL;
 	bool is_obedit;
-	float dist = 100.0f;
-	int retval = false;
+	float dist = ED_view3d_select_dist_px() * 1.3333f;
+	bool retval = false;
 	short hits;
 	const float mval_fl[2] = {(float)mval[0], (float)mval[1]};
 
@@ -2124,7 +2128,7 @@ static int view3d_borderselect_exec(bContext *C, wmOperator *op)
 	}
 	else {  /* no editmode, unified for bones and objects */
 		if (vc.obact && vc.obact->mode & OB_MODE_SCULPT) {
-			ret = do_sculpt_mask_box_select(&vc, &rect, select, extend);
+			ret = ED_sculpt_mask_box_select(C, &vc, &rect, select, extend);
 		}
 		else if (vc.obact && BKE_paint_select_face_test(vc.obact)) {
 			ret = do_paintface_box_select(&vc, &rect, select, extend);
@@ -2259,6 +2263,8 @@ static int view3d_select_exec(bContext *C, wmOperator *op)
 			retval = mouse_nurb(C, location, extend, deselect, toggle);
 		else if (obedit->type == OB_MBALL)
 			retval = mouse_mball(C, location, extend, deselect, toggle);
+		else if (obedit->type == OB_FONT)
+			retval = mouse_font(C, location, extend, deselect, toggle);
 			
 	}
 	else if (obact && obact->mode & OB_MODE_PARTICLE_EDIT)
@@ -2835,6 +2841,6 @@ void VIEW3D_OT_select_circle(wmOperatorType *ot)
 	
 	RNA_def_int(ot->srna, "x", 0, INT_MIN, INT_MAX, "X", "", INT_MIN, INT_MAX);
 	RNA_def_int(ot->srna, "y", 0, INT_MIN, INT_MAX, "Y", "", INT_MIN, INT_MAX);
-	RNA_def_int(ot->srna, "radius", 0, INT_MIN, INT_MAX, "Radius", "", INT_MIN, INT_MAX);
+	RNA_def_int(ot->srna, "radius", 1, 1, INT_MAX, "Radius", "", 1, INT_MAX);
 	RNA_def_int(ot->srna, "gesture_mode", 0, INT_MIN, INT_MAX, "Event Type", "", INT_MIN, INT_MAX);
 }

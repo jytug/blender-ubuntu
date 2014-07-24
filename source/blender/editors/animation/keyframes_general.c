@@ -36,7 +36,6 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_math.h"
 #include "BLI_utildefines.h"
 
 #include "DNA_anim_types.h"
@@ -359,7 +358,7 @@ void smooth_fcurve(FCurve *fcu)
 		/* round 2: apply new values */
 		tsb = tarray;
 		for (i = 0; i < totSel; i++, tsb++) {
-			/* don't touch end points, as their values were't touched above */
+			/* don't touch end points, as their values weren't touched above */
 			if (ELEM(i, 0, (totSel - 1)) == 0) {
 				/* y2 takes the average of the 2 points */
 				*tsb->h2 = tsb->y2;
@@ -764,8 +763,10 @@ EnumPropertyItem keyframe_paste_merge_items[] = {
 	{0, NULL, 0, NULL, NULL}};
 
 
-/* This function pastes data from the keyframes copy/paste buffer 
- * > return status code is whether the method FAILED to do anything
+/**
+ * This function pastes data from the keyframes copy/paste buffer
+ *
+ * \return Status code is whether the method FAILED to do anything
  */
 short paste_animedit_keys(bAnimContext *ac, ListBase *anim_data,
                           const eKeyPasteOffset offset_mode, const eKeyMergeMode merge_mode)
@@ -858,6 +859,8 @@ short paste_animedit_keys(bAnimContext *ac, ListBase *anim_data,
 					totmatch++;
 					paste_animedit_keys_fcurve(fcu, aci, offset, merge_mode);
 				}
+
+				ale->update |= ANIM_UPDATE_DEFAULT;
 			}
 			
 			/* don't continue if some fcurves were pasted */
@@ -866,6 +869,8 @@ short paste_animedit_keys(bAnimContext *ac, ListBase *anim_data,
 		}
 	}
 	
+	ANIM_animdata_update(ac, anim_data);
+
 	return 0;
 }
 

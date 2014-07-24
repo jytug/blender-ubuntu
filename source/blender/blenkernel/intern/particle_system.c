@@ -54,12 +54,9 @@
 #include "DNA_modifier_types.h"
 #include "DNA_object_force.h"
 #include "DNA_object_types.h"
-#include "DNA_material_types.h"
 #include "DNA_curve_types.h"
-#include "DNA_group_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_texture_types.h"
-#include "DNA_ipo_types.h" // XXX old animation system stuff... to be removed!
 #include "DNA_listBase.h"
 
 #include "BLI_utildefines.h"
@@ -74,12 +71,10 @@
 #include "BLI_threads.h"
 #include "BLI_linklist.h"
 
-#include "BKE_main.h"
 #include "BKE_animsys.h"
 #include "BKE_boids.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_collision.h"
-#include "BKE_displist.h"
 #include "BKE_effect.h"
 #include "BKE_particle.h"
 #include "BKE_global.h"
@@ -88,7 +83,6 @@
 #include "BKE_object.h"
 #include "BKE_material.h"
 #include "BKE_cloth.h"
-#include "BKE_depsgraph.h"
 #include "BKE_lattice.h"
 #include "BKE_pointcache.h"
 #include "BKE_mesh.h"
@@ -495,15 +489,19 @@ static void distribute_grid(DerivedMesh *dm, ParticleSystem *psys)
 	int totvert=dm->getNumVerts(dm), from=psys->part->from;
 	int i, j, k, p, res=psys->part->grid_res, size[3], axis;
 
-	mv=mvert;
-
 	/* find bounding box of dm */
-	copy_v3_v3(min, mv->co);
-	copy_v3_v3(max, mv->co);
-	mv++;
-
-	for (i=1; i<totvert; i++, mv++) {
-		minmax_v3v3_v3(min, max, mv->co);
+	if (totvert > 0) {
+		mv=mvert;
+		copy_v3_v3(min, mv->co);
+		copy_v3_v3(max, mv->co);
+		mv++;
+		for (i = 1; i < totvert; i++, mv++) {
+			minmax_v3v3_v3(min, max, mv->co);
+		}
+	}
+	else {
+		zero_v3(min);
+		zero_v3(max);
 	}
 
 	sub_v3_v3v3(delta, max, min);
@@ -692,7 +690,7 @@ static void hammersley_create(float *out, int n, int seed, float amount)
 	}
 }
 
-/* modified copy from effect.c */
+/* almost exact copy of BLI_jitter_init */
 static void init_mv_jit(float *jit, int num, int seed2, float amount)
 {
 	RNG *rng;
@@ -723,9 +721,9 @@ static void init_mv_jit(float *jit, int num, int seed2, float amount)
 	jit2= MEM_mallocN(12 + 2*sizeof(float)*num, "initjit");
 
 	for (i=0 ; i<4 ; i++) {
-		BLI_jitterate1(jit, jit2, num, rad1);
-		BLI_jitterate1(jit, jit2, num, rad1);
-		BLI_jitterate2(jit, jit2, num, rad2);
+		BLI_jitterate1((float (*)[2])jit, (float (*)[2])jit2, num, rad1);
+		BLI_jitterate1((float (*)[2])jit, (float (*)[2])jit2, num, rad1);
+		BLI_jitterate2((float (*)[2])jit, (float (*)[2])jit2, num, rad2);
 	}
 	MEM_freeN(jit2);
 	BLI_rng_free(rng);
@@ -817,7 +815,7 @@ static void distribute_threads_exec(ParticleThread *thread, ParticleData *pa, Ch
 
 			psys_particle_on_dm(ctx->dm,from,pa->num,pa->num_dmcache,pa->fuv,pa->foffset,co1,0,0,0,orco1,0);
 			BKE_mesh_orco_verts_transform((Mesh*)ob->data, &orco1, 1, 1);
-			maxw = BLI_kdtree_find_nearest_n(ctx->tree,orco1,NULL,ptn,3);
+			maxw = BLI_kdtree_find_nearest_n(ctx->tree,orco1,ptn,3);
 
 			for (w=0; w<maxw; w++) {
 				pa->verts[w]=ptn->num;
@@ -942,7 +940,7 @@ static void distribute_threads_exec(ParticleThread *thread, ParticleData *pa, Ch
 
 			psys_particle_on_dm(dm,cfrom,cpa->num,DMCACHE_ISCHILD,cpa->fuv,cpa->foffset,co1,nor1,NULL,NULL,orco1,NULL);
 			BKE_mesh_orco_verts_transform((Mesh*)ob->data, &orco1, 1, 1);
-			maxw = BLI_kdtree_find_nearest_n(ctx->tree,orco1,NULL,ptn,3);
+			maxw = BLI_kdtree_find_nearest_n(ctx->tree,orco1,ptn,3);
 
 			maxd=ptn[maxw-1].dist;
 			/* mind=ptn[0].dist; */ /* UNUSED */
@@ -1013,7 +1011,7 @@ static void *distribute_threads_exec_cb(void *data)
 	return 0;
 }
 
-static int distribute_compare_orig_index(void *user_data, const void *p1, const void *p2)
+static int distribute_compare_orig_index(const void *p1, const void *p2, void *user_data)
 {
 	int *orig_index = (int *) user_data;
 	int index1 = orig_index[*(const int *)p1];
@@ -1079,7 +1077,7 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 	int totelem=0, totpart, *particle_element=0, children=0, totseam=0;
 	int jitlevel= 1, distr;
 	float *element_weight=NULL,*element_sum=NULL,*jitter_offset=NULL, *vweight=NULL;
-	float cur, maxweight=0.0, tweight, totweight, inv_totweight, co[3], nor[3], orco[3], ornor[3];
+	float cur, maxweight=0.0, tweight, totweight, inv_totweight, co[3], nor[3], orco[3];
 	
 	if (ELEM3(NULL, ob, psys, psys->part))
 		return 0;
@@ -1130,9 +1128,9 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 		tree=BLI_kdtree_new(totpart);
 
 		for (p=0,pa=psys->particles; p<totpart; p++,pa++) {
-			psys_particle_on_dm(dm,part->from,pa->num,pa->num_dmcache,pa->fuv,pa->foffset,co,nor,0,0,orco,ornor);
+			psys_particle_on_dm(dm,part->from,pa->num,pa->num_dmcache,pa->fuv,pa->foffset,co,nor,0,0,orco,NULL);
 			BKE_mesh_orco_verts_transform((Mesh*)ob->data, &orco, 1, 1);
-			BLI_kdtree_insert(tree, p, orco, ornor);
+			BLI_kdtree_insert(tree, p, orco);
 		}
 
 		BLI_kdtree_balance(tree);
@@ -1172,7 +1170,7 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 				}
 				else
 					copy_v3_v3(co,mv[p].co);
-				BLI_kdtree_insert(tree,p,co,NULL);
+				BLI_kdtree_insert(tree, p, co);
 			}
 
 			BLI_kdtree_balance(tree);
@@ -1346,7 +1344,7 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 		}
 
 		if (orig_index) {
-			BLI_qsort_r(particle_element, totpart, sizeof(int), orig_index, distribute_compare_orig_index);
+			BLI_qsort_r(particle_element, totpart, sizeof(int), distribute_compare_orig_index, orig_index);
 		}
 	}
 
@@ -1964,10 +1962,21 @@ void psys_get_birth_coordinates(ParticleSimulationData *sim, ParticleData *pa, P
 		}
 	}
 }
+
+/* recursively evaluate emitter parent anim at cfra */
+static void evaluate_emitter_anim(Scene *scene, Object *ob, float cfra)
+{
+	if (ob->parent)
+		evaluate_emitter_anim(scene, ob->parent, cfra);
+	
+	/* we have to force RECALC_ANIM here since where_is_objec_time only does drivers */
+	BKE_animsys_evaluate_animdata(scene, &ob->id, ob->adt, cfra, ADT_RECALC_ANIM);
+	BKE_object_where_is_calc_time(scene, ob, cfra);
+}
+
 /* sets particle to the emitter surface with initial velocity & rotation */
 void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, float cfra)
 {
-	Object *ob = sim->ob;
 	ParticleSystem *psys = sim->psys;
 	ParticleSettings *part;
 	ParticleTexture ptex;
@@ -1976,13 +1985,7 @@ void reset_particle(ParticleSimulationData *sim, ParticleData *pa, float dtime, 
 	
 	/* get precise emitter matrix if particle is born */
 	if (part->type!=PART_HAIR && dtime > 0.f && pa->time < cfra && pa->time >= sim->psys->cfra) {
-		/* we have to force RECALC_ANIM here since where_is_objec_time only does drivers */
-		while (ob) {
-			BKE_animsys_evaluate_animdata(sim->scene, &ob->id, ob->adt, pa->time, ADT_RECALC_ANIM);
-			BKE_object_where_is_calc_time(sim->scene, ob, pa->time);
-			ob = ob->parent;
-		}
-		ob = sim->ob;
+		evaluate_emitter_anim(sim->scene, sim->ob, pa->time);
 
 		psys->flag |= PSYS_OB_ANIM_RESTORE;
 	}
@@ -2260,9 +2263,9 @@ void psys_update_particle_tree(ParticleSystem *psys, float cfra)
 			LOOP_SHOWN_PARTICLES {
 				if (pa->alive == PARS_ALIVE) {
 					if (pa->state.time == cfra)
-						BLI_kdtree_insert(psys->tree, p, pa->prev_state.co, NULL);
+						BLI_kdtree_insert(psys->tree, p, pa->prev_state.co);
 					else
-						BLI_kdtree_insert(psys->tree, p, pa->state.co, NULL);
+						BLI_kdtree_insert(psys->tree, p, pa->state.co);
 				}
 			}
 			BLI_kdtree_balance(psys->tree);
@@ -4086,7 +4089,7 @@ static void do_hair_dynamics(ParticleSimulationData *sim)
 	psys->clmd->point_cache = psys->pointcache;
 	psys->clmd->sim_parms->effector_weights = psys->part->effector_weights;
 
-	deformedVerts = MEM_callocN(sizeof(*deformedVerts)*dm->getNumVerts(dm), "do_hair_dynamics vertexCos");
+	deformedVerts = MEM_mallocN(sizeof(*deformedVerts) * dm->getNumVerts(dm), "do_hair_dynamics vertexCos");
 	psys->hair_out_dm = CDDM_copy(dm);
 	psys->hair_out_dm->getVertCos(psys->hair_out_dm, deformedVerts);
 
@@ -4433,7 +4436,7 @@ static void dynamics_step(ParticleSimulationData *sim, float cfra)
 				 * and Monaghan). Note that, unlike double-density relaxation,
 				 * this algorithm is separated into distinct loops. */
 
-#pragma omp parallel for firstprivate (sphdata) private (pa) schedule(dynamic,5)
+#pragma omp parallel for private (pa) schedule(dynamic,5)
 				LOOP_DYNAMIC_PARTICLES {
 					basic_integrate(sim, p, pa->state.time, cfra);
 				}
@@ -5100,13 +5103,7 @@ void particle_system_update(Scene *scene, Object *ob, ParticleSystem *psys)
 
 	/* make sure emitter is left at correct time (particle emission can change this) */
 	if (psys->flag & PSYS_OB_ANIM_RESTORE) {
-		while (ob) {
-			BKE_animsys_evaluate_animdata(scene, &ob->id, ob->adt, cfra, ADT_RECALC_ANIM);
-			BKE_object_where_is_calc_time(scene, ob, cfra);
-			ob = ob->parent;
-		}
-		ob = sim.ob;
-
+		evaluate_emitter_anim(scene, ob, cfra);
 		psys->flag &= ~PSYS_OB_ANIM_RESTORE;
 	}
 

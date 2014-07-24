@@ -19,8 +19,8 @@
 bl_info = {
     "name": "Oscurart Tools",
     "author": "Oscurart, CodemanX",
-    "version": (3,1),
-    "blender": (2, 65, 0),
+    "version": (3,2),
+    "blender": (2, 70, 0),
     "location": "View3D > Tools > Oscurart Tools",
     "description": "Tools for objects, render, shapes, and files.",
     "warning": "",
@@ -152,7 +152,6 @@ class OscPanelObject(OscPollObject, bpy.types.Panel):
         colrow = col.row(align=1)
         colrow.prop(bpy.context.scene, "RenameObjectOt", text="")
         colrow.operator("object.rename_objects_osc", icon="SHORTDISPLAY")
-        col.operator("object.duplicate_object_symmetry_osc", icon="OBJECT_DATAMODE", text="Duplicate Symmetry")
         col.operator("object.distribute_osc", icon="OBJECT_DATAMODE", text="Distribute")
         colrow = col.row(align=1)
         colrow.operator("object.modifiers_remove_osc", icon="MODIFIER", text="Remove Modifiers")
@@ -182,6 +181,8 @@ class OscPanelMesh(OscPollMesh, bpy.types.Panel):
         colrow=col.row(align=1)
         colrow.operator("mesh.overlap_uv_faces", icon="UV_FACESEL")               
         colrow=col.row(align=1)
+        colrow.operator("view3d.modal_operator", icon="STICKY_UVS_DISABLE")               
+        colrow=col.row(align=1)        
         colrow.operator("file.export_groups_osc", icon='GROUP_VCOL')
         colrow.operator("file.import_groups_osc", icon='GROUP_VCOL')
         colrow=col.row(align=1)
@@ -270,10 +271,10 @@ class OscPanelOverrides(OscPollOverrides, bpy.types.Panel):
         obj = context.object
         col = layout.box().column(align=1)
         colrow = col.row()
-        col.operator("render.overrides_set_list", text="Create Override List", icon="GREASEPENCIL")
+        #col.operator("render.overrides_set_list", text="Create Override List", icon="GREASEPENCIL")
         col.label(text="Active Scene: " + bpy.context.scene.name)
         col.label(text="Example: [[Group,Material]]")
-        col.prop(bpy.context.scene, '["OVERRIDE"]', text="")
+        col.prop(bpy.context.scene, "overrides", text="")
         col.operator("render.check_overrides", text="Check List", icon="ZOOM_ALL")
         col.operator("render.overrides_on", text="On / Off", icon="QUIT")   
         col.label(text=str("OVERRIDES: ON" if bpy.use_overrides else "OVERRIDES: OFF"))             

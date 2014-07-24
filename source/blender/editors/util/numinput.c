@@ -52,6 +52,7 @@
 enum {
 	/* (1 << 8) and below are reserved for public flags! */
 	NUM_EDIT_FULL       = (1 << 9),   /* Enable full editing, with units and math operators support. */
+	NUM_FAKE_EDITED     = (1 << 10),  /* Fake edited state (temp, avoids issue with backspace). */
 };
 
 /* NumInput.val_flag[] */
@@ -69,17 +70,20 @@ enum {
 
 void initNumInput(NumInput *n)
 {
-	n->unit_sys = USER_UNIT_NONE;
-	n->unit_type[0] = n->unit_type[1] = n->unit_type[2] = B_UNIT_NONE;
-	n->idx = 0;
 	n->idx_max = 0;
+	n->unit_sys = USER_UNIT_NONE;
+	fill_vn_i(n->unit_type, NUM_MAX_ELEMENTS, B_UNIT_NONE);
+	n->unit_use_radians = false;
+
 	n->flag = 0;
-	n->val_flag[0] = n->val_flag[1] = n->val_flag[2] = 0;
-	zero_v3(n->val_org);
+	fill_vn_short(n->val_flag, NUM_MAX_ELEMENTS, 0);
 	zero_v3(n->val);
+	fill_vn_fl(n->val_org, NUM_MAX_ELEMENTS, 0.0f);
+	fill_vn_fl(n->val_inc, NUM_MAX_ELEMENTS, 1.0f);
+
+	n->idx = 0;
 	n->str[0] = '\0';
 	n->str_cur = 0;
-	copy_v3_fl(n->val_inc, 1.0f);
 }
 
 /* str must be NUM_STR_REP_LEN * (idx_max + 1) length. */
@@ -148,6 +152,10 @@ bool hasNumInput(const NumInput *n)
 {
 	short i;
 
+	if (n->flag & NUM_FAKE_EDITED) {
+		return true;
+	}
+
 	for (i = 0; i <= n->idx_max; i++) {
 		if (n->val_flag[i] & NUM_EDITED) {
 			return true;
@@ -160,31 +168,45 @@ bool hasNumInput(const NumInput *n)
 /**
  * \warning \a vec must be set beforehand otherwise we risk uninitialized vars.
  */
-void applyNumInput(NumInput *n, float *vec)
+bool applyNumInput(NumInput *n, float *vec)
 {
 	short i, j;
 	float val;
 
 	if (hasNumInput(n)) {
 		for (j = 0; j <= n->idx_max; j++) {
-			/* if AFFECTALL and no number typed and cursor not on number, use first number */
-			i = (n->flag & NUM_AFFECT_ALL && n->idx != j && !(n->val_flag[j] & NUM_EDITED)) ? 0 : j;
-			val = (!(n->val_flag[i] & NUM_EDITED) && n->val_flag[i] & NUM_NULL_ONE) ? 1.0f : n->val[i];
+			if (n->flag & NUM_FAKE_EDITED) {
+				val = n->val[j];
+			}
+			else {
+				/* if AFFECTALL and no number typed and cursor not on number, use first number */
+				i = (n->flag & NUM_AFFECT_ALL && n->idx != j && !(n->val_flag[j] & NUM_EDITED)) ? 0 : j;
+				val = (!(n->val_flag[i] & NUM_EDITED) && n->val_flag[i] & NUM_NULL_ONE) ? 1.0f : n->val[i];
 
-			if (n->val_flag[i] & NUM_NO_NEGATIVE && val < 0.0f) {
-				val = 0.0f;
-			}
-			if (n->val_flag[i] & NUM_NO_ZERO && val == 0.0f) {
-				val = 0.0001f;
-			}
-			if (n->val_flag[i] & NUM_NO_FRACTION && val != floorf(val)) {
-				val = floorf(val + 0.5f);
+				if (n->val_flag[i] & NUM_NO_NEGATIVE && val < 0.0f) {
+					val = 0.0f;
+				}
 				if (n->val_flag[i] & NUM_NO_ZERO && val == 0.0f) {
-					val = 1.0f;
+					val = 0.0001f;
+				}
+				if (n->val_flag[i] & NUM_NO_FRACTION && val != floorf(val)) {
+					val = floorf(val + 0.5f);
+					if (n->val_flag[i] & NUM_NO_ZERO && val == 0.0f) {
+						val = 1.0f;
+					}
 				}
 			}
 			vec[j] = val;
 		}
+		n->flag &= ~NUM_FAKE_EDITED;
+		return true;
+	}
+	else {
+		/* Else, we set the 'org' values for numinput! */
+		for (j = 0; j <= n->idx_max; j++) {
+			n->val[j] = n->val_org[j] = vec[j];
+		}
+		return false;
 	}
 }
 
@@ -234,7 +256,6 @@ bool handleNumInput(bContext *C, NumInput *n, const wmEvent *event)
 	short idx = n->idx, idx_max = n->idx_max;
 	short dir = STRCUR_DIR_NEXT, mode = STRCUR_JUMP_NONE;
 	int cur;
-	double val;
 
 	switch (event->type) {
 		case EVT_MODAL_MAP:
@@ -257,6 +278,7 @@ bool handleNumInput(bContext *C, NumInput *n, const wmEvent *event)
 				n->val_flag[0] &= ~NUM_EDITED;
 				n->val_flag[1] &= ~NUM_EDITED;
 				n->val_flag[2] &= ~NUM_EDITED;
+				n->flag |= NUM_FAKE_EDITED;
 				updated = true;
 				break;
 			}
@@ -285,6 +307,9 @@ bool handleNumInput(bContext *C, NumInput *n, const wmEvent *event)
 					}
 					memmove(&n->str[cur], &n->str[t_cur], strlen(&n->str[t_cur]) + 1);  /* +1 for trailing '\0'. */
 					updated = true;
+				}
+				if (!n->str[0]) {
+					n->val[idx] = n->val_org[idx];
 				}
 			}
 			else {
@@ -318,12 +343,10 @@ bool handleNumInput(bContext *C, NumInput *n, const wmEvent *event)
 			}
 			return false;
 		case TABKEY:
-			n->val_org[idx] = n->val[idx];
 			n->val_flag[idx] &= ~(NUM_NEGATE | NUM_INVERSE);
 
 			idx = (idx + idx_max + (event->ctrl ? 0 : 2)) % (idx_max + 1);
 			n->idx = idx;
-			n->val[idx] = n->val_org[idx];
 			if (n->val_flag[idx] & NUM_EDITED) {
 				value_to_editstr(n, idx);
 			}
@@ -443,6 +466,7 @@ bool handleNumInput(bContext *C, NumInput *n, const wmEvent *event)
 	/* At this point, our value has changed, try to interpret it with python (if str is not empty!). */
 	if (n->str[0]) {
 #ifdef WITH_PYTHON
+		double val;
 		char str_unit_convert[NUM_STR_REP_LEN * 6];  /* Should be more than enough! */
 		const char *default_unit = NULL;
 
@@ -465,6 +489,7 @@ bool handleNumInput(bContext *C, NumInput *n, const wmEvent *event)
 		}
 #else  /* Very unlikely, but does not harm... */
 		n->val[idx] = (float)atof(n->str);
+		(void)C;
 #endif  /* WITH_PYTHON */
 
 		if (n->val_flag[idx] & NUM_NEGATE) {

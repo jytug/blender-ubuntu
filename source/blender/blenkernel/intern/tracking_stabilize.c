@@ -33,8 +33,6 @@
 
 #include <limits.h>
 
-#include "MEM_guardedalloc.h"
-
 #include "DNA_movieclip_types.h"
 
 #include "BLI_utildefines.h"
@@ -157,7 +155,7 @@ static float stabilization_calculate_autoscale_factor(MovieTracking *tracking, i
 		}
 
 		/* For every frame we calculate scale factor needed to eliminate black
-		 * aread and choose largest scale factor as final one.
+		 * area and choose largest scale factor as final one.
 		 */
 		for (cfra = sfra; cfra <= efra; cfra++) {
 			float median[2];
@@ -245,7 +243,7 @@ static float stabilization_calculate_autoscale_factor(MovieTracking *tracking, i
 		stab->scale = 1.0f;
 	}
 
-	stab->ok = TRUE;
+	stab->ok = true;
 
 	return stab->scale;
 }
@@ -289,7 +287,7 @@ void BKE_tracking_stabilization_data_get(MovieTracking *tracking, int framenr, i
 			stabilization_calculate_data(tracking, framenr, width, height, firstmedian, median,
 			                             translation, scale, angle);
 
-			stab->ok = TRUE;
+			stab->ok = true;
 		}
 		else {
 			stabilization_calculate_data(tracking, framenr, width, height, firstmedian, median,

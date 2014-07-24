@@ -45,6 +45,7 @@
 
 #include "BKE_animsys.h"
 #include "BKE_action.h"
+#include "BKE_fcurve.h"
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_global.h"
@@ -243,13 +244,13 @@ static void animchan_sync_fcurve(bAnimContext *ac, bAnimListElem *ale, FCurve **
 		
 		/* only affect if F-Curve involves sequence_editor.sequences */
 		if ((fcu->rna_path) && strstr(fcu->rna_path, "sequences_all")) {
-			Editing *ed = BKE_sequencer_editing_get(scene, FALSE);
+			Editing *ed = BKE_sequencer_editing_get(scene, false);
 			Sequence *seq;
 			char *seq_name;
 			
 			/* get strip name, and check if this strip is selected */
 			seq_name = BLI_str_quoted_substrN(fcu->rna_path, "sequences_all[");
-			seq = BKE_sequence_get_by_name(ed->seqbasep, seq_name, FALSE);
+			seq = BKE_sequence_get_by_name(ed->seqbasep, seq_name, false);
 			if (seq_name) MEM_freeN(seq_name);
 			
 			/* update selection status */
@@ -341,5 +342,56 @@ void ANIM_sync_animchannels_to_data(const bContext *C)
 		}
 	}
 	
-	BLI_freelistN(&anim_data);
+	ANIM_animdata_freelist(&anim_data);
+}
+
+void ANIM_animdata_update(bAnimContext *ac, ListBase *anim_data)
+{
+	bAnimListElem *ale;
+
+	if (ELEM(ac->datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
+#ifdef DEBUG
+		/* quiet assert */
+		for (ale = anim_data->first; ale; ale = ale->next) {
+			ale->update = 0;
+		}
+#endif
+		return;
+	}
+
+	for (ale = anim_data->first; ale; ale = ale->next) {
+		FCurve *fcu = ale->key_data;
+
+		if (ale->update & ANIM_UPDATE_ORDER) {
+			ale->update &= ~ANIM_UPDATE_ORDER;
+			sort_time_fcurve(fcu);
+		}
+
+		if (ale->update & ANIM_UPDATE_HANDLES) {
+			ale->update &= ~ANIM_UPDATE_HANDLES;
+			calchandles_fcurve(fcu);
+		}
+
+		if (ale->update & ANIM_UPDATE_DEPS) {
+			ale->update &= ~ANIM_UPDATE_DEPS;
+			ANIM_list_elem_update(ac->scene, ale);
+		}
+
+		BLI_assert(ale->update == 0);
+	}
+}
+
+void ANIM_animdata_freelist(ListBase *anim_data)
+{
+#ifndef NDEBUG
+	bAnimListElem *ale, *ale_next;
+	for (ale = anim_data->first; ale; ale = ale_next) {
+		ale_next = ale->next;
+		BLI_assert(ale->update == 0);
+		MEM_freeN(ale);
+	}
+	BLI_listbase_clear(anim_data);
+#else
+	BLI_freelistN(anim_data);
+#endif
 }
