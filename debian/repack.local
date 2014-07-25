@@ -1,0 +1,11 @@
+SUFFIX=+dfsg0
+rm release/scripts/addons/netrender/js/jquery.js
+rm release/scripts/addons/netrender/js/jquery-ui.js
+rm release/scripts/addons/.git
+rm release/scripts/addons_contrib/.git
+rm release/datafiles/locale/.git
+rm scons/.git
+rm release/scripts/addons/.gitignore
+rm release/scripts/addons_contrib/.gitignore
+rm release/datafiles/locale/.gitignore
+rm scons/.gitignore
