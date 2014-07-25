@@ -1,4 +1,4 @@
-blender (2.71+dfsg0-1) UNRELEASED; urgency=medium
+blender (2.71+dfsg0-1) unstable; urgency=medium
 
   * New upstream release (Closes: #753630, #754042)
   * debian/patches/: re-worked against v2.71 (Closes: #752160, #752315)
@@ -16,7 +16,7 @@ blender (2.71+dfsg0-1) UNRELEASED; urgency=medium
   * debian/rules: get-orig-source directive re-written
   * debian/: repack stuff added
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Thu, 24 Jul 2014 11:37:18 +0200
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Fri, 25 Jul 2014 15:18:10 +0200
 
 blender (2.70a-2) unstable; urgency=medium
 
