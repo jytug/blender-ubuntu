@@ -1,3 +1,23 @@
+blender (2.71+dfsg0-1) UNRELEASED; urgency=medium
+
+  * New upstream release (Closes: #753630, #754042)
+  * debian/patches/: re-worked against v2.71 (Closes: #752160, #752315)
+    - 0001-blender_thumbnailer.patch refreshed
+    - 0002-disable_tests.patch dropped (obsolete)
+    - #0003 => #0009 renumbered back by 1
+    - 0011-fix_FTBFS_on_unofficial_64bit_archs.patch => #0009
+    - 0010-fix_FTBFS_on_non-linux_architectures.patch dropped
+    - 0012-fix_FTBFS_due_to_SSE.patch dropped
+      (both #0010 and #0012 were applied upstream)
+  * debian/watch: mangle option added
+  * debian/: jquery references updated
+    (more info in README.source) (Closes: #752224)
+  * debian/rules: dh_auto_test target overridden
+  * debian/rules: get-orig-source directive re-written
+  * debian/: repack stuff added
+
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Thu, 24 Jul 2014 11:37:18 +0200
+
 blender (2.70a-2) unstable; urgency=medium
 
   * debian/patches/: patchset refreshed (Closes: #749223)
