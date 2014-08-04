@@ -59,8 +59,6 @@ Depends: blender-data (= ${source:Version}),
          ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends}
-Suggests: yafaray-exporter
-Breaks: yafaray-exporter (<< 0.1.2+really0.1.2~beta5-1)
 Description: Very fast and versatile 3D modeller/renderer
  Blender is an integrated 3d suite for modelling, animation, rendering,
  post-production, interactive creation and playback (games). Blender has its
