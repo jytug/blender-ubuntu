@@ -1,0 +1,40 @@
+From: Campbell Barton <ideasman42@gmail.com>
+Date: Sat, 26 Jul 2014 18:39:27 +1000
+Subject: fix_includes_on_different_endian_systems
+
+---
+ source/blender/modifiers/intern/MOD_meshcache_mdd.c | 4 +++-
+ source/blender/modifiers/intern/MOD_meshcache_pc2.c | 3 +++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/source/blender/modifiers/intern/MOD_meshcache_mdd.c b/source/blender/modifiers/intern/MOD_meshcache_mdd.c
+index 0cbf07c..90fc750 100644
+--- a/source/blender/modifiers/intern/MOD_meshcache_mdd.c
++++ b/source/blender/modifiers/intern/MOD_meshcache_mdd.c
+@@ -30,9 +30,11 @@
+ 
+ #include "BLI_sys_types.h"
+ #include "BLI_utildefines.h"
+-#include "BLI_endian_switch.h"
+ #include "BLI_fileops.h"
+ #include "BLI_math.h"
++#ifdef __LITTLE_ENDIAN__
++#  include "BLI_endian_switch.h"
++#endif
+ 
+ #include "MOD_meshcache_util.h"  /* own include */
+ 
+diff --git a/source/blender/modifiers/intern/MOD_meshcache_pc2.c b/source/blender/modifiers/intern/MOD_meshcache_pc2.c
+index ac0363f..3ef0ee5 100644
+--- a/source/blender/modifiers/intern/MOD_meshcache_pc2.c
++++ b/source/blender/modifiers/intern/MOD_meshcache_pc2.c
+@@ -32,6 +32,9 @@
+ #include "BLI_utildefines.h"
+ #include "BLI_fileops.h"
+ #include "BLI_math.h"
++#ifdef __BIG_ENDIAN__
++#  include "BLI_endian_switch.h"
++#endif
+ 
+ #include "MOD_meshcache_util.h"  /* own include */
+ 

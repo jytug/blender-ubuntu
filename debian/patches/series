@@ -6,3 +6,4 @@
 0006-do_not_use_version_number_in_system_path.patch
 0007-look_for_droid_ttf_with_fontconfig.patch
 0008-fix_FTBFS_on_unofficial_64bit_archs.patch
+0009-fix_includes_on_different_endian_systems.patch
