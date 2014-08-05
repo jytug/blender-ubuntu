@@ -1,10 +1,10 @@
-blender (2.71+dfsg0-3) UNRELEASED; urgency=medium
+blender (2.71+dfsg0-3) unstable; urgency=medium
 
   * debian/patches/: patchset updated
     - 0009-fix_includes_on_different_endian_systems.patch added
       Thanks to Campbell Burton (upstream devel) for the patch.
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Tue, 05 Aug 2014 08:32:22 +0200
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Tue, 05 Aug 2014 08:34:28 +0200
 
 blender (2.71+dfsg0-2) unstable; urgency=medium
 
