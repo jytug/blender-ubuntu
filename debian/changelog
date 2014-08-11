@@ -1,3 +1,9 @@
+blender (2.71+dfsg0-4) UNRELEASED; urgency=medium
+
+  * debian/blender-data.links: jquery-ui.js path fixed (Closes: #757765)
+
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Mon, 11 Aug 2014 10:56:06 +0200
+
 blender (2.71+dfsg0-3) unstable; urgency=medium
 
   * debian/patches/: patchset updated
