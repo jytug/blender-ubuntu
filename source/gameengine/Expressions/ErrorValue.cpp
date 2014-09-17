@@ -107,13 +107,6 @@ double CErrorValue::GetNumber()
 
 
 
-int CErrorValue::GetValueType()
-{
-	return VALUE_ERROR_TYPE;
-}
-
-
-
 const STR_String & CErrorValue::GetText()
 {
 	return m_strErrorText;

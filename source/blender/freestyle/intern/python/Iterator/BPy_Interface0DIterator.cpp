@@ -25,7 +25,6 @@
 #include "BPy_Interface0DIterator.h"
 
 #include "../BPy_Convert.h"
-#include "../BPy_Interface1D.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,10 +70,9 @@ static int convert_nested_it(PyObject *obj, void *v)
 static int Interface0DIterator_init(BPy_Interface0DIterator *self, PyObject *args, PyObject *kwds)
 {
 	static const char *kwlist_1[] = {"it", NULL};
-	static const char *kwlist_2[] = {"inter", NULL};
-	static const char *kwlist_3[] = {"brother", NULL};
+	static const char *kwlist_2[] = {"brother", NULL};
 	Interface0DIteratorNested *nested_it;
-	PyObject *brother, *inter;
+	PyObject *brother;
 
 	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", (char **)kwlist_1, convert_nested_it, &nested_it)) {
 		self->if0D_it = new Interface0DIterator(nested_it->copy());
@@ -82,14 +80,7 @@ static int Interface0DIterator_init(BPy_Interface0DIterator *self, PyObject *arg
 		self->reversed = false;
 	}
 	else if (PyErr_Clear(),
-	         PyArg_ParseTupleAndKeywords(args, kwds, "O!", (char **)kwlist_2, &Interface1D_Type, &inter))
-	{
-		self->if0D_it = new Interface0DIterator(((BPy_Interface1D *)inter)->if1D->verticesBegin());
-		self->at_start = true;
-		self->reversed = false;
-	}
-	else if (PyErr_Clear(),
-	         PyArg_ParseTupleAndKeywords(args, kwds, "O!", (char **)kwlist_3, &Interface0DIterator_Type, &brother))
+	         PyArg_ParseTupleAndKeywords(args, kwds, "O!", (char **)kwlist_2, &Interface0DIterator_Type, &brother))
 	{
 		self->if0D_it = new Interface0DIterator(*(((BPy_Interface0DIterator *)brother)->if0D_it));
 		self->at_start = ((BPy_Interface0DIterator *)brother)->at_start;

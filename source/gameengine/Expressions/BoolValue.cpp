@@ -186,13 +186,6 @@ double CBoolValue::GetNumber()
 
 
 
-int CBoolValue::GetValueType()
-{
-	return VALUE_BOOL_TYPE;
-}
-
-
-
 const STR_String& CBoolValue::GetText()
 {
 	return m_bool ? sTrueString : sFalseString;

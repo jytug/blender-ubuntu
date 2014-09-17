@@ -2813,7 +2813,8 @@ static ImBuf *seq_render_strip(const SeqRenderData *context, Sequence *seq, floa
 	ibuf = BKE_sequencer_cache_get(context, seq, cfra, SEQ_STRIPELEM_IBUF);
 
 	if (ibuf == NULL) {
-		ibuf = copy_from_ibuf_still(context, seq, nr);
+		if (ibuf == NULL)
+			ibuf = copy_from_ibuf_still(context, seq, nr);
 
 		if (ibuf == NULL) {
 			ibuf = BKE_sequencer_preprocessed_cache_get(context, seq, cfra, SEQ_STRIPELEM_IBUF);
@@ -3074,12 +3075,13 @@ static ImBuf *seq_render_strip_stack(const SeqRenderData *context, ListBase *seq
 ImBuf *BKE_sequencer_give_ibuf(const SeqRenderData *context, float cfra, int chanshown)
 {
 	Editing *ed = BKE_sequencer_editing_get(context->scene, false);
+	int count;
 	ListBase *seqbasep;
 	
 	if (ed == NULL) return NULL;
 
-	if ((chanshown < 0) && !BLI_listbase_is_empty(&ed->metastack)) {
-		int count = BLI_countlist(&ed->metastack);
+	count = BLI_countlist(&ed->metastack);
+	if ((chanshown < 0) && (count > 0)) {
 		count = max_ii(count + chanshown, 0);
 		seqbasep = ((MetaStack *)BLI_findlink(&ed->metastack, count))->oldbasep;
 	}

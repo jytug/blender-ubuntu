@@ -70,7 +70,7 @@ static int ViewEdge_init(BPy_ViewEdge *self, PyObject *args, PyObject *kwds)
 	else
 		self->ve = new ViewEdge(*(((BPy_ViewEdge *)brother)->ve));
 	self->py_if1D.if1D = self->ve;
-	self->py_if1D.borrowed = false;
+	self->py_if1D.borrowed = 0;
 	return 0;
 }
 

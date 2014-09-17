@@ -25,8 +25,6 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#include <stdio.h>
-
 #include "GL/glew.h"
 
 #include "RAS_OpenGLLight.h"

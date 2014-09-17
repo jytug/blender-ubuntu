@@ -64,18 +64,18 @@ static void InputSpring(TransInfo *UNUSED(t), MouseInput *mi, const int mval[2],
 		/* calculate ratio for shiftkey pos, and for total, and blend these for precision */
 		dx = (float)(mi->center[0] - mi->precision_mval[0]);
 		dy = (float)(mi->center[1] - mi->precision_mval[1]);
-		ratio = hypotf(dx, dy);
+		ratio = sqrtf(dx * dx + dy * dy);
 
 		dx = (float)(mi->center[0] - mval[0]);
 		dy = (float)(mi->center[1] - mval[1]);
-		precise_ratio = hypotf(dx, dy);
+		precise_ratio = sqrtf(dx * dx + dy * dy);
 
 		ratio = (ratio + (precise_ratio - ratio) / 10.0f) / mi->factor;
 	}
 	else {
 		dx = (float)(mi->center[0] - mval[0]);
 		dy = (float)(mi->center[1] - mval[1]);
-		ratio = hypotf(dx, dy) / mi->factor;
+		ratio = sqrtf(dx * dx + dy * dy) / mi->factor;
 	}
 
 	output[0] = ratio;
@@ -195,7 +195,7 @@ static void InputCustomRatioFlip(TransInfo *UNUSED(t), MouseInput *mi, const int
 		dx = data[2] - data[0];
 		dy = data[3] - data[1];
 		
-		length = hypot(dx, dy);
+		length = sqrt(dx * dx + dy * dy);
 		
 		if (mi->precision) {
 			/* deal with Shift key by adding motion / 10 to motion before shift press */

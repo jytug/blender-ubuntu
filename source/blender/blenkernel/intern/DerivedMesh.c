@@ -615,8 +615,7 @@ void DM_to_mesh(DerivedMesh *dm, Mesh *me, Object *ob, CustomDataMask mask)
 		MEM_freeN(me->mselect);
 	}
 
-	/* skip the listbase */
-	MEMCPY_STRUCT_OFS(me, &tmp, id.prev);
+	*me = tmp;
 }
 
 void DM_to_meshkey(DerivedMesh *dm, Mesh *me, KeyBlock *kb)
@@ -1214,15 +1213,14 @@ static void calc_weightpaint_vert_array(Object *ob, DerivedMesh *dm, int const d
 		}
 	}
 	else {
-		unsigned char col[4];
+		int col_i;
 		if (draw_flag & (CALC_WP_GROUP_USER_ACTIVE | CALC_WP_GROUP_USER_ALL)) {
-			copy_v3_v3_char((char *)col, dm_wcinfo->alert_color);
-			col[3] = 255;
+			col_i = 0;
 		}
 		else {
-			weightpaint_color(col, dm_wcinfo, 0.0f);
+			weightpaint_color((unsigned char *)&col_i, dm_wcinfo, 0.0f);
 		}
-		fill_vn_i((int *)r_wtcol_v, numVerts, *((int *)col));
+		fill_vn_i((int *)r_wtcol_v, numVerts, col_i);
 	}
 }
 

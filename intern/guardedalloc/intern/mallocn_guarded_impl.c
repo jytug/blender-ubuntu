@@ -113,10 +113,7 @@ typedef struct MemHead {
 	const char *name;
 	const char *nextname;
 	int tag2;
-	short mmap;  /* if true, memory was mmapped */
-	short alignment;  /* if non-zero aligned alloc was used
-	                   * and alignment is stored here.
-	                   */
+	int mmap;  /* if true, memory was mmapped */
 #ifdef DEBUG_MEMCOUNTER
 	int _count;
 #endif
@@ -130,8 +127,6 @@ typedef struct MemHead {
 	int backtrace_size;
 #endif
 } MemHead;
-
-typedef MemHead MemHeadAligned;
 
 /* for openmp threading asserts, saves time troubleshooting
  * we may need to extend this if blender code starts using MEM_
@@ -192,7 +187,7 @@ static const char *check_memlist(MemHead *memh);
 
 #define MEMNEXT(x) \
 	((MemHead *)(((char *) x) - ((char *) &(((MemHead *)0)->next))))
-
+	
 /* --------------------------------------------------------------------- */
 /* vars                                                                  */
 /* --------------------------------------------------------------------- */
@@ -330,12 +325,10 @@ void *MEM_guarded_dupallocN(const void *vmemh)
 		memh--;
 
 #ifndef DEBUG_MEMDUPLINAME
-		if (UNLIKELY(memh->mmap))
-			newp = MEM_guarded_mapallocN(memh->len, "dupli_mapalloc");
-		else if (LIKELY(memh->alignment == 0))
+		if (memh->mmap)
 			newp = MEM_guarded_mapallocN(memh->len, "dupli_mapalloc");
 		else
-			newp = MEM_guarded_mallocN_aligned(memh->len, (size_t) memh->alignment, "dupli_alloc");
+			newp = MEM_guarded_mallocN(memh->len, "dupli_alloc");
 
 		if (newp == NULL) return NULL;
 #else
@@ -343,17 +336,13 @@ void *MEM_guarded_dupallocN(const void *vmemh)
 			MemHead *nmemh;
 			char *name = malloc(strlen(memh->name) + 24);
 
-			if (UNLIKELY(memh->mmap)) {
+			if (memh->mmap) {
 				sprintf(name, "%s %s", "dupli_mapalloc", memh->name);
 				newp = MEM_guarded_mapallocN(memh->len, name);
 			}
-			else if (LIKELY(memh->alignment == 0)) {
-				sprintf(name, "%s %s", "dupli_alloc", memh->name);
-				newp = MEM_guarded_mallocN(memh->len, name);
-			}
 			else {
 				sprintf(name, "%s %s", "dupli_alloc", memh->name);
-				newp = MEM_guarded_mallocN_aligned(memh->len, (size_t) memh->alignment, name);
+				newp = MEM_guarded_mallocN(memh->len, name);
 			}
 
 			if (newp == NULL) return NULL;
@@ -379,13 +368,7 @@ void *MEM_guarded_reallocN_id(void *vmemh, size_t len, const char *str)
 		MemHead *memh = vmemh;
 		memh--;
 
-		if (LIKELY(memh->alignment == 0)) {
-			newp = MEM_guarded_mallocN(len, memh->name);
-		}
-		else {
-			newp = MEM_guarded_mallocN_aligned(len, (size_t) memh->alignment, memh->name);
-		}
-
+		newp = MEM_guarded_mallocN(len, memh->name);
 		if (newp) {
 			if (len < memh->len) {
 				/* shrink */
@@ -414,13 +397,7 @@ void *MEM_guarded_recallocN_id(void *vmemh, size_t len, const char *str)
 		MemHead *memh = vmemh;
 		memh--;
 
-		if (LIKELY(memh->alignment == 0)) {
-			newp = MEM_guarded_mallocN(len, memh->name);
-		}
-		else {
-			newp = MEM_guarded_mallocN_aligned(len, (size_t) memh->alignment, memh->name);
-		}
-
+		newp = MEM_guarded_mallocN(len, memh->name);
 		if (newp) {
 			if (len < memh->len) {
 				/* shrink */
@@ -487,7 +464,6 @@ static void make_memhead_header(MemHead *memh, size_t len, const char *str)
 	memh->nextname = NULL;
 	memh->len = len;
 	memh->mmap = 0;
-	memh->alignment = 0;
 	memh->tag2 = MEMTAG2;
 
 #ifdef DEBUG_MEMDUPLINAME
@@ -534,54 +510,6 @@ void *MEM_guarded_mallocN(size_t len, const char *str)
 		return (++memh);
 	}
 	print_error("Malloc returns null: len=" SIZET_FORMAT " in %s, total %u\n",
-	            SIZET_ARG(len), str, (unsigned int) mem_in_use);
-	return NULL;
-}
-
-void *MEM_guarded_mallocN_aligned(size_t len, size_t alignment, const char *str)
-{
-	MemHead *memh;
-
-	/* It's possible that MemHead's size is not properly aligned,
-	 * do extra padding to deal with this.
-	 *
-	 * We only support small alignments which fits into short in
-	 * order to save some bits in MemHead structure.
-	 */
-	size_t extra_padding = MEMHEAD_ALIGN_PADDING(alignment);
-
-	/* Huge alignment values doesn't make sense and they
-	 * wouldn't fit into 'short' used in the MemHead.
-	 */
-	assert(alignment < 1024);
-
-	/* We only support alignment to a power of two. */
-	assert(IS_POW2(alignment));
-
-	len = SIZET_ALIGN_4(len);
-
-	memh = (MemHead *)aligned_malloc(len + extra_padding + sizeof(MemHead) + sizeof(MemTail), alignment);
-
-	if (LIKELY(memh)) {
-		/* We keep padding in the beginning of MemHead,
-		 * this way it's always possible to get MemHead
-		 * from the data pointer.
-		 */
-		memh = (MemHead *)((char *)memh + extra_padding);
-
-		make_memhead_header(memh, len, str);
-		memh->alignment = (short) alignment;
-		if (UNLIKELY(malloc_debug_memset && len))
-			memset(memh + 1, 255, len);
-
-#ifdef DEBUG_MEMCOUNTER
-		if (_mallocn_count == DEBUG_MEMCOUNTER_ERROR_VAL)
-			memcount_raise(__func__);
-		memh->_count = _mallocn_count++;
-#endif
-		return (++memh);
-	}
-	print_error("aligned_malloc returns null: len=" SIZET_FORMAT " in %s, total %u\n",
 	            SIZET_ARG(len), str, (unsigned int) mem_in_use);
 	return NULL;
 }
@@ -1025,12 +953,7 @@ static void rem_memblock(MemHead *memh)
 	else {
 		if (UNLIKELY(malloc_debug_memset && memh->len))
 			memset(memh + 1, 255, memh->len);
-		if (LIKELY(memh->alignment == 0)) {
-			free(memh);
-		}
-		else {
-			aligned_free(MEMHEAD_REAL_PTR(memh));
-		}
+		free(memh);
 	}
 }
 

@@ -32,7 +32,6 @@ public:
 
 	virtual const STR_String &	GetText();
 	virtual double			GetNumber();
-	virtual int				GetValueType();
 	CListValue*				GetPolySoup();
 	virtual double*			GetVector3(bool bGetTransformedVec=false);
 	bool					IsInside(CValue* testpoint,bool bBorderInclude=true);

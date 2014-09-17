@@ -154,7 +154,6 @@ endif()
 		extern_rangetree
 		extern_wcwidth
 		extern_libmv
-		extern_glog
 	)
 
 	if(WITH_MOD_CLOTH_ELTOPO)

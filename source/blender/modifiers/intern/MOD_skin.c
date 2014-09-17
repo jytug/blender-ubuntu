@@ -68,7 +68,6 @@
 #include "BLI_heap.h"
 #include "BLI_math.h"
 #include "BLI_stack.h"
-#include "BLI_bitmap.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_deform.h"
@@ -642,7 +641,7 @@ typedef struct {
 	int e;
 } EdgeStackElem;
 
-static void build_emats_stack(BLI_Stack *stack, BLI_bitmap *visited_e, EMat *emat,
+static void build_emats_stack(BLI_Stack *stack, int *visited_e, EMat *emat,
                               const MeshElemMap *emap, const MEdge *medge,
                               const MVertSkin *vs, const MVert *mvert)
 {
@@ -655,11 +654,11 @@ static void build_emats_stack(BLI_Stack *stack, BLI_bitmap *visited_e, EMat *ema
 	e = stack_elem.e;
 
 	/* Skip if edge already visited */
-	if (BLI_BITMAP_TEST(visited_e, e))
+	if (visited_e[e])
 		return;
 
 	/* Mark edge as visited */
-	BLI_BITMAP_ENABLE(visited_e, e);
+	visited_e[e] = true;
 	
 	/* Process edge */
 
@@ -705,12 +704,11 @@ static EMat *build_edge_mats(const MVertSkin *vs,
 	BLI_Stack *stack;
 	EMat *emat;
 	EdgeStackElem stack_elem;
-	BLI_bitmap *visited_e;
-	int i, v;
+	int *visited_e, i, v;
 
 	stack = BLI_stack_new(sizeof(stack_elem), "build_edge_mats.stack");
 
-	visited_e = BLI_BITMAP_NEW(totedge, "build_edge_mats.visited_e");
+	visited_e = MEM_callocN(sizeof(int) * totedge, "build_edge_mats.visited_e");
 	emat = MEM_callocN(sizeof(EMat) * totedge, "build_edge_mats.emat");
 
 	/* Edge matrices are built from the root nodes, add all roots with
@@ -1705,11 +1703,6 @@ static BMesh *build_skin(SkinNode *skin_nodes,
 	so.bm = BM_mesh_create(&bm_mesh_allocsize_default);
 	so.mat_nr = 0;
 	
-	/* BMESH_TODO: bumping up the stack level (see MOD_array.c) */
-	BM_mesh_elem_toolflags_ensure(so.bm);
-	BMO_push(so.bm, NULL);
-	bmesh_edit_begin(so.bm, 0);
-
 	if (input_dvert)
 		BM_data_layer_add(so.bm, &so.bm->vdata, CD_MDEFORMVERT);
 
@@ -1757,12 +1750,13 @@ static BMesh *build_skin(SkinNode *skin_nodes,
 
 static void skin_set_orig_indices(DerivedMesh *dm)
 {
-	int *orig, totpoly;
+	int *orig, totpoly, i;
 
 	totpoly = dm->getNumPolys(dm);
 	orig = CustomData_add_layer(&dm->polyData, CD_ORIGINDEX,
 	                            CD_CALLOC, NULL, totpoly);
-	fill_vn_i(orig, totpoly, ORIGINDEX_NONE);
+	for (i = 0; i < totpoly; i++)
+		orig[i] = ORIGINDEX_NONE;
 }
 
 /*

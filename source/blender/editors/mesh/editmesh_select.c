@@ -213,7 +213,7 @@ bool EDBM_backbuf_border_init(ViewContext *vc, short xmin, short ymin, short xma
 	a = (xmax - xmin + 1) * (ymax - ymin + 1);
 	while (a--) {
 		if (*dr > 0 && *dr <= bm_vertoffs) {
-			BLI_BITMAP_ENABLE(selbuf, *dr);
+			BLI_BITMAP_SET(selbuf, *dr);
 		}
 		dr++;
 	}
@@ -230,7 +230,7 @@ bool EDBM_backbuf_check(unsigned int index)
 		return true;
 
 	if (index > 0 && index <= bm_vertoffs)
-		return BLI_BITMAP_TEST_BOOL(selbuf, index);
+		return BLI_BITMAP_GET_BOOL(selbuf, index);
 
 	return false;
 }
@@ -297,7 +297,7 @@ bool EDBM_backbuf_border_mask_init(ViewContext *vc, const int mcords[][2], short
 	a = (xmax - xmin + 1) * (ymax - ymin + 1);
 	while (a--) {
 		if (*dr > 0 && *dr <= bm_vertoffs && *dr_mask == true) {
-			BLI_BITMAP_ENABLE(selbuf, *dr);
+			BLI_BITMAP_SET(selbuf, *dr);
 		}
 		dr++; dr_mask++;
 	}
@@ -340,7 +340,7 @@ bool EDBM_backbuf_circle_init(ViewContext *vc, short xs, short ys, short rads)
 		for (xc = -rads; xc <= rads; xc++, dr++) {
 			if (xc * xc + yc * yc < radsq) {
 				if (*dr > 0 && *dr <= bm_vertoffs) {
-					BLI_BITMAP_ENABLE(selbuf, *dr);
+					BLI_BITMAP_SET(selbuf, *dr);
 				}
 			}
 		}
@@ -3189,7 +3189,7 @@ void MESH_OT_region_to_loop(wmOperatorType *ot)
 }
 
 static int loop_find_region(BMLoop *l, int flag,
-                            GSet *visit_face_set, BMFace ***region_out)
+                            SmallHash *fhash, BMFace ***region_out)
 {
 	BMFace **region = NULL;
 	BMFace **stack = NULL;
@@ -3198,7 +3198,7 @@ static int loop_find_region(BMLoop *l, int flag,
 	BMFace *f;
 	
 	BLI_array_append(stack, l->f);
-	BLI_gset_insert(visit_face_set, l->f);
+	BLI_smallhash_insert(fhash, (uintptr_t)l->f, NULL);
 	
 	while (BLI_array_count(stack) > 0) {
 		BMIter liter1, liter2;
@@ -3217,10 +3217,11 @@ static int loop_find_region(BMLoop *l, int flag,
 				if (BM_elem_flag_test(l2->f, BM_ELEM_TAG)) {
 					continue;
 				}
-
-				if (BLI_gset_add(visit_face_set, l2->f)) {
-					BLI_array_append(stack, l2->f);
-				}
+				if (BLI_smallhash_haskey(fhash, (uintptr_t)l2->f))
+					continue;
+				
+				BLI_array_append(stack, l2->f);
+				BLI_smallhash_insert(fhash, (uintptr_t)l2->f, NULL);
 			}
 		}
 	}
@@ -3253,13 +3254,13 @@ static int verg_radial(const void *va, const void *vb)
  */
 static int loop_find_regions(BMEditMesh *em, const bool selbigger)
 {
-	GSet *visit_face_set;
+	SmallHash visithash;
 	BMIter iter;
 	const int edges_len = em->bm->totedgesel;
 	BMEdge *e, **edges;
 	int count = 0, i;
 	
-	visit_face_set = BLI_gset_ptr_new_ex(__func__, edges_len);
+	BLI_smallhash_init_ex(&visithash, edges_len);
 	edges = MEM_mallocN(sizeof(*edges) * edges_len, __func__);
 
 	i = 0;
@@ -3288,10 +3289,10 @@ static int loop_find_regions(BMEditMesh *em, const bool selbigger)
 			continue;
 		
 		BM_ITER_ELEM (l, &liter, e, BM_LOOPS_OF_EDGE) {
-			if (BLI_gset_haskey(visit_face_set, l->f))
+			if (BLI_smallhash_haskey(&visithash, (uintptr_t)l->f))
 				continue;
-
-			c = loop_find_region(l, BM_ELEM_SELECT, visit_face_set, &region_out);
+						
+			c = loop_find_region(l, BM_ELEM_SELECT, &visithash, &region_out);
 
 			if (!region || (selbigger ? c >= tot : c < tot)) {
 				/* this region is the best seen so far */
@@ -3326,7 +3327,7 @@ static int loop_find_regions(BMEditMesh *em, const bool selbigger)
 	}
 	
 	MEM_freeN(edges);
-	BLI_gset_free(visit_face_set, NULL);
+	BLI_smallhash_release(&visithash);
 	
 	return count;
 }

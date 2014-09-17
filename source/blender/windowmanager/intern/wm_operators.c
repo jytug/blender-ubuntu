@@ -1086,6 +1086,7 @@ static uiBlock *wm_enum_search_menu(bContext *C, ARegion *ar, void *arg_op)
 	uiDefBut(block, LABEL, 0, "", 10, 10 - uiSearchBoxHeight(), uiSearchBoxWidth(), uiSearchBoxHeight(), NULL, 0, 0, 0, 0, NULL);
 
 	uiPopupBoundsBlock(block, 6, 0, -UI_UNIT_Y); /* move it downwards, mouse over button */
+	uiEndBlock(C, block);
 
 	wm_event_init_from_window(win, &event);
 	event.type = EVT_BUT_OPEN;
@@ -1426,6 +1427,7 @@ static uiBlock *wm_block_create_redo(bContext *C, ARegion *ar, void *arg_op)
 	}
 	
 	uiPopupBoundsBlock(block, 4, 0, 0);
+	uiEndBlock(C, block);
 
 	return block;
 }
@@ -1460,11 +1462,7 @@ static void dialog_check_cb(bContext *C, void *op_ptr, void *UNUSED(arg))
 	wmOperator *op = op_ptr;
 	if (op->type->check) {
 		if (op->type->check(C, op)) {
-			/* check for popup and re-layout buttons */
-			ARegion *ar_menu = CTX_wm_menu(C);
-			if (ar_menu) {
-				ED_region_tag_refresh_ui(ar_menu);
-			}
+			/* refresh */
 		}
 	}
 }
@@ -1509,6 +1507,7 @@ static uiBlock *wm_block_dialog_create(bContext *C, ARegion *ar, void *userData)
 
 	/* center around the mouse */
 	uiPopupBoundsBlock(block, 4, data->width / -2, data->height / 2);
+	uiEndBlock(C, block);
 
 	return block;
 }
@@ -1531,6 +1530,7 @@ static uiBlock *wm_operator_ui_create(bContext *C, ARegion *ar, void *userData)
 	uiLayoutOperatorButs(C, layout, op, NULL, 'V', 0);
 
 	uiPopupBoundsBlock(block, 4, 0, 0);
+	uiEndBlock(C, block);
 
 	return block;
 }
@@ -1774,7 +1774,6 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	int i;
 	MenuType *mt = WM_menutype_find("USERPREF_MT_splash", true);
 	char url[96];
-	const char *version_suffix = NULL;
 
 #ifndef WITH_HEADLESS
 	extern char datatoc_splash_png[];
@@ -1829,18 +1828,14 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 
 	/* label for 'a' bugfix releases, or 'Release Candidate 1'...
 	 *  avoids recreating splash for version updates */
-	if (STREQ(STRINGIFY(BLENDER_VERSION_CYCLE), "rc")) {
-		version_suffix = "Release Candidate";
-	}
-	else if (STREQ(STRINGIFY(BLENDER_VERSION_CYCLE), "release")) {
-		version_suffix = STRINGIFY(BLENDER_VERSION_CHAR);
-	}
-	if (version_suffix != NULL && version_suffix[0]) {
+	if (0) {
 		/* placed after the version number in the image,
 		 * placing y is tricky to match baseline */
 		int x = 260 - (2 * UI_DPI_WINDOW_FAC);
 		int y = 242 + (4 * UI_DPI_WINDOW_FAC);
 		int w = 240;
+
+		const char *version_suffix = "Release Candidate 2";
 
 		/* hack to have text draw 'text_sel' */
 		uiBlockSetEmboss(block, UI_EMBOSSN);
@@ -1930,6 +1925,7 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	uiItemL(col, "", ICON_NONE);
 	
 	uiCenteredBoundsBlock(block, 0);
+	uiEndBlock(C, block);
 	
 	return block;
 }
@@ -1971,6 +1967,7 @@ static uiBlock *wm_block_search_menu(bContext *C, ARegion *ar, void *UNUSED(arg_
 	uiDefBut(block, LABEL, 0, "", 10, 10 - uiSearchBoxHeight(), uiSearchBoxWidth(), uiSearchBoxHeight(), NULL, 0, 0, 0, 0, NULL);
 	
 	uiPopupBoundsBlock(block, 6, 0, -UI_UNIT_Y); /* move it downwards, mouse over button */
+	uiEndBlock(C, block);
 	
 	wm_event_init_from_window(win, &event);
 	event.type = EVT_BUT_OPEN;
@@ -2587,7 +2584,7 @@ void WM_recover_last_session(bContext *C, ReportList *reports)
 {
 	char filepath[FILE_MAX];
 	
-	BLI_make_file_string("/", filepath, BLI_temp_dir_base(), BLENDER_QUIT_FILE);
+	BLI_make_file_string("/", filepath, BLI_temporary_dir(), BLENDER_QUIT_FILE);
 	/* if reports==NULL, it's called directly without operator, we add a quick check here */
 	if (reports || BLI_exists(filepath)) {
 		G.fileflags |= G_FILE_RECOVER;

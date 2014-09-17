@@ -50,7 +50,6 @@ set(SRC
 	editmesh_loopcut.c
 	editmesh_path.c
 	editmesh_rip.c
-	editmesh_rip_edge.c
 	editmesh_select.c
 	editmesh_tools.c
 	editmesh_utils.c

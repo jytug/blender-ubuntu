@@ -44,8 +44,6 @@ CCL_NAMESPACE_BEGIN
 #define BB_TABLE_YPOWER			5.0f
 #define BB_TABLE_SPACING		2.0f
 
-#define BECKMANN_TABLE_SIZE		256
-
 #define TEX_NUM_FLOAT_IMAGES	5
 
 #define SHADER_NONE				(~0)
@@ -480,7 +478,6 @@ typedef enum AttributeElement {
 	ATTR_ELEMENT_VERTEX,
 	ATTR_ELEMENT_VERTEX_MOTION,
 	ATTR_ELEMENT_CORNER,
-	ATTR_ELEMENT_CORNER_BYTE,
 	ATTR_ELEMENT_CURVE,
 	ATTR_ELEMENT_CURVE_KEY,
 	ATTR_ELEMENT_CURVE_KEY_MOTION,
@@ -536,7 +533,10 @@ typedef struct ShaderClosure {
 	float3 T;
 #endif
 
-	float data2;
+#ifdef __HAIR__
+	float offset;
+#endif
+
 #ifdef __OSL__
 	void *prim;
 #endif
@@ -576,8 +576,7 @@ enum ShaderDataFlag {
 	SD_AO = 512,			/* have ao closure? */
 	SD_TRANSPARENT = 1024,	/* have transparent closure? */
 
-	SD_CLOSURE_FLAGS = (SD_EMISSION|SD_BSDF|SD_BSDF_HAS_EVAL|SD_BSDF_GLOSSY|
-	                    SD_BSSRDF|SD_HOLDOUT|SD_ABSORPTION|SD_SCATTER|SD_AO),
+	SD_CLOSURE_FLAGS = (SD_EMISSION|SD_BSDF|SD_BSDF_HAS_EVAL|SD_BSDF_GLOSSY|SD_BSSRDF|SD_HOLDOUT|SD_ABSORPTION|SD_SCATTER|SD_AO),
 
 	/* shader flags */
 	SD_USE_MIS = 2048,					/* direct light sample */
@@ -586,17 +585,13 @@ enum ShaderDataFlag {
 	SD_HAS_ONLY_VOLUME = 16384,			/* has only volume shader, no surface */
 	SD_HETEROGENEOUS_VOLUME = 32768,	/* has heterogeneous volume */
 	SD_HAS_BSSRDF_BUMP = 65536,			/* bssrdf normal uses bump */
-	SD_VOLUME_EQUIANGULAR = 131072,		/* use equiangular sampling */
-	SD_VOLUME_MIS = 262144,				/* use multiple importance sampling */
 
-	SD_SHADER_FLAGS = (SD_USE_MIS|SD_HAS_TRANSPARENT_SHADOW|SD_HAS_VOLUME|
-	                   SD_HAS_ONLY_VOLUME|SD_HETEROGENEOUS_VOLUME|
-					   SD_HAS_BSSRDF_BUMP|SD_VOLUME_EQUIANGULAR|SD_VOLUME_MIS),
+	SD_SHADER_FLAGS = (SD_USE_MIS|SD_HAS_TRANSPARENT_SHADOW|SD_HAS_VOLUME|SD_HAS_ONLY_VOLUME|SD_HETEROGENEOUS_VOLUME|SD_HAS_BSSRDF_BUMP),
 
 	/* object flags */
-	SD_HOLDOUT_MASK = 524288,			/* holdout for camera rays */
-	SD_OBJECT_MOTION = 1048576,			/* has object motion blur */
-	SD_TRANSFORM_APPLIED = 2097152, 	/* vertices have transform applied */
+	SD_HOLDOUT_MASK = 131072,			/* holdout for camera rays */
+	SD_OBJECT_MOTION = 262144,			/* has object motion blur */
+	SD_TRANSFORM_APPLIED = 524288, 		/* vertices have transform applied */
 
 	SD_OBJECT_FLAGS = (SD_HOLDOUT_MASK|SD_OBJECT_MOTION|SD_TRANSFORM_APPLIED)
 };
@@ -898,6 +893,7 @@ typedef struct KernelIntegrator {
 	int aa_samples;
 
 	/* volume render */
+	int volume_homogeneous_sampling;
 	int use_volumes;
 	int volume_max_steps;
 	float volume_step_size;
@@ -935,11 +931,11 @@ typedef struct KernelCurves {
 	float maximum_width;
 } KernelCurves;
 
-typedef struct KernelTables {
-	int blackbody_offset;
-	int beckmann_offset;
-	int pad1, pad2;
-} KernelTables;
+typedef struct KernelBlackbody {
+	int table_offset;
+	int pad1, pad2, pad3;
+} KernelBlackbody;
+
 
 typedef struct KernelData {
 	KernelCamera cam;
@@ -948,7 +944,7 @@ typedef struct KernelData {
 	KernelIntegrator integrator;
 	KernelBVH bvh;
 	KernelCurves curve;
-	KernelTables tables;
+	KernelBlackbody blackbody;
 } KernelData;
 
 CCL_NAMESPACE_END

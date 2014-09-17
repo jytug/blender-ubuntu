@@ -428,19 +428,6 @@ struct uiKeyNavLock {
 	int event_xy[2];
 };
 
-typedef uiBlock * (*uiBlockHandleCreateFunc)(struct bContext *C, struct uiPopupBlockHandle *handle, void *arg1);
-
-struct uiPopupBlockCreate {
-	uiBlockCreateFunc              create_func;
-	uiBlockHandleCreateFunc handle_create_func;
-	void *arg;
-
-	int event_xy[2];
-
-	/* when popup is initialized from a button */
-	ARegion *butregion;
-};
-
 struct uiPopupBlockHandle {
 	/* internal */
 	struct ARegion *region;
@@ -455,9 +442,6 @@ struct uiPopupBlockHandle {
 	void (*cancel_func)(struct bContext *C, void *arg);
 	void *popup_arg;
 	
-	/* store data for refreshing popups */
-	struct uiPopupBlockCreate popup_create_vars;
-
 	struct wmTimer *scrolltimer;
 
 	struct uiKeyNavLock keynav_state;
@@ -471,7 +455,7 @@ struct uiPopupBlockHandle {
 	/* return values */
 	int butretval;
 	int menuretval;
-	int   retvalue;
+	float retvalue;
 	float retvec[4];
 
 	/* menu direction */
@@ -512,8 +496,7 @@ bool ui_searchbox_apply(uiBut *but, struct ARegion *ar);
 void ui_searchbox_free(struct bContext *C, struct ARegion *ar);
 void ui_but_search_test(uiBut *but);
 
-uiBlock *ui_popup_block_refresh(struct bContext *C, uiPopupBlockHandle *handle,
-                                ARegion *butregion, uiBut *but);
+typedef uiBlock * (*uiBlockHandleCreateFunc)(struct bContext *C, struct uiPopupBlockHandle *handle, void *arg1);
 
 uiPopupBlockHandle *ui_popup_block_create(struct bContext *C, struct ARegion *butregion, uiBut *but,
                                           uiBlockCreateFunc create_func, uiBlockHandleCreateFunc handle_create_func,

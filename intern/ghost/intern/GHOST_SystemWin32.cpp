@@ -425,8 +425,15 @@ GHOST_TSuccess GHOST_SystemWin32::exit()
 
 GHOST_TKey GHOST_SystemWin32::hardKey(GHOST_IWindow *window, RAWINPUT const& raw, int *keyDown, char *vk)
 {
-	GHOST_SystemWin32 *system = (GHOST_SystemWin32 *)getSystem();
 	GHOST_TKey key = GHOST_kKeyUnknown;
+
+
+	if (!keyDown)
+		return GHOST_kKeyUnknown;
+
+
+	GHOST_SystemWin32 *system = (GHOST_SystemWin32 *)getSystem();
+
 	GHOST_ModifierKeys modifiers;
 	system->retrieveModifierKeys(modifiers);
 

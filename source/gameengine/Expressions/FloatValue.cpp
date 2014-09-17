@@ -285,13 +285,6 @@ double CFloatValue::GetNumber()
 
 
 
-int CFloatValue::GetValueType()
-{
-	return VALUE_FLOAT_TYPE;
-}
-
-
-
 void CFloatValue::SetValue(CValue* newval)
 { 	
 	m_float = (float)newval->GetNumber(); 
