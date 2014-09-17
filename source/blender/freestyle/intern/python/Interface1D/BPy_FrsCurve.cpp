@@ -84,7 +84,7 @@ static int FrsCurve_init(BPy_FrsCurve *self, PyObject *args, PyObject *kwds)
 		return -1;
 	}
 	self->py_if1D.if1D = self->c;
-	self->py_if1D.borrowed = false;
+	self->py_if1D.borrowed = 0;
 	return 0;
 }
 

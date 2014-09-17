@@ -117,17 +117,11 @@
 
 static void wm_init_reports(bContext *C)
 {
-	ReportList *reports = CTX_wm_reports(C);
-
-	BLI_assert(!reports || BLI_listbase_is_empty(&reports->list));
-
-	BKE_reports_init(reports, RPT_STORE);
+	BKE_reports_init(CTX_wm_reports(C), RPT_STORE);
 }
 static void wm_free_reports(bContext *C)
 {
-	ReportList *reports = CTX_wm_reports(C);
-
-	BKE_reports_clear(reports);
+	BKE_reports_clear(CTX_wm_reports(C));
 }
 
 bool wm_start_with_console = false; /* used in creator.c */
@@ -405,7 +399,7 @@ void WM_exit_ext(bContext *C, const bool do_python)
 				/* save the undo state as quit.blend */
 				char filename[FILE_MAX];
 				
-				BLI_make_file_string("/", filename, BLI_temp_dir_base(), BLENDER_QUIT_FILE);
+				BLI_make_file_string("/", filename, BLI_temporary_dir(), BLENDER_QUIT_FILE);
 
 				if (BKE_undo_save_file(filename))
 					printf("Saved session recovery to '%s'\n", filename);
@@ -527,8 +521,6 @@ void WM_exit_ext(bContext *C, const bool do_python)
 		MEM_printmemlist();
 	}
 	wm_autosave_delete();
-
-	BLI_temp_dir_session_purge();
 }
 
 void WM_exit(bContext *C)

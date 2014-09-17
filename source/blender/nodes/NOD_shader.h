@@ -71,8 +71,6 @@ void register_node_type_sh_seprgb(void);
 void register_node_type_sh_combrgb(void);
 void register_node_type_sh_sephsv(void);
 void register_node_type_sh_combhsv(void);
-void register_node_type_sh_sepxyz(void);
-void register_node_type_sh_combxyz(void);
 void register_node_type_sh_hue_sat(void);
 void register_node_type_sh_tex_brick(void);
 

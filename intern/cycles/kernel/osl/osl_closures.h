@@ -149,18 +149,17 @@ public: \
 \
 	void blur(float roughness) \
 	{ \
+		bsdf_##svmlower##_blur(&sc, roughness); \
 	} \
 \
 	float3 eval_reflect(const float3 &omega_out, const float3 &omega_in, float& pdf) const \
 	{ \
-		pdf = 0; \
-		return make_float3(0, 0, 0); \
+		return bsdf_##svmlower##_eval_reflect(&sc, omega_out, omega_in, &pdf); \
 	} \
 \
 	float3 eval_transmit(const float3 &omega_out, const float3 &omega_in, float& pdf) const \
 	{ \
-		pdf = 0; \
-		return make_float3(0, 0, 0); \
+		return bsdf_##svmlower##_eval_transmit(&sc, omega_out, omega_in, &pdf); \
 	} \
 \
 	int sample(const float3 &Ng, \
@@ -169,8 +168,8 @@ public: \
 	           float3 &omega_in, float3 &domega_in_dx, float3 &domega_in_dy, \
 	           float &pdf, float3 &eval) const \
 	{ \
-		pdf = 0; \
-		return LABEL_NONE; \
+		return bsdf_##svmlower##_sample(&sc, Ng, omega_out, domega_out_dx, domega_out_dy, \
+			randu, randv, &eval, &omega_in, &domega_in_dx, &domega_in_dy, &pdf); \
 	} \
 }; \
 \

@@ -347,25 +347,25 @@ static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<
 				continue;
 
 			Attribute *attr = mesh->attributes.add(
-				ustring(l->name().c_str()), TypeDesc::TypeColor, ATTR_ELEMENT_CORNER_BYTE);
+				ustring(l->name().c_str()), TypeDesc::TypeColor, ATTR_ELEMENT_CORNER);
 
 			BL::MeshColorLayer::data_iterator c;
-			uchar4 *cdata = attr->data_uchar4();
+			float3 *fdata = attr->data_float3();
 			size_t i = 0;
 
 			for(l->data.begin(c); c != l->data.end(); ++c, ++i) {
-				cdata[0] = color_float_to_byte(color_srgb_to_scene_linear(get_float3(c->color1())));
-				cdata[1] = color_float_to_byte(color_srgb_to_scene_linear(get_float3(c->color2())));
-				cdata[2] = color_float_to_byte(color_srgb_to_scene_linear(get_float3(c->color3())));
+				fdata[0] = color_srgb_to_scene_linear(get_float3(c->color1()));
+				fdata[1] = color_srgb_to_scene_linear(get_float3(c->color2()));
+				fdata[2] = color_srgb_to_scene_linear(get_float3(c->color3()));
 
 				if(nverts[i] == 4) {
-					cdata[3] = cdata[0];
-					cdata[4] = cdata[2];
-					cdata[5] = color_float_to_byte(color_srgb_to_scene_linear(get_float3(c->color4())));
-					cdata += 6;
+					fdata[3] = fdata[0];
+					fdata[4] = fdata[2];
+					fdata[5] = color_srgb_to_scene_linear(get_float3(c->color4()));
+					fdata += 6;
 				}
 				else
-					cdata += 3;
+					fdata += 3;
 			}
 		}
 	}

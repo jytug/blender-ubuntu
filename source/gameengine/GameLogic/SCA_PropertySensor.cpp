@@ -133,7 +133,6 @@ bool	SCA_PropertySensor::CheckPropertyCondition()
 	{
 	case KX_PROPSENSOR_NOTEQUAL:
 		reverse = true;
-		/* fall-through */
 	case KX_PROPSENSOR_EQUAL:
 		{
 			CValue* orgprop = GetParent()->FindIdentifier(m_checkpropname);
@@ -151,7 +150,7 @@ bool	SCA_PropertySensor::CheckPropertyCondition()
 				/* Patch: floating point values cant use strings usefully since you can have "0.0" == "0.0000"
 				 * this could be made into a generic Value class function for comparing values with a string.
 				 */
-				if (result==false && (orgprop->GetValueType() == VALUE_FLOAT_TYPE)) {
+				if (result==false && dynamic_cast<CFloatValue *>(orgprop) != NULL) {
 					float f;
 					if (sscanf(m_checkpropval.ReadPtr(), "%f", &f) == 1) {
 						result = (f == ((CFloatValue *)orgprop)->GetFloat());
@@ -199,11 +198,11 @@ bool	SCA_PropertySensor::CheckPropertyCondition()
 				const float max = m_checkpropmaxval.ToFloat();
 				float val;
 
-				if (orgprop->GetValueType() == VALUE_STRING_TYPE){
-					val = orgprop->GetText().ToFloat();
+				if (dynamic_cast<CStringValue *>(orgprop) == NULL) {
+					val = orgprop->GetNumber();
 				}
 				else {
-					val = orgprop->GetNumber();
+					val = orgprop->GetText().ToFloat();
 				}
 
 				result = (min <= val) && (val <= max);
@@ -227,36 +226,6 @@ bool	SCA_PropertySensor::CheckPropertyCondition()
 			orgprop->Release();
 
 			//cout << " \nSens:Prop:changed!"; /* need implementation here!!! */
-			break;
-		}
-	case KX_PROPSENSOR_LESSTHAN:
-		reverse = true;
-		/* fall-through */
-	case KX_PROPSENSOR_GREATERTHAN:
-		{
-			CValue* orgprop = GetParent()->FindIdentifier(m_checkpropname);
-			if (!orgprop->IsError())
-			{
-				const float ref = m_checkpropval.ToFloat();
-				float val;
-
-				if (orgprop->GetValueType() == VALUE_STRING_TYPE){
-					val = orgprop->GetText().ToFloat();
-				}
-				else {
-					val = orgprop->GetNumber();
-				}
-
-				if (reverse) {
-					result = val < ref;
-				}
-				else {
-					result = val > ref;
-				}
-
-			}
-			orgprop->Release();
-
 			break;
 		}
 	default:

@@ -47,7 +47,7 @@ extern PyTypeObject SShape_Type;
 typedef struct {
 	PyObject_HEAD
 	SShape *ss;
-	bool borrowed; /* true if *ss is a borrowed object */
+	int borrowed; /* non-zero if *ss is a borrowed object */
 } BPy_SShape;
 
 /*---------------------------Python BPy_SShape visible prototypes-----------*/

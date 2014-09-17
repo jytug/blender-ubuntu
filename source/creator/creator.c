@@ -566,7 +566,7 @@ static void blender_crash_handler(int signum)
 		char fname[FILE_MAX];
 
 		if (!G.main->name[0]) {
-			BLI_make_file_string("/", fname, BLI_temp_dir_base(), "crash.blend");
+			BLI_make_file_string("/", fname, BLI_temporary_dir(), "crash.blend");
 		}
 		else {
 			BLI_strncpy(fname, G.main->name, sizeof(fname));
@@ -587,10 +587,10 @@ static void blender_crash_handler(int signum)
 	char fname[FILE_MAX];
 
 	if (!G.main->name[0]) {
-		BLI_join_dirfile(fname, sizeof(fname), BLI_temp_dir_base(), "blender.crash.txt");
+		BLI_join_dirfile(fname, sizeof(fname), BLI_temporary_dir(), "blender.crash.txt");
 	}
 	else {
-		BLI_join_dirfile(fname, sizeof(fname), BLI_temp_dir_base(), BLI_path_basename(G.main->name));
+		BLI_join_dirfile(fname, sizeof(fname), BLI_temporary_dir(), BLI_path_basename(G.main->name));
 		BLI_replace_extension(fname, sizeof(fname), ".crash.txt");
 	}
 
@@ -621,8 +621,6 @@ static void blender_crash_handler(int signum)
 		fclose(fp);
 	}
 
-	/* Delete content of temp dir! */
-	BLI_temp_dir_session_purge();
 
 	/* really crash */
 	signal(signum, SIG_DFL);
@@ -1672,7 +1670,7 @@ int main(
 
 		/* this is properly initialized with user defs, but this is default */
 		/* call after loading the startup.blend so we can read U.tempdir */
-		BLI_temp_dir_init(U.tempdir);
+		BLI_init_temporary_dir(U.tempdir);
 	}
 	else {
 #ifndef WITH_PYTHON_MODULE
@@ -1682,7 +1680,7 @@ int main(
 		WM_init(C, argc, (const char **)argv);
 
 		/* don't use user preferences temp dir */
-		BLI_temp_dir_init(NULL);
+		BLI_init_temporary_dir(NULL);
 	}
 #ifdef WITH_PYTHON
 	/**

@@ -41,7 +41,6 @@ public:
 
 	virtual const STR_String& GetText();
 	virtual double		GetNumber();
-	virtual int			GetValueType();
 	bool				GetBool();
 	virtual void		SetValue(CValue* newval);
 	

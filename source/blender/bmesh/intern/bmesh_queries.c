@@ -36,7 +36,6 @@
 #include "BLI_math.h"
 #include "BLI_alloca.h"
 #include "BLI_linklist.h"
-#include "BLI_stackdefines.h"
 
 #include "bmesh.h"
 #include "intern/bmesh_private.h"

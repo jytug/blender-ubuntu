@@ -633,8 +633,7 @@ static bool connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 	HairKey *key;
 	BVHTreeFromMesh bvhtree= {NULL};
 	BVHTreeNearest nearest;
-	MFace *mface = NULL, *mf;
-	MEdge *medge = NULL, *me;
+	MFace *mface, *mf;
 	MVert *mvert;
 	DerivedMesh *dm = NULL;
 	int numverts;
@@ -664,23 +663,13 @@ static bool connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 	numverts = dm->getNumVerts(dm);
 
 	mvert = dm->getVertArray(dm);
+	mface = dm->getTessFaceArray(dm);
 
 	/* convert to global coordinates */
 	for (i=0; i<numverts; i++)
 		mul_m4_v3(ob->obmat, mvert[i].co);
 
-	if (dm->getNumTessFaces(dm) != 0) {
-		mface = dm->getTessFaceArray(dm);
-		bvhtree_from_mesh_faces(&bvhtree, dm, 0.0, 2, 6);
-	}
-	else if (dm->getNumEdges(dm) != 0) {
-		medge = dm->getEdgeArray(dm);
-		bvhtree_from_mesh_edges(&bvhtree, dm, 0.0, 2, 6);
-	}
-	else {
-		dm->release(dm);
-		return false;
-	}
+	bvhtree_from_mesh_faces(&bvhtree, dm, 0.0, 2, 6);
 
 	for (i=0, pa= psys->particles; i<psys->totpart; i++, pa++) {
 		key = pa->hair;
@@ -696,35 +685,21 @@ static bool connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 			continue;
 		}
 
-		if (mface) {
-			mf = &mface[nearest.index];
+		mf = &mface[nearest.index];
 
-			copy_v3_v3(v[0], mvert[mf->v1].co);
-			copy_v3_v3(v[1], mvert[mf->v2].co);
-			copy_v3_v3(v[2], mvert[mf->v3].co);
-			if (mf->v4) {
-				copy_v3_v3(v[3], mvert[mf->v4].co);
-				interp_weights_poly_v3(pa->fuv, v, 4, nearest.co);
-			}
-			else
-				interp_weights_poly_v3(pa->fuv, v, 3, nearest.co);
-
-			pa->num = nearest.index;
-			pa->num_dmcache = psys_particle_dm_face_lookup(ob, psmd->dm, pa->num, pa->fuv, NULL);
+		copy_v3_v3(v[0], mvert[mf->v1].co);
+		copy_v3_v3(v[1], mvert[mf->v2].co);
+		copy_v3_v3(v[2], mvert[mf->v3].co);
+		if (mf->v4) {
+			copy_v3_v3(v[3], mvert[mf->v4].co);
+			interp_weights_poly_v3(pa->fuv, v, 4, nearest.co);
 		}
-		else {
-			me = &medge[nearest.index];
+		else
+			interp_weights_poly_v3(pa->fuv, v, 3, nearest.co);
 
-			pa->fuv[1] = line_point_factor_v3(nearest.co,
-			                                  mvert[me->v2].co,
-			                                  mvert[me->v2].co);
-			pa->fuv[0] = 1.0f - pa->fuv[1];
-			pa->fuv[2] = pa->fuv[3] = 0.0f;
-
-			pa->num = nearest.index;
-			pa->num_dmcache = -1;
-		}
-
+		pa->num = nearest.index;
+		pa->num_dmcache = psys_particle_dm_face_lookup(ob, psmd->dm, pa->num, pa->fuv, NULL);
+		
 		psys_mat_hair_to_global(ob, psmd->dm, psys->part->from, pa, hairmat);
 		invert_m4_m4(imat, hairmat);
 

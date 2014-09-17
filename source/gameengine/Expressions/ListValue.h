@@ -40,7 +40,6 @@ public:
 							  VALUE_OPERATOR op,
 							  CValue* val);
 	virtual double GetNumber();
-	virtual int GetValueType();
 	virtual CValue* GetReplica();
 
 public:

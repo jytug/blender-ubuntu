@@ -68,7 +68,6 @@ public:
 	bool use_mis;
 	bool use_transparent_shadow;
 	bool heterogeneous_volume;
-	int volume_sampling_method;
 
 	/* synchronization */
 	bool need_update;
@@ -149,7 +148,6 @@ protected:
 	AttributeIDMap unique_attribute_id;
 
 	size_t blackbody_table_offset;
-	size_t beckmann_table_offset;
 };
 
 CCL_NAMESPACE_END

@@ -299,7 +299,7 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 
 		sce->r.cfra = scene->r.cfra;
 
-		if (id_type == ID_TE) {
+		if (id_type == ID_TE && ELEM(sp->pr_method, PR_ICON_RENDER, PR_NODE_RENDER)) {
 			/* Force blender internal for texture icons and nodes render,
 			 * seems commonly used render engines does not support
 			 * such kind of rendering.
@@ -1161,12 +1161,10 @@ void ED_preview_shader_job(const bContext *C, void *owner, ID *id, ID *parent, M
 
 	/* hardcoded preview .blend for cycles/internal, this should be solved
 	 * once with custom preview .blend path for external engines */
-	if ((method != PR_NODE_RENDER) && id_type != ID_TE && use_new_shading) {
+	if ((method != PR_NODE_RENDER) && id_type != ID_TE && use_new_shading)
 		sp->pr_main = G_pr_main_cycles;
-	}
-	else {
+	else
 		sp->pr_main = G_pr_main;
-	}
 
 	if (ob && ob->totcol) copy_v4_v4(sp->col, ob->col);
 	else sp->col[0] = sp->col[1] = sp->col[2] = sp->col[3] = 1.0f;

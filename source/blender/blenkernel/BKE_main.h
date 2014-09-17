@@ -41,7 +41,6 @@
  *
  */
 #include "DNA_listBase.h"
-#include "BLI_threads.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,8 +96,6 @@ typedef struct Main {
 
 	/* Evaluation context used by viewport */
 	struct EvaluationContext *eval_ctx;
-
-	SpinLock lock;
 } Main;
 
 #define MAIN_VERSION_ATLEAST(main, ver, subver) \

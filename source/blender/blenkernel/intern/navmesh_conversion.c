@@ -305,7 +305,7 @@ struct SortContext {
 	const int *trisToFacesMap;
 };
 
-static int compareByData(const void *a, const void *b, void *ctx)
+static int compareByData(void *ctx, const void *a, const void *b)
 {
 	return (((struct SortContext *)ctx)->recastData[((struct SortContext *)ctx)->trisToFacesMap[*(int *)a]] -
 	        ((struct SortContext *)ctx)->recastData[((struct SortContext *)ctx)->trisToFacesMap[*(int *)b]]);
@@ -341,7 +341,7 @@ int buildNavMeshData(const int nverts, const float *verts,
 		trisMapping[i] = i;
 	context.recastData = recastData;
 	context.trisToFacesMap = trisToFacesMap;
-	BLI_qsort_r(trisMapping, ntris, sizeof(int), compareByData, &context);
+	BLI_qsort_r(trisMapping, ntris, sizeof(int), &context, compareByData);
 
 	/* search first valid triangle - triangle of convex polygon */
 	validTriStart = -1;

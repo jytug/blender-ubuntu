@@ -127,12 +127,9 @@ struct CPUCapabilities {
 	bool sse42;
 	bool sse4a;
 	bool avx;
-	bool avx2;
 	bool xop;
 	bool fma3;
 	bool fma4;
-	bool bmi1;
-	bool bmi2;
 };
 
 static CPUCapabilities& system_cpu_capabilities()
@@ -183,11 +180,6 @@ static CPUCapabilities& system_cpu_capabilities()
 #endif
 				caps.avx = (xcr_feature_mask & 0x6) == 0x6;
 			}
-
-			__cpuid(result, 0x00000007);
-			caps.bmi1 = (result[1] & ((int)1 << 3)) != 0;
-			caps.bmi2 = (result[1] & ((int)1 << 8)) != 0;
-			caps.avx2 = (result[1] & ((int)1 << 5)) != 0;
 		}
 
 #if 0
@@ -229,11 +221,6 @@ bool system_cpu_support_avx()
 	CPUCapabilities& caps = system_cpu_capabilities();
 	return caps.sse && caps.sse2 && caps.sse3 && caps.ssse3 && caps.sse41 && caps.avx;
 }
-bool system_cpu_support_avx2()
-{
-	CPUCapabilities& caps = system_cpu_capabilities();
-	return caps.sse && caps.sse2 && caps.sse3 && caps.ssse3 && caps.sse41 && caps.avx && caps.avx2 && caps.fma3 && caps.bmi1 && caps.bmi2;
-}
 #else
 
 bool system_cpu_support_sse2()
@@ -252,10 +239,6 @@ bool system_cpu_support_sse41()
 }
 
 bool system_cpu_support_avx()
-{
-	return false;
-}
-bool system_cpu_support_avx2()
 {
 	return false;
 }
