@@ -30,10 +30,10 @@ index e2d9733..ec0e691 100644
  	if (static_path) {
  		static string system_path = string(static_path) + "/blender/" + versionstr;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 757ab35..9bc05aa 100644
+index 232a3fe..576ec9a 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -260,7 +260,7 @@ if(UNIX AND NOT APPLE)
+@@ -257,7 +257,7 @@ if(UNIX AND NOT APPLE)
  		if(WITH_PYTHON_MODULE)
  			set(TARGETDIR_VER ${PYTHON_LIBPATH}/python${PYTHON_VERSION}/site-packages/${BLENDER_VERSION})
  		else()

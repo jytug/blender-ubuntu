@@ -8,10 +8,10 @@ Install only relevant documentation.
  1 file changed, 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index dded81b..c2d4f82 100644
+index 0185bbe..4173c9a 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -237,8 +237,6 @@ else()
+@@ -234,8 +234,6 @@ else()
  endif()
  
  set(BLENDER_TEXT_FILES

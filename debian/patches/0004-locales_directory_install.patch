@@ -55,7 +55,7 @@ index 2852b81..61c3ef1 100644
  	else {
  		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 diff --git a/source/blender/blenlib/BLI_path_util.h b/source/blender/blenlib/BLI_path_util.h
-index 244c308..9fe30c1 100644
+index b33b26a..55cd713 100644
 --- a/source/blender/blenlib/BLI_path_util.h
 +++ b/source/blender/blenlib/BLI_path_util.h
 @@ -62,6 +62,7 @@ const char *BLI_get_folder_version(const int id, const int ver, const bool do_ch
@@ -67,10 +67,10 @@ index 244c308..9fe30c1 100644
  /* for BLI_get_folder_version only */
  #define BLENDER_RESOURCE_PATH_USER      0
 diff --git a/source/blender/blenlib/intern/path_util.c b/source/blender/blenlib/intern/path_util.c
-index 0b89ec1..54fd478 100644
+index e00631f..e7444cf 100644
 --- a/source/blender/blenlib/intern/path_util.c
 +++ b/source/blender/blenlib/intern/path_util.c
-@@ -1367,6 +1367,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
+@@ -1365,6 +1365,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
  			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
  			return NULL;
  
@@ -81,10 +81,10 @@ index 0b89ec1..54fd478 100644
  			BLI_assert(0);
  			break;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index c2d4f82..26474f6 100644
+index 4173c9a..691d39b 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -322,11 +322,11 @@ if(WITH_INTERNATIONAL)
+@@ -319,11 +319,11 @@ if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY
  			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
