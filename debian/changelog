@@ -1,3 +1,19 @@
+blender (2.71+dfsg1-1) UNRELEASED; urgency=medium
+
+  * Real 2.71 upstream release (Closes: #758876)
+    (Former "2.71" was indeed a wrong release made by upstream)
+    - debian/patches/: patchset updated against v2.71+dfsg1
+      - 0001-blender_thumbnailer.patch updated
+      - 0002-install_in_usr_share.patch refreshed
+      - 0003-filter_docs_to_install.patch refreshed
+      - 0004-locales_directory_install.patch refreshed
+      - 0005-update_manpages.patch updated
+      - 0006-do_not_use_version_number_in_system_path.patch refreshed
+      - 0007-look_for_droid_ttf_with_fontconfig.patch refreshed
+    - debian/copyright: updated to fix few lintian warnings
+
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Thu, 18 Sep 2014 10:14:33 +0200
+
 blender (2.71+dfsg0-4) unstable; urgency=medium
 
   * debian/blender-data.links: jquery-ui.js path fixed (Closes: #757765)
