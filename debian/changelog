@@ -1,4 +1,4 @@
-blender (2.71+dfsg1-1) UNRELEASED; urgency=medium
+blender (2.71+dfsg1-1) unstable; urgency=medium
 
   * Real 2.71 upstream release (Closes: #758876)
     (Former "2.71" was indeed a wrong release made by upstream)
@@ -12,7 +12,7 @@ blender (2.71+dfsg1-1) UNRELEASED; urgency=medium
       - 0007-look_for_droid_ttf_with_fontconfig.patch refreshed
     - debian/copyright: updated to fix few lintian warnings
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Thu, 18 Sep 2014 10:14:33 +0200
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Thu, 18 Sep 2014 10:16:02 +0200
 
 blender (2.71+dfsg0-4) unstable; urgency=medium
 
