@@ -58,7 +58,7 @@
 #include "ED_object.h"
 #include "ED_render.h"
 #include "ED_screen.h"
-#include "ED_sculpt.h"
+#include "ED_paint.h"
 #include "ED_util.h"
 #include "ED_text.h"
 
@@ -213,6 +213,7 @@ static int ed_undo_step(bContext *C, int step, const char *undoname)
 	}
 	
 	WM_event_add_notifier(C, NC_WINDOW, NULL);
+	WM_event_add_notifier(C, NC_WM | ND_UNDO, NULL);
 
 	if (win) {
 		win->addmousemove = true;
@@ -385,7 +386,13 @@ int ED_undo_operator_repeat(bContext *C, struct wmOperator *op)
 			ED_undo_pop_op(C, op);
 
 			if (op->type->check) {
-				op->type->check(C, op); /* ignore return value since its running again anyway */
+				if (op->type->check(C, op)) {
+					/* check for popup and re-layout buttons */
+					ARegion *ar_menu = CTX_wm_menu(C);
+					if (ar_menu) {
+						ED_region_tag_refresh_ui(ar_menu);
+					}
+				}
 			}
 
 			retval = WM_operator_repeat(C, op);

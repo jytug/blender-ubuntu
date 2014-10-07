@@ -1895,7 +1895,7 @@ ImBuf *IMB_colormanagement_imbuf_for_write(ImBuf *ibuf, bool save_as_render, boo
 	 * so much useful to just ignore alpha -- it leads to bad
 	 * artifacts especially when saving byte images.
 	 *
-	 * What we do here is we're overing our image on top of
+	 * What we do here is we're overlaying our image on top of
 	 * background color (which is currently black).
 	 *
 	 * This is quite much the same as what Gimp does and it
@@ -3044,7 +3044,7 @@ static void update_glsl_display_processor(const ColorManagedViewSettings *view_s
 		global_glsl_state.exposure = view_settings->exposure;
 		global_glsl_state.gamma = view_settings->gamma;
 
-		/* We're using curve mapping's address as a acache ID,
+		/* We're using curve mapping's address as a cache ID,
 		 * so we need to make sure re-allocation gives new address here.
 		 * We do this by allocating new curve mapping before freeing ol one.
 		 */

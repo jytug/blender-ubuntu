@@ -117,11 +117,17 @@
 
 static void wm_init_reports(bContext *C)
 {
-	BKE_reports_init(CTX_wm_reports(C), RPT_STORE);
+	ReportList *reports = CTX_wm_reports(C);
+
+	BLI_assert(!reports || BLI_listbase_is_empty(&reports->list));
+
+	BKE_reports_init(reports, RPT_STORE);
 }
 static void wm_free_reports(bContext *C)
 {
-	BKE_reports_clear(CTX_wm_reports(C));
+	ReportList *reports = CTX_wm_reports(C);
+
+	BKE_reports_clear(reports);
 }
 
 bool wm_start_with_console = false; /* used in creator.c */
@@ -181,6 +187,8 @@ void WM_init(bContext *C, int argc, const char **argv)
 	(void)argv; /* unused */
 #endif
 
+	ED_spacemacros_init();
+
 	if (!G.background && !wm_start_with_console)
 		GHOST_toggleConsole(3);
 
@@ -230,6 +238,7 @@ void WM_init(bContext *C, int argc, const char **argv)
 		 *
 		 * unlikely any handlers are set but its possible,
 		 * note that recovering the last session does its own callbacks. */
+		BLI_callback_exec(CTX_data_main(C), NULL, BLI_CB_EVT_VERSION_UPDATE);
 		BLI_callback_exec(CTX_data_main(C), NULL, BLI_CB_EVT_LOAD_POST);
 	}
 }
@@ -399,7 +408,7 @@ void WM_exit_ext(bContext *C, const bool do_python)
 				/* save the undo state as quit.blend */
 				char filename[FILE_MAX];
 				
-				BLI_make_file_string("/", filename, BLI_temporary_dir(), BLENDER_QUIT_FILE);
+				BLI_make_file_string("/", filename, BLI_temp_dir_base(), BLENDER_QUIT_FILE);
 
 				if (BKE_undo_save_file(filename))
 					printf("Saved session recovery to '%s'\n", filename);
@@ -521,6 +530,8 @@ void WM_exit_ext(bContext *C, const bool do_python)
 		MEM_printmemlist();
 	}
 	wm_autosave_delete();
+
+	BLI_temp_dir_session_purge();
 }
 
 void WM_exit(bContext *C)

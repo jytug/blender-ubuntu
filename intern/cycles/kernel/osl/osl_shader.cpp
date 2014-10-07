@@ -164,11 +164,14 @@ static void flatten_surface_closure_tree(ShaderData *sd, int path_flag,
 					CBSDFClosure *bsdf = (CBSDFClosure *)prim;
 					int scattering = bsdf->scattering();
 
-					/* no caustics option */
-					if(scattering == LABEL_GLOSSY && (path_flag & PATH_RAY_DIFFUSE)) {
+					/* caustic options */
+					if((scattering & LABEL_GLOSSY) && (path_flag & PATH_RAY_DIFFUSE)) {
 						KernelGlobals *kg = sd->osl_globals;
-						if(kernel_data.integrator.no_caustics)
+
+						if((!kernel_data.integrator.caustics_reflective && (scattering & LABEL_REFLECT)) ||
+						   (!kernel_data.integrator.caustics_refractive && (scattering & LABEL_TRANSMIT))) {
 							return;
+						}
 					}
 
 					/* sample weight */
@@ -181,11 +184,8 @@ static void flatten_surface_closure_tree(ShaderData *sd, int path_flag,
 					sc.T = bsdf->sc.T;
 					sc.data0 = bsdf->sc.data0;
 					sc.data1 = bsdf->sc.data1;
+					sc.data2 = bsdf->sc.data2;
 					sc.prim = bsdf->sc.prim;
-
-#ifdef __HAIR__
-					sc.offset = bsdf->sc.offset;
-#endif
 
 					/* add */
 					if(sc.sample_weight > CLOSURE_WEIGHT_CUTOFF && sd->num_closure < MAX_CLOSURE) {
@@ -202,6 +202,7 @@ static void flatten_surface_closure_tree(ShaderData *sd, int path_flag,
 					sc.type = CLOSURE_EMISSION_ID;
 					sc.data0 = 0.0f;
 					sc.data1 = 0.0f;
+					sc.data2 = 0.0f;
 					sc.prim = NULL;
 
 					/* flag */
@@ -219,6 +220,7 @@ static void flatten_surface_closure_tree(ShaderData *sd, int path_flag,
 					sc.type = CLOSURE_AMBIENT_OCCLUSION_ID;
 					sc.data0 = 0.0f;
 					sc.data1 = 0.0f;
+					sc.data2 = 0.0f;
 					sc.prim = NULL;
 
 					if(sd->num_closure < MAX_CLOSURE) {
@@ -232,6 +234,7 @@ static void flatten_surface_closure_tree(ShaderData *sd, int path_flag,
 					sc.type = CLOSURE_HOLDOUT_ID;
 					sc.data0 = 0.0f;
 					sc.data1 = 0.0f;
+					sc.data2 = 0.0f;
 					sc.prim = NULL;
 
 					if(sd->num_closure < MAX_CLOSURE) {

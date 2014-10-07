@@ -34,7 +34,6 @@ ccl_device void compute_light_pass(KernelGlobals *kg, ShaderData *sd, PathRadian
 
 	/* init path state */
 	path_state_init(kg, &state, &rng, sample);
-	state.num_samples = kernel_data.integrator.aa_samples;
 
 	/* evaluate surface shader */
 	float rbsdf = path_state_rng_1D(kg, &rng, &state, PRNG_BSDF);
@@ -69,7 +68,9 @@ ccl_device void compute_light_pass(KernelGlobals *kg, ShaderData *sd, PathRadian
 				path_radiance_accum_emission(&L_sample, throughput, emission, state.bounce);
 			}
 
-			if(kernel_path_integrate_lighting(kg, &rng, sd, &throughput, &state, &L_sample, &ray)) {
+			kernel_path_surface_connect_light(kg, &rng, sd, throughput, &state, &L_sample);
+
+			if(kernel_path_surface_bounce(kg, &rng, sd, &throughput, &state, &L_sample, &ray)) {
 #ifdef __LAMP_MIS__
 				state.ray_t = 0.0f;
 #endif
@@ -107,7 +108,17 @@ ccl_device void compute_light_pass(KernelGlobals *kg, ShaderData *sd, PathRadian
 				path_radiance_accum_emission(&L_sample, throughput, emission, state.bounce);
 			}
 
-			kernel_branched_path_integrate_lighting(kg, &rng,
+#if defined(__EMISSION__)
+			/* direct light */
+			if(kernel_data.integrator.use_direct_light) {
+				bool all = kernel_data.integrator.sample_all_lights_direct;
+				kernel_branched_path_surface_connect_light(kg, &rng,
+					sd, &state, throughput, 1.0f, &L_sample, all);
+			}
+#endif
+
+			/* indirect light */
+			kernel_branched_path_surface_indirect_light(kg, &rng,
 				sd, throughput, 1.0f, &state, &L_sample);
 		}
 	}
@@ -161,7 +172,8 @@ ccl_device_inline float bake_clamp_mirror_repeat(float u)
 }
 #endif
 
-ccl_device void kernel_bake_evaluate(KernelGlobals *kg, ccl_global uint4 *input, ccl_global float4 *output, ShaderEvalType type, int i, int sample)
+ccl_device void kernel_bake_evaluate(KernelGlobals *kg, ccl_global uint4 *input, ccl_global float4 *output,
+                                     ShaderEvalType type, int i, int offset, int sample)
 {
 	ShaderData sd;
 	uint4 in = input[i * 2];
@@ -186,7 +198,7 @@ ccl_device void kernel_bake_evaluate(KernelGlobals *kg, ccl_global uint4 *input,
 	int num_samples = kernel_data.integrator.aa_samples;
 
 	/* random number generator */
-	RNG rng = cmj_hash(i, 0);
+	RNG rng = cmj_hash(offset + i, 0);
 
 #if 0
 	uint rng_state = cmj_hash(i, 0);
@@ -204,7 +216,7 @@ ccl_device void kernel_bake_evaluate(KernelGlobals *kg, ccl_global uint4 *input,
 	int shader;
 	float3 P, Ng;
 
-	triangle_point_normal(kg, prim, u, v, &P, &Ng, &shader);
+	triangle_point_normal(kg, object, prim, u, v, &P, &Ng, &shader);
 
 	/* dummy initilizations copied from SHADER_EVAL_DISPLACE */
 	float3 I = Ng;

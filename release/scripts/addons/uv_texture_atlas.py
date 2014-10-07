@@ -80,7 +80,7 @@ class TexAtl_Main(Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "render"
-    COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         scene = context.scene
@@ -101,27 +101,34 @@ class TexAtl_Main(Panel):
         # Resolution and Unwrap types (only if Lightmap group is added)
         if context.scene.ms_lightmap_groups:
             group = scene.ms_lightmap_groups[scene.ms_lightmap_groups_index]
-            row.prop(group, 'resolution', text='Resolution', expand=True)
+            row.label(text="Resolutiom:")
+            row.prop(group, 'resolutionX', text='')
+            row.prop(group, 'resolutionY', text='')
             row = self.layout.row()
-            row.prop(group, 'unwrap_type', text='Lightmap', expand=True)
-            row = self.layout.row()
+            #self.layout.separator()
 
             row = self.layout.row()
             row.operator("scene.ms_remove_other_uv",
                          text="RemoveOtherUVs", icon="GROUP")
             row.operator("scene.ms_remove_selected",
                          text="RemoveSelected", icon="GROUP")
-            row = self.layout.row()
-            row = self.layout.row()
+            #self.layout.separator()
+
             row = self.layout.row()
             row.operator("scene.ms_add_selected_to_group",
                          text="AddSelected", icon="GROUP")
             row.operator("scene.ms_select_group",
                          text="SelectGroup", icon="GROUP")
 
+            #self.layout.separator()
+            self.layout.label(text="Auto Unwrap:")
+            self.layout.prop(group, 'unwrap_type', text='Lightmap', expand=True)
             row = self.layout.row()
             row.operator(
                 "object.ms_auto", text="Auto Unwrap", icon="LAMP_SPOT")
+            row.prop(group, 'autoUnwrapPrecision', text='')
+
+            self.layout.label(text="Manual Unwrap:")
             row = self.layout.row()
             row.operator(
                 "object.ms_run", text="StartManualUnwrap", icon="LAMP_SPOT")
@@ -154,9 +161,10 @@ class TexAtl_RunAuto(Operator):
             isAllObjVisible = check_all_objects_visible(self, context)
 
             if isAllObjVisible is True:
-                res = int(group.resolution)
+                resX = int(group.resolutionX)
+                resY = int(group.resolutionY)
                 bpy.ops.object.ms_create_lightmap(
-                    group_name=group.name, resolution=res)
+                    group_name=group.name, resolutionX=resX, resolutionY=resY)
                 bpy.ops.object.ms_merge_objects(
                     group_name=group.name, unwrap=True)
                 bpy.ops.object.ms_separate_objects(group_name=group.name)
@@ -187,19 +195,22 @@ class TexAtl_RunStart(Operator):
         if bpy.ops.object.mode_set.poll():
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
-        if group.bake is True and bpy.data.groups[group.name].objects and bpy.data.objects.get(group.name + "_mergedObject") is None:
+        if group.bake is True and bpy.data.groups[group.name].objects:
 
             # Check if objects are all on the visible Layers.
             isAllObjVisible = check_all_objects_visible(self, context)
 
-            if isAllObjVisible is True:
-                res = int(group.resolution)
+            if bpy.data.objects.get(group.name + "_mergedObject") is not None:
+                self.report({'INFO'}, "Old Merged Object Exists!!!")
+            elif isAllObjVisible is False:
+                self.report({'INFO'}, "Not All Objects Are Visible!!!")
+            else:
+                resX = int(group.resolutionX)
+                resY = int(group.resolutionY)
                 bpy.ops.object.ms_create_lightmap(
-                    group_name=group.name, resolution=res)
+                    group_name=group.name, resolutionX=resX, resolutionY=resY)
                 bpy.ops.object.ms_merge_objects(
                     group_name=group.name, unwrap=False)
-            else:
-                self.report({'INFO'}, "Not All Objects Are Visible!!!")
 
         context.area.type = old_context
 
@@ -263,8 +274,8 @@ class TexAtl_MSLightmapGroups(PropertyGroup):
                ('2', 'No_Unwrap', 'No_Unwrap'),
                ),
     )
-    resolution = EnumProperty(
-        name="resolution",
+    resolutionX = EnumProperty(
+        name="resolutionX",
         items=(('256', '256', ''),
                ('512', '512', ''),
                ('1024', '1024', ''),
@@ -273,6 +284,25 @@ class TexAtl_MSLightmapGroups(PropertyGroup):
                ('8192', '8192', ''),
                ('16384', '16384', ''),
                ),
+        default='1024'
+    )
+    resolutionY = EnumProperty(
+        name="resolutionY",
+        items=(('256', '256', ''),
+               ('512', '512', ''),
+               ('1024', '1024', ''),
+               ('2048', '2048', ''),
+               ('4096', '4096', ''),
+               ('8192', '8192', ''),
+               ('16384', '16384', ''),
+               ),
+        default='1024'
+    )
+    autoUnwrapPrecision = FloatProperty(
+        name="autoUnwrapPrecision",
+        default=0.01,
+        min=0.001,
+        max=10
     )
     template_list_controls = StringProperty(
         default="bake",
@@ -432,7 +462,7 @@ class TexAtl_AddLightmapGroup(Operator):
 
         item = scene.ms_lightmap_groups.add()
         item.name = obj_group.name
-        item.resolution = '1024'
+        #item.resolution = '1024'
         scene.ms_lightmap_groups_index = len(scene.ms_lightmap_groups) - 1
 
         # Add selested objects to group
@@ -484,7 +514,8 @@ class TexAtl_CreateLightmap(Operator):
     bl_description = "Generates a Lightmap"
 
     group_name = StringProperty(default='')
-    resolution = IntProperty(default=1024)
+    resolutionX = IntProperty(default=1024)
+    resolutionY = IntProperty(default=1024)
 
     def execute(self, context):
         scene = context.scene
@@ -493,11 +524,11 @@ class TexAtl_CreateLightmap(Operator):
         image = bpy.data.images.get(self.group_name)
         if image is None:
             image = bpy.data.images.new(
-                name=self.group_name, width=self.resolution, height=self.resolution)
+                name=self.group_name, width=self.resolutionX, height=self.resolutionY)
 
         image.generated_type = 'COLOR_GRID'
-        image.generated_width = self.resolution
-        image.generated_height = self.resolution
+        image.generated_width = self.resolutionX
+        image.generated_height = self.resolutionY
         obj_group = bpy.data.groups[self.group_name]
 
         # non MESH objects for removal list
@@ -551,11 +582,11 @@ class TexAtl_MergeObjects(Operator):
 
         # objToDelete = None
         bpy.ops.object.select_all(action='DESELECT')
-        for obj in scene.objects:
-            if obj.name == self.group_name + "_mergedObject":
-                obj.select = True
-                scene.objects.active = obj
-                bpy.ops.object.delete(use_global=False)
+        ob_merged_old = bpy.data.objects.get(self.group_name + "_mergedObject")
+        if ob_merged_old is not None:
+            ob_merged_old.select = True
+            scene.objects.active = ob_merged_old
+            bpy.ops.object.delete(use_global=True)
 
         me = bpy.data.meshes.new(self.group_name + '_mergedObject')
         ob_merge = bpy.data.objects.new(self.group_name + '_mergedObject', me)
@@ -566,8 +597,12 @@ class TexAtl_MergeObjects(Operator):
 
         bpy.ops.object.select_all(action='DESELECT')
 
+        # We do the MergeList beacuse we will duplicate grouped objects
+        mergeList = []
         for object in bpy.data.groups[self.group_name].objects:
+            mergeList.append(object)
 
+        for object in mergeList:
             # make object temporary unhidden
             isObjHideSelect = object.hide_select
             object.hide = False
@@ -615,7 +650,7 @@ class TexAtl_MergeObjects(Operator):
             vgroup.add(
                 list(range(len(activeNowObject.data.vertices))), weight=1.0, type='ADD')
 
-            # save object name and object location in merged object
+            # save object name in merged object
             item = ob_merge.ms_merged_objects.add()
             item.name = object.name
 
@@ -636,6 +671,8 @@ class TexAtl_MergeObjects(Operator):
             scene.objects.active = ob_merge
             bpy.ops.object.join()
 
+        mergeList.clear() # Clear Merge List
+
         # make Unwrap
         bpy.ops.object.select_all(action='DESELECT')
         ob_merge.select = True
@@ -648,18 +685,20 @@ class TexAtl_MergeObjects(Operator):
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
         if self.unwrap is True:
-            unwrapType = scene.ms_lightmap_groups[self.group_name].unwrap_type
+            groupProps = scene.ms_lightmap_groups[self.group_name]
+            unwrapType = groupProps.unwrap_type
 
             if unwrapType == '0' or unwrapType == '1':
                 bpy.ops.object.mode_set(mode='EDIT')
 
             if unwrapType == '0':
+
                 bpy.ops.uv.smart_project(
-                    angle_limit=72.0, island_margin=0.2, user_area_weight=0.0)
+                    angle_limit=72.0, island_margin=groupProps.autoUnwrapPrecision, user_area_weight=0.0)
             elif unwrapType == '1':
                 bpy.ops.uv.lightmap_pack(
                     PREF_CONTEXT='ALL_FACES', PREF_PACK_IN_ONE=True, PREF_NEW_UVLAYER=False,
-                    PREF_APPLY_IMAGE=False, PREF_IMG_PX_SIZE=1024, PREF_BOX_DIV=48, PREF_MARGIN_DIV=0.2)
+                    PREF_APPLY_IMAGE=False, PREF_IMG_PX_SIZE=1024, PREF_BOX_DIV=48, PREF_MARGIN_DIV=groupProps.autoUnwrapPrecision)
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
         return{'FINISHED'}
@@ -675,71 +714,71 @@ class TexAtl_SeparateObjects(Operator):
     def execute(self, context):
         scene = context.scene
 
-        for obj in scene.objects:
-            if obj.name == self.group_name + "_mergedObject":
+        ob_merged = bpy.data.objects.get(self.group_name + "_mergedObject")
+        if ob_merged is not None:
 
-                # if scene.objects.active is not None:
-                    # bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-                bpy.ops.object.select_all(action='DESELECT')
-                ob_merged = obj
-                obj.hide = False
-                ob_merged.select = True
-                groupSeparate = bpy.data.groups.new(ob_merged.name)
-                groupSeparate.objects.link(ob_merged)
-                ob_merged.select = False
+            # if scene.objects.active is not None:
+                # bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            bpy.ops.object.select_all(action='DESELECT')
+            ob_merged.hide = False
+            ob_merged.select = True
+            groupSeparate = bpy.data.groups.new(ob_merged.name)
+            groupSeparate.objects.link(ob_merged)
+            ob_merged.select = False
 
-                doUnhidePolygons = False
-                for ms_obj in ob_merged.ms_merged_objects:
-                    # select vertex groups and separate group from merged
-                    # object
-                    bpy.ops.object.select_all(action='DESELECT')
-                    ob_merged.select = True
-                    scene.objects.active = ob_merged
-
-                    bpy.ops.object.mode_set(mode='EDIT')
-                    if doUnhidePolygons is False:
-                        # Unhide Polygons only once
-                        bpy.ops.mesh.reveal()
-                        doUnhidePolygons = True
-
-                    bpy.ops.mesh.select_all(action='DESELECT')
-                    ob_merged.vertex_groups.active_index = ob_merged.vertex_groups[
-                        ms_obj.name].index
-                    bpy.ops.object.vertex_group_select()
-                    bpy.ops.mesh.separate(type='SELECTED')
-                    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-                    # scene.objects.active.select = False
-
-                    # find separeted object
-                    ob_separeted = None
-                    for obj in groupSeparate.objects:
-                        if obj != ob_merged:
-                            ob_separeted = obj
-                            break
-
-                    # Copy UV Coordinates to the original mesh
-                    if ms_obj.name in scene.objects:
-                        ob_merged.select = False
-                        ob_original = scene.objects[ms_obj.name]
-                        isOriginalToSelect = ob_original.hide_select
-                        ob_original.hide_select = False
-                        ob_original.hide = False
-                        ob_original.select = True
-                        scene.objects.active = ob_separeted
-                        bpy.ops.object.join_uvs()
-                        ob_original.hide_render = False
-                        ob_original.select = False
-                        ob_original.hide_select = isOriginalToSelect
-
-                    # delete separeted object
-                    bpy.ops.object.select_all(action='DESELECT')
-                    ob_separeted.select = True
-                    bpy.ops.object.delete(use_global=False)
-
-                # delete duplicated object
+            doUnhidePolygons = False
+            for ms_obj in ob_merged.ms_merged_objects:
+                # select vertex groups and separate group from merged
+                # object
                 bpy.ops.object.select_all(action='DESELECT')
                 ob_merged.select = True
+                scene.objects.active = ob_merged
+
+                bpy.ops.object.mode_set(mode='EDIT')
+                if doUnhidePolygons is False:
+                    # Unhide Polygons only once
+                    bpy.ops.mesh.reveal()
+                    doUnhidePolygons = True
+
+                bpy.ops.mesh.select_all(action='DESELECT')
+                ob_merged.vertex_groups.active_index = ob_merged.vertex_groups[
+                    ms_obj.name].index
+                bpy.ops.object.vertex_group_select()
+                bpy.ops.mesh.separate(type='SELECTED')
+                bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+                # scene.objects.active.select = False
+
+                # find separeted object
+                ob_separeted = None
+                for obj in groupSeparate.objects:
+                    if obj != ob_merged:
+                        ob_separeted = obj
+                        break
+
+                # Copy UV Coordinates to the original mesh
+                if ms_obj.name in scene.objects:
+                    ob_merged.select = False
+                    ob_original = scene.objects[ms_obj.name]
+                    isOriginalToSelect = ob_original.hide_select
+                    ob_original.hide_select = False
+                    ob_original.hide = False
+                    ob_original.select = True
+                    scene.objects.active = ob_separeted
+                    bpy.ops.object.join_uvs()
+                    ob_original.hide_render = False
+                    ob_original.select = False
+                    ob_original.hide_select = isOriginalToSelect
+                    ob_original.data.update()
+
+                # delete separeted object
+                bpy.ops.object.select_all(action='DESELECT')
+                ob_separeted.select = True
                 bpy.ops.object.delete(use_global=False)
+
+            # delete duplicated object
+            bpy.ops.object.select_all(action='DESELECT')
+            ob_merged.select = True
+            bpy.ops.object.delete(use_global=False)
 
         return{'FINISHED'}
 

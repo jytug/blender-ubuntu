@@ -51,6 +51,7 @@
 #endif
 #define ccl_may_alias
 #define ccl_always_inline __forceinline
+#define ccl_maybe_unused
 
 #else
 
@@ -62,6 +63,7 @@
 #define ccl_try_align(...) __attribute__((aligned(__VA_ARGS__)))
 #define ccl_may_alias __attribute__((__may_alias__))
 #define ccl_always_inline __attribute__((always_inline))
+#define ccl_maybe_unused __attribute__((used))
 
 #endif
 
@@ -472,14 +474,14 @@ enum InterpolationType {
  * ... the compiler optimizes away the temp var */
 #ifdef __GNUC__
 #define CHECK_TYPE(var, type)  {  \
-	__typeof(var) *__tmp;         \
+	typeof(var) *__tmp;         \
 	__tmp = (type *)NULL;         \
 	(void)__tmp;                  \
 } (void)0
 
 #define CHECK_TYPE_PAIR(var_a, var_b)  {  \
-	__typeof(var_a) *__tmp;               \
-	__tmp = (__typeof(var_b) *)NULL;      \
+	typeof(var_a) *__tmp;                 \
+	__tmp = (typeof(var_b) *)NULL;        \
 	(void)__tmp;                          \
 } (void)0
 #else
