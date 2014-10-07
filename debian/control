@@ -45,7 +45,7 @@ Build-Depends: autotools-dev,
                python3-dev
 X-Python3-Version: >= 3.3
 Build-Conflicts: nvidia-glx
-Standards-Version: 3.9.5
+Standards-Version: 3.9.6
 Homepage: http://www.blender.org/
 Vcs-Git: git://anonscm.debian.org/pkg-multimedia/blender.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-multimedia/blender.git
