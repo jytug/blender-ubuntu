@@ -30,11 +30,20 @@ import time
 from collections import OrderedDict
 from itertools import zip_longest, chain
 
+if "bpy" in locals():
+    import importlib
+    if "encode_bin" in locals():
+        importlib.reload(encode_bin)
+    if "data_types" in locals():
+        importlib.reload(data_types)
+    if "fbx_utils" in locals():
+        importlib.reload(fbx_utils)
+
 import bpy
 import bpy_extras
 from mathutils import Vector, Matrix
 
-from . import encode_bin, data_types
+from . import encode_bin, data_types, fbx_utils
 from .fbx_utils import (
     # Constants.
     FBX_VERSION, FBX_HEADER_VERSION, FBX_SCENEINFO_VERSION, FBX_TEMPLATES_VERSION,
@@ -42,21 +51,26 @@ from .fbx_utils import (
     FBX_GEOMETRY_VERSION, FBX_GEOMETRY_NORMAL_VERSION, FBX_GEOMETRY_BINORMAL_VERSION, FBX_GEOMETRY_TANGENT_VERSION,
     FBX_GEOMETRY_SMOOTHING_VERSION, FBX_GEOMETRY_VCOLOR_VERSION, FBX_GEOMETRY_UV_VERSION,
     FBX_GEOMETRY_MATERIAL_VERSION, FBX_GEOMETRY_LAYER_VERSION,
+    FBX_GEOMETRY_SHAPE_VERSION, FBX_DEFORMER_SHAPE_VERSION, FBX_DEFORMER_SHAPECHANNEL_VERSION,
     FBX_POSE_BIND_VERSION, FBX_DEFORMER_SKIN_VERSION, FBX_DEFORMER_CLUSTER_VERSION,
     FBX_MATERIAL_VERSION, FBX_TEXTURE_VERSION,
     FBX_ANIM_KEY_VERSION,
+    FBX_ANIM_PROPSGROUP_NAME,
     FBX_KTIME,
     BLENDER_OTHER_OBJECT_TYPES, BLENDER_OBJECT_TYPES_MESHLIKE,
     FBX_LIGHT_TYPES, FBX_LIGHT_DECAY_TYPES,
     RIGHT_HAND_AXES, FBX_FRAMERATES,
     # Miscellaneous utils.
-    units_convert, units_convert_iter, matrix_to_array, similar_values,
+    units_convertor, units_convertor_iter, matrix4_to_array, similar_values, similar_values_iter,
+    # Mesh transform helpers.
+    vcos_transformed_gen, nors_transformed_gen,
     # UUID from key.
     get_fbx_uuid_from_key,
     # Key generators.
     get_blenderID_key, get_blenderID_name,
+    get_blender_mesh_shape_key, get_blender_mesh_shape_channel_key,
     get_blender_empty_key, get_blender_bone_key,
-    get_blender_armature_bindpose_key, get_blender_armature_skin_key, get_blender_bone_cluster_key,
+    get_blender_bindpose_key, get_blender_armature_skin_key, get_blender_bone_cluster_key,
     get_blender_anim_id_base, get_blender_anim_stack_key, get_blender_anim_layer_key,
     get_blender_anim_curve_node_key, get_blender_anim_curve_key,
     # FBX element data.
@@ -72,13 +86,25 @@ from .fbx_utils import (
     elem_props_template_init, elem_props_template_set, elem_props_template_finalize,
     # Templates.
     FBXTemplate, fbx_templates_generate,
+    # Animation.
+    AnimationCurveNodeWrapper,
     # Objects.
     ObjectWrapper, fbx_name_class,
     # Top level.
-    FBXSettingsMedia, FBXSettings, FBXData,
+    FBXExportSettingsMedia, FBXExportSettings, FBXExportData,
 )
 
-##### Templates #####
+# Units convertors!
+convert_sec_to_ktime = units_convertor("second", "ktime")
+convert_sec_to_ktime_iter = units_convertor_iter("second", "ktime")
+
+convert_mm_to_inch = units_convertor("millimeter", "inch")
+
+convert_rad_to_deg = units_convertor("radian", "degree")
+convert_rad_to_deg_iter = units_convertor_iter("radian", "degree")
+
+
+# ##### Templates #####
 # TODO: check all those "default" values, they should match Blender's default as much as possible, I guess?
 
 def fbx_template_def_globalsettings(scene, settings, override_defaults=None, nbr_users=0):
@@ -123,7 +149,7 @@ def fbx_template_def_model(scene, settings, override_defaults=None, nbr_users=0)
         (b"RotationMaxX", (False, "p_bool", False)),
         (b"RotationMaxY", (False, "p_bool", False)),
         (b"RotationMaxZ", (False, "p_bool", False)),
-        (b"InheritType", (1, "p_enum", False)),  # RSrs
+        (b"InheritType", (0, "p_enum", False)),  # RrSs
         (b"ScalingActive", (False, "p_bool", False)),
         (b"ScalingMin", ((0.0, 0.0, 0.0), "p_vector_3d", False)),
         (b"ScalingMax", ((1.0, 1.0, 1.0), "p_vector_3d", False)),
@@ -155,7 +181,7 @@ def fbx_template_def_model(scene, settings, override_defaults=None, nbr_users=0)
         (b"UpVectorProperty", (None, "p_object", False)),
         (b"Show", (True, "p_bool", False)),
         (b"NegativePercentShapeSupport", (True, "p_bool", False)),
-        (b"DefaultAttributeIndex", (0, "p_integer", False)),
+        (b"DefaultAttributeIndex", (-1, "p_integer", False)),
         (b"Freeze", (False, "p_bool", False)),
         (b"LODBox", (False, "p_bool", False)),
         (b"Lcl Translation", ((0.0, 0.0, 0.0), "p_lcl_translation", True)),
@@ -208,21 +234,21 @@ def fbx_template_def_camera(scene, settings, override_defaults=None, nbr_users=0
         (b"Roll", (0.0, "p_roll", True)),
         (b"OpticalCenterX", (0.0, "p_opticalcenterx", True)),
         (b"OpticalCenterY", (0.0, "p_opticalcentery", True)),
-        (b"BackgroundColor", ((0.8, 0.8, 0.8), "p_color", True)),
+        (b"BackgroundColor", ((0.63, 0.63, 0.63), "p_color", True)),
         (b"TurnTable", (0.0, "p_number", True)),
         (b"DisplayTurnTableIcon", (False, "p_bool", False)),
         (b"UseMotionBlur", (False, "p_bool", False)),
         (b"UseRealTimeMotionBlur", (True, "p_bool", False)),
         (b"Motion Blur Intensity", (1.0, "p_number", True)),
-        (b"AspectRatioMode", (2, "p_enum", False)),  # Fixed ratio, height and width in pixels.
-        (b"AspectWidth", (float(r.resolution_x), "p_double", False)),
-        (b"AspectHeight", (float(r.resolution_y), "p_double", False)),
-        (b"PixelAspectRatio", (float(r.pixel_aspect_x / r.pixel_aspect_y), "p_double", False)),
+        (b"AspectRatioMode", (0, "p_enum", False)),  # WindowSize.
+        (b"AspectWidth", (320.0, "p_double", False)),
+        (b"AspectHeight", (200.0, "p_double", False)),
+        (b"PixelAspectRatio", (1.0, "p_double", False)),
         (b"FilmOffsetX", (0.0, "p_number", True)),
         (b"FilmOffsetY", (0.0, "p_number", True)),
-        (b"FilmWidth", (1.2598425196850394, "p_double", False)),
-        (b"FilmHeight", (0.7086614173228346, "p_double", False)),
-        (b"FilmAspectRatio", (1.777777777777778, "p_double", False)),
+        (b"FilmWidth", (0.816, "p_double", False)),
+        (b"FilmHeight", (0.612, "p_double", False)),
+        (b"FilmAspectRatio", (1.3333333333333333, "p_double", False)),
         (b"FilmSqueezeRatio", (1.0, "p_double", False)),
         (b"FilmFormatIndex", (0, "p_enum", False)),  # Assuming this is ApertureFormat, 0 = custom.
         (b"PreScale", (1.0, "p_number", True)),
@@ -232,12 +258,12 @@ def fbx_template_def_camera(scene, settings, override_defaults=None, nbr_users=0
         (b"FilmRollPivotY", (0.0, "p_number", True)),
         (b"FilmRollValue", (0.0, "p_number", True)),
         (b"FilmRollOrder", (0, "p_enum", False)),  # 0 = rotate first (default).
-        (b"ApertureMode", (3, "p_enum", False)),  # 3 = focal length.
+        (b"ApertureMode", (2, "p_enum", False)),  # 2 = Vertical.
         (b"GateFit", (0, "p_enum", False)),  # 0 = no resolution gate fit.
-        (b"FieldOfView", (49.13434207760448, "p_fov", True)),
-        (b"FieldOfViewX", (49.13434207760448, "p_fov_x", True)),
-        (b"FieldOfViewY", (28.841546110078532, "p_fov_y", True)),
-        (b"FocalLength", (35.0, "p_number", True)),
+        (b"FieldOfView", (25.114999771118164, "p_fov", True)),
+        (b"FieldOfViewX", (40.0, "p_fov_x", True)),
+        (b"FieldOfViewY", (40.0, "p_fov_y", True)),
+        (b"FocalLength", (34.89327621672628, "p_number", True)),
         (b"CameraFormat", (0, "p_enum", False)),  # Custom camera format.
         (b"UseFrameColor", (False, "p_bool", False)),
         (b"FrameColor", ((0.3, 0.3, 0.3), "p_color_rgb", False)),
@@ -246,26 +272,28 @@ def fbx_template_def_camera(scene, settings, override_defaults=None, nbr_users=0
         (b"ShowGrid", (True, "p_bool", False)),
         (b"ShowOpticalCenter", (False, "p_bool", False)),
         (b"ShowAzimut", (True, "p_bool", False)),
-        (b"ShowTimeCode", (True, "p_bool", False)),
+        (b"ShowTimeCode", (False, "p_bool", False)),
         (b"ShowAudio", (False, "p_bool", False)),
         (b"AudioColor", ((0.0, 1.0, 0.0), "p_vector_3d", False)),  # Yep, vector3d, not corlorgb… :cry:
-        (b"NearPlane", (1.0, "p_double", False)),
-        (b"FarPlane", (100.0, "p_double", False)),
+        (b"NearPlane", (10.0, "p_double", False)),
+        (b"FarPlane", (4000.0, "p_double", False)),
         (b"AutoComputeClipPanes", (False, "p_bool", False)),
         (b"ViewCameraToLookAt", (True, "p_bool", False)),
         (b"ViewFrustumNearFarPlane", (False, "p_bool", False)),
         (b"ViewFrustumBackPlaneMode", (2, "p_enum", False)),  # 2 = show back plane if texture added.
-        (b"BackPlaneDistance", (100.0, "p_number", True)),
+        (b"BackPlaneDistance", (4000.0, "p_number", True)),
         (b"BackPlaneDistanceMode", (1, "p_enum", False)),  # 1 = relative to camera.
         (b"ViewFrustumFrontPlaneMode", (2, "p_enum", False)),  # 2 = show front plane if texture added.
-        (b"FrontPlaneDistance", (1.0, "p_number", True)),
+        (b"FrontPlaneDistance", (10.0, "p_number", True)),
         (b"FrontPlaneDistanceMode", (1, "p_enum", False)),  # 1 = relative to camera.
         (b"LockMode", (False, "p_bool", False)),
         (b"LockInterestNavigation", (False, "p_bool", False)),
-        (b"BackPlateFitImage", (False, "p_bool", False)),
-        (b"BackPlateCrop", (False, "p_bool", False)),
-        (b"BackPlateCenter", (True, "p_bool", False)),
-        (b"BackPlateKeepRatio", (True, "p_bool", False)),
+        # BackPlate... properties **arggggg!**
+        (b"FitImage", (False, "p_bool", False)),
+        (b"Crop", (False, "p_bool", False)),
+        (b"Center", (True, "p_bool", False)),
+        (b"KeepRatio", (True, "p_bool", False)),
+        # End of BackPlate...
         (b"BackgroundAlphaTreshold", (0.5, "p_double", False)),
         (b"ShowBackplate", (True, "p_bool", False)),
         (b"BackPlaneOffsetX", (0.0, "p_number", True)),
@@ -286,10 +314,10 @@ def fbx_template_def_camera(scene, settings, override_defaults=None, nbr_users=0
         (b"FrontPlaneScaleX", (1.0, "p_number", True)),
         (b"FrontPlaneScaleY", (1.0, "p_number", True)),
         (b"Foreground Texture", (None, "p_object", False)),
-        (b"DisplaySafeArea", (True, "p_bool", False)),
+        (b"DisplaySafeArea", (False, "p_bool", False)),
         (b"DisplaySafeAreaOnRender", (False, "p_bool", False)),
         (b"SafeAreaDisplayStyle", (1, "p_enum", False)),  # 1 = rounded corners.
-        (b"SafeAreaAspectRatio", (1.777777777777778, "p_double", False)),
+        (b"SafeAreaAspectRatio", (1.3333333333333333, "p_double", False)),
         (b"Use2DMagnifierZoom", (False, "p_bool", False)),
         (b"2D Magnifier Zoom", (100.0, "p_number", True)),
         (b"2D Magnifier X", (50.0, "p_number", True)),
@@ -298,9 +326,9 @@ def fbx_template_def_camera(scene, settings, override_defaults=None, nbr_users=0
         (b"OrthoZoom", (1.0, "p_double", False)),
         (b"UseRealTimeDOFAndAA", (False, "p_bool", False)),
         (b"UseDepthOfField", (False, "p_bool", False)),
-        (b"FocusSource", (1, "p_enum", False)),  # 0 = camera interest, 1 = distance from camera interest.
+        (b"FocusSource", (0, "p_enum", False)),  # 0 = camera interest, 1 = distance from camera interest.
         (b"FocusAngle", (3.5, "p_double", False)),  # ???
-        (b"FocusDistance", (10.0, "p_double", False)),
+        (b"FocusDistance", (200.0, "p_double", False)),
         (b"UseAntialiasing", (False, "p_bool", False)),
         (b"AntialiasingIntensity", (0.77777, "p_double", False)),
         (b"AntialiasingMethod", (0, "p_enum", False)),  # 0 = oversampling, 1 = hardware.
@@ -340,32 +368,32 @@ def fbx_template_def_material(scene, settings, override_defaults=None, nbr_users
         (b"ShadingModel", ("Phong", "p_string", False)),
         (b"MultiLayer", (False, "p_bool", False)),
         # Lambert-specific.
-        (b"EmissiveColor", ((0.8, 0.8, 0.8), "p_color", True)),  # Same as diffuse.
-        (b"EmissiveFactor", (0.0, "p_number", True)),
-        (b"AmbientColor", ((0.0, 0.0, 0.0), "p_color", True)),
+        (b"EmissiveColor", ((0.0, 0.0, 0.0), "p_color", True)),
+        (b"EmissiveFactor", (1.0, "p_number", True)),
+        (b"AmbientColor", ((0.2, 0.2, 0.2), "p_color", True)),
         (b"AmbientFactor", (1.0, "p_number", True)),
         (b"DiffuseColor", ((0.8, 0.8, 0.8), "p_color", True)),
-        (b"DiffuseFactor", (0.8, "p_number", True)),
-        (b"TransparentColor", ((0.8, 0.8, 0.8), "p_color", True)),  # Same as diffuse.
+        (b"DiffuseFactor", (1.0, "p_number", True)),
+        (b"TransparentColor", ((0.0, 0.0, 0.0), "p_color", True)),
         (b"TransparencyFactor", (0.0, "p_number", True)),
         (b"Opacity", (1.0, "p_number", True)),
         (b"NormalMap", ((0.0, 0.0, 0.0), "p_vector_3d", False)),
         (b"Bump", ((0.0, 0.0, 0.0), "p_vector_3d", False)),
         (b"BumpFactor", (1.0, "p_double", False)),
         (b"DisplacementColor", ((0.0, 0.0, 0.0), "p_color_rgb", False)),
-        (b"DisplacementFactor", (0.0, "p_double", False)),
+        (b"DisplacementFactor", (1.0, "p_double", False)),
         (b"VectorDisplacementColor", ((0.0, 0.0, 0.0), "p_color_rgb", False)),
-        (b"VectorDisplacementFactor", (0.0, "p_double", False)),
+        (b"VectorDisplacementFactor", (1.0, "p_double", False)),
         # Phong-specific.
-        (b"SpecularColor", ((1.0, 1.0, 1.0), "p_color", True)),
-        (b"SpecularFactor", (0.5 / 2.0, "p_number", True)),
+        (b"SpecularColor", ((0.2, 0.2, 0.2), "p_color", True)),
+        (b"SpecularFactor", (1.0, "p_number", True)),
         # Not sure about the name, importer uses this (but ShininessExponent for tex prop name!)
         # And in fbx exported by sdk, you have one in template, the other in actual material!!! :/
         # For now, using both.
-        (b"Shininess", ((50.0 - 1.0) / 5.10, "p_number", True)),
-        (b"ShininessExponent", ((50.0 - 1.0) / 5.10, "p_number", True)),
-        (b"ReflectionColor", ((1.0, 1.0, 1.0), "p_color", True)),
-        (b"ReflectionFactor", (0.0, "p_number", True)),
+        (b"Shininess", (20.0, "p_number", True)),
+        (b"ShininessExponent", (20.0, "p_number", True)),
+        (b"ReflectionColor", ((0.0, 0.0, 0.0), "p_color", True)),
+        (b"ReflectionFactor", (1.0, "p_number", True)),
     ))
     if override_defaults is not None:
         props.update(override_defaults)
@@ -379,9 +407,10 @@ def fbx_template_def_texture_file(scene, settings, override_defaults=None, nbr_u
         (b"TextureTypeUse", (0, "p_enum", False)),  # Standard.
         (b"AlphaSource", (2, "p_enum", False)),  # Black (i.e. texture's alpha), XXX name guessed!.
         (b"Texture alpha", (1.0, "p_double", False)),
-        (b"PremultiplyAlpha", (False, "p_bool", False)),
-        (b"CurrentTextureBlendMode", (0, "p_enum", False)),  # Translucent, assuming this means "Alpha over"!
-        (b"CurrentMappingType", (1, "p_enum", False)),  # Planar.
+        (b"PremultiplyAlpha", (True, "p_bool", False)),
+        (b"CurrentTextureBlendMode", (1, "p_enum", False)),  # Additive...
+        (b"CurrentMappingType", (0, "p_enum", False)),  # UV.
+        (b"UVSet", ("default", "p_string", False)),  # UVMap name.
         (b"WrapModeU", (0, "p_enum", False)),  # Repeat.
         (b"WrapModeV", (0, "p_enum", False)),  # Repeat.
         (b"UVSwap", (False, "p_bool", False)),
@@ -390,8 +419,8 @@ def fbx_template_def_texture_file(scene, settings, override_defaults=None, nbr_u
         (b"Scaling", ((1.0, 1.0, 1.0), "p_vector_3d", False)),
         (b"TextureRotationPivot", ((0.0, 0.0, 0.0), "p_vector_3d", False)),
         (b"TextureScalingPivot", ((0.0, 0.0, 0.0), "p_vector_3d", False)),
-        # Not sure about those two... At least, UseMaterial should always be ON imho.
-        (b"UseMaterial", (True, "p_bool", False)),
+        # Not sure about those two...
+        (b"UseMaterial", (False, "p_bool", False)),
         (b"UseMipMap", (False, "p_bool", False)),
     ))
     if override_defaults is not None:
@@ -411,14 +440,14 @@ def fbx_template_def_video(scene, settings, override_defaults=None, nbr_users=0)
         (b"StartFrame", (0, "p_integer", False)),
         (b"StopFrame", (0, "p_integer", False)),
         (b"Offset", (0, "p_timestamp", False)),
-        (b"PlaySpeed", (1.0, "p_double", False)),
+        (b"PlaySpeed", (0.0, "p_double", False)),
         (b"FreeRunning", (False, "p_bool", False)),
         (b"Loop", (False, "p_bool", False)),
         (b"InterlaceMode", (0, "p_enum", False)),  # None, i.e. progressive.
         # Image sequences.
         (b"ImageSequence", (False, "p_bool", False)),
         (b"ImageSequenceOffset", (0, "p_integer", False)),
-        (b"FrameRate", (scene.render.fps / scene.render.fps_base, "p_double", False)),
+        (b"FrameRate", (0.0, "p_double", False)),
         (b"LastFrame", (0, "p_integer", False)),
     ))
     if override_defaults is not None:
@@ -472,7 +501,7 @@ def fbx_template_def_animlayer(scene, settings, override_defaults=None, nbr_user
 
 def fbx_template_def_animcurvenode(scene, settings, override_defaults=None, nbr_users=0):
     props = OrderedDict((
-        (b"d", (None, "p_compound", False)),
+        (FBX_ANIM_PROPSGROUP_NAME.encode(), (None, "p_compound", False)),
     ))
     if override_defaults is not None:
         props.update(override_defaults)
@@ -486,7 +515,7 @@ def fbx_template_def_animcurve(scene, settings, override_defaults=None, nbr_user
     return FBXTemplate(b"AnimationCurve", b"", props, nbr_users, [False])
 
 
-##### Generators for connection elements. #####
+# ##### Generators for connection elements. #####
 
 def elem_connection(elem, c_type, uid_src, uid_dst, prop_dst=None):
     e = elem_data_single_string(elem, b"C", c_type)
@@ -496,19 +525,23 @@ def elem_connection(elem, c_type, uid_src, uid_dst, prop_dst=None):
         e.add_string(prop_dst)
 
 
-##### FBX objects generators. #####
+# ##### FBX objects generators. #####
 
 def fbx_data_element_custom_properties(props, bid):
     """
     Store custom properties of blender ID bid (any mapping-like object, in fact) into FBX properties props.
     """
     for k, v in bid.items():
+        list_val = getattr(v, "to_list", lambda: None)()
+
         if isinstance(v, str):
             elem_props_set(props, "p_string", k.encode(), v, custom=True)
         elif isinstance(v, int):
             elem_props_set(props, "p_integer", k.encode(), v, custom=True)
-        if isinstance(v, float):
+        elif isinstance(v, float):
             elem_props_set(props, "p_double", k.encode(), v, custom=True)
+        elif list_val and len(list_val) == 3:
+            elem_props_set(props, "p_vector", k.encode(), list_val, custom=True)
 
 
 def fbx_data_empty_elements(root, empty, scene_data):
@@ -571,7 +604,7 @@ def fbx_data_lamp_elements(root, lamp, scene_data):
     elem_props_template_finalize(tmpl, props)
 
     # Custom properties.
-    if scene_data.settings.use_custom_properties:
+    if scene_data.settings.use_custom_props:
         fbx_data_element_custom_properties(props, lamp)
 
 
@@ -597,8 +630,8 @@ def fbx_data_camera_elements(root, cam_obj, scene_data):
     height = render.resolution_y
     aspect = width / height
     # Film width & height from mm to inches
-    filmwidth = units_convert(cam_data.sensor_width, "millimeter", "inch")
-    filmheight = units_convert(cam_data.sensor_height, "millimeter", "inch")
+    filmwidth = convert_mm_to_inch(cam_data.sensor_width)
+    filmheight = convert_mm_to_inch(cam_data.sensor_height)
     filmaspect = filmwidth / filmheight
     # Film offset
     offsetx = filmwidth * cam_data.shift_x
@@ -618,6 +651,12 @@ def fbx_data_camera_elements(root, cam_obj, scene_data):
     elem_props_template_set(tmpl, props, "p_color", b"BackgroundColor", (0.0, 0.0, 0.0))
     elem_props_template_set(tmpl, props, "p_bool", b"DisplayTurnTableIcon", True)
 
+    elem_props_template_set(tmpl, props, "p_enum", b"AspectRatioMode", 2)  # FixedResolution
+    elem_props_template_set(tmpl, props, "p_double", b"AspectWidth", float(render.resolution_x))
+    elem_props_template_set(tmpl, props, "p_double", b"AspectHeight", float(render.resolution_y))
+    elem_props_template_set(tmpl, props, "p_double", b"PixelAspectRatio",
+                            float(render.pixel_aspect_x / render.pixel_aspect_y))
+
     elem_props_template_set(tmpl, props, "p_double", b"FilmWidth", filmwidth)
     elem_props_template_set(tmpl, props, "p_double", b"FilmHeight", filmheight)
     elem_props_template_set(tmpl, props, "p_double", b"FilmAspectRatio", filmaspect)
@@ -632,6 +671,9 @@ def fbx_data_camera_elements(root, cam_obj, scene_data):
     # No need to convert to inches here...
     elem_props_template_set(tmpl, props, "p_double", b"FocalLength", cam_data.lens)
     elem_props_template_set(tmpl, props, "p_double", b"SafeAreaAspectRatio", aspect)
+    # Default to perspective camera.
+    elem_props_template_set(tmpl, props, "p_enum", b"CameraProjectionType", 1 if cam_data.type == 'ORTHO' else 0)
+    elem_props_template_set(tmpl, props, "p_double", b"OrthoZoom", cam_data.ortho_scale)
 
     elem_props_template_set(tmpl, props, "p_double", b"NearPlane", cam_data.clip_start * gscale)
     elem_props_template_set(tmpl, props, "p_double", b"FarPlane", cam_data.clip_end * gscale)
@@ -641,7 +683,7 @@ def fbx_data_camera_elements(root, cam_obj, scene_data):
     elem_props_template_finalize(tmpl, props)
 
     # Custom properties.
-    if scene_data.settings.use_custom_properties:
+    if scene_data.settings.use_custom_props:
         fbx_data_element_custom_properties(props, cam_data)
 
     elem_data_single_string(cam, b"TypeFlags", b"Camera")
@@ -653,6 +695,105 @@ def fbx_data_camera_elements(root, cam_obj, scene_data):
     elem_data_single_int32(cam, b"ShowAudio", 0)
     elem_data_vec_float64(cam, b"AudioColor", (0.0, 1.0, 0.0))
     elem_data_single_float64(cam, b"CameraOrthoZoom", 1.0)
+
+
+def fbx_data_bindpose_element(root, me_obj, me, scene_data, arm_obj=None, bones=[]):
+    """
+    Helper, since bindpose are used by both meshes shape keys and armature bones...
+    """
+    if arm_obj is None:
+        arm_obj = me_obj
+    # We assume bind pose for our bones are their "Editmode" pose...
+    # All matrices are expected in global (world) space.
+    bindpose_key = get_blender_bindpose_key(arm_obj.bdata, me)
+    fbx_pose = elem_data_single_int64(root, b"Pose", get_fbx_uuid_from_key(bindpose_key))
+    fbx_pose.add_string(fbx_name_class(me.name.encode(), b"Pose"))
+    fbx_pose.add_string(b"BindPose")
+
+    elem_data_single_string(fbx_pose, b"Type", b"BindPose")
+    elem_data_single_int32(fbx_pose, b"Version", FBX_POSE_BIND_VERSION)
+    elem_data_single_int32(fbx_pose, b"NbPoseNodes", 1 + len(bones))
+
+    # First node is mesh/object.
+    mat_world_obj = me_obj.fbx_object_matrix(scene_data, global_space=True)
+    fbx_posenode = elem_empty(fbx_pose, b"PoseNode")
+    elem_data_single_int64(fbx_posenode, b"Node", me_obj.fbx_uuid)
+    elem_data_single_float64_array(fbx_posenode, b"Matrix", matrix4_to_array(mat_world_obj))
+    # And all bones of armature!
+    mat_world_bones = {}
+    for bo_obj in bones:
+        bomat = bo_obj.fbx_object_matrix(scene_data, rest=True, global_space=True)
+        mat_world_bones[bo_obj] = bomat
+        fbx_posenode = elem_empty(fbx_pose, b"PoseNode")
+        elem_data_single_int64(fbx_posenode, b"Node", bo_obj.fbx_uuid)
+        elem_data_single_float64_array(fbx_posenode, b"Matrix", matrix4_to_array(bomat))
+
+    return mat_world_obj, mat_world_bones
+
+
+def fbx_data_mesh_shapes_elements(root, me_obj, me, scene_data, fbx_me_tmpl, fbx_me_props):
+    """
+    Write shape keys related data.
+    """
+    if me not in scene_data.data_deformers_shape:
+        return
+
+    # First, write the geometry data itself (i.e. shapes).
+    _me_key, shape_key, shapes = scene_data.data_deformers_shape[me]
+
+    channels = []
+
+    for shape, (channel_key, geom_key, shape_verts_co, shape_verts_idx) in shapes.items():
+        # Use vgroups as weights, if defined.
+        if shape.vertex_group and shape.vertex_group in me_obj.bdata.vertex_groups:
+            shape_verts_weights = [0.0] * (len(shape_verts_co) // 3)
+            vg_idx = me_obj.bdata.vertex_groups[shape.vertex_group].index
+            for sk_idx, v_idx in enumerate(shape_verts_idx):
+                for vg in me.vertices[v_idx].groups:
+                    if vg.group == vg_idx:
+                        shape_verts_weights[sk_idx] = vg.weight * 100.0
+        else:
+            shape_verts_weights = [100.0] * (len(shape_verts_co) // 3)
+        channels.append((channel_key, shape, shape_verts_weights))
+
+        geom = elem_data_single_int64(root, b"Geometry", get_fbx_uuid_from_key(geom_key))
+        geom.add_string(fbx_name_class(shape.name.encode(), b"Geometry"))
+        geom.add_string(b"Shape")
+
+        tmpl = elem_props_template_init(scene_data.templates, b"Geometry")
+        props = elem_properties(geom)
+        elem_props_template_finalize(tmpl, props)
+
+        elem_data_single_int32(geom, b"Version", FBX_GEOMETRY_SHAPE_VERSION)
+
+        elem_data_single_int32_array(geom, b"Indexes", shape_verts_idx)
+        elem_data_single_float64_array(geom, b"Vertices", shape_verts_co)
+        elem_data_single_float64_array(geom, b"Normals", [0.0] * len(shape_verts_co))
+
+    # Yiha! BindPose for shapekeys too! Dodecasigh...
+    # XXX Not sure yet whether several bindposes on same mesh are allowed, or not... :/
+    fbx_data_bindpose_element(root, me_obj, me, scene_data)
+
+    # ...and now, the deformers stuff.
+    fbx_shape = elem_data_single_int64(root, b"Deformer", get_fbx_uuid_from_key(shape_key))
+    fbx_shape.add_string(fbx_name_class(me.name.encode(), b"Deformer"))
+    fbx_shape.add_string(b"BlendShape")
+
+    elem_data_single_int32(fbx_shape, b"Version", FBX_DEFORMER_SHAPE_VERSION)
+
+    for channel_key, shape, shape_verts_weights in channels:
+        fbx_channel = elem_data_single_int64(root, b"Deformer", get_fbx_uuid_from_key(channel_key))
+        fbx_channel.add_string(fbx_name_class(shape.name.encode(), b"SubDeformer"))
+        fbx_channel.add_string(b"BlendShapeChannel")
+
+        elem_data_single_int32(fbx_channel, b"Version", FBX_DEFORMER_SHAPECHANNEL_VERSION)
+        elem_data_single_float64(fbx_channel, b"DeformPercent", shape.value * 100.0)  # Percents...
+        elem_data_single_float64_array(fbx_channel, b"FullWeights", shape_verts_weights)
+
+        # *WHY* add this in linked mesh properties too? *cry*
+        # No idea whether it’s percent here too, or more usual factor (assume percentage for now) :/
+        elem_props_template_set(fbx_me_tmpl, fbx_me_props, "p_number", shape.name.encode(), shape.value * 100.0,
+                                animatable=True)
 
 
 def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
@@ -672,8 +813,9 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
 
     # No gscale/gmat here, all data are supposed to be in object space.
     smooth_type = scene_data.settings.mesh_smooth_type
+    write_normals = smooth_type in {'OFF'}
 
-    do_bake_space_transform = ObjectWrapper(me_obj).use_bake_space_transform(scene_data)
+    do_bake_space_transform = me_obj.use_bake_space_transform(scene_data)
 
     # Vertices are in object space, but we are post-multiplying all transforms with the inverse of the
     # global matrix, so we need to apply the global matrix to the vertices to get the correct result.
@@ -692,10 +834,8 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
     tmpl = elem_props_template_init(scene_data.templates, b"Geometry")
     props = elem_properties(geom)
 
-    elem_props_template_finalize(tmpl, props)
-
     # Custom properties.
-    if scene_data.settings.use_custom_properties:
+    if scene_data.settings.use_custom_props:
         fbx_data_element_custom_properties(props, me)
 
     elem_data_single_int32(geom, b"GeometryVersion", FBX_GEOMETRY_VERSION)
@@ -703,12 +843,7 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
     # Vertex cos.
     t_co = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.vertices) * 3
     me.vertices.foreach_get("co", t_co)
-    if geom_mat_co is not None:
-        def _vcos_transformed_gen(raw_cos, m=None):
-            # Note: we could most likely get much better performances with numpy, but will leave this as TODO for now.
-            return chain(*(m * Vector(v) for v in zip(*(iter(raw_cos),) * 3)))
-        t_co = _vcos_transformed_gen(t_co, geom_mat_co)
-    elem_data_single_float64_array(geom, b"Vertices", t_co)
+    elem_data_single_float64_array(geom, b"Vertices", chain(*vcos_transformed_gen(t_co, geom_mat_co)))
     del t_co
 
     # Polygon indices.
@@ -810,96 +945,90 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
     del edges_map
 
     # Loop normals.
-    # NOTE: this is not supported by importer currently.
-    # XXX Official docs says normals should use IndexToDirect,
-    #     but this does not seem well supported by apps currently...
-    me.calc_normals_split()
-
-    def _nortuples_gen(raw_nors, m):
-        # Great, now normals are also expected 4D!
-        # XXX Back to 3D normals for now!
-        #gen = zip(*(iter(raw_nors),) * 3 + (_infinite_gen(1.0),))
-        gen = zip(*(iter(raw_nors),) * 3)
-        return gen if m is None else (m * Vector(v) for v in gen)
-
-    t_ln = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops) * 3
-    me.loops.foreach_get("normal", t_ln)
-    t_ln = _nortuples_gen(t_ln, geom_mat_no)
-    if 0:
-        t_ln = tuple(t_ln)  # No choice... :/
-
-        lay_nor = elem_data_single_int32(geom, b"LayerElementNormal", 0)
-        elem_data_single_int32(lay_nor, b"Version", FBX_GEOMETRY_NORMAL_VERSION)
-        elem_data_single_string(lay_nor, b"Name", b"")
-        elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
-        elem_data_single_string(lay_nor, b"ReferenceInformationType", b"IndexToDirect")
-
-        ln2idx = tuple(set(t_ln))
-        elem_data_single_float64_array(lay_nor, b"Normals", chain(*ln2idx))
-        # Normal weights, no idea what it is.
-        #t_lnw = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(ln2idx)
-        #elem_data_single_float64_array(lay_nor, b"NormalsW", t_lnw)
-
-        ln2idx = {nor: idx for idx, nor in enumerate(ln2idx)}
-        elem_data_single_int32_array(lay_nor, b"NormalsIndex", (ln2idx[n] for n in t_ln))
-
-        del ln2idx
-        #del t_lnw
-    else:
-        lay_nor = elem_data_single_int32(geom, b"LayerElementNormal", 0)
-        elem_data_single_int32(lay_nor, b"Version", FBX_GEOMETRY_NORMAL_VERSION)
-        elem_data_single_string(lay_nor, b"Name", b"")
-        elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
-        elem_data_single_string(lay_nor, b"ReferenceInformationType", b"Direct")
-        elem_data_single_float64_array(lay_nor, b"Normals", chain(*t_ln))
-        # Normal weights, no idea what it is.
-        #t_ln = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops)
-        #elem_data_single_float64_array(lay_nor, b"NormalsW", t_ln)
-    del t_ln
-
-    # tspace
     tspacenumber = 0
-    if scene_data.settings.use_tspace:
-        tspacenumber = len(me.uv_layers)
-        if tspacenumber:
-            t_ln = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops) * 3
-            #t_lnw = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops)
-            for idx, uvlayer in enumerate(me.uv_layers):
-                name = uvlayer.name
-                me.calc_tangents(name)
-                # Loop bitangents (aka binormals).
-                # NOTE: this is not supported by importer currently.
-                me.loops.foreach_get("bitangent", t_ln)
-                lay_nor = elem_data_single_int32(geom, b"LayerElementBinormal", idx)
-                elem_data_single_int32(lay_nor, b"Version", FBX_GEOMETRY_BINORMAL_VERSION)
-                elem_data_single_string_unicode(lay_nor, b"Name", name)
-                elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
-                elem_data_single_string(lay_nor, b"ReferenceInformationType", b"Direct")
-                elem_data_single_float64_array(lay_nor, b"Binormals", chain(*_nortuples_gen(t_ln, geom_mat_no)))
-                # Binormal weights, no idea what it is.
-                #elem_data_single_float64_array(lay_nor, b"BinormalsW", t_lnw)
+    if write_normals:
+        # NOTE: this is not supported by importer currently.
+        # XXX Official docs says normals should use IndexToDirect,
+        #     but this does not seem well supported by apps currently...
+        me.calc_normals_split()
 
-                # Loop tangents.
-                # NOTE: this is not supported by importer currently.
-                me.loops.foreach_get("tangent", t_ln)
-                lay_nor = elem_data_single_int32(geom, b"LayerElementTangent", idx)
-                elem_data_single_int32(lay_nor, b"Version", FBX_GEOMETRY_TANGENT_VERSION)
-                elem_data_single_string_unicode(lay_nor, b"Name", name)
-                elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
-                elem_data_single_string(lay_nor, b"ReferenceInformationType", b"Direct")
-                elem_data_single_float64_array(lay_nor, b"Tangents", chain(*_nortuples_gen(t_ln, geom_mat_no)))
-                # Tangent weights, no idea what it is.
-                #elem_data_single_float64_array(lay_nor, b"TangentsW", t_lnw)
+        t_ln = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops) * 3
+        me.loops.foreach_get("normal", t_ln)
+        t_ln = nors_transformed_gen(t_ln, geom_mat_no)
+        if 0:
+            t_ln = tuple(t_ln)  # No choice... :/
 
-            del t_ln
-            #del t_lnw
-            me.free_tangents()
+            lay_nor = elem_data_single_int32(geom, b"LayerElementNormal", 0)
+            elem_data_single_int32(lay_nor, b"Version", FBX_GEOMETRY_NORMAL_VERSION)
+            elem_data_single_string(lay_nor, b"Name", b"")
+            elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
+            elem_data_single_string(lay_nor, b"ReferenceInformationType", b"IndexToDirect")
 
-    me.free_normals_split()
-    del _nortuples_gen
+            ln2idx = tuple(set(t_ln))
+            elem_data_single_float64_array(lay_nor, b"Normals", chain(*ln2idx))
+            # Normal weights, no idea what it is.
+            # t_lnw = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(ln2idx)
+            # elem_data_single_float64_array(lay_nor, b"NormalsW", t_lnw)
 
-    # Write VertexColor Layers
-    # note, no programs seem to use this info :/
+            ln2idx = {nor: idx for idx, nor in enumerate(ln2idx)}
+            elem_data_single_int32_array(lay_nor, b"NormalsIndex", (ln2idx[n] for n in t_ln))
+
+            del ln2idx
+            # del t_lnw
+        else:
+            lay_nor = elem_data_single_int32(geom, b"LayerElementNormal", 0)
+            elem_data_single_int32(lay_nor, b"Version", FBX_GEOMETRY_NORMAL_VERSION)
+            elem_data_single_string(lay_nor, b"Name", b"")
+            elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
+            elem_data_single_string(lay_nor, b"ReferenceInformationType", b"Direct")
+            elem_data_single_float64_array(lay_nor, b"Normals", chain(*t_ln))
+            # Normal weights, no idea what it is.
+            # t_ln = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops)
+            # elem_data_single_float64_array(lay_nor, b"NormalsW", t_ln)
+        del t_ln
+
+        # tspace
+        if scene_data.settings.use_tspace:
+            tspacenumber = len(me.uv_layers)
+            if tspacenumber:
+                t_ln = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops) * 3
+                # t_lnw = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops)
+                for idx, uvlayer in enumerate(me.uv_layers):
+                    name = uvlayer.name
+                    me.calc_tangents(name)
+                    # Loop bitangents (aka binormals).
+                    # NOTE: this is not supported by importer currently.
+                    me.loops.foreach_get("bitangent", t_ln)
+                    lay_nor = elem_data_single_int32(geom, b"LayerElementBinormal", idx)
+                    elem_data_single_int32(lay_nor, b"Version", FBX_GEOMETRY_BINORMAL_VERSION)
+                    elem_data_single_string_unicode(lay_nor, b"Name", name)
+                    elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
+                    elem_data_single_string(lay_nor, b"ReferenceInformationType", b"Direct")
+                    elem_data_single_float64_array(lay_nor, b"Binormals",
+                                                   chain(*nors_transformed_gen(t_ln, geom_mat_no)))
+                    # Binormal weights, no idea what it is.
+                    # elem_data_single_float64_array(lay_nor, b"BinormalsW", t_lnw)
+
+                    # Loop tangents.
+                    # NOTE: this is not supported by importer currently.
+                    me.loops.foreach_get("tangent", t_ln)
+                    lay_nor = elem_data_single_int32(geom, b"LayerElementTangent", idx)
+                    elem_data_single_int32(lay_nor, b"Version", FBX_GEOMETRY_TANGENT_VERSION)
+                    elem_data_single_string_unicode(lay_nor, b"Name", name)
+                    elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
+                    elem_data_single_string(lay_nor, b"ReferenceInformationType", b"Direct")
+                    elem_data_single_float64_array(lay_nor, b"Tangents",
+                                                   chain(*nors_transformed_gen(t_ln, geom_mat_no)))
+                    # Tangent weights, no idea what it is.
+                    # elem_data_single_float64_array(lay_nor, b"TangentsW", t_lnw)
+
+                del t_ln
+                # del t_lnw
+                me.free_tangents()
+
+        me.free_normals_split()
+
+    # Write VertexColor Layers.
     vcolnumber = len(me.vertex_colors)
     if vcolnumber:
         def _coltuples_gen(raw_cols):
@@ -950,9 +1079,8 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
         del _uvtuples_gen
 
     # Face's materials.
-    me_fbxmats_idx = None
-    if me in scene_data.mesh_mat_indices:
-        me_fbxmats_idx = scene_data.mesh_mat_indices[me]
+    me_fbxmats_idx = scene_data.mesh_mat_indices.get(me)
+    if me_fbxmats_idx is not None:
         me_blmats = me.materials
         if me_fbxmats_idx and me_blmats:
             lay_mat = elem_data_single_int32(geom, b"LayerElementMaterial", 0)
@@ -964,7 +1092,8 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
                 me.polygons.foreach_get("material_index", t_pm)
 
                 # We have to validate mat indices, and map them to FBX indices.
-                blmats_to_fbxmats_idxs = [me_fbxmats_idx[m] for m in me_blmats]
+                # Note a mat might not be in me_fbxmats_idx (e.g. node mats are ignored).
+                blmats_to_fbxmats_idxs = [me_fbxmats_idx[m] for m in me_blmats if m in me_fbxmats_idx]
                 mat_idx_limit = len(blmats_to_fbxmats_idxs)
                 def_mat = blmats_to_fbxmats_idxs[0]
                 _gen = (blmats_to_fbxmats_idxs[m] if m < mat_idx_limit else def_mat for m in t_pm)
@@ -987,9 +1116,10 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
 
     layer = elem_data_single_int32(geom, b"Layer", 0)
     elem_data_single_int32(layer, b"Version", FBX_GEOMETRY_LAYER_VERSION)
-    lay_nor = elem_empty(layer, b"LayerElement")
-    elem_data_single_string(lay_nor, b"Type", b"LayerElementNormal")
-    elem_data_single_int32(lay_nor, b"TypedIndex", 0)
+    if write_normals:
+        lay_nor = elem_empty(layer, b"LayerElement")
+        elem_data_single_string(lay_nor, b"Type", b"LayerElementNormal")
+        elem_data_single_int32(lay_nor, b"TypedIndex", 0)
     if tspacenumber:
         lay_binor = elem_empty(layer, b"LayerElement")
         elem_data_single_string(lay_binor, b"Type", b"LayerElementBinormal")
@@ -1035,7 +1165,16 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
             elem_data_single_string(lay_tan, b"Type", b"LayerElementTangent")
             elem_data_single_int32(lay_tan, b"TypedIndex", tspaceidx)
 
+    # Shape keys...
+    fbx_data_mesh_shapes_elements(root, me_obj, me, scene_data, tmpl, props)
+
+    elem_props_template_finalize(tmpl, props)
     done_meshes.add(me_key)
+
+
+def check_skip_material(mat):
+    """Simple helper to check whether we actually support exporting that material or not"""
+    return mat.type not in {'SURFACE'} or mat.use_nodes
 
 
 def fbx_data_material_elements(root, mat, scene_data):
@@ -1047,8 +1186,11 @@ def fbx_data_material_elements(root, mat, scene_data):
         ambient_color = next(iter(scene_data.data_world.keys())).ambient_color
 
     mat_key, _objs = scene_data.data_materials[mat]
+    skip_mat = check_skip_material(mat)
+    mat_type = b"Phong"
     # Approximation...
-    mat_type = b"Phong" if mat.specular_shader in {'COOKTORR', 'PHONG', 'BLINN'} else b"Lambert"
+    if not skip_mat and mat.specular_shader not in {'COOKTORR', 'PHONG', 'BLINN'}:
+        mat_type = b"Lambert"
 
     fbx_mat = elem_data_single_int64(root, b"Material", get_fbx_uuid_from_key(mat_key))
     fbx_mat.add_string(fbx_name_class(mat.name.encode(), b"Material"))
@@ -1062,40 +1204,41 @@ def fbx_data_material_elements(root, mat, scene_data):
     tmpl = elem_props_template_init(scene_data.templates, b"Material")
     props = elem_properties(fbx_mat)
 
-    elem_props_template_set(tmpl, props, "p_string", b"ShadingModel", mat_type.decode())
-    elem_props_template_set(tmpl, props, "p_color", b"EmissiveColor", mat.diffuse_color)
-    elem_props_template_set(tmpl, props, "p_number", b"EmissiveFactor", mat.emit)
-    elem_props_template_set(tmpl, props, "p_color", b"AmbientColor", ambient_color)
-    elem_props_template_set(tmpl, props, "p_number", b"AmbientFactor", mat.ambient)
-    elem_props_template_set(tmpl, props, "p_color", b"DiffuseColor", mat.diffuse_color)
-    elem_props_template_set(tmpl, props, "p_number", b"DiffuseFactor", mat.diffuse_intensity)
-    elem_props_template_set(tmpl, props, "p_color", b"TransparentColor",
-                            mat.diffuse_color if mat.use_transparency else (1.0, 1.0, 1.0))
-    elem_props_template_set(tmpl, props, "p_number", b"TransparencyFactor",
-                            1.0 - mat.alpha if mat.use_transparency else 0.0)
-    elem_props_template_set(tmpl, props, "p_number", b"Opacity", mat.alpha if mat.use_transparency else 1.0)
-    elem_props_template_set(tmpl, props, "p_vector_3d", b"NormalMap", (0.0, 0.0, 0.0))
-    # Not sure about those...
-    """
-    b"Bump": ((0.0, 0.0, 0.0), "p_vector_3d"),
-    b"BumpFactor": (1.0, "p_double"),
-    b"DisplacementColor": ((0.0, 0.0, 0.0), "p_color_rgb"),
-    b"DisplacementFactor": (0.0, "p_double"),
-    """
-    if mat_type == b"Phong":
-        elem_props_template_set(tmpl, props, "p_color", b"SpecularColor", mat.specular_color)
-        elem_props_template_set(tmpl, props, "p_number", b"SpecularFactor", mat.specular_intensity / 2.0)
-        # See Material template about those two!
-        elem_props_template_set(tmpl, props, "p_number", b"Shininess", (mat.specular_hardness - 1.0) / 5.10)
-        elem_props_template_set(tmpl, props, "p_number", b"ShininessExponent", (mat.specular_hardness - 1.0) / 5.10)
-        elem_props_template_set(tmpl, props, "p_color", b"ReflectionColor", mat.mirror_color)
-        elem_props_template_set(tmpl, props, "p_number", b"ReflectionFactor",
-                                mat.raytrace_mirror.reflect_factor if mat.raytrace_mirror.use else 0.0)
+    if not skip_mat:
+        elem_props_template_set(tmpl, props, "p_string", b"ShadingModel", mat_type.decode())
+        elem_props_template_set(tmpl, props, "p_color", b"EmissiveColor", mat.diffuse_color)
+        elem_props_template_set(tmpl, props, "p_number", b"EmissiveFactor", mat.emit)
+        elem_props_template_set(tmpl, props, "p_color", b"AmbientColor", ambient_color)
+        elem_props_template_set(tmpl, props, "p_number", b"AmbientFactor", mat.ambient)
+        elem_props_template_set(tmpl, props, "p_color", b"DiffuseColor", mat.diffuse_color)
+        elem_props_template_set(tmpl, props, "p_number", b"DiffuseFactor", mat.diffuse_intensity)
+        elem_props_template_set(tmpl, props, "p_color", b"TransparentColor",
+                                mat.diffuse_color if mat.use_transparency else (1.0, 1.0, 1.0))
+        elem_props_template_set(tmpl, props, "p_number", b"TransparencyFactor",
+                                1.0 - mat.alpha if mat.use_transparency else 0.0)
+        elem_props_template_set(tmpl, props, "p_number", b"Opacity", mat.alpha if mat.use_transparency else 1.0)
+        elem_props_template_set(tmpl, props, "p_vector_3d", b"NormalMap", (0.0, 0.0, 0.0))
+        # Not sure about those...
+        """
+        b"Bump": ((0.0, 0.0, 0.0), "p_vector_3d"),
+        b"BumpFactor": (1.0, "p_double"),
+        b"DisplacementColor": ((0.0, 0.0, 0.0), "p_color_rgb"),
+        b"DisplacementFactor": (0.0, "p_double"),
+        """
+        if mat_type == b"Phong":
+            elem_props_template_set(tmpl, props, "p_color", b"SpecularColor", mat.specular_color)
+            elem_props_template_set(tmpl, props, "p_number", b"SpecularFactor", mat.specular_intensity / 2.0)
+            # See Material template about those two!
+            elem_props_template_set(tmpl, props, "p_number", b"Shininess", (mat.specular_hardness - 1.0) / 5.10)
+            elem_props_template_set(tmpl, props, "p_number", b"ShininessExponent", (mat.specular_hardness - 1.0) / 5.10)
+            elem_props_template_set(tmpl, props, "p_color", b"ReflectionColor", mat.mirror_color)
+            elem_props_template_set(tmpl, props, "p_number", b"ReflectionFactor",
+                                    mat.raytrace_mirror.reflect_factor if mat.raytrace_mirror.use else 0.0)
 
     elem_props_template_finalize(tmpl, props)
 
     # Custom properties.
-    if scene_data.settings.use_custom_properties:
+    if scene_data.settings.use_custom_props:
         fbx_data_element_custom_properties(props, mat)
 
 
@@ -1137,7 +1280,8 @@ def fbx_data_texture_file_elements(root, tex, scene_data):
         else:
             alpha_source = 2  # Black, i.e. alpha channel.
     # BlendMode not useful for now, only affects layered textures afaics.
-    mapping = 0  # None.
+    mapping = 0  # UV.
+    uvset = None
     if tex.texture_coords in {'ORCO'}:  # XXX Others?
         if tex.mapping in {'FLAT'}:
             mapping = 1  # Planar
@@ -1148,8 +1292,9 @@ def fbx_data_texture_file_elements(root, tex, scene_data):
         elif tex.mapping in {'SPHERE'}:
             mapping = 2  # Spherical
     elif tex.texture_coords in {'UV'}:
-        # XXX *HOW* do we link to correct UVLayer???
-        mapping = 6  # UV
+        mapping = 0  # UV
+        # Yuck, UVs are linked by mere names it seems... :/
+        uvset = tex.uv_layer
     wrap_mode = 1  # Clamp
     if tex.texture.extension in {'REPEAT'}:
         wrap_mode = 0  # Repeat
@@ -1160,15 +1305,19 @@ def fbx_data_texture_file_elements(root, tex, scene_data):
     elem_props_template_set(tmpl, props, "p_bool", b"PremultiplyAlpha",
                             img.alpha_mode in {'STRAIGHT'})  # Or is it PREMUL?
     elem_props_template_set(tmpl, props, "p_enum", b"CurrentMappingType", mapping)
+    if uvset is not None:
+        elem_props_template_set(tmpl, props, "p_string", b"UVSet", uvset)
     elem_props_template_set(tmpl, props, "p_enum", b"WrapModeU", wrap_mode)
     elem_props_template_set(tmpl, props, "p_enum", b"WrapModeV", wrap_mode)
     elem_props_template_set(tmpl, props, "p_vector_3d", b"Translation", tex.offset)
     elem_props_template_set(tmpl, props, "p_vector_3d", b"Scaling", tex.scale)
+    # UseMaterial should always be ON imho.
+    elem_props_template_set(tmpl, props, "p_bool", b"UseMaterial", True)
     elem_props_template_set(tmpl, props, "p_bool", b"UseMipMap", tex.texture.use_mipmap)
     elem_props_template_finalize(tmpl, props)
 
     # Custom properties.
-    if scene_data.settings.use_custom_properties:
+    if scene_data.settings.use_custom_props:
         fbx_data_element_custom_properties(props, tex.texture)
 
 
@@ -1237,39 +1386,17 @@ def fbx_data_armature_elements(root, arm_obj, scene_data):
         elem_props_template_finalize(tmpl, props)
 
         # Custom properties.
-        if scene_data.settings.use_custom_properties:
+        if scene_data.settings.use_custom_props:
             fbx_data_element_custom_properties(props, bo)
 
-    # Deformers and BindPoses.
+    # Skin deformers and BindPoses.
     # Note: we might also use Deformers for our "parent to vertex" stuff???
-    deformer = scene_data.data_deformers.get(arm_obj, None)
+    deformer = scene_data.data_deformers_skin.get(arm_obj, None)
     if deformer is not None:
         for me, (skin_key, ob_obj, clusters) in deformer.items():
             # BindPose.
-            # We assume bind pose for our bones are their "Editmode" pose...
-            # All matrices are expected in global (world) space.
-            bindpose_key = get_blender_armature_bindpose_key(arm_obj.bdata, me)
-            fbx_pose = elem_data_single_int64(root, b"Pose", get_fbx_uuid_from_key(bindpose_key))
-            fbx_pose.add_string(fbx_name_class(me.name.encode(), b"Pose"))
-            fbx_pose.add_string(b"BindPose")
 
-            elem_data_single_string(fbx_pose, b"Type", b"BindPose")
-            elem_data_single_int32(fbx_pose, b"Version", FBX_POSE_BIND_VERSION)
-            elem_data_single_int32(fbx_pose, b"NbPoseNodes", 1 + len(bones))
-
-            # First node is mesh/object.
-            mat_world_obj = ob_obj.fbx_object_matrix(scene_data, global_space=True)
-            fbx_posenode = elem_empty(fbx_pose, b"PoseNode")
-            elem_data_single_int64(fbx_posenode, b"Node", ob_obj.fbx_uuid)
-            elem_data_single_float64_array(fbx_posenode, b"Matrix", matrix_to_array(mat_world_obj))
-            # And all bones of armature!
-            mat_world_bones = {}
-            for bo_obj in bones:
-                bomat = bo_obj.fbx_object_matrix(scene_data, rest=True, global_space=True)
-                mat_world_bones[bo_obj] = bomat
-                fbx_posenode = elem_empty(fbx_pose, b"PoseNode")
-                elem_data_single_int64(fbx_posenode, b"Node", bo_obj.fbx_uuid)
-                elem_data_single_float64_array(fbx_posenode, b"Matrix", matrix_to_array(bomat))
+            mat_world_obj, mat_world_bones = fbx_data_bindpose_element(root, ob_obj, me, scene_data, arm_obj, bones)
 
             # Deformer.
             fbx_skin = elem_data_single_int64(root, b"Deformer", get_fbx_uuid_from_key(skin_key))
@@ -1318,9 +1445,9 @@ def fbx_data_armature_elements(root, arm_obj, scene_data):
                 #          http://area.autodesk.com/forum/autodesk-fbx/fbx-sdk/why-the-values-return-
                 #                 by-fbxcluster-gettransformmatrix-x-not-same-with-the-value-in-ascii-fbx-file/
                 elem_data_single_float64_array(fbx_clstr, b"Transform",
-                                               matrix_to_array(mat_world_bones[bo_obj].inverted() * mat_world_obj))
-                elem_data_single_float64_array(fbx_clstr, b"TransformLink", matrix_to_array(mat_world_bones[bo_obj]))
-                elem_data_single_float64_array(fbx_clstr, b"TransformAssociateModel", matrix_to_array(mat_world_arm))
+                                               matrix4_to_array(mat_world_bones[bo_obj].inverted() * mat_world_obj))
+                elem_data_single_float64_array(fbx_clstr, b"TransformLink", matrix4_to_array(mat_world_bones[bo_obj]))
+                elem_data_single_float64_array(fbx_clstr, b"TransformAssociateModel", matrix4_to_array(mat_world_arm))
 
 
 def fbx_data_object_elements(root, ob_obj, scene_data):
@@ -1345,7 +1472,7 @@ def fbx_data_object_elements(root, ob_obj, scene_data):
 
     # Object transform info.
     loc, rot, scale, matrix, matrix_rot = ob_obj.fbx_object_tx(scene_data)
-    rot = tuple(units_convert_iter(rot, "radian", "degree"))
+    rot = tuple(convert_rad_to_deg_iter(rot))
 
     tmpl = elem_props_template_init(scene_data.templates, b"Model")
     # For now add only loc/rot/scale...
@@ -1355,8 +1482,14 @@ def fbx_data_object_elements(root, ob_obj, scene_data):
     elem_props_template_set(tmpl, props, "p_lcl_scaling", b"Lcl Scaling", scale)
     elem_props_template_set(tmpl, props, "p_visibility", b"Visibility", float(not ob_obj.hide))
 
+    # Absolutely no idea what this is, but seems mandatory for validity of the file, and defaults to
+    # invalid -1 value...
+    elem_props_template_set(tmpl, props, "p_integer", b"DefaultAttributeIndex", 0)
+
+    elem_props_template_set(tmpl, props, "p_enum", b"InheritType", 1)  # RSrs
+
     # Custom properties.
-    if scene_data.settings.use_custom_properties:
+    if scene_data.settings.use_custom_props:
         fbx_data_element_custom_properties(props, ob_obj.bdata)
 
     # Those settings would obviously need to be edited in a complete version of the exporter, may depends on
@@ -1394,7 +1527,7 @@ def fbx_data_animation_elements(root, scene_data):
     fps = scene.render.fps / scene.render.fps_base
 
     def keys_to_ktimes(keys):
-        return (int(v) for v in units_convert_iter((f / fps for f, _v in keys), "second", "ktime"))
+        return (int(v) for v in convert_sec_to_ktime_iter((f / fps for f, _v in keys)))
 
     # Animation stacks.
     for astack_key, alayers, alayer_key, name, f_start, f_end in animations:
@@ -1406,8 +1539,8 @@ def fbx_data_animation_elements(root, scene_data):
         astack_props = elem_properties(astack)
         r = scene_data.scene.render
         fps = r.fps / r.fps_base
-        start = int(units_convert(f_start / fps, "second", "ktime"))
-        end = int(units_convert(f_end / fps, "second", "ktime"))
+        start = int(convert_sec_to_ktime(f_start / fps))
+        end = int(convert_sec_to_ktime(f_end / fps))
         elem_props_template_set(astack_tmpl, astack_props, "p_timestamp", b"LocalStart", start)
         elem_props_template_set(astack_tmpl, astack_props, "p_timestamp", b"LocalStop", end)
         elem_props_template_set(astack_tmpl, astack_props, "p_timestamp", b"ReferenceStart", start)
@@ -1469,7 +1602,7 @@ def fbx_data_animation_elements(root, scene_data):
                 elem_props_template_finalize(acn_tmpl, acn_props)
 
 
-##### Top-level FBX data container. #####
+# ##### Top-level FBX data container. #####
 
 def fbx_mat_properties_from_texture(tex):
     """
@@ -1477,9 +1610,6 @@ def fbx_mat_properties_from_texture(tex):
     Quite obviously, this is a fuzzy and far-from-perfect mapping! Amounts of influence are completely lost, e.g.
     Note tex is actually expected to be a texture slot.
     """
-    # Tex influence does not exists in FBX, so assume influence < 0.5 = no influence... :/
-    INFLUENCE_THRESHOLD = 0.5
-
     # Mapping Blender -> FBX (blend_use_name, blend_fact_name, fbx_name).
     blend_to_fbx = (
         # Lambert & Phong...
@@ -1490,13 +1620,13 @@ def fbx_mat_properties_from_texture(tex):
         ("emit", "emit", b"EmissiveFactor"),
         ("diffuse", "diffuse", b"EmissiveColor"),  # Uses diffuse color in Blender!
         ("ambient", "ambient", b"AmbientFactor"),
-        #("", "", b"AmbientColor"),  # World stuff in Blender, for now ignore...
+        # ("", "", b"AmbientColor"),  # World stuff in Blender, for now ignore...
         ("normal", "normal", b"NormalMap"),
         # Note: unsure about those... :/
-        #("", "", b"Bump"),
-        #("", "", b"BumpFactor"),
-        #("", "", b"DisplacementColor"),
-        #("", "", b"DisplacementFactor"),
+        # ("", "", b"Bump"),
+        # ("", "", b"BumpFactor"),
+        # ("", "", b"DisplacementColor"),
+        # ("", "", b"DisplacementFactor"),
         # Phong only.
         ("specular", "specular", b"SpecularFactor"),
         ("color_spec", "specular_color", b"SpecularColor"),
@@ -1509,14 +1639,15 @@ def fbx_mat_properties_from_texture(tex):
 
     tex_fbx_props = set()
     for use_map_name, name_factor, fbx_prop_name in blend_to_fbx:
-        if getattr(tex, "use_map_" + use_map_name) and getattr(tex, name_factor + "_factor") >= INFLUENCE_THRESHOLD:
+        # Always export enabled textures, even if they have a null influence...
+        if getattr(tex, "use_map_" + use_map_name):
             tex_fbx_props.add(fbx_prop_name)
 
     return tex_fbx_props
 
 
 def fbx_skeleton_from_armature(scene, settings, arm_obj, objects, data_meshes,
-                               data_bones, data_deformers, arm_parents):
+                               data_bones, data_deformers_skin, arm_parents):
     """
     Create skeleton from armature/bones (NodeAttribute/LimbNode and Model/LimbNode), and for each deformed mesh,
     create Pose/BindPose(with sub PoseNode) and Deformer/Skin(with Deformer/SubDeformer/Cluster).
@@ -1546,13 +1677,12 @@ def fbx_skeleton_from_armature(scene, settings, arm_obj, objects, data_meshes,
     data_bones.update((bo, get_blender_bone_key(arm_obj.bdata, bo.bdata)) for bo in bones)
 
     for ob_obj in objects:
-        if not (ob_obj.is_object and ob_obj.type == 'MESH' and ob_obj.parent == arm_obj):
+        if not ob_obj.is_deformed_by_armature(arm_obj):
             continue
 
         # Always handled by an Armature modifier...
-        ob = ob_obj.bdata
         found = False
-        for mod in ob.modifiers:
+        for mod in ob_obj.bdata.modifiers:
             if mod.type not in {'ARMATURE'}:
                 continue
             # We only support vertex groups binding method, not bone envelopes one!
@@ -1566,72 +1696,26 @@ def fbx_skeleton_from_armature(scene, settings, arm_obj, objects, data_meshes,
         # Now we have a mesh using this armature.
         # Note: bindpose have no relations at all (no connections), so no need for any preprocess for them.
         # Create skin & clusters relations (note skins are connected to geometry, *not* model!).
-        _key, me, _free = data_meshes[ob]
+        _key, me, _free = data_meshes[ob_obj]
         clusters = OrderedDict((bo, get_blender_bone_cluster_key(arm_obj.bdata, me, bo.bdata)) for bo in bones)
-        data_deformers.setdefault(arm_obj, OrderedDict())[me] = (get_blender_armature_skin_key(arm_obj.bdata, me),
-                                                                 ob_obj, clusters)
+        data_deformers_skin.setdefault(arm_obj, OrderedDict())[me] = (get_blender_armature_skin_key(arm_obj.bdata, me),
+                                                                      ob_obj, clusters)
 
         # We don't want a regular parent relationship for those in FBX...
         arm_parents.add((arm_obj, ob_obj))
+        # Needed to handle matrices/spaces (since we do not parent them to 'armature' in FBX :/ ).
+        ob_obj.parented_to_armature = True
 
     objects.update(bones)
 
 
-def fbx_animations_simplify(scene_data, animdata):
-    """
-    Simplifies FCurves!
-    """
-    fac = scene_data.settings.bake_anim_simplify_factor
-    step = scene_data.settings.bake_anim_step
-    # So that, with default factor and step values (1), we get:
-    max_frame_diff = step * fac * 10  # max step of 10 frames.
-    value_diff_fac = fac / 1000  # min value evolution: 0.1% of whole range.
-    min_significant_diff = 1.0e-6
-
-    for keys in animdata.values():
-        if not keys:
-            continue
-        extremums = [(min(values), max(values)) for values in zip(*(k[1] for k in keys))]
-        min_diffs = [max((mx - mn) * value_diff_fac, min_significant_diff) for mn, mx in extremums]
-        p_currframe, p_key, p_key_write = keys[0]
-        p_keyed = [(p_currframe - max_frame_diff, val) for val in p_key]
-        are_keyed = [False] * len(p_key)
-        for currframe, key, key_write in keys:
-            for idx, (val, p_val) in enumerate(zip(key, p_key)):
-                p_keyedframe, p_keyedval = p_keyed[idx]
-                if val == p_val:
-                    # Never write keyframe when value is exactly the same as prev one!
-                    continue
-                if abs(val - p_val) >= min_diffs[idx]:
-                    # If enough difference from previous sampled value, key this value *and* the previous one!
-                    key_write[idx] = True
-                    p_key_write[idx] = True
-                    p_keyed[idx] = (currframe, val)
-                    are_keyed[idx] = True
-                else:
-                    frame_diff = currframe - p_keyedframe
-                    val_diff = abs(val - p_keyedval)
-                    if ((val_diff >= min_diffs[idx]) or
-                        ((val_diff >= min_significant_diff) and (frame_diff >= max_frame_diff))):
-                        # Else, if enough difference from previous keyed value
-                        # (or any significant difference and max gap between keys is reached),
-                        # key this value only!
-                        key_write[idx] = True
-                        p_keyed[idx] = (currframe, val)
-                        are_keyed[idx] = True
-            p_currframe, p_key, p_key_write = currframe, key, key_write
-        # If we did key something, ensure first and last sampled values are keyed as well.
-        for idx, is_keyed in enumerate(are_keyed):
-            if is_keyed:
-                keys[0][2][idx] = keys[-1][2][idx] = True
-
-
-def fbx_animations_objects_do(scene_data, ref_id, f_start, f_end, start_zero, objects=None, force_keep=False):
+def fbx_animations_do(scene_data, ref_id, f_start, f_end, start_zero, objects=None, force_keep=False):
     """
     Generate animation data (a single AnimStack) from objects, for a given frame range.
     """
     bake_step = scene_data.settings.bake_anim_step
     scene = scene_data.scene
+    meshes = scene_data.data_meshes
 
     if objects is not None:
         # Add bones and duplis!
@@ -1648,15 +1732,22 @@ def fbx_animations_objects_do(scene_data, ref_id, f_start, f_end, start_zero, ob
     else:
         objects = scene_data.objects
 
-    # FBX mapping info: Property affected, and name of the "sub" property (to distinguish e.g. vector's channels).
-    fbx_names = (
-        ("Lcl Translation", "T", "d|X"), ("Lcl Translation", "T", "d|Y"), ("Lcl Translation", "T", "d|Z"),
-        ("Lcl Rotation", "R", "d|X"), ("Lcl Rotation", "R", "d|Y"), ("Lcl Rotation", "R", "d|Z"),
-        ("Lcl Scaling", "S", "d|X"), ("Lcl Scaling", "S", "d|Y"), ("Lcl Scaling", "S", "d|Z"),
-    )
-
     back_currframe = scene.frame_current
-    animdata = OrderedDict((obj, []) for obj in objects)
+    animdata_ob = OrderedDict((ob_obj, (AnimationCurveNodeWrapper(ob_obj.key, 'LCL_TRANSLATION', (0.0, 0.0, 0.0)),
+                                        AnimationCurveNodeWrapper(ob_obj.key, 'LCL_ROTATION', (0.0, 0.0, 0.0)),
+                                        AnimationCurveNodeWrapper(ob_obj.key, 'LCL_SCALING', (1.0, 1.0, 1.0))))
+                              for ob_obj in objects)
+
+    animdata_shapes = OrderedDict()
+    for me, (me_key, _shapes_key, shapes) in scene_data.data_deformers_shape.items():
+        # Ignore absolute shape keys for now!
+        if not me.shape_keys.use_relative:
+            continue
+        for shape, (channel_key, geom_key, _shape_verts_co, _shape_verts_idx) in shapes.items():
+            acnode = AnimationCurveNodeWrapper(channel_key, 'SHAPE_KEY', (0.0,))
+            # Sooooo happy to have to twist again like a mad snake... Yes, we need to write those curves twice. :/
+            acnode.add_group(me_key, shape.name, shape.name, (shape.name,))
+            animdata_shapes[channel_key] = (acnode, me, shape)
 
     p_rots = {}
 
@@ -1665,63 +1756,51 @@ def fbx_animations_objects_do(scene_data, ref_id, f_start, f_end, start_zero, ob
         real_currframe = currframe - f_start if start_zero else currframe
         scene.frame_set(int(currframe), currframe - int(currframe))
 
-        for ob_obj in objects:
+        for ob_obj in animdata_ob:
             ob_obj.dupli_list_create(scene, 'RENDER')
-        for ob_obj in objects:
+        for ob_obj, (anim_loc, anim_rot, anim_scale) in animdata_ob.items():
             # We compute baked loc/rot/scale for all objects (rot being euler-compat with previous value!).
             p_rot = p_rots.get(ob_obj, None)
             loc, rot, scale, _m, _mr = ob_obj.fbx_object_tx(scene_data, rot_euler_compat=p_rot)
             p_rots[ob_obj] = rot
-            tx = tuple(loc) + tuple(units_convert_iter(rot, "radian", "degree")) + tuple(scale)
-            animdata[ob_obj].append((real_currframe, tx, [False] * len(tx)))
+            anim_loc.add_keyframe(real_currframe, loc)
+            anim_rot.add_keyframe(real_currframe, tuple(convert_rad_to_deg_iter(rot)))
+            anim_scale.add_keyframe(real_currframe, scale)
         for ob_obj in objects:
             ob_obj.dupli_list_clear()
+        for anim_shape, me, shape in animdata_shapes.values():
+            anim_shape.add_keyframe(real_currframe, (shape.value * 100.0,))
         currframe += bake_step
 
     scene.frame_set(back_currframe, 0.0)
 
-    fbx_animations_simplify(scene_data, animdata)
-
     animations = OrderedDict()
+    simplify_fac = scene_data.settings.bake_anim_simplify_factor
 
-    # And now, produce final data (usable by FBX export code)...
-    for ob_obj, keys in animdata.items():
-        if not keys:
-            continue
-        curves = [[] for k in keys[0][1]]
-        for currframe, key, key_write in keys:
-            for idx, (val, wrt) in enumerate(zip(key, key_write)):
-                if wrt:
-                    curves[idx].append((currframe, val))
-
-        obj_key = ob_obj.key
-        # Get PoseBone from bone...
-        #tobj = bone_map[obj] if isinstance(obj, Bone) else obj
-        #loc, rot, scale, _m, _mr = fbx_object_tx(scene_data, tobj)
-        #tx = tuple(loc) + tuple(units_convert_iter(rot, "radian", "degree")) + tuple(scale)
-        dtx = (0.0, 0.0, 0.0) + (0.0, 0.0, 0.0) + (1.0, 1.0, 1.0)
-        # If animation for a channel, (True, keyframes), else (False, current value).
-        final_keys = OrderedDict()
-        for idx, c in enumerate(curves):
-            fbx_group, fbx_gname, fbx_item = fbx_names[idx]
-            fbx_item_key = get_blender_anim_curve_key(scene, ref_id, obj_key, fbx_group, fbx_item)
-            if fbx_group not in final_keys:
-                fbx_group_key = get_blender_anim_curve_node_key(scene, ref_id, obj_key, fbx_group)
-                final_keys[fbx_group] = (fbx_group_key, OrderedDict(), fbx_gname)
-            final_keys[fbx_group][1][fbx_item] = (fbx_item_key, dtx[idx], c,
-                                                  True if (len(c) > 1 or (len(c) > 0 and force_keep)) else False)
-        # And now, remove anim groups (i.e. groups of curves affecting a single FBX property) with no curve at all!
-        del_groups = []
-        for grp, (_k, data, _n) in final_keys.items():
-            if True in (d[3] for d in data.values()):
+    # And now, produce final data (usable by FBX export code)
+    # Objects-like loc/rot/scale...
+    for ob_obj, anims in animdata_ob.items():
+        for anim in anims:
+            anim.simplify(simplify_fac, bake_step, force_keep)
+            if not anim:
                 continue
-            del_groups.append(grp)
-        for grp in del_groups:
-            del final_keys[grp]
+            for obj_key, group_key, group, fbx_group, fbx_gname in anim.get_final_data(scene, ref_id, force_keep):
+                anim_data = animations.get(obj_key)
+                if anim_data is None:
+                    anim_data = animations[obj_key] = ("dummy_unused_key", OrderedDict())
+                anim_data[1][fbx_group] = (group_key, group, fbx_gname)
 
-        if final_keys:
-            #animations[obj] = (get_blender_anim_layer_key(scene, obj.bdata), final_keys)
-            animations[ob_obj] = ("dummy_unused_key", final_keys)
+    # And meshes' shape keys.
+    for channel_key, (anim_shape, me, shape) in animdata_shapes.items():
+        final_keys = OrderedDict()
+        anim_shape.simplify(simplify_fac, bake_step, force_keep)
+        if not anim_shape:
+            continue
+        for elem_key, group_key, group, fbx_group, fbx_gname in anim_shape.get_final_data(scene, ref_id, force_keep):
+                anim_data = animations.get(elem_key)
+                if anim_data is None:
+                    anim_data = animations[elem_key] = ("dummy_unused_key", OrderedDict())
+                anim_data[1][fbx_group] = (group_key, group, fbx_gname)
 
     astack_key = get_blender_anim_stack_key(scene, ref_id)
     alayer_key = get_blender_anim_layer_key(scene, ref_id)
@@ -1734,7 +1813,7 @@ def fbx_animations_objects_do(scene_data, ref_id, f_start, f_end, start_zero, ob
     return (astack_key, animations, alayer_key, name, f_start, f_end) if animations else None
 
 
-def fbx_animations_objects(scene_data):
+def fbx_animations(scene_data):
     """
     Generate global animation data from objects.
     """
@@ -1774,7 +1853,7 @@ def fbx_animations_objects(scene_data):
 
         for strip in strips:
             strip.mute = False
-            add_anim(animations, fbx_animations_objects_do(scene_data, strip, strip.frame_start, strip.frame_end, True))
+            add_anim(animations, fbx_animations_do(scene_data, strip, strip.frame_start, strip.frame_end, True))
             strip.mute = True
 
         for strip in strips:
@@ -1822,6 +1901,8 @@ def fbx_animations_objects(scene_data):
             # We can't play with animdata and actions and get back to org state easily.
             # So we have to add a temp copy of the object to the scene, animate it, and remove it... :/
             ob_copy = ob.copy()
+            # Great, have to handle bones as well if needed...
+            pbones_matrices = [pbo.matrix_basis.copy() for pbo in ob.pose.bones] if ob.type == 'ARMATURE' else ...
 
             if ob.animation_data:
                 org_act = ob.animation_data.action
@@ -1838,11 +1919,17 @@ def fbx_animations_objects(scene_data):
                 ob.animation_data.action = act
                 frame_start, frame_end = act.frame_range  # sic!
                 add_anim(animations,
-                         fbx_animations_objects_do(scene_data, (ob, act), frame_start, frame_end, True, {ob_obj}, True))
+                         fbx_animations_do(scene_data, (ob, act), frame_start, frame_end, True, {ob_obj}, True))
                 # Ugly! :/
+                if pbones_matrices is not ...:
+                    for pbo, mat in zip(ob.pose.bones, pbones_matrices):
+                        pbo.matrix_basis = mat.copy()
                 ob.animation_data.action = None if org_act is ... else org_act
                 restore_object(ob, ob_copy)
 
+            if pbones_matrices is not ...:
+                for pbo, mat in zip(ob.pose.bones, pbones_matrices):
+                    pbo.matrix_basis = mat.copy()
             if org_act is ...:
                 ob.animation_data_clear()
             else:
@@ -1852,7 +1939,7 @@ def fbx_animations_objects(scene_data):
 
     # Global (containing everything) animstack.
     if not scene_data.settings.bake_anim_use_nla_strips or not animations:
-        add_anim(animations, fbx_animations_objects_do(scene_data, None, scene.frame_start, scene.frame_end, False))
+        add_anim(animations, fbx_animations_do(scene_data, None, scene.frame_start, scene.frame_end, False))
 
     # Be sure to update all matrices back to org state!
     scene.frame_set(scene.frame_current, 0.0)
@@ -1866,7 +1953,7 @@ def fbx_data_from_scene(scene, settings):
     """
     objtypes = settings.object_types
 
-    ##### Gathering data...
+    # ##### Gathering data...
 
     # This is rather simple for now, maybe we could end generating templates with most-used values
     # instead of default ones?
@@ -1914,22 +2001,54 @@ def fbx_data_from_scene(scene, settings):
                         use_org_data = False
             if not use_org_data:
                 tmp_me = ob.to_mesh(scene, apply_modifiers=True, settings='RENDER')
-                data_meshes[ob] = (get_blenderID_key(tmp_me), tmp_me, True)
+                data_meshes[ob_obj] = (get_blenderID_key(tmp_me), tmp_me, True)
             # Re-enable temporary disabled modifiers.
             for mod, show_render in tmp_mods:
                 mod.show_render = show_render
         if use_org_data:
-            data_meshes[ob] = (get_blenderID_key(ob.data), ob.data, False)
+            data_meshes[ob_obj] = (get_blenderID_key(ob.data), ob.data, False)
+
+    # ShapeKeys.
+    data_deformers_shape = OrderedDict()
+    geom_mat_co = settings.global_matrix if settings.bake_space_transform else None
+    for me_obj, (me_key, me, _org) in data_meshes.items():
+        if not (me.shape_keys and me.shape_keys.key_blocks):
+            continue
+
+        shapes_key = get_blender_mesh_shape_key(me)
+        _cos = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.vertices) * 3
+        me.vertices.foreach_get("co", _cos)
+        v_cos = tuple(vcos_transformed_gen(_cos, geom_mat_co))
+        for shape in me.shape_keys.key_blocks:
+            # Only write vertices really different from org coordinates!
+            # XXX FBX does not like empty shapes (makes Unity crash e.g.), so we have to do this here... :/
+            shape_verts_co = []
+            shape_verts_idx = []
+
+            shape.data.foreach_get("co", _cos)
+            sv_cos = tuple(vcos_transformed_gen(_cos, geom_mat_co))
+            for idx, (sv_co, v_co) in enumerate(zip(sv_cos, v_cos)):
+                if similar_values_iter(sv_co, v_co):
+                    # Note: Maybe this is a bit too simplistic, should we use real shape base here? Though FBX does not
+                    #       have this at all... Anyway, this should cover most common cases imho.
+                    continue
+                shape_verts_co.extend(Vector(sv_co) - Vector(v_co))
+                shape_verts_idx.append(idx)
+            if not shape_verts_co:
+                continue
+            channel_key, geom_key = get_blender_mesh_shape_channel_key(me, shape)
+            data = (channel_key, geom_key, shape_verts_co, shape_verts_idx)
+            data_deformers_shape.setdefault(me, (me_key, shapes_key, OrderedDict()))[2][shape] = data
 
     # Armatures!
+    data_deformers_skin = OrderedDict()
     data_bones = OrderedDict()
-    data_deformers = OrderedDict()
     arm_parents = set()
     for ob_obj in tuple(objects):
         if not (ob_obj.is_object and ob_obj.type in {'ARMATURE'}):
             continue
         fbx_skeleton_from_armature(scene, settings, ob_obj, objects, data_meshes,
-                                   data_bones, data_deformers, arm_parents)
+                                   data_bones, data_deformers_skin, arm_parents)
 
     # Some world settings are embedded in FBX materials...
     if scene.world:
@@ -1951,12 +2070,12 @@ def fbx_data_from_scene(scene, settings):
             # Note theoretically, FBX supports any kind of materials, even GLSL shaders etc.
             # However, I doubt anything else than Lambert/Phong is really portable!
             # We support any kind of 'surface' shader though, better to have some kind of default Lambert than nothing.
-            # TODO: Support nodes (*BIG* todo!).
-            if mat.type in {'SURFACE'} and not mat.use_nodes:
-                if mat in data_materials:
-                    data_materials[mat][1].append(ob_obj)
-                else:
-                    data_materials[mat] = (get_blenderID_key(mat), [ob_obj])
+            # Note we want to keep a 'dummy' empty mat even when we can't really support it, see T41396.
+            mat_data = data_materials.get(mat)
+            if mat_data is not None:
+                mat_data[1].append(ob_obj)
+            else:
+                data_materials[mat] = (get_blenderID_key(mat), [ob_obj])
 
     # Note FBX textures also hold their mapping info.
     # TODO: Support layers?
@@ -1965,14 +2084,16 @@ def fbx_data_from_scene(scene, settings):
     data_videos = OrderedDict()
     # For now, do not use world textures, don't think they can be linked to anything FBX wise...
     for mat in data_materials.keys():
-        for tex in mat.texture_slots:
-            if tex is None:
+        if check_skip_material(mat):
+            continue
+        for tex, use_tex in zip(mat.texture_slots, mat.use_textures):
+            if tex is None or not use_tex:
                 continue
             # For now, only consider image textures.
             # Note FBX does has support for procedural, but this is not portable at all (opaque blob),
             # so not useful for us.
             # TODO I think ENVIRONMENT_MAP should be usable in FBX as well, but for now let it aside.
-            #if tex.texture.type not in {'IMAGE', 'ENVIRONMENT_MAP'}:
+            # if tex.texture.type not in {'IMAGE', 'ENVIRONMENT_MAP'}:
             if tex.texture.type not in {'IMAGE'}:
                 continue
             img = tex.texture.image
@@ -1982,12 +2103,14 @@ def fbx_data_from_scene(scene, settings):
             tex_fbx_props = fbx_mat_properties_from_texture(tex)
             if not tex_fbx_props:
                 continue
-            if tex in data_textures:
-                data_textures[tex][1][mat] = tex_fbx_props
+            tex_data = data_textures.get(tex)
+            if tex_data is not None:
+                tex_data[1][mat] = tex_fbx_props
             else:
                 data_textures[tex] = (get_blenderID_key(tex), OrderedDict(((mat, tex_fbx_props),)))
-            if img in data_videos:
-                data_videos[img][1].append(tex)
+            vid_data = data_videos.get(img)
+            if vid_data is not None:
+                vid_data[1].append(tex)
             else:
                 data_videos[img] = (get_blenderID_key(img), [tex])
 
@@ -1997,16 +2120,17 @@ def fbx_data_from_scene(scene, settings):
     frame_end = scene.frame_end
     if settings.bake_anim:
         # From objects & bones only for a start.
-        tmp_scdata = FBXData(  # Kind of hack, we need a temp scene_data for object's space handling to bake animations...
+        # Kind of hack, we need a temp scene_data for object's space handling to bake animations...
+        tmp_scdata = FBXExportData(
             None, None, None,
             settings, scene, objects, None, 0.0, 0.0,
             data_empties, data_lamps, data_cameras, data_meshes, None,
-            data_bones, data_deformers,
+            data_bones, data_deformers_skin, data_deformers_shape,
             data_world, data_materials, data_textures, data_videos,
         )
-        animations, frame_start, frame_end = fbx_animations_objects(tmp_scdata)
+        animations, frame_start, frame_end = fbx_animations(tmp_scdata)
 
-    ##### Creation of templates...
+    # ##### Creation of templates...
 
     templates = OrderedDict()
     templates[b"GlobalSettings"] = fbx_template_def_globalsettings(scene, settings, nbr_users=1)
@@ -2024,7 +2148,10 @@ def fbx_data_from_scene(scene, settings):
         templates[b"Bone"] = fbx_template_def_bone(scene, settings, nbr_users=len(data_bones))
 
     if data_meshes:
-        templates[b"Geometry"] = fbx_template_def_geometry(scene, settings, nbr_users=len(data_meshes))
+        nbr = len(data_meshes)
+        if data_deformers_shape:
+            nbr += sum(len(shapes[2]) for shapes in data_deformers_shape.values())
+        templates[b"Geometry"] = fbx_template_def_geometry(scene, settings, nbr_users=nbr)
 
     if objects:
         templates[b"Model"] = fbx_template_def_model(scene, settings, nbr_users=len(objects))
@@ -2033,9 +2160,15 @@ def fbx_data_from_scene(scene, settings):
         # Number of Pose|BindPose elements should be the same as number of meshes-parented-to-armatures
         templates[b"BindPose"] = fbx_template_def_pose(scene, settings, nbr_users=len(arm_parents))
 
-    if data_deformers:
-        nbr = len(data_deformers)
-        nbr += sum(len(clusters) for def_me in data_deformers.values() for a, b, clusters in def_me.values())
+    if data_deformers_skin or data_deformers_shape:
+        nbr = 0
+        if data_deformers_skin:
+            nbr += len(data_deformers_skin)
+            nbr += sum(len(clusters) for def_me in data_deformers_skin.values() for a, b, clusters in def_me.values())
+        if data_deformers_shape:
+            nbr += len(data_deformers_shape)
+            nbr += sum(len(shapes[2]) for shapes in data_deformers_shape.values())
+        assert(nbr != 0)
         templates[b"Deformers"] = fbx_template_def_deformer(scene, settings, nbr_users=nbr)
 
     # No world support in FBX...
@@ -2074,7 +2207,7 @@ def fbx_data_from_scene(scene, settings):
 
     templates_users = sum(tmpl.nbr_users for tmpl in templates.values())
 
-    ##### Creation of connections...
+    # ##### Creation of connections...
 
     connections = []
 
@@ -2112,14 +2245,24 @@ def fbx_data_from_scene(scene, settings):
                 empty_key = data_empties[ob_obj]
                 connections.append((b"OO", get_fbx_uuid_from_key(empty_key), ob_obj.fbx_uuid, None))
             elif ob_obj.type in BLENDER_OBJECT_TYPES_MESHLIKE:
-                mesh_key, _me, _free = data_meshes[ob_obj.bdata]
+                mesh_key, _me, _free = data_meshes[ob_obj]
                 connections.append((b"OO", get_fbx_uuid_from_key(mesh_key), ob_obj.fbx_uuid, None))
 
-    # Deformers (armature-to-geometry, only for meshes currently)...
-    for arm, deformed_meshes in data_deformers.items():
+    # 'Shape' deformers (shape keys, only for meshes currently)...
+    for me_key, shapes_key, shapes in data_deformers_shape.values():
+        # shape -> geometry
+        connections.append((b"OO", get_fbx_uuid_from_key(shapes_key), get_fbx_uuid_from_key(me_key), None))
+        for channel_key, geom_key, _shape_verts_co, _shape_verts_idx in shapes.values():
+            # shape channel -> shape
+            connections.append((b"OO", get_fbx_uuid_from_key(channel_key), get_fbx_uuid_from_key(shapes_key), None))
+            # geometry (keys) -> shape channel
+            connections.append((b"OO", get_fbx_uuid_from_key(geom_key), get_fbx_uuid_from_key(channel_key), None))
+
+    # 'Skin' deformers (armature-to-geometry, only for meshes currently)...
+    for arm, deformed_meshes in data_deformers_skin.items():
         for me, (skin_key, ob_obj, clusters) in deformed_meshes.items():
             # skin -> geometry
-            mesh_key, _me, _free = data_meshes[ob_obj.bdata]
+            mesh_key, _me, _free = data_meshes[ob_obj]
             assert(me == _me)
             connections.append((b"OO", get_fbx_uuid_from_key(skin_key), get_fbx_uuid_from_key(mesh_key), None))
             for bo_obj, clstr_key in clusters.items():
@@ -2141,7 +2284,7 @@ def fbx_data_from_scene(scene, settings):
             # Should not be an issue in practice, and it's needed in case we export duplis but not the original!
             if ob_obj.type not in BLENDER_OBJECT_TYPES_MESHLIKE:
                 continue
-            _mesh_key, me, _free = data_meshes[ob_obj.bdata]
+            _mesh_key, me, _free = data_meshes[ob_obj]
             idx = _objs_indices[ob_obj] = _objs_indices.get(ob_obj, -1) + 1
             mesh_mat_indices.setdefault(me, OrderedDict())[mat] = idx
     del _objs_indices
@@ -2160,15 +2303,15 @@ def fbx_data_from_scene(scene, settings):
             tex_key, _texs = data_textures[tex]
             connections.append((b"OO", get_fbx_uuid_from_key(vid_key), get_fbx_uuid_from_key(tex_key), None))
 
-    #Animations
+    # Animations
     for astack_key, astack, alayer_key, _name, _fstart, _fend in animations:
         # Animstack itself is linked nowhere!
         astack_id = get_fbx_uuid_from_key(astack_key)
         # For now, only one layer!
         alayer_id = get_fbx_uuid_from_key(alayer_key)
         connections.append((b"OO", alayer_id, astack_id, None))
-        for ob_obj, (alayer_key, acurvenodes) in astack.items():
-            ob_id = ob_obj.fbx_uuid
+        for elem_key, (alayer_key, acurvenodes) in astack.items():
+            elem_id = get_fbx_uuid_from_key(elem_key)
             # Animlayer -> animstack.
             # alayer_id = get_fbx_uuid_from_key(alayer_key)
             # connections.append((b"OO", alayer_id, astack_id, None))
@@ -2177,19 +2320,19 @@ def fbx_data_from_scene(scene, settings):
                 acurvenode_id = get_fbx_uuid_from_key(acurvenode_key)
                 connections.append((b"OO", acurvenode_id, alayer_id, None))
                 # Animcurvenode -> object property.
-                connections.append((b"OP", acurvenode_id, ob_id, fbx_prop.encode()))
+                connections.append((b"OP", acurvenode_id, elem_id, fbx_prop.encode()))
                 for fbx_item, (acurve_key, default_value, acurve, acurve_valid) in acurves.items():
                     if acurve:
                         # Animcurve -> Animcurvenode.
                         connections.append((b"OP", get_fbx_uuid_from_key(acurve_key), acurvenode_id, fbx_item.encode()))
 
-    ##### And pack all this!
+    # ##### And pack all this!
 
-    return FBXData(
+    return FBXExportData(
         templates, templates_users, connections,
         settings, scene, objects, animations, frame_start, frame_end,
         data_empties, data_lamps, data_cameras, data_meshes, mesh_mat_indices,
-        data_bones, data_deformers,
+        data_bones, data_deformers_skin, data_deformers_shape,
         data_world, data_materials, data_textures, data_videos,
     )
 
@@ -2204,14 +2347,17 @@ def fbx_scene_data_cleanup(scene_data):
             bpy.data.meshes.remove(me)
 
 
-##### Top-level FBX elements generators. #####
+# ##### Top-level FBX elements generators. #####
 
 def fbx_header_elements(root, scene_data, time=None):
     """
     Write boiling code of FBX root.
     time is expected to be a datetime.datetime object, or None (using now() in this case).
     """
-    ##### Start of FBXHeaderExtension element.
+    app_vendor = "Blender Foundation"
+    app_name = "Blender (stable FBX IO)"
+    app_ver = bpy.app.version_string
+    # ##### Start of FBXHeaderExtension element.
     header_ext = elem_empty(root, b"FBXHeaderExtension")
 
     elem_data_single_int32(header_ext, b"FBXHeaderVersion", FBX_HEADER_VERSION)
@@ -2233,7 +2379,7 @@ def fbx_header_elements(root, scene_data, time=None):
     elem_data_single_int32(elem, b"Second", time.second)
     elem_data_single_int32(elem, b"Millisecond", time.microsecond // 1000)
 
-    elem_data_single_string_unicode(header_ext, b"Creator", "Blender version %s" % bpy.app.version_string)
+    elem_data_single_string_unicode(header_ext, b"Creator", "%s - %s" % (app_name, app_ver))
 
     # 'SceneInfo' seems mandatory to get a valid FBX file...
     # TODO use real values!
@@ -2255,18 +2401,18 @@ def fbx_header_elements(root, scene_data, time=None):
     elem_props_set(props, "p_string_url", b"DocumentUrl", "/foobar.fbx")
     elem_props_set(props, "p_string_url", b"SrcDocumentUrl", "/foobar.fbx")
     original = elem_props_compound(props, b"Original")
-    original("p_string", b"ApplicationVendor", "Blender Foundation")
-    original("p_string", b"ApplicationName", "Blender")
-    original("p_string", b"ApplicationVersion", "2.70")
+    original("p_string", b"ApplicationVendor", app_vendor)
+    original("p_string", b"ApplicationName", app_name)
+    original("p_string", b"ApplicationVersion", app_ver)
     original("p_datetime", b"DateTime_GMT", "01/01/1970 00:00:00.000")
     original("p_string", b"FileName", "/foobar.fbx")
     lastsaved = elem_props_compound(props, b"LastSaved")
-    lastsaved("p_string", b"ApplicationVendor", "Blender Foundation")
-    lastsaved("p_string", b"ApplicationName", "Blender")
-    lastsaved("p_string", b"ApplicationVersion", "2.70")
+    lastsaved("p_string", b"ApplicationVendor", app_vendor)
+    lastsaved("p_string", b"ApplicationName", app_name)
+    lastsaved("p_string", b"ApplicationVersion", app_ver)
     lastsaved("p_datetime", b"DateTime_GMT", "01/01/1970 00:00:00.000")
 
-    ##### End of FBXHeaderExtension element.
+    # ##### End of FBXHeaderExtension element.
 
     # FileID is replaced by dummy value currently...
     elem_data_single_bytes(root, b"FileId", b"FooBar")
@@ -2277,9 +2423,9 @@ def fbx_header_elements(root, scene_data, time=None):
                                     "".format(time.year, time.month, time.day, time.hour, time.minute, time.second,
                                               time.microsecond * 1000))
 
-    elem_data_single_string_unicode(root, b"Creator", "Blender version %s" % bpy.app.version_string)
+    elem_data_single_string_unicode(root, b"Creator", "%s - %s" % (app_name, app_ver))
 
-    ##### Start of GlobalSettings element.
+    # ##### Start of GlobalSettings element.
     global_settings = elem_empty(root, b"GlobalSettings")
     scene = scene_data.scene
 
@@ -2315,7 +2461,7 @@ def fbx_header_elements(root, scene_data, time=None):
     elem_props_set(props, "p_timestamp", b"TimeSpanStop", FBX_KTIME)
     elem_props_set(props, "p_double", b"CustomFrameRate", fbx_fps)
 
-    ##### End of GlobalSettings element.
+    # ##### End of GlobalSettings element.
 
 
 def fbx_documents_elements(root, scene_data):
@@ -2326,7 +2472,7 @@ def fbx_documents_elements(root, scene_data):
     """
     name = scene_data.scene.name
 
-    ##### Start of Documents element.
+    # ##### Start of Documents element.
     docs = elem_empty(root, b"Documents")
 
     elem_data_single_int32(docs, b"Count", 1)
@@ -2380,8 +2526,8 @@ def fbx_objects_elements(root, scene_data):
         fbx_data_camera_elements(objects, cam, scene_data)
 
     done_meshes = set()
-    for me in scene_data.data_meshes:
-        fbx_data_mesh_elements(objects, me, scene_data, done_meshes)
+    for me_obj in scene_data.data_meshes:
+        fbx_data_mesh_elements(objects, me_obj, scene_data, done_meshes)
     del done_meshes
 
     for ob_obj in scene_data.objects:
@@ -2434,8 +2580,8 @@ def fbx_takes_elements(root, scene_data):
     for astack_key, animations, alayer_key, name, f_start, f_end in animations:
         scene = scene_data.scene
         fps = scene.render.fps / scene.render.fps_base
-        start_ktime = int(units_convert(f_start / fps, "second", "ktime"))
-        end_ktime = int(units_convert(f_end / fps, "second", "ktime"))  # +1 is unity hack...
+        start_ktime = int(convert_sec_to_ktime(f_start / fps))
+        end_ktime = int(convert_sec_to_ktime(f_end / fps))
 
         take = elem_data_single_string(takes, b"Take", name)
         elem_data_single_string(take, b"FileName", name + b".tak")
@@ -2445,7 +2591,7 @@ def fbx_takes_elements(root, scene_data):
         take_ref_time.add_int64(end_ktime)
 
 
-##### "Main" functions. #####
+# ##### "Main" functions. #####
 
 # This func can be called with just the filepath
 def save_single(operator, scene, filepath="",
@@ -2467,7 +2613,7 @@ def save_single(operator, scene, filepath="",
                 use_mesh_edges=True,
                 use_tspace=True,
                 embed_textures=False,
-                use_custom_properties=False,
+                use_custom_props=False,
                 bake_space_transform=False,
                 **kwargs
                 ):
@@ -2490,7 +2636,7 @@ def save_single(operator, scene, filepath="",
     if embed_textures and path_mode != 'COPY':
         embed_textures = False
 
-    media_settings = FBXSettingsMedia(
+    media_settings = FBXExportSettingsMedia(
         path_mode,
         os.path.dirname(bpy.data.filepath),  # base_src
         os.path.dirname(filepath),  # base_dst
@@ -2500,13 +2646,13 @@ def save_single(operator, scene, filepath="",
         set(),  # copy_set
     )
 
-    settings = FBXSettings(
+    settings = FBXExportSettings(
         operator.report, (axis_up, axis_forward), global_matrix, global_scale,
         bake_space_transform, global_matrix_inv, global_matrix_inv_transposed,
         context_objects, object_types, use_mesh_modifiers,
         mesh_smooth_type, use_mesh_edges, use_tspace, use_armature_deform_only,
         bake_anim, bake_anim_use_nla_strips, bake_anim_use_all_actions, bake_anim_step, bake_anim_simplify_factor,
-        False, media_settings, use_custom_properties,
+        False, media_settings, use_custom_props,
     )
 
     import bpy_extras.io_utils
@@ -2558,18 +2704,36 @@ def save_single(operator, scene, filepath="",
 # defaults for applications, currently only unity but could add others.
 def defaults_unity3d():
     return {
+        # These options seem to produce the same result as the old Ascii exporter in Unity3D:
+        "version": 'BIN7400',
+        "axis_up": 'Y',
+        "axis_forward": '-Z',
         "global_matrix": Matrix.Rotation(-math.pi / 2.0, 4, 'X'),
-        "use_selection": False,
-        "object_types": {'ARMATURE', 'EMPTY', 'MESH'},
-        "use_mesh_modifiers": True,
-        #"use_armature_deform_only": True,
-        "bake_anim": True,
-        #"use_anim_optimize": False,
-        #"use_anim_action_all": True,
-        "batch_mode": 'OFF',
         # Should really be True, but it can cause problems if a model is already in a scene or prefab
         # with the old transforms.
         "bake_space_transform": False,
+
+        "use_selection": False,
+
+        "object_types": {'ARMATURE', 'EMPTY', 'MESH', 'OTHER'},
+        "use_mesh_modifiers": True,
+        "use_mesh_edges": False,
+        "mesh_smooth_type": 'FACE',
+        "use_tspace": False,  # XXX Why? Unity is expected to support tspace import...
+
+        "use_armature_deform_only": True,
+
+        "use_custom_props": True,
+
+        "bake_anim": True,
+        "bake_anim_simplify_factor": 1.0,
+        "bake_anim_step": 1.0,
+        "bake_anim_use_nla_strips": True,
+        "bake_anim_use_all_actions": True,
+
+        "path_mode": 'AUTO',
+        "embed_textures": False,
+        "batch_mode": 'OFF',
     }
 
 
@@ -2637,8 +2801,25 @@ def save(operator, context,
                 scene = bpy.data.scenes.new(name="FBX_Temp")
                 scene.layers = [True] * 20
                 # bpy.data.scenes.active = scene # XXX, cant switch
+                src_scenes = {}  # Count how much each 'source' scenes are used.
                 for ob_base in data.objects:
+                    for src_sce in ob_base.users_scene:
+                        if src_sce not in src_scenes:
+                            src_scenes[src_sce] = 0
+                        src_scenes[src_sce] += 1
                     scene.objects.link(ob_base)
+
+                # Find the 'most used' source scene, and use its unit settings. This is somewhat weak, but should work
+                # fine in most cases, and avoids stupid issues like T41931.
+                best_src_scene = None
+                best_src_scene_users = 0
+                for sce, nbr_users in src_scenes.items():
+                    if (nbr_users) > best_src_scene_users:
+                        best_src_scene_users = nbr_users
+                        best_src_scene = sce
+                scene.unit_settings.system = best_src_scene.unit_settings.system
+                scene.unit_settings.system_rotation = best_src_scene.unit_settings.system_rotation
+                scene.unit_settings.scale_length = best_src_scene.unit_settings.scale_length
 
                 scene.update()
                 # TODO - BUMMER! Armatures not in the group wont animate the mesh

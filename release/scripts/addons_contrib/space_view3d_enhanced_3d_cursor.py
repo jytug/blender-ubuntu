@@ -21,8 +21,8 @@ bl_info = {
     "name": "Enhanced 3D Cursor",
     "description": "Cursor history and bookmarks; drag/snap cursor.",
     "author": "dairin0d",
-    "version": (2, 9, 2),
-    "blender": (2, 65, 4),
+    "version": (2, 9, 5),
+    "blender": (2, 7, 0),
     "location": "View3D > Action mouse; F10; Properties panel",
     "warning": "",
     "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"
@@ -31,19 +31,6 @@ bl_info = {
     "category": "3D View"}
 
 """
-ATTENTION:
-somewhere around 45447 revision object.ray_cast() starts conflicting with
-mesh.update(calc_tessface=True) -- at least when invoked within one
-operator cycle, object.ray_cast() crashes if object's tessfaces were
-update()d earlier in the code. However, not update()ing the meshes
-seems to work fine -- ray_cast() does its job, and it's possible to
-access tessfaces afterwards.
-mesh.calc_tessface() -- ? crashes too
-
-Seems like now axes are stored in columns instead of rows.
-Perhaps it's better to write utility functions to create/decompose
-matrices from/to 3D-vector axes and a translation component
-
 Breakdown:
     Addon registration
     Keymap utils
@@ -377,11 +364,10 @@ class EnhancedSetCursor(bpy.types.Operator):
         wm = context.window_manager
         if '3D View' in wm.keyconfigs.user.keymaps:
             km = wm.keyconfigs.user.keymaps['3D View']
-            for kmi in km.keymap_items:
-                if kmi.idname == 'view3d.cursor3d_enhanced':
-                    if kmi.map_type == 'KEYBOARD':
-                        self.key_map["free_mouse"] = {kmi.type,}
-                        break
+            for kmi in KeyMapItemSearch(EnhancedSetCursor.bl_idname, km):
+                if kmi.map_type == 'KEYBOARD':
+                    self.key_map["free_mouse"] = {kmi.type,}
+                    break
 
     def try_process_input(self, context, event, initial_run=False):
         try:
@@ -405,7 +391,8 @@ class EnhancedSetCursor(bpy.types.Operator):
                 return self.finalize(context)
 
         if event.type in self.key_map["cancel"]:
-            return self.cancel(context)
+            self.cancel(context)
+            return {'CANCELLED'}
 
         tool_settings = context.tool_settings
 
@@ -2326,7 +2313,9 @@ class SnapUtilityBase:
     def snap(self, xy, src_matrix, initial_matrix, do_raycast, \
         alt_snap, vu, csu, modify_Surface, use_object_centers):
 
-        grid_step = self.grid_steps[alt_snap]
+        v3d = csu.space_data
+
+        grid_step = self.grid_steps[alt_snap] * v3d.grid_scale
 
         su = self
         use_relative_coords = su.use_relative_coords
@@ -4504,6 +4493,8 @@ class CursorMonitor(bpy.types.Operator):
     _handle_px = None
     _handle_header_px = None
 
+    script_reload_kmis = []
+
     @staticmethod
     def handle_add(self, context):
         CursorMonitor._handle_view = bpy.types.SpaceView3D.draw_handler_add(
@@ -4542,6 +4533,13 @@ class CursorMonitor(bpy.types.Operator):
             return False
 
     def modal(self, context, event):
+        # Scripts cannot be reloaded while modal operators are running
+        # Intercept the corresponding event and shut down CursorMonitor
+        # (it would be relaunched automatically afterwards)
+        for kmi in CursorMonitor.script_reload_kmis:
+            if IsKeyMapItemEvent(kmi, event):
+                return {'CANCELLED'}
+        
         try:
             return self._modal(context, event)
         except Exception as e:
@@ -4562,7 +4560,8 @@ class CursorMonitor(bpy.types.Operator):
             # Another (newer) monitor was launched;
             # this one should stop.
             # (OR addon was disabled)
-            return self.cancel(context)
+            self.cancel(context)
+            return {'CANCELLED'}
 
         # Somewhy after addon re-registration
         # this permanently becomes False
@@ -4685,6 +4684,8 @@ class CursorMonitor(bpy.types.Operator):
 
     def execute(self, context):
         print("Cursor monitor: launched")
+
+        CursorMonitor.script_reload_kmis = list(KeyMapItemSearch('script.reload'))
 
         runtime_settings = find_runtime_settings()
 
@@ -5266,7 +5267,6 @@ def draw_callback_px(self, context):
 
 
 # ===== UTILITY FUNCTIONS ===== #
-
 cursor_stick_pos_cache = None
 def update_stick_to_obj(context):
     global cursor_stick_pos_cache
@@ -5367,18 +5367,38 @@ def find_runtime_settings():
 
     return runtime_settings
 
-# ===== REGISTRATION ===== #
-def find_keymap_items(km, idname):
-    items = []
-    for kmi in km.keymap_items:
-        if kmi.idname == idname:
-            items.append(kmi)
-    return items
+def KeyMapItemSearch(idname, place=None):
+    if isinstance(place, bpy.types.KeyMap):
+        for kmi in place.keymap_items:
+            if kmi.idname == idname:
+                yield kmi
+    elif isinstance(place, bpy.types.KeyConfig):
+        for keymap in place.keymaps:
+            for kmi in KeyMapItemSearch(idname, keymap):
+                yield kmi
+    else:
+        wm = bpy.context.window_manager
+        for keyconfig in wm.keyconfigs:
+            for kmi in KeyMapItemSearch(idname, keyconfig):
+                yield kmi
 
+def IsKeyMapItemEvent(kmi, event):
+    event_any = (event.shift or event.ctrl or event.alt or event.oskey)
+    event_key_modifier = 'NONE' # no such info in event
+    return ((kmi.type == event.type) and
+            (kmi.value == event.value) and
+            (kmi.shift == event.shift) and
+            (kmi.ctrl == event.ctrl) and
+            (kmi.alt == event.alt) and
+            (kmi.oskey == event.oskey) and
+            (kmi.any == event_any) and
+            (kmi.key_modifier == event_key_modifier))
+
+# ===== REGISTRATION ===== #
 def update_keymap(activate):
-    #if activate:
-    #    if bpy.ops.view3d.cursor3d_monitor.poll():
-    #        bpy.ops.view3d.cursor3d_monitor()
+    reg_idname = DelayRegistrationOperator.bl_idname
+    enh_idname = EnhancedSetCursor.bl_idname
+    cur_idname = 'view3d.cursor3d'
 
     wm = bpy.context.window_manager
 
@@ -5389,9 +5409,7 @@ def update_keymap(activate):
         if activate:
             # activate temporary operator
             km = wm.keyconfigs.active.keymaps['Window']
-            kmi = km.keymap_items.new( \
-                'wm.enhanced_3d_cursor_registration', \
-                'MOUSEMOVE', 'ANY')
+            kmi = km.keymap_items.new(reg_idname, 'MOUSEMOVE', 'ANY')
         return
 
     # We need for the enhanced operator to take precedence over
@@ -5402,40 +5420,20 @@ def update_keymap(activate):
     # However, we may just simply turn it off or remove
     # (depending on what saves with blend).
 
-    items = find_keymap_items(km, 'view3d.cursor3d_enhanced')
+    items = list(KeyMapItemSearch(enh_idname, km))
     if activate and (len(items) == 0):
-        kmi = km.keymap_items.new('view3d.cursor3d_enhanced', \
-            'ACTIONMOUSE', 'PRESS')
+        kmi = km.keymap_items.new(enh_idname, 'ACTIONMOUSE', 'PRESS')
         for key in EnhancedSetCursor.key_map["free_mouse"]:
-            kmi = km.keymap_items.new('view3d.cursor3d_enhanced', \
-                key, 'PRESS')
+            kmi = km.keymap_items.new(enh_idname, key, 'PRESS')
     else:
-        if activate:
-            for kmi in items:
+        for kmi in items:
+            if activate:
                 kmi.active = activate
-        else:
-            for kmi in items:
+            else:
                 km.keymap_items.remove(kmi)
 
-    for kmi in find_keymap_items(km, 'view3d.cursor3d'):
+    for kmi in KeyMapItemSearch(cur_idname):
         kmi.active = not activate
-
-    try:
-        km = wm.keyconfigs.active.keymaps['3D View']
-        for kmi in find_keymap_items(km, 'view3d.cursor3d'):
-            kmi.active = not activate
-    except KeyError:
-        # seems like in recent builds (after 2.63a)
-        # 'bpy_prop_collection[key]: key "3D View" not found'
-        pass
-
-    try:
-        km = wm.keyconfigs.default.keymaps['3D View']
-        for kmi in find_keymap_items(km, 'view3d.cursor3d'):
-            kmi.active = not activate
-    except KeyError:
-        pass
-
 
 class DelayRegistrationOperator(bpy.types.Operator):
     bl_idname = "wm.enhanced_3d_cursor_registration"
@@ -5458,31 +5456,8 @@ class DelayRegistrationOperator(bpy.types.Operator):
         if (not self.keymap_updated) and \
             ((event.type == 'TIMER') or ("MOVE" in event.type)):
             # clean up (we don't need this operator to run anymore)
-            wm = bpy.context.window_manager
-
-            for kcfg in wm.keyconfigs.values():
-                for km in kcfg.keymaps.values():
-                    items = find_keymap_items(km,
-                        'wm.enhanced_3d_cursor_registration')
-                    for kmi in items:
-                        km.keymap_items.remove(kmi)
-
-            """
-            try:
-                # A bug when using Maya keymap presets
-                # (reported by chafouin in BlenderArtists thread)
-                # KeyError: key "Window" not found'
-                # Circumvent for now.
-                km = wm.keyconfigs.active.keymaps['Window']
-            except KeyError:
-                km = None
-
-            if km:
-                items = find_keymap_items(km,
-                    'wm.enhanced_3d_cursor_registration')
-                for kmi in items:
-                    km.keymap_items.remove(kmi)
-            """
+            for kmi in KeyMapItemSearch(self.bl_idname):
+                km.keymap_items.remove(kmi)
 
             update_keymap(True)
 
@@ -5494,7 +5469,8 @@ class DelayRegistrationOperator(bpy.types.Operator):
             #if bpy.ops.view3d.cursor3d_monitor.poll():
             #    bpy.ops.view3d.cursor3d_monitor()
 
-            return self.cancel(context)
+            self.cancel(context)
+            return {'CANCELLED'}
 
         return {'PASS_THROUGH'}
 
@@ -5508,7 +5484,6 @@ class DelayRegistrationOperator(bpy.types.Operator):
 
     def cancel(self, context):
         DelayRegistrationOperator.timer_remove(context)
-        return {'CANCELLED'}
 
 
 def register():

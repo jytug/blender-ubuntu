@@ -190,7 +190,11 @@ struct RenderLayer *RE_GetRenderLayer(struct RenderResult *rr, const char *name)
 float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype);
 
 /* obligatory initialize call, disprect is optional */
-void RE_InitState(struct Render *re, struct Render *source, struct RenderData *rd, struct SceneRenderLayer *srl, int winx, int winy, rcti *disprect);
+void RE_InitState(struct Render *re, struct Render *source, struct RenderData *rd,
+                  struct SceneRenderLayer *srl,
+                  int winx, int winy, rcti *disprect);
+void RE_ChangeResolution(struct Render *re, int winx, int winy, rcti *disprect);
+void RE_ChangeModeFlag(struct Render *re, int flag, bool clear);
 
 /* set up the viewplane/perspective matrix, three choices */
 struct Object *RE_GetCamera(struct Render *re); /* return camera override if set */
@@ -231,6 +235,7 @@ void RE_BlenderAnim(struct Render *re, struct Main *bmain, struct Scene *scene, 
                     unsigned int lay_override, int sfra, int efra, int tfra);
 #ifdef WITH_FREESTYLE
 void RE_RenderFreestyleStrokes(struct Render *re, struct Main *bmain, struct Scene *scene, int render);
+void RE_RenderFreestyleExternal(struct Render *re);
 #endif
 
 /* error reporting */

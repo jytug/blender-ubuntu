@@ -795,8 +795,6 @@ static int edbm_rip_invoke__vert(bContext *C, wmOperator *op, const wmEvent *eve
 		BM_mesh_edgesplit(em->bm, true, true, true);
 	}
 
-	dist_sq = FLT_MAX;
-
 	{
 		/* --- select which vert --- */
 		BMVert *v_best = NULL;
@@ -992,6 +990,12 @@ static int edbm_rip_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 		// WM_operator_name_call(C, "MESH_OT_region_to_loop", WM_OP_INVOKE_DEFAULT, NULL);
 
 		BKE_report(op->reports, RPT_ERROR, "Cannot rip selected faces");
+		return OPERATOR_CANCELLED;
+	}
+
+	/* we could support this, but not for now */
+	if ((bm->totvertsel > 1) && (bm->totedgesel == 0)) {
+		BKE_report(op->reports, RPT_ERROR, "Cannot rip multiple disconnected vertices");
 		return OPERATOR_CANCELLED;
 	}
 

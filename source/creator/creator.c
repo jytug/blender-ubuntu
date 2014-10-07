@@ -41,6 +41,9 @@
 #endif
 
 #ifdef WIN32
+#  if defined(_MSC_VER) && _MSC_VER >= 1800 && defined(_M_X64)
+#    include <math.h> /* needed for _set_FMA3_enable */
+#  endif
 #  include <windows.h>
 #  include "utfconv.h"
 #endif
@@ -535,7 +538,7 @@ static void blender_crash_handler_backtrace(FILE *fp)
 	SymInitialize(process, NULL, true);
 
 	nframes = CaptureStackBackTrace(0, SIZE, stack, NULL);
-	symbolinfo = MEM_callocN(sizeof(SYMBOL_INFO) + MAXSYMBOL * sizeof( char ), "crash Symbol table");
+	symbolinfo = MEM_callocN(sizeof(SYMBOL_INFO) + MAXSYMBOL * sizeof(char), "crash Symbol table");
 	symbolinfo->MaxNameLen = MAXSYMBOL - 1;
 	symbolinfo->SizeOfStruct = sizeof(SYMBOL_INFO);
 
@@ -566,7 +569,7 @@ static void blender_crash_handler(int signum)
 		char fname[FILE_MAX];
 
 		if (!G.main->name[0]) {
-			BLI_make_file_string("/", fname, BLI_temporary_dir(), "crash.blend");
+			BLI_make_file_string("/", fname, BLI_temp_dir_base(), "crash.blend");
 		}
 		else {
 			BLI_strncpy(fname, G.main->name, sizeof(fname));
@@ -587,10 +590,10 @@ static void blender_crash_handler(int signum)
 	char fname[FILE_MAX];
 
 	if (!G.main->name[0]) {
-		BLI_join_dirfile(fname, sizeof(fname), BLI_temporary_dir(), "blender.crash.txt");
+		BLI_join_dirfile(fname, sizeof(fname), BLI_temp_dir_base(), "blender.crash.txt");
 	}
 	else {
-		BLI_join_dirfile(fname, sizeof(fname), BLI_temporary_dir(), BLI_path_basename(G.main->name));
+		BLI_join_dirfile(fname, sizeof(fname), BLI_temp_dir_base(), BLI_path_basename(G.main->name));
 		BLI_replace_extension(fname, sizeof(fname), ".crash.txt");
 	}
 
@@ -621,6 +624,8 @@ static void blender_crash_handler(int signum)
 		fclose(fp);
 	}
 
+	/* Delete content of temp dir! */
+	BLI_temp_dir_session_purge();
 
 	/* really crash */
 	signal(signum, SIG_DFL);
@@ -811,6 +816,9 @@ static int set_engine(int argc, const char **argv, void *data)
 
 				if (BLI_findstring(&R_engines, argv[1], offsetof(RenderEngineType, idname))) {
 					BLI_strncpy_utf8(rd->engine, argv[1], sizeof(rd->engine));
+				}
+				else {
+					printf("\nError: engine not found '%s'\n", argv[1]);
 				}
 			}
 			else {
@@ -1499,7 +1507,13 @@ int main(
 	bArgs *ba;
 #endif
 
-#ifdef WIN32 /* Win32 Unicode Args */
+#ifdef WIN32
+    /* FMA3 support in the 2013 CRT is broken on Vista and Windows 7 RTM (fixed in SP1). Just disable it. */
+#  if defined(_MSC_VER) && _MSC_VER >= 1800 && defined(_M_X64)
+    _set_FMA3_enable(0);
+#  endif
+
+	/* Win32 Unicode Args */
 	/* NOTE: cannot use guardedalloc malloc here, as it's not yet initialized
 	 *       (it depends on the args passed in, which is what we're getting here!)
 	 */
@@ -1670,7 +1684,7 @@ int main(
 
 		/* this is properly initialized with user defs, but this is default */
 		/* call after loading the startup.blend so we can read U.tempdir */
-		BLI_init_temporary_dir(U.tempdir);
+		BLI_temp_dir_init(U.tempdir);
 	}
 	else {
 #ifndef WITH_PYTHON_MODULE
@@ -1680,7 +1694,7 @@ int main(
 		WM_init(C, argc, (const char **)argv);
 
 		/* don't use user preferences temp dir */
-		BLI_init_temporary_dir(NULL);
+		BLI_temp_dir_init(NULL);
 	}
 #ifdef WITH_PYTHON
 	/**
