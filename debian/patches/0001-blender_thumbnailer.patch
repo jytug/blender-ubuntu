@@ -1,5 +1,5 @@
 From: "Matteo F. Vescovi" <mfvescovi@gmail.com>
-Date: Wed, 17 Sep 2014 18:01:52 +0200
+Date: Tue, 7 Oct 2014 15:38:09 +0200
 Subject: blender_thumbnailer
 
 * Move thumbnailer script to an appropriate destination
@@ -33,10 +33,10 @@ index 779c615..dbcd865 100755
  # ##### BEGIN GPL LICENSE BLOCK #####
  #
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 4943256..42bd812 100644
+index 6ed87f6..498c99e 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -453,7 +453,7 @@ if(UNIX AND NOT APPLE)
+@@ -478,7 +478,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
@@ -44,4 +44,4 @@ index 4943256..42bd812 100644
 +			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/blender/scripts
  		)
  		install(
- 			FILES ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1
+ 			FILES ${BLENDER_TEXT_FILES}

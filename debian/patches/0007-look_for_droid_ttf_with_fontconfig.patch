@@ -18,10 +18,10 @@ Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
  7 files changed, 85 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0ab31dd..f14559b 100644
+index 1dd9721..c305805 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -658,6 +658,13 @@ if(UNIX AND NOT APPLE)
+@@ -679,6 +679,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -36,7 +36,7 @@ index 0ab31dd..f14559b 100644
  	if(WITH_CODEC_SNDFILE)
  		find_package_wrapper(SndFile)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index bdd3883..a2ac060 100644
+index adbba81..0a01f06 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
 @@ -307,6 +307,9 @@ macro(setup_liblinks
@@ -117,10 +117,10 @@ index 150ff1b..477c735 100644
  	}
  
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index c032b60..1324eb2 100644
+index 4f451a6..fa2f35e 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
-@@ -81,6 +81,7 @@ bool   BLI_is_file(const char *path);
+@@ -87,6 +87,7 @@ bool   BLI_is_file(const char *path);
  void   BLI_dir_create_recursive(const char *dir);
  double BLI_dir_free_space(const char *dir);
  char  *BLI_current_working_dir(char *dir, const size_t maxlen);
@@ -129,10 +129,10 @@ index c032b60..1324eb2 100644
  unsigned int BLI_dir_contents(const char *dir, struct direntry **filelist);
  void BLI_free_filelist(struct direntry *filelist, unsigned int nrentries);
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index 5df4675..9c289cb 100644
+index f6bbd32..91b4070 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
-@@ -158,6 +158,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *r_size)
+@@ -159,6 +159,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *r_size)
  	return mem;
  }
  
@@ -184,10 +184,10 @@ index 5df4675..9c289cb 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 576ec9a..10dda3e 100644
+index 40609da..095732b 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -316,12 +316,6 @@ endif()
+@@ -320,12 +320,6 @@ endif()
  
  # localization
  if(WITH_INTERNATIONAL)
