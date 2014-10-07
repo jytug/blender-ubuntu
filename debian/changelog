@@ -1,3 +1,16 @@
+blender (2.72+dfsg1-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - debian/patches/: patchset updated against v2.72+dfsg0
+      - #0001 => #0007 refreshed
+      - 0008-fix_FTBFS_on_unofficial_64bit_archs.patch dropped
+      - 0009-fix_includes_on_different_endian_systems.patch dropped
+        Both were applied upstream.
+    - debian/copyright: light update
+  * debian/control: S-V bump 3.9.5 => 3.9.6 (no changes needed)
+
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Tue, 07 Oct 2014 17:17:36 +0200
+
 blender (2.71+dfsg1-1) unstable; urgency=medium
 
   * Real 2.71 upstream release (Closes: #758876)
