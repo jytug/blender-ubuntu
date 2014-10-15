@@ -1,4 +1,4 @@
-blender (2.72+dfsg1-2) UNRELEASED; urgency=medium
+blender (2.72+dfsg1-2) unstable; urgency=medium
 
   * debian/: patchset and rules file updated (Closes: #763755, #765187)
     - 0008-use_cuda_pointer_arithmetic_in_integers.patch added
@@ -6,7 +6,7 @@ blender (2.72+dfsg1-2) UNRELEASED; urgency=medium
     - rules updated to enable/disable SSE/SSE2 support on i386
     Thanks to Sergey Sharybin (upstream devel) for both the patches.
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Wed, 15 Oct 2014 15:01:22 +0200
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Wed, 15 Oct 2014 15:01:57 +0200
 
 blender (2.72+dfsg1-1) unstable; urgency=medium
 
