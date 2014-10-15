@@ -1,0 +1,72 @@
+From: Sergey Sharybin <sergey.vfx@gmail.com>
+Date: Wed, 15 Oct 2014 14:53:52 +0200
+Subject: add_flag_disabling_SSE-SSE2_intrinsics
+
+The flag is called WITH_CPU_SSE, it is ON by default
+so no one should be affected by the change really.
+
+This should hopefully fix #763755
+
+Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
+---
+ CMakeLists.txt                 | 10 +++++++++-
+ build_files/cmake/macros.cmake |  2 ++
+ intern/cycles/CMakeLists.txt   |  4 +++-
+ 3 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c305805..5e63f6d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -264,6 +264,8 @@ option(WITH_PYTHON_INSTALL       "Copy system python into the blender install fo
+ option(WITH_PYTHON_INSTALL_NUMPY "Copy system numpy into the blender install folder"  ON)
+ set(PYTHON_NUMPY_PATH            "" CACHE PATH "Path to python site-packages or dist-packages containing 'numpy' module")
+ mark_as_advanced(PYTHON_NUMPY_PATH)
++option(WITH_CPU_SSE              "Enable SIMD instruction if they're detected on the host machine" ON)
++mark_as_advanced(WITH_CPU_SSE)
+ 
+ if(UNIX AND NOT APPLE)
+ 	option(WITH_PYTHON_INSTALL_REQUESTS "Copy system requests into the blender install folder" ON)
+@@ -518,7 +520,13 @@ if(WITH_GHOST_SDL OR WITH_HEADLESS)
+ 	set(WITH_X11_XINPUT OFF)
+ endif()
+ 
+-TEST_SSE_SUPPORT(COMPILER_SSE_FLAG COMPILER_SSE2_FLAG)
++if(WITH_CPU_SSE)
++	TEST_SSE_SUPPORT(COMPILER_SSE_FLAG COMPILER_SSE2_FLAG)
++else()
++	message(STATUS "SSE and SSE2 optimizations are DISABLED!")
++	set(COMPILER_SSE_FLAG)
++	set(COMPILER_SSE2_FLAG)
++endif()
+ 
+ TEST_STDBOOL_SUPPORT()
+ if(HAVE_STDBOOL_H)
+diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
+index 0a01f06..179738f 100644
+--- a/build_files/cmake/macros.cmake
++++ b/build_files/cmake/macros.cmake
+@@ -721,6 +721,8 @@ macro(TEST_SSE_SUPPORT
+ endmacro()
+ 
+ macro(TEST_STDBOOL_SUPPORT)
++	include(CheckCSourceRuns)
++
+ 	# This program will compile correctly if and only if
+ 	# this C compiler supports C99 stdbool.
+ 	check_c_source_runs("
+diff --git a/intern/cycles/CMakeLists.txt b/intern/cycles/CMakeLists.txt
+index ccf6aac..a3f251d 100644
+--- a/intern/cycles/CMakeLists.txt
++++ b/intern/cycles/CMakeLists.txt
+@@ -14,7 +14,9 @@ include(cmake/external_libs.cmake)
+ # todo: refactor this code to match scons
+ # note: CXX_HAS_SSE is needed in case passing SSE flags fails altogether (gcc-arm)
+ 
+-if(WIN32 AND MSVC)
++if(NOT WITH_CPU_SSE)
++	set(CXX_HAS_SSE FALSE)
++elseif(WIN32 AND MSVC)
+ 	set(CXX_HAS_SSE TRUE)
+ 
+ 	# /arch:AVX for VC2012 and above

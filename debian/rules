@@ -6,6 +6,12 @@ INSTDIR = debian/tmp
 PY3VERS = $(shell py3versions -dv)
 SRC_VER = $(shell uscan --report | grep blender-.* | sed 's/^.*-//' | sed 's/\.tar.*$$//')
 
+ifeq ($(DEB_HOST_ARCH),i386)
+	SETSSE = OFF
+else
+	SETSSE = ON
+endif
+
 get-orig-source:
 	uscan --force-download --repack --compression xz
 	$(REPACK_SH) --upstream-version $(SRC_VER) ../blender_$(SRC_VER).orig.tar.xz
@@ -25,6 +31,7 @@ override_dh_auto_configure:
 		-DWITH_PYTHON_INSTALL=OFF \
 		-DWITH_CODEC_FFMPEG=ON \
 		-DWITH_CODEC_SNDFILE=ON \
+		-DWITH_CPU_SSE=$(SETSSE) \
 		-DWITH_FONTCONFIG=ON \
 		-DWITH_MOD_OCEANSIM=ON \
 		-DWITH_CYCLES=ON
