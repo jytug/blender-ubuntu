@@ -62,6 +62,8 @@ from .fbx_utils import (
     RIGHT_HAND_AXES, FBX_FRAMERATES,
     # Miscellaneous utils.
     units_convertor, units_convertor_iter, matrix4_to_array, similar_values, similar_values_iter,
+    # Mesh transform helpers.
+    vcos_transformed_gen, nors_transformed_gen,
     # UUID from key.
     get_fbx_uuid_from_key,
     # Key generators.
@@ -841,12 +843,7 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
     # Vertex cos.
     t_co = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.vertices) * 3
     me.vertices.foreach_get("co", t_co)
-    if geom_mat_co is not None:
-        def _vcos_transformed_gen(raw_cos, m=None):
-            # Note: we could most likely get much better performances with numpy, but will leave this as TODO for now.
-            return chain(*(m * Vector(v) for v in zip(*(iter(raw_cos),) * 3)))
-        t_co = _vcos_transformed_gen(t_co, geom_mat_co)
-    elem_data_single_float64_array(geom, b"Vertices", t_co)
+    elem_data_single_float64_array(geom, b"Vertices", chain(*vcos_transformed_gen(t_co, geom_mat_co)))
     del t_co
 
     # Polygon indices.
@@ -949,22 +946,15 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
 
     # Loop normals.
     tspacenumber = 0
-    if (write_normals):
+    if write_normals:
         # NOTE: this is not supported by importer currently.
         # XXX Official docs says normals should use IndexToDirect,
         #     but this does not seem well supported by apps currently...
         me.calc_normals_split()
 
-        def _nortuples_gen(raw_nors, m):
-            # Great, now normals are also expected 4D!
-            # XXX Back to 3D normals for now!
-            # gen = zip(*(iter(raw_nors),) * 3 + (_infinite_gen(1.0),))
-            gen = zip(*(iter(raw_nors),) * 3)
-            return gen if m is None else (m * Vector(v) for v in gen)
-
         t_ln = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.loops) * 3
         me.loops.foreach_get("normal", t_ln)
-        t_ln = _nortuples_gen(t_ln, geom_mat_no)
+        t_ln = nors_transformed_gen(t_ln, geom_mat_no)
         if 0:
             t_ln = tuple(t_ln)  # No choice... :/
 
@@ -1014,7 +1004,8 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
                     elem_data_single_string_unicode(lay_nor, b"Name", name)
                     elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
                     elem_data_single_string(lay_nor, b"ReferenceInformationType", b"Direct")
-                    elem_data_single_float64_array(lay_nor, b"Binormals", chain(*_nortuples_gen(t_ln, geom_mat_no)))
+                    elem_data_single_float64_array(lay_nor, b"Binormals",
+                                                   chain(*nors_transformed_gen(t_ln, geom_mat_no)))
                     # Binormal weights, no idea what it is.
                     # elem_data_single_float64_array(lay_nor, b"BinormalsW", t_lnw)
 
@@ -1026,7 +1017,8 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
                     elem_data_single_string_unicode(lay_nor, b"Name", name)
                     elem_data_single_string(lay_nor, b"MappingInformationType", b"ByPolygonVertex")
                     elem_data_single_string(lay_nor, b"ReferenceInformationType", b"Direct")
-                    elem_data_single_float64_array(lay_nor, b"Tangents", chain(*_nortuples_gen(t_ln, geom_mat_no)))
+                    elem_data_single_float64_array(lay_nor, b"Tangents",
+                                                   chain(*nors_transformed_gen(t_ln, geom_mat_no)))
                     # Tangent weights, no idea what it is.
                     # elem_data_single_float64_array(lay_nor, b"TangentsW", t_lnw)
 
@@ -1035,7 +1027,6 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
                 me.free_tangents()
 
         me.free_normals_split()
-        del _nortuples_gen
 
     # Write VertexColor Layers.
     vcolnumber = len(me.vertex_colors)
@@ -1125,9 +1116,10 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
 
     layer = elem_data_single_int32(geom, b"Layer", 0)
     elem_data_single_int32(layer, b"Version", FBX_GEOMETRY_LAYER_VERSION)
-    lay_nor = elem_empty(layer, b"LayerElement")
-    elem_data_single_string(lay_nor, b"Type", b"LayerElementNormal")
-    elem_data_single_int32(lay_nor, b"TypedIndex", 0)
+    if write_normals:
+        lay_nor = elem_empty(layer, b"LayerElement")
+        elem_data_single_string(lay_nor, b"Type", b"LayerElementNormal")
+        elem_data_single_int32(lay_nor, b"TypedIndex", 0)
     if tspacenumber:
         lay_binor = elem_empty(layer, b"LayerElement")
         elem_data_single_string(lay_binor, b"Type", b"LayerElementBinormal")
@@ -1379,6 +1371,8 @@ def fbx_data_armature_elements(root, arm_obj, scene_data):
     mat_world_arm = arm_obj.fbx_object_matrix(scene_data, global_space=True)
     bones = tuple(bo_obj for bo_obj in arm_obj.bones if bo_obj in scene_data.objects)
 
+    bone_radius_scale = scene_data.settings.global_scale * 33.0
+
     # Bones "data".
     for bo_obj in bones:
         bo = bo_obj.bdata
@@ -1390,12 +1384,17 @@ def fbx_data_armature_elements(root, arm_obj, scene_data):
 
         tmpl = elem_props_template_init(scene_data.templates, b"Bone")
         props = elem_properties(fbx_bo)
-        elem_props_template_set(tmpl, props, "p_double", b"Size", (bo.tail_local - bo.head_local).length)
+        elem_props_template_set(tmpl, props, "p_double", b"Size", bo.head_radius * bone_radius_scale)
         elem_props_template_finalize(tmpl, props)
 
         # Custom properties.
         if scene_data.settings.use_custom_props:
             fbx_data_element_custom_properties(props, bo)
+
+        # Store Blender bone length - XXX Not much useful actually :/
+        # (LimbLength can't be used because it is a scale factor 0-1 for the parent-child distance:
+        # http://docs.autodesk.com/FBX/2014/ENU/FBX-SDK-Documentation/cpp_ref/class_fbx_skeleton.html#a9bbe2a70f4ed82cd162620259e649f0f )
+        # elem_props_set(props, "p_double", "BlenderBoneLength".encode(), (bo.tail_local - bo.head_local).length, custom=True)
 
     # Skin deformers and BindPoses.
     # Note: we might also use Deformers for our "parent to vertex" stuff???
@@ -1456,6 +1455,56 @@ def fbx_data_armature_elements(root, arm_obj, scene_data):
                                                matrix4_to_array(mat_world_bones[bo_obj].inverted() * mat_world_obj))
                 elem_data_single_float64_array(fbx_clstr, b"TransformLink", matrix4_to_array(mat_world_bones[bo_obj]))
                 elem_data_single_float64_array(fbx_clstr, b"TransformAssociateModel", matrix4_to_array(mat_world_arm))
+
+
+def fbx_data_leaf_bone_elements(root, scene_data):
+    # Write a dummy leaf bone that is used by applications to show the length of the last bone in a chain
+    for (node_name, _par_uuid, node_uuid, attr_uuid, matrix, hide, size) in scene_data.data_leaf_bones:
+        # Bone 'data'...
+        fbx_bo = elem_data_single_int64(root, b"NodeAttribute", attr_uuid)
+        fbx_bo.add_string(fbx_name_class(node_name.encode(), b"NodeAttribute"))
+        fbx_bo.add_string(b"LimbNode")
+        elem_data_single_string(fbx_bo, b"TypeFlags", b"Skeleton")
+
+        tmpl = elem_props_template_init(scene_data.templates, b"Bone")
+        props = elem_properties(fbx_bo)
+        elem_props_template_set(tmpl, props, "p_double", b"Size", size)
+        elem_props_template_finalize(tmpl, props)
+
+        # And bone object.
+        model = elem_data_single_int64(root, b"Model", node_uuid)
+        model.add_string(fbx_name_class(node_name.encode(), b"Model"))
+        model.add_string(b"LimbNode")
+
+        elem_data_single_int32(model, b"Version", FBX_MODELS_VERSION)
+
+        # Object transform info.
+        loc, rot, scale = matrix.decompose()
+        rot = rot.to_euler('XYZ')
+        rot = tuple(convert_rad_to_deg_iter(rot))
+
+        tmpl = elem_props_template_init(scene_data.templates, b"Model")
+        # For now add only loc/rot/scale...
+        props = elem_properties(model)
+        elem_props_template_set(tmpl, props, "p_lcl_translation", b"Lcl Translation", loc)
+        elem_props_template_set(tmpl, props, "p_lcl_rotation", b"Lcl Rotation", rot)
+        elem_props_template_set(tmpl, props, "p_lcl_scaling", b"Lcl Scaling", scale)
+        elem_props_template_set(tmpl, props, "p_visibility", b"Visibility", float(not hide))
+
+        # Absolutely no idea what this is, but seems mandatory for validity of the file, and defaults to
+        # invalid -1 value...
+        elem_props_template_set(tmpl, props, "p_integer", b"DefaultAttributeIndex", 0)
+
+        elem_props_template_set(tmpl, props, "p_enum", b"InheritType", 1)  # RSrs
+
+        # Those settings would obviously need to be edited in a complete version of the exporter, may depends on
+        # object type, etc.
+        elem_data_single_int32(model, b"MultiLayer", 0)
+        elem_data_single_int32(model, b"MultiTake", 0)
+        elem_data_single_bool(model, b"Shading", True)
+        elem_data_single_string(model, b"Culling", b"CullingOff")
+
+        elem_props_template_finalize(tmpl, props)
 
 
 def fbx_data_object_elements(root, ob_obj, scene_data):
@@ -1685,7 +1734,7 @@ def fbx_skeleton_from_armature(scene, settings, arm_obj, objects, data_meshes,
     data_bones.update((bo, get_blender_bone_key(arm_obj.bdata, bo.bdata)) for bo in bones)
 
     for ob_obj in objects:
-        if not (ob_obj.is_object and ob_obj.type == 'MESH' and ob_obj.parent == arm_obj):
+        if not ob_obj.is_deformed_by_armature(arm_obj):
             continue
 
         # Always handled by an Armature modifier...
@@ -1715,6 +1764,37 @@ def fbx_skeleton_from_armature(scene, settings, arm_obj, objects, data_meshes,
         ob_obj.parented_to_armature = True
 
     objects.update(bones)
+
+
+def fbx_generate_leaf_bones(settings, data_bones):
+    # find which bons have no children
+    child_count = {bo: 0 for bo, _bo_key in data_bones.items()}
+    for bo, _bo_key in data_bones.items():
+        if bo.parent and bo.parent.is_bone:
+            child_count[bo.parent] += 1
+
+    bone_radius_scale = settings.global_scale * 33.0
+
+    # generate bone data
+    leaf_parents = [bo for bo, count in child_count.items() if count == 0]
+    leaf_bones = []
+    for parent in leaf_parents:
+        node_name = parent.name + "_end"
+        parent_uuid = parent.fbx_uuid
+        node_uuid = get_fbx_uuid_from_key(node_name + "_node")
+        attr_uuid = get_fbx_uuid_from_key(node_name + "_nodeattr")
+
+        hide = parent.hide
+        size = parent.bdata.head_radius * bone_radius_scale
+        bone_length = (parent.bdata.tail_local - parent.bdata.head_local).length
+        matrix = Matrix.Translation((0, bone_length, 0))
+        if settings.bone_correction_matrix_inv:
+            matrix = settings.bone_correction_matrix_inv * matrix
+        if settings.bone_correction_matrix:
+            matrix = matrix * settings.bone_correction_matrix
+        leaf_bones.append((node_name, parent_uuid, node_uuid, attr_uuid, matrix, hide, size))
+
+    return leaf_bones
 
 
 def fbx_animations_do(scene_data, ref_id, f_start, f_end, start_zero, objects=None, force_keep=False):
@@ -1945,8 +2025,8 @@ def fbx_animations(scene_data):
 
             bpy.data.objects.remove(ob_copy)
 
-    # Global (containing everything) animstack.
-    if not scene_data.settings.bake_anim_use_nla_strips or not animations:
+    # Global (containing everything) animstack, only if not exporting NLA strips and/or all actions.
+    if not scene_data.settings.bake_anim_use_nla_strips and not scene_data.settings.bake_anim_use_all_actions:
         add_anim(animations, fbx_animations_do(scene_data, None, scene.frame_start, scene.frame_end, False))
 
     # Be sure to update all matrices back to org state!
@@ -2018,21 +2098,29 @@ def fbx_data_from_scene(scene, settings):
 
     # ShapeKeys.
     data_deformers_shape = OrderedDict()
-    for me_key, me, _org in data_meshes.values():
+    geom_mat_co = settings.global_matrix if settings.bake_space_transform else None
+    for me_obj, (me_key, me, _org) in data_meshes.items():
         if not (me.shape_keys and me.shape_keys.key_blocks):
             continue
+
         shapes_key = get_blender_mesh_shape_key(me)
+        _cos = array.array(data_types.ARRAY_FLOAT64, (0.0,)) * len(me.vertices) * 3
+        me.vertices.foreach_get("co", _cos)
+        v_cos = tuple(vcos_transformed_gen(_cos, geom_mat_co))
         for shape in me.shape_keys.key_blocks:
             # Only write vertices really different from org coordinates!
             # XXX FBX does not like empty shapes (makes Unity crash e.g.), so we have to do this here... :/
             shape_verts_co = []
             shape_verts_idx = []
-            for idx, (sv, v) in enumerate(zip(shape.data, me.vertices)):
-                if similar_values_iter(sv.co, v.co):
+
+            shape.data.foreach_get("co", _cos)
+            sv_cos = tuple(vcos_transformed_gen(_cos, geom_mat_co))
+            for idx, (sv_co, v_co) in enumerate(zip(sv_cos, v_cos)):
+                if similar_values_iter(sv_co, v_co):
                     # Note: Maybe this is a bit too simplistic, should we use real shape base here? Though FBX does not
                     #       have this at all... Anyway, this should cover most common cases imho.
                     continue
-                shape_verts_co.extend(sv.co - v.co)
+                shape_verts_co.extend(Vector(sv_co) - Vector(v_co))
                 shape_verts_idx.append(idx)
             if not shape_verts_co:
                 continue
@@ -2049,6 +2137,11 @@ def fbx_data_from_scene(scene, settings):
             continue
         fbx_skeleton_from_armature(scene, settings, ob_obj, objects, data_meshes,
                                    data_bones, data_deformers_skin, arm_parents)
+
+    # Generate leaf bones
+    data_leaf_bones = []
+    if settings.add_leaf_bones:
+        data_leaf_bones = fbx_generate_leaf_bones(settings, data_bones)
 
     # Some world settings are embedded in FBX materials...
     if scene.world:
@@ -2125,7 +2218,7 @@ def fbx_data_from_scene(scene, settings):
             None, None, None,
             settings, scene, objects, None, 0.0, 0.0,
             data_empties, data_lamps, data_cameras, data_meshes, None,
-            data_bones, data_deformers_skin, data_deformers_shape,
+            data_bones, data_leaf_bones, data_deformers_skin, data_deformers_shape,
             data_world, data_materials, data_textures, data_videos,
         )
         animations, frame_start, frame_end = fbx_animations(tmp_scdata)
@@ -2248,6 +2341,11 @@ def fbx_data_from_scene(scene, settings):
                 mesh_key, _me, _free = data_meshes[ob_obj]
                 connections.append((b"OO", get_fbx_uuid_from_key(mesh_key), ob_obj.fbx_uuid, None))
 
+    # Leaf Bones
+    for (_node_name, par_uuid, node_uuid, attr_uuid, _matrix, _hide, _size) in data_leaf_bones:
+        connections.append((b"OO", node_uuid, par_uuid, None))
+        connections.append((b"OO", attr_uuid, node_uuid, None))
+
     # 'Shape' deformers (shape keys, only for meshes currently)...
     for me_key, shapes_key, shapes in data_deformers_shape.values():
         # shape -> geometry
@@ -2332,7 +2430,7 @@ def fbx_data_from_scene(scene, settings):
         templates, templates_users, connections,
         settings, scene, objects, animations, frame_start, frame_end,
         data_empties, data_lamps, data_cameras, data_meshes, mesh_mat_indices,
-        data_bones, data_deformers_skin, data_deformers_shape,
+        data_bones, data_leaf_bones, data_deformers_skin, data_deformers_shape,
         data_world, data_materials, data_textures, data_videos,
     )
 
@@ -2546,6 +2644,9 @@ def fbx_objects_elements(root, scene_data):
             continue
         fbx_data_armature_elements(objects, ob_obj, scene_data)
 
+    if scene_data.data_leaf_bones:
+        fbx_data_leaf_bone_elements(objects, scene_data)
+
     for mat in scene_data.data_materials:
         fbx_data_material_elements(objects, mat, scene_data)
 
@@ -2608,6 +2709,9 @@ def save_single(operator, scene, filepath="",
                 bake_anim_use_all_actions=True,
                 bake_anim_step=1.0,
                 bake_anim_simplify_factor=1.0,
+                add_leaf_bones=False,
+                primary_bone_axis='Y',
+                secondary_bone_axis='X',
                 use_metadata=True,
                 path_mode='AUTO',
                 use_mesh_edges=True,
@@ -2627,6 +2731,11 @@ def save_single(operator, scene, filepath="",
     if 'OTHER' in object_types:
         object_types |= BLENDER_OTHER_OBJECT_TYPES
 
+    # Scale/unit mess. FBX can store the 'reference' unit of a file in its UnitScaleFactor property
+    # (1.0 meaning centimeter, afaik). We use that to reflect user's default unit as set in Blender with scale_length.
+    # However, we always get values in BU (i.e. meters), so we have to reverse-apply that scale in global matrix...
+    if scene.unit_settings.system != 'NONE':
+        global_matrix = global_matrix * Matrix.Scale(1.0 / scene.unit_settings.scale_length, 4)
     global_scale = global_matrix.median_scale
     global_matrix_inv = global_matrix.inverted()
     # For transforming mesh normals.
@@ -2635,6 +2744,19 @@ def save_single(operator, scene, filepath="",
     # Only embed textures in COPY mode!
     if embed_textures and path_mode != 'COPY':
         embed_textures = False
+
+    # Calcuate bone correction matrix
+    bone_correction_matrix = None  # Default is None = no change
+    bone_correction_matrix_inv = None
+    if (primary_bone_axis, secondary_bone_axis) != ('Y', 'X'):
+        from bpy_extras.io_utils import axis_conversion
+        bone_correction_matrix = axis_conversion(from_forward=secondary_bone_axis,
+                                                 from_up=primary_bone_axis,
+                                                 to_forward='X',
+                                                 to_up='Y',
+                                                 ).to_4x4()
+        bone_correction_matrix_inv = bone_correction_matrix.inverted()
+
 
     media_settings = FBXExportSettingsMedia(
         path_mode,
@@ -2650,7 +2772,8 @@ def save_single(operator, scene, filepath="",
         operator.report, (axis_up, axis_forward), global_matrix, global_scale,
         bake_space_transform, global_matrix_inv, global_matrix_inv_transposed,
         context_objects, object_types, use_mesh_modifiers,
-        mesh_smooth_type, use_mesh_edges, use_tspace, use_armature_deform_only,
+        mesh_smooth_type, use_mesh_edges, use_tspace,
+        use_armature_deform_only, add_leaf_bones, bone_correction_matrix, bone_correction_matrix_inv,
         bake_anim, bake_anim_use_nla_strips, bake_anim_use_all_actions, bake_anim_step, bake_anim_simplify_factor,
         False, media_settings, use_custom_props,
     )
@@ -2730,6 +2853,9 @@ def defaults_unity3d():
         "bake_anim_step": 1.0,
         "bake_anim_use_nla_strips": True,
         "bake_anim_use_all_actions": True,
+        "add_leaf_bones": False,  # Avoid memory/performance cost for something only useful for modelling
+        "primary_bone_axis": 'Y',  # Doesn't really matter for Unity, so leave unchanged
+        "secondary_bone_axis": 'X',
 
         "path_mode": 'AUTO',
         "embed_textures": False,
@@ -2782,7 +2908,7 @@ def save(operator, context,
 
         new_fbxpath = fbxpath  # own dir option modifies, we need to keep an original
         for data in data_seq:  # scene or group
-            newname = "_".join((prefix, bpy.path.clean_name(data.name)))
+            newname = "_".join((prefix, bpy.path.clean_name(data.name))) if prefix else bpy.path.clean_name(data.name)
 
             if use_batch_own_dir:
                 new_fbxpath = os.path.join(fbxpath, newname)
@@ -2801,8 +2927,25 @@ def save(operator, context,
                 scene = bpy.data.scenes.new(name="FBX_Temp")
                 scene.layers = [True] * 20
                 # bpy.data.scenes.active = scene # XXX, cant switch
+                src_scenes = {}  # Count how much each 'source' scenes are used.
                 for ob_base in data.objects:
+                    for src_sce in ob_base.users_scene:
+                        if src_sce not in src_scenes:
+                            src_scenes[src_sce] = 0
+                        src_scenes[src_sce] += 1
                     scene.objects.link(ob_base)
+
+                # Find the 'most used' source scene, and use its unit settings. This is somewhat weak, but should work
+                # fine in most cases, and avoids stupid issues like T41931.
+                best_src_scene = None
+                best_src_scene_users = 0
+                for sce, nbr_users in src_scenes.items():
+                    if (nbr_users) > best_src_scene_users:
+                        best_src_scene_users = nbr_users
+                        best_src_scene = sce
+                scene.unit_settings.system = best_src_scene.unit_settings.system
+                scene.unit_settings.system_rotation = best_src_scene.unit_settings.system_rotation
+                scene.unit_settings.scale_length = best_src_scene.unit_settings.scale_length
 
                 scene.update()
                 # TODO - BUMMER! Armatures not in the group wont animate the mesh
