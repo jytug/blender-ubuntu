@@ -154,10 +154,10 @@
         </wcol_menu_back>
         <wcol_pie_menu>
           <ThemeWidgetColors outline="#0a0a0a"
-                             inner="#aaaaaae6"
+                             inner="#191919e6"
                              inner_sel="#8c8c8cff"
-                             item="#a2a2a2e6"
-                             text="#000000"
+                             item="#2d2d2de6"
+                             text="#a0a0a0"
                              text_sel="#ffffff"
                              show_shaded="TRUE"
                              shadetop="10"
@@ -286,7 +286,6 @@
                    editmesh_active="#fcf8ff80"
                    normal="#22dddd"
                    vertex_normal="#2361dd"
-                   split_normal="#dd23dd"
                    bone_solid="#c8c8c8"
                    bone_pose="#50c8ff"
                    bone_pose_active="#8cffff"
@@ -313,9 +312,9 @@
                               tab_back="#bfbfbfff"
                               tab_outline="#d1cccb">
             <gradients>
-              <ThemeGradientColors show_grad="FALSE"
-                                   gradient="#808080"
-                                   high_gradient="#818181">
+              <ThemeGradientColors show_grad="TRUE"
+                                   gradient="#333333"
+                                   high_gradient="#404040">
               </ThemeGradientColors>
             </gradients>
             <panelcolors>
@@ -505,7 +504,7 @@
                       keyframe_jitter_selected="#61c042"
                       keyframe_border="#000000ff"
                       keyframe_border_selected="#000000ff"
-                      summary="#94949400">
+                      summary="#00000000">
         <space>
           <ThemeSpaceGeneric back="#737373"
                              title="#000000"

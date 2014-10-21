@@ -285,8 +285,7 @@ class ExportFBX_experimental(bpy.types.Operator, ExportHelper):
 
     use_mesh_modifiers = BoolProperty(
             name="Apply Modifiers",
-            description="Apply modifiers to mesh objects (except Armature ones) - "
-                        "WARNING: prevents exporting shape keys",
+            description="Apply modifiers to mesh objects (except Armature ones!)",
             default=True,
             )
     mesh_smooth_type = EnumProperty(

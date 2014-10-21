@@ -506,11 +506,14 @@ void ED_object_parent_clear(Object *ob, int type)
 		}
 		case CLEAR_PARENT_INVERSE:
 		{
-			/* object stays parented, but the parent inverse (i.e. offset from parent to retain binding state) is cleared */
-			unit_m4(ob->parentinv);
+			/* object stays parented, but the parent inverse (i.e. offset from parent to retain binding state)
+			 * is cleared. In other words: nothing to do here! */
 			break;
 		}
 	}
+	
+	/* Always clear parentinv matrix for sake of consistency, see T41950. */
+	unit_m4(ob->parentinv);
 	
 	DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 }
@@ -556,6 +559,9 @@ void OBJECT_OT_parent_clear(wmOperatorType *ot)
 
 void ED_object_parent(Object *ob, Object *par, int type, const char *substr)
 {
+	/* Always clear parentinv matrix for sake of consistency, see T41950. */
+	unit_m4(ob->parentinv);
+
 	if (!par || BKE_object_parent_loop_check(par, ob)) {
 		ob->parent = NULL;
 		ob->partype = PAROBJECT;
@@ -655,6 +661,8 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 			/* set the parent (except for follow-path constraint option) */
 			if (partype != PAR_PATH_CONST) {
 				ob->parent = par;
+				/* Always clear parentinv matrix for sake of consistency, see T41950. */
+				unit_m4(ob->parentinv);
 			}
 			
 			/* handle types */
@@ -2411,10 +2419,13 @@ static int drop_named_material_invoke(bContext *C, wmOperator *op, const wmEvent
 		return OPERATOR_CANCELLED;
 	
 	assign_material(base->object, ma, 1, BKE_MAT_ASSIGN_USERPREF);
-	
+
+	DAG_id_tag_update(&base->object->id, OB_RECALC_OB);
+
+	WM_event_add_notifier(C, NC_OBJECT | ND_OB_SHADING, base->object);
 	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, CTX_wm_view3d(C));
 	WM_event_add_notifier(C, NC_MATERIAL | ND_SHADING_LINKS, ma);
-	
+
 	return OPERATOR_FINISHED;
 }
 
