@@ -30,7 +30,7 @@ from itertools import zip_longest, chain
 import bpy
 import bpy_extras
 from bpy.types import Object, Bone, PoseBone, DupliObject
-from mathutils import Matrix
+from mathutils import Vector, Matrix
 
 from . import encode_bin, data_types
 
@@ -207,6 +207,18 @@ def similar_values_iter(v1, v2, e=1e-6):
         if (v1 != v2) and ((abs(v1 - v2) / max(abs(v1), abs(v2))) > e):
             return False
     return True
+
+def vcos_transformed_gen(raw_cos, m=None):
+    # Note: we could most likely get much better performances with numpy, but will leave this as TODO for now.
+    gen = zip(*(iter(raw_cos),) * 3)
+    return gen if m is None else (m * Vector(v) for v in gen)
+
+def nors_transformed_gen(raw_nors, m=None):
+    # Great, now normals are also expected 4D!
+    # XXX Back to 3D normals for now!
+    # gen = zip(*(iter(raw_nors),) * 3 + (_infinite_gen(1.0),))
+    gen = zip(*(iter(raw_nors),) * 3)
+    return gen if m is None else (m * Vector(v) for v in gen)
 
 
 # ##### UIDs code. #####
@@ -659,7 +671,7 @@ class AnimationCurveNodeWrapper:
 
     def __bool__(self):
         # We are 'True' if we do have some validated keyframes...
-        return self._keys and True in ((True in k[2]) for k in self._keys)
+        return bool(self._keys) and (True in ((True in k[2]) for k in self._keys))
 
     def add_group(self, elem_key, fbx_group, fbx_gname, fbx_props):
         """
@@ -869,7 +881,17 @@ class ObjectWrapper(metaclass=MetaObjectWrapper):
 
     def get_parent(self):
         if self._tag == 'OB':
-            return ObjectWrapper(self.bdata.parent)
+            if (self.bdata.parent and self.bdata.parent.type == 'ARMATURE' and
+                self.bdata.parent_type == 'BONE' and self.bdata.parent_bone):
+                # Try to parent to a bone.
+                bo_par = self.bdata.parent.pose.bones.get(self.bdata.parent_bone, None)
+                if (bo_par):
+                    return ObjectWrapper(bo_par, self.bdata.parent)
+                else:  # Fallback to mere object parenting.
+                    return ObjectWrapper(self.bdata.parent)
+            else:
+                # Mere object parenting.
+                return ObjectWrapper(self.bdata.parent)
         elif self._tag == 'DP':
             return ObjectWrapper(self.bdata.parent or self._ref)
         else:  # self._tag == 'BO'
@@ -960,13 +982,24 @@ class ObjectWrapper(metaclass=MetaObjectWrapper):
 
         # Bones, lamps and cameras need to be rotated (in local space!).
         if self._tag == 'BO':
-            # XXX This should work smoothly, but actually is only OK for 'rest' pose, actual pose/animations
-            #     give insane results... :(
-            matrix = matrix * MAT_CONVERT_BONE
+            # If we have a bone parent we need to undo the parent correction.
+            if not is_global and scene_data.settings.bone_correction_matrix_inv and parent and parent.is_bone:
+                matrix = scene_data.settings.bone_correction_matrix_inv * matrix
+            # Apply the bone correction.
+            if scene_data.settings.bone_correction_matrix:
+                matrix = matrix * scene_data.settings.bone_correction_matrix
         elif self.bdata.type == 'LAMP':
             matrix = matrix * MAT_CONVERT_LAMP
         elif self.bdata.type == 'CAMERA':
             matrix = matrix * MAT_CONVERT_CAMERA
+
+        if self._tag in {'DP', 'OB'} and parent:
+            # To get *real* local matrix of a child object, we also need to take into account its inverted par mat!
+            matrix = self.bdata.matrix_parent_inverse * matrix
+            if parent._tag == 'BO':
+                # In bone parent case, we get transformation in **bone tip** space (sigh).
+                # Have to bring it back into bone root, which is FBX expected value.
+                matrix = Matrix.Translation((0, (parent.bdata.tail - parent.bdata.head).length, 0)) * matrix
 
         # Our matrix is in local space, time to bring it in its final desired space.
         if parent:
@@ -1042,6 +1075,15 @@ class ObjectWrapper(metaclass=MetaObjectWrapper):
         return ()
     material_slots = property(get_material_slots)
 
+    def is_deformed_by_armature(self, arm_obj):
+        if not (self.is_object and self.type == 'MESH'):
+            return False
+        if self.parent == arm_obj:
+            return True
+        for mod in self.bdata.modifiers:
+            if mod.type == 'ARMATURE' and mod.object == arm_obj.bdata:
+                return True
+
     # #### Duplis...
     def dupli_list_create(self, scene, settings='PREVIEW'):
         if self._tag == 'OB':
@@ -1079,7 +1121,8 @@ FBXExportSettings = namedtuple("FBXExportSettings", (
     "report", "to_axes", "global_matrix", "global_scale",
     "bake_space_transform", "global_matrix_inv", "global_matrix_inv_transposed",
     "context_objects", "object_types", "use_mesh_modifiers",
-    "mesh_smooth_type", "use_mesh_edges", "use_tspace", "use_armature_deform_only",
+    "mesh_smooth_type", "use_mesh_edges", "use_tspace",
+    "use_armature_deform_only", "add_leaf_bones", "bone_correction_matrix", "bone_correction_matrix_inv",
     "bake_anim", "bake_anim_use_nla_strips", "bake_anim_use_all_actions", "bake_anim_step", "bake_anim_simplify_factor",
     "use_metadata", "media_settings", "use_custom_props",
 ))
@@ -1095,15 +1138,17 @@ FBXExportData = namedtuple("FBXExportData", (
     "templates", "templates_users", "connections",
     "settings", "scene", "objects", "animations", "frame_start", "frame_end",
     "data_empties", "data_lamps", "data_cameras", "data_meshes", "mesh_mat_indices",
-    "data_bones", "data_deformers_skin", "data_deformers_shape",
+    "data_bones", "data_leaf_bones", "data_deformers_skin", "data_deformers_shape",
     "data_world", "data_materials", "data_textures", "data_videos",
 ))
 
 # Helper container gathering all importer settings.
 FBXImportSettings = namedtuple("FBXImportSettings", (
     "report", "to_axes", "global_matrix", "global_scale",
+    "bake_space_transform", "global_matrix_inv", "global_matrix_inv_transposed",
     "use_cycles", "use_image_search",
     "use_alpha_decals", "decal_offset",
     "use_custom_props", "use_custom_props_enum_as_string",
-    "object_tdata_cache", "cycles_material_wrap_map", "image_cache",
+    "cycles_material_wrap_map", "image_cache",
+    "ignore_leaf_bones", "automatic_bone_orientation", "bone_correction_matrix"
 ))
