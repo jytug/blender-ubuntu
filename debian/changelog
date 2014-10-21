@@ -1,8 +1,8 @@
-blender (2.72.b+dfsg0-1) UNRELEASED; urgency=medium
+blender (2.72.b+dfsg0-1) unstable; urgency=medium
 
   * New upstream bugfix release
 
- -- Matteo F. Vescovi <mfvescovi@gmail.com>  Tue, 21 Oct 2014 14:57:36 +0200
+ -- Matteo F. Vescovi <mfvescovi@gmail.com>  Tue, 21 Oct 2014 14:58:40 +0200
 
 blender (2.72+dfsg1-2) unstable; urgency=medium
 
