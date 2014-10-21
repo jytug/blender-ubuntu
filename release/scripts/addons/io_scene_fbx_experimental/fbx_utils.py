@@ -30,7 +30,7 @@ from itertools import zip_longest, chain
 import bpy
 import bpy_extras
 from bpy.types import Object, Bone, PoseBone, DupliObject
-from mathutils import Vector, Matrix
+from mathutils import Matrix
 
 from . import encode_bin, data_types
 
@@ -207,18 +207,6 @@ def similar_values_iter(v1, v2, e=1e-6):
         if (v1 != v2) and ((abs(v1 - v2) / max(abs(v1), abs(v2))) > e):
             return False
     return True
-
-def vcos_transformed_gen(raw_cos, m=None):
-    # Note: we could most likely get much better performances with numpy, but will leave this as TODO for now.
-    gen = zip(*(iter(raw_cos),) * 3)
-    return gen if m is None else (m * Vector(v) for v in gen)
-
-def nors_transformed_gen(raw_nors, m=None):
-    # Great, now normals are also expected 4D!
-    # XXX Back to 3D normals for now!
-    # gen = zip(*(iter(raw_nors),) * 3 + (_infinite_gen(1.0),))
-    gen = zip(*(iter(raw_nors),) * 3)
-    return gen if m is None else (m * Vector(v) for v in gen)
 
 
 # ##### UIDs code. #####
@@ -671,7 +659,7 @@ class AnimationCurveNodeWrapper:
 
     def __bool__(self):
         # We are 'True' if we do have some validated keyframes...
-        return bool(self._keys) and (True in ((True in k[2]) for k in self._keys))
+        return self._keys and True in ((True in k[2]) for k in self._keys)
 
     def add_group(self, elem_key, fbx_group, fbx_gname, fbx_props):
         """
@@ -1056,15 +1044,6 @@ class ObjectWrapper(metaclass=MetaObjectWrapper):
             return self.bdata.material_slots
         return ()
     material_slots = property(get_material_slots)
-
-    def is_deformed_by_armature(self, arm_obj):
-        if not (self.is_object and self.type == 'MESH'):
-            return False
-        if self.parent == arm_obj:
-            return True
-        for mod in self.bdata.modifiers:
-            if mod.type == 'ARMATURE' and mod.object == arm_obj.bdata:
-                return True
 
     # #### Duplis...
     def dupli_list_create(self, scene, settings='PREVIEW'):

@@ -712,16 +712,16 @@ static float voronoiTex(Tex *tex, const float texvec[3], TexResult *texres)
 static int texnoise(Tex *tex, TexResult *texres)
 {
 	float div=3.0;
-	int val, ran, loop;
+	int val, ran, loop, shift = 29;
 	
 	ran= BLI_rand();
 	val= (ran & 3);
 	
 	loop= tex->noisedepth;
 	while (loop--) {
-		ran= (ran>>2);
-		val*= (ran & 3);
-		div*= 3.0f;
+		shift -= 2;		
+		val *= ((ran >> shift) & 3);
+		div *= 3.0f;
 	}
 	
 	texres->tin= ((float)val)/div;
@@ -3396,8 +3396,11 @@ void do_lamp_tex(LampRen *la, const float lavec[3], ShadeInput *shi, float col_r
 				col[0]= texres.tr*la->energy;
 				col[1]= texres.tg*la->energy;
 				col[2]= texres.tb*la->energy;
-				
-				texture_rgb_blend(col_r, col, col_r, texres.tin, mtex->colfac, mtex->blendtype);
+
+				if (effect & LA_SHAD_TEX)
+					texture_rgb_blend(col_r, col, col_r, texres.tin, mtex->shadowfac, mtex->blendtype);
+				else
+					texture_rgb_blend(col_r, col, col_r, texres.tin, mtex->colfac, mtex->blendtype);
 			}
 		}
 	}

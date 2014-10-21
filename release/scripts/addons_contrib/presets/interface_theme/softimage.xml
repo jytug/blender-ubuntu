@@ -5,9 +5,9 @@
                           menu_shadow_width="12"
                           icon_file=""
                           icon_alpha="1"
-                          axis_x="#ff5a5a"
-                          axis_y="#58ff58"
-                          axis_z="#6262ff">
+                          axis_x="#ff4c4c"
+                          axis_y="#40ff40"
+                          axis_z="#4040ff">
         <wcol_regular>
           <ThemeWidgetColors outline="#949190"
                              inner="#aca8a7ff"
@@ -46,8 +46,8 @@
         </wcol_radio>
         <wcol_text>
           <ThemeWidgetColors outline="#989594"
-                             inner="#8a888aff"
-                             inner_sel="#919fa9ff"
+                             inner="#343234ff"
+                             inner_sel="#343234ff"
                              item="#4849ceff"
                              text="#ffffff"
                              text_sel="#ffffff"
@@ -82,8 +82,8 @@
         </wcol_toggle>
         <wcol_num>
           <ThemeWidgetColors outline="#4b4b4b"
-                             inner="#898789ff"
-                             inner_sel="#93a0aaff"
+                             inner="#373334ff"
+                             inner_sel="#353432ff"
                              item="#101010ff"
                              text="#ffffff"
                              text_sel="#ffffff"
@@ -94,9 +94,9 @@
         </wcol_num>
         <wcol_numslider>
           <ThemeWidgetColors outline="#4b4b4b"
-                             inner="#898789ff"
-                             inner_sel="#93a0aaff"
-                             item="#635c5fff"
+                             inner="#373334ff"
+                             inner_sel="#353432ff"
+                             item="#292627ff"
                              text="#f9f9f9"
                              text_sel="#ffffff"
                              show_shaded="FALSE"
@@ -154,12 +154,12 @@
         </wcol_menu_back>
         <wcol_pie_menu>
           <ThemeWidgetColors outline="#0a0a0a"
-                             inner="#aca8a7ff"
-                             inner_sel="#b1d1d8ff"
-                             item="#b4d8b1ff"
-                             text="#000000"
-                             text_sel="#000000"
-                             show_shaded="FALSE"
+                             inner="#191919e6"
+                             inner_sel="#8c8c8cff"
+                             item="#2d2d2de6"
+                             text="#a0a0a0"
+                             text_sel="#ffffff"
+                             show_shaded="TRUE"
                              shadetop="10"
                              shadedown="-10">
           </ThemeWidgetColors>
@@ -286,7 +286,6 @@
                    editmesh_active="#ffffffb3"
                    normal="#9cfcc8"
                    vertex_normal="#68a1db"
-                   split_normal="#dd23dd"
                    bone_solid="#c8c8c8"
                    bone_pose="#50c8ff"
                    bone_pose_active="#8cffff"
@@ -983,8 +982,8 @@
                        handle_auto_clamped="#000000"
                        handle_sel_auto_clamped="#000000"
                        handle_vertex="#000000"
-                       handle_vertex_select="#ffff00"
-                       handle_vertex_size="5">
+                       handle_vertex_select="#ff2f7a"
+                       handle_vertex_size="4">
         <space>
           <ThemeSpaceGeneric back="#aca8a7"
                              title="#1a1a1a"
@@ -1127,9 +1126,9 @@
       <ThemeFontStyle points="12"
                       font_kerning_style="FITTED"
                       shadow="1"
-                      shadow_offset_x="1"
+                      shadow_offset_x="0"
                       shadow_offset_y="-1"
-                      shadow_alpha="0.278"
+                      shadow_alpha="0.15"
                       shadow_value="1">
       </ThemeFontStyle>
     </panel_title>
