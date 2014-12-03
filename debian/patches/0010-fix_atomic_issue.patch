@@ -1,0 +1,521 @@
+From: Sergey Sharybin <sergey.vfx@gmail.com>
+Date: Wed, 3 Dec 2014 10:48:03 +0100
+Subject: fix_atomic_issue
+
+Closes: #771042
+
+Signed-off-by: Matteo F. Vescovi <mfv@debian.org>
+---
+ intern/atomic/atomic_ops.h          | 202 +++++++++++++++++++++++++++++-------
+ intern/cycles/CMakeLists.txt        |   4 +
+ intern/cycles/SConscript            |   2 +-
+ intern/cycles/kernel/osl/SConscript |   1 +
+ intern/cycles/util/CMakeLists.txt   |   1 +
+ intern/cycles/util/util_atomic.h    |  33 ++++++
+ intern/cycles/util/util_stats.h     |   9 +-
+ 7 files changed, 210 insertions(+), 42 deletions(-)
+ create mode 100644 intern/cycles/util/util_atomic.h
+
+diff --git a/intern/atomic/atomic_ops.h b/intern/atomic/atomic_ops.h
+index 127552f..06a5c8d 100644
+--- a/intern/atomic/atomic_ops.h
++++ b/intern/atomic/atomic_ops.h
+@@ -34,6 +34,11 @@
+ #if defined (__APPLE__)
+ #  include <libkern/OSAtomic.h>
+ #elif defined(_MSC_VER)
++#  define NOGDI
++#  ifndef NOMINMAX
++#    define NOMINMAX
++#  endif
++#  define WIN32_LEAN_AND_MEAN
+ #  include <windows.h>
+ #elif defined(__arm__)
+ /* Attempt to fix compilation error on Debian armel kernel.
+@@ -79,37 +84,57 @@
+ ATOMIC_INLINE uint64_t
+ atomic_add_uint64(uint64_t *p, uint64_t x)
+ {
+-	return (__sync_add_and_fetch(p, x));
++	return __sync_add_and_fetch(p, x);
+ }
+ 
+ ATOMIC_INLINE uint64_t
+ atomic_sub_uint64(uint64_t *p, uint64_t x)
+ {
+-	return (__sync_sub_and_fetch(p, x));
++	return __sync_sub_and_fetch(p, x);
++}
++
++ATOMIC_INLINE uint64_t
++atomic_cas_uint64(uint64_t *v, uint64_t old, uint64_t _new)
++{
++	return __sync_val_compare_and_swap(v, old, _new);
+ }
+ #elif (defined(_MSC_VER))
+ ATOMIC_INLINE uint64_t
+ atomic_add_uint64(uint64_t *p, uint64_t x)
+ {
+-	return (InterlockedExchangeAdd64(p, x));
++	return InterlockedExchangeAdd64((int64_t *)p, (int64_t)x);
+ }
+ 
+ ATOMIC_INLINE uint64_t
+ atomic_sub_uint64(uint64_t *p, uint64_t x)
+ {
+-	return (InterlockedExchangeAdd64(p, -((int64_t)x)));
++	return InterlockedExchangeAdd64((int64_t *)p, -((int64_t)x));
++}
++
++ATOMIC_INLINE uint64_t
++atomic_cas_uint64(uint64_t *v, uint64_t old, uint64_t _new)
++{
++	return InterlockedCompareExchange64((int64_t *)v, _new, old);
+ }
+ #elif (defined(__APPLE__))
+ ATOMIC_INLINE uint64_t
+ atomic_add_uint64(uint64_t *p, uint64_t x)
+ {
+-	return (uint64_t)(OSAtomicAdd64((int64_t)x, (int64_t *)p));
++	return (uint64_t)OSAtomicAdd64((int64_t)x, (int64_t *)p);
+ }
+ 
+ ATOMIC_INLINE uint64_t
+ atomic_sub_uint64(uint64_t *p, uint64_t x)
+ {
+-	return (uint64_t)(OSAtomicAdd64(-((int64_t)x), (int64_t *)p));
++	return (uint64_t)OSAtomicAdd64(-((int64_t)x), (int64_t *)p);
++}
++
++ATOMIC_INLINE uint64_t
++atomic_cas_uint64(uint64_t *v, uint64_t old, uint64_t _new)
++{
++	uint64_t init_val = *v;
++	OSAtomicCompareAndSwap64((int64_t)old, (int64_t)_new, (int64_t *)v);
++	return init_val;
+ }
+ #  elif (defined(__amd64__) || defined(__x86_64__))
+ ATOMIC_INLINE uint64_t
+@@ -120,7 +145,7 @@ atomic_add_uint64(uint64_t *p, uint64_t x)
+ 	    : "+r" (x), "=m" (*p) /* Outputs. */
+ 	    : "m" (*p) /* Inputs. */
+ 	    );
+-	return (x);
++	return x;
+ }
+ 
+ ATOMIC_INLINE uint64_t
+@@ -132,8 +157,21 @@ atomic_sub_uint64(uint64_t *p, uint64_t x)
+ 	    : "+r" (x), "=m" (*p) /* Outputs. */
+ 	    : "m" (*p) /* Inputs. */
+ 	    );
+-	return (x);
++	return x;
++}
++
++ATOMIC_INLINE uint64_t
++atomic_cas_uint64(uint64_t *v, uint64_t old, uint64_t _new)
++{
++	uint64_t ret;
++	asm volatile (
++	    "lock; cmpxchgq %2,%1"
++	    : "=a" (ret), "+m" (*v)
++	    : "r" (_new), "0" (old)
++	    : "memory");
++	return ret;
+ }
++
+ #  elif (defined(JEMALLOC_ATOMIC9))
+ ATOMIC_INLINE uint64_t
+ atomic_add_uint64(uint64_t *p, uint64_t x)
+@@ -144,7 +182,7 @@ atomic_add_uint64(uint64_t *p, uint64_t x)
+ 	 */
+ 	assert(sizeof(uint64_t) == sizeof(unsigned long));
+ 
+-	return (atomic_fetchadd_long(p, (unsigned long)x) + x);
++	return atomic_fetchadd_long(p, (unsigned long)x) + x;
+ }
+ 
+ ATOMIC_INLINE uint64_t
+@@ -152,19 +190,33 @@ atomic_sub_uint64(uint64_t *p, uint64_t x)
+ {
+ 	assert(sizeof(uint64_t) == sizeof(unsigned long));
+ 
+-	return (atomic_fetchadd_long(p, (unsigned long)(-(long)x)) - x);
++	return atomic_fetchadd_long(p, (unsigned long)(-(long)x)) - x;
++}
++
++ATOMIC_INLINE uint64_t
++atomic_cas_uint32(uint64_t *v, uint64_t old, uint64_t _new)
++{
++	assert(sizeof(uint64_t) == sizeof(unsigned long));
++
++	return atomic_cmpset_long(v, old, _new);
+ }
+ #  elif (defined(JE_FORCE_SYNC_COMPARE_AND_SWAP_8))
+ ATOMIC_INLINE uint64_t
+ atomic_add_uint64(uint64_t *p, uint64_t x)
+ {
+-	return (__sync_add_and_fetch(p, x));
++	return __sync_add_and_fetch(p, x);
+ }
+ 
+ ATOMIC_INLINE uint64_t
+ atomic_sub_uint64(uint64_t *p, uint64_t x)
+ {
+-	return (__sync_sub_and_fetch(p, x));
++	return __sync_sub_and_fetch(p, x);
++}
++
++ATOMIC_INLINE uint64_t
++atomic_cas_uint32(uint64_t *v, uint64_t old, uint64_t _new)
++{
++	return __sync_val_compare_and_swap(v, old, _new);
+ }
+ #  else
+ #    error "Missing implementation for 64-bit atomic operations"
+@@ -177,37 +229,57 @@ atomic_sub_uint64(uint64_t *p, uint64_t x)
+ ATOMIC_INLINE uint32_t
+ atomic_add_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (__sync_add_and_fetch(p, x));
++	return __sync_add_and_fetch(p, x);
+ }
+ 
+ ATOMIC_INLINE uint32_t
+ atomic_sub_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (__sync_sub_and_fetch(p, x));
++	return __sync_sub_and_fetch(p, x);
++}
++
++ATOMIC_INLINE uint32_t
++atomic_cas_uint32(uint32_t *v, uint32_t old, uint32_t _new)
++{
++   return __sync_val_compare_and_swap(v, old, _new);
+ }
+ #elif (defined(_MSC_VER))
+ ATOMIC_INLINE uint32_t
+ atomic_add_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (InterlockedExchangeAdd(p, x));
++	return InterlockedExchangeAdd(p, x);
+ }
+ 
+ ATOMIC_INLINE uint32_t
+ atomic_sub_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (InterlockedExchangeAdd(p, -((int32_t)x)));
++	return InterlockedExchangeAdd(p, -((int32_t)x));
++}
++
++ATOMIC_INLINE uint32_t
++atomic_cas_uint32(uint32_t *v, uint32_t old, uint32_t _new)
++{
++	return InterlockedCompareExchange((long *)v, _new, old);
+ }
+ #elif (defined(__APPLE__))
+ ATOMIC_INLINE uint32_t
+ atomic_add_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (uint32_t)(OSAtomicAdd32((int32_t)x, (int32_t *)p));
++	return (uint32_t)OSAtomicAdd32((int32_t)x, (int32_t *)p);
+ }
+ 
+ ATOMIC_INLINE uint32_t
+ atomic_sub_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (uint32_t)(OSAtomicAdd32(-((int32_t)x), (int32_t *)p));
++	return (uint32_t)OSAtomicAdd32(-((int32_t)x), (int32_t *)p);
++}
++
++ATOMIC_INLINE uint32_t
++atomic_cas_uint32(uint32_t *v, uint32_t old, uint32_t _new)
++{
++	uint32_t init_val = *v;
++	OSAtomicCompareAndSwap32((int32_t)old, (int32_t)_new, (int32_t *)v);
++	return init_val;
+ }
+ #elif (defined(__i386__) || defined(__amd64__) || defined(__x86_64__))
+ ATOMIC_INLINE uint32_t
+@@ -218,7 +290,7 @@ atomic_add_uint32(uint32_t *p, uint32_t x)
+ 	    : "+r" (x), "=m" (*p) /* Outputs. */
+ 	    : "m" (*p) /* Inputs. */
+ 	    );
+-	return (x);
++	return x;
+ }
+ 
+ ATOMIC_INLINE uint32_t
+@@ -230,31 +302,55 @@ atomic_sub_uint32(uint32_t *p, uint32_t x)
+ 	    : "+r" (x), "=m" (*p) /* Outputs. */
+ 	    : "m" (*p) /* Inputs. */
+ 	    );
+-	return (x);
++	return x;
++}
++
++ATOMIC_INLINE uint32_t
++atomic_cas_uint32(uint32_t *v, uint32_t old, uint32_t _new)
++{
++	uint32_t ret;
++	asm volatile (
++	    "lock; cmpxchgl %2,%1"
++	    : "=a" (ret), "+m" (*v)
++	    : "r" (_new), "0" (old)
++	    : "memory");
++	return ret;
+ }
+ #elif (defined(JEMALLOC_ATOMIC9))
+ ATOMIC_INLINE uint32_t
+ atomic_add_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (atomic_fetchadd_32(p, x) + x);
++	return atomic_fetchadd_32(p, x) + x;
+ }
+ 
+ ATOMIC_INLINE uint32_t
+ atomic_sub_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (atomic_fetchadd_32(p, (uint32_t)(-(int32_t)x)) - x);
++	return atomic_fetchadd_32(p, (uint32_t)(-(int32_t)x)) - x;
++}
++
++ATOMIC_INLINE uint32_t
++atomic_cas_uint32(uint32_t *v, uint32_t old, uint32_t _new)
++{
++	return atomic_cmpset_32(v, old, _new);
+ }
+-#elif (defined(JE_FORCE_SYNC_COMPARE_AND_SWAP_4))
++#elif defined(JE_FORCE_SYNC_COMPARE_AND_SWAP_4)
+ ATOMIC_INLINE uint32_t
+ atomic_add_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (__sync_add_and_fetch(p, x));
++	return __sync_add_and_fetch(p, x);
+ }
+ 
+ ATOMIC_INLINE uint32_t
+ atomic_sub_uint32(uint32_t *p, uint32_t x)
+ {
+-	return (__sync_sub_and_fetch(p, x));
++	return __sync_sub_and_fetch(p, x);
++}
++
++ATOMIC_INLINE uint32_t
++atomic_cas_uint32(uint32_t *v, uint32_t old, uint32_t _new)
++{
++	return __sync_val_compare_and_swap(v, old, _new);
+ }
+ #else
+ #  error "Missing implementation for 32-bit atomic operations"
+@@ -268,9 +364,9 @@ atomic_add_z(size_t *p, size_t x)
+ 	assert(sizeof(size_t) == 1 << LG_SIZEOF_PTR);
+ 
+ #if (LG_SIZEOF_PTR == 3)
+-	return ((size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)x));
++	return (size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)x);
+ #elif (LG_SIZEOF_PTR == 2)
+-	return ((size_t)atomic_add_uint32((uint32_t *)p, (uint32_t)x));
++	return (size_t)atomic_add_uint32((uint32_t *)p, (uint32_t)x);
+ #endif
+ }
+ 
+@@ -280,11 +376,27 @@ atomic_sub_z(size_t *p, size_t x)
+ 	assert(sizeof(size_t) == 1 << LG_SIZEOF_PTR);
+ 
+ #if (LG_SIZEOF_PTR == 3)
+-	return ((size_t)atomic_add_uint64((uint64_t *)p,
+-	    (uint64_t)-((int64_t)x)));
++	return (size_t)atomic_add_uint64((uint64_t *)p,
++	                                 (uint64_t)-((int64_t)x));
+ #elif (LG_SIZEOF_PTR == 2)
+-	return ((size_t)atomic_add_uint32((uint32_t *)p,
+-	    (uint32_t)-((int32_t)x)));
++	return (size_t)atomic_add_uint32((uint32_t *)p,
++	                                 (uint32_t)-((int32_t)x));
++#endif
++}
++
++ATOMIC_INLINE size_t
++atomic_cas_z(size_t *v, size_t old, size_t _new)
++{
++	assert(sizeof(size_t) == 1 << LG_SIZEOF_PTR);
++
++#if (LG_SIZEOF_PTR == 3)
++	return (size_t)atomic_cas_uint64((uint64_t *)v,
++	                                 (uint64_t)old,
++	                                 (uint64_t)_new);
++#elif (LG_SIZEOF_PTR == 2)
++	return (size_t)atomic_cas_uint32((uint32_t *)v,
++	                                 (uint32_t)old,
++	                                 (uint32_t)_new);
+ #endif
+ }
+ 
+@@ -296,9 +408,9 @@ atomic_add_u(unsigned *p, unsigned x)
+ 	assert(sizeof(unsigned) == 1 << LG_SIZEOF_INT);
+ 
+ #if (LG_SIZEOF_INT == 3)
+-	return ((unsigned)atomic_add_uint64((uint64_t *)p, (uint64_t)x));
++	return (unsigned)atomic_add_uint64((uint64_t *)p, (uint64_t)x);
+ #elif (LG_SIZEOF_INT == 2)
+-	return ((unsigned)atomic_add_uint32((uint32_t *)p, (uint32_t)x));
++	return (unsigned)atomic_add_uint32((uint32_t *)p, (uint32_t)x);
+ #endif
+ }
+ 
+@@ -308,11 +420,27 @@ atomic_sub_u(unsigned *p, unsigned x)
+ 	assert(sizeof(unsigned) == 1 << LG_SIZEOF_INT);
+ 
+ #if (LG_SIZEOF_INT == 3)
+-	return ((unsigned)atomic_add_uint64((uint64_t *)p,
+-	    (uint64_t)-((int64_t)x)));
++	return (unsigned)atomic_add_uint64((uint64_t *)p,
++	                                   (uint64_t)-((int64_t)x));
+ #elif (LG_SIZEOF_INT == 2)
+-	return ((unsigned)atomic_add_uint32((uint32_t *)p,
+-	    (uint32_t)-((int32_t)x)));
++	return (unsigned)atomic_add_uint32((uint32_t *)p,
++	                                   (uint32_t)-((int32_t)x));
++#endif
++}
++
++ATOMIC_INLINE unsigned
++atomic_cas_u(unsigned *v, unsigned old, unsigned _new)
++{
++	assert(sizeof(unsigned) == 1 << LG_SIZEOF_INT);
++
++#if (LG_SIZEOF_PTR == 3)
++	return (unsigned)atomic_cas_uint64((uint64_t *)v,
++	                                   (uint64_t)old,
++	                                   (uint64_t)_new);
++#elif (LG_SIZEOF_PTR == 2)
++	return (unsigned)atomic_cas_uint32((uint32_t *)v,
++	                                   (uint32_t)old,
++	                                   (uint32_t)_new);
+ #endif
+ }
+ 
+diff --git a/intern/cycles/CMakeLists.txt b/intern/cycles/CMakeLists.txt
+index a3f251d..2b64eac 100644
+--- a/intern/cycles/CMakeLists.txt
++++ b/intern/cycles/CMakeLists.txt
+@@ -139,6 +139,10 @@ include_directories(
+ 	${OPENEXR_INCLUDE_DIRS}
+ )
+ 
++# TODO(sergey): Adjust so standalone repository is also happy.
++include_directories(
++	../atomic
++)
+ 
+ # Warnings
+ if(CMAKE_COMPILER_IS_GNUCXX)
+diff --git a/intern/cycles/SConscript b/intern/cycles/SConscript
+index a6c947b..53278b7 100644
+--- a/intern/cycles/SConscript
++++ b/intern/cycles/SConscript
+@@ -60,7 +60,7 @@ if env['WITH_BF_CYCLES_OSL']:
+     incs.append(cycles['BF_OSL_INC'])
+ 
+ incs.extend('. bvh render device kernel kernel/osl kernel/svm util subd'.split())
+-incs.extend('#intern/guardedalloc #source/blender/makesrna #source/blender/makesdna #source/blender/blenlib'.split())
++incs.extend('#intern/guardedalloc #intern/atomic #source/blender/makesrna #source/blender/makesdna #source/blender/blenlib'.split())
+ incs.extend('#source/blender/blenloader ../../source/blender/makesrna/intern'.split())
+ incs.extend('#extern/glew/include #extern/clew/include #extern/cuew/include #intern/mikktspace'.split())
+ incs.append(cycles['BF_OIIO_INC'])
+diff --git a/intern/cycles/kernel/osl/SConscript b/intern/cycles/kernel/osl/SConscript
+index 4685bb7..e4329de 100644
+--- a/intern/cycles/kernel/osl/SConscript
++++ b/intern/cycles/kernel/osl/SConscript
+@@ -38,6 +38,7 @@ incs.append(env['BF_OIIO_INC'])
+ incs.append(env['BF_BOOST_INC'])
+ incs.append(env['BF_OSL_INC'])
+ incs.append(env['BF_OPENEXR_INC'].split())
++incs.append('#/intern/atomic')
+ 
+ defs.append('CCL_NAMESPACE_BEGIN=namespace ccl {')
+ defs.append('CCL_NAMESPACE_END=}')
+diff --git a/intern/cycles/util/CMakeLists.txt b/intern/cycles/util/CMakeLists.txt
+index d9b97a7..4caa1e1 100644
+--- a/intern/cycles/util/CMakeLists.txt
++++ b/intern/cycles/util/CMakeLists.txt
+@@ -30,6 +30,7 @@ endif()
+ set(SRC_HEADERS
+ 	util_algorithm.h
+ 	util_args.h
++	util_atomic.h
+ 	util_boundbox.h
+ 	util_cache.h
+ 	util_debug.h
+diff --git a/intern/cycles/util/util_atomic.h b/intern/cycles/util/util_atomic.h
+new file mode 100644
+index 0000000..1bbb0a8
+--- /dev/null
++++ b/intern/cycles/util/util_atomic.h
+@@ -0,0 +1,33 @@
++/*
++ * Copyright 2014 Blender Foundation
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License
++ */
++
++#ifndef __UTIL_ATOMIC_H__
++#define __UTIL_ATOMIC_H__
++
++/* Using atomic ops header from Blender. */
++#include "atomic_ops.h"
++
++ATOMIC_INLINE void atomic_update_max_z(size_t *maximum_value, size_t value)
++{
++	size_t prev_value = *maximum_value;
++	while (prev_value < value) {
++		if (atomic_cas_z(maximum_value, prev_value, value) != prev_value) {
++			break;
++		}
++	}
++}
++
++#endif /* __UTIL_ATOMIC_H__ */
+diff --git a/intern/cycles/util/util_stats.h b/intern/cycles/util/util_stats.h
+index 8758b82..fe6c162 100644
+--- a/intern/cycles/util/util_stats.h
++++ b/intern/cycles/util/util_stats.h
+@@ -17,6 +17,8 @@
+ #ifndef __UTIL_STATS_H__
+ #define __UTIL_STATS_H__
+ 
++#include "util_atomic.h"
++
+ CCL_NAMESPACE_BEGIN
+ 
+ class Stats {
+@@ -24,14 +26,13 @@ public:
+ 	Stats() : mem_used(0), mem_peak(0) {}
+ 
+ 	void mem_alloc(size_t size) {
+-		mem_used += size;
+-		if(mem_used > mem_peak)
+-			mem_peak = mem_used;
++		atomic_add_z(&mem_used, size);
++		atomic_update_max_z(&mem_peak, mem_used);
+ 	}
+ 
+ 	void mem_free(size_t size) {
+ 		assert(mem_used >= size);
+-		mem_used -= size;
++		atomic_sub_z(&mem_used, size);
+ 	}
+ 
+ 	size_t mem_used;

@@ -8,7 +8,7 @@ Install only relevant documentation.
  1 file changed, 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 9af7b21..2ae3bf2 100644
+index d38cf25..3cd9cdf 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -238,8 +238,6 @@ else()

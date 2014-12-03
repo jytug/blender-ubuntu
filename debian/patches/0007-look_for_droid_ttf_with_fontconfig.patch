@@ -184,7 +184,7 @@ index f6bbd32..91b4070 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 40609da..095732b 100644
+index 5b9b390..f9a451e 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -320,12 +320,6 @@ endif()

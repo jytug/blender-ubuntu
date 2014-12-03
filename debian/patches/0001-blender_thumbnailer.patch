@@ -33,7 +33,7 @@ index 779c615..dbcd865 100755
  # ##### BEGIN GPL LICENSE BLOCK #####
  #
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 6ed87f6..498c99e 100644
+index 06c6d0d..80c48cf 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -478,7 +478,7 @@ if(UNIX AND NOT APPLE)

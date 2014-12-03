@@ -30,7 +30,7 @@ index e2d9733..ec0e691 100644
  	if (static_path) {
  		static string system_path = string(static_path) + "/blender/" + versionstr;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index f5566ab..40609da 100644
+index 27a9b62..5b9b390 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -261,7 +261,7 @@ if(UNIX AND NOT APPLE)
