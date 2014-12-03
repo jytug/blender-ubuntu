@@ -99,7 +99,7 @@ Copyright: 1999, Stephen Crowley <crow@debian.org>
            2005-2007, Florian Ernst <florian@debian.org>
            2007-2010, Cyril Brulebois <kibi@debian.org>
            2010-2012, Kevin Roy <kiniou@gmail.com>
-           2012-2013, Matteo F. Vescovi <mfv.debian@gmail.com>
+           2012-2014, Matteo F. Vescovi <mfv@debian.org>
 License: GPL-2+
 
 Files: extern/libopenjpeg/*
