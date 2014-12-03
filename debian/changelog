@@ -1,9 +1,9 @@
-blender (2.72.b+dfsg0-3) UNRELEASED; urgency=medium
+blender (2.72.b+dfsg0-3) unstable; urgency=medium
 
   * debian/patches/: patchset updated
     - 0011-set_SSL_version_to_v23.patch added (Closes: #770447)
 
- -- Matteo F. Vescovi <mfv@debian.org>  Wed, 03 Dec 2014 14:36:13 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Wed, 03 Dec 2014 16:09:11 +0100
 
 blender (2.72.b+dfsg0-2) experimental; urgency=medium
 
