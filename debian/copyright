@@ -385,11 +385,6 @@ Copyright: 2009-2010, Sony Pictures Imageworks Inc.
            2011, Blender Foundation
 License: BSD-New-(Sony)
 
-Files: intern/cycles/kernel/closure/bsdf_westin.h
-Copyright: 2009-2010, Sony Pictures Imageworks Inc.
-           2011, Blender Foundation
-License: BSD-New-(Sony)
-
 Files: intern/cycles/kernel/closure/bsdf_refraction.h
 Copyright: 2009-2010, Sony Pictures Imageworks Inc.
            2011, Blender Foundation
