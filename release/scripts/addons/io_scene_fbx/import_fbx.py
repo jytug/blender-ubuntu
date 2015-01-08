@@ -360,11 +360,11 @@ def blen_read_object_transform_do(transform_data):
         pre_rot *
         lcl_rot *
         pst_rot *
-        rot_piv.inverted() *
+        rot_piv.inverted_safe() *
         sca_ofs *
         sca_piv *
         lcl_scale *
-        sca_piv.inverted()
+        sca_piv.inverted_safe()
     )
 
 
@@ -382,7 +382,7 @@ def add_vgroup_to_objects(vg_indices, vg_weights, vg_name, objects):
                 vg.add((i,), w, 'REPLACE')
 
 
-def blen_read_object_transform_preprocess(fbx_props, fbx_obj, rot_alt_mat):
+def blen_read_object_transform_preprocess(fbx_props, fbx_obj, rot_alt_mat, use_prepost_rot):
     # This is quite involved, 'fbxRNode.cpp' from openscenegraph used as a reference
     const_vector_zero_3d = 0.0, 0.0, 0.0
     const_vector_one_3d = 1.0, 1.0, 1.0
@@ -399,8 +399,12 @@ def blen_read_object_transform_preprocess(fbx_props, fbx_obj, rot_alt_mat):
     is_rot_act = elem_props_get_bool(fbx_props, b'RotationActive', False)
 
     if is_rot_act:
-        pre_rot = elem_props_get_vector_3d(fbx_props, b'PreRotation', const_vector_zero_3d)
-        pst_rot = elem_props_get_vector_3d(fbx_props, b'PostRotation', const_vector_zero_3d)
+        if use_prepost_rot:
+            pre_rot = elem_props_get_vector_3d(fbx_props, b'PreRotation', const_vector_zero_3d)
+            pst_rot = elem_props_get_vector_3d(fbx_props, b'PostRotation', const_vector_zero_3d)
+        else:
+            pre_rot = const_vector_zero_3d
+            pst_rot = const_vector_zero_3d
         rot_ord = {
             0: 'XYZ',
             1: 'XYZ',
@@ -533,7 +537,7 @@ def blen_read_animations_action_item(action, item, cnodes, fps):
         rot_prev = bl_obj.rotation_euler.copy()
 
         # Pre-compute inverted local rest matrix of the bone, if relevant.
-        restmat_inv = item.get_bind_matrix().inverted() if item.is_bone else None
+        restmat_inv = item.get_bind_matrix().inverted_safe() if item.is_bone else None
 
         # We assume for now blen init point is frame 1.0, while FBX ktime init point is 0.
         for frame, values in blen_read_animations_curves_iter(fbx_curves, 1.0, 0, fps):
@@ -583,7 +587,8 @@ def blen_read_animations_action_item(action, item, cnodes, fps):
 def blen_read_animations(fbx_tmpl_astack, fbx_tmpl_alayer, stacks, scene):
     """
     Recreate an action per stack/layer/object combinations.
-    Note actions are not linked to objects, this is up to the user!
+    Only the first found action is linked to objects, more complex setups are not handled,
+    it's up to user to reproduce them!
     """
     from bpy.types import ShapeKey
 
@@ -599,12 +604,19 @@ def blen_read_animations(fbx_tmpl_astack, fbx_tmpl_alayer, stacks, scene):
                     id_data = item.bl_obj
                 if id_data is None:
                     continue
+                # Create new action if needed (should always be needed!
                 key = (as_uuid, al_uuid, id_data)
                 action = actions.get(key)
                 if action is None:
                     action_name = "|".join((id_data.name, stack_name, layer_name))
                     actions[key] = action = bpy.data.actions.new(action_name)
                     action.use_fake_user = True
+                # If none yet assigned, assign this action to id_data.
+                if not id_data.animation_data:
+                    id_data.animation_data_create()
+                if not id_data.animation_data.action:
+                    id_data.animation_data.action = action
+                # And actually populate the action!
                 blen_read_animations_action_item(action, item, cnodes, scene.render.fps)
 
 
@@ -1420,7 +1432,7 @@ class FbxImportHelperNode:
             self.post_matrix = settings.global_matrix_inv * (self.post_matrix if self.post_matrix else Matrix())
 
         # process children
-        correction_matrix_inv = correction_matrix.inverted() if correction_matrix else None
+        correction_matrix_inv = correction_matrix.inverted_safe() if correction_matrix else None
         for child in self.children:
             child.find_correction_matrix(settings, correction_matrix_inv)
 
@@ -1431,7 +1443,7 @@ class FbxImportHelperNode:
                 needs_armature = True
                 break
         if needs_armature:
-            if self.fbx_type == b'Null':
+            if self.fbx_type in {b'Null', b'Root'}:
                 # if empty then convert into armature
                 self.is_armature = True
             else:
@@ -1464,7 +1476,7 @@ class FbxImportHelperNode:
         if in_armature and not self.is_bone and self.has_bone_children:
             self.is_bone = True
             # if we are not a null node we need an intermediate node for the data
-            if self.fbx_type != b'Null':
+            if self.fbx_type not in {b'Null', b'Root'}:
                 node = FbxImportHelperNode(self.fbx_elem, self.bl_data, None, False)
                 self.fbx_elem = None
                 self.bl_data = None
@@ -1518,7 +1530,7 @@ class FbxImportHelperNode:
             parent_matrix = Matrix()
 
         if self.bind_matrix:
-            bind_matrix = parent_matrix.inverted() * self.bind_matrix
+            bind_matrix = parent_matrix.inverted_safe() * self.bind_matrix
         else:
             bind_matrix = self.matrix.copy() if self.matrix else None
 
@@ -1537,7 +1549,7 @@ class FbxImportHelperNode:
 
     def collect_armature_meshes(self):
         if self.is_armature:
-            armature_matrix_inv = self.get_world_matrix().inverted()
+            armature_matrix_inv = self.get_world_matrix().inverted_safe()
 
             meshes = set()
             for child in self.children:
@@ -1545,7 +1557,7 @@ class FbxImportHelperNode:
             for m in meshes:
                 old_matrix = m.matrix
                 m.matrix = armature_matrix_inv * m.get_world_matrix()
-                m.anim_compensation_matrix = old_matrix.inverted() * m.matrix
+                m.anim_compensation_matrix = old_matrix.inverted_safe() * m.matrix
                 m.parent = self
             self.meshes = meshes
         else:
@@ -1625,6 +1637,8 @@ class FbxImportHelperNode:
         return obj
 
     def build_skeleton_children(self, fbx_tmpl, settings, scene):
+        from mathutils import Matrix
+
         if self.is_bone:
             for child in self.children:
                 if child.ignore:
@@ -1634,6 +1648,7 @@ class FbxImportHelperNode:
                     child_obj.parent = self.bl_obj  # get the armature the bone belongs to
                     child_obj.parent_bone = self.bl_bone
                     child_obj.parent_type = 'BONE'
+                    child_obj.matrix_parent_inverse = Matrix()
 
                     # Blender attaches to the end of a bone, while FBX attaches to the start. bone_child_matrix corrects for that.
                     if child.pre_matrix:
@@ -1662,7 +1677,7 @@ class FbxImportHelperNode:
 
     def set_pose_matrix(self, arm):
         pose_bone = arm.bl_obj.pose.bones[self.bl_bone]
-        pose_bone.matrix_basis = self.get_bind_matrix().inverted() * self.get_matrix()
+        pose_bone.matrix_basis = self.get_bind_matrix().inverted_safe() * self.get_matrix()
 
         for child in self.children:
             if child.ignore:
@@ -1862,7 +1877,8 @@ def load(operator, context, filepath="",
          ignore_leaf_bones=False,
          automatic_bone_orientation=False,
          primary_bone_axis='Y',
-         secondary_bone_axis='X'):
+         secondary_bone_axis='X',
+         use_prepost_rot=True):
 
     global fbx_elem_nil
     fbx_elem_nil = FBXElem('', (), (), ())
@@ -1975,6 +1991,7 @@ def load(operator, context, filepath="",
         use_custom_props, use_custom_props_enum_as_string,
         cycles_material_wrap_map, image_cache,
         ignore_leaf_bones, automatic_bone_orientation, bone_correction_matrix,
+        use_prepost_rot,
     )
 
     # #### And now, the "real" data.
@@ -2120,8 +2137,8 @@ def load(operator, context, filepath="",
         return [(c_found[0], c_found[1], c_type)
                 for (c_uuid, c_type) in dct.get(fbx_uuid, ())
                 # 0 is used for the root node, which isnt in fbx_table_nodes
-                for c_found in (() if c_uuid is 0 else (fbx_table_nodes[c_uuid],))
-                if (fbx_id is None) or (c_found[0].id == fbx_id)]
+                for c_found in (() if c_uuid is 0 else (fbx_table_nodes.get(c_uuid, (None, None)),))
+                if (fbx_id is None) or (c_found[0] and c_found[0].id == fbx_id)]
 
     def connection_filter_forward(fbx_uuid, fbx_id):
         return connection_filter_ex(fbx_uuid, fbx_id, fbx_connection_map)
@@ -2155,8 +2172,8 @@ def load(operator, context, filepath="",
                          elem_find_first(fbx_tmpl, b'Properties70', fbx_elem_nil))
             assert(fbx_props[0] is not None)
 
-            transform_data = blen_read_object_transform_preprocess(fbx_props, fbx_obj, Matrix())
-            is_bone = fbx_obj.props[2] in {b'LimbNode', b'Root'}
+            transform_data = blen_read_object_transform_preprocess(fbx_props, fbx_obj, Matrix(), use_prepost_rot)
+            is_bone = fbx_obj.props[2] in {b'LimbNode'}  # Note: 'Root' "bones" are handled as (armature) objects.
             fbx_helper_nodes[a_uuid] = FbxImportHelperNode(fbx_obj, bl_data, transform_data, is_bone)
 
         # add parent-child relations and add blender data to the node
@@ -2440,7 +2457,7 @@ def load(operator, context, filepath="",
             if fbx_obj.id != b'Geometry':
                 continue
 
-            mesh = fbx_table_nodes[fbx_uuid][1]
+            mesh = fbx_table_nodes.get(fbx_uuid, (None, None))[1]
 
             # can happen in rare cases
             if mesh is None:
@@ -2523,7 +2540,7 @@ def load(operator, context, filepath="",
             if fbx_obj.id != b'Material':
                 continue
 
-            material = fbx_table_nodes[fbx_uuid][1]
+            material = fbx_table_nodes.get(fbx_uuid, (None, None))[1]
             for (fbx_lnk,
                  image,
                  fbx_lnk_type) in connection_filter_reverse(fbx_uuid, b'Texture'):
@@ -2641,7 +2658,7 @@ def load(operator, context, filepath="",
             fbx_obj, blen_data = fbx_item
             if fbx_obj.id != b'Material':
                 continue
-            material = fbx_table_nodes[fbx_uuid][1]
+            material = fbx_table_nodes.get(fbx_uuid, (None, None))[1]
             image, tex_map = material_images.get(material, {}).get(b'DiffuseColor', (None, None))
             # do we have alpha?
             if image and image.depth == 32:
