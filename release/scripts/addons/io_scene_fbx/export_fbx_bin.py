@@ -1452,7 +1452,7 @@ def fbx_data_armature_elements(root, arm_obj, scene_data):
                 #          http://area.autodesk.com/forum/autodesk-fbx/fbx-sdk/why-the-values-return-
                 #                 by-fbxcluster-gettransformmatrix-x-not-same-with-the-value-in-ascii-fbx-file/
                 elem_data_single_float64_array(fbx_clstr, b"Transform",
-                                               matrix4_to_array(mat_world_bones[bo_obj].inverted() * mat_world_obj))
+                                               matrix4_to_array(mat_world_bones[bo_obj].inverted_safe() * mat_world_obj))
                 elem_data_single_float64_array(fbx_clstr, b"TransformLink", matrix4_to_array(mat_world_bones[bo_obj]))
                 elem_data_single_float64_array(fbx_clstr, b"TransformAssociateModel", matrix4_to_array(mat_world_arm))
 
@@ -1515,6 +1515,8 @@ def fbx_data_object_elements(root, ob_obj, scene_data):
     obj_type = b"Null"  # default, sort of empty...
     if ob_obj.is_bone:
         obj_type = b"LimbNode"
+    elif (ob_obj.type == 'ARMATURE'):
+        obj_type = b"Root"
     elif (ob_obj.type in BLENDER_OBJECT_TYPES_MESHLIKE):
         obj_type = b"Mesh"
     elif (ob_obj.type == 'LAMP'):
@@ -1840,7 +1842,7 @@ def fbx_animations_do(scene_data, ref_id, f_start, f_end, start_zero, objects=No
     p_rots = {}
 
     currframe = f_start
-    while currframe < f_end:
+    while currframe <= f_end:
         real_currframe = currframe - f_start if start_zero else currframe
         scene.frame_set(int(currframe), currframe - int(currframe))
 
@@ -2898,7 +2900,7 @@ def save(operator, context,
             fbxpath = os.path.dirname(fbxpath)
 
         if batch_mode == 'GROUP':
-            data_seq = bpy.data.groups
+            data_seq = tuple(grp for grp in bpy.data.groups if grp.objects)
         else:
             data_seq = bpy.data.scenes
 

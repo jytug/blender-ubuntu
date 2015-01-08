@@ -38,9 +38,7 @@
 #include "DNA_space_types.h"
 #include "DNA_object_types.h"
 
-#include "BLI_math.h"
 
-#include "BLI_rect.h"
 #include "BLI_math_color_blend.h"
 #include "BLI_stack.h"
 #include "BLI_bitmap.h"
@@ -65,7 +63,6 @@
 
 #include "UI_view2d.h"
 
-#include "RE_shader_ext.h"
 
 #include "GPU_draw.h"
 
@@ -1564,7 +1561,7 @@ void paint_2d_gradient_fill(
 	sub_v2_v2v2(tangent, image_final, image_init);
 	line_len = len_squared_v2(tangent);
 	line_len_sq_inv = 1.0f / line_len;
-	line_len = sqrt(line_len);
+	line_len = sqrtf(line_len);
 
 	do_float = (ibuf->rect_float != NULL);
 

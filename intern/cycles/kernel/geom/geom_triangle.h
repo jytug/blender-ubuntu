@@ -157,7 +157,7 @@ ccl_device_inline void triangle_point_normal(KernelGlobals *kg, int object, int 
 		*Ng = normalize(cross(v1 - v0, v2 - v0));
 
 	/* shader`*/
-	*shader = __float_as_int(kernel_tex_fetch(__tri_shader, prim));
+	*shader = kernel_tex_fetch(__tri_shader, prim);
 }
 
 /* Triangle vertex locations */
@@ -334,12 +334,12 @@ ccl_device_inline bool triangle_intersect(KernelGlobals *kg, Intersection *isect
 #endif
 				{
 					/* record intersection */
+					isect->t = t;
+					isect->u = u;
+					isect->v = v;
 					isect->prim = triAddr;
 					isect->object = object;
 					isect->type = PRIMITIVE_TRIANGLE;
-					isect->u = u;
-					isect->v = v;
-					isect->t = t;
 					return true;
 				}
 			}
@@ -397,12 +397,12 @@ ccl_device_inline void triangle_intersect_subsurface(KernelGlobals *kg, Intersec
 
 				/* record intersection */
 				Intersection *isect = &isect_array[hit];
+				isect->t = t;
+				isect->u = u;
+				isect->v = v;
 				isect->prim = triAddr;
 				isect->object = object;
 				isect->type = PRIMITIVE_TRIANGLE;
-				isect->u = u;
-				isect->v = v;
-				isect->t = t;
 			}
 		}
 	}
