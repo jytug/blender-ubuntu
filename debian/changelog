@@ -1,3 +1,19 @@
+blender (2.73+dfsg0-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - debian/patches/: patchset updated against v2.73
+      - #0001 => #0007 refreshed
+      - #0008 => #0011 dropped (applied upstream)
+  * debian/copyright: bsdf_westin.h entry dropped (removed upstream)
+  * debian/rules: WITH_GAMEENGINE parameter added
+  * debian/rules: WITH_OPENCOLORIO parameter added
+  * debian/rules: WITH_DOC_MANPAGE parameter added
+  * debian/rules: WITH_SYSTEM_OPENJPEG parameter added
+  * debian/control: debug package description updated
+  * debian/control: python3-requests b-dep added
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 09 Jan 2015 17:51:23 +0100
+
 blender (2.72.b+dfsg0-3) unstable; urgency=medium
 
   * debian/patches/: patchset updated
