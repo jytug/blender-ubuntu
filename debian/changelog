@@ -1,4 +1,4 @@
-blender (2.73+dfsg0-1) UNRELEASED; urgency=medium
+blender (2.73+dfsg0-1) experimental; urgency=medium
 
   * New upstream release
     - debian/patches/: patchset updated against v2.73
@@ -12,7 +12,7 @@ blender (2.73+dfsg0-1) UNRELEASED; urgency=medium
   * debian/control: debug package description updated
   * debian/control: python3-requests b-dep added
 
- -- Matteo F. Vescovi <mfv@debian.org>  Fri, 09 Jan 2015 17:51:23 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 09 Jan 2015 17:52:36 +0100
 
 blender (2.72.b+dfsg0-3) unstable; urgency=medium
 
