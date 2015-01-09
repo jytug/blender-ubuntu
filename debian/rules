@@ -35,6 +35,7 @@ override_dh_auto_configure:
 		-DWITH_CPU_SSE=$(SETSSE) \
 		-DWITH_FONTCONFIG=ON \
 		-DWITH_MOD_OCEANSIM=ON \
+		-DWITH_OPENCOLORIO=ON \
 		-DWITH_CYCLES=ON
 
 override_dh_auto_install:
