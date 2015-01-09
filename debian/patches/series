@@ -5,7 +5,3 @@
 0005-update_manpages.patch
 0006-do_not_use_version_number_in_system_path.patch
 0007-look_for_droid_ttf_with_fontconfig.patch
-0008-use_cuda_pointer_arithmetic_in_integers.patch
-0009-add_flag_disabling_SSE-SSE2_intrinsics.patch
-0010-fix_atomic_issue.patch
-0011-set_SSL_version_to_v23.patch

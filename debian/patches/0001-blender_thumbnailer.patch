@@ -1,10 +1,10 @@
-From: "Matteo F. Vescovi" <mfvescovi@gmail.com>
-Date: Tue, 7 Oct 2014 15:38:09 +0200
+From: "Matteo F. Vescovi" <mfv@debian.org>
+Date: Thu, 8 Jan 2015 12:35:02 +0100
 Subject: blender_thumbnailer
 
-* Move thumbnailer script to an appropriate destination
 * Add blender.thumbnailer file
-* Change to python 3.3 since lintian is messing around with that
+* Change to python3 since lintian is messing around with that
+* Move thumbnailer script to an appropriate destination
 ---
  blender.thumbnailer                | 4 ++++
  release/bin/blender-thumbnailer.py | 2 +-
@@ -33,14 +33,14 @@ index 779c615..dbcd865 100755
  # ##### BEGIN GPL LICENSE BLOCK #####
  #
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 06c6d0d..80c48cf 100644
+index 21cb41d..a66eabb 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -478,7 +478,7 @@ if(UNIX AND NOT APPLE)
+@@ -484,7 +484,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
--			DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+-			DESTINATION bin
 +			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/blender/scripts
  		)
  		install(

@@ -1,5 +1,5 @@
-From: Kevin Roy <kiniou@gmail.com>
-Date: Tue, 5 Nov 2013 17:42:18 +0100
+From: "Matteo F. Vescovi" <mfv@debian.org>
+Date: Thu, 8 Jan 2015 15:34:28 +0100
 Subject: do_not_use_version_number_in_system_path
 
 Global installation expects system path to be
@@ -8,8 +8,6 @@ without version numbers.
 
 Contributions by:
  Antonio Ospite <ospite@studenti.unina.it>
-
-Signed-off-by: Matteo F. Vescovi <mfvescovi@gmail.com>
 ---
  intern/ghost/intern/GHOST_SystemPathsX11.cpp | 3 +++
  source/creator/CMakeLists.txt                | 2 +-
@@ -30,15 +28,15 @@ index e2d9733..ec0e691 100644
  	if (static_path) {
  		static string system_path = string(static_path) + "/blender/" + versionstr;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 27a9b62..5b9b390 100644
+index 89695c7..86970e8 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -261,7 +261,7 @@ if(UNIX AND NOT APPLE)
+@@ -265,7 +265,7 @@ if(UNIX AND NOT APPLE)
  		if(WITH_PYTHON_MODULE)
  			set(TARGETDIR_VER ${PYTHON_LIBPATH}/python${PYTHON_VERSION}/site-packages/${BLENDER_VERSION})
  		else()
--			set(TARGETDIR_VER ${CMAKE_INSTALL_PREFIX}/share/blender/${BLENDER_VERSION})
-+			set(TARGETDIR_VER ${CMAKE_INSTALL_PREFIX}/share/blender)
+-			set(TARGETDIR_VER share/blender/${BLENDER_VERSION})
++			set(TARGETDIR_VER share/blender)
  		endif()
  	endif()
  

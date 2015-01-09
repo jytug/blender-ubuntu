@@ -1,5 +1,5 @@
-From: Kevin Roy <kiniou@gmail.com>
-Date: Tue, 5 Nov 2013 17:14:41 +0100
+From: "Matteo F. Vescovi" <mfv@debian.org>
+Date: Thu, 8 Jan 2015 12:39:04 +0100
 Subject: filter_docs_to_install
 
 Install only relevant documentation.
@@ -8,11 +8,11 @@ Install only relevant documentation.
  1 file changed, 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index d38cf25..3cd9cdf 100644
+index 2771eb9..d7ea8ad 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -238,8 +238,6 @@ else()
- endif()
+@@ -242,8 +242,6 @@ endif()
+ # Post build steps for bundling/packaging.
  
  set(BLENDER_TEXT_FILES
 -	${CMAKE_SOURCE_DIR}/release/text/GPL-license.txt
