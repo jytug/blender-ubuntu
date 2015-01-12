@@ -94,7 +94,7 @@ Section: debug
 Priority: extra
 Depends: blender (= ${binary:Version}),
          ${misc:Depends}
-Description: Very fast and versatile 3D modeller/renderer - debug symbols package
+Description: Very fast and versatile 3D modeller/renderer - debug package
  Blender is an integrated 3d suite for modelling, animation, rendering,
  post-production, interactive creation and playback (games).
  .
