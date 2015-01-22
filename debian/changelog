@@ -1,3 +1,10 @@
+blender (2.73.a+dfsg0-1) UNRELEASED; urgency=medium
+
+  * New upstream bugfix release
+  * debian/control: dbg package description shortened
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 22 Jan 2015 10:26:12 +0100
+
 blender (2.73+dfsg0-1) experimental; urgency=medium
 
   * New upstream release
