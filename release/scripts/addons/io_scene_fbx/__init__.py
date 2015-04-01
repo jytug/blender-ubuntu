@@ -21,8 +21,8 @@
 bl_info = {
     "name": "FBX format",
     "author": "Campbell Barton, Bastien Montagne, Jens Restemeier",
-    "version": (3, 2, 0),
-    "blender": (2, 72, 0),
+    "version": (3, 2, 2),
+    "blender": (2, 74, 0),
     "location": "File > Import-Export",
     "description": "FBX IO meshes, UV's, vertex colors, materials, "
                    "textures, cameras, lamps and actions",
@@ -53,12 +53,16 @@ from bpy.props import (StringProperty,
 
 from bpy_extras.io_utils import (ImportHelper,
                                  ExportHelper,
+                                 orientation_helper_factory,
                                  path_reference_mode,
                                  axis_conversion,
                                  )
 
 
-class ImportFBX(bpy.types.Operator, ImportHelper):
+IOFBXOrientationHelper = orientation_helper_factory("IOFBXOrientationHelper", axis_forward='-Z', axis_up='Y')
+
+
+class ImportFBX(bpy.types.Operator, ImportHelper, IOFBXOrientationHelper):
     """Load a FBX file"""
     bl_idname = "import_scene.fbx"
     bl_label = "Import FBX"
@@ -73,28 +77,6 @@ class ImportFBX(bpy.types.Operator, ImportHelper):
             name="Manual Orientation",
             description="Specify orientation and scale, instead of using embedded data in FBX file",
             default=False,
-            )
-    axis_forward = EnumProperty(
-            name="Forward",
-            items=(('X', "X Forward", ""),
-                   ('Y', "Y Forward", ""),
-                   ('Z', "Z Forward", ""),
-                   ('-X', "-X Forward", ""),
-                   ('-Y', "-Y Forward", ""),
-                   ('-Z', "-Z Forward", ""),
-                   ),
-            default='-Z',
-            )
-    axis_up = EnumProperty(
-            name="Up",
-            items=(('X', "X Up", ""),
-                   ('Y', "Y Up", ""),
-                   ('Z', "Z Up", ""),
-                   ('-X', "-X Up", ""),
-                   ('-Y', "-Y Up", ""),
-                   ('-Z', "-Z Up", ""),
-                   ),
-            default='Y',
             )
     global_scale = FloatProperty(
             name="Scale",
@@ -221,7 +203,7 @@ class ImportFBX(bpy.types.Operator, ImportHelper):
         return import_fbx.load(self, context, **keywords)
 
 
-class ExportFBX(bpy.types.Operator, ExportHelper):
+class ExportFBX(bpy.types.Operator, ExportHelper, IOFBXOrientationHelper):
     """Write a FBX file"""
     bl_idname = "export_scene.fbx"
     bl_label = "Export FBX"
@@ -234,7 +216,7 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
     # to the class instance from the operator settings before calling.
 
     version = EnumProperty(
-            items=(('BIN7400', "FBX 7.4 binary", "Newer 7.4 binary version, still in development (no animation yet)"),
+            items=(('BIN7400', "FBX 7.4 binary", "Modern 7.4 binary version"),
                    ('ASCII6100', "FBX 6.1 ASCII", "Legacy 6.1 ascii version"),
                    ),
             name="Version",
@@ -252,28 +234,6 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
             min=0.001, max=1000.0,
             soft_min=0.01, soft_max=1000.0,
             default=1.0,
-            )
-    axis_forward = EnumProperty(
-            name="Forward",
-            items=(('X', "X Forward", ""),
-                   ('Y', "Y Forward", ""),
-                   ('Z', "Z Forward", ""),
-                   ('-X', "-X Forward", ""),
-                   ('-Y', "-Y Forward", ""),
-                   ('-Z', "-Z Forward", ""),
-                   ),
-            default='-Z',
-            )
-    axis_up = EnumProperty(
-            name="Up",
-            items=(('X', "X Up", ""),
-                   ('Y', "Y Up", ""),
-                   ('Z', "Z Up", ""),
-                   ('-X', "-X Up", ""),
-                   ('-Y', "-Y Up", ""),
-                   ('-Z', "-Z Up", ""),
-                   ),
-            default='Y',
             )
     # 7.4 only
     bake_space_transform = BoolProperty(
@@ -306,12 +266,12 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
             )
     mesh_smooth_type = EnumProperty(
             name="Smoothing",
-            items=(('OFF', "Off", "Don't write smoothing, export normals instead"),
+            items=(('OFF', "Normals Only", "Export only normals instead of writing edge or face smoothing data"),
                    ('FACE', "Face", "Write face smoothing"),
                    ('EDGE', "Edge", "Write edge smoothing"),
                    ),
             description="Export smoothing information "
-                        "(prefer 'Off' option if your target importer understand split normals)",
+                        "(prefer 'Normals Only' option if your target importer understand split normals)",
             default='OFF',
             )
     use_mesh_edges = BoolProperty(
@@ -369,6 +329,12 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
     bake_anim = BoolProperty(
             name="Baked Animation",
             description="Export baked keyframe animation",
+            default=True,
+            )
+    bake_anim_use_all_bones = BoolProperty(
+            name="Key All Bones",
+            description="Force exporting at least one key of animation for all bones "
+                        "(needed with some target applications, like UE4)",
             default=True,
             )
     bake_anim_use_nla_strips = BoolProperty(
@@ -468,7 +434,7 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
         layout.prop(self, "mesh_smooth_type")
         layout.prop(self, "use_mesh_edges")
         sub = layout.row()
-        sub.enabled = self.mesh_smooth_type in {'OFF'}
+        #~ sub.enabled = self.mesh_smooth_type in {'OFF'}
         sub.prop(self, "use_tspace")
         layout.prop(self, "use_armature_deform_only")
         if is_74bin:
@@ -479,6 +445,7 @@ class ExportFBX(bpy.types.Operator, ExportHelper):
             layout.prop(self, "bake_anim")
             col = layout.column()
             col.enabled = self.bake_anim
+            col.prop(self, "bake_anim_use_all_bones")
             col.prop(self, "bake_anim_use_nla_strips")
             col.prop(self, "bake_anim_use_all_actions")
             col.prop(self, "bake_anim_step")

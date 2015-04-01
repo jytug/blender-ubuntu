@@ -99,31 +99,31 @@ FBX_LIGHT_DECAY_TYPES = {
 
 
 RIGHT_HAND_AXES = {
-    # Up, Front -> FBX values (tuples of (axis, sign), Up, Front, Coord).
-    ('X',  'Y'):  ((0, 1),  (1, 1),  (2, 1)),
-    ('X',  '-Y'): ((0, 1),  (1, -1), (2, -1)),
-    ('X',  'Z'):  ((0, 1),  (2, 1),  (1, -1)),
-    ('X',  '-Z'): ((0, 1),  (2, -1), (1, 1)),
-    ('-X', 'Y'):  ((0, -1), (1, 1),  (2, -1)),
-    ('-X', '-Y'): ((0, -1), (1, -1), (2, 1)),
-    ('-X', 'Z'):  ((0, -1), (2, 1),  (1, 1)),
-    ('-X', '-Z'): ((0, -1), (2, -1), (1, -1)),
-    ('Y',  'X'):  ((1, 1),  (0, 1),  (2, -1)),
-    ('Y',  '-X'): ((1, 1),  (0, -1), (2, 1)),
-    ('Y',  'Z'):  ((1, 1),  (2, 1),  (0, 1)),
-    ('Y',  '-Z'): ((1, 1),  (2, -1), (0, -1)),
-    ('-Y', 'X'):  ((1, -1), (0, 1),  (2, 1)),
-    ('-Y', '-X'): ((1, -1), (0, -1), (2, -1)),
-    ('-Y', 'Z'):  ((1, -1), (2, 1),  (0, -1)),
-    ('-Y', '-Z'): ((1, -1), (2, -1), (0, 1)),
-    ('Z',  'X'):  ((2, 1),  (0, 1),  (1, 1)),
-    ('Z',  '-X'): ((2, 1),  (0, -1), (1, -1)),
-    ('Z',  'Y'):  ((2, 1),  (1, 1),  (0, -1)),
-    ('Z',  '-Y'): ((2, 1),  (1, -1), (0, 1)),  # Blender system!
-    ('-Z', 'X'):  ((2, -1), (0, 1),  (1, -1)),
-    ('-Z', '-X'): ((2, -1), (0, -1), (1, 1)),
-    ('-Z', 'Y'):  ((2, -1), (1, 1),  (0, 1)),
-    ('-Z', '-Y'): ((2, -1), (1, -1), (0, -1)),
+    # Up, Forward -> FBX values (tuples of (axis, sign), Up, Front, Coord).
+    ( 'X', '-Y'): ((0,  1), (1,  1), (2,  1)),
+    ( 'X',  'Y'): ((0,  1), (1, -1), (2, -1)),
+    ( 'X', '-Z'): ((0,  1), (2,  1), (1, -1)),
+    ( 'X',  'Z'): ((0,  1), (2, -1), (1,  1)),
+    ('-X', '-Y'): ((0, -1), (1,  1), (2, -1)),
+    ('-X',  'Y'): ((0, -1), (1, -1), (2,  1)),
+    ('-X', '-Z'): ((0, -1), (2,  1), (1,  1)),
+    ('-X',  'Z'): ((0, -1), (2, -1), (1, -1)),
+    ( 'Y', '-X'): ((1,  1), (0,  1), (2, -1)),
+    ( 'Y',  'X'): ((1,  1), (0, -1), (2,  1)),
+    ( 'Y', '-Z'): ((1,  1), (2,  1), (0,  1)),
+    ( 'Y',  'Z'): ((1,  1), (2, -1), (0, -1)),
+    ('-Y', '-X'): ((1, -1), (0,  1), (2,  1)),
+    ('-Y',  'X'): ((1, -1), (0, -1), (2, -1)),
+    ('-Y', '-Z'): ((1, -1), (2,  1), (0, -1)),
+    ('-Y',  'Z'): ((1, -1), (2, -1), (0,  1)),
+    ( 'Z', '-X'): ((2,  1), (0,  1), (1,  1)),
+    ( 'Z',  'X'): ((2,  1), (0, -1), (1, -1)),
+    ( 'Z', '-Y'): ((2,  1), (1,  1), (0, -1)),
+    ( 'Z',  'Y'): ((2,  1), (1, -1), (0,  1)),  # Blender system!
+    ('-Z', '-X'): ((2, -1), (0,  1), (1, -1)),
+    ('-Z',  'X'): ((2, -1), (0, -1), (1,  1)),
+    ('-Z', '-Y'): ((2, -1), (1,  1), (0,  1)),
+    ('-Z',  'Y'): ((2, -1), (1, -1), (0, -1)),
 }
 
 
@@ -284,18 +284,26 @@ def get_key_from_fbx_uuid(uuid):
 
 
 # Blender-specific key generators
+def get_bid_name(bid):
+    library = getattr(bid, "library", None)
+    if library is not None:
+        return "%s_L_%s" % (bid.name, library.name)
+    else:
+        return bid.name
+
+
 def get_blenderID_key(bid):
     if isinstance(bid, Iterable):
-        return "|".join("B" + e.rna_type.name + "#" + e.name for e in bid)
+        return "|".join("B" + e.rna_type.name + "#" + get_bid_name(e) for e in bid)
     else:
-        return "B" + bid.rna_type.name + "#" + bid.name
+        return "B" + bid.rna_type.name + "#" + get_bid_name(bid)
 
 
 def get_blenderID_name(bid):
     if isinstance(bid, Iterable):
-        return "|".join(e.name for e in bid)
+        return "|".join(get_bid_name(e) for e in bid)
     else:
-        return bid.name
+        return get_bid_name(bid)
 
 
 def get_blender_empty_key(obj):
@@ -643,7 +651,7 @@ class AnimationCurveNodeWrapper:
     This class provides a same common interface for all (FBX-wise) AnimationCurveNode and AnimationCurve elements,
     and easy API to handle those.
     """
-    __slots__ = ('elem_keys', '_keys', 'default_values', 'fbx_group', 'fbx_gname', 'fbx_props')
+    __slots__ = ('elem_keys', '_keys', 'default_values', 'fbx_group', 'fbx_gname', 'fbx_props', 'force_keying')
 
     kinds = {
         'LCL_TRANSLATION': ("Lcl Translation", "T", ("X", "Y", "Z")),
@@ -652,16 +660,13 @@ class AnimationCurveNodeWrapper:
         'SHAPE_KEY': ("DeformPercent", "DeformPercent", ("DeformPercent",)),
     }
 
-    def __init__(self, elem_key, kind, default_values=...):
-        """
-        bdata might be an Object, DupliObject, Bone or PoseBone.
-        If Bone or PoseBone, armature Object must be provided.
-        """
+    def __init__(self, elem_key, kind, force_keying, default_values=...):
         self.elem_keys = [elem_key]
         assert(kind in self.kinds)
         self.fbx_group = [self.kinds[kind][0]]
         self.fbx_gname = [self.kinds[kind][1]]
         self.fbx_props = [self.kinds[kind][2]]
+        self.force_keying = force_keying
         self._keys = []  # (frame, values, write_flags)
         if default_values is not ...:
             assert(len(default_values) == len(self.fbx_props[0]))
@@ -741,7 +746,11 @@ class AnimationCurveNodeWrapper:
 
         # If we write nothing (action doing nothing) and are in 'force_keep' mode, we key everything! :P
         # See T41766.
-        if (force_keep and not self):
+        # Also, it seems some importers (e.g. UE4) do not handle correctly armatures where some bones
+        # are not animated, but are children of animated ones, so added an option to systematically force writing
+        # one key in this case.
+        # See T41719, T41605, T41254...
+        if self.force_keying or (force_keep and not self):
             are_keyed[:] = [True] * len(are_keyed)
 
         # If we did key something, ensure first and last sampled values are keyed as well.
@@ -760,6 +769,7 @@ class AnimationCurveNodeWrapper:
                 if wrt:
                     curve.append((currframe, val))
 
+        force_keep = force_keep or self.force_keying
         for elem_key, fbx_group, fbx_gname, fbx_props in \
             zip(self.elem_keys, self.fbx_group, self.fbx_gname, self.fbx_props):
             group_key = get_blender_anim_curve_node_key(scene, ref_id, elem_key, fbx_group)
@@ -926,14 +936,14 @@ class ObjectWrapper(metaclass=MetaObjectWrapper):
             par_mat_inv = par.matrix_local.inverted_safe() if par else Matrix()
             return par_mat_inv * self.bdata.matrix_local
         else:
-            return self.matrix_local
+            return self.matrix_local.copy()
     matrix_rest_local = property(get_matrix_rest_local)
 
     def get_matrix_rest_global(self):
         if self._tag == 'BO':
             return self._ref.matrix_world * self.bdata.matrix_local
         else:
-            return self.matrix_global
+            return self.matrix_global.copy()
     matrix_rest_global = property(get_matrix_rest_global)
 
     # #### Transform and helpers
@@ -994,19 +1004,10 @@ class ObjectWrapper(metaclass=MetaObjectWrapper):
             matrix = matrix * MAT_CONVERT_CAMERA
 
         if self._tag in {'DP', 'OB'} and parent:
-            # To get *real* local matrix of a child object, we also need to take into account its inverted par mat!
-            # In fact, this is wrong - since we do not store that matrix in FBX at all, we shall not use it here...
-            #~ matrix = self.bdata.matrix_parent_inverse * matrix
             if parent._tag == 'BO':
-                # In bone parent case, local matrix is in ***armature*** space!!!!!!!!!!!!
-                # So we need to bring it back into parent bone space.
-                matrix = parent._ref.pose.bones[parent.name].matrix.inverted_safe() * matrix
-
                 # In bone parent case, we get transformation in **bone tip** space (sigh).
                 # Have to bring it back into bone root, which is FBX expected value.
-                # Actually, since we parent back to bone space above, we do not need that
-                # correction here it seems...
-                #~ matrix = Matrix.Translation((0, (parent.bdata.tail - parent.bdata.head).length, 0)) * matrix
+                matrix = Matrix.Translation((0, (parent.bdata.tail - parent.bdata.head).length, 0)) * matrix
 
         # Our matrix is in local space, time to bring it in its final desired space.
         if parent:
@@ -1130,7 +1131,8 @@ FBXExportSettings = namedtuple("FBXExportSettings", (
     "context_objects", "object_types", "use_mesh_modifiers",
     "mesh_smooth_type", "use_mesh_edges", "use_tspace",
     "use_armature_deform_only", "add_leaf_bones", "bone_correction_matrix", "bone_correction_matrix_inv",
-    "bake_anim", "bake_anim_use_nla_strips", "bake_anim_use_all_actions", "bake_anim_step", "bake_anim_simplify_factor",
+    "bake_anim", "bake_anim_use_all_bones", "bake_anim_use_nla_strips", "bake_anim_use_all_actions",
+    "bake_anim_step", "bake_anim_simplify_factor",
     "use_metadata", "media_settings", "use_custom_props",
 ))
 
