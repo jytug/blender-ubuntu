@@ -738,6 +738,8 @@ def fbx_data_mesh_shapes_elements(root, me_obj, me, scene_data, fbx_me_tmpl, fbx
     if me not in scene_data.data_deformers_shape:
         return
 
+    write_normals = True  # scene_data.settings.mesh_smooth_type in {'OFF'}
+
     # First, write the geometry data itself (i.e. shapes).
     _me_key, shape_key, shapes = scene_data.data_deformers_shape[me]
 
@@ -768,7 +770,8 @@ def fbx_data_mesh_shapes_elements(root, me_obj, me, scene_data, fbx_me_tmpl, fbx
 
         elem_data_single_int32_array(geom, b"Indexes", shape_verts_idx)
         elem_data_single_float64_array(geom, b"Vertices", shape_verts_co)
-        elem_data_single_float64_array(geom, b"Normals", [0.0] * len(shape_verts_co))
+        if write_normals:
+            elem_data_single_float64_array(geom, b"Normals", [0.0] * len(shape_verts_co))
 
     # Yiha! BindPose for shapekeys too! Dodecasigh...
     # XXX Not sure yet whether several bindposes on same mesh are allowed, or not... :/
@@ -813,7 +816,7 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
 
     # No gscale/gmat here, all data are supposed to be in object space.
     smooth_type = scene_data.settings.mesh_smooth_type
-    write_normals = smooth_type in {'OFF'}
+    write_normals = True  # smooth_type in {'OFF'}
 
     do_bake_space_transform = me_obj.use_bake_space_transform(scene_data)
 
@@ -879,6 +882,7 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
     if t_ls and t_pvi:
         t_ls = set(t_ls)
         todo_edges = [None] * len(me.edges) * 2
+        # Sigh, cannot access edge.key through foreach_get... :/
         me.edges.foreach_get("vertices", todo_edges)
         todo_edges = set((v1, v2) if v1 < v2 else (v2, v1) for v1, v2 in zip(*(iter(todo_edges),) * 2))
 
@@ -925,11 +929,24 @@ def fbx_data_mesh_elements(root, me_obj, scene_data, done_meshes):
             _map = b"ByPolygon"
         else:  # EDGE
             # Write Edge Smoothing.
+            # Note edge is sharp also if it's used by more than two faces, or one of its faces is flat.
             t_ps = array.array(data_types.ARRAY_INT32, (0,)) * edges_nbr
+            sharp_edges = set()
+            temp_sharp_edges = {}
+            for p in me.polygons:
+                if not p.use_smooth:
+                    sharp_edges.update(p.edge_keys)
+                    continue
+                for k in p.edge_keys:
+                    if temp_sharp_edges.setdefault(k, 0) > 1:
+                        sharp_edges.add(k)
+                    else:
+                        temp_sharp_edges[k] += 1
+            del temp_sharp_edges
             for e in me.edges:
                 if e.key not in edges_map:
                     continue  # Only loose edges, in theory!
-                t_ps[edges_map[e.key]] = not e.use_edge_sharp
+                t_ps[edges_map[e.key]] = not (e.use_edge_sharp or (e.key in sharp_edges))
             _map = b"ByEdge"
         lay_smooth = elem_data_single_int32(geom, b"LayerElementSmoothing", 0)
         elem_data_single_int32(lay_smooth, b"Version", FBX_GEOMETRY_SMOOTHING_VERSION)
@@ -1341,7 +1358,7 @@ def fbx_data_video_elements(root, vid, scene_data):
     elem_props_template_finalize(tmpl, props)
 
     elem_data_single_int32(fbx_vid, b"UseMipMap", 0)
-    elem_data_single_string_unicode(fbx_vid, b"FileName", fname_abs)
+    elem_data_single_string_unicode(fbx_vid, b"Filename", fname_abs)
     elem_data_single_string_unicode(fbx_vid, b"RelativeFilename", fname_rel)
 
     if scene_data.settings.media_settings.embed_textures:
@@ -1806,6 +1823,7 @@ def fbx_animations_do(scene_data, ref_id, f_start, f_end, start_zero, objects=No
     bake_step = scene_data.settings.bake_anim_step
     scene = scene_data.scene
     meshes = scene_data.data_meshes
+    force_keying = scene_data.settings.bake_anim_use_all_bones
 
     if objects is not None:
         # Add bones and duplis!
@@ -1823,9 +1841,12 @@ def fbx_animations_do(scene_data, ref_id, f_start, f_end, start_zero, objects=No
         objects = scene_data.objects
 
     back_currframe = scene.frame_current
-    animdata_ob = OrderedDict((ob_obj, (AnimationCurveNodeWrapper(ob_obj.key, 'LCL_TRANSLATION', (0.0, 0.0, 0.0)),
-                                        AnimationCurveNodeWrapper(ob_obj.key, 'LCL_ROTATION', (0.0, 0.0, 0.0)),
-                                        AnimationCurveNodeWrapper(ob_obj.key, 'LCL_SCALING', (1.0, 1.0, 1.0))))
+    animdata_ob = OrderedDict((ob_obj, (AnimationCurveNodeWrapper(ob_obj.key, 'LCL_TRANSLATION',
+                                                                  ob_obj.is_bone and force_keying, (0.0, 0.0, 0.0)),
+                                        AnimationCurveNodeWrapper(ob_obj.key, 'LCL_ROTATION',
+                                                                  ob_obj.is_bone and force_keying, (0.0, 0.0, 0.0)),
+                                        AnimationCurveNodeWrapper(ob_obj.key, 'LCL_SCALING',
+                                                                  ob_obj.is_bone and force_keying, (1.0, 1.0, 1.0))))
                               for ob_obj in objects)
 
     animdata_shapes = OrderedDict()
@@ -1834,7 +1855,7 @@ def fbx_animations_do(scene_data, ref_id, f_start, f_end, start_zero, objects=No
         if not me.shape_keys.use_relative:
             continue
         for shape, (channel_key, geom_key, _shape_verts_co, _shape_verts_idx) in shapes.items():
-            acnode = AnimationCurveNodeWrapper(channel_key, 'SHAPE_KEY', (0.0,))
+            acnode = AnimationCurveNodeWrapper(channel_key, 'SHAPE_KEY', False, (0.0,))
             # Sooooo happy to have to twist again like a mad snake... Yes, we need to write those curves twice. :/
             acnode.add_group(me_key, shape.name, shape.name, (shape.name,))
             animdata_shapes[channel_key] = (acnode, me, shape)
@@ -1979,7 +2000,8 @@ def fbx_animations(scene_data):
                 'show_only_shape_key', 'use_shape_key_edit_mode', 'active_shape_key_index',
             )
             for p in props:
-                setattr(ob_to, p, getattr(ob_from, p))
+                if not ob_to.is_property_readonly(p):
+                    setattr(ob_to, p, getattr(ob_from, p))
 
         for ob_obj in scene_data.objects:
             # Actions only for objects, not bones!
@@ -2182,7 +2204,7 @@ def fbx_data_from_scene(scene, settings):
         if check_skip_material(mat):
             continue
         for tex, use_tex in zip(mat.texture_slots, mat.use_textures):
-            if tex is None or not use_tex:
+            if tex is None or tex.texture is None or not use_tex:
                 continue
             # For now, only consider image textures.
             # Note FBX does has support for procedural, but this is not portable at all (opaque blob),
@@ -2612,7 +2634,7 @@ def fbx_definitions_elements(root, scene_data):
 
 def fbx_objects_elements(root, scene_data):
     """
-    Data (objects, geometry, material, textures, armatures, etc.
+    Data (objects, geometry, material, textures, armatures, etc.).
     """
     objects = elem_empty(root, b"Objects")
 
@@ -2707,6 +2729,7 @@ def save_single(operator, scene, filepath="",
                 mesh_smooth_type='FACE',
                 use_armature_deform_only=False,
                 bake_anim=True,
+                bake_anim_use_all_bones=True,
                 bake_anim_use_nla_strips=True,
                 bake_anim_use_all_actions=True,
                 bake_anim_step=1.0,
@@ -2776,7 +2799,8 @@ def save_single(operator, scene, filepath="",
         context_objects, object_types, use_mesh_modifiers,
         mesh_smooth_type, use_mesh_edges, use_tspace,
         use_armature_deform_only, add_leaf_bones, bone_correction_matrix, bone_correction_matrix_inv,
-        bake_anim, bake_anim_use_nla_strips, bake_anim_use_all_actions, bake_anim_step, bake_anim_simplify_factor,
+        bake_anim, bake_anim_use_all_bones, bake_anim_use_nla_strips, bake_anim_use_all_actions,
+        bake_anim_step, bake_anim_simplify_factor,
         False, media_settings, use_custom_props,
     )
 
