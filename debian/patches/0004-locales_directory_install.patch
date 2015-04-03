@@ -1,5 +1,5 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Thu, 8 Jan 2015 15:12:42 +0100
+Date: Fri, 3 Apr 2015 09:42:30 +0200
 Subject: locales_directory_install
 
 Change where locales are installed.
@@ -13,10 +13,10 @@ Contributions by:
  3 files changed, 8 insertions(+), 7 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 10614e8..776afc5 100644
+index 99e1aa5..4a8b0d6 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
-@@ -78,9 +78,9 @@ static void free_locales(void)
+@@ -82,9 +82,9 @@ static void free_locales(void)
  	num_locales = num_locales_menu = 0;
  }
  
@@ -28,7 +28,7 @@ index 10614e8..776afc5 100644
  	char languages[FILE_MAX];
  	LinkNode *lines = NULL, *line;
  	char *str;
-@@ -88,7 +88,7 @@ static void fill_locales(void)
+@@ -92,7 +92,7 @@ static void fill_locales(void)
  
  	free_locales();
  
@@ -37,13 +37,17 @@ index 10614e8..776afc5 100644
  	line = lines = BLI_file_read_as_lines(languages);
  
  	/* This whole "parsing" code is a bit weak, in that it expects strictly formated input file...
-@@ -188,11 +188,11 @@ EnumPropertyItem *BLF_RNA_lang_enum_properties(void)
+@@ -192,7 +192,7 @@ EnumPropertyItem *BLF_RNA_lang_enum_properties(void)
  void BLF_lang_init(void)
  {
  #ifdef WITH_INTERNATIONAL
 -	const char * const messagepath = BKE_appdir_folder_id(BLENDER_DATAFILES, "locale");
 +	const char * const messagepath = BKE_appdir_folder_id(BLENDER_SYSTEM_LOCALE, NULL);
+ #endif
  
+ 	/* Make sure LANG is correct and wouldn't cause std::rumtime_error. */
+@@ -225,7 +225,7 @@ void BLF_lang_init(void)
+ #ifdef WITH_INTERNATIONAL
  	if (messagepath) {
  		bl_locale_init(messagepath, TEXT_DOMAIN_NAME);
 -		fill_locales();
@@ -64,7 +68,7 @@ index 5e42f17..d6838bc 100644
  
  /* for BKE_appdir_folder_id_version only */
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index d7ea8ad..a12f3d9 100644
+index c914eac..2b11015 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -327,11 +327,11 @@ if(WITH_INTERNATIONAL)

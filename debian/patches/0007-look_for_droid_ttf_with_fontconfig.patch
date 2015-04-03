@@ -1,5 +1,5 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Thu, 8 Jan 2015 16:04:37 +0100
+Date: Fri, 3 Apr 2015 09:50:43 +0200
 Subject: look_for_droid_ttf_with_fontconfig
 
 * Remove bad installation of fonts directory into locales.
@@ -16,10 +16,10 @@ Subject: look_for_droid_ttf_with_fontconfig
  7 files changed, 85 insertions(+), 6 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 4ee277b..ffe4c53 100644
+index b52dd05..08529c5 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -864,6 +864,13 @@ if(UNIX AND NOT APPLE)
+@@ -872,6 +872,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -34,10 +34,10 @@ index 4ee277b..ffe4c53 100644
  	if(WITH_CODEC_SNDFILE)
  		find_package_wrapper(SndFile)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 40bea5e..b295857 100644
+index 33c7644..73e3a86 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -306,6 +306,9 @@ macro(setup_liblinks
+@@ -324,6 +324,9 @@ macro(setup_liblinks
  	if(WITH_SYSTEM_GLEW)
  		target_link_libraries(${target} ${BLENDER_GLEW_LIBRARIES})
  	endif()
@@ -48,10 +48,10 @@ index 40bea5e..b295857 100644
  		target_link_libraries(${target} ${BULLET_LIBRARIES})
  	endif()
 diff --git a/source/blender/blenfont/CMakeLists.txt b/source/blender/blenfont/CMakeLists.txt
-index 346d5bc..f5132e9 100644
+index 392a9ed..deb1f3c 100644
 --- a/source/blender/blenfont/CMakeLists.txt
 +++ b/source/blender/blenfont/CMakeLists.txt
-@@ -60,6 +60,13 @@ if(WITH_INTERNATIONAL)
+@@ -66,6 +66,13 @@ if(WITH_INTERNATIONAL)
  	add_definitions(-DWITH_INTERNATIONAL)
  endif()
  
@@ -66,7 +66,7 @@ index 346d5bc..f5132e9 100644
  
  blender_add_lib(bf_blenfont "${SRC}" "${INC}" "${INC_SYS}")
 diff --git a/source/blender/blenfont/intern/blf_translation.c b/source/blender/blenfont/intern/blf_translation.c
-index e7d2c14..21f2d00 100644
+index 2a4a152..7fd4b5c 100644
 --- a/source/blender/blenfont/intern/blf_translation.c
 +++ b/source/blender/blenfont/intern/blf_translation.c
 @@ -52,7 +52,11 @@
@@ -115,19 +115,19 @@ index e7d2c14..21f2d00 100644
  	}
  
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index 4f451a6..fa2f35e 100644
+index 7898a54..7db1d2e 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
-@@ -87,6 +87,7 @@ bool   BLI_is_file(const char *path);
- void   BLI_dir_create_recursive(const char *dir);
- double BLI_dir_free_space(const char *dir);
- char  *BLI_current_working_dir(char *dir, const size_t maxlen);
+@@ -89,6 +89,7 @@ bool   BLI_is_file(const char *path) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+ void   BLI_dir_create_recursive(const char *dir) ATTR_NONNULL();
+ double BLI_dir_free_space(const char *dir) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+ char  *BLI_current_working_dir(char *dir, const size_t maxlen) ATTR_NONNULL();
 +char  *BLI_file_to_mem(const char *from_file, int *size_r);
  
- unsigned int BLI_dir_contents(const char *dir, struct direntry **filelist);
- void BLI_free_filelist(struct direntry *filelist, unsigned int nrentries);
+ /* Filelist */
+ 
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index f6bbd32..91b4070 100644
+index d6fe5e5..52e2c33 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
 @@ -159,6 +159,50 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *r_size)
@@ -182,7 +182,7 @@ index f6bbd32..91b4070 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 86970e8..7aaaa92 100644
+index 9e8777a..2279826 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -324,12 +324,6 @@ endif()
