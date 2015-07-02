@@ -1,10 +1,10 @@
-blender (2.74+dfsg0-3) UNRELEASED; urgency=medium
+blender (2.74+dfsg0-3) unstable; urgency=medium
 
   * debian/rules: NDOF parameter added (Closes: #784796)
   * debian/patches/: patchset updated
     - 0008-blender_desktop.patch added
 
- -- Matteo F. Vescovi <mfv@debian.org>  Thu, 02 Jul 2015 22:33:13 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 02 Jul 2015 22:33:51 +0200
 
 blender (2.74+dfsg0-2) unstable; urgency=medium
 
