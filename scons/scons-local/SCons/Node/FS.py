@@ -173,7 +173,7 @@ needs_normpath_check = re.compile(
       # We need to renormalize the path if it contains a '.'
       # directory, but NOT if it is a single '.'  '/' characters. We
       # do not want to match a single '.' because this case is checked
-      # for explicitely since this is common enough case.
+      # for explicitly since this is common enough case.
       #
       # Note that we check for all the following cases:
       #

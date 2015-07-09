@@ -141,7 +141,7 @@ class ConfigureDryRunError(SConfError):
         SConfError.__init__(self,msg)
 
 class ConfigureCacheError(SConfError):
-    """Raised when a use explicitely requested the cache feature, but the test
+    """Raised when a use explicitly requested the cache feature, but the test
     is run the first time."""
     def __init__(self,target):
         SConfError.__init__(self, '"%s" is not yet built and cache is forced.' % str(target))
@@ -374,11 +374,11 @@ class SConfBase(object):
     tests, be sure to call the Finish() method, which returns the modified
     environment.
     Some words about caching: In most cases, it is not necessary to cache
-    Test results explicitely. Instead, we use the scons dependency checking
+    Test results explicitly. Instead, we use the scons dependency checking
     mechanism. For example, if one wants to compile a test program
     (SConf.TryLink), the compiler is only called, if the program dependencies
     have changed. However, if the program could not be compiled in a former
-    SConf run, we need to explicitely cache this error.
+    SConf run, we need to explicitly cache this error.
     """
 
     def __init__(self, env, custom_tests = {}, conf_dir='$CONFIGUREDIR',
