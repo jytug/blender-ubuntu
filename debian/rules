@@ -46,6 +46,7 @@ override_dh_auto_install:
 	find $(INSTDIR)/usr/share/blender/ -type d -empty -delete
 	rm $(INSTDIR)/usr/share/doc/blender/LICENSE-droidsans.ttf.txt
 	rm $(INSTDIR)/usr/share/doc/blender/LICENSE-bmonofont-i18n.ttf.txt
+	rm $(INSTDIR)/usr/share/doc/blender/LICENSE-bfont.ttf.txt
 	rm $(INSTDIR)/usr/share/doc/blender/readme.html
 
 override_dh_install:
