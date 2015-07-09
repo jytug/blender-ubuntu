@@ -22,6 +22,7 @@
 
 
 import math
+import time
 
 from collections import namedtuple, OrderedDict
 from collections.abc import Iterable
@@ -146,6 +147,64 @@ FBX_FRAMERATES = (
 
 
 # ##### Misc utilities #####
+
+DO_PERFMON = True
+
+if DO_PERFMON:
+    class PerfMon():
+        def __init__(self):
+            self.level = -1
+            self.ref_time = []
+
+        def level_up(self, message=""):
+            self.level += 1
+            self.ref_time.append(None)
+            if message:
+                print("\t" * self.level, message, sep="")
+
+        def level_down(self, message=""):
+            if not self.ref_time:
+                if message:
+                    print(message)
+                return
+            ref_time = self.ref_time[self.level]
+            print("\t" * self.level,
+                  "\tDone (%f sec)\n" % ((time.process_time() - ref_time) if ref_time is not None else 0.0),
+                  sep="")
+            if message:
+                print("\t" * self.level, message, sep="")
+            del self.ref_time[self.level]
+            self.level -= 1
+
+        def step(self, message=""):
+            ref_time = self.ref_time[self.level]
+            curr_time = time.process_time()
+            if ref_time is not None:
+                print("\t" * self.level, "\tDone (%f sec)\n" % (curr_time - ref_time), sep="")
+            self.ref_time[self.level] = curr_time
+            print("\t" * self.level, message, sep="")
+else:
+    class PerfMon():
+        def __init__(self):
+            pass
+
+        def level_up(self, message=""):
+            pass
+
+        def level_down(self, message=""):
+            pass
+
+        def step(self, message=""):
+            pass
+
+
+# Scale/unit mess. FBX can store the 'reference' unit of a file in its UnitScaleFactor property
+# (1.0 meaning centimeter, afaik). We use that to reflect user's default unit as set in Blender with scale_length.
+# However, we always get values in BU (i.e. meters), so we have to reverse-apply that scale in global matrix...
+# Note that when no default unit is available, we assume 'meters' (and hence scale by 100).
+def units_blender_to_fbx_factor(scene):
+    return 100.0 if (scene.unit_settings.system == 'NONE') else (100.0 * scene.unit_settings.scale_length)
+
 
 # Note: this could be in a utility (math.units e.g.)...
 
@@ -518,25 +577,33 @@ def _elem_props_set(elem, ptype, name, value, flags):
             getattr(p, callback)(val)
 
 
-def _elem_props_flags(animatable, custom):
-    if animatable and custom:
-        return b"AU"
-    elif animatable:
+def _elem_props_flags(animatable, animated, custom):
+    # XXX: There are way more flags, see
+    #      http://help.autodesk.com/view/FBX/2015/ENU/?guid=__cpp_ref_class_fbx_property_flags_html
+    #      Unfortunately, as usual, no doc at all about their 'translation' in actual FBX file format.
+    #      Curse you-know-who.
+    if animatable:
+        if animated:
+            if custom:
+                return b"A+U"
+            return b"A+"
+        if custom:
+            return b"AU"
         return b"A"
-    elif custom:
+    if custom:
         return b"U"
     return b""
 
 
-def elem_props_set(elem, ptype, name, value=None, animatable=False, custom=False):
+def elem_props_set(elem, ptype, name, value=None, animatable=False, animated=False, custom=False):
     ptype = FBX_PROPERTIES_DEFINITIONS[ptype]
-    _elem_props_set(elem, ptype, name, value, _elem_props_flags(animatable, custom))
+    _elem_props_set(elem, ptype, name, value, _elem_props_flags(animatable, animated, custom))
 
 
 def elem_props_compound(elem, cmpd_name, custom=False):
-    def _setter(ptype, name, value, animatable=False, custom=False):
+    def _setter(ptype, name, value, animatable=False, animated=False, custom=False):
         name = cmpd_name + b"|" + name
-        elem_props_set(elem, ptype, name, value, animatable=animatable, custom=custom)
+        elem_props_set(elem, ptype, name, value, animatable=animatable, animated=animated, custom=custom)
 
     elem_props_set(elem, "p_compound", cmpd_name, custom=custom)
     return _setter
@@ -555,7 +622,7 @@ def elem_props_template_init(templates, template_type):
     return ret
 
 
-def elem_props_template_set(template, elem, ptype_name, name, value, animatable=False):
+def elem_props_template_set(template, elem, ptype_name, name, value, animatable=False, animated=False):
     """
     Only add a prop if the same value is not already defined in given template.
     Note it is important to not give iterators as value, here!
@@ -565,15 +632,16 @@ def elem_props_template_set(template, elem, ptype_name, name, value, animatable=
         value = tuple(value)
     tmpl_val, tmpl_ptype, tmpl_animatable, tmpl_written = template.get(name, (None, None, False, False))
     # Note animatable flag from template takes precedence over given one, if applicable.
-    if tmpl_ptype is not None:
+    # However, animated properties are always written, since they cannot match their template!
+    if tmpl_ptype is not None and not animated:
         if (tmpl_written and
             ((len(ptype) == 3 and (tmpl_val, tmpl_ptype) == (value, ptype_name)) or
              (len(ptype) > 3 and (tuple(tmpl_val), tmpl_ptype) == (value, ptype_name)))):
             return  # Already in template and same value.
-        _elem_props_set(elem, ptype, name, value, _elem_props_flags(tmpl_animatable, False))
+        _elem_props_set(elem, ptype, name, value, _elem_props_flags(tmpl_animatable, animated, False))
         template[name][3] = True
     else:
-        _elem_props_set(elem, ptype, name, value, _elem_props_flags(animatable, False))
+        _elem_props_set(elem, ptype, name, value, _elem_props_flags(animatable, animated, False))
 
 
 def elem_props_template_finalize(template, elem):
@@ -588,7 +656,7 @@ def elem_props_template_finalize(template, elem):
         if written:
             continue
         ptype = FBX_PROPERTIES_DEFINITIONS[ptype_name]
-        _elem_props_set(elem, ptype, name, value, _elem_props_flags(animatable, False))
+        _elem_props_set(elem, ptype, name, value, _elem_props_flags(animatable, False, False))
 
 
 # ##### Templates #####
@@ -1121,12 +1189,12 @@ def fbx_name_class(name, cls):
 # Helper sub-container gathering all exporter settings related to media (texture files).
 FBXExportSettingsMedia = namedtuple("FBXExportSettingsMedia", (
     "path_mode", "base_src", "base_dst", "subdir",
-    "embed_textures", "copy_set",
+    "embed_textures", "copy_set", "embedded_set",
 ))
 
 # Helper container gathering all exporter settings.
 FBXExportSettings = namedtuple("FBXExportSettings", (
-    "report", "to_axes", "global_matrix", "global_scale",
+    "report", "to_axes", "global_matrix", "global_scale", "apply_unit_scale",
     "bake_space_transform", "global_matrix_inv", "global_matrix_inv_transposed",
     "context_objects", "object_types", "use_mesh_modifiers",
     "mesh_smooth_type", "use_mesh_edges", "use_tspace",
@@ -1145,7 +1213,7 @@ FBXExportSettings = namedtuple("FBXExportSettings", (
 #     * animations.
 FBXExportData = namedtuple("FBXExportData", (
     "templates", "templates_users", "connections",
-    "settings", "scene", "objects", "animations", "frame_start", "frame_end",
+    "settings", "scene", "objects", "animations", "animated", "frame_start", "frame_end",
     "data_empties", "data_lamps", "data_cameras", "data_meshes", "mesh_mat_indices",
     "data_bones", "data_leaf_bones", "data_deformers_skin", "data_deformers_shape",
     "data_world", "data_materials", "data_textures", "data_videos",
