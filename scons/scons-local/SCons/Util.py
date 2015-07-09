@@ -301,11 +301,11 @@ ListTypes = (list, UserList)
 SequenceTypes = (list, tuple, UserList)
 
 # Note that profiling data shows a speed-up when comparing
-# explicitely with str and unicode instead of simply comparing
+# explicitly with str and unicode instead of simply comparing
 # with basestring. (at least on Python 2.5.1)
 StringTypes = (str, unicode, UserString)
 
-# Empirically, it is faster to check explicitely for str and
+# Empirically, it is faster to check explicitly for str and
 # unicode than for basestring.
 BaseStringTypes = (str, unicode)
 
@@ -326,7 +326,7 @@ def is_String(obj, isinstance=isinstance, StringTypes=StringTypes):
 
 def is_Scalar(obj, isinstance=isinstance, StringTypes=StringTypes, SequenceTypes=SequenceTypes):
     # Profiling shows that there is an impressive speed-up of 2x
-    # when explicitely checking for strings instead of just not
+    # when explicitly checking for strings instead of just not
     # sequence when the argument (i.e. obj) is already a string.
     # But, if obj is a not string then it is twice as fast to
     # check only for 'not sequence'. The following code therefore
