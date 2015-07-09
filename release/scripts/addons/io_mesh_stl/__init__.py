@@ -21,7 +21,7 @@
 bl_info = {
     "name": "STL format",
     "author": "Guillaume Bouchard (Guillaum)",
-    "version": (1, 1, 1),
+    "version": (1, 1, 2),
     "blender": (2, 74, 0),
     "location": "File > Import-Export > Stl",
     "description": "Import-Export STL files",
@@ -57,18 +57,23 @@ if "bpy" in locals():
 import os
 
 import bpy
-from bpy.props import (StringProperty,
-                       BoolProperty,
-                       CollectionProperty,
-                       EnumProperty,
-                       FloatProperty,
-                       )
-from bpy_extras.io_utils import (ImportHelper,
-                                 ExportHelper,
-                                 orientation_helper_factory,
-                                 axis_conversion,
-                                 )
-from bpy.types import Operator, OperatorFileListElement
+from bpy.props import (
+        StringProperty,
+        BoolProperty,
+        CollectionProperty,
+        EnumProperty,
+        FloatProperty,
+        )
+from bpy_extras.io_utils import (
+        ImportHelper,
+        ExportHelper,
+        orientation_helper_factory,
+        axis_conversion,
+        )
+from bpy.types import (
+        Operator,
+        OperatorFileListElement,
+        )
 
 
 IOSTLOrientationHelper = orientation_helper_factory("IOSTLOrientationHelper", axis_forward='Y', axis_up='Z')
@@ -104,6 +109,12 @@ class ImportSTL(Operator, ImportHelper, IOSTLOrientationHelper):
     use_scene_unit = BoolProperty(
             name="Scene Unit",
             description="Apply current scene's unit (as defined by unit scale) to imported data",
+            default=True,
+            )
+
+    use_facet_normal = BoolProperty(
+            name="Facet Normals",
+            description="Use (import) facet normals (note that this will still give flat shading)",
             default=False,
             )
 
@@ -137,8 +148,9 @@ class ImportSTL(Operator, ImportHelper, IOSTLOrientationHelper):
 
         for path in paths:
             objName = bpy.path.display_name(os.path.basename(path))
-            tris, pts = stl_utils.read_stl(path)
-            blender_utils.create_and_link_mesh(objName, tris, pts, global_matrix)
+            tris, tri_nors, pts = stl_utils.read_stl(path)
+            tri_nors = tri_nors if self.use_facet_normal else None
+            blender_utils.create_and_link_mesh(objName, tris, tri_nors, pts, global_matrix)
 
         return {'FINISHED'}
 
@@ -160,7 +172,7 @@ class ExportSTL(Operator, ExportHelper, IOSTLOrientationHelper):
     use_scene_unit = BoolProperty(
             name="Scene Unit",
             description="Apply current scene's unit (as defined by unit scale) to exported data",
-            default=True,
+            default=False,
             )
     ascii = BoolProperty(
             name="Ascii",
@@ -170,7 +182,7 @@ class ExportSTL(Operator, ExportHelper, IOSTLOrientationHelper):
     use_mesh_modifiers = BoolProperty(
             name="Apply Modifiers",
             description="Apply the modifiers before saving",
-            default=False,
+            default=True,
             )
 
 

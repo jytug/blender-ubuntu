@@ -21,14 +21,12 @@
 bl_info = {
     "name": "FBX format",
     "author": "Campbell Barton, Bastien Montagne, Jens Restemeier",
-    "version": (3, 2, 2),
+    "version": (3, 3, 3),
     "blender": (2, 74, 0),
     "location": "File > Import-Export",
-    "description": "FBX IO meshes, UV's, vertex colors, materials, "
-                   "textures, cameras, lamps and actions",
+    "description": "FBX IO meshes, UV's, vertex colors, materials, textures, cameras, lamps and actions",
     "warning": "",
-    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/"
-                "Scripts/Import-Export/Autodesk_FBX",
+    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Import-Export/Autodesk_FBX",
     "support": 'OFFICIAL',
     "category": "Import-Export",
 }
@@ -45,18 +43,19 @@ if "bpy" in locals():
 
 
 import bpy
-from bpy.props import (StringProperty,
-                       BoolProperty,
-                       FloatProperty,
-                       EnumProperty,
-                       )
-
-from bpy_extras.io_utils import (ImportHelper,
-                                 ExportHelper,
-                                 orientation_helper_factory,
-                                 path_reference_mode,
-                                 axis_conversion,
-                                 )
+from bpy.props import (
+        StringProperty,
+        BoolProperty,
+        FloatProperty,
+        EnumProperty,
+        )
+from bpy_extras.io_utils import (
+        ImportHelper,
+        ExportHelper,
+        orientation_helper_factory,
+        path_reference_mode,
+        axis_conversion,
+        )
 
 
 IOFBXOrientationHelper = orientation_helper_factory("IOFBXOrientationHelper", axis_forward='-Z', axis_up='Y')
@@ -84,10 +83,10 @@ class ImportFBX(bpy.types.Operator, ImportHelper, IOFBXOrientationHelper):
             default=1.0,
             )
     bake_space_transform = BoolProperty(
-            name="Apply Transform",
+            name="!EXPERIMENTAL! Apply Transform",
             description="Bake space transform into object data, avoids getting unwanted rotations to objects when "
                         "target space is not aligned with Blender's space "
-                        "(WARNING! experimental option, might give odd/wrong results)",
+                        "(WARNING! experimental option, use at own risks, known broken with armatures/animations)",
             default=False,
             )
 
@@ -236,11 +235,18 @@ class ExportFBX(bpy.types.Operator, ExportHelper, IOFBXOrientationHelper):
             default=1.0,
             )
     # 7.4 only
+    apply_unit_scale = BoolProperty(
+            name="Apply Unit",
+            description="Scale all data according to current Blender size, to match default FBX unit "
+                        "(centimeter, some importers do not handle UnitScaleFactor properly)",
+            default=True,
+            )
+    # 7.4 only
     bake_space_transform = BoolProperty(
-            name="Apply Transform",
+            name="!EXPERIMENTAL! Apply Transform",
             description="Bake space transform into object data, avoids getting unwanted rotations to objects when "
                         "target space is not aligned with Blender's space "
-                        "(WARNING! experimental option, might give odd/wrong results)",
+                        "(WARNING! experimental option, use at own risks, known broken with armatures/animations)",
             default=False,
             )
 
@@ -345,7 +351,9 @@ class ExportFBX(bpy.types.Operator, ExportHelper, IOFBXOrientationHelper):
             )
     bake_anim_use_all_actions = BoolProperty(
             name="All Actions",
-            description="Export each action as a separated FBX's AnimStack, instead of global scene animation",
+            description="Export each action as a separated FBX's AnimStack, instead of global scene animation "
+                        "(note that animated objects will get all actions compatible with them, "
+                        "others will get no animation at all)",
             default=True,
             )
     bake_anim_step = FloatProperty(
@@ -423,6 +431,8 @@ class ExportFBX(bpy.types.Operator, ExportHelper, IOFBXOrientationHelper):
         layout.prop(self, "version")
         layout.prop(self, "use_selection")
         layout.prop(self, "global_scale")
+        if is_74bin:
+            layout.prop(self, "apply_unit_scale")
         layout.prop(self, "axis_forward")
         layout.prop(self, "axis_up")
         if is_74bin:

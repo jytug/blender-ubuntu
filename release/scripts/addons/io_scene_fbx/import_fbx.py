@@ -41,6 +41,8 @@ from . import parse_fbx, fbx_utils
 
 from .parse_fbx import data_types, FBXElem
 from .fbx_utils import (
+    PerfMon,
+    units_blender_to_fbx_factor,
     units_convertor_iter,
     array_to_matrix4,
     similar_values,
@@ -476,12 +478,12 @@ def blen_read_object_transform_preprocess(fbx_props, fbx_obj, rot_alt_mat, use_p
             pst_rot = const_vector_zero_3d
         rot_ord = {
             0: 'XYZ',
-            1: 'XYZ',
-            2: 'XZY',
-            3: 'YZX',
-            4: 'YXZ',
-            5: 'ZXY',
-            6: 'ZYX',
+            1: 'XZY',
+            2: 'YZX',
+            3: 'YXZ',
+            4: 'ZXY',
+            5: 'ZYX',
+            6: 'XYZ',  # XXX eSphericXYZ, not really supported...
             }.get(elem_props_get_enum(fbx_props, b'RotationOrder', 0))
     else:
         pre_rot = const_vector_zero_3d
@@ -2091,6 +2093,11 @@ def load(operator, context, filepath="",
     start_time_proc = time.process_time()
     start_time_sys = time.time()
 
+    perfmon = PerfMon()
+    perfmon.level_up()
+    perfmon.step("FBX Import: start importing %s" % filepath)
+    perfmon.level_up()
+
     # detect ascii files
     if is_ascii(filepath, 24):
         operator.report({'ERROR'}, "ASCII FBX files are not supported %r" % filepath)
@@ -2135,6 +2142,8 @@ def load(operator, context, filepath="",
 
     # #### Get some info from GlobalSettings.
 
+    perfmon.step("FBX import: Prepare...")
+
     fbx_settings = elem_find_first(elem_root, b'GlobalSettings')
     fbx_settings_props = elem_find_first(fbx_settings, b'Properties70')
     if fbx_settings is None or fbx_settings_props is None:
@@ -2142,7 +2151,9 @@ def load(operator, context, filepath="",
         return {'CANCELLED'}
 
     # FBX default base unit seems to be the centimeter, while raw Blender Unit is equivalent to the meter...
-    global_scale *= elem_props_get_number(fbx_settings_props, b'UnitScaleFactor', 100.0) / 100.0
+    unit_scale = elem_props_get_number(fbx_settings_props, b'UnitScaleFactor', 1.0)
+    unit_scale_org = elem_props_get_number(fbx_settings_props, b'OriginalUnitScaleFactor', 1.0)
+    global_scale *= (unit_scale / units_blender_to_fbx_factor(context.scene))
     # Compute global matrix and scale.
     if not use_manual_orientation:
         axis_forward = (elem_props_get_integer(fbx_settings_props, b'FrontAxis', 1),
@@ -2194,6 +2205,8 @@ def load(operator, context, filepath="",
 
     # #### And now, the "real" data.
 
+    perfmon.step("FBX import: Templates...")
+
     fbx_defs = elem_find_first(elem_root, b'Definitions')  # can be None
     fbx_nodes = elem_find_first(elem_root, b'Objects')
     fbx_connections = elem_find_first(elem_root, b'Connections')
@@ -2234,6 +2247,8 @@ def load(operator, context, filepath="",
             return fbx_templates.get(key, fbx_elem_nil)
         return ret
 
+    perfmon.step("FBX import: Nodes...")
+
     # ----
     # Build FBX node-table
     def _():
@@ -2249,6 +2264,8 @@ def load(operator, context, filepath="",
     # http://download.autodesk.com/us/fbx/20112/FBX_SDK_HELP/index.html?url=
     #        WS73099cc142f487551fea285e1221e4f9ff8-7fda.htm,topicNumber=d0e6388
 
+    perfmon.step("FBX import: Connections...")
+
     fbx_connection_map = {}
     fbx_connection_map_reverse = {}
 
@@ -2260,6 +2277,8 @@ def load(operator, context, filepath="",
                 fbx_connection_map.setdefault(c_src, []).append((c_dst, fbx_link))
                 fbx_connection_map_reverse.setdefault(c_dst, []).append((c_src, fbx_link))
     _(); del _
+
+    perfmon.step("FBX import: Meshes...")
 
     # ----
     # Load mesh data
@@ -2274,6 +2293,8 @@ def load(operator, context, filepath="",
                 assert(blen_data is None)
                 fbx_item[1] = blen_read_geom(fbx_tmpl, fbx_obj, settings)
     _(); del _
+
+    perfmon.step("FBX import: Materials & Textures...")
 
     # ----
     # Load material data
@@ -2309,6 +2330,8 @@ def load(operator, context, filepath="",
                 continue
             fbx_item[1] = blen_read_texture_image(fbx_tmpl_tex, fbx_obj, basedir, settings)
     _(); del _
+
+    perfmon.step("FBX import: Cameras & Lamps...")
 
     # ----
     # Load camera data
@@ -2352,6 +2375,8 @@ def load(operator, context, filepath="",
 
     def connection_filter_reverse(fbx_uuid, fbx_id):
         return connection_filter_ex(fbx_uuid, fbx_id, fbx_connection_map_reverse)
+
+    perfmon.step("FBX import: Objects & Armatures...")
 
     # -- temporary helper hierarchy to build armatures and objects from
     # lookup from uuid to helper node. Used to build parent-child relations and later to look up animated nodes.
@@ -2517,6 +2542,8 @@ def load(operator, context, filepath="",
         # root_helper.print_info(0)
     _(); del _
 
+    perfmon.step("FBX import: ShapeKeys...")
+
     # We can handle shapes.
     blend_shape_channels = {}  # We do not need Shapes themselves, but keyblocks, for anim.
 
@@ -2566,6 +2593,8 @@ def load(operator, context, filepath="",
                 keyblocks = blen_read_shape(fbx_tmpl, fbx_sdata, fbx_bcdata, meshes, scene)
                 blend_shape_channels[bc_uuid] = keyblocks
     _(); del _
+
+    perfmon.step("FBX import: Animations...")
 
     # Animation!
     def _():
@@ -2658,6 +2687,8 @@ def load(operator, context, filepath="",
 
     _(); del _
 
+    perfmon.step("FBX import: Assign materials...")
+
     def _():
         # link Material's to Geometry (via Model's)
         for fbx_uuid, fbx_item in fbx_table_nodes.items():
@@ -2671,23 +2702,27 @@ def load(operator, context, filepath="",
             if mesh is None:
                 continue
 
-            for (fbx_lnk,
-                 fbx_lnk_item,
-                 fbx_lnk_type) in connection_filter_forward(fbx_uuid, b'Model'):
+            # In Blender, we link materials to data, typically (meshes), while in FBX they are linked to objects...
+            # So we have to be careful not to re-add endlessly the same material to a mesh!
+            # This can easily happen with 'baked' dupliobjects, see T44386.
+            # TODO: add an option to link materials to objects in Blender instead?
+            done_mats = set()
 
+            for (fbx_lnk, fbx_lnk_item, fbx_lnk_type) in connection_filter_forward(fbx_uuid, b'Model'):
                 # link materials
                 fbx_lnk_uuid = elem_uuid(fbx_lnk)
-                for (fbx_lnk_material,
-                     material,
-                     fbx_lnk_material_type) in connection_filter_reverse(fbx_lnk_uuid, b'Material'):
-
-                    mesh.materials.append(material)
+                for (fbx_lnk_material, material, fbx_lnk_material_type) in connection_filter_reverse(fbx_lnk_uuid, b'Material'):
+                    if material not in done_mats:
+                        mesh.materials.append(material)
+                        done_mats.add(material)
 
             # We have to validate mesh polygons' mat_idx, see T41015!
             # Some FBX seem to have an extra 'default' material which is not defined in FBX file.
             if mesh.validate_material_indices():
                 print("WARNING: mesh '%s' had invalid material indices, those were reset to first material" % mesh.name)
     _(); del _
+
+    perfmon.step("FBX import: Assign textures...")
 
     def _():
         material_images = {}
@@ -2898,6 +2933,8 @@ def load(operator, context, filepath="",
 
     _(); del _
 
+    perfmon.step("FBX import: Cycles z-offset workaround...")
+
     def _():
         # Annoying workaround for cycles having no z-offset
         if material_decals and use_alpha_decals:
@@ -2925,6 +2962,7 @@ def load(operator, context, filepath="",
                                 material.use_raytrace = False
     _(); del _
 
-    print('Import finished in %.4f sec (process time: %.4f sec).' %
-          (time.time() - start_time_sys, time.process_time() - start_time_proc))
+    perfmon.level_down()
+
+    perfmon.level_down("Import finished.")
     return {'FINISHED'}
