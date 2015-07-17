@@ -99,7 +99,7 @@ Copyright: 1999, Stephen Crowley <crow@debian.org>
            2005-2007, Florian Ernst <florian@debian.org>
            2007-2010, Cyril Brulebois <kibi@debian.org>
            2010-2012, Kevin Roy <kiniou@gmail.com>
-           2012-2014, Matteo F. Vescovi <mfv@debian.org>
+           2012-2015, Matteo F. Vescovi <mfv@debian.org>
 License: GPL-2+
 
 Files: extern/libopenjpeg/*
@@ -164,14 +164,14 @@ License: LGPL-2+ or BSD-style or Zlib
 
 Files: extern/colamd/*
 Copyright: 1998-2007, Timothy A. Davis
-License: LGPL-2+
+License: LGPL-2+_colamd
  All Rights Reserved.
  COLAMD is also available under alternate licenses, contact T. Davis
  for details.
 
 Files: extern/colamd/Include/UFconfig.h
 Copyright: 2007, University of Florida
-License: Permissive
+License: Permissive-UoF
  No licensing restrictions apply to this file or to the UFconfig directory.
 
 Files: extern/Eigen3/*
@@ -198,17 +198,11 @@ Copyright: 2008-2012, Gael Guennebaud
            2009, Kenneth Riddile
            2010, Thomas Capricelli
 License: MPL-2
- This Source Code Form is subject to the terms of the Mozilla
- Public License v. 2.0. If a copy of the MPL was not distributed
- with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Files: extern/Eigen3/Eigen/src/SparseCholesky/SimplicialCholesky.h
 Copyright: 2008-2010, Gael Guennebaud
            2005, by Timothy A. Davis
 License: MPL-2 and LGPL-2.1+
- This Source Code Form is subject to the terms of the Mozilla
- Public License v. 2.0. If a copy of the MPL was not distributed
- with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Files: extern/carve/*
 Copyright: 2006-2011, Tobias Sargeant
@@ -240,7 +234,7 @@ License: Boost-1.0
 
 Files: intern/iksolver/intern/TNT/*
 Copyright: None
-License: Permissive
+License: Permissive-NIST
  This software was developed at the National Institute of Standards and
  Technology (NIST) by employees of the Federal Government in the course
  of their official duties. Pursuant to title 17 Section 105 of the
@@ -252,7 +246,7 @@ License: Permissive
 
 Files: intern/opennl/superlu/*
 Copyright: 1994, by Xerox Corporation
-License: Permissive
+License: Permissive-Xeox
  All rights reserved.
  .
  THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
@@ -308,7 +302,7 @@ License: Zlib
 
 Files: intern/smoke/intern/*
 Copyright: 2007-2008, Theodore Kim and Nils Thuerey
-License: GPL-3+
+License: GPL-3+_WaveletTurbulence
  This file is part of Wavelet Turbulence.
  . 
  Wavelet Turbulence is free software: you can redistribute it and/or modify
@@ -324,7 +318,7 @@ License: GPL-3+
 Files: intern/smoke/intern/MERSENNETWISTER.h
 Copyright: 1997-2002, Makoto Matsumoto and Takuji Nishimura
            2000-2003, Richard J. Wagner
-License: BSD-New
+License: BSD-MERSENNETWISTER
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
  are met:
@@ -453,16 +447,13 @@ Copyright: 2003-2010, Sony Pictures Imageworks Inc.
 License: BSD-New-(Sony)
 
 Files: release/scripts/addons/io_export_unreal_psk_psa.py
+ release/scripts/addons/io_export_dxf/__init__.py
 Copyright: None
 License: GPL-3+
 
 Files: release/scripts/addons/mesh_bsurfaces.py
 Copyright: None
 License: GPL-2
-
-Files: release/scripts/addons/io_export_dxf/__init__.py
-Copyright: None
-License: GPL-3+
 
 Files: release/scripts/addons/netrender/js/*
 Copyright: 2011, jQuery UI Team
@@ -484,7 +475,7 @@ Copyright: 2003, Bitstream, Inc.
            2005-2006, Bageshri Salvi
            2005-2006, Pravin Satpute
            2005-2006, Sandeep Shedmake
-License: Permissive
+License: Permissive-Fonts
  Comment: Blender Main I18n font ("droidsans.ttf") includes glyphs imported
  from the following fonts:
  1. DejaVu Sans
@@ -766,3 +757,8 @@ License: GPL-3+
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in
  `/usr/share/common-licenses/GPL-3'.
+
+License: MPL-2
+ This Source Code Form is subject to the terms of the Mozilla
+ Public License v. 2.0. If a copy of the MPL was not distributed
+ with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
