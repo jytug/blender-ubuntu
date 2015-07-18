@@ -1,5 +1,5 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Fri, 3 Apr 2015 09:42:30 +0200
+Date: Fri, 17 Jul 2015 22:10:32 +0200
 Subject: locales_directory_install
 
 Change where locales are installed.
@@ -9,11 +9,12 @@ Contributions by:
 ---
  source/blender/blenfont/intern/blf_lang.c | 10 +++++-----
  source/blender/blenkernel/BKE_appdir.h    |  1 +
+ source/blender/blenkernel/intern/appdir.c |  3 +++
  source/creator/CMakeLists.txt             |  4 ++--
- 3 files changed, 8 insertions(+), 7 deletions(-)
+ 4 files changed, 11 insertions(+), 7 deletions(-)
 
 diff --git a/source/blender/blenfont/intern/blf_lang.c b/source/blender/blenfont/intern/blf_lang.c
-index 99e1aa5..4a8b0d6 100644
+index 4683081..121e15d 100644
 --- a/source/blender/blenfont/intern/blf_lang.c
 +++ b/source/blender/blenfont/intern/blf_lang.c
 @@ -82,9 +82,9 @@ static void free_locales(void)
@@ -56,10 +57,10 @@ index 99e1aa5..4a8b0d6 100644
  	else {
  		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 diff --git a/source/blender/blenkernel/BKE_appdir.h b/source/blender/blenkernel/BKE_appdir.h
-index 5e42f17..d6838bc 100644
+index 077fe2a..905106d 100644
 --- a/source/blender/blenkernel/BKE_appdir.h
 +++ b/source/blender/blenkernel/BKE_appdir.h
-@@ -62,6 +62,7 @@ enum {
+@@ -67,6 +67,7 @@ enum {
  	BLENDER_SYSTEM_DATAFILES    = 52,
  	BLENDER_SYSTEM_SCRIPTS      = 53,
  	BLENDER_SYSTEM_PYTHON       = 54,
@@ -67,11 +68,25 @@ index 5e42f17..d6838bc 100644
  };
  
  /* for BKE_appdir_folder_id_version only */
+diff --git a/source/blender/blenkernel/intern/appdir.c b/source/blender/blenkernel/intern/appdir.c
+index b1b32e7..8d89ce8 100644
+--- a/source/blender/blenkernel/intern/appdir.c
++++ b/source/blender/blenkernel/intern/appdir.c
+@@ -399,6 +399,9 @@ const char *BKE_appdir_folder_id(const int folder_id, const char *subfolder)
+ 			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
+ 			return NULL;
+ 
++		case BLENDER_SYSTEM_LOCALE:
++			BLI_strncpy(path, "/usr/share/locale", FILE_MAX); break;
++
+ 		default:
+ 			BLI_assert(0);
+ 			break;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index c914eac..2b11015 100644
+index 19113e3..4848d65 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -327,11 +327,11 @@ if(WITH_INTERNATIONAL)
+@@ -334,11 +334,11 @@ if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY
  			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
