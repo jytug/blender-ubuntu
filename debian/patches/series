@@ -1,8 +1,7 @@
 0001-blender_thumbnailer.patch
 0002-install_in_usr_share.patch
-0003-filter_docs_to_install.patch
-0004-locales_directory_install.patch
-0005-update_manpages.patch
-0006-do_not_use_version_number_in_system_path.patch
+0003-locales_directory_install.patch
+0004-update_manpages.patch
+0005-do_not_use_version_number_in_system_path.patch
+0006-blender_desktop.patch
 0007-look_for_droid_ttf_with_fontconfig.patch
-0008-blender_desktop.patch
