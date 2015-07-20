@@ -1,4 +1,4 @@
-blender (2.74+dfsg0-4) UNRELEASED; urgency=medium
+blender (2.74+dfsg0-4) unstable; urgency=medium
 
   * debian/patches/: patchset updated (Closes: #790970)
     - 0003-filter_docs_to_install.patch dropped
@@ -12,7 +12,7 @@ blender (2.74+dfsg0-4) UNRELEASED; urgency=medium
   * debian/rules: useless license text files dropped
   * debian/TODO: obsolete file dropped
 
- -- Matteo F. Vescovi <mfv@debian.org>  Mon, 20 Jul 2015 08:38:17 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Mon, 20 Jul 2015 08:39:33 +0200
 
 blender (2.74+dfsg0-3) unstable; urgency=medium
 
