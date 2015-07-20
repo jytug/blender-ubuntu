@@ -1,3 +1,19 @@
+blender (2.74+dfsg0-4) UNRELEASED; urgency=medium
+
+  * debian/patches/: patchset updated (Closes: #790970)
+    - 0003-filter_docs_to_install.patch dropped
+    - #0004 renamed to #0003
+    - #0005 renamed to #0004
+    - #0006 renamed to #0005
+    - #0008 renamed to #0006
+    - 0007-look_for_droid_ttf_with_fontconfig.patch improved
+  * debian/control: libjemalloc-dev b-dep added
+  * debian/copyright: license names fixed
+  * debian/rules: useless license text files dropped
+  * debian/TODO: obsolete file dropped
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Mon, 20 Jul 2015 08:38:17 +0200
+
 blender (2.74+dfsg0-3) unstable; urgency=medium
 
   * debian/rules: NDOF parameter added (Closes: #784796)
