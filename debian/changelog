@@ -1,3 +1,17 @@
+blender (2.75.a+dfsg0-1) UNRELEASED; urgency=medium
+
+  [ Matteo F. Vescovi ]
+  * New upstream bugfix release
+    - debian/patches/: patchset re-worked against v2.75a
+    - debian/control:
+      - libilmbase-dev (>= 2.2.0) b-dep added
+      - libopenexr-dev (>= 2.2.0) b-dep added
+
+  [ Alessio Treglia ]
+  * Remove myself from the Uploaders field
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 06 Aug 2015 09:36:52 +0200
+
 blender (2.74+dfsg0-4) unstable; urgency=medium
 
   * debian/patches/: patchset updated (Closes: #790970)
