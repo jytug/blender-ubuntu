@@ -44,6 +44,7 @@ override_dh_auto_configure:
 override_dh_auto_install:
 	dh_auto_install --buildsystem=cmake
 	find $(INSTDIR)/usr/share/blender/ -type d -empty -delete
+	rm -rf $(INSTDIR)/usr/share/blender/scripts/addons/netrender/
 	rm $(INSTDIR)/usr/share/doc/blender/LICENSE-droidsans.ttf.txt
 	rm $(INSTDIR)/usr/share/doc/blender/LICENSE-bmonofont-i18n.ttf.txt
 	rm $(INSTDIR)/usr/share/doc/blender/LICENSE-bfont.ttf.txt
