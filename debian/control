@@ -56,8 +56,6 @@ Package: blender
 Architecture: any
 Depends: blender-data (= ${source:Version}),
          fonts-droid,
-         libjs-jquery,
-         libjs-jquery-ui,
          ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends}
