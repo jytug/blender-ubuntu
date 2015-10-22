@@ -34,7 +34,7 @@
 #include "BLI_utildefines.h"
 #include "BLI_math.h"
 
-#include "BLF_translation.h"
+#include "BLT_translation.h"
 
 #include "BKE_font.h"
 
@@ -45,9 +45,6 @@
 #include "rna_internal.h"
 
 #include "WM_types.h"
-
-#include "BKE_curve.h"
-#include "ED_curve.h"
 
 #ifndef RNA_RUNTIME
 static EnumPropertyItem beztriple_handle_type_items[] = {
@@ -123,8 +120,6 @@ static const EnumPropertyItem curve2d_fill_mode_items[] = {
 #endif
 
 #ifdef RNA_RUNTIME
-
-#include "BLI_math.h"
 
 #include "DNA_object_types.h"
 
@@ -752,11 +747,12 @@ static int rna_Curve_is_editmode_get(PointerRNA *ptr)
 
 #else
 
+static const float tilt_limit = DEG2RADF(21600.0f);
+
 static void rna_def_bpoint(BlenderRNA *brna)
 {
 	StructRNA *srna;
 	PropertyRNA *prop;
-	const float tilt_limit = DEG2RADF(21600.0f);
 
 	srna = RNA_def_struct(brna, "SplinePoint", NULL);
 	RNA_def_struct_sdna(srna, "BPoint");
@@ -790,7 +786,7 @@ static void rna_def_bpoint(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "tilt", PROP_FLOAT, PROP_ANGLE);
 	RNA_def_property_float_sdna(prop, NULL, "alfa");
 	RNA_def_property_range(prop, -tilt_limit, tilt_limit);
-	RNA_def_property_ui_range(prop, -tilt_limit, tilt_limit, 0.1, 3);
+	RNA_def_property_ui_range(prop, -tilt_limit, tilt_limit, 10, 3);
 	RNA_def_property_ui_text(prop, "Tilt", "Tilt in 3D View");
 	RNA_def_property_update(prop, 0, "rna_Curve_update_data");
 
@@ -877,7 +873,8 @@ static void rna_def_beztriple(BlenderRNA *brna)
 	/* Number values */
 	prop = RNA_def_property(srna, "tilt", PROP_FLOAT, PROP_ANGLE);
 	RNA_def_property_float_sdna(prop, NULL, "alfa");
-	/*RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);*/
+	RNA_def_property_range(prop, -tilt_limit, tilt_limit);
+	RNA_def_property_ui_range(prop, -tilt_limit, tilt_limit, 10, 3);
 	RNA_def_property_ui_text(prop, "Tilt", "Tilt in 3D View");
 	RNA_def_property_update(prop, 0, "rna_Curve_update_data");
 

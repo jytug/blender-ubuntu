@@ -49,12 +49,13 @@
 #include "BLI_listbase.h"
 #include "BLI_string.h"
 #include "BLI_path_util.h"
+#include "BLI_timecode.h"
 #include "BLI_fileops.h"
 #include "BLI_threads.h"
 #include "BLI_rand.h"
 #include "BLI_callbacks.h"
 
-#include "BLF_translation.h"
+#include "BLT_translation.h"
 
 #include "BKE_animsys.h"  /* <------ should this be here?, needed for sequencer update */
 #include "BKE_camera.h"
@@ -154,6 +155,7 @@ static void stats_background(void *UNUSED(arg), RenderStats *rs)
 {
 	uintptr_t mem_in_use, mmap_in_use, peak_memory;
 	float megs_used_memory, mmap_used_memory, megs_peak_memory;
+	char info_time_str[32];
 
 	mem_in_use = MEM_get_memory_in_use();
 	mmap_in_use = MEM_get_mapped_memory_in_use();
@@ -171,8 +173,11 @@ static void stats_background(void *UNUSED(arg), RenderStats *rs)
 	if (rs->curblur)
 		fprintf(stdout, IFACE_("Blur %d "), rs->curblur);
 
+	BLI_timecode_string_from_time_simple(info_time_str, sizeof(info_time_str), PIL_check_seconds_timer() - rs->starttime);
+	fprintf(stdout, IFACE_("| Time:%s | "), info_time_str);
+
 	if (rs->infostr) {
-		fprintf(stdout, "| %s", rs->infostr);
+		fprintf(stdout, "%s", rs->infostr);
 	}
 	else {
 		if (rs->tothalo)
@@ -526,6 +531,17 @@ void RE_FreeAllRender(void)
 	/* finalize Freestyle */
 	FRS_exit();
 #endif
+}
+
+void RE_FreeAllPersistentData(void)
+{
+	Render *re;
+	for (re = RenderGlobal.renderlist.first; re != NULL; re = re->next) {
+		if ((re->r.mode & R_PERSISTENT_DATA) != 0 && re->engine != NULL) {
+			RE_engine_free(re->engine);
+			re->engine = NULL;
+		}
+	}
 }
 
 /* on file load, free all re */
@@ -1265,8 +1281,11 @@ static void main_render_result_new(Render *re)
 
 	BLI_rw_mutex_unlock(&re->resultmutex);
 
-	if (re->result->do_exr_tile)
-		render_result_exr_file_begin(re);
+	if (re->result) {
+		if (re->result->do_exr_tile) {
+			render_result_exr_file_begin(re);
+		}
+	}
 }
 
 static void threaded_tile_processor(Render *re)
@@ -2200,7 +2219,7 @@ static void free_all_freestyle_renders(void)
 			/* detach the window manager from freestyle bmain (see comments
 			 * in add_freestyle() for more detail)
 			 */
-			re1->freestyle_bmain->wm.first = re1->freestyle_bmain->wm.last = NULL;
+			BLI_listbase_clear(&re1->freestyle_bmain->wm);
 
 			BKE_main_free(re1->freestyle_bmain);
 			re1->freestyle_bmain = NULL;
@@ -2611,6 +2630,7 @@ static void do_render_seq(Render *re)
 
 		if (out) {
 			ibuf_arr[view_id] = IMB_dupImBuf(out);
+			IMB_metadata_copy(ibuf_arr[view_id], out);
 			IMB_freeImBuf(out);
 			BKE_sequencer_imbuf_from_sequencer_space(re->scene, ibuf_arr[view_id]);
 		}
@@ -2632,6 +2652,12 @@ static void do_render_seq(Render *re)
 		if (ibuf_arr[view_id]) {
 			/* copy ibuf into combined pixel rect */
 			render_result_rect_from_ibuf(rr, &re->r, ibuf_arr[view_id], view_id);
+
+			if (ibuf_arr[view_id]->metadata && (re->r.stamp & R_STAMP_STRIPMETA)) {
+				/* ensure render stamp info first */
+				BKE_render_result_stamp_info(NULL, NULL, rr, true);
+				BKE_stamp_info_from_imbuf(rr, ibuf_arr[view_id]);
+			}
 
 			if (recurs_depth == 0) { /* with nested scenes, only free on toplevel... */
 				Editing *ed = re->scene->ed;
@@ -2672,6 +2698,7 @@ static void do_render_seq(Render *re)
 static void do_render_all_options(Render *re)
 {
 	Object *camera;
+	bool render_seq = false;
 
 	re->current_scene_update(re->suh, re->scene);
 
@@ -2687,8 +2714,10 @@ static void do_render_all_options(Render *re)
 	}
 	else if (RE_seq_render_active(re->scene, &re->r)) {
 		/* note: do_render_seq() frees rect32 when sequencer returns float images */
-		if (!re->test_break(re->tbh))
+		if (!re->test_break(re->tbh)) {
 			do_render_seq(re);
+			render_seq = true;
+		}
 		
 		re->stats_draw(re->sdh, &re->i);
 		re->display_update(re->duh, re->result, NULL);
@@ -2708,7 +2737,9 @@ static void do_render_all_options(Render *re)
 	
 	/* save render result stamp if needed */
 	camera = RE_GetCamera(re);
-	BKE_render_result_stamp_info(re->scene, camera, re->result);
+	/* sequence rendering should have taken care of that already */
+	if (!(render_seq && (re->r.stamp & R_STAMP_STRIPMETA)))
+		BKE_render_result_stamp_info(re->scene, camera, re->result, false);
 
 	/* stamp image info here */
 	if ((re->r.stamp & R_STAMP_ALL) && (re->r.stamp & R_STAMP_DRAW)) {
@@ -3411,7 +3442,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 	render_time = re->i.lastframetime;
 	re->i.lastframetime = PIL_check_seconds_timer() - re->i.starttime;
 	
-	BLI_timestr(re->i.lastframetime, name, sizeof(name));
+	BLI_timecode_string_from_time_simple(name, sizeof(name), re->i.lastframetime);
 	printf(" Time: %s", name);
 
 	/* Flush stdout to be sure python callbacks are printing stuff after blender. */
@@ -3419,7 +3450,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 
 	BLI_callback_exec(G.main, NULL, BLI_CB_EVT_RENDER_STATS);
 
-	BLI_timestr(re->i.lastframetime - render_time, name, sizeof(name));
+	BLI_timecode_string_from_time_simple(name, sizeof(name), re->i.lastframetime - render_time);
 	printf(" (Saving: %s)\n", name);
 	
 	fputc('\n', stdout);
