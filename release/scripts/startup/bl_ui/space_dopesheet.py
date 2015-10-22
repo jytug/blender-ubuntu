@@ -153,7 +153,8 @@ class DOPESHEET_HT_header(Header):
         row = layout.row(align=True)
         row.operator("action.copy", text="", icon='COPYDOWN')
         row.operator("action.paste", text="", icon='PASTEDOWN')
-        row.operator("action.paste", text="", icon='PASTEFLIPDOWN').flipped = True
+        if st.mode not in ('GPENCIL', 'MASK'):
+            row.operator("action.paste", text="", icon='PASTEFLIPDOWN').flipped = True
 
 
 class DOPESHEET_MT_editor_menus(Menu):
@@ -339,6 +340,7 @@ class DOPESHEET_MT_key(Menu):
 
         layout.separator()
         layout.operator("action.clean")
+        layout.operator("action.clean", text="Clean Channels").channels = True
         layout.operator("action.sample")
 
         layout.separator()
@@ -421,6 +423,8 @@ class DOPESHEET_MT_delete(Menu):
         layout.separator()
 
         layout.operator("action.clean")
+        layout.operator("action.clean", text="Clean Channels").channels = True
+
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

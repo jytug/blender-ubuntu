@@ -3,7 +3,7 @@
 Various utility functions go here.
 """
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014 The SCons Foundation
+# Copyright (c) 2001 - 2014 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -24,7 +24,7 @@ Various utility functions go here.
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__revision__ = "src/engine/SCons/Util.py  2014/03/02 14:18:15 garyo"
+__revision__ = "src/engine/SCons/Util.py  2014/07/05 09:42:21 garyo"
 
 import os
 import sys
@@ -301,11 +301,11 @@ ListTypes = (list, UserList)
 SequenceTypes = (list, tuple, UserList)
 
 # Note that profiling data shows a speed-up when comparing
-# explicitly with str and unicode instead of simply comparing
+# explicitely with str and unicode instead of simply comparing
 # with basestring. (at least on Python 2.5.1)
 StringTypes = (str, unicode, UserString)
 
-# Empirically, it is faster to check explicitly for str and
+# Empirically, it is faster to check explicitely for str and
 # unicode than for basestring.
 BaseStringTypes = (str, unicode)
 
@@ -326,7 +326,7 @@ def is_String(obj, isinstance=isinstance, StringTypes=StringTypes):
 
 def is_Scalar(obj, isinstance=isinstance, StringTypes=StringTypes, SequenceTypes=SequenceTypes):
     # Profiling shows that there is an impressive speed-up of 2x
-    # when explicitly checking for strings instead of just not
+    # when explicitely checking for strings instead of just not
     # sequence when the argument (i.e. obj) is already a string.
     # But, if obj is a not string then it is twice as fast to
     # check only for 'not sequence'. The following code therefore
