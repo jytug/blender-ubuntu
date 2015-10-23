@@ -1,27 +1,27 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Sat, 18 Jul 2015 21:30:33 +0200
+Date: Fri, 23 Oct 2015 21:42:19 +0200
 Subject: look_for_droid_ttf_with_fontconfig
 
 * Remove bad installation of fonts directory into locales.
 * Avoid using the droid font shipped with upstream source
   and use fontconfig to get it.
 ---
- CMakeLists.txt                                   | 11 ++++++
- build_files/cmake/Modules/FindFontconfig.cmake   | 48 ++++++++++++++++++++++++
- build_files/cmake/macros.cmake                   |  6 +++
- source/blender/blenfont/CMakeLists.txt           |  7 ++++
- source/blender/blenfont/intern/blf_translation.c | 44 +++++++++++++++++++++-
- source/blender/blenlib/BLI_fileops.h             |  1 +
- source/blender/blenlib/intern/fileops.c          | 43 +++++++++++++++++++++
- source/creator/CMakeLists.txt                    |  6 ---
+ CMakeLists.txt                                 | 11 ++++++
+ build_files/cmake/Modules/FindFontconfig.cmake | 48 ++++++++++++++++++++++++++
+ build_files/cmake/macros.cmake                 |  6 ++++
+ source/blender/blenfont/CMakeLists.txt         |  7 ++++
+ source/blender/blenfont/intern/blf_font_i18n.c | 44 ++++++++++++++++++++++-
+ source/blender/blenlib/BLI_fileops.h           |  1 +
+ source/blender/blenlib/intern/fileops.c        | 43 +++++++++++++++++++++++
+ source/creator/CMakeLists.txt                  |  6 ----
  8 files changed, 159 insertions(+), 7 deletions(-)
  create mode 100644 build_files/cmake/Modules/FindFontconfig.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 1f0be6c..0e726c0 100644
+index 029198f..0823f0a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -192,6 +192,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
+@@ -198,6 +198,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
  mark_as_advanced(WITH_BLENDER)
  
  option(WITH_INTERNATIONAL "Enable I18N (International fonts and text)" ON)
@@ -31,7 +31,7 @@ index 1f0be6c..0e726c0 100644
  
  option(WITH_PYTHON        "Enable Embedded Python API  (only disable for development)" ON)
  option(WITH_PYTHON_SECURITY "Disables execution of scripts within blend files by default" ON) 
-@@ -903,6 +906,13 @@ if(UNIX AND NOT APPLE)
+@@ -972,6 +975,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -45,7 +45,7 @@ index 1f0be6c..0e726c0 100644
  	# Codecs
  	if(WITH_CODEC_SNDFILE)
  		find_package_wrapper(SndFile)
-@@ -2864,6 +2874,7 @@ if(FIRST_RUN)
+@@ -2977,6 +2987,7 @@ if(FIRST_RUN)
  
  	info_cfg_text("Other:")
  	info_cfg_option(WITH_OPENNL)
@@ -108,10 +108,10 @@ index 0000000..7dc09f3
 +
 +endif (FONTCONFIG_LIBRARIES AND FONTCONFIG_INCLUDE_DIR)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 7de2b25..364c120 100644
+index 90c4fbd..f740d4d 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -284,6 +284,9 @@ macro(SETUP_LIBDIRS)
+@@ -294,6 +294,9 @@ function(SETUP_LIBDIRS)
  	if(WITH_MEM_JEMALLOC)
  		link_directories(${JEMALLOC_LIBPATH})
  	endif()
@@ -121,7 +121,7 @@ index 7de2b25..364c120 100644
  
  	if(WIN32 AND NOT UNIX)
  		link_directories(${PTHREADS_LIBPATH})
-@@ -327,6 +330,9 @@ macro(setup_liblinks
+@@ -340,6 +343,9 @@ function(setup_liblinks
  	if(WITH_SYSTEM_GLEW)
  		target_link_libraries(${target} ${BLENDER_GLEW_LIBRARIES})
  	endif()
@@ -132,10 +132,10 @@ index 7de2b25..364c120 100644
  		target_link_libraries(${target} ${BULLET_LIBRARIES})
  	endif()
 diff --git a/source/blender/blenfont/CMakeLists.txt b/source/blender/blenfont/CMakeLists.txt
-index 059e2ca..b744a8a 100644
+index 36ad6fe..19d2bab 100644
 --- a/source/blender/blenfont/CMakeLists.txt
 +++ b/source/blender/blenfont/CMakeLists.txt
-@@ -66,6 +66,13 @@ if(WITH_INTERNATIONAL)
+@@ -64,6 +64,13 @@ if(WITH_INTERNATIONAL)
  	add_definitions(-DWITH_INTERNATIONAL)
  endif()
  
@@ -149,14 +149,14 @@ index 059e2ca..b744a8a 100644
  if(WITH_PYTHON)
  	add_definitions(-DWITH_PYTHON)
  	list(APPEND INC
-diff --git a/source/blender/blenfont/intern/blf_translation.c b/source/blender/blenfont/intern/blf_translation.c
-index 5d828d9..602af66 100644
---- a/source/blender/blenfont/intern/blf_translation.c
-+++ b/source/blender/blenfont/intern/blf_translation.c
-@@ -54,10 +54,14 @@
+diff --git a/source/blender/blenfont/intern/blf_font_i18n.c b/source/blender/blenfont/intern/blf_font_i18n.c
+index b6ff7ed..2165995 100644
+--- a/source/blender/blenfont/intern/blf_font_i18n.c
++++ b/source/blender/blenfont/intern/blf_font_i18n.c
+@@ -45,10 +45,14 @@
+ #include "BKE_appdir.h"
  
- #include "boost_locale_wrapper.h"
- 
+ #ifdef WITH_INTERNATIONAL
 +#ifdef WITH_FONTCONFIG
 +#include <fontconfig/fontconfig.h>
 +#else
@@ -169,7 +169,7 @@ index 5d828d9..602af66 100644
  static unsigned char *unifont_mono_ttf = NULL;
  static int unifont_mono_size = 0;
  #endif  /* WITH_INTERNATIONAL */
-@@ -66,6 +70,24 @@ unsigned char *BLF_get_unifont(int *r_unifont_size)
+@@ -57,6 +61,24 @@ unsigned char *BLF_get_unifont(int *r_unifont_size)
  {
  #ifdef WITH_INTERNATIONAL
  	if (unifont_ttf == NULL) {
@@ -194,7 +194,7 @@ index 5d828d9..602af66 100644
  		const char * const fontpath = BKE_appdir_folder_id(BLENDER_DATAFILES, "fonts");
  		if (fontpath) {
  			char unifont_path[1024];
-@@ -77,6 +99,7 @@ unsigned char *BLF_get_unifont(int *r_unifont_size)
+@@ -68,6 +90,7 @@ unsigned char *BLF_get_unifont(int *r_unifont_size)
  		else {
  			printf("%s: 'fonts' data path not found for international font, continuing\n", __func__);
  		}
@@ -202,7 +202,7 @@ index 5d828d9..602af66 100644
  	}
  
  	*r_unifont_size = unifont_size;
-@@ -101,6 +124,24 @@ unsigned char *BLF_get_unifont_mono(int *r_unifont_size)
+@@ -92,6 +115,24 @@ unsigned char *BLF_get_unifont_mono(int *r_unifont_size)
  {
  #ifdef WITH_INTERNATIONAL
  	if (unifont_mono_ttf == NULL) {
@@ -227,7 +227,7 @@ index 5d828d9..602af66 100644
  		const char *fontpath = BKE_appdir_folder_id(BLENDER_DATAFILES, "fonts");
  		if (fontpath) {
  			char unifont_path[1024];
-@@ -112,6 +153,7 @@ unsigned char *BLF_get_unifont_mono(int *r_unifont_size)
+@@ -103,6 +144,7 @@ unsigned char *BLF_get_unifont_mono(int *r_unifont_size)
  		else {
  			printf("%s: 'fonts' data path not found for international monospace font, continuing\n", __func__);
  		}
@@ -236,11 +236,11 @@ index 5d828d9..602af66 100644
  
  	*r_unifont_size = unifont_mono_size;
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index 01aa5d3..644991b 100644
+index 33dae45..76e80f9 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
-@@ -88,6 +88,7 @@ bool   BLI_is_file(const char *path) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
- void   BLI_dir_create_recursive(const char *dir) ATTR_NONNULL();
+@@ -90,6 +90,7 @@ bool   BLI_is_file(const char *path) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+ bool   BLI_dir_create_recursive(const char *dir) ATTR_NONNULL();
  double BLI_dir_free_space(const char *dir) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
  char  *BLI_current_working_dir(char *dir, const size_t maxlen) ATTR_NONNULL();
 +char  *BLI_file_to_mem(const char *from_file, int *size_r) ATTR_NONNULL();
@@ -248,7 +248,7 @@ index 01aa5d3..644991b 100644
  /* Filelist */
  
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index d6fe5e5..beb01da 100644
+index ef9a7c0..42b7515 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
 @@ -159,6 +159,49 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *r_size)
@@ -302,10 +302,10 @@ index d6fe5e5..beb01da 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 15c906e..444d39c 100644
+index d129c1e..991e62b 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -331,12 +331,6 @@ endif()
+@@ -338,12 +338,6 @@ endif()
  
  # localization
  if(WITH_INTERNATIONAL)

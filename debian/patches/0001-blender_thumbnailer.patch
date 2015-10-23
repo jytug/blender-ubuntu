@@ -23,7 +23,7 @@ index 0000000..05d4fae
 +Exec=/usr/share/blender/scripts/blender-thumbnailer.py %i %o
 +MimeType=application/x-blender;
 diff --git a/release/bin/blender-thumbnailer.py b/release/bin/blender-thumbnailer.py
-index d3b31d6..9685d46 100755
+index fe5d462..5d2dd95 100755
 --- a/release/bin/blender-thumbnailer.py
 +++ b/release/bin/blender-thumbnailer.py
 @@ -1,4 +1,4 @@
@@ -33,10 +33,10 @@ index d3b31d6..9685d46 100755
  # ##### BEGIN GPL LICENSE BLOCK #####
  #
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 1b2dd21..ef7b0b0 100644
+index 8feb882..d10de41 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -487,7 +487,7 @@ if(UNIX AND NOT APPLE)
+@@ -494,7 +494,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py

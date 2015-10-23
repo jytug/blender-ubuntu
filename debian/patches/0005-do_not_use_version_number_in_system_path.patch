@@ -28,10 +28,10 @@ index 5473e40..348b9c3 100644
  	if (static_path) {
  		static string system_path = string(static_path) + "/blender/" + versionstr;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index fab2491..15c906e 100644
+index 1c75ff4..d129c1e 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -272,7 +272,7 @@ if(UNIX AND NOT APPLE)
+@@ -279,7 +279,7 @@ if(UNIX AND NOT APPLE)
  		if(WITH_INSTALL_PORTABLE)
  			set(TARGETDIR_VER ${BLENDER_VERSION})
  		else()
