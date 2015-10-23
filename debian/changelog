@@ -1,4 +1,4 @@
-blender (2.76+dfsg0-1) UNRELEASED; urgency=medium
+blender (2.76+dfsg0-1) experimental; urgency=medium
 
   * New upstream release
     - debian/patches/: patchset re-worked against v2.76
@@ -7,7 +7,7 @@ blender (2.76+dfsg0-1) UNRELEASED; urgency=medium
       - 0007-look_for_droid_ttf_with_fontconfig.patch -> #0006
       - 0008-fix_FTBFS_on_non-x86_platforms.patch -> #0007
 
- -- Matteo F. Vescovi <mfv@debian.org>  Fri, 23 Oct 2015 21:45:45 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 23 Oct 2015 21:50:30 +0200
 
 blender (2.75.a+dfsg0-2) experimental; urgency=medium
 
