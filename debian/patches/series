@@ -4,4 +4,3 @@
 0004-update_manpages.patch
 0005-do_not_use_version_number_in_system_path.patch
 0006-look_for_droid_ttf_with_fontconfig.patch
-0007-fix_FTBFS_on_non-x86_platforms.patch
