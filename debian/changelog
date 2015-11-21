@@ -1,3 +1,14 @@
+blender (2.76.b+dfsg0-1) UNRELEASED; urgency=medium
+
+  * New upstream bugfix release
+    - debian/patches/: patchset updated against v2.76b
+      - #0006 renamed to 0006-look_for_dejavu_ttf_with_fontconfig.patch
+        with the usage of DejaVu fonts instead of Droid (Closes: #804678)
+      - 0007-fix_FTBFS_on_non-x86_platforms.patch dropped
+        (applied upstream)
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Sat, 21 Nov 2015 21:54:59 +0100
+
 blender (2.76+dfsg0-1) experimental; urgency=medium
 
   * New upstream release
