@@ -1,4 +1,4 @@
-blender (2.74+dfsg0-5) UNRELEASED; urgency=medium
+blender (2.74+dfsg0-5) unstable; urgency=medium
 
   [ Alessio Treglia ]
   * Remove myself from the Uploaders field
@@ -11,7 +11,7 @@ blender (2.74+dfsg0-5) UNRELEASED; urgency=medium
       Thanks to Andreas Cadhalpun for the patch.
   * debian/menu: file dropped
 
- -- Matteo F. Vescovi <mfv@debian.org>  Wed, 09 Dec 2015 22:51:08 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Wed, 09 Dec 2015 22:52:22 +0100
 
 blender (2.74+dfsg0-4) unstable; urgency=medium
 
