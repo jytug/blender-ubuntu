@@ -1,10 +1,10 @@
-blender (2.76.b+dfsg0-2) UNRELEASED; urgency=medium
+blender (2.76.b+dfsg0-2) experimental; urgency=medium
 
   * debian/control:
     - fonts-droid -> fonts-dejavu in binary package (Closes: #804678)
     - Vcs-* fields updated
 
- -- Matteo F. Vescovi <mfv@debian.org>  Sat, 30 Jan 2016 15:50:27 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Sat, 30 Jan 2016 15:51:47 +0100
 
 blender (2.76.b+dfsg0-1) experimental; urgency=medium
 
