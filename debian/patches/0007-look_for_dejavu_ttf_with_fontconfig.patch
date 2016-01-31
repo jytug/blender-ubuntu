@@ -1,10 +1,10 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Sat, 18 Jul 2015 22:14:52 +0200
-Subject: look_for_droid_ttf_with_fontconfig
+Date: Sun, 31 Jan 2016 14:37:05 +0100
+Subject: look_for_dejavu_ttf_with_fontconfig
 
-* Remove bad installation of fonts directory into locales.
 * Avoid using the droid font shipped with upstream source
-  and use fontconfig to get it.
+  and use fontconfig to get Dejavu instead.
+* Remove bad installation of fonts directory into locales.
 ---
  CMakeLists.txt                                   | 11 ++++++
  build_files/cmake/Modules/FindFontconfig.cmake   | 48 ++++++++++++++++++++++++
@@ -150,7 +150,7 @@ index 392a9ed..deb1f3c 100644
  
  blender_add_lib(bf_blenfont "${SRC}" "${INC}" "${INC_SYS}")
 diff --git a/source/blender/blenfont/intern/blf_translation.c b/source/blender/blenfont/intern/blf_translation.c
-index 2a4a152..bb4e226 100644
+index 2a4a152..cbc3af0 100644
 --- a/source/blender/blenfont/intern/blf_translation.c
 +++ b/source/blender/blenfont/intern/blf_translation.c
 @@ -52,10 +52,14 @@
@@ -176,7 +176,7 @@ index 2a4a152..bb4e226 100644
 +#ifdef WITH_FONTCONFIG
 +		FcFontSet *fontset = NULL;
 +		FcValue v;
-+		FcPattern *pattern = FcPatternBuild (0, FC_FAMILY, FcTypeString, "Droid Sans", FC_STYLE, FcTypeString, "Regular", (char *) 0);
++		FcPattern *pattern = FcPatternBuild (0, FC_FAMILY, FcTypeString, "Dejavu Sans", FC_STYLE, FcTypeString, "Regular", (char *) 0);
 +		fontset = FcFontList(0,pattern,0);
 +		if (fontset->nfont > 0) {
 +			// Get the file of the first font in the fontset that match pattern
@@ -188,7 +188,7 @@ index 2a4a152..bb4e226 100644
 +			);
 +		}
 +		else {
-+			printf("%s: 'Droid Sans Regular' font not found with fontconfig\n", __func__);
++			printf("%s: 'Dejavu Sans' font not found with fontconfig\n", __func__);
 +		}
 +#else
  		const char * const fontpath = BKE_appdir_folder_id(BLENDER_DATAFILES, "fonts");
@@ -209,7 +209,7 @@ index 2a4a152..bb4e226 100644
 +#ifdef WITH_FONTCONFIG
 +		FcFontSet *fontset = NULL;
 +		FcValue v;
-+		FcPattern *pattern = FcPatternBuild (0, FC_FAMILY, FcTypeString, "Droid Sans Mono", FC_STYLE, FcTypeString, "Regular", (char *) 0);
++		FcPattern *pattern = FcPatternBuild (0, FC_FAMILY, FcTypeString, "Dejavu Sans Mono", FC_STYLE, FcTypeString, "Regular", (char *) 0);
 +		fontset = FcFontList(0,pattern,0);
 +		if (fontset->nfont > 0) {
 +			// Get the file of the first font in the fontset that match pattern
@@ -221,7 +221,7 @@ index 2a4a152..bb4e226 100644
 +			);
 +		}
 +		else {
-+			printf("%s: 'Droid Sans Mono' font not found with fontconfig\n", __func__);
++			printf("%s: 'Dejavu Sans Mono' font not found with fontconfig\n", __func__);
 +		}
 +#else
  		const char *fontpath = BKE_appdir_folder_id(BLENDER_DATAFILES, "fonts");

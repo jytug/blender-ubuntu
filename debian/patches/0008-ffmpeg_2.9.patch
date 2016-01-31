@@ -1,9 +1,24 @@
-Description: Replace deprecated FFmpeg API
-Author: Andreas Cadhalpun <Andreas.Cadhalpun@googlemail.com>
-Last-Update: <2015-11-02>
+From: Andreas Cadhalpun <Andreas.Cadhalpun@googlemail.com>
+Date: Sun, 31 Jan 2016 14:41:39 +0100
+Subject: ffmpeg_2.9
 
---- blender-2.74+dfsg0.orig/CMakeLists.txt
-+++ blender-2.74+dfsg0/CMakeLists.txt
+Replace deprecated FFmpeg API.
+---
+ CMakeLists.txt                                 |   2 +-
+ intern/audaspace/ffmpeg/AUD_FFMPEGReader.cpp   |   4 +-
+ intern/audaspace/ffmpeg/AUD_FFMPEGWriter.cpp   |   2 +-
+ source/blender/blenkernel/intern/writeffmpeg.c |  36 ++++----
+ source/blender/imbuf/intern/IMB_anim.h         |  11 +++
+ source/blender/imbuf/intern/anim_movie.c       | 107 ++++++++++++++++++++----
+ source/blender/imbuf/intern/indexer.c          |  10 +--
+ source/gameengine/VideoTexture/VideoFFmpeg.cpp | 109 +++++++++++++++++++++----
+ source/gameengine/VideoTexture/VideoFFmpeg.h   |  15 ++++
+ 9 files changed, 235 insertions(+), 61 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4f59c65..a7e0132 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
 @@ -892,7 +892,7 @@ if(UNIX AND NOT APPLE)
  
  	if(WITH_CODEC_FFMPEG)
@@ -13,9 +28,11 @@ Last-Update: <2015-11-02>
  
  		mark_as_advanced(FFMPEG)
  
---- blender-2.74+dfsg0.orig/intern/audaspace/ffmpeg/AUD_FFMPEGReader.cpp
-+++ blender-2.74+dfsg0/intern/audaspace/ffmpeg/AUD_FFMPEGReader.cpp
-@@ -58,9 +58,9 @@ int AUD_FFMPEGReader::decode(AVPacket& p
+diff --git a/intern/audaspace/ffmpeg/AUD_FFMPEGReader.cpp b/intern/audaspace/ffmpeg/AUD_FFMPEGReader.cpp
+index ba961f0..bc351b9 100644
+--- a/intern/audaspace/ffmpeg/AUD_FFMPEGReader.cpp
++++ b/intern/audaspace/ffmpeg/AUD_FFMPEGReader.cpp
+@@ -58,9 +58,9 @@ int AUD_FFMPEGReader::decode(AVPacket& packet, AUD_Buffer& buffer)
  		got_frame = 0;
  
  		if(!frame)
@@ -27,9 +44,11 @@ Last-Update: <2015-11-02>
  
  		read_length = avcodec_decode_audio4(m_codecCtx, frame, &got_frame, &packet);
  		if(read_length < 0)
---- blender-2.74+dfsg0.orig/intern/audaspace/ffmpeg/AUD_FFMPEGWriter.cpp
-+++ blender-2.74+dfsg0/intern/audaspace/ffmpeg/AUD_FFMPEGWriter.cpp
-@@ -202,7 +202,7 @@ AUD_FFMPEGWriter::AUD_FFMPEGWriter(std::
+diff --git a/intern/audaspace/ffmpeg/AUD_FFMPEGWriter.cpp b/intern/audaspace/ffmpeg/AUD_FFMPEGWriter.cpp
+index 4ee99c7..4de7812 100644
+--- a/intern/audaspace/ffmpeg/AUD_FFMPEGWriter.cpp
++++ b/intern/audaspace/ffmpeg/AUD_FFMPEGWriter.cpp
+@@ -202,7 +202,7 @@ AUD_FFMPEGWriter::AUD_FFMPEGWriter(std::string filename, AUD_DeviceSpecs specs,
  			m_frame = av_frame_alloc();
  			if (!m_frame)
  				AUD_THROW(AUD_ERROR_FFMPEG, codec_error);
@@ -38,8 +57,10 @@ Last-Update: <2015-11-02>
  			m_frame->linesize[0]    = m_input_size * samplesize;
  			m_frame->format         = m_codecCtx->sample_fmt;
  			m_frame->nb_samples     = m_input_size;
---- blender-2.74+dfsg0.orig/source/blender/blenkernel/intern/writeffmpeg.c
-+++ blender-2.74+dfsg0/source/blender/blenkernel/intern/writeffmpeg.c
+diff --git a/source/blender/blenkernel/intern/writeffmpeg.c b/source/blender/blenkernel/intern/writeffmpeg.c
+index 128a5da..77d00a1 100644
+--- a/source/blender/blenkernel/intern/writeffmpeg.c
++++ b/source/blender/blenkernel/intern/writeffmpeg.c
 @@ -133,8 +133,8 @@ static int write_audio_frame(void)
  	audio_time += (double) audio_input_samples / (double) c->sample_rate;
  
@@ -78,7 +99,7 @@ Last-Update: <2015-11-02>
  
  	return 0;
  }
-@@ -219,7 +219,7 @@ static AVFrame *alloc_picture(int pix_fm
+@@ -219,7 +219,7 @@ static AVFrame *alloc_picture(int pix_fmt, int width, int height)
  	int size;
  	
  	/* allocate space for the struct */
@@ -87,7 +108,7 @@ Last-Update: <2015-11-02>
  	if (!f) return NULL;
  	size = avpicture_get_size(pix_fmt, width, height);
  	/* allocate the actual picture buffer */
-@@ -358,8 +358,8 @@ static AVFrame *generate_video_frame(uin
+@@ -358,8 +358,8 @@ static AVFrame *generate_video_frame(uint8_t *pixels, ReportList *reports)
  	int height = c->height;
  	AVFrame *rgb_frame;
  
@@ -98,7 +119,7 @@ Last-Update: <2015-11-02>
  		if (!rgb_frame) {
  			BKE_report(reports, RPT_ERROR, "Could not allocate temporary frame");
  			return NULL;
-@@ -409,14 +409,14 @@ static AVFrame *generate_video_frame(uin
+@@ -409,14 +409,14 @@ static AVFrame *generate_video_frame(uint8_t *pixels, ReportList *reports)
  		}
  	}
  
@@ -115,7 +136,7 @@ Last-Update: <2015-11-02>
  	current_frame->width = width;
  	current_frame->height = height;
  
-@@ -581,12 +581,12 @@ static AVStream *alloc_video_stream(Rend
+@@ -581,12 +581,12 @@ static AVStream *alloc_video_stream(RenderData *rd, int codec_id, AVFormatContex
  	}
  	else {
  		/* makes HuffYUV happy ... */
@@ -130,7 +151,7 @@ Last-Update: <2015-11-02>
  		c->codec_tag = (('D' << 24) + ('I' << 16) + ('V' << 8) + 'X');
  	}
  
-@@ -599,26 +599,26 @@ static AVStream *alloc_video_stream(Rend
+@@ -599,26 +599,26 @@ static AVStream *alloc_video_stream(RenderData *rd, int codec_id, AVFormatContex
  	/* Keep lossless encodes in the RGB domain. */
  	if (codec_id == AV_CODEC_ID_HUFFYUV) {
  		if (rd->im_format.planes == R_IMF_PLANES_RGBA) {
@@ -162,7 +183,7 @@ Last-Update: <2015-11-02>
  		}
  	}
  
-@@ -656,7 +656,7 @@ static AVStream *alloc_video_stream(Rend
+@@ -656,7 +656,7 @@ static AVStream *alloc_video_stream(RenderData *rd, int codec_id, AVFormatContex
  
  	current_frame = alloc_picture(c->pix_fmt, c->width, c->height);
  
@@ -171,8 +192,10 @@ Last-Update: <2015-11-02>
  	                                 NULL, NULL, NULL);
  	return st;
  }
---- blender-2.74+dfsg0.orig/source/blender/imbuf/intern/IMB_anim.h
-+++ blender-2.74+dfsg0/source/blender/imbuf/intern/IMB_anim.h
+diff --git a/source/blender/imbuf/intern/IMB_anim.h b/source/blender/imbuf/intern/IMB_anim.h
+index ed349e8..c6200f4 100644
+--- a/source/blender/imbuf/intern/IMB_anim.h
++++ b/source/blender/imbuf/intern/IMB_anim.h
 @@ -76,6 +76,9 @@
  #  include <libavformat/avformat.h>
  #  include <libavcodec/avcodec.h>
@@ -198,9 +221,11 @@ Last-Update: <2015-11-02>
  #endif
  
  #ifdef WITH_REDCODE
---- blender-2.74+dfsg0.orig/source/blender/imbuf/intern/anim_movie.c
-+++ blender-2.74+dfsg0/source/blender/imbuf/intern/anim_movie.c
-@@ -472,6 +472,10 @@ static int startffmpeg(struct anim *anim
+diff --git a/source/blender/imbuf/intern/anim_movie.c b/source/blender/imbuf/intern/anim_movie.c
+index ffdecb7..9f36a6f 100644
+--- a/source/blender/imbuf/intern/anim_movie.c
++++ b/source/blender/imbuf/intern/anim_movie.c
+@@ -472,6 +472,10 @@ static int startffmpeg(struct anim *anim)
  	const int *inv_table;
  #endif
  
@@ -211,7 +236,7 @@ Last-Update: <2015-11-02>
  	if (anim == NULL) return(-1);
  
  	streamcount = anim->streamindex;
-@@ -560,21 +564,21 @@ static int startffmpeg(struct anim *anim
+@@ -560,21 +564,21 @@ static int startffmpeg(struct anim *anim)
  	anim->next_pts = -1;
  	anim->next_packet.stream_index = -1;
  
@@ -240,7 +265,7 @@ Last-Update: <2015-11-02>
  		anim->pCodecCtx = NULL;
  		return -1;
  	}
-@@ -604,7 +608,7 @@ static int startffmpeg(struct anim *anim
+@@ -604,7 +608,7 @@ static int startffmpeg(struct anim *anim)
  	        anim->pCodecCtx->pix_fmt,
  	        anim->x,
  	        anim->y,
@@ -249,7 +274,7 @@ Last-Update: <2015-11-02>
  	        SWS_FAST_BILINEAR | SWS_PRINT_INFO | SWS_FULL_CHR_H_INT,
  	        NULL, NULL, NULL);
  		
-@@ -613,9 +617,9 @@ static int startffmpeg(struct anim *anim
+@@ -613,9 +617,9 @@ static int startffmpeg(struct anim *anim)
  		        "Can't transform color space??? Bailing out...\n");
  		avcodec_close(anim->pCodecCtx);
  		avformat_close_input(&anim->pFormatCtx);
@@ -262,7 +287,7 @@ Last-Update: <2015-11-02>
  		anim->pCodecCtx = NULL;
  		return -1;
  	}
-@@ -642,6 +646,74 @@ static int startffmpeg(struct anim *anim
+@@ -642,6 +646,74 @@ static int startffmpeg(struct anim *anim)
  	return (0);
  }
  
@@ -337,7 +362,7 @@ Last-Update: <2015-11-02>
  /* postprocess the image in anim->pFrame and do color conversion
   * and deinterlacing stuff.
   *
-@@ -675,7 +747,8 @@ static void ffmpeg_postprocess(struct an
+@@ -675,7 +747,8 @@ static void ffmpeg_postprocess(struct anim *anim)
  
  
  	if (anim->ib_flags & IB_animdeinterlace) {
@@ -347,7 +372,7 @@ Last-Update: <2015-11-02>
  		        (AVPicture *)
  		        anim->pFrameDeinterlaced,
  		        (const AVPicture *)
-@@ -693,7 +766,7 @@ static void ffmpeg_postprocess(struct an
+@@ -693,7 +766,7 @@ static void ffmpeg_postprocess(struct anim *anim)
  	
  	avpicture_fill((AVPicture *) anim->pFrameRGB,
  	               (unsigned char *) ibuf->rect,
@@ -356,7 +381,7 @@ Last-Update: <2015-11-02>
  
  	if (ENDIAN_ORDER == B_ENDIAN) {
  		int *dstStride   = anim->pFrameRGB->linesize;
-@@ -1136,16 +1209,18 @@ static void free_anim_ffmpeg(struct anim
+@@ -1136,16 +1209,18 @@ static void free_anim_ffmpeg(struct anim *anim)
  {
  	if (anim == NULL) return;
  
@@ -378,9 +403,11 @@ Last-Update: <2015-11-02>
  		sws_freeContext(anim->img_convert_ctx);
  		IMB_freeImBuf(anim->last_frame);
  		if (anim->next_packet.stream_index != -1) {
---- blender-2.74+dfsg0.orig/source/blender/imbuf/intern/indexer.c
-+++ blender-2.74+dfsg0/source/blender/imbuf/intern/indexer.c
-@@ -516,7 +516,7 @@ static struct proxy_output_ctx *alloc_pr
+diff --git a/source/blender/imbuf/intern/indexer.c b/source/blender/imbuf/intern/indexer.c
+index d028174..b12dde1 100644
+--- a/source/blender/imbuf/intern/indexer.c
++++ b/source/blender/imbuf/intern/indexer.c
+@@ -516,7 +516,7 @@ static struct proxy_output_ctx *alloc_proxy_output_ffmpeg(
  		rv->c->pix_fmt = rv->codec->pix_fmts[0];
  	}
  	else {
@@ -389,7 +416,7 @@ Last-Update: <2015-11-02>
  	}
  
  	rv->c->sample_aspect_ratio =
-@@ -551,7 +551,7 @@ static struct proxy_output_ctx *alloc_pr
+@@ -551,7 +551,7 @@ static struct proxy_output_ctx *alloc_proxy_output_ffmpeg(
  	if (st->codec->width != width || st->codec->height != height ||
  	    st->codec->pix_fmt != rv->c->pix_fmt)
  	{
@@ -398,7 +425,7 @@ Last-Update: <2015-11-02>
  		avpicture_fill((AVPicture *) rv->frame,
  		               MEM_mallocN(avpicture_get_size(
  		                               rv->c->pix_fmt,
-@@ -672,7 +672,7 @@ static void free_proxy_output_ffmpeg(str
+@@ -672,7 +672,7 @@ static void free_proxy_output_ffmpeg(struct proxy_output_ctx *ctx,
  		sws_freeContext(ctx->sws_ctx);
  
  		MEM_freeN(ctx->frame->data[0]);
@@ -407,7 +434,7 @@ Last-Update: <2015-11-02>
  	}
  
  	get_proxy_filename(ctx->anim, ctx->proxy_size, 
-@@ -902,7 +902,7 @@ static int index_rebuild_ffmpeg(FFmpegIn
+@@ -902,7 +902,7 @@ static int index_rebuild_ffmpeg(FFmpegIndexBuilderContext *context,
  
  	memset(&next_packet, 0, sizeof(AVPacket));
  
@@ -416,7 +443,7 @@ Last-Update: <2015-11-02>
  
  	stream_size = avio_size(context->iFormatCtx->pb);
  
-@@ -970,7 +970,7 @@ static int index_rebuild_ffmpeg(FFmpegIn
+@@ -970,7 +970,7 @@ static int index_rebuild_ffmpeg(FFmpegIndexBuilderContext *context,
  		} while (frame_finished);
  	}
  
@@ -425,9 +452,11 @@ Last-Update: <2015-11-02>
  
  	return 1;
  }
---- blender-2.74+dfsg0.orig/source/gameengine/VideoTexture/VideoFFmpeg.cpp
-+++ blender-2.74+dfsg0/source/gameengine/VideoTexture/VideoFFmpeg.cpp
-@@ -79,11 +79,16 @@ m_isThreaded(false), m_isStreaming(false
+diff --git a/source/gameengine/VideoTexture/VideoFFmpeg.cpp b/source/gameengine/VideoTexture/VideoFFmpeg.cpp
+index db76ba5..d188b88 100644
+--- a/source/gameengine/VideoTexture/VideoFFmpeg.cpp
++++ b/source/gameengine/VideoTexture/VideoFFmpeg.cpp
+@@ -79,11 +79,16 @@ m_isThreaded(false), m_isStreaming(false), m_stopThread(false), m_cacheStarted(f
  	BLI_listbase_clear(&m_frameCacheBase);
  	BLI_listbase_clear(&m_packetCacheFree);
  	BLI_listbase_clear(&m_packetCacheBase);
@@ -473,7 +502,7 @@ Last-Update: <2015-11-02>
  	}
  	return frame;
  }
-@@ -236,8 +241,8 @@ int VideoFFmpeg::openStream(const char *
+@@ -236,8 +241,8 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
  	m_codecCtx = codecCtx;
  	m_formatCtx = formatCtx;
  	m_videoStream = videoStream;
@@ -484,7 +513,7 @@ Last-Update: <2015-11-02>
  
  	// allocate buffer if deinterlacing is required
  	avpicture_fill((AVPicture*)m_frameDeinterlaced, 
-@@ -248,10 +253,10 @@ int VideoFFmpeg::openStream(const char *
+@@ -248,10 +253,10 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
  		m_codecCtx->pix_fmt, m_codecCtx->width, m_codecCtx->height);
  
  	// check if the pixel format supports Alpha
@@ -495,11 +524,11 @@ Last-Update: <2015-11-02>
 +	if (m_codecCtx->pix_fmt == AV_PIX_FMT_RGB32 ||
 +		m_codecCtx->pix_fmt == AV_PIX_FMT_BGR32 ||
 +		m_codecCtx->pix_fmt == AV_PIX_FMT_RGB32_1 ||
-+		m_codecCtx->pix_fmt == AV_PIX_FMT_BGR32_1) 
++		m_codecCtx->pix_fmt == AV_PIX_FMT_BGR32_1)
  	{
  		// allocate buffer to store final decoded frame
  		m_format = RGBA32;
-@@ -262,7 +267,7 @@ int VideoFFmpeg::openStream(const char *
+@@ -262,7 +267,7 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
  			m_codecCtx->pix_fmt,
  			m_codecCtx->width,
  			m_codecCtx->height,
@@ -508,7 +537,7 @@ Last-Update: <2015-11-02>
  			SWS_FAST_BILINEAR,
  			NULL, NULL, NULL);
  	} else
-@@ -276,7 +281,7 @@ int VideoFFmpeg::openStream(const char *
+@@ -276,7 +281,7 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
  			m_codecCtx->pix_fmt,
  			m_codecCtx->width,
  			m_codecCtx->height,
@@ -517,7 +546,7 @@ Last-Update: <2015-11-02>
  			SWS_FAST_BILINEAR,
  			NULL, NULL, NULL);
  	}
-@@ -293,13 +298,81 @@ int VideoFFmpeg::openStream(const char *
+@@ -293,13 +298,81 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
  		av_free(m_frameDeinterlaced);
  		m_frameDeinterlaced = NULL;
  		MEM_freeN(m_frameRGB->data[0]);
@@ -600,7 +629,7 @@ Last-Update: <2015-11-02>
  /*
   * This thread is used to load video frame asynchronously.
   * It provides a frame caching service. 
-@@ -392,7 +465,7 @@ void *VideoFFmpeg::cacheThread(void *dat
+@@ -392,7 +465,7 @@ void *VideoFFmpeg::cacheThread(void *data)
  					{
  						if (video->m_deinterlace) 
  						{
@@ -626,7 +655,7 @@ Last-Update: <2015-11-02>
  			delete frame;
  		}
  		while ((packet = (CachePacket *)m_packetCacheBase.first) != NULL)
-@@ -1062,7 +1135,7 @@ AVFrame *VideoFFmpeg::grabFrame(long pos
+@@ -1062,7 +1135,7 @@ AVFrame *VideoFFmpeg::grabFrame(long position)
  
  				if (m_deinterlace) 
  				{
@@ -635,8 +664,10 @@ Last-Update: <2015-11-02>
  						(AVPicture*) m_frameDeinterlaced,
  						(const AVPicture*) m_frame,
  						m_codecCtx->pix_fmt,
---- blender-2.74+dfsg0.orig/source/gameengine/VideoTexture/VideoFFmpeg.h
-+++ blender-2.74+dfsg0/source/gameengine/VideoTexture/VideoFFmpeg.h
+diff --git a/source/gameengine/VideoTexture/VideoFFmpeg.h b/source/gameengine/VideoTexture/VideoFFmpeg.h
+index 4834a7c..b62888a 100644
+--- a/source/gameengine/VideoTexture/VideoFFmpeg.h
++++ b/source/gameengine/VideoTexture/VideoFFmpeg.h
 @@ -39,6 +39,9 @@
  extern "C" {
  #include <pthread.h>
