@@ -1,4 +1,4 @@
-blender (2.74+dfsg0-6) UNRELEASED; urgency=medium
+blender (2.74+dfsg0-6) unstable; urgency=medium
 
   * debian/patches/: patchset updated (Closes: #804678)
     - 0007-look_for_droid_ttf_with_fontconfig.patch
@@ -8,7 +8,7 @@ blender (2.74+dfsg0-6) UNRELEASED; urgency=medium
     for binary package
   * debian/control: Vcs-* fields updated
 
- -- Matteo F. Vescovi <mfv@debian.org>  Sun, 31 Jan 2016 14:49:47 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Sun, 31 Jan 2016 14:51:13 +0100
 
 blender (2.74+dfsg0-5) unstable; urgency=medium
 
