@@ -1,8 +1,8 @@
-blender (2.76.b+dfsg0-3) UNRELEASED; urgency=medium
+blender (2.76.b+dfsg0-3) unstable; urgency=medium
 
   * Upload to unstable (Closes: #810065)
 
- -- Matteo F. Vescovi <mfv@debian.org>  Tue, 02 Feb 2016 12:21:07 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Tue, 02 Feb 2016 12:25:04 +0100
 
 blender (2.76.b+dfsg0-2) experimental; urgency=medium
 
