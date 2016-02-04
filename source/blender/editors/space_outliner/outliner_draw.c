@@ -43,7 +43,7 @@
 #include "BLI_utildefines.h"
 #include "BLI_mempool.h"
 
-#include "BLF_translation.h"
+#include "BLT_translation.h"
 
 #include "BKE_context.h"
 #include "BKE_deform.h"
@@ -198,11 +198,11 @@ static void restrictbutton_recursive_child(bContext *C, Scene *scene, Object *ob
 				ID *id;
 				bAction *action;
 				FCurve *fcu;
-				bool driven;
+				bool driven, special;
 
 				RNA_id_pointer_create(&ob->id, &ptr);
 				prop = RNA_struct_find_property(&ptr, rnapropname);
-				fcu = rna_get_fcurve_context_ui(C, &ptr, prop, 0, NULL, &action, &driven);
+				fcu = rna_get_fcurve_context_ui(C, &ptr, prop, 0, NULL, &action, &driven, &special);
 
 				if (fcu && !driven) {
 					id = ptr.id.data;
@@ -290,8 +290,7 @@ static void restrictbutton_modifier_cb(bContext *C, void *UNUSED(poin), void *po
 	Object *ob = (Object *)poin2;
 	
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-
-	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
+	WM_event_add_notifier(C, NC_OBJECT | ND_MODIFIER, ob);
 }
 
 static void restrictbutton_bone_visibility_cb(bContext *C, void *poin, void *poin2)
@@ -568,7 +567,7 @@ static void namebutton_cb(bContext *C, void *tsep, char *oldname)
 					Object *ob = (Object *)tselem->id; // id = object
 					bActionGroup *grp = te->directdata;
 					
-					BLI_uniquename(&ob->pose->agroups, grp, CTX_DATA_(BLF_I18NCONTEXT_ID_ACTION, "Group"), '.',
+					BLI_uniquename(&ob->pose->agroups, grp, CTX_DATA_(BLT_I18NCONTEXT_ID_ACTION, "Group"), '.',
 					               offsetof(bActionGroup, name), sizeof(grp->name));
 					WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
 					break;
@@ -1003,20 +1002,23 @@ static void tselem_draw_gp_icon_uibut(struct DrawIconArg *arg, ID *id, bGPDlayer
 	}
 	else {
 		PointerRNA ptr;
-		float w = 0.85f * U.widget_unit;
+		const float eps = 0.001f;
+		const bool is_stroke_visible = (gpl->color[3] > eps);
+		const bool is_fill_visible = (gpl->fill[3] > eps);
+		float w = 0.5f  * UI_UNIT_X;
 		float h = 0.85f * UI_UNIT_Y;
-		
+
 		RNA_pointer_create(id, &RNA_GPencilLayer, gpl, &ptr);
-		
+
 		UI_block_align_begin(arg->block);
 		
-		UI_block_emboss_set(arg->block, RNA_boolean_get(&ptr, "is_stroke_visible") ? UI_EMBOSS : UI_EMBOSS_NONE);
+		UI_block_emboss_set(arg->block, is_stroke_visible ? UI_EMBOSS : UI_EMBOSS_NONE);
 		uiDefButR(arg->block, UI_BTYPE_COLOR, 1, "", arg->xb, arg->yb, w, h,
 		          &ptr, "color", -1,
 		          0, 0, 0, 0, NULL);
 		
-		UI_block_emboss_set(arg->block, RNA_boolean_get(&ptr, "is_fill_visible") ? UI_EMBOSS : UI_EMBOSS_NONE);
-		uiDefButR(arg->block, UI_BTYPE_COLOR, 1, "", arg->xb, arg->yb, w, h,
+		UI_block_emboss_set(arg->block, is_fill_visible ? UI_EMBOSS : UI_EMBOSS_NONE);
+		uiDefButR(arg->block, UI_BTYPE_COLOR, 1, "", arg->xb + w, arg->yb, w, h,
 		          &ptr, "fill_color", -1,
 		          0, 0, 0, 0, NULL);
 		
@@ -1122,6 +1124,7 @@ static void tselem_draw_icon(uiBlock *block, int xmax, float x, float y, TreeSto
 						UI_icon_draw(x, y, ICON_MOD_BEVEL); break;
 					case eModifierType_Smooth:
 					case eModifierType_LaplacianSmooth:
+					case eModifierType_CorrectiveSmooth:
 						UI_icon_draw(x, y, ICON_MOD_SMOOTH); break;
 					case eModifierType_SimpleDeform:
 						UI_icon_draw(x, y, ICON_MOD_SIMPLEDEFORM); break;

@@ -31,6 +31,13 @@ ccl_device void compute_light_pass(KernelGlobals *kg, ShaderData *sd, PathRadian
 	float3 throughput = make_float3(1.0f, 1.0f, 1.0f);
 	bool is_sss_sample = is_sss;
 
+	ray.P = sd->P + sd->Ng;
+	ray.D = -sd->Ng;
+	ray.t = FLT_MAX;
+#ifdef __CAMERA_MOTION__
+	ray.time = TIME_INVALID;
+#endif
+
 	/* init radiance */
 	path_radiance_init(&L_sample, kernel_data.film.use_light_pass);
 
@@ -57,7 +64,7 @@ ccl_device void compute_light_pass(KernelGlobals *kg, ShaderData *sd, PathRadian
 		/* sample subsurface scattering */
 		if((is_combined || is_sss_sample) && (sd->flag & SD_BSSRDF)) {
 			/* when mixing BSSRDF and BSDF closures we should skip BSDF lighting if scattering was successful */
-			if (kernel_path_subsurface_scatter(kg, sd, &L_sample, &state, &rng, &ray, &throughput))
+			if(kernel_path_subsurface_scatter(kg, sd, &L_sample, &state, &rng, &ray, &throughput))
 				is_sss_sample = true;
 		}
 #endif
@@ -208,7 +215,7 @@ ccl_device void kernel_bake_evaluate(KernelGlobals *kg, ccl_global uint4 *input,
 		filter_x = filter_y = 0.5f;
 	}
 	else {
-		path_rng_2D(kg, &rng, sample, num_samples, PRNG_FILTER_U, &filter_x, &filter_x);
+		path_rng_2D(kg, &rng, sample, num_samples, PRNG_FILTER_U, &filter_x, &filter_y);
 	}
 
 	/* subpixel u/v offset */
@@ -259,7 +266,7 @@ ccl_device void kernel_bake_evaluate(KernelGlobals *kg, ccl_global uint4 *input,
 		/* data passes */
 		case SHADER_EVAL_NORMAL:
 		{
-			if ((sd.flag & SD_HAS_BUMP)) {
+			if((sd.flag & SD_HAS_BUMP)) {
 				shader_eval_surface(kg, &sd, 0.f, 0, SHADER_CONTEXT_MAIN);
 			}
 

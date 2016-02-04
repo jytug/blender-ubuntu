@@ -92,7 +92,7 @@ typedef struct UndoImageTile {
 	struct UndoImageTile *next, *prev;
 
 	char idname[MAX_ID_NAME];  /* name instead of pointer*/
-	char ibufname[IB_FILENAME_SIZE];
+	char ibufname[IMB_FILENAME_SIZE];
 
 	union {
 		float        *fp;
@@ -215,7 +215,7 @@ void *image_undo_find_tile(Image *ima, ImBuf *ibuf, int x_tile, int y_tile, unsi
 	return NULL;
 }
 
-void *image_undo_push_tile(Image *ima, ImBuf *ibuf, ImBuf **tmpibuf, int x_tile, int y_tile, unsigned short **mask, bool **valid, bool proj)
+void *image_undo_push_tile(Image *ima, ImBuf *ibuf, ImBuf **tmpibuf, int x_tile, int y_tile, unsigned short **mask, bool **valid, bool proj, bool find_prev)
 {
 	ListBase *lb = undo_paint_push_get_list(UNDO_PAINT_IMAGE);
 	UndoImageTile *tile;
@@ -226,7 +226,7 @@ void *image_undo_push_tile(Image *ima, ImBuf *ibuf, ImBuf **tmpibuf, int x_tile,
 	/* check if tile is already pushed */
 
 	/* in projective painting we keep accounting of tiles, so if we need one pushed, just push! */
-	if (!proj) {
+	if (find_prev) {
 		data = image_undo_find_tile(ima, ibuf, x_tile, y_tile, mask, true);
 		if (data)
 			return data;
@@ -445,7 +445,7 @@ void imapaint_region_tiles(ImBuf *ibuf, int x, int y, int w, int h, int *tx, int
 	*ty = (y >> IMAPAINT_TILE_BITS);
 }
 
-void ED_imapaint_dirty_region(Image *ima, ImBuf *ibuf, int x, int y, int w, int h)
+void ED_imapaint_dirty_region(Image *ima, ImBuf *ibuf, int x, int y, int w, int h, bool find_old)
 {
 	ImBuf *tmpibuf = NULL;
 	int tilex, tiley, tilew, tileh, tx, ty;
@@ -474,7 +474,7 @@ void ED_imapaint_dirty_region(Image *ima, ImBuf *ibuf, int x, int y, int w, int 
 
 	for (ty = tiley; ty <= tileh; ty++)
 		for (tx = tilex; tx <= tilew; tx++)
-			image_undo_push_tile(ima, ibuf, &tmpibuf, tx, ty, NULL, NULL, false);
+			image_undo_push_tile(ima, ibuf, &tmpibuf, tx, ty, NULL, NULL, false, find_old);
 
 	ibuf->userflags |= IB_BITMAPDIRTY;
 	
@@ -499,7 +499,7 @@ void imapaint_image_update(SpaceImage *sima, Image *image, ImBuf *ibuf, short te
 		int w = imapaintpartial.x2 - imapaintpartial.x1;
 		int h = imapaintpartial.y2 - imapaintpartial.y1;
 		/* Testing with partial update in uv editor too */
-		GPU_paint_update_image(image, imapaintpartial.x1, imapaintpartial.y1, w, h); //!texpaint);
+		GPU_paint_update_image(image, (sima ? &sima->iuser : NULL), imapaintpartial.x1, imapaintpartial.y1, w, h); //!texpaint);
 	}
 }
 
@@ -1045,8 +1045,9 @@ static void toggle_paint_cursor(bContext *C, int enable)
  * purpose is to make sure the paint cursor is shown if paint
  * mode is enabled in the image editor. the paint poll will
  * ensure that the cursor is hidden when not in paint mode */
-void ED_space_image_paint_update(wmWindowManager *wm, ToolSettings *settings)
+void ED_space_image_paint_update(wmWindowManager *wm, Scene *scene)
 {
+	ToolSettings *settings = scene->toolsettings;
 	wmWindow *win;
 	ScrArea *sa;
 	ImagePaintSettings *imapaint = &settings->imapaint;
@@ -1059,7 +1060,7 @@ void ED_space_image_paint_update(wmWindowManager *wm, ToolSettings *settings)
 					enabled = true;
 
 	if (enabled) {
-		BKE_paint_init(&settings->unified_paint_settings, &imapaint->paint, PAINT_CURSOR_TEXTURE_PAINT);
+		BKE_paint_init(scene, ePaintTexture2D, PAINT_CURSOR_TEXTURE_PAINT);
 
 		paint_cursor_start_explicit(&imapaint->paint, wm, image_paint_poll);
 	}
@@ -1212,7 +1213,7 @@ static int sample_color_exec(bContext *C, wmOperator *op)
 	RNA_int_get_array(op->ptr, "location", location);
 	use_palette = RNA_boolean_get(op->ptr, "palette");
 
-	paint_sample_color(C, ar, location[0], location[1], mode == PAINT_TEXTURE_PROJECTIVE, use_palette);
+	paint_sample_color(C, ar, location[0], location[1], mode == ePaintTextureProjective, use_palette);
 
 	if (show_cursor) {
 		paint->flags |= PAINT_SHOW_BRUSH;
@@ -1250,7 +1251,7 @@ static int sample_color_invoke(bContext *C, wmOperator *op, const wmEvent *event
 
 	RNA_int_set_array(op->ptr, "location", event->mval);
 
-	paint_sample_color(C, ar, event->mval[0], event->mval[1], mode == PAINT_TEXTURE_PROJECTIVE, false);
+	paint_sample_color(C, ar, event->mval[0], event->mval[1], mode == ePaintTextureProjective, false);
 	WM_cursor_modal_set(win, BC_EYEDROPPER_CURSOR);
 
 	WM_event_add_notifier(C, NC_BRUSH | NA_EDITED, brush);
@@ -1289,7 +1290,7 @@ static int sample_color_modal(bContext *C, wmOperator *op, const wmEvent *event)
 		{
 			ARegion *ar = CTX_wm_region(C);
 			RNA_int_set_array(op->ptr, "location", event->mval);
-			paint_sample_color(C, ar, event->mval[0], event->mval[1], mode == PAINT_TEXTURE_PROJECTIVE, false);
+			paint_sample_color(C, ar, event->mval[0], event->mval[1], mode == ePaintTextureProjective, false);
 			WM_event_add_notifier(C, NC_BRUSH | NA_EDITED, brush);
 			break;
 		}
@@ -1298,7 +1299,7 @@ static int sample_color_modal(bContext *C, wmOperator *op, const wmEvent *event)
 			if (event->val == KM_PRESS) {
 				ARegion *ar = CTX_wm_region(C);
 				RNA_int_set_array(op->ptr, "location", event->mval);
-				paint_sample_color(C, ar, event->mval[0], event->mval[1], mode == PAINT_TEXTURE_PROJECTIVE, true);
+				paint_sample_color(C, ar, event->mval[0], event->mval[1], mode == ePaintTextureProjective, true);
 				if (!data->sample_palette) {
 					data->sample_palette = true;
 					sample_color_update_header(data, C);
@@ -1393,7 +1394,7 @@ static int texture_paint_toggle_exec(bContext *C, wmOperator *op)
 			if (ma && ma->texpaintslot)
 				ima = ma->texpaintslot[ma->paint_active_slot].ima;
 		}
-		else if (imapaint->mode == IMAGEPAINT_MODE_MATERIAL) {
+		else if (imapaint->mode == IMAGEPAINT_MODE_IMAGE) {
 			ima = imapaint->canvas;
 		}	
 		
@@ -1416,7 +1417,7 @@ static int texture_paint_toggle_exec(bContext *C, wmOperator *op)
 		
 		ob->mode |= mode_flag;
 
-		BKE_paint_init(&scene->toolsettings->unified_paint_settings, &imapaint->paint, PAINT_CURSOR_TEXTURE_PAINT);
+		BKE_paint_init(scene, ePaintTextureProjective, PAINT_CURSOR_TEXTURE_PAINT);
 
 		if (U.glreslimit != 0)
 			GPU_free_images();

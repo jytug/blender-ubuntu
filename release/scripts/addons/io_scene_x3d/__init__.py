@@ -20,7 +20,8 @@
 
 bl_info = {
     "name": "Web3D X3D/VRML2 format",
-    "author": "Campbell Barton, Bart",
+    "author": "Campbell Barton, Bart, Bastien Montagne",
+    "version": (1, 1, 0),
     "blender": (2, 74, 0),
     "location": "File > Import-Export",
     "description": "Import-Export X3D, Import VRML2",
@@ -38,13 +39,19 @@ if "bpy" in locals():
         importlib.reload(export_x3d)
 
 import bpy
-from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
-from bpy_extras.io_utils import (ImportHelper,
-                                 ExportHelper,
-                                 orientation_helper_factory,
-                                 axis_conversion,
-                                 path_reference_mode,
-                                 )
+from bpy.props import (
+        BoolProperty,
+        EnumProperty,
+        FloatProperty,
+        StringProperty,
+        )
+from bpy_extras.io_utils import (
+        ImportHelper,
+        ExportHelper,
+        orientation_helper_factory,
+        axis_conversion,
+        path_reference_mode,
+        )
 
 
 IOX3DOrientationHelper = orientation_helper_factory("IOX3DOrientationHelper", axis_forward='Z', axis_up='Y')

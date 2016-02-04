@@ -1,9 +1,9 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Thu, 8 Jan 2015 15:21:01 +0100
+Date: Thu, 9 Jul 2015 22:43:20 +0200
 Subject: update_manpages
 
 * Add blenderplayer manpage.
-* Update blender manpage.
+* Install blenderplayer manpage to appropriate location.
 ---
  doc/manpage/blenderplayer.1   | 131 ++++++++++++++++++++++++++++++++++++++++++
  source/creator/CMakeLists.txt |   5 ++
@@ -12,7 +12,7 @@ Subject: update_manpages
 
 diff --git a/doc/manpage/blenderplayer.1 b/doc/manpage/blenderplayer.1
 new file mode 100644
-index 0000000..d15b0c9
+index 0000000..5435c63
 --- /dev/null
 +++ b/doc/manpage/blenderplayer.1
 @@ -0,0 +1,131 @@
@@ -146,12 +146,12 @@ index 0000000..d15b0c9
 +
 +.br
 +.SH AUTHORS
-+This manpage was written for a Debian GNU/Linux by Kevin Roy <kiniou@gmail.com>.
++This manpage was written for a Debian by Kevin Roy <kiniou@gmail.com>.
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 178cdcf..30af58d 100644
+index 8b99a9c..1c75ff4 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -427,6 +427,7 @@ if(UNIX AND NOT APPLE)
+@@ -448,6 +448,7 @@ if(UNIX AND NOT APPLE)
  			FILES
  				${CMAKE_SOURCE_DIR}/release/freedesktop/blender.desktop
  				${CMAKE_SOURCE_DIR}/release/freedesktop/icons/scalable/apps/blender.svg
@@ -159,14 +159,14 @@ index 178cdcf..30af58d 100644
  			DESTINATION "."
  		)
  
-@@ -459,6 +460,10 @@ if(UNIX AND NOT APPLE)
- 					FILES ${CMAKE_CURRENT_BINARY_DIR}/blender.1
- 					DESTINATION share/man/man1
- 				)
-+				install(
-+					FILES ${CMAKE_SOURCE_DIR}/doc/manpage/blenderplayer.1
-+					DESTINATION share/man/man1
-+				)
- 			endif()
+@@ -470,6 +471,10 @@ if(UNIX AND NOT APPLE)
+ 				FILES ${CMAKE_CURRENT_BINARY_DIR}/blender.1
+ 				DESTINATION share/man/man1
+ 			)
++			install(
++				FILES ${CMAKE_SOURCE_DIR}/doc/manpage/blenderplayer.1
++				DESTINATION share/man/man1
++			)
  		endif()
  
+ 		# misc files

@@ -3,6 +3,4 @@
 0003-locales_directory_install.patch
 0004-update_manpages.patch
 0005-do_not_use_version_number_in_system_path.patch
-0006-blender_desktop.patch
-0007-look_for_dejavu_ttf_with_fontconfig.patch
-0008-ffmpeg_2.9.patch
+0006-look_for_dejavu_ttf_with_fontconfig.patch

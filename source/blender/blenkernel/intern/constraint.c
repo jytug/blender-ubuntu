@@ -43,7 +43,7 @@
 #include "BLI_kdopbvh.h"
 #include "BLI_utildefines.h"
 
-#include "BLF_translation.h"
+#include "BLT_translation.h"
 
 #include "DNA_armature_types.h"
 #include "DNA_constraint_types.h"
@@ -76,6 +76,7 @@
 #include "BKE_idprop.h"
 #include "BKE_shrinkwrap.h"
 #include "BKE_editmesh.h"
+#include "BKE_scene.h"
 #include "BKE_tracking.h"
 #include "BKE_movieclip.h"
 
@@ -132,7 +133,20 @@ bConstraintOb *BKE_constraints_make_evalob(Scene *scene, Object *ob, void *subda
 			if (ob) {
 				cob->ob = ob;
 				cob->type = datatype;
-				cob->rotOrder = EULER_ORDER_DEFAULT; // TODO: when objects have rotation order too, use that
+				
+				if (cob->ob->rotmode > 0) {
+					/* Should be some kind of Euler order, so use it */
+					/* NOTE: Versions <= 2.76 assumed that "default" order
+					 *       would always get used, so we may seem some rig
+					 *       breakage as a result. However, this change here
+					 *       is needed to fix T46599
+					 */
+					cob->rotOrder = ob->rotmode;
+				}
+				else {
+					/* Quats/Axis-Angle, so Eulers should just use default order */
+					cob->rotOrder = EULER_ORDER_DEFAULT;
+				}
 				copy_m4_m4(cob->matrix, ob->obmat);
 			}
 			else
@@ -3437,7 +3451,7 @@ static void shrinkwrap_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 					if (scon->shrinkType == MOD_SHRINKWRAP_NEAREST_VERTEX)
 						bvhtree_from_mesh_verts(&treeData, target, 0.0, 2, 6);
 					else
-						bvhtree_from_mesh_faces(&treeData, target, 0.0, 2, 6);
+						bvhtree_from_mesh_looptri(&treeData, target, 0.0, 2, 6);
 					
 					if (treeData.tree == NULL) {
 						fail = true;
@@ -3489,7 +3503,7 @@ static void shrinkwrap_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 						break;
 					}
 
-					bvhtree_from_mesh_faces(&treeData, target, scon->dist, 4, 6);
+					bvhtree_from_mesh_looptri(&treeData, target, scon->dist, 4, 6);
 					if (treeData.tree == NULL) {
 						fail = true;
 						break;
@@ -3923,7 +3937,8 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 	MovieTrackingTrack *track;
 	MovieTrackingObject *tracking_object;
 	Object *camob = data->camera ? data->camera : scene->camera;
-	int framenr;
+	float ctime = BKE_scene_frame_get(scene);
+	float framenr;
 
 	if (data->flag & FOLLOWTRACK_ACTIVECLIP)
 		clip = scene->clip;
@@ -3946,7 +3961,7 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 	if (!track)
 		return;
 
-	framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, scene->r.cfra);
+	framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, ctime);
 
 	if (data->flag & FOLLOWTRACK_USE_3D_POSITION) {
 		if (track->flag & TRACK_HAS_BUNDLE) {
@@ -3974,7 +3989,6 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 		}
 	}
 	else {
-		MovieTrackingMarker *marker;
 		float vec[3], disp[3], axis[3], mat[4][4];
 		float aspect = (scene->r.xsch * scene->r.xasp) / (scene->r.ysch * scene->r.yasp);
 		float len, d;
@@ -4000,10 +4014,7 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 			float pos[2], rmat[4][4];
 
 			BKE_movieclip_get_size(clip, NULL, &width, &height);
-
-			marker = BKE_tracking_marker_get(track, framenr);
-
-			add_v2_v2v2(pos, marker->pos, track->offset);
+			BKE_tracking_marker_get_subframe_position(track, framenr, pos);
 
 			if (data->flag & FOLLOWTRACK_USE_UNDISTORTION) {
 				/* Undistortion need to happen in pixel space. */
@@ -4108,8 +4119,9 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 					mul_v3_m4v3(ray_end, imat, cob->matrix[3]);
 
 					sub_v3_v3v3(ray_nor, ray_end, ray_start);
+					normalize_v3(ray_nor);
 
-					bvhtree_from_mesh_faces(&treeData, target, 0.0f, 4, 6);
+					bvhtree_from_mesh_looptri(&treeData, target, 0.0f, 4, 6);
 
 					hit.dist = FLT_MAX;
 					hit.index = -1;
@@ -4173,7 +4185,8 @@ static void camerasolver_evaluate(bConstraint *con, bConstraintOb *cob, ListBase
 		float mat[4][4], obmat[4][4];
 		MovieTracking *tracking = &clip->tracking;
 		MovieTrackingObject *object = BKE_tracking_object_get_camera(tracking);
-		int framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, scene->r.cfra);
+		float ctime = BKE_scene_frame_get(scene);
+		float framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, ctime);
 
 		BKE_tracking_camera_get_reconstructed_interpolate(tracking, object, framenr, mat);
 
@@ -4238,7 +4251,8 @@ static void objectsolver_evaluate(bConstraint *con, bConstraintOb *cob, ListBase
 
 		if (object) {
 			float mat[4][4], obmat[4][4], imat[4][4], cammat[4][4], camimat[4][4], parmat[4][4];
-			int framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, scene->r.cfra);
+			float ctime = BKE_scene_frame_get(scene);
+			float framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, ctime);
 
 			BKE_object_where_is_calc_mat4(scene, camob, cammat);
 
@@ -4318,7 +4332,7 @@ static void constraints_init_typeinfo(void)
 /* This function should be used for getting the appropriate type-info when only
  * a constraint type is known
  */
-bConstraintTypeInfo *BKE_constraint_typeinfo_from_type(int type)
+const bConstraintTypeInfo *BKE_constraint_typeinfo_from_type(int type)
 {
 	/* initialize the type-info list? */
 	if (CTI_INIT) {
@@ -4343,7 +4357,7 @@ bConstraintTypeInfo *BKE_constraint_typeinfo_from_type(int type)
 /* This function should always be used to get the appropriate type-info, as it
  * has checks which prevent segfaults in some weird cases.
  */
-bConstraintTypeInfo *BKE_constraint_typeinfo_get(bConstraint *con)
+const bConstraintTypeInfo *BKE_constraint_typeinfo_get(bConstraint *con)
 {
 	/* only return typeinfo for valid constraints */
 	if (con)
@@ -4373,7 +4387,7 @@ static void con_unlink_refs_cb(bConstraint *UNUSED(con), ID **idpoin, bool is_re
 void BKE_constraint_free_data_ex(bConstraint *con, bool do_id_user)
 {
 	if (con->data) {
-		bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
+		const bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 		
 		if (cti) {
 			/* perform any special freeing constraint may have */
@@ -4447,7 +4461,7 @@ bool BKE_constraint_remove_ex(ListBase *list, Object *ob, bConstraint *con, bool
 static bConstraint *add_new_constraint_internal(const char *name, short type)
 {
 	bConstraint *con = MEM_callocN(sizeof(bConstraint), "Constraint");
-	bConstraintTypeInfo *cti = BKE_constraint_typeinfo_from_type(type);
+	const bConstraintTypeInfo *cti = BKE_constraint_typeinfo_from_type(type);
 	const char *newName;
 
 	/* Set up a generic constraint datablock */
@@ -4574,7 +4588,7 @@ void BKE_constraints_id_loop(ListBase *conlist, ConstraintIDFunc func, void *use
 	bConstraint *con;
 	
 	for (con = conlist->first; con; con = con->next) {
-		bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
+		const bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 		
 		if (cti) {
 			if (cti->id_looper)
@@ -4609,7 +4623,7 @@ void BKE_constraints_copy(ListBase *dst, const ListBase *src, bool do_extern)
 	BLI_duplicatelist(dst, src);
 	
 	for (con = dst->first, srccon = src->first; con && srccon; srccon = srccon->next, con = con->next) {
-		bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
+		const bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 		
 		/* make a new copy of the constraint's data */
 		con->data = MEM_dupallocN(con->data);
@@ -4724,7 +4738,7 @@ bool BKE_constraints_proxylocked_owner(Object *ob, bPoseChannel *pchan)
  */
 void BKE_constraint_target_matrix_get(Scene *scene, bConstraint *con, int index, short ownertype, void *ownerdata, float mat[4][4], float ctime)
 {
-	bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
+	const bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 	ListBase targets = {NULL, NULL};
 	bConstraintOb *cob;
 	bConstraintTarget *ct;
@@ -4791,7 +4805,7 @@ void BKE_constraint_target_matrix_get(Scene *scene, bConstraint *con, int index,
 /* Get the list of targets required for solving a constraint */
 void BKE_constraint_targets_for_solving_get(bConstraint *con, bConstraintOb *cob, ListBase *targets, float ctime)
 {
-	bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
+	const bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 	
 	if (cti && cti->get_constraint_targets) {
 		bConstraintTarget *ct;
@@ -4836,7 +4850,7 @@ void BKE_constraints_solve(ListBase *conlist, bConstraintOb *cob, float ctime)
 	
 	/* loop over available constraints, solving and blending them */
 	for (con = conlist->first; con; con = con->next) {
-		bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
+		const bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 		ListBase targets = {NULL, NULL};
 		
 		/* these we can skip completely (invalid constraints...) */

@@ -19,9 +19,11 @@ Build-Depends: autotools-dev,
                libboost-system-dev,
                libboost-thread-dev,
                libfftw3-dev,
+               libfontconfig-dev,
                libgettextpo-dev,
                libglew-dev,
                libgsm1-dev,
+               libilmbase-dev (>= 2.2.0),
                libjack-dev,
                libjemalloc-dev,
                libjpeg-dev,
@@ -29,7 +31,7 @@ Build-Depends: autotools-dev,
                liblzo2-dev,
                libopenal-dev,
                libopencolorio-dev [!hurd-i386],
-               libopenexr-dev,
+               libopenexr-dev (>= 2.2.0),
                libopenimageio-dev,
                libopenjpeg-dev,
                libpng-dev,
@@ -41,7 +43,6 @@ Build-Depends: autotools-dev,
                libvorbis-dev,
                libxi-dev,
                libz-dev,
-               libfontconfig-dev,
                pkg-config,
                python3-dev,
                python3-requests
@@ -49,7 +50,7 @@ X-Python3-Version: >= 3.3
 Build-Conflicts: nvidia-glx
 Standards-Version: 3.9.6
 Homepage: http://www.blender.org/
-Vcs-Git: https://anonscm.debian.org/pkg-multimedia/blender.git
+Vcs-Git: https://anonscm.debian.org/git/pkg-multimedia/blender.git
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-multimedia/blender.git
 
 Package: blender

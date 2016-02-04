@@ -21,8 +21,8 @@
 bl_info = {
     "name": "Manage UI translations",
     "author": "Bastien Montagne",
-    "version": (1, 1, 1),
-    "blender": (2, 66, 6),
+    "version": (1, 1, 2),
+    "blender": (2, 75, 0),
     "location": "Main \"File\" menu, text editor, any UI control",
     "description": "Allow to manage UI translations directly from Blender "
         "(update main po files, update scripts' translations, etc.)",
@@ -41,12 +41,13 @@ if "bpy" in locals():
     importlib.reload(update_ui)
 else:
     import bpy
-    from . import (settings,
-                   edit_translation,
-                   update_svn,
-                   update_addon,
-                   update_ui,
-                  )
+    from . import (
+            settings,
+            edit_translation,
+            update_svn,
+            update_addon,
+            update_ui,
+            )
 
 
 import os

@@ -51,7 +51,7 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
-#include "BLF_translation.h"
+#include "BLT_translation.h"
 
 #include "PIL_time.h"
 
@@ -84,8 +84,12 @@
 #endif
 
 #ifdef WITH_LZO
-#include "minilzo.h"
-#define LZO_HEAP_ALLOC(var,size) \
+#  ifdef WITH_SYSTEM_LZO
+#    include <lzo/lzo1x.h>
+#  else
+#    include "minilzo.h"
+#  endif
+#  define LZO_HEAP_ALLOC(var,size) \
 	lzo_align_t __LZO_MMODEL var [ ((size) + (sizeof(lzo_align_t) - 1)) / sizeof(lzo_align_t) ]
 #endif
 
@@ -539,7 +543,7 @@ static void ptcache_cloth_interpolate(int index, void *cloth_v, void **data, flo
 static int  ptcache_cloth_totpoint(void *cloth_v, int UNUSED(cfra))
 {
 	ClothModifierData *clmd= cloth_v;
-	return clmd->clothObject ? clmd->clothObject->numverts : 0;
+	return clmd->clothObject ? clmd->clothObject->mvert_num : 0;
 }
 
 static void ptcache_cloth_error(void *cloth_v, const char *message)
@@ -3089,7 +3093,7 @@ static PointCache *ptcache_copy(PointCache *cache, bool copy_data)
 }
 
 /* returns first point cache */
-PointCache *BKE_ptcache_copy_list(ListBase *ptcaches_new, ListBase *ptcaches_old, bool copy_data)
+PointCache *BKE_ptcache_copy_list(ListBase *ptcaches_new, const ListBase *ptcaches_old, bool copy_data)
 {
 	PointCache *cache = ptcaches_old->first;
 
@@ -3350,7 +3354,7 @@ void BKE_ptcache_bake(PTCacheBaker *baker)
 			}
 		}
 
-	BLI_end_threads(&threads);
+		BLI_end_threads(&threads);
 	}
 	/* clear baking flag */
 	if (pid) {
