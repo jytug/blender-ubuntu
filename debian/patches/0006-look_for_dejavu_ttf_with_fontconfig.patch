@@ -6,7 +6,7 @@ Subject: look_for_dejavu_ttf_with_fontconfig
   and use fontconfig to get Dajavu instead.
 * Remove bad installation of fonts directory into locales.
 ---
- CMakeLists.txt                                 | 11 ++++++
+ CMakeLists.txt                                 | 13 +++++++
  build_files/cmake/Modules/FindFontconfig.cmake | 48 ++++++++++++++++++++++++++
  build_files/cmake/macros.cmake                 |  6 ++++
  source/blender/blenfont/CMakeLists.txt         |  7 ++++
@@ -14,14 +14,14 @@ Subject: look_for_dejavu_ttf_with_fontconfig
  source/blender/blenlib/BLI_fileops.h           |  1 +
  source/blender/blenlib/intern/fileops.c        | 43 +++++++++++++++++++++++
  source/creator/CMakeLists.txt                  |  6 ----
- 8 files changed, 159 insertions(+), 7 deletions(-)
+ 8 files changed, 161 insertions(+), 7 deletions(-)
  create mode 100644 build_files/cmake/Modules/FindFontconfig.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 029198f..0823f0a 100644
+index 1efaa14..fa05865 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -198,6 +198,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
+@@ -200,6 +200,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
  mark_as_advanced(WITH_BLENDER)
  
  option(WITH_INTERNATIONAL "Enable I18N (International fonts and text)" ON)
@@ -31,7 +31,7 @@ index 029198f..0823f0a 100644
  
  option(WITH_PYTHON        "Enable Embedded Python API  (only disable for development)" ON)
  option(WITH_PYTHON_SECURITY "Disables execution of scripts within blend files by default" ON) 
-@@ -972,6 +975,13 @@ if(UNIX AND NOT APPLE)
+@@ -952,6 +955,13 @@ if(UNIX AND NOT APPLE)
  		endif()
  	endif()
  
@@ -45,14 +45,16 @@ index 029198f..0823f0a 100644
  	# Codecs
  	if(WITH_CODEC_SNDFILE)
  		find_package_wrapper(SndFile)
-@@ -2977,6 +2987,7 @@ if(FIRST_RUN)
+@@ -3100,6 +3110,9 @@ if(FIRST_RUN)
+ 		info_cfg_option(WITH_GL_ANGLE)
+ 	endif()
  
- 	info_cfg_text("Other:")
- 	info_cfg_option(WITH_OPENNL)
++	info_cfg_text("Other:")
 +	info_cfg_option(WITH_FONTCONFIG)
++
+ 	info_cfg_text("")
  
- 	# debug
- 	message(STATUS "HAVE_STDBOOL_H = ${HAVE_STDBOOL_H}")
+ 	message("${_config_msg}")
 diff --git a/build_files/cmake/Modules/FindFontconfig.cmake b/build_files/cmake/Modules/FindFontconfig.cmake
 new file mode 100644
 index 0000000..7dc09f3
@@ -108,10 +110,10 @@ index 0000000..7dc09f3
 +
 +endif (FONTCONFIG_LIBRARIES AND FONTCONFIG_INCLUDE_DIR)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 90c4fbd..f740d4d 100644
+index 7bdf790..39926dc 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -294,6 +294,9 @@ function(SETUP_LIBDIRS)
+@@ -298,6 +298,9 @@ function(SETUP_LIBDIRS)
  	if(WITH_MEM_JEMALLOC)
  		link_directories(${JEMALLOC_LIBPATH})
  	endif()
@@ -121,7 +123,7 @@ index 90c4fbd..f740d4d 100644
  
  	if(WIN32 AND NOT UNIX)
  		link_directories(${PTHREADS_LIBPATH})
-@@ -340,6 +343,9 @@ function(setup_liblinks
+@@ -344,6 +347,9 @@ function(setup_liblinks
  	if(WITH_SYSTEM_GLEW)
  		target_link_libraries(${target} ${BLENDER_GLEW_LIBRARIES})
  	endif()
@@ -236,19 +238,19 @@ index b6ff7ed..a208fde 100644
  
  	*r_unifont_size = unifont_mono_size;
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index 33dae45..76e80f9 100644
+index 91d139c..20cca01 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
 @@ -90,6 +90,7 @@ bool   BLI_is_file(const char *path) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
  bool   BLI_dir_create_recursive(const char *dir) ATTR_NONNULL();
  double BLI_dir_free_space(const char *dir) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
- char  *BLI_current_working_dir(char *dir, const size_t maxlen) ATTR_NONNULL();
+ char  *BLI_current_working_dir(char *dir, const size_t maxlen) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 +char  *BLI_file_to_mem(const char *from_file, int *size_r) ATTR_NONNULL();
  
  /* Filelist */
  
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index ef9a7c0..42b7515 100644
+index db4b3bc..dc240ee 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
 @@ -159,6 +159,49 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *r_size)
@@ -302,10 +304,10 @@ index ef9a7c0..42b7515 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index d129c1e..991e62b 100644
+index 5a84745..e1e72d2 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -338,12 +338,6 @@ endif()
+@@ -341,12 +341,6 @@ endif()
  
  # localization
  if(WITH_INTERNATIONAL)

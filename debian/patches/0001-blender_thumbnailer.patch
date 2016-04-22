@@ -33,10 +33,10 @@ index fe5d462..5d2dd95 100755
  # ##### BEGIN GPL LICENSE BLOCK #####
  #
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 8feb882..d10de41 100644
+index ff6544c..e7729d4 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -494,7 +494,7 @@ if(UNIX AND NOT APPLE)
+@@ -497,7 +497,7 @@ if(UNIX AND NOT APPLE)
  		)
  		install(
  			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py

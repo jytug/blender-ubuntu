@@ -1,11 +1,12 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Fri, 23 Oct 2015 21:10:16 +0200
+Date: Fri, 22 Apr 2016 17:05:17 +0200
 Subject: locales_directory_install
 
 Change where locales are installed.
 
 Contributions by:
  Antonio Ospite <ospite@studenti.unina.it>
+ Gleb Fotengauer-Malinovskiy <glebfm@altlinux.org>
 ---
  source/blender/blenkernel/BKE_appdir.h           |  1 +
  source/blender/blenkernel/intern/appdir.c        |  3 +++
@@ -26,7 +27,7 @@ index 077fe2a..905106d 100644
  
  /* for BKE_appdir_folder_id_version only */
 diff --git a/source/blender/blenkernel/intern/appdir.c b/source/blender/blenkernel/intern/appdir.c
-index ee6710e..c95eb7a 100644
+index de21d91..aaf73ec 100644
 --- a/source/blender/blenkernel/intern/appdir.c
 +++ b/source/blender/blenkernel/intern/appdir.c
 @@ -398,6 +398,9 @@ const char *BKE_appdir_folder_id(const int folder_id, const char *subfolder)
@@ -83,10 +84,10 @@ index 1ad62fa..3c70e0c 100644
  	else {
  		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 888475a..8b99a9c 100644
+index 118d807..7733b4b 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -341,11 +341,11 @@ if(WITH_INTERNATIONAL)
+@@ -344,11 +344,11 @@ if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY
  			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
