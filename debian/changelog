@@ -1,3 +1,18 @@
+blender (2.77.a+dfsg0-1) UNRELEASED; urgency=medium
+
+  * New upstream release (Closes: #821414)
+    - debian/patches/: patchset updated
+      - 0001-blender_thumbnailer.patch refreshed
+      - 0002-install_in_usr_share.patch refreshed
+      - 0003-locales_directory_install.patch updated
+      - 0004-update_manpages.patch refreshed
+      - 0005-do_not_use_version_number_in_system_path.patch updated
+      - 0006-look_for_dejavu_ttf_with_fontconfig.patch updated
+      Thanks to Gleb Fotengauer-Malinovskiy for the updated patches.
+  * debian/control: S-V bump 3.9.6 -> 3.9.8 (no changes needed)
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Sat, 23 Apr 2016 14:14:35 +0200
+
 blender (2.76.b+dfsg0-3) unstable; urgency=medium
 
   * Upload to unstable (Closes: #810065)
