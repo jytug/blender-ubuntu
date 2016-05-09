@@ -1,4 +1,4 @@
-blender (2.77.a+dfsg0-3) UNRELEASED; urgency=medium
+blender (2.77.a+dfsg0-3) unstable; urgency=medium
 
   [ Matteo F. Vescovi ]
   * debian/control: drop jemalloc b-dep on Hurd
@@ -6,7 +6,7 @@ blender (2.77.a+dfsg0-3) UNRELEASED; urgency=medium
   [ Martin Dickopp ]
   * Link with OpenVDB library (Closes: #823097)
 
- -- Matteo F. Vescovi <mfv@debian.org>  Mon, 09 May 2016 20:18:58 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Mon, 09 May 2016 20:20:58 +0200
 
 blender (2.77.a+dfsg0-2) unstable; urgency=medium
 
