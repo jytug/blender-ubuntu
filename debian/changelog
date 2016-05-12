@@ -1,3 +1,10 @@
+blender (2.77.a+dfsg0-5) UNRELEASED; urgency=medium
+
+  * debian/rules: fix a typo in conditional statement on OpenVDB
+  * debian/copyright: file refreshed and updated
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 12 May 2016 21:52:25 +0200
+
 blender (2.77.a+dfsg0-4) unstable; urgency=medium
 
   * debian/: fix linking to OpenVDB library
