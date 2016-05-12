@@ -12,6 +12,12 @@ else
 	SETSSE = ON
 endif
 
+ifeq (,$(filter $(DEB_HOST_ARCH),amd64 i386))
+	SETVDB = ON
+else
+	SETVDB = OFF
+endif
+
 get-orig-source:
 	uscan --force-download --repack --compression xz
 	$(REPACK_SH) --upstream-version $(SRC_VER) ../blender_$(SRC_VER).orig.tar.xz
@@ -37,7 +43,7 @@ override_dh_auto_configure:
 		-DWITH_JACK=ON \
 		-DWITH_MOD_OCEANSIM=ON \
 		-DWITH_OPENCOLORIO=ON \
-		-DWITH_OPENVDB=ON \
+		-DWITH_OPENVDB=$(SETVDB) \
 		-DWITH_PLAYER=ON \
 		-DWITH_PYTHON_INSTALL=OFF \
 		-DWITH_SYSTEM_OPENJPEG=ON
