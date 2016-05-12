@@ -1,11 +1,11 @@
-blender (2.77.a+dfsg0-4) UNRELEASED; urgency=medium
+blender (2.77.a+dfsg0-4) unstable; urgency=medium
 
   * debian/: fix linking to OpenVDB library
   * debian/patches/: patchset updated
     - 0008-make_blender_reproducible.patch added (Closes: #823940)
       Thanks to Campbell Burton (upstream dev) for the patch.
 
- -- Matteo F. Vescovi <mfv@debian.org>  Thu, 12 May 2016 14:09:16 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 12 May 2016 14:09:57 +0200
 
 blender (2.77.a+dfsg0-3) unstable; urgency=medium
 
