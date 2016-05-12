@@ -83,14 +83,6 @@ License: BSD-Modified
  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  See the License for more information.
 
-Files: build_files/scons/tools/crossmingw.py
-Copyright: 2001-2009, The SCons Foundation
-License: Expat
-
-Files: build_files/scons/tools/mstoolkit.py
-Copyright: 2004, John Connors
-License: Expat
-
 Files: debian/*
 Copyright: 1999, Stephen Crowley <crow@debian.org>
            2000, Torsten Landschoff <torsten@debian.org> 
@@ -99,7 +91,7 @@ Copyright: 1999, Stephen Crowley <crow@debian.org>
            2005-2007, Florian Ernst <florian@debian.org>
            2007-2010, Cyril Brulebois <kibi@debian.org>
            2010-2012, Kevin Roy <kiniou@gmail.com>
-           2012-2015, Matteo F. Vescovi <mfv@debian.org>
+           2012-2016, Matteo F. Vescovi <mfv@debian.org>
 License: GPL-2+
 
 Files: extern/libopenjpeg/*
@@ -115,23 +107,19 @@ Copyright: 2002-2011, Communications and Remote Sensing Laboratory, Universite c
            2007, Jonathan Ballard
 License: BSD-Simplified
 
-Files: extern/libmv/third_party/glog/src/*
+Files: extern/glog/src/*
 Copyright: 1999-2008, Google Inc.
 License: BSD-New-(Google)
 
-Files: extern/libmv/third_party/ceres/*
+Files: extern/ceres/*
 Copyright: 2010-2013, Google Inc.
 License: BSD-New-(Google)
 
-Files: extern/libmv/third_party/msinttypes/*
-Copyright: 2006-2008, Alexander Chemeris
-License: BSD-style
-
-Files: extern/libmv/third_party/gflags/*
+Files: extern/gflags/*
 Copyright: 1999, 2006-2008, 2011, Google Inc.
 License: BSD-New-(Google)
 
-Files: extern/libmv/libmv/*
+Files: intern/libmv/*
 Copyright: 2007-2013, libmv authors.
 License: Expat
 
@@ -161,18 +149,6 @@ License: Zlib
 Files: extern/bullet2/src/BulletCollision/Gimpact/*
 Copyright: 2006-2007, Francisco Leon Najera
 License: LGPL-2+ or BSD-style or Zlib
-
-Files: extern/colamd/*
-Copyright: 1998-2007, Timothy A. Davis
-License: LGPL-2+_colamd
- All Rights Reserved.
- COLAMD is also available under alternate licenses, contact T. Davis
- for details.
-
-Files: extern/colamd/Include/UFconfig.h
-Copyright: 2007, University of Florida
-License: Permissive-UoF
- No licensing restrictions apply to this file or to the UFconfig directory.
 
 Files: extern/Eigen3/*
 Copyright: 2008-2012, Gael Guennebaud
@@ -232,7 +208,7 @@ License: Boost-1.0
  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 
-Files: intern/iksolver/intern/TNT/*
+Files: intern/iksolver/intern/*
 Copyright: None
 License: Permissive-NIST
  This software was developed at the National Institute of Standards and
@@ -243,53 +219,6 @@ License: Permissive-NIST
  an experimental system.  NIST assumes no responsibility whatsoever for
  its use by other parties, and makes no guarantees, expressed or implied,
  about its quality, reliability, or any other characteristic.
-
-Files: intern/opennl/superlu/*
-Copyright: 1994, by Xerox Corporation
-License: Permissive-Xeox
- All rights reserved.
- .
- THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY
- EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- .
- Permission is hereby granted to use or copy this program for any
- purpose, provided the above notices are retained on all copies.
- Permission to modify the code and to distribute modified code is
- granted, provided the above notices are retained, and a notice that
- the code was modified is included with the above copyright notice.
-
-Files: intern/opennl/doc/SuperLU_License.txt
-Copyright: 2003, The Regents of the University of California,
-                 through Lawrence Berkeley National Laboratory
-                 (subject to receipt of any required approvals from
-                 U.S. Dept. of Energy)
-License: BSD-New
- All rights reserved.
- .
- Redistribution and use in source and binary forms, with or without
- modification,
- are permitted provided that the following conditions are met: 
- .
- (1) Redistributions of source code must retain the above copyright notice,
- this list of conditions and the following disclaimer. 
- (2) Redistributions in binary form must reproduce the above copyright notice,
- this list of conditions and the following disclaimer in the documentation
- and/or other materials provided with the distribution. 
- (3) Neither the name of Lawrence Berkeley National Laboratory, U.S. Dept. of
- Energy nor the names of its contributors may be used to endorse or promote
- products derived from this software without specific prior written permission.
- .
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
- IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Files: intern/elbeem/*
 Copyright: 2003-2006, Nils Thuerey
@@ -498,13 +427,6 @@ License: Permissive-Fonts
  .
  (3) Samyak-devanagari
  GPL-3 with font embedding exception
-
-Files: scons/*
-Copyright: 2001-2013, The SCons Foundation
-           2001-2004, Twisted Matrix Laboratories
-           2003, Stichting NLnet Labs
-           2001-2003, Steven Knight
-License: Expat
 
 Files: source/blender/imbuf/intern/dds/PixelFormat.h
 Copyright: 2007, NVIDIA Corporation
