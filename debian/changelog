@@ -1,9 +1,9 @@
-blender (2.77.a+dfsg0-5) UNRELEASED; urgency=medium
+blender (2.77.a+dfsg0-5) unstable; urgency=medium
 
   * debian/rules: fix a typo in conditional statement on OpenVDB
   * debian/copyright: file refreshed and updated
 
- -- Matteo F. Vescovi <mfv@debian.org>  Thu, 12 May 2016 21:52:25 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 12 May 2016 21:52:58 +0200
 
 blender (2.77.a+dfsg0-4) unstable; urgency=medium
 
