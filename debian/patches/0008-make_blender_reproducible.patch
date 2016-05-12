@@ -1,0 +1,81 @@
+From: Campbell Barton <ideasman42@gmail.com>
+Date: Wed, 11 May 2016 02:43:58 +1000
+Subject: make_blender_reproducible
+
+---
+ CMakeLists.txt                    |  4 ++++
+ build_files/cmake/buildinfo.cmake | 26 +++++++++++++++++++-------
+ source/creator/CMakeLists.txt     |  3 +++
+ 3 files changed, 26 insertions(+), 7 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index fa05865..d285df9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -221,6 +221,10 @@ if(${CMAKE_VERSION} VERSION_LESS 2.8.8)
+ 	# add_library OBJECT arg unsupported
+ 	set(WITH_BUILDINFO OFF)
+ endif()
++set(BUILDINFO_OVERRIDE_DATE "" CACHE STRING "Use instead of the current date for reproducable builds (empty string disables this option)")
++set(BUILDINFO_OVERRIDE_TIME "" CACHE STRING "Use instead of the current time for reproducable builds (empty string disables this option)")
++mark_as_advanced(BUILDINFO_OVERRIDE_DATE)
++mark_as_advanced(BUILDINFO_OVERRIDE_TIME)
+ 
+ option(WITH_IK_ITASC      "Enable ITASC IK solver (only disable for development & for incompatible C++ compilers)" ON)
+ option(WITH_IK_SOLVER     "Enable Legacy IK solver (only disable for development)" ON)
+diff --git a/build_files/cmake/buildinfo.cmake b/build_files/cmake/buildinfo.cmake
+index d292b35..d3b6d10 100644
+--- a/build_files/cmake/buildinfo.cmake
++++ b/build_files/cmake/buildinfo.cmake
+@@ -1,5 +1,10 @@
+-# This is called by cmake as an extermal process from
++# This is called by cmake as an external process from
+ # ./source/creator/CMakeLists.txt to write ./source/creator/buildinfo.h
++# Caller must define:
++#   SOURCE_DIR
++# Optional overrides:
++#   BUILD_DATE
++#   BUILD_TIME
+ 
+ # Extract working copy information for SOURCE_DIR into MY_XXX variables
+ # with a default in case anything fails, for example when using git-svn
+@@ -134,12 +139,19 @@ endif()
+ # BUILD_PLATFORM and BUILD_PLATFORM are taken from CMake
+ # but BUILD_DATE and BUILD_TIME are platform dependent
+ if(UNIX)
+-	execute_process(COMMAND date "+%Y-%m-%d" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
+-	execute_process(COMMAND date "+%H:%M:%S" OUTPUT_VARIABLE BUILD_TIME OUTPUT_STRIP_TRAILING_WHITESPACE)
+-endif()
+-if(WIN32)
+-	execute_process(COMMAND cmd /c date /t OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
+-	execute_process(COMMAND cmd /c time /t OUTPUT_VARIABLE BUILD_TIME OUTPUT_STRIP_TRAILING_WHITESPACE)
++	if(NOT BUILD_DATE)
++		execute_process(COMMAND date "+%Y-%m-%d" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
++	endif()
++	if(NOT BUILD_TIME)
++		execute_process(COMMAND date "+%H:%M:%S" OUTPUT_VARIABLE BUILD_TIME OUTPUT_STRIP_TRAILING_WHITESPACE)
++	endif()
++elseif(WIN32)
++	if(NOT BUILD_DATE)
++		execute_process(COMMAND cmd /c date /t OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
++	endif()
++	if(NOT BUILD_TIME)
++		execute_process(COMMAND cmd /c time /t OUTPUT_VARIABLE BUILD_TIME OUTPUT_STRIP_TRAILING_WHITESPACE)
++	endif()
+ endif()
+ 
+ # Write a file with the BUILD_HASH define
+diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
+index e1e72d2..aa60c17 100644
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -182,6 +182,9 @@ if(WITH_BUILDINFO)
+ 	add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_buildinfo.h
+ 		COMMAND ${CMAKE_COMMAND}
+ 		-DSOURCE_DIR=${CMAKE_SOURCE_DIR}
++		# overrides only used when non-empty strings
++		-DBUILD_DATE=${BUILDINFO_OVERRIDE_DATE}
++		-DBUILD_TIME=${BUILDINFO_OVERRIDE_TIME}
+ 		-P ${CMAKE_SOURCE_DIR}/build_files/cmake/buildinfo.cmake)
+ 
+ 	# buildinfo.h is a generated file
