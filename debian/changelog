@@ -1,3 +1,13 @@
+blender (2.77.a+dfsg0-6) UNRELEASED; urgency=medium
+
+  * debian/patches/: patchset updated
+    - 0009-fix_OpenJPEG2_build.patch added (Closes: #826807)
+    - 0010-fix_manpage_creation.patch added
+      Thanks to Campbell Burton and Sergey Sharybin (upstream).
+  * debian/control: b-dep libopenjpeg-dev -> libopenjp2-7-dev
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Mon, 25 Jul 2016 17:05:32 +0200
+
 blender (2.77.a+dfsg0-5) unstable; urgency=medium
 
   * debian/rules: fix a typo in conditional statement on OpenVDB
