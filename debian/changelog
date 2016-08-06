@@ -1,8 +1,8 @@
-blender (2.77.a+dfsg0-7) UNRELEASED; urgency=medium
+blender (2.77.a+dfsg0-7) unstable; urgency=medium
 
   * debian/: OpenCOLLADA support enabled (Closes: #694879)
 
- -- Matteo F. Vescovi <mfv@debian.org>  Sat, 06 Aug 2016 21:53:35 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Sat, 06 Aug 2016 21:54:13 +0200
 
 blender (2.77.a+dfsg0-6) unstable; urgency=medium
 
