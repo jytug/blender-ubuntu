@@ -1,8 +1,8 @@
-blender (2.77.a+dfsg0-8) UNRELEASED; urgency=medium
+blender (2.77.a+dfsg0-8) unstable; urgency=medium
 
   * debian/control: b-dep opencollada-dev limited to [linux-any]
 
- -- Matteo F. Vescovi <mfv@debian.org>  Thu, 11 Aug 2016 13:35:49 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 11 Aug 2016 13:36:27 +0200
 
 blender (2.77.a+dfsg0-7) unstable; urgency=medium
 
