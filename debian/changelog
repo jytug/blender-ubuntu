@@ -1,3 +1,10 @@
+blender (2.77.a+dfsg0-9) UNRELEASED; urgency=medium
+
+  * debian/patches/: patchset updated
+    - 0011-fix_ld-gold_issue.patch added (Closes: #838373)
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Tue, 27 Sep 2016 22:17:01 +0200
+
 blender (2.77.a+dfsg0-8) unstable; urgency=medium
 
   * debian/control: b-dep opencollada-dev limited to [linux-any]
