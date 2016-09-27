@@ -8,3 +8,4 @@
 0008-make_blender_reproducible.patch
 0009-fix_OpenJPEG2_build.patch
 0010-fix_manpage_creation.patch
+0011-fix_ld-gold_issue.patch
