@@ -1,27 +1,28 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Sat, 21 Nov 2015 21:16:38 +0100
+Date: Mon, 31 Oct 2016 22:28:15 +0100
 Subject: look_for_dejavu_ttf_with_fontconfig
 
 * Avoid using the droid font shipped with upstream source
-  and use fontconfig to get Dajavu instead.
+  and use fontconfig to get DejaVu instead.
 * Remove bad installation of fonts directory into locales.
 ---
- CMakeLists.txt                                 | 13 +++++++
+ CMakeLists.txt                                 |  6 ++++
  build_files/cmake/Modules/FindFontconfig.cmake | 48 ++++++++++++++++++++++++++
  build_files/cmake/macros.cmake                 |  6 ++++
+ build_files/cmake/platform/platform_unix.cmake |  7 ++++
  source/blender/blenfont/CMakeLists.txt         |  7 ++++
- source/blender/blenfont/intern/blf_font_i18n.c | 44 ++++++++++++++++++++++-
+ source/blender/blenfont/intern/blf_font_i18n.c | 46 ++++++++++++++++++++++--
  source/blender/blenlib/BLI_fileops.h           |  1 +
  source/blender/blenlib/intern/fileops.c        | 43 +++++++++++++++++++++++
  source/creator/CMakeLists.txt                  |  6 ----
- 8 files changed, 161 insertions(+), 7 deletions(-)
+ 9 files changed, 162 insertions(+), 8 deletions(-)
  create mode 100644 build_files/cmake/Modules/FindFontconfig.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 1efaa14..fa05865 100644
+index 578f913..d9fdaaa 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -200,6 +200,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
+@@ -202,6 +202,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
  mark_as_advanced(WITH_BLENDER)
  
  option(WITH_INTERNATIONAL "Enable I18N (International fonts and text)" ON)
@@ -31,21 +32,7 @@ index 1efaa14..fa05865 100644
  
  option(WITH_PYTHON        "Enable Embedded Python API  (only disable for development)" ON)
  option(WITH_PYTHON_SECURITY "Disables execution of scripts within blend files by default" ON) 
-@@ -952,6 +955,13 @@ if(UNIX AND NOT APPLE)
- 		endif()
- 	endif()
- 
-+	if(WITH_FONTCONFIG)
-+		find_package(Fontconfig)
-+		if(NOT FONTCONFIG_FOUND)
-+			set(WITH_FONTCONFIG OFF)
-+		endif()
-+	endif()
-+
- 	# Codecs
- 	if(WITH_CODEC_SNDFILE)
- 		find_package_wrapper(SndFile)
-@@ -3100,6 +3110,9 @@ if(FIRST_RUN)
+@@ -1781,6 +1784,9 @@ if(FIRST_RUN)
  		info_cfg_option(WITH_GL_ANGLE)
  	endif()
  
@@ -110,20 +97,20 @@ index 0000000..7dc09f3
 +
 +endif (FONTCONFIG_LIBRARIES AND FONTCONFIG_INCLUDE_DIR)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 7bdf790..39926dc 100644
+index 5a67ac9..aa0675f 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
-@@ -298,6 +298,9 @@ function(SETUP_LIBDIRS)
- 	if(WITH_MEM_JEMALLOC)
- 		link_directories(${JEMALLOC_LIBPATH})
+@@ -302,6 +302,9 @@ function(SETUP_LIBDIRS)
+ 	if(WITH_BOOST)
+ 		link_directories(${BOOST_LIBPATH})
  	endif()
 +	if(WITH_FONTCONFIG)
 +		link_directories(${FONTCONFIG_LIBPATH})
 +	endif()
- 
- 	if(WIN32 AND NOT UNIX)
- 		link_directories(${PTHREADS_LIBPATH})
-@@ -344,6 +347,9 @@ function(setup_liblinks
+ 	if(WITH_OPENIMAGEIO)
+ 		link_directories(${OPENIMAGEIO_LIBPATH})
+ 	endif()
+@@ -382,6 +385,9 @@ function(setup_liblinks
  	if(WITH_SYSTEM_GLEW)
  		target_link_libraries(${target} ${BLENDER_GLEW_LIBRARIES})
  	endif()
@@ -133,6 +120,24 @@ index 7bdf790..39926dc 100644
  	if(WITH_BULLET AND WITH_SYSTEM_BULLET)
  		target_link_libraries(${target} ${BULLET_LIBRARIES})
  	endif()
+diff --git a/build_files/cmake/platform/platform_unix.cmake b/build_files/cmake/platform/platform_unix.cmake
+index e33141f..3e3c883 100644
+--- a/build_files/cmake/platform/platform_unix.cmake
++++ b/build_files/cmake/platform/platform_unix.cmake
+@@ -132,6 +132,13 @@ if(WITH_JACK)
+ 	endif()
+ endif()
+ 
++if(WITH_FONTCONFIG)
++	find_package(Fontconfig)
++	if(NOT FONTCONFIG_FOUND)
++		set(WITH_FONTCONFIG OFF)
++	endif()
++endif()
++
+ # Codecs
+ if(WITH_CODEC_SNDFILE)
+ 	find_package_wrapper(SndFile)
 diff --git a/source/blender/blenfont/CMakeLists.txt b/source/blender/blenfont/CMakeLists.txt
 index 36ad6fe..19d2bab 100644
 --- a/source/blender/blenfont/CMakeLists.txt
@@ -152,7 +157,7 @@ index 36ad6fe..19d2bab 100644
  	add_definitions(-DWITH_PYTHON)
  	list(APPEND INC
 diff --git a/source/blender/blenfont/intern/blf_font_i18n.c b/source/blender/blenfont/intern/blf_font_i18n.c
-index b6ff7ed..a208fde 100644
+index b6ff7ed..e343c73 100644
 --- a/source/blender/blenfont/intern/blf_font_i18n.c
 +++ b/source/blender/blenfont/intern/blf_font_i18n.c
 @@ -45,10 +45,14 @@
@@ -204,10 +209,11 @@ index b6ff7ed..a208fde 100644
  	}
  
  	*r_unifont_size = unifont_size;
-@@ -92,6 +115,24 @@ unsigned char *BLF_get_unifont_mono(int *r_unifont_size)
+@@ -92,7 +115,25 @@ unsigned char *BLF_get_unifont_mono(int *r_unifont_size)
  {
  #ifdef WITH_INTERNATIONAL
  	if (unifont_mono_ttf == NULL) {
+-		const char *fontpath = BKE_appdir_folder_id(BLENDER_DATAFILES, "fonts");
 +#ifdef WITH_FONTCONFIG
 +		FcFontSet *fontset = NULL;
 +		FcValue v;
@@ -226,9 +232,10 @@ index b6ff7ed..a208fde 100644
 +			printf("%s: 'Dejavu Sans Mono' font not found with fontconfig\n", __func__);
 +		}
 +#else
- 		const char *fontpath = BKE_appdir_folder_id(BLENDER_DATAFILES, "fonts");
++       	const char *fontpath = BKE_appdir_folder_id(BLENDER_DATAFILES, "fonts");
  		if (fontpath) {
  			char unifont_path[1024];
+ 
 @@ -103,6 +144,7 @@ unsigned char *BLF_get_unifont_mono(int *r_unifont_size)
  		else {
  			printf("%s: 'fonts' data path not found for international monospace font, continuing\n", __func__);
@@ -304,10 +311,10 @@ index db4b3bc..dc240ee 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 5a84745..e1e72d2 100644
+index 69e53b3..7421477 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -341,12 +341,6 @@ endif()
+@@ -369,12 +369,6 @@ endif()
  
  # localization
  if(WITH_INTERNATIONAL)

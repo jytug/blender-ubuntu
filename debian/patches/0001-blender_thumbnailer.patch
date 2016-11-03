@@ -1,15 +1,13 @@
 From: "Matteo F. Vescovi" <mfv@debian.org>
-Date: Thu, 9 Jul 2015 22:31:02 +0200
+Date: Sat, 29 Oct 2016 14:31:49 +0200
 Subject: blender_thumbnailer
 
 * Add blender.thumbnailer file
-* Change to python3 since lintian is messing around with that
 * Move thumbnailer script to an appropriate destination
 ---
- blender.thumbnailer                | 4 ++++
- release/bin/blender-thumbnailer.py | 2 +-
- source/creator/CMakeLists.txt      | 2 +-
- 3 files changed, 6 insertions(+), 2 deletions(-)
+ blender.thumbnailer           | 4 ++++
+ source/creator/CMakeLists.txt | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
  create mode 100644 blender.thumbnailer
 
 diff --git a/blender.thumbnailer b/blender.thumbnailer
@@ -22,26 +20,16 @@ index 0000000..05d4fae
 +TryExec=/usr/share/blender/scripts/blender-thumbnailer.py
 +Exec=/usr/share/blender/scripts/blender-thumbnailer.py %i %o
 +MimeType=application/x-blender;
-diff --git a/release/bin/blender-thumbnailer.py b/release/bin/blender-thumbnailer.py
-index fe5d462..5d2dd95 100755
---- a/release/bin/blender-thumbnailer.py
-+++ b/release/bin/blender-thumbnailer.py
-@@ -1,4 +1,4 @@
--#!/usr/bin/env python
-+#!/usr/bin/env python3
- 
- # ##### BEGIN GPL LICENSE BLOCK #####
- #
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index ff6544c..e7729d4 100644
+index f65688e..2f57417 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -497,7 +497,7 @@ if(UNIX AND NOT APPLE)
- 		)
+@@ -486,7 +486,7 @@ if(UNIX AND NOT APPLE)
  		install(
- 			PROGRAMS ${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
--			DESTINATION bin
+ 			PROGRAMS
+ 			${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
+-			DESTINATION "."
 +			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/blender/scripts
  		)
- 		set(BLENDER_TEXT_FILES_DESTINATION share/doc/blender)
- 	endif()
+ 
+ 		set(BLENDER_TEXT_FILES_DESTINATION ".")

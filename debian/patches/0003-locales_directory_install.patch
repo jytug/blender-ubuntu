@@ -27,7 +27,7 @@ index 077fe2a..905106d 100644
  
  /* for BKE_appdir_folder_id_version only */
 diff --git a/source/blender/blenkernel/intern/appdir.c b/source/blender/blenkernel/intern/appdir.c
-index de21d91..aaf73ec 100644
+index b1dcc40..de2014e 100644
 --- a/source/blender/blenkernel/intern/appdir.c
 +++ b/source/blender/blenkernel/intern/appdir.c
 @@ -398,6 +398,9 @@ const char *BKE_appdir_folder_id(const int folder_id, const char *subfolder)
@@ -41,10 +41,10 @@ index de21d91..aaf73ec 100644
  			BLI_assert(0);
  			break;
 diff --git a/source/blender/blentranslation/intern/blt_lang.c b/source/blender/blentranslation/intern/blt_lang.c
-index 1ad62fa..3c70e0c 100644
+index 74c2b4b..9dc3c88 100644
 --- a/source/blender/blentranslation/intern/blt_lang.c
 +++ b/source/blender/blentranslation/intern/blt_lang.c
-@@ -84,9 +84,9 @@ static void free_locales(void)
+@@ -88,9 +88,9 @@ static void free_locales(void)
  	num_locales = num_locales_menu = 0;
  }
  
@@ -56,7 +56,7 @@ index 1ad62fa..3c70e0c 100644
  	char languages[FILE_MAX];
  	LinkNode *lines = NULL, *line;
  	char *str;
-@@ -94,7 +94,7 @@ static void fill_locales(void)
+@@ -98,7 +98,7 @@ static void fill_locales(void)
  
  	free_locales();
  
@@ -65,7 +65,7 @@ index 1ad62fa..3c70e0c 100644
  	line = lines = BLI_file_read_as_lines(languages);
  
  	/* This whole "parsing" code is a bit weak, in that it expects strictly formatted input file...
-@@ -194,7 +194,7 @@ EnumPropertyItem *BLT_lang_RNA_enum_properties(void)
+@@ -198,7 +198,7 @@ EnumPropertyItem *BLT_lang_RNA_enum_properties(void)
  void BLT_lang_init(void)
  {
  #ifdef WITH_INTERNATIONAL
@@ -74,7 +74,7 @@ index 1ad62fa..3c70e0c 100644
  #endif
  
  	/* Make sure LANG is correct and wouldn't cause std::rumtime_error. */
-@@ -227,7 +227,7 @@ void BLT_lang_init(void)
+@@ -231,7 +231,7 @@ void BLT_lang_init(void)
  #ifdef WITH_INTERNATIONAL
  	if (messagepath) {
  		bl_locale_init(messagepath, TEXT_DOMAIN_NAME);
@@ -84,10 +84,10 @@ index 1ad62fa..3c70e0c 100644
  	else {
  		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 118d807..7733b4b 100644
+index c3140c9..504f85d 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -344,11 +344,11 @@ if(WITH_INTERNATIONAL)
+@@ -372,11 +372,11 @@ if(WITH_INTERNATIONAL)
  	install(
  		DIRECTORY
  			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
