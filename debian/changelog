@@ -1,4 +1,4 @@
-blender (2.78.a+dfsg0-1) UNRELEASED; urgency=medium
+blender (2.78.a+dfsg0-1) unstable; urgency=medium
 
   * New upstream bugfix release (Closes: #843425)
     - debian/patches/: patchset updated against v2.78a
@@ -10,7 +10,7 @@ blender (2.78.a+dfsg0-1) UNRELEASED; urgency=medium
       - 0011-fix_ld-gold_issue.patch dropped (become useless)
   * debian/copyright: file updated
 
- -- Matteo F. Vescovi <mfv@debian.org>  Fri, 11 Nov 2016 10:59:53 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 11 Nov 2016 11:10:00 +0100
 
 blender (2.77.a+dfsg0-9) unstable; urgency=medium
 
