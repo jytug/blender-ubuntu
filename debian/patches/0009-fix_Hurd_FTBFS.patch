@@ -1,0 +1,22 @@
+From: Sergey Sharybin <sergey@blender.org>
+Date: Wed, 23 Nov 2016 14:44:29 +0100
+Subject: fix_Hurd_FTBFS
+
+---
+ extern/glog/src/raw_logging.cc | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/extern/glog/src/raw_logging.cc b/extern/glog/src/raw_logging.cc
+index 7a7409b..8517129 100644
+--- a/extern/glog/src/raw_logging.cc
++++ b/extern/glog/src/raw_logging.cc
+@@ -59,7 +59,8 @@
+ # include <unistd.h>
+ #endif
+ 
+-#if defined(HAVE_SYSCALL_H) || defined(HAVE_SYS_SYSCALL_H)
++// Hurd does not have SYS_write.
++#if (defined(HAVE_SYSCALL_H) || defined(HAVE_SYS_SYSCALL_H)) && !defined(__GNU__)
+ # define safe_write(fd, s, len)  syscall(SYS_write, fd, s, len)
+ #else
+   // Not so safe, but what can you do?

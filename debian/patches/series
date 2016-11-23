@@ -6,3 +6,5 @@
 0006-look_for_dejavu_ttf_with_fontconfig.patch
 0007-fix_OpenJPEG2_build.patch
 0008-fix_ppc64el_FTBFS.patch
+0009-fix_Hurd_FTBFS.patch
+0010-fix_x32_FTBFS.patch
