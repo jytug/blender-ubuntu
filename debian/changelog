@@ -1,3 +1,12 @@
+blender (2.78.a+dfsg0-3) UNRELEASED; urgency=medium
+
+  * debian/patches/: patchset updated
+    - 0009-fix_Hurd_FTBFS.patch added
+    - 0010-fix_x32_FTBFS.patch added
+      Thanks to Sergey Sharybin for both patches.
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Wed, 23 Nov 2016 14:59:38 +0100
+
 blender (2.78.a+dfsg0-2) unstable; urgency=medium
 
   * debian/patches/: patchset updated
