@@ -1,3 +1,11 @@
+blender (2.78.a+dfsg0-4) UNRELEASED; urgency=medium
+
+  * debian/patches/: patchset updated (Closes: #846382)
+    - #0001 -> #0010 refreshed
+    - 0011-fix_AMD_UI_glitches.patch added
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Tue, 13 Dec 2016 22:33:57 +0100
+
 blender (2.78.a+dfsg0-3) unstable; urgency=medium
 
   * debian/patches/: patchset updated
