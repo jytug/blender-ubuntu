@@ -1,0 +1,26 @@
+From: "Matteo F. Vescovi" <mfv@debian.org>
+Date: Tue, 13 Dec 2016 22:27:15 +0100
+Subject: fix_AMD_UI_glitches
+
+Upstream issue:
+ https://developer.blender.org/T49945
+---
+ source/blender/gpu/intern/gpu_extensions.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/source/blender/gpu/intern/gpu_extensions.c b/source/blender/gpu/intern/gpu_extensions.c
+index d41573b68..b6ccbdc14 100644
+--- a/source/blender/gpu/intern/gpu_extensions.c
++++ b/source/blender/gpu/intern/gpu_extensions.c
+@@ -173,7 +173,10 @@ void gpu_extensions_init(void)
+ 		GG.device = GPU_DEVICE_INTEL;
+ 		GG.driver = GPU_DRIVER_OFFICIAL;
+ 	}
+-	else if (strstr(renderer, "Mesa DRI R") || (strstr(renderer, "Gallium ") && strstr(renderer, " on ATI "))) {
++	else if ((strstr(renderer, "Mesa DRI R")) ||
++	         (strstr(renderer, "Gallium ") && strstr(renderer, " on ATI ")) ||
++	         (strstr(renderer, "Gallium ") && strstr(renderer, " on AMD ")))
++	{
+ 		GG.device = GPU_DEVICE_ATI;
+ 		GG.driver = GPU_DRIVER_OPENSOURCE;
+ 	}

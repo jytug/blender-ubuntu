@@ -83,7 +83,7 @@ we can add the changes back to master.
  create mode 100644 extern/libopenjpeg/t1_generate_luts.c
 
 diff --git a/build_files/cmake/Modules/FindOpenJPEG.cmake b/build_files/cmake/Modules/FindOpenJPEG.cmake
-index d765103..1f82591 100644
+index d76510363..1f825914a 100644
 --- a/build_files/cmake/Modules/FindOpenJPEG.cmake
 +++ b/build_files/cmake/Modules/FindOpenJPEG.cmake
 @@ -41,13 +41,14 @@ FIND_PATH(OPENJPEG_INCLUDE_DIR
@@ -104,7 +104,7 @@ index d765103..1f82591 100644
      ${_openjpeg_SEARCH_DIRS}
    PATH_SUFFIXES
 diff --git a/extern/libopenjpeg/CMakeLists.txt b/extern/libopenjpeg/CMakeLists.txt
-index ad49eee..0af2a90 100644
+index ad49eee25..0af2a90e1 100644
 --- a/extern/libopenjpeg/CMakeLists.txt
 +++ b/extern/libopenjpeg/CMakeLists.txt
 @@ -31,49 +31,56 @@ set(INC_SYS
@@ -185,7 +185,7 @@ index ad49eee..0af2a90 100644
  
  blender_add_lib(extern_openjpeg "${SRC}" "${INC}" "${INC_SYS}")
 diff --git a/extern/libopenjpeg/bio.c b/extern/libopenjpeg/bio.c
-index f04f3e5..5d49580 100644
+index f04f3e503..5d4958017 100644
 --- a/extern/libopenjpeg/bio.c
 +++ b/extern/libopenjpeg/bio.c
 @@ -1,9 +1,15 @@
@@ -389,7 +389,7 @@ index f04f3e5..5d49580 100644
 +	return OPJ_TRUE;
  }
 diff --git a/extern/libopenjpeg/bio.h b/extern/libopenjpeg/bio.h
-index 764d7cb..fba2428 100644
+index 764d7cb2e..fba242847 100644
 --- a/extern/libopenjpeg/bio.h
 +++ b/extern/libopenjpeg/bio.h
 @@ -1,9 +1,15 @@
@@ -513,7 +513,7 @@ index 764d7cb..fba2428 100644
  /*@}*/
  
 diff --git a/extern/libopenjpeg/cidx_manager.c b/extern/libopenjpeg/cidx_manager.c
-index f3b251f..ff2dbda 100644
+index f3b251ffa..ff2dbdaa3 100644
 --- a/extern/libopenjpeg/cidx_manager.c
 +++ b/extern/libopenjpeg/cidx_manager.c
 @@ -1,8 +1,8 @@
@@ -828,7 +828,7 @@ index f3b251f..ff2dbda 100644
    return EPHused;
  }
 diff --git a/extern/libopenjpeg/cidx_manager.h b/extern/libopenjpeg/cidx_manager.h
-index 23eebd5..d0bbef8 100644
+index 23eebd52b..d0bbef883 100644
 --- a/extern/libopenjpeg/cidx_manager.h
 +++ b/extern/libopenjpeg/cidx_manager.h
 @@ -1,8 +1,8 @@
@@ -864,7 +864,7 @@ index 23eebd5..d0bbef8 100644
  
  #endif      /* !CIDX_MANAGER_H_ */
 diff --git a/extern/libopenjpeg/cio.c b/extern/libopenjpeg/cio.c
-index 97cccea..1fc2393 100644
+index 97cccea6d..1fc239374 100644
 --- a/extern/libopenjpeg/cio.c
 +++ b/extern/libopenjpeg/cio.c
 @@ -1,10 +1,18 @@
@@ -1625,7 +1625,7 @@ index 97cccea..1fc2393 100644
 +	return OPJ_FALSE;
 +}
 diff --git a/extern/libopenjpeg/cio.h b/extern/libopenjpeg/cio.h
-index e627431..6dfa5bb 100644
+index e62743141..6dfa5bb84 100644
 --- a/extern/libopenjpeg/cio.h
 +++ b/extern/libopenjpeg/cio.h
 @@ -1,10 +1,18 @@
@@ -2043,7 +2043,7 @@ index e627431..6dfa5bb 100644
  #endif /* __CIO_H */
  
 diff --git a/extern/libopenjpeg/dwt.c b/extern/libopenjpeg/dwt.c
-index 0fbfc20..e1f8a33 100644
+index 0fbfc2033..e1f8a337d 100644
 --- a/extern/libopenjpeg/dwt.c
 +++ b/extern/libopenjpeg/dwt.c
 @@ -1,9 +1,15 @@
@@ -3209,7 +3209,7 @@ index 0fbfc20..e1f8a33 100644
  }
 -
 diff --git a/extern/libopenjpeg/dwt.h b/extern/libopenjpeg/dwt.h
-index adf73e5..f8b57bc 100644
+index adf73e544..f8b57bc0c 100644
 --- a/extern/libopenjpeg/dwt.h
 +++ b/extern/libopenjpeg/dwt.h
 @@ -1,9 +1,15 @@
@@ -3304,7 +3304,7 @@ index adf73e5..f8b57bc 100644
  /*@}*/
  
 diff --git a/extern/libopenjpeg/event.c b/extern/libopenjpeg/event.c
-index 38db33a..b6034b4 100644
+index 38db33a94..b6034b42d 100644
 --- a/extern/libopenjpeg/event.c
 +++ b/extern/libopenjpeg/event.c
 @@ -1,5 +1,12 @@
@@ -3427,7 +3427,7 @@ index 38db33a..b6034b4 100644
 +}
 +
 diff --git a/extern/libopenjpeg/event.h b/extern/libopenjpeg/event.h
-index 9c59787..88e0395 100644
+index 9c59787ca..88e0395b4 100644
 --- a/extern/libopenjpeg/event.h
 +++ b/extern/libopenjpeg/event.h
 @@ -1,5 +1,12 @@
@@ -3512,7 +3512,7 @@ index 9c59787..88e0395 100644
  /*@}*/
 diff --git a/extern/libopenjpeg/function_list.c b/extern/libopenjpeg/function_list.c
 new file mode 100644
-index 0000000..4c8aae6
+index 000000000..4c8aae621
 --- /dev/null
 +++ b/extern/libopenjpeg/function_list.c
 @@ -0,0 +1,119 @@
@@ -3637,7 +3637,7 @@ index 0000000..4c8aae6
 +}
 diff --git a/extern/libopenjpeg/function_list.h b/extern/libopenjpeg/function_list.h
 new file mode 100644
-index 0000000..749ad9e
+index 000000000..749ad9e45
 --- /dev/null
 +++ b/extern/libopenjpeg/function_list.h
 @@ -0,0 +1,131 @@
@@ -3773,7 +3773,7 @@ index 0000000..749ad9e
 +#endif /* __FUNCTION_LIST_H */
 +
 diff --git a/extern/libopenjpeg/image.c b/extern/libopenjpeg/image.c
-index 579fd73..2c3540c 100644
+index 579fd73d7..2c3540c51 100644
 --- a/extern/libopenjpeg/image.c
 +++ b/extern/libopenjpeg/image.c
 @@ -1,4 +1,9 @@
@@ -3976,7 +3976,7 @@ index 579fd73..2c3540c 100644
 +	return image;
 +}
 diff --git a/extern/libopenjpeg/image.h b/extern/libopenjpeg/image.h
-index f828b5b..e0e2772 100644
+index f828b5b77..e0e2772d4 100644
 --- a/extern/libopenjpeg/image.h
 +++ b/extern/libopenjpeg/image.h
 @@ -1,4 +1,9 @@
@@ -4026,7 +4026,7 @@ index f828b5b..e0e2772 100644
  
  #endif /* __IMAGE_H */
 diff --git a/extern/libopenjpeg/indexbox_manager.h b/extern/libopenjpeg/indexbox_manager.h
-index 7364df6..ec5525f 100644
+index 7364df62c..ec5525f53 100644
 --- a/extern/libopenjpeg/indexbox_manager.h
 +++ b/extern/libopenjpeg/indexbox_manager.h
 @@ -1,8 +1,8 @@
@@ -4117,7 +4117,7 @@ index 7364df6..ec5525f 100644
  #endif      /* !INDEXBOX_MANAGER_H_ */
 diff --git a/extern/libopenjpeg/invert.c b/extern/libopenjpeg/invert.c
 new file mode 100644
-index 0000000..4c1ee78
+index 000000000..4c1ee780d
 --- /dev/null
 +++ b/extern/libopenjpeg/invert.c
 @@ -0,0 +1,294 @@
@@ -4419,7 +4419,7 @@ diff --git a/extern/libopenjpeg/jpt.h b/extern/libopenjpeg/invert.h
 similarity index 50%
 rename from extern/libopenjpeg/jpt.h
 rename to extern/libopenjpeg/invert.h
-index eb01f98..2fae8e5 100644
+index eb01f98eb..2fae8e54b 100644
 --- a/extern/libopenjpeg/jpt.h
 +++ b/extern/libopenjpeg/invert.h
 @@ -1,8 +1,10 @@
@@ -4512,7 +4512,7 @@ index eb01f98..2fae8e5 100644
 -#endif
 +#endif /* __INVERT_H */ 
 diff --git a/extern/libopenjpeg/j2k.c b/extern/libopenjpeg/j2k.c
-index 93e5c9e..881cc72 100644
+index 93e5c9eb8..881cc72c7 100644
 --- a/extern/libopenjpeg/j2k.c
 +++ b/extern/libopenjpeg/j2k.c
 @@ -1,12 +1,21 @@
@@ -17261,7 +17261,7 @@ index 93e5c9e..881cc72 100644
 +        return OPJ_TRUE;
  }
 diff --git a/extern/libopenjpeg/j2k.h b/extern/libopenjpeg/j2k.h
-index 6338c29..d0f59d7 100644
+index 6338c290d..d0f59d727 100644
 --- a/extern/libopenjpeg/j2k.h
 +++ b/extern/libopenjpeg/j2k.h
 @@ -1,11 +1,21 @@
@@ -18227,7 +18227,7 @@ index 6338c29..d0f59d7 100644
  
  #endif /* __J2K_H */
 diff --git a/extern/libopenjpeg/jp2.c b/extern/libopenjpeg/jp2.c
-index d332260..5c88c4d 100644
+index d3322603c..5c88c4d74 100644
 --- a/extern/libopenjpeg/jp2.c
 +++ b/extern/libopenjpeg/jp2.c
 @@ -1,11 +1,19 @@
@@ -21917,7 +21917,7 @@ index d332260..5c88c4d 100644
 +#endif
 +#endif /* USE_JPIP */
 diff --git a/extern/libopenjpeg/jp2.h b/extern/libopenjpeg/jp2.h
-index acb643c..c11d2f3 100644
+index acb643cad..c11d2f313 100644
 --- a/extern/libopenjpeg/jp2.h
 +++ b/extern/libopenjpeg/jp2.h
 @@ -1,8 +1,15 @@
@@ -22499,7 +22499,7 @@ index acb643c..c11d2f3 100644
  /*@}*/
 diff --git a/extern/libopenjpeg/jpt.c b/extern/libopenjpeg/jpt.c
 deleted file mode 100644
-index a2566ea..0000000
+index a2566ea88..000000000
 --- a/extern/libopenjpeg/jpt.c
 +++ /dev/null
 @@ -1,155 +0,0 @@
@@ -22659,7 +22659,7 @@ index a2566ea..0000000
 -	}
 -}
 diff --git a/extern/libopenjpeg/mct.c b/extern/libopenjpeg/mct.c
-index 870993b..60ee096 100644
+index 870993b06..60ee0969d 100644
 --- a/extern/libopenjpeg/mct.c
 +++ b/extern/libopenjpeg/mct.c
 @@ -1,10 +1,18 @@
@@ -22980,7 +22980,7 @@ index 870993b..60ee096 100644
 +	}
  }
 diff --git a/extern/libopenjpeg/mct.h b/extern/libopenjpeg/mct.h
-index 84e3f8a..1c1f4d0 100644
+index 84e3f8add..1c1f4d0c4 100644
 --- a/extern/libopenjpeg/mct.h
 +++ b/extern/libopenjpeg/mct.h
 @@ -1,10 +1,18 @@
@@ -23105,7 +23105,7 @@ index 84e3f8a..1c1f4d0 100644
  /*@}*/
  
 diff --git a/extern/libopenjpeg/mqc.c b/extern/libopenjpeg/mqc.c
-index 14129fb..18fcc47 100644
+index 14129fbf4..18fcc4760 100644
 --- a/extern/libopenjpeg/mqc.c
 +++ b/extern/libopenjpeg/mqc.c
 @@ -1,10 +1,17 @@
@@ -23638,7 +23638,7 @@ index 14129fb..18fcc47 100644
  
  
 diff --git a/extern/libopenjpeg/mqc.h b/extern/libopenjpeg/mqc.h
-index d00cd10..69a2d46 100644
+index d00cd1067..69a2d4602 100644
 --- a/extern/libopenjpeg/mqc.h
 +++ b/extern/libopenjpeg/mqc.h
 @@ -1,10 +1,17 @@
@@ -23830,7 +23830,7 @@ index d00cd10..69a2d46 100644
  /*@}*/
  
 diff --git a/extern/libopenjpeg/openjpeg.c b/extern/libopenjpeg/openjpeg.c
-index 180cc84..4665d90 100644
+index 180cc844a..4665d906e 100644
 --- a/extern/libopenjpeg/openjpeg.c
 +++ b/extern/libopenjpeg/openjpeg.c
 @@ -1,5 +1,12 @@
@@ -24884,7 +24884,7 @@ index 180cc84..4665d90 100644
 +    return l_stream;
 +}
 diff --git a/extern/libopenjpeg/openjpeg.h b/extern/libopenjpeg/openjpeg.h
-index 59147c8..988db72 100644
+index 59147c8b3..988db7200 100644
 --- a/extern/libopenjpeg/openjpeg.h
 +++ b/extern/libopenjpeg/openjpeg.h
 @@ -1,12 +1,21 @@
@@ -26555,7 +26555,7 @@ diff --git a/extern/libopenjpeg/j2k_lib.c b/extern/libopenjpeg/opj_clock.c
 similarity index 80%
 rename from extern/libopenjpeg/j2k_lib.c
 rename to extern/libopenjpeg/opj_clock.c
-index a66e31e..0df99ef 100644
+index a66e31e9a..0df99ef04 100644
 --- a/extern/libopenjpeg/j2k_lib.c
 +++ b/extern/libopenjpeg/opj_clock.c
 @@ -1,4 +1,9 @@
@@ -26604,7 +26604,7 @@ diff --git a/extern/libopenjpeg/j2k_lib.h b/extern/libopenjpeg/opj_clock.h
 similarity index 78%
 rename from extern/libopenjpeg/j2k_lib.h
 rename to extern/libopenjpeg/opj_clock.h
-index 5f3406e..6f5168b 100644
+index 5f3406e51..6f5168b57 100644
 --- a/extern/libopenjpeg/j2k_lib.h
 +++ b/extern/libopenjpeg/opj_clock.h
 @@ -1,4 +1,9 @@
@@ -26653,7 +26653,7 @@ index 5f3406e..6f5168b 100644
  
 diff --git a/extern/libopenjpeg/opj_codec.h b/extern/libopenjpeg/opj_codec.h
 new file mode 100644
-index 0000000..4fdfa7d
+index 000000000..4fdfa7d8b
 --- /dev/null
 +++ b/extern/libopenjpeg/opj_codec.h
 @@ -0,0 +1,165 @@
@@ -26823,7 +26823,7 @@ index 0000000..4fdfa7d
 +#endif /* __OPJ_CODEC_H */
 +
 diff --git a/extern/libopenjpeg/opj_config.h b/extern/libopenjpeg/opj_config.h
-index 5d0a877..815ed3d 100644
+index 5d0a877b8..815ed3d1d 100644
 --- a/extern/libopenjpeg/opj_config.h
 +++ b/extern/libopenjpeg/opj_config.h
 @@ -1,39 +1,5 @@
@@ -26872,7 +26872,7 @@ index 5d0a877..815ed3d 100644
 +#define OPJ_VERSION_BUILD 0
 diff --git a/extern/libopenjpeg/opj_config_private.h b/extern/libopenjpeg/opj_config_private.h
 new file mode 100644
-index 0000000..61f82ec
+index 000000000..61f82ec48
 --- /dev/null
 +++ b/extern/libopenjpeg/opj_config_private.h
 @@ -0,0 +1,6 @@
@@ -26883,7 +26883,7 @@ index 0000000..61f82ec
 +
 +// #define OPJ_HAVE_FSEEKO ON
 diff --git a/extern/libopenjpeg/opj_includes.h b/extern/libopenjpeg/opj_includes.h
-index e9194fd..d9238b1 100644
+index e9194fd98..d9238b1bf 100644
 --- a/extern/libopenjpeg/opj_includes.h
 +++ b/extern/libopenjpeg/opj_includes.h
 @@ -1,5 +1,12 @@
@@ -27058,7 +27058,7 @@ diff --git a/extern/libopenjpeg/int.h b/extern/libopenjpeg/opj_intmath.h
 similarity index 54%
 rename from extern/libopenjpeg/int.h
 rename to extern/libopenjpeg/opj_intmath.h
-index 4e5fe08..dc89895 100644
+index 4e5fe08eb..dc8989530 100644
 --- a/extern/libopenjpeg/int.h
 +++ b/extern/libopenjpeg/opj_intmath.h
 @@ -1,9 +1,15 @@
@@ -27231,7 +27231,7 @@ diff --git a/extern/libopenjpeg/license.txt b/extern/libopenjpeg/opj_inttypes.h
 similarity index 66%
 rename from extern/libopenjpeg/license.txt
 rename to extern/libopenjpeg/opj_inttypes.h
-index d1e5b6a..e74aed6 100644
+index d1e5b6a53..e74aed6a1 100644
 --- a/extern/libopenjpeg/license.txt
 +++ b/extern/libopenjpeg/opj_inttypes.h
 @@ -1,10 +1,10 @@
@@ -27277,7 +27277,7 @@ index d1e5b6a..e74aed6 100644
 +
 +#endif /* OPJ_INTTYPES_H */
 diff --git a/extern/libopenjpeg/opj_malloc.h b/extern/libopenjpeg/opj_malloc.h
-index aef2ee3..5007b0c 100644
+index aef2ee3b8..5007b0c9e 100644
 --- a/extern/libopenjpeg/opj_malloc.h
 +++ b/extern/libopenjpeg/opj_malloc.h
 @@ -1,4 +1,9 @@
@@ -27336,7 +27336,7 @@ diff --git a/extern/libopenjpeg/fix.h b/extern/libopenjpeg/opj_stdint.h
 similarity index 56%
 rename from extern/libopenjpeg/fix.h
 rename to extern/libopenjpeg/opj_stdint.h
-index bcb2acb..b8556a1 100644
+index bcb2acb54..b8556a193 100644
 --- a/extern/libopenjpeg/fix.h
 +++ b/extern/libopenjpeg/opj_stdint.h
 @@ -1,10 +1,10 @@
@@ -27413,7 +27413,7 @@ index bcb2acb..b8556a1 100644
 -#endif /* __FIX_H */
 +#endif /* OPJ_STDINT_H */
 diff --git a/extern/libopenjpeg/phix_manager.c b/extern/libopenjpeg/phix_manager.c
-index 60a0281..5a3e883 100644
+index 60a028117..5a3e88387 100644
 --- a/extern/libopenjpeg/phix_manager.c
 +++ b/extern/libopenjpeg/phix_manager.c
 @@ -1,8 +1,8 @@
@@ -27620,7 +27620,7 @@ index 60a0281..5a3e883 100644
 +  return (int)len;
  }
 diff --git a/extern/libopenjpeg/pi.c b/extern/libopenjpeg/pi.c
-index e8e33bf..1d8db41 100644
+index e8e33bfe6..1d8db41b0 100644
 --- a/extern/libopenjpeg/pi.c
 +++ b/extern/libopenjpeg/pi.c
 @@ -1,9 +1,15 @@
@@ -29951,7 +29951,7 @@ index e8e33bf..1d8db41 100644
 +	return OPJ_FALSE;
 +}
 diff --git a/extern/libopenjpeg/pi.h b/extern/libopenjpeg/pi.h
-index cf9135f..f239679 100644
+index cf9135fd1..f239679f5 100644
 --- a/extern/libopenjpeg/pi.h
 +++ b/extern/libopenjpeg/pi.h
 @@ -1,9 +1,15 @@
@@ -30175,7 +30175,7 @@ index cf9135f..f239679 100644
  /*@}*/
  
 diff --git a/extern/libopenjpeg/ppix_manager.c b/extern/libopenjpeg/ppix_manager.c
-index 58d324c..fce5148 100644
+index 58d324ceb..fce514899 100644
 --- a/extern/libopenjpeg/ppix_manager.c
 +++ b/extern/libopenjpeg/ppix_manager.c
 @@ -1,8 +1,8 @@
@@ -30380,7 +30380,7 @@ index 58d324c..fce5148 100644
 +  return (int)len;
  }
 diff --git a/extern/libopenjpeg/raw.c b/extern/libopenjpeg/raw.c
-index 3d231bf..2498761 100644
+index 3d231bfdc..2498761c4 100644
 --- a/extern/libopenjpeg/raw.c
 +++ b/extern/libopenjpeg/raw.c
 @@ -1,7 +1,13 @@
@@ -30442,7 +30442,7 @@ index 3d231bf..2498761 100644
  		raw->ct = 8;
  		if (raw->len == raw->lenmax) {
 diff --git a/extern/libopenjpeg/raw.h b/extern/libopenjpeg/raw.h
-index 3c4b372..572c666 100644
+index 3c4b372f3..572c66617 100644
 --- a/extern/libopenjpeg/raw.h
 +++ b/extern/libopenjpeg/raw.h
 @@ -1,7 +1,13 @@
@@ -30527,7 +30527,7 @@ index 3c4b372..572c666 100644
  /*@}*/
  
 diff --git a/extern/libopenjpeg/t1.c b/extern/libopenjpeg/t1.c
-index ed9cdc3..0d6c2f6 100644
+index ed9cdc3fe..0d6c2f606 100644
 --- a/extern/libopenjpeg/t1.c
 +++ b/extern/libopenjpeg/t1.c
 @@ -1,9 +1,15 @@
@@ -33199,7 +33199,7 @@ index ed9cdc3..0d6c2f6 100644
 +}				/* VSC and  BYPASS by Antonin */
 +#endif
 diff --git a/extern/libopenjpeg/t1.h b/extern/libopenjpeg/t1.h
-index 572ec88..e5be70e 100644
+index 572ec88d2..e5be70ed5 100644
 --- a/extern/libopenjpeg/t1.h
 +++ b/extern/libopenjpeg/t1.h
 @@ -1,9 +1,15 @@
@@ -33318,7 +33318,7 @@ index 572ec88..e5be70e 100644
  
 diff --git a/extern/libopenjpeg/t1_generate_luts.c b/extern/libopenjpeg/t1_generate_luts.c
 new file mode 100644
-index 0000000..1997d39
+index 000000000..1997d3997
 --- /dev/null
 +++ b/extern/libopenjpeg/t1_generate_luts.c
 @@ -0,0 +1,282 @@
@@ -33605,7 +33605,7 @@ index 0000000..1997d39
 +	return 0;
 +}
 diff --git a/extern/libopenjpeg/t1_luts.h b/extern/libopenjpeg/t1_luts.h
-index e5e33f6..37776b6 100644
+index e5e33f665..37776b65a 100644
 --- a/extern/libopenjpeg/t1_luts.h
 +++ b/extern/libopenjpeg/t1_luts.h
 @@ -1,6 +1,6 @@
@@ -33671,7 +33671,7 @@ index e5e33f6..37776b6 100644
    0x1880, 0x1780, 0x1700, 0x1600, 0x1500, 0x1480, 0x1380, 0x1300, 
    0x1200, 0x1180, 0x1080, 0x1000, 0x0f00, 0x0e80, 0x0e00, 0x0d00, 
 diff --git a/extern/libopenjpeg/t2.c b/extern/libopenjpeg/t2.c
-index 2585c3d..37f9814 100644
+index 2585c3d56..37f981492 100644
 --- a/extern/libopenjpeg/t2.c
 +++ b/extern/libopenjpeg/t2.c
 @@ -1,10 +1,18 @@
@@ -35728,7 +35728,7 @@ index 2585c3d..37f9814 100644
 +        return OPJ_TRUE;
 +}
 diff --git a/extern/libopenjpeg/t2.h b/extern/libopenjpeg/t2.h
-index 2151ba6..931141e 100644
+index 2151ba67f..931141e05 100644
 --- a/extern/libopenjpeg/t2.h
 +++ b/extern/libopenjpeg/t2.h
 @@ -1,10 +1,18 @@
@@ -35854,7 +35854,7 @@ index 2151ba6..931141e 100644
  /* ----------------------------------------------------------------------- */
  /*@}*/
 diff --git a/extern/libopenjpeg/tcd.c b/extern/libopenjpeg/tcd.c
-index 62904eb..79262fc 100644
+index 62904eb2c..79262fcd3 100644
 --- a/extern/libopenjpeg/tcd.c
 +++ b/extern/libopenjpeg/tcd.c
 @@ -1,11 +1,19 @@
@@ -39491,7 +39491,7 @@ index 62904eb..79262fc 100644
 +        return OPJ_TRUE;
 +}
 diff --git a/extern/libopenjpeg/tcd.h b/extern/libopenjpeg/tcd.h
-index e3f93ad..360923b 100644
+index e3f93adc3..360923b15 100644
 --- a/extern/libopenjpeg/tcd.h
 +++ b/extern/libopenjpeg/tcd.h
 @@ -1,10 +1,18 @@
@@ -39965,7 +39965,7 @@ index e3f93ad..360923b 100644
  /* ----------------------------------------------------------------------- */
  /*@}*/
 diff --git a/extern/libopenjpeg/tgt.c b/extern/libopenjpeg/tgt.c
-index a5dbcd3..e77adb3 100644
+index a5dbcd3ce..e77adb3bb 100644
 --- a/extern/libopenjpeg/tgt.c
 +++ b/extern/libopenjpeg/tgt.c
 @@ -1,10 +1,18 @@
@@ -40448,7 +40448,7 @@ index a5dbcd3..e77adb3 100644
 +        return (node->value < threshold) ? 1 : 0;
  }
 diff --git a/extern/libopenjpeg/tgt.h b/extern/libopenjpeg/tgt.h
-index c08c8da..3d152f8 100644
+index c08c8da0a..3d152f8a9 100644
 --- a/extern/libopenjpeg/tgt.h
 +++ b/extern/libopenjpeg/tgt.h
 @@ -1,10 +1,19 @@
@@ -40577,7 +40577,7 @@ index c08c8da..3d152f8 100644
  /*@}*/
  
 diff --git a/extern/libopenjpeg/thix_manager.c b/extern/libopenjpeg/thix_manager.c
-index aa55f21..0967b1e 100644
+index aa55f217c..0967b1e9a 100644
 --- a/extern/libopenjpeg/thix_manager.c
 +++ b/extern/libopenjpeg/thix_manager.c
 @@ -1,8 +1,8 @@
@@ -40737,7 +40737,7 @@ index aa55f21..0967b1e 100644
 +  return (int)len;
  }
 diff --git a/extern/libopenjpeg/tpix_manager.c b/extern/libopenjpeg/tpix_manager.c
-index 9ba9e7f..74c02ba 100644
+index 9ba9e7fda..74c02ba7c 100644
 --- a/extern/libopenjpeg/tpix_manager.c
 +++ b/extern/libopenjpeg/tpix_manager.c
 @@ -1,8 +1,8 @@
@@ -40955,7 +40955,7 @@ index 9ba9e7f..74c02ba 100644
  
  int get_num_max_tile_parts( opj_codestream_info_t cstr_info)
 diff --git a/source/blender/imbuf/intern/IMB_filetype.h b/source/blender/imbuf/intern/IMB_filetype.h
-index 2bd7cbc..19d3787 100644
+index 2bd7cbcf6..19d37871a 100644
 --- a/source/blender/imbuf/intern/IMB_filetype.h
 +++ b/source/blender/imbuf/intern/IMB_filetype.h
 @@ -82,8 +82,9 @@ int imb_saveiris(struct ImBuf *ibuf, const char *name, int flags);
@@ -40971,7 +40971,7 @@ index 2bd7cbc..19d3787 100644
  /* jpeg */
  int imb_is_a_jpeg(const unsigned char *mem);
 diff --git a/source/blender/imbuf/intern/filetype.c b/source/blender/imbuf/intern/filetype.c
-index 3d3e8a0..7ffb575 100644
+index 3d3e8a064..7ffb575cd 100644
 --- a/source/blender/imbuf/intern/filetype.c
 +++ b/source/blender/imbuf/intern/filetype.c
 @@ -81,7 +81,7 @@ const ImFileType IMB_FILE_TYPES[] = {
@@ -40984,7 +40984,7 @@ index 3d3e8a0..7ffb575 100644
  #ifdef WITH_DDS
  	{NULL, NULL, imb_is_a_dds, NULL, imb_ftype_default, imb_load_dds, NULL, NULL, NULL, 0, IMB_FTYPE_DDS, COLOR_ROLE_DEFAULT_BYTE},
 diff --git a/source/blender/imbuf/intern/jp2.c b/source/blender/imbuf/intern/jp2.c
-index 390f250..923318f 100644
+index 390f2502e..923318fbe 100644
 --- a/source/blender/imbuf/intern/jp2.c
 +++ b/source/blender/imbuf/intern/jp2.c
 @@ -38,7 +38,7 @@

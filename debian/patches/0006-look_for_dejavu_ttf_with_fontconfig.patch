@@ -19,7 +19,7 @@ Subject: look_for_dejavu_ttf_with_fontconfig
  create mode 100644 build_files/cmake/Modules/FindFontconfig.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 578f913..d9fdaaa 100644
+index 578f913f8..d9fdaaaa0 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -202,6 +202,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
@@ -44,7 +44,7 @@ index 578f913..d9fdaaa 100644
  	message("${_config_msg}")
 diff --git a/build_files/cmake/Modules/FindFontconfig.cmake b/build_files/cmake/Modules/FindFontconfig.cmake
 new file mode 100644
-index 0000000..7dc09f3
+index 000000000..7dc09f30a
 --- /dev/null
 +++ b/build_files/cmake/Modules/FindFontconfig.cmake
 @@ -0,0 +1,48 @@
@@ -97,7 +97,7 @@ index 0000000..7dc09f3
 +
 +endif (FONTCONFIG_LIBRARIES AND FONTCONFIG_INCLUDE_DIR)
 diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
-index 5a67ac9..aa0675f 100644
+index 5a67ac981..aa0675ff1 100644
 --- a/build_files/cmake/macros.cmake
 +++ b/build_files/cmake/macros.cmake
 @@ -302,6 +302,9 @@ function(SETUP_LIBDIRS)
@@ -121,7 +121,7 @@ index 5a67ac9..aa0675f 100644
  		target_link_libraries(${target} ${BULLET_LIBRARIES})
  	endif()
 diff --git a/build_files/cmake/platform/platform_unix.cmake b/build_files/cmake/platform/platform_unix.cmake
-index e33141f..3e3c883 100644
+index e33141f80..3e3c8834b 100644
 --- a/build_files/cmake/platform/platform_unix.cmake
 +++ b/build_files/cmake/platform/platform_unix.cmake
 @@ -132,6 +132,13 @@ if(WITH_JACK)
@@ -139,7 +139,7 @@ index e33141f..3e3c883 100644
  if(WITH_CODEC_SNDFILE)
  	find_package_wrapper(SndFile)
 diff --git a/source/blender/blenfont/CMakeLists.txt b/source/blender/blenfont/CMakeLists.txt
-index 36ad6fe..19d2bab 100644
+index 36ad6fe03..19d2bab31 100644
 --- a/source/blender/blenfont/CMakeLists.txt
 +++ b/source/blender/blenfont/CMakeLists.txt
 @@ -64,6 +64,13 @@ if(WITH_INTERNATIONAL)
@@ -157,7 +157,7 @@ index 36ad6fe..19d2bab 100644
  	add_definitions(-DWITH_PYTHON)
  	list(APPEND INC
 diff --git a/source/blender/blenfont/intern/blf_font_i18n.c b/source/blender/blenfont/intern/blf_font_i18n.c
-index b6ff7ed..e343c73 100644
+index b6ff7ed86..e343c73ae 100644
 --- a/source/blender/blenfont/intern/blf_font_i18n.c
 +++ b/source/blender/blenfont/intern/blf_font_i18n.c
 @@ -45,10 +45,14 @@
@@ -245,7 +245,7 @@ index b6ff7ed..e343c73 100644
  
  	*r_unifont_size = unifont_mono_size;
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index 91d139c..20cca01 100644
+index 91d139c70..20cca0113 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
 @@ -90,6 +90,7 @@ bool   BLI_is_file(const char *path) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
@@ -257,7 +257,7 @@ index 91d139c..20cca01 100644
  /* Filelist */
  
 diff --git a/source/blender/blenlib/intern/fileops.c b/source/blender/blenlib/intern/fileops.c
-index db4b3bc..dc240ee 100644
+index db4b3bcf2..dc240eed6 100644
 --- a/source/blender/blenlib/intern/fileops.c
 +++ b/source/blender/blenlib/intern/fileops.c
 @@ -159,6 +159,49 @@ char *BLI_file_ungzip_to_mem(const char *from_file, int *r_size)
@@ -311,7 +311,7 @@ index db4b3bc..dc240ee 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 69e53b3..7421477 100644
+index 69e53b3af..7421477a9 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -369,12 +369,6 @@ endif()

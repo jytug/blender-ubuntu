@@ -9,7 +9,7 @@ Subject: fix_ppc64el_FTBFS
  3 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/extern/clew/include/clew.h b/extern/clew/include/clew.h
-index 1f79c12..08040af 100644
+index 1f79c1248..08040af4b 100644
 --- a/extern/clew/include/clew.h
 +++ b/extern/clew/include/clew.h
 @@ -369,7 +369,7 @@ typedef unsigned int cl_GLenum;
@@ -22,7 +22,7 @@ index 1f79c12..08040af 100644
     typedef vector unsigned char     __cl_uchar16;
     typedef vector signed char       __cl_char16;
 diff --git a/extern/glog/src/stacktrace_powerpc-inl.h b/extern/glog/src/stacktrace_powerpc-inl.h
-index 1090dde..03b9108 100644
+index 1090ddedb..03b91089a 100644
 --- a/extern/glog/src/stacktrace_powerpc-inl.h
 +++ b/extern/glog/src/stacktrace_powerpc-inl.h
 @@ -111,7 +111,7 @@ int GetStackTrace(void** result, int max_depth, int skip_count) {
@@ -35,7 +35,7 @@ index 1090dde..03b9108 100644
        result[n++] = *(sp+2);
  #elif defined(__linux)
 diff --git a/intern/cycles/device/device_opencl.cpp b/intern/cycles/device/device_opencl.cpp
-index dce1d37..42eabaf 100644
+index dce1d3753..42eabaf54 100644
 --- a/intern/cycles/device/device_opencl.cpp
 +++ b/intern/cycles/device/device_opencl.cpp
 @@ -20,8 +20,6 @@

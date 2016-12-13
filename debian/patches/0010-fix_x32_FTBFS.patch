@@ -7,7 +7,7 @@ Subject: fix_x32_FTBFS
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/intern/cycles/util/util_simd.h b/intern/cycles/util/util_simd.h
-index 36da155..e6caa91 100644
+index 36da1550a..e6caa9154 100644
 --- a/intern/cycles/util/util_simd.h
 +++ b/intern/cycles/util/util_simd.h
 @@ -229,7 +229,7 @@ __forceinline int __btr(int v, int i) {

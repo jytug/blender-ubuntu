@@ -12,7 +12,7 @@ Subject: update_manpages
 
 diff --git a/doc/manpage/blenderplayer.1 b/doc/manpage/blenderplayer.1
 new file mode 100644
-index 0000000..5435c63
+index 000000000..5435c63e1
 --- /dev/null
 +++ b/doc/manpage/blenderplayer.1
 @@ -0,0 +1,131 @@
@@ -148,7 +148,7 @@ index 0000000..5435c63
 +.SH AUTHORS
 +This manpage was written for a Debian by Kevin Roy <kiniou@gmail.com>.
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 504f85d..10ce80a 100644
+index 504f85d26..10ce80a37 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -480,6 +480,7 @@ if(UNIX AND NOT APPLE)

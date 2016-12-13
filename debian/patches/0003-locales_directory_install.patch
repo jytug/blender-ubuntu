@@ -15,7 +15,7 @@ Contributions by:
  4 files changed, 11 insertions(+), 7 deletions(-)
 
 diff --git a/source/blender/blenkernel/BKE_appdir.h b/source/blender/blenkernel/BKE_appdir.h
-index 077fe2a..905106d 100644
+index 077fe2a62..905106df8 100644
 --- a/source/blender/blenkernel/BKE_appdir.h
 +++ b/source/blender/blenkernel/BKE_appdir.h
 @@ -67,6 +67,7 @@ enum {
@@ -27,7 +27,7 @@ index 077fe2a..905106d 100644
  
  /* for BKE_appdir_folder_id_version only */
 diff --git a/source/blender/blenkernel/intern/appdir.c b/source/blender/blenkernel/intern/appdir.c
-index b1dcc40..de2014e 100644
+index b1dcc4027..de2014eed 100644
 --- a/source/blender/blenkernel/intern/appdir.c
 +++ b/source/blender/blenkernel/intern/appdir.c
 @@ -398,6 +398,9 @@ const char *BKE_appdir_folder_id(const int folder_id, const char *subfolder)
@@ -41,7 +41,7 @@ index b1dcc40..de2014e 100644
  			BLI_assert(0);
  			break;
 diff --git a/source/blender/blentranslation/intern/blt_lang.c b/source/blender/blentranslation/intern/blt_lang.c
-index 74c2b4b..9dc3c88 100644
+index 74c2b4b74..9dc3c8882 100644
 --- a/source/blender/blentranslation/intern/blt_lang.c
 +++ b/source/blender/blentranslation/intern/blt_lang.c
 @@ -88,9 +88,9 @@ static void free_locales(void)
@@ -84,7 +84,7 @@ index 74c2b4b..9dc3c88 100644
  	else {
  		printf("%s: 'locale' data path for translations not found, continuing\n", __func__);
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index c3140c9..504f85d 100644
+index c3140c999..504f85d26 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -372,11 +372,11 @@ if(WITH_INTERNATIONAL)

@@ -7,7 +7,7 @@ Subject: fix_Hurd_FTBFS
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/extern/glog/src/raw_logging.cc b/extern/glog/src/raw_logging.cc
-index 7a7409b..8517129 100644
+index 7a7409bbf..8517129fa 100644
 --- a/extern/glog/src/raw_logging.cc
 +++ b/extern/glog/src/raw_logging.cc
 @@ -59,7 +59,8 @@
