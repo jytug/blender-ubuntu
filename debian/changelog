@@ -1,4 +1,4 @@
-blender (2.78.c+dfsg0-1) UNRELEASED; urgency=medium
+blender (2.78.c+dfsg0-1) experimental; urgency=medium
 
   * New upstream release
     - debian/patches/: patchset updated against v2.78c
@@ -7,7 +7,7 @@ blender (2.78.c+dfsg0-1) UNRELEASED; urgency=medium
       - 0011-fix_AMD_UI_glitches.patch renamed to #0010
       Thanks to Sergey Sharybin (sergey) for #0008 refresh
 
- -- Matteo F. Vescovi <mfv@debian.org>  Tue, 06 Jun 2017 18:27:54 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Tue, 06 Jun 2017 18:31:03 +0200
 
 blender (2.78.a+dfsg0-4) unstable; urgency=medium
 
