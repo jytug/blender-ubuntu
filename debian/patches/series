@@ -7,5 +7,4 @@
 0007-fix_OpenJPEG2_build.patch
 0008-fix_ppc64el_FTBFS.patch
 0009-fix_Hurd_FTBFS.patch
-0010-fix_x32_FTBFS.patch
-0011-fix_AMD_UI_glitches.patch
+0010-fix_AMD_UI_glitches.patch

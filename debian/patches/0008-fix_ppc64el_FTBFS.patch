@@ -1,15 +1,15 @@
+From f7a8afa878d163ae669b5dfc923e2c4d2993a49a Mon Sep 17 00:00:00 2001
 From: Sergey Sharybin <sergey@blender.org>
-Date: Mon, 21 Nov 2016 21:34:50 +0100
+Date: Tue, 06 Jun 2017 11:31:13 +0200
 Subject: fix_ppc64el_FTBFS
 
 ---
  extern/clew/include/clew.h               | 2 +-
  extern/glog/src/stacktrace_powerpc-inl.h | 2 +-
- intern/cycles/device/device_opencl.cpp   | 4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/extern/clew/include/clew.h b/extern/clew/include/clew.h
-index 1f79c1248..08040af4b 100644
+index 1f79c12481b..08040af4bc1 100644
 --- a/extern/clew/include/clew.h
 +++ b/extern/clew/include/clew.h
 @@ -369,7 +369,7 @@ typedef unsigned int cl_GLenum;
@@ -22,7 +22,7 @@ index 1f79c1248..08040af4b 100644
     typedef vector unsigned char     __cl_uchar16;
     typedef vector signed char       __cl_char16;
 diff --git a/extern/glog/src/stacktrace_powerpc-inl.h b/extern/glog/src/stacktrace_powerpc-inl.h
-index 1090ddedb..03b91089a 100644
+index 1090ddedbc7..03b91089aad 100644
 --- a/extern/glog/src/stacktrace_powerpc-inl.h
 +++ b/extern/glog/src/stacktrace_powerpc-inl.h
 @@ -111,7 +111,7 @@ int GetStackTrace(void** result, int max_depth, int skip_count) {
@@ -34,25 +34,6 @@ index 1090ddedb..03b91089a 100644
        // This check is in case the compiler doesn't define _CALL_AIX/etc.
        result[n++] = *(sp+2);
  #elif defined(__linux)
-diff --git a/intern/cycles/device/device_opencl.cpp b/intern/cycles/device/device_opencl.cpp
-index dce1d3753..42eabaf54 100644
---- a/intern/cycles/device/device_opencl.cpp
-+++ b/intern/cycles/device/device_opencl.cpp
-@@ -20,8 +20,6 @@
- #include <stdlib.h>
- #include <string.h>
- 
--#include "clew.h"
--
- #include "device.h"
- #include "device_intern.h"
- 
-@@ -37,6 +35,8 @@
- #include "util_path.h"
- #include "util_time.h"
- 
-+#include "clew.h"
-+
- CCL_NAMESPACE_BEGIN
- 
- #define CL_MEM_PTR(p) ((cl_mem)(uintptr_t)(p))
+-- 
+2.11.0
+
