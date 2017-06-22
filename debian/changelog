@@ -1,9 +1,9 @@
-blender (2.78.c+dfsg0-2) UNRELEASED; urgency=medium
+blender (2.78.c+dfsg0-2) unstable; urgency=medium
 
   * Upload to unstable
   * debian/control: S-V bump 3.9.8 => 4.0.0 (no changes needed)
 
- -- Matteo F. Vescovi <mfv@debian.org>  Thu, 22 Jun 2017 17:20:30 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 22 Jun 2017 17:21:24 +0200
 
 blender (2.78.c+dfsg0-1) experimental; urgency=medium
 
