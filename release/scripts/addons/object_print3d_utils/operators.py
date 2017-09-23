@@ -24,13 +24,8 @@ import bpy
 import bmesh
 from bpy.types import Operator
 from bpy.props import (
-        StringProperty,
-        BoolProperty,
         IntProperty,
         FloatProperty,
-        FloatVectorProperty,
-        EnumProperty,
-        PointerProperty,
         )
 
 from . import (
@@ -102,7 +97,7 @@ class Print3DInfoArea(Operator):
             info.append(("Area: %s \"²" % clean_float("%.4f" % ((area * (scale ** 2.0)) / (0.0254 ** 2.0))), None))
         else:
             info.append(("Area: %s²" % clean_float("%.8f" % area), None))
- 
+
         report.update(*info)
         return {'FINISHED'}
 
@@ -117,7 +112,14 @@ def execute_check(self, context):
     self.main_check(obj, info)
     report.update(*info)
 
+    multiple_obj_warning(self, context)
+
     return {'FINISHED'}
+
+
+def multiple_obj_warning(self, context):
+    if len(context.selected_objects) > 1:
+        self.report({"INFO"}, "Multiple selected objects. Only the active one will be evaluated")
 
 
 class Print3DCheckSolid(Operator):
@@ -210,7 +212,10 @@ class Print3DCheckDistorted(Operator):
             no = ele.normal
             angle_fn = no.angle
             for loop in ele.loops:
-                if angle_fn(loop.calc_normal(), 1000.0) > angle_distort:
+                loopno = loop.calc_normal()
+                if loopno.dot(no) < 0.0:
+                    loopno.negate()
+                if angle_fn(loopno, 1000.0) > angle_distort:
                     return True
             return False
 
@@ -332,6 +337,8 @@ class Print3DCheckAll(Operator):
             cls.main_check(obj, info)
 
         report.update(*info)
+
+        multiple_obj_warning(self, context)
 
         return {'FINISHED'}
 
@@ -594,7 +601,7 @@ class Print3DCleanThin(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        TODO
+        # TODO
 
         return {'FINISHED'}
 
@@ -644,7 +651,7 @@ class Print3DSelectReport(Operator):
             self.report({'WARNING'}, "Report is out of date, re-run check")
 
         # cool, but in fact annoying
-        #~ bpy.ops.view3d.view_selected(use_all_regions=False)
+        # bpy.ops.view3d.view_selected(use_all_regions=False)
 
         return {'FINISHED'}
 
@@ -768,8 +775,6 @@ class Print3DExport(Operator):
     bl_label = "Print3D Export"
 
     def execute(self, context):
-        scene = bpy.context.scene
-        print_3d = scene.print_3d
         from . import export
 
         info = []

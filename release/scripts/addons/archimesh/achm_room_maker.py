@@ -844,8 +844,8 @@ class WallProperties(PropertyGroup):
             )
 
     a = BoolProperty(
-            name="Advance",
-            description="Define advance parameters of the wall",
+            name="Advanced",
+            description="Define advanced parameters of the wall",
             default=False,
             update=update_room,
             )
@@ -985,42 +985,33 @@ def sort_facelist(activefaces, activenormals):
     # -----------------------
     # Look for first element
     # -----------------------
-    flag = False
-    for x in range(1, totfaces):
-        if flag is False:
-            idx = 0
-            for face in activefaces:
-                c = 0
-                for i in face:
-                    if i == 0 or i == 1:
-                        c += 1
-                    # avoid close
-                    if i > 3:
-                        c -= 1
+    idx = 0
+    for face in activefaces:
+        c = 0
+        for i in face:
+            if i == 0 or i == 1:
+                c += 1
 
-                if c >= 2 and face not in newlist:
-                    newlist.append(face)
-                    newnormal.append(activenormals[idx])
-                    flag = True
-                idx += 1
+        if c >= 2 and face not in newlist:
+            newlist.append(face)
+            newnormal.append(activenormals[idx])
+            break
+        idx += 1
 
     # -----------------------
     # Look for second element
     # -----------------------
-    flag = False
-    for x in range(1, totfaces):
-        if flag is False:
-            idx = 0
-            for face in activefaces:
-                c = 0
-                for i in face:
-                    if i == 2 or i == 3:
-                        c += 1
-                if c >= 2 and face not in newlist:
-                    newlist.append(face)
-                    newnormal.append(activenormals[idx])
-                    flag = True
-                idx += 1
+    idx = 0
+    for face in activefaces:
+        c = 0
+        for i in face:
+            if i == 2 or i == 3:
+                c += 1
+        if c >= 2 and face not in newlist:
+            newlist.append(face)
+            newnormal.append(activenormals[idx])
+            break
+        idx += 1
 
     # -----------------------
     # Add next faces
@@ -1097,6 +1088,7 @@ def get_wall_points(selobject):
     # Sort faces
     # ------------------------
     newlist, newnormal = sort_facelist(activefaces, activenormals)
+
     return verts, newlist, newnormal
 
 

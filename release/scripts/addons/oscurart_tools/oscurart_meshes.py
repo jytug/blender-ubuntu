@@ -21,11 +21,11 @@
 import bpy
 from bpy.types import Operator
 from bpy.props import (
-            IntProperty,
-            BoolProperty,
-            FloatProperty,
-            EnumProperty,
-            )
+        IntProperty,
+        BoolProperty,
+        FloatProperty,
+        EnumProperty,
+        )
 import os
 import bmesh
 import time
@@ -35,8 +35,8 @@ from bpy_extras.view3d_utils import location_3d_to_region_2d
 C = bpy.context
 D = bpy.data
 
-# -----------------------------RECONST---------------------------
 
+# -----------------------------RECONST---------------------------
 
 def defReconst(self, OFFSET):
     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
@@ -51,8 +51,8 @@ def defReconst(self, OFFSET):
         if vertice.co[0] < 0:
             bm.verts.remove(vertice)
             bmesh.update_edit_mesh(ob.data)
-    # mod = ob.modifiers.new("Mirror", "MIRROR")
-    # uv = ob.data.uv_textures.new(name="SYMMETRICAL")
+    mod = ob.modifiers.new("Mirror", "MIRROR")
+    uv = ob.data.uv_textures.new(name="SYMMETRICAL")
     for v in bm.faces:
         v.select = 1
     bmesh.update_edit_mesh(ob.data)
@@ -67,7 +67,7 @@ def defReconst(self, OFFSET):
     bpy.ops.object.mode_set(mode="EDIT", toggle=False)
     bm = bmesh.from_edit_mesh(ob.data)
     bm.select_flush(0)
-    # uv = ob.data.uv_textures.new(name="ASYMMETRICAL")
+    uv = ob.data.uv_textures.new(name="ASYMMETRICAL")
     ob.data.uv_textures.active = ob.data.uv_textures['ASYMMETRICAL']
     bpy.ops.uv.unwrap(
         method='ANGLE_BASED',
@@ -76,10 +76,13 @@ def defReconst(self, OFFSET):
         use_subsurf_data=0)
 
 
-class reConst (Operator):
+class reConst(Operator):
+    """Erase vertices bellow cero X position value and rebuilds the symmetry. """
+    """It also creates two uv channels, one symmetrical and one asymmetrical"""
     bl_idname = "mesh.reconst_osc"
     bl_label = "ReConst Mesh"
     bl_options = {"REGISTER", "UNDO"}
+
     OFFSET = FloatProperty(
             name="Offset",
             default=0.001,
@@ -96,8 +99,8 @@ class reConst (Operator):
         defReconst(self, self.OFFSET)
         return {'FINISHED'}
 
-# -----------------------------------SELECT LEFT---------------------
 
+# -----------------------------------SELECT LEFT---------------------
 
 def side(self, nombre, offset):
 
@@ -119,7 +122,8 @@ def side(self, nombre, offset):
     bpy.ops.object.mode_set(mode="EDIT", toggle=0)
 
 
-class SelectMenor (Operator):
+class SelectMenor(Operator):
+    """Selects the vetex with an N position value on the X axis"""
     bl_idname = "mesh.select_side_osc"
     bl_label = "Select Side"
     bl_options = {"REGISTER", "UNDO"}
@@ -148,21 +152,28 @@ class SelectMenor (Operator):
 # -------------------------RESYM VG----------------------------------
 
 
-class resymVertexGroups (Operator):
+class resymVertexGroups(Operator):
     bl_idname = "mesh.resym_vertex_weights_osc"
     bl_label = "Resym Vertex Weights"
+    bl_description = ("Copies the symetrical weight value of the vertices on the X axys\n"
+                      "(It needs the XML map and the Active Object is not in Edit mode)")
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None
+        obj = context.active_object
+        return obj is not None and obj.mode != "EDIT"
 
     def execute(self, context):
+        ob = bpy.context.object
+        actgr = ob.vertex_groups.active if ob else None
+        if not actgr:
+            self.report({'WARNING'},
+                        "Object doesn't have active Vertex groups. Operation Cancelled")
+            return {"CANCELLED"}
 
         with open("%s_%s_SYM_TEMPLATE.xml" % (os.path.join(os.path.dirname(bpy.data.filepath),
                                               bpy.context.scene.name), bpy.context.object.name)) as file:
-            ob = bpy.context.object
-            actgr = ob.vertex_groups.active
             actind = ob.vertex_groups.active_index
             ls = eval(file.read())
             wdict = {left: actgr.weight(right) for left, right in ls.items()
@@ -176,63 +187,7 @@ class resymVertexGroups (Operator):
         return {'FINISHED'}
 
 
-# ------------------------IMPORT EXPORT GROUPS--------------------
-
-class OscExportVG (Operator):
-    bl_idname = "file.export_groups_osc"
-    bl_label = "Export Groups"
-    bl_options = {"REGISTER", "UNDO"}
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
-
-    def execute(self, context):
-
-        ob = bpy.context.object
-        with open(os.path.join(os.path.dirname(bpy.data.filepath), ob.name + ".txt"), mode="w") as file:
-            vgindex = {vg.index: vg.name for vg in ob.vertex_groups[:]}
-            vgdict = {}
-            for vert in ob.data.vertices:
-                for vg in vert.groups:
-                    vgdict.setdefault(vg.group, []).append(
-                        (vert.index, vg.weight))
-            file.write(str(vgdict) + "\n")
-            file.write(str(vgindex))
-
-        return {'FINISHED'}
-
-
-class OscImportVG (Operator):
-    bl_idname = "file.import_groups_osc"
-    bl_label = "Import Groups"
-    bl_options = {"REGISTER", "UNDO"}
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
-
-    def execute(self, context):
-
-        ob = bpy.context.object
-        with open(os.path.join(os.path.dirname(bpy.data.filepath), ob.name + ".txt"), mode="r") as file:
-            vgdict = eval(file.readlines(1)[0].replace("\n", ""))
-            vgindex = eval(file.readlines(2)[0].replace("\n", ""))
-
-        for index, name in vgindex.items():
-            ob.vertex_groups.new(name=name)
-
-        for group, vdata in vgdict.items():
-            for index, weight in vdata:
-                ob.vertex_groups[group].add(
-                    index=[index],
-                    weight=weight,
-                    type="REPLACE")
-
-        return {'FINISHED'}
-
-
-# ------------------------------------ RESYM MESH-------------------------
+# --------------------------- RESYM MESH-------------------------
 
 
 def reSymSave(self, quality):
@@ -246,7 +201,8 @@ def reSymSave(self, quality):
     absol = lambda x: (abs(x[0]), x[1], x[2])
 
     inddict = {
-        tuple(map(rd, vert.co[:])): vert.index for vert in object.data.vertices[:]}
+            tuple(map(rd, vert.co[:])): vert.index for vert in object.data.vertices[:]
+            }
     reldict = {inddict[vert]: inddict.get(absol(vert), inddict[vert])
                for vert in inddict if vert[0] <= 0}
 
@@ -254,6 +210,7 @@ def reSymSave(self, quality):
         os.path.join(os.path.dirname(bpy.data.filepath),
                      bpy.context.scene.name),
         bpy.context.object.name)
+
     with open(ENTFILEPATH, mode="w") as file:
         file.writelines(str(reldict))
         reldict.clear()
@@ -271,6 +228,7 @@ def reSymMesh(self, SELECTED, SIDE):
         object = bpy.context.object
 
         def MAME(SYMAP):
+            bm.verts.ensure_lookup_table()
             if SELECTED:
                 for vert in SYMAP:
                     if bm.verts[SYMAP[vert]].select:
@@ -285,6 +243,7 @@ def reSymMesh(self, SELECTED, SIDE):
             bmesh.update_edit_mesh(object.data)
 
         def MEMA(SYMAP):
+            bm.verts.ensure_lookup_table()
             if SELECTED:
                 for vert in SYMAP:
                     if bm.verts[vert].select:
@@ -304,7 +263,9 @@ def reSymMesh(self, SELECTED, SIDE):
             MEMA(SYMAP)
 
 
-class OscResymSave (Operator):
+class OscResymSave(Operator):
+    """Creates a file on disk that saves the info of every vertex but in simmetry, """ \
+    """this info its going to be later used by “Resym Mesh” and “Resym Vertex Weights”"""
     bl_idname = "mesh.resym_save_map"
     bl_label = "Resym save XML Map"
     bl_options = {"REGISTER", "UNDO"}
@@ -324,7 +285,8 @@ class OscResymSave (Operator):
         return {'FINISHED'}
 
 
-class OscResymMesh (Operator):
+class OscResymMesh(Operator):
+    """Copies the symetrical position of the vertices on the X axys. It needs the XML map"""
     bl_idname = "mesh.resym_mesh"
     bl_label = "Resym save Apply XML"
     bl_options = {"REGISTER", "UNDO"}
@@ -364,13 +326,10 @@ def DefOscObjectToMesh():
 
 
 class OscObjectToMesh(Operator):
-    bl_idname = "mesh.object_to_mesh_osc"
+    """It creates a copy of the final state of the object as it being see in the viewport"""
     bl_idname = "mesh.object_to_mesh_osc"
     bl_label = "Object To Mesh"
-    bl_label = "Object To Mesh"
-    bl_description = "Works on Meshes, Meta objects, Curves and Surfaces"
 
-    
     @classmethod
     def poll(cls, context):
         return (context.active_object is not None and
@@ -378,9 +337,10 @@ class OscObjectToMesh(Operator):
                 {'MESH', 'META', 'CURVE', 'SURFACE'})
 
     def execute(self, context):
-         print("Active type object is", context.object.type)
-         DefOscObjectToMesh()
-         return {'FINISHED'}
+        print("Active type object is", context.object.type)
+        DefOscObjectToMesh()
+
+        return {'FINISHED'}
 
 
 # ----------------------------- OVERLAP UV -------------------------------
@@ -428,7 +388,7 @@ def DefOscOverlapUv(valpresicion):
             for lloop in lif[l]:
                 for rloop in lif[r]:
                     if (verteqind[vertexvert[lloop]] == vertexvert[rloop] and
-                        ob.data.uv_layers.active.data[rloop].select):
+                            ob.data.uv_layers.active.data[rloop].select):
 
                         ob.data.uv_layers.active.data[
                             lloop].uv = ob.data.uv_layers.active.data[
@@ -440,6 +400,8 @@ def DefOscOverlapUv(valpresicion):
 
 
 class OscOverlapUv(Operator):
+    """Overlaps the uvs on one side of the model symmetry plane. """ \
+    """Useful to get more detail on fixed resolution bitmaps"""
     bl_idname = "mesh.overlap_uv_faces"
     bl_label = "Overlap Uvs"
     bl_options = {"REGISTER", "UNDO"}
@@ -460,57 +422,8 @@ class OscOverlapUv(Operator):
         DefOscOverlapUv(self.presicion)
         return {'FINISHED'}
 
-# ------------------------------- IO VERTEX COLORS --------------------
-
-
-def DefOscExportVC():
-    with open(os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.object.name) + ".vc", mode="w") as file:
-        ob = bpy.context.object
-        di = {loopind: ob.data.vertex_colors.active.data[loopind].color[:]
-              for face in ob.data.polygons for loopind in face.loop_indices[:]}
-        file.write(str(di))
-
-
-def DefOscImportVC():
-    with open(os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.object.name) + ".vc", mode="r") as file:
-        di = eval(file.read())
-        for loopind in di:
-            bpy.context.object.data.vertex_colors.active.data[
-                loopind].color = di[loopind]
-
-
-class OscExportVC (Operator):
-    bl_idname = "mesh.export_vertex_colors"
-    bl_label = "Export Vertex Colors"
-    bl_options = {"REGISTER", "UNDO"}
-
-    @classmethod
-    def poll(cls, context):
-        return (context.active_object is not None and
-                context.active_object.type == 'MESH')
-
-    def execute(self, context):
-        DefOscExportVC()
-        return {'FINISHED'}
-
-
-class OscImportVC (Operator):
-    bl_idname = "mesh.import_vertex_colors"
-    bl_label = "Import Vertex Colors"
-    bl_options = {"REGISTER", "UNDO"}
-
-    @classmethod
-    def poll(cls, context):
-        return (context.active_object is not None and
-                context.active_object.type == 'MESH')
-
-    def execute(self, context):
-        DefOscImportVC()
-        return {'FINISHED'}
-
 
 # ------------------ PRINT VERTICES ----------------------
-
 
 def dibuja_callback(self, context):
     font_id = 0
@@ -526,6 +439,7 @@ def dibuja_callback(self, context):
 
 
 class ModalIndexOperator(Operator):
+    """Allow to visualize the index number for vertices in the viewport"""
     bl_idname = "view3d.modal_operator"
     bl_label = "Print Vertices"
 
@@ -566,3 +480,85 @@ class ModalIndexOperator(Operator):
         else:
             self.report({"WARNING"}, "Is not a 3D Space")
             return {'CANCELLED'}
+
+
+# -------------------------- SELECT DOUBLES
+
+def SelDoubles(self, context):
+    bm = bmesh.from_edit_mesh(bpy.context.object.data)
+
+    for v in bm.verts:
+        v.select = 0
+
+    dictloc = {}
+
+    rd = lambda x: (round(x[0], 4), round(x[1], 4), round(x[2], 4))
+
+    for vert in bm.verts:
+        dictloc.setdefault(rd(vert.co), []).append(vert.index)
+
+    for loc, ind in dictloc.items():
+        if len(ind) > 1:
+            for v in ind:
+                bm.verts[v].select = 1
+
+    bpy.context.scene.objects.active = bpy.context.scene.objects.active
+
+
+class SelectDoubles(Operator):
+    """Selects duplicated vertex without merge them"""
+    bl_idname = "mesh.select_doubles"
+    bl_label = "Select Doubles"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return (context.active_object is not None and
+                context.active_object.type == 'MESH' and
+                context.active_object.mode == "EDIT")
+
+    def execute(self, context):
+        SelDoubles(self, context)
+        return {'FINISHED'}
+
+
+# -------------------------- SELECT DOUBLES
+
+def defLatticeMirror(self, context):
+
+    ob = bpy.context.object
+    u = ob.data.points_u
+    v = ob.data.points_v
+    w = ob.data.points_w
+    total = u * v * w
+
+    # guardo indices a cada punto
+    libIndex = {point: index for point, index in zip(bpy.context.object.data.points, range(0, total))}
+
+    # guardo puntos seleccionados
+    selectionPoint = [libIndex[i] for i in ob.data.points if i.select]
+
+    for point in selectionPoint:
+        rango = list(range(int(point / u) * u, int(point / u) * u + (u)))
+        rango.reverse()
+        indPorcion = range(int(point / u) * u, int(point / u) * u + (u)).index(point)
+        ob.data.points[rango[indPorcion]].co_deform.x = -ob.data.points[point].co_deform.x
+        ob.data.points[rango[indPorcion]].co_deform.y = ob.data.points[point].co_deform.y
+        ob.data.points[rango[indPorcion]].co_deform.z = ob.data.points[point].co_deform.z
+
+
+class LatticeMirror(Operator):
+    """Mirror Lattice"""
+    bl_idname = "lattice.mirror_selected"
+    bl_label = "Mirror Lattice"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return (context.active_object is not None and
+                context.active_object.type == 'LATTICE' and
+                context.active_object.mode == "EDIT")
+
+    def execute(self, context):
+        defLatticeMirror(self, context)
+        return {'FINISHED'}

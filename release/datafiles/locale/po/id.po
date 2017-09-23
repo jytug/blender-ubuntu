@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 2.78 (sub 0) (b'2c19ddf')\n"
+"Project-Id-Version: Blender 2.79 (sub 0) (b'6e7d9621180')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-26 12:09:58\n"
+"POT-Creation-Date: 2017-08-17 15:17:11\n"
 "PO-Revision-Date: 2013-09-26 14:51+0700\n"
 "Last-Translator: Daffi A. Prabowo <daffi.ap@gmail.com>\n"
 "Language-Team: Indonesian <>\n"
@@ -822,10 +822,6 @@ msgid "Objects"
 msgstr "Objek"
 
 
-msgid "Object datablocks"
-msgstr "Objek datablok"
-
-
 msgid "Particles"
 msgstr "Partikel"
 
@@ -1087,18 +1083,6 @@ msgid "Show Errors"
 msgstr "Warna"
 
 
-msgid "Group"
-msgstr "Grup"
-
-
-msgid "Lamp"
-msgstr "Lampu"
-
-
-msgid "Texture"
-msgstr "Tekstur"
-
-
 msgid "Generated Coordinates"
 msgstr "Partikel"
 
@@ -1109,6 +1093,10 @@ msgstr "Induk"
 
 msgid "Dupli Type"
 msgstr "Tipe"
+
+
+msgid "Group"
+msgstr "Grup"
 
 
 msgid "Paint Color"
@@ -1161,6 +1149,10 @@ msgstr "Data Animasi"
 
 msgid "Vertex Color"
 msgstr "Warna Standar"
+
+
+msgid "Texture"
+msgstr "Tekstur"
 
 
 msgid "Use Color Preview"
@@ -1345,10 +1337,6 @@ msgstr "Orientasi Transformasi"
 
 msgid "Frame Range"
 msgstr "Dalam Jarak"
-
-
-msgid "ID Root Type"
-msgstr "Tipe"
 
 
 msgid "Bones"
@@ -1920,6 +1908,10 @@ msgstr "Tekstur"
 
 msgid "Type of Object"
 msgstr "Sunting Objek"
+
+
+msgid "Lamp"
+msgstr "Lampu"
 
 
 msgid "Shape Key Edit Mode"
@@ -5569,10 +5561,6 @@ msgid "Bake object transformations"
 msgstr "Orientasi Transformasi"
 
 
-msgid "Only key selected object/bones"
-msgstr "Modus Sunting"
-
-
 msgctxt "Operator"
 msgid "Mouse Select"
 msgstr "Seleksi"
@@ -7540,16 +7528,8 @@ msgid "Include Children"
 msgstr "Tambah Gambar"
 
 
-msgid "Include Material Textures"
-msgstr "Tambah Gambar"
-
-
 msgid "Include Shape Keys"
 msgstr "Orientasi Transformasi"
-
-
-msgid "Include UV Textures"
-msgstr "Tekstur"
 
 
 msgid "Sort by Object name"
@@ -7753,10 +7733,6 @@ msgid "Mask Tools"
 msgstr "Grup"
 
 
-msgid "Cycles Hair Rendering"
-msgstr "Partikel"
-
-
 msgid "Light Paths"
 msgstr "Kamera"
 
@@ -7839,6 +7815,14 @@ msgstr "Partikel"
 
 msgid "Strand shape parameter"
 msgstr "Partikel"
+
+
+msgid "Transmission Direct"
+msgstr "Orientasi Transformasi"
+
+
+msgid "Transmission Indirect"
+msgstr "Orientasi Transformasi"
 
 
 msgid "Cancel timeout"
@@ -7958,14 +7942,6 @@ msgstr "Warna"
 
 
 msgid "Deliver transmission color pass"
-msgstr "Orientasi Transformasi"
-
-
-msgid "Transmission Direct"
-msgstr "Orientasi Transformasi"
-
-
-msgid "Transmission Indirect"
 msgstr "Orientasi Transformasi"
 
 
@@ -8351,10 +8327,6 @@ msgid "Edit Tree"
 msgstr "Gambar Latar"
 
 
-msgid "Highlight"
-msgstr "Penyunting Logika"
-
-
 msgid "Blender File"
 msgstr "Situs Blender"
 
@@ -8683,10 +8655,6 @@ msgid "Aperture:"
 msgstr "Tipe"
 
 
-msgid "Render:"
-msgstr "Situs Blender"
-
-
 msgid "Samples:"
 msgstr "Gerakan"
 
@@ -8787,6 +8755,10 @@ msgstr "Warna Standar"
 
 msgid "UV Axis:"
 msgstr "Kiri"
+
+
+msgid "Render:"
+msgstr "Situs Blender"
 
 
 msgctxt "Operator"
@@ -9336,10 +9308,6 @@ msgid "Axis Colors:"
 msgstr "Warna Standar"
 
 
-msgid "NDOF Orbit Sensitivity"
-msgstr "Tampilan 3D"
-
-
 msgid "Description:"
 msgstr "Penjelasan"
 
@@ -9443,13 +9411,13 @@ msgstr "Semua Tampilan"
 
 
 msgctxt "Operator"
-msgid "Speaker"
-msgstr "Tambah Gambar"
+msgid "Camera"
+msgstr "Kamera"
 
 
 msgctxt "Operator"
-msgid "Camera"
-msgstr "Kamera"
+msgid "Speaker"
+msgstr "Tambah Gambar"
 
 
 msgctxt "Operator"
@@ -9475,16 +9443,6 @@ msgstr "Tekstur"
 msgctxt "Operator"
 msgid "Bake Action..."
 msgstr "lokasi"
-
-
-msgctxt "Operator"
-msgid "Location"
-msgstr "Lokasi"
-
-
-msgctxt "Operator"
-msgid "Rotation"
-msgstr "Rotasi"
 
 
 msgctxt "Operator"
@@ -9550,6 +9508,16 @@ msgstr "Modus Sunting"
 msgctxt "Operator"
 msgid "Clear Mask"
 msgstr "Hapus"
+
+
+msgctxt "Operator"
+msgid "Location"
+msgstr "Lokasi"
+
+
+msgctxt "Operator"
+msgid "Rotation"
+msgstr "Rotasi"
 
 
 msgctxt "Operator"
@@ -10410,10 +10378,6 @@ msgid "Scene has no camera"
 msgstr "Hapus"
 
 
-msgid "Saved file: %s"
-msgstr "Nilai: %s"
-
-
 msgid "Flip to Bottom"
 msgstr "Bawah"
 
@@ -10428,6 +10392,10 @@ msgstr "Modus Pahat"
 
 msgid "Maximize Area"
 msgstr "Partikel"
+
+
+msgid "Saved file: %s"
+msgstr "Nilai: %s"
 
 
 msgid "No active camera set"
@@ -10880,10 +10848,6 @@ msgstr "Gambar"
 
 msgid "ID value"
 msgstr "Nilai"
-
-
-msgid "Reflect"
-msgstr "Seleksi"
 
 
 msgid "Dispersion"

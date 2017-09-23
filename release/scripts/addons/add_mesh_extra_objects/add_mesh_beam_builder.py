@@ -1,38 +1,26 @@
-################################################################################
-# ***** BEGIN GPL LICENSE BLOCK *****
-#
-# This is free software; you may redistribute it, and/or modify it,
-# under the terms of the GNU General Public License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License (http://www.gnu.org/licenses/) for more details.
-#
-# ***** END GPL LICENSE BLOCK *****
-'''
-Create "Beam" primitives. Based on original script by revolt_randy.
-'''
-# Author(s): revolt_randy, Jambay
-#
-# @todo: track 3D cursor for location.
-#
-################################################################################
+# GPL # "author": revolt_randy, Jambay
+
+# Create "Beam" primitives. Based on original script by revolt_randy
+
 
 import bpy
-from bpy.props import BoolProperty, EnumProperty, FloatProperty, FloatVectorProperty, IntProperty
-from bpy_extras import object_utils
+from bpy.types import Operator
+from bpy.props import (
+        BoolProperty,
+        EnumProperty,
+        FloatProperty,
+        IntProperty,
+        )
 
 
-########################################
-#
+# #####################
 # Create vertices for end of mesh
 #
 # y_off - verts y-axis origin
 #
 # returns:
 #  endVs - x,y,z list
-#
+
 def beamEndVs(sRef, y_off):
     thick = sRef.beamW * 2
 
@@ -63,15 +51,14 @@ def beamEndVs(sRef, y_off):
     return endVs
 
 
-########################################
-#
+# #####################
 # Create End Faces
 #
 # verts_list - list of vertices
 #
 # returns:
 #  beamFs, a list of tuples defining the end faces.
-#
+
 def beamEndFaces(verts_list):
 
     beamFs = []
@@ -98,8 +85,7 @@ def beamEndFaces(verts_list):
     return beamFs
 
 
-########################################
-#
+# #####################
 # Bridge vertices to create side faces.
 #
 # front_verts - front face vertices
@@ -109,7 +95,7 @@ def beamEndFaces(verts_list):
 #
 # returns:
 #  sideFaces, a list of the bridged faces
-#
+
 def beamSides(front_verts, back_verts):
     sideFaces = []
 
@@ -127,14 +113,13 @@ def beamSides(front_verts, back_verts):
     return sideFaces
 
 
-####################################################
-#
+# #####################
 # Creates a box beam
 #
 # returns:
 #  beamVs - x, y, z, location of each vertice
 #  beamFs - vertices that make up each face
-#
+
 def create_beam(sRef):
 
     frontVs = []
@@ -190,15 +175,14 @@ def create_beam(sRef):
     return beamVs, beamFs
 
 
-########################################
-#
+# #####################
 # Taper/angle faces of beam.
 #  inner vert toward outer vert
 #  based on percentage of taper.
 #
 # returns:
 #  adVert - the calculated vertex
-#
+
 def beamSlant(sRef, outV, inV):
     bTaper = 100 - sRef.edgeA
 
@@ -209,15 +193,14 @@ def beamSlant(sRef, outV, inV):
     return adVert
 
 
-########################################
-#
+# #####################
 # Modify location to shape beam.
 #
 # verts - tuples for one end of beam
 #
 # returns:
 #  verts - modified tuples for beam shape.
-#
+
 def beamSquareEnds(sRef, verts):
 
     # match 5th & 6th z locations to 1st & 2nd
@@ -235,7 +218,7 @@ def beamSquareEnds(sRef, verts):
     return verts
 
 
-########################################
+# #####################
 #
 # Create U shaped beam
 #  Shared with C shape - see beamEndVs
@@ -244,7 +227,7 @@ def beamSquareEnds(sRef, verts):
 # returns:
 #  beamVs - vertice x, y, z, locations
 #  beamFs - face vertices
-#
+
 def create_u_beam(sRef):
 
     # offset vertices from center
@@ -308,12 +291,11 @@ def create_u_beam(sRef):
     return beamVs, beamFs
 
 
-###################################
-#
+# #####################
 # returns:
 #  verts_final - x, y, z, location of each vertice
 #  faces_final - vertices that make up each face
-#
+
 def create_L_beam(sRef):
 
     thick = sRef.beamW
@@ -328,12 +310,14 @@ def create_L_beam(sRef):
     verts_back_temp = []
 
     # Create front vertices by calculation
-    verts_front_temp = [(-x_off, -y_off, z_off),
-                        (-(x_off - thick), -y_off, z_off),
-                        (-(x_off - thick), -y_off, -(z_off - thick)),
-                        (x_off, -y_off, -(z_off - thick)),
-                        (x_off, -y_off, -z_off),
-                        (-x_off, -y_off, -z_off)]
+    verts_front_temp = [
+            (-x_off, -y_off, z_off),
+            (-(x_off - thick), -y_off, z_off),
+            (-(x_off - thick), -y_off, -(z_off - thick)),
+            (x_off, -y_off, -(z_off - thick)),
+            (x_off, -y_off, -z_off),
+            (-x_off, -y_off, -z_off)
+            ]
 
     # Adjust taper
     vert_outside = verts_front_temp[0]
@@ -347,12 +331,14 @@ def create_L_beam(sRef):
     verts_front_temp[3] = [vert_inside[0], vert_inside[1], vert_taper]
 
     # Create back vertices by calculation
-    verts_back_temp = [(-x_off, y_off, z_off),
-                       (-(x_off - thick), y_off, z_off),
-                       (-(x_off - thick), y_off, -(z_off - thick)),
-                       (x_off, y_off, -(z_off - thick)),
-                       (x_off, y_off, -z_off),
-                       (-x_off, y_off, -z_off)]
+    verts_back_temp = [
+            (-x_off, y_off, z_off),
+            (-(x_off - thick), y_off, z_off),
+            (-(x_off - thick), y_off, -(z_off - thick)),
+            (x_off, y_off, -(z_off - thick)),
+            (x_off, y_off, -z_off),
+            (-x_off, y_off, -z_off)
+            ]
 
     # Adjust taper
     vert_outside = verts_back_temp[0]
@@ -392,12 +378,11 @@ def create_L_beam(sRef):
     return verts_final, faces_final
 
 
-###################################
-#
+# #####################
 # returns:
 #  verts_final - a list of tuples of the x, y, z, location of each vertice
 #  faces_final - a list of tuples of the vertices that make up each face
-#
+
 def create_T_beam(sRef):
 
     thick = sRef.beamW
@@ -413,16 +398,18 @@ def create_T_beam(sRef):
     verts_back_temp = []
 
     # Create front vertices
-    verts_front_temp = [(-x_off, -y_off, z_off),
-                        (-thick_off, -y_off, z_off),
-                        (thick_off, -y_off, z_off),
-                        (x_off, -y_off, z_off),
-                        (x_off, -y_off, z_off - thick),
-                        (thick_off, -y_off, z_off - thick),
-                        (thick_off, -y_off, -z_off),
-                        (-thick_off, -y_off, -z_off),
-                        (-thick_off, -y_off, z_off - thick),
-                        (-x_off, -y_off, z_off - thick)]
+    verts_front_temp = [
+            (-x_off, -y_off, z_off),
+            (-thick_off, -y_off, z_off),
+            (thick_off, -y_off, z_off),
+            (x_off, -y_off, z_off),
+            (x_off, -y_off, z_off - thick),
+            (thick_off, -y_off, z_off - thick),
+            (thick_off, -y_off, -z_off),
+            (-thick_off, -y_off, -z_off),
+            (-thick_off, -y_off, z_off - thick),
+            (-x_off, -y_off, z_off - thick)
+            ]
 
     # Adjust taper
     vert_outside = verts_front_temp[0]
@@ -448,16 +435,18 @@ def create_T_beam(sRef):
     verts_front_temp[7] = [vert_taper, vert_inside[1], vert_inside[2]]
 
     # Create fack vertices by calculation
-    verts_back_temp = [(-x_off, y_off, z_off),
-                       (-thick_off, y_off, z_off),
-                       (thick_off, y_off, z_off),
-                       (x_off, y_off, z_off),
-                       (x_off, y_off, z_off - thick),
-                       (thick_off, y_off, z_off - thick),
-                       (thick_off, y_off, -z_off),
-                       (-thick_off, y_off, -z_off),
-                       (-thick_off, y_off, z_off - thick),
-                       (-x_off, y_off, z_off - thick)]
+    verts_back_temp = [
+            (-x_off, y_off, z_off),
+            (-thick_off, y_off, z_off),
+            (thick_off, y_off, z_off),
+            (x_off, y_off, z_off),
+            (x_off, y_off, z_off - thick),
+            (thick_off, y_off, z_off - thick),
+            (thick_off, y_off, -z_off),
+            (-thick_off, y_off, -z_off),
+            (-thick_off, y_off, z_off - thick),
+            (-x_off, y_off, z_off - thick)
+            ]
 
     # Adjust taper
     vert_outside = verts_back_temp[0]
@@ -513,12 +502,11 @@ def create_T_beam(sRef):
     return verts_final, faces_final
 
 
-###################################
-#
+# #####################
 # returns:
 #  verts_final - a list of tuples of the x, y, z, location of each vertice
 #  faces_final - a list of tuples of the vertices that make up each face
-#
+
 def create_I_beam(sRef):
 
     thick = sRef.beamW
@@ -534,22 +522,24 @@ def create_I_beam(sRef):
     verts_back_temp = []
 
     # Create front vertices by calculation
-    verts_front_temp = [(-x_off, -y_off, z_off),
-                        (-thick_off, -y_off, z_off),
-                        (thick_off, -y_off, z_off),
-                        (x_off, -y_off, z_off),
-                        (x_off, -y_off, z_off - thick),
-                        (thick_off, -y_off, z_off - thick),
-                        (thick_off, -y_off, -z_off + thick),
-                        (x_off, -y_off, -z_off + thick),
-                        (x_off, -y_off, -z_off),
-                        (thick_off, -y_off, -z_off),
-                        (-thick_off, -y_off, -z_off),
-                        (-x_off, -y_off, -z_off),
-                        (-x_off, -y_off, -z_off + thick),
-                        (-thick_off, -y_off, -z_off + thick),
-                        (-thick_off, -y_off, z_off - thick),
-                        (-x_off, -y_off, z_off - thick)]
+    verts_front_temp = [
+            (-x_off, -y_off, z_off),
+            (-thick_off, -y_off, z_off),
+            (thick_off, -y_off, z_off),
+            (x_off, -y_off, z_off),
+            (x_off, -y_off, z_off - thick),
+            (thick_off, -y_off, z_off - thick),
+            (thick_off, -y_off, -z_off + thick),
+            (x_off, -y_off, -z_off + thick),
+            (x_off, -y_off, -z_off),
+            (thick_off, -y_off, -z_off),
+            (-thick_off, -y_off, -z_off),
+            (-x_off, -y_off, -z_off),
+            (-x_off, -y_off, -z_off + thick),
+            (-thick_off, -y_off, -z_off + thick),
+            (-thick_off, -y_off, z_off - thick),
+            (-x_off, -y_off, z_off - thick)
+            ]
 
     # Adjust taper
     vert_outside = verts_front_temp[0]
@@ -573,22 +563,24 @@ def create_I_beam(sRef):
     verts_front_temp[12] = [vert_inside[0], vert_inside[1], vert_taper]
 
     # Create back vertices by calculation
-    verts_back_temp = [(-x_off, y_off, z_off),
-                       (-thick_off, y_off, z_off),
-                       (thick_off, y_off, z_off),
-                       (x_off, y_off, z_off),
-                       (x_off, y_off, z_off - thick),
-                       (thick_off, y_off, z_off - thick),
-                       (thick_off, y_off, -z_off + thick),
-                       (x_off, y_off, -z_off + thick),
-                       (x_off, y_off, -z_off),
-                       (thick_off, y_off, -z_off),
-                       (-thick_off, y_off, -z_off),
-                       (-x_off, y_off, -z_off),
-                       (-x_off, y_off, -z_off + thick),
-                       (-thick_off, y_off, -z_off + thick),
-                       (-thick_off, y_off, z_off - thick),
-                       (-x_off, y_off, z_off - thick)]
+    verts_back_temp = [
+            (-x_off, y_off, z_off),
+            (-thick_off, y_off, z_off),
+            (thick_off, y_off, z_off),
+            (x_off, y_off, z_off),
+            (x_off, y_off, z_off - thick),
+            (thick_off, y_off, z_off - thick),
+            (thick_off, y_off, -z_off + thick),
+            (x_off, y_off, -z_off + thick),
+            (x_off, y_off, -z_off),
+            (thick_off, y_off, -z_off),
+            (-thick_off, y_off, -z_off),
+            (-x_off, y_off, -z_off),
+            (-x_off, y_off, -z_off + thick),
+            (-thick_off, y_off, -z_off + thick),
+            (-thick_off, y_off, z_off - thick),
+            (-x_off, y_off, z_off - thick)
+            ]
 
     # Adjust taper
     vert_outside = verts_back_temp[0]
@@ -645,10 +637,10 @@ def create_I_beam(sRef):
     return verts_final, faces_final
 
 
-################################################################################
+# ######################
 #
 # Generate beam object.
-#
+
 def addBeamObj(sRef, context):
     verts = []
     faces = []
@@ -682,57 +674,90 @@ def addBeamObj(sRef, context):
         bpy.ops.transform.rotate(value=1.570796, constraint_axis=[False, True, False])
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
 
+    if sRef.Cursor:
+        if beamObj.select is True:
+            # we also have to check if we're considered to be in 3D View (view3d)
+            if bpy.ops.view3d.snap_selected_to_cursor.poll():
+                bpy.ops.view3d.snap_selected_to_cursor()
+            else:
+                sRef.Cursor = False
 
-################################################################################
-#
+
+# ######################
 # Create a beam primitive.
 #
 #  UI functions and object creation.
-#
-class addBeam(bpy.types.Operator):
+
+class addBeam(Operator):
     bl_idname = "mesh.add_beam"
-    bl_description = "Beam Builder"
     bl_label = "Beam Builder"
+    bl_description = "Create beam meshes of various profiles"
     bl_options = {'REGISTER', 'UNDO'}
 
-    Type = EnumProperty(items=(
-        ('0', "Box", "Square Beam"),
-        ("1", "U", "U Beam"),
-        ("2", "C", "C Beam"),
-        ("3", "L", "L Beam"),
-        ("4", "I", "T Beam"),
-        ("5", "T", "I Beam")
-    ),
-        description="Beam form.")
+    Type = EnumProperty(
+            items=(
+            ('0', "Box Profile", "Square Beam"),
+            ("1", "U Profile", "U Profile Beam"),
+            ("2", "C Profile", "C Profile Beam"),
+            ("3", "L Profile", "L Profile Beam"),
+            ("4", "I Profile", "I Profile Beam"),
+            ("5", "T Profile", "T Profile Beam")
+            ),
+            description="Beam form"
+            )
+    beamZ = FloatProperty(
+            name="Height",
+            min=0.01, max=100,
+            default=1
+            )
+    beamX = FloatProperty(
+            name="Width",
+            min=0.01, max=100,
+            default=.5
+            )
+    beamY = FloatProperty(
+            name="Depth",
+            min=0.01,
+            max=100,
+            default=2
+            )
+    beamW = FloatProperty(
+            name="Thickness",
+            min=0.01, max=1,
+            default=0.1
+            )
+    edgeA = IntProperty(
+            name="Taper",
+            min=0, max=100,
+            default=0,
+            description="Angle beam edges"
+            )
+    Cursor = BoolProperty(
+            name="Use 3D Cursor",
+            default=False,
+            description="Draw the beam where the 3D Cursor is"
+            )
 
-    beamZ = FloatProperty(name="Height", min=0.01, max=100, default=1)
-    beamX = FloatProperty(name="Width", min=0.01, max=100, default=.5)
-    beamY = FloatProperty(name="Depth", min=0.01, max=100, default=2)
-    beamW = FloatProperty(name="Thickness", min=0.01, max=1, default=0.1)
-
-    edgeA = IntProperty(name="Taper", min=0, max=100, default=0, description="Angle beam edges.")
-
-    ########################################
     def draw(self, context):
         layout = self.layout
 
         box = layout.box()
-        row = box.row()
-        row.prop(self, 'Type', text='')
+        split = box.split(percentage=0.85, align=True)
+        split.prop(self, "Type", text="")
+        split.prop(self, "Cursor", text="", icon="CURSOR")
 
-        box.prop(self, 'beamZ')
-        box.prop(self, 'beamX')
-        box.prop(self, 'beamY')
-        box.prop(self, 'beamW')
+        box.prop(self, "beamZ")
+        box.prop(self, "beamX")
+        box.prop(self, "beamY")
+        box.prop(self, "beamW")
 
         if self.Type != '0':
-            box.prop(self, 'edgeA')
+            box.prop(self, "edgeA")
 
-    ########################################
     def execute(self, context):
         if bpy.context.mode == "OBJECT":
             addBeamObj(self, context)
             return {'FINISHED'}
-        else:
-            self.report({'WARNING'}, "Option only valid in Object mode")
-            return {'CANCELLED'}
+
+        self.report({'WARNING'}, "Option only valid in Object mode")
+        return {'CANCELLED'}

@@ -1049,6 +1049,13 @@ PyDoc_STRVAR(bpy_bmesh_from_mesh_doc,
 "   :type use_shape_key: boolean\n"
 "   :arg shape_key_index: The shape key index to use.\n"
 "   :type shape_key_index: int\n"
+"\n"
+"   .. note::\n"
+"\n"
+"      Multiple calls can be used to join multiple meshes.\n"
+"\n"
+"      Custom-data layers are only copied from ``mesh`` on initialization.\n"
+"      Further calls will copy custom-data to matching layers, layers missing on the target mesh wont be added.\n"
 );
 static PyObject *bpy_bmesh_from_mesh(BPy_BMesh *self, PyObject *args, PyObject *kw)
 {
@@ -2233,7 +2240,7 @@ static PyObject *bpy_bmfaceseq_new(BPy_BMElemSeq *self, PyObject *args)
 		}
 
 		/* check if the face exists */
-		if (BM_face_exists(vert_array, vert_seq_len, NULL)) {
+		if (BM_face_exists(vert_array, vert_seq_len) != NULL) {
 			PyErr_SetString(PyExc_ValueError,
 			                "faces.new(verts): face already exists");
 			goto cleanup;
@@ -2426,7 +2433,8 @@ static PyObject *bpy_bmfaceseq_get__method(BPy_BMElemSeq *self, PyObject *args)
 			return NULL;
 		}
 
-		if (BM_face_exists(vert_array, vert_seq_len, &f)) {
+		f = BM_face_exists(vert_array, vert_seq_len);
+		if (f != NULL) {
 			ret = BPy_BMFace_CreatePyObject(bm, f);
 		}
 		else {

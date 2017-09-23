@@ -21,8 +21,8 @@
 bl_info = {
     "name": "Wavefront OBJ format",
     "author": "Campbell Barton, Bastien Montagne",
-    "version": (2, 3, 1),
-    "blender": (2, 77, 0),
+    "version": (2, 3, 6),
+    "blender": (2, 78, 0),
     "location": "File > Import-Export",
     "description": "Import-Export OBJ, Import OBJ mesh, UV's, materials and textures",
     "warning": "",
@@ -139,6 +139,7 @@ class ImportOBJ(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
                                         from_up=self.axis_up,
                                         ).to_4x4()
         keywords["global_matrix"] = global_matrix
+        keywords["use_cycles"] = (context.scene.render.engine == 'CYCLES')
 
         if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
             import os
@@ -201,8 +202,13 @@ class ExportOBJ(bpy.types.Operator, ExportHelper, IOOBJOrientationHelper):
     # object group
     use_mesh_modifiers = BoolProperty(
             name="Apply Modifiers",
-            description="Apply modifiers (preview resolution)",
+            description="Apply modifiers",
             default=True,
+            )
+    use_mesh_modifiers_render = BoolProperty(
+            name="Use Modifiers Render Settings",
+            description="Use render settings when applying modifiers to mesh objects",
+            default=False,
             )
 
     # extra data group
@@ -314,18 +320,27 @@ def menu_func_export(self, context):
     self.layout.operator(ExportOBJ.bl_idname, text="Wavefront (.obj)")
 
 
+classes = (
+    ImportOBJ,
+    ExportOBJ,
+)
+
+
 def register():
-    bpy.utils.register_module(__name__)
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
     bpy.types.INFO_MT_file_import.append(menu_func_import)
     bpy.types.INFO_MT_file_export.append(menu_func_export)
 
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
-
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
+
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
+
 
 if __name__ == "__main__":
     register()

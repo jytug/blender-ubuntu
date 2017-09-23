@@ -1,16 +1,16 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 2.78 (sub 0) (b'2c19ddf')\n"
+"Project-Id-Version: Blender 2.79 (sub 0) (b'6e7d9621180')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-26 12:09:58\n"
-"PO-Revision-Date: 2015-05-10 14:41+0100\n"
-"Last-Translator: Piotr Arlukowicz <piotao@polskikursblendera.pl>\n"
+"POT-Creation-Date: 2017-08-17 15:17:11\n"
+"PO-Revision-Date: 2017-08-07 12:49+0200\n"
+"Last-Translator: Mikołaj Juda <mikolaj.juda@gmail.com>\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.8.7.1\n"
 "Language-Team: Polish Blender Course <piotao@polskikursblendera.pl>"
 
 
@@ -2408,14 +2408,6 @@ msgid "View and edit images and UV Maps"
 msgstr "Wyświetlaj oraz edytuj obrazy oraz mapy UV"
 
 
-msgid "Video Sequence Editor"
-msgstr "Edytor Sekwencji Wideo"
-
-
-msgid "Video editing tools"
-msgstr "Narzędzia do edycji wideo"
-
-
 msgid "Movie Clip Editor"
 msgstr "Edytor klipów filmowych"
 
@@ -2424,12 +2416,12 @@ msgid "Motion tracking tools"
 msgstr "Narzędzia do śledzenia ruchu"
 
 
-msgid "Text Editor"
-msgstr "Edytor tekstu"
+msgid "Video Sequence Editor"
+msgstr "Edytor Sekwencji Wideo"
 
 
-msgid "Edit scripts and in-file documentation"
-msgstr "Edytuj skrypty oraz dokumentację 'w pliku'"
+msgid "Video editing tools"
+msgstr "Narzędzia do edycji wideo"
 
 
 msgid "Node Editor"
@@ -2438,6 +2430,14 @@ msgstr "Edytor nodów"
 
 msgid "Editor for node-based shading and compositing tools"
 msgstr "Edytor z narzędziami do nieliniowego cieniowania i kompozycji"
+
+
+msgid "Text Editor"
+msgstr "Edytor tekstu"
+
+
+msgid "Edit scripts and in-file documentation"
+msgstr "Edytuj skrypty oraz dokumentację 'w pliku'"
 
 
 msgid "Logic Editor"
@@ -3008,48 +3008,24 @@ msgid "Blendfile Data"
 msgstr "Dane pliku blend"
 
 
-msgid "Main data structure representing a .blend file and all its datablocks"
-msgstr "Główna struktura danych reprezentująca plik .blend oraz wszystkie jego bloki danych"
-
-
 msgid "Actions"
 msgstr "Akcje"
-
-
-msgid "Action datablocks"
-msgstr "Bloki danych dla akcji"
 
 
 msgid "Armatures"
 msgstr "Szkielety"
 
 
-msgid "Armature datablocks"
-msgstr "Bloki danych dla szkieletów"
-
-
 msgid "Brushes"
 msgstr "Pędzle"
-
-
-msgid "Brush datablocks"
-msgstr "Bloki danych dla pędzli"
 
 
 msgid "Cameras"
 msgstr "Kamery"
 
 
-msgid "Camera datablocks"
-msgstr "Bloki danych dla kamer"
-
-
 msgid "Curves"
 msgstr "Krzywe"
-
-
-msgid "Curve datablocks"
-msgstr "Bloki danych dla krzywych"
 
 
 msgid "Filename"
@@ -3064,32 +3040,16 @@ msgid "Vector Fonts"
 msgstr "Czcionki wektorowe"
 
 
-msgid "Vector font datablocks"
-msgstr "Bloki danych dla czcionek wektorowych"
-
-
 msgid "Grease Pencil"
 msgstr "Szkicownik"
-
-
-msgid "Grease Pencil datablocks"
-msgstr "Bloki danych dla szkicownika"
 
 
 msgid "Groups"
 msgstr "Grupy"
 
 
-msgid "Group datablocks"
-msgstr "Bloki danych dla grup"
-
-
 msgid "Images"
 msgstr "Obrazy"
-
-
-msgid "Image datablocks"
-msgstr "Bloki danych dla obrazów"
 
 
 msgid "File Has Unsaved Changes"
@@ -3112,152 +3072,76 @@ msgid "Lamps"
 msgstr "Lampy"
 
 
-msgid "Lamp datablocks"
-msgstr "Bloki danych dla lamp"
-
-
 msgid "Lattices"
 msgstr "Kraty"
-
-
-msgid "Lattice datablocks"
-msgstr "Bloki danych dla krat"
 
 
 msgid "Libraries"
 msgstr "Biblioteki"
 
 
-msgid "Library datablocks"
-msgstr "Bloki danych dla bibliotek"
-
-
 msgid "Line Styles"
 msgstr "Style linii"
-
-
-msgid "Line Style datablocks"
-msgstr "Bloki danych dla stylów linii"
 
 
 msgid "Masks"
 msgstr "Maski"
 
 
-msgid "Masks datablocks"
-msgstr "Bloki danych dla masek"
-
-
 msgid "Materials"
 msgstr "Materiały"
-
-
-msgid "Material datablocks"
-msgstr "Bloki danych dla materiałów"
 
 
 msgid "Meshes"
 msgstr "Siatki"
 
 
-msgid "Mesh datablocks"
-msgstr "Bloki danych dla siatek"
-
-
 msgid "Metaballs"
 msgstr "Metakule"
-
-
-msgid "Metaball datablocks"
-msgstr "Bloki danych dla metakuli"
 
 
 msgid "Movie Clips"
 msgstr "Klipy filmowe"
 
 
-msgid "Movie Clip datablocks"
-msgstr "Bloki danych dla klipów filmowych"
-
-
 msgid "Node Groups"
 msgstr "Grupy nodów"
-
-
-msgid "Node group datablocks"
-msgstr "Bloki danych dla grup nodów"
 
 
 msgid "Objects"
 msgstr "Obiekty"
 
 
-msgid "Object datablocks"
-msgstr "Bloki danych dla obiektów"
-
-
 msgid "Particles"
 msgstr "Cząstki"
-
-
-msgid "Particle datablocks"
-msgstr "Bloki danych dla cząstek"
 
 
 msgid "Scenes"
 msgstr "Sceny"
 
 
-msgid "Scene datablocks"
-msgstr "Bloki danych dla scen"
-
-
 msgid "Screens"
 msgstr "Ekrany"
-
-
-msgid "Screen datablocks"
-msgstr "Bloki danych dla ekranów"
 
 
 msgid "Shape Keys"
 msgstr "Kształty"
 
 
-msgid "Shape Key datablocks"
-msgstr "Bloki danych dla kształtów"
-
-
 msgid "Sounds"
 msgstr "Dźwięki"
-
-
-msgid "Sound datablocks"
-msgstr "Bloki danych dla dźwięków"
 
 
 msgid "Speakers"
 msgstr "Głośniki"
 
 
-msgid "Speaker datablocks"
-msgstr "Bloki danych dla głośników"
-
-
 msgid "Texts"
 msgstr "Teksty"
 
 
-msgid "Text datablocks"
-msgstr "Bloki danych dla tekstów"
-
-
 msgid "Textures"
 msgstr "Tekstury"
-
-
-msgid "Texture datablocks"
-msgstr "Bloki danych dla tekstur"
 
 
 msgid "Use Autopack"
@@ -3272,24 +3156,12 @@ msgid "Version"
 msgstr "Wersja"
 
 
-msgid "Version of the blender the .blend was saved with"
-msgstr "Wersja Blendera, która zapisała plik .blend "
-
-
 msgid "Window Managers"
 msgstr "Managery okien"
 
 
-msgid "Window manager datablocks"
-msgstr "Bloki danych dla managerów okien"
-
-
 msgid "Worlds"
 msgstr "Światy"
-
-
-msgid "World datablocks"
-msgstr "Bloki danych dla światów"
 
 
 msgid "Blender RNA"
@@ -7225,10 +7097,6 @@ msgid "Safe area for general elements in a different aspect ratio"
 msgstr "Bezpieczny obszar dla ogólnie pojmowanych elementów o różnych proporcjach"
 
 
-msgid "Title Safe margins"
-msgstr "Bezpieczne marginesy tytułu"
-
-
 msgid "Safe area for text and graphics"
 msgstr "Bezpiecznie marginesy dla tekstu i grafiki"
 
@@ -7371,10 +7239,6 @@ msgstr "Pokaż wizualizację metakul związanych z animacją"
 
 msgid "Include Missing NLA"
 msgstr "Pokaż brakujące NLA"
-
-
-msgid "Include animation data blocks with no NLA data (NLA editor only)"
-msgstr "Pokaż bloki danych animacji bez danych NLA (tylko w edytorze NLA)"
 
 
 msgid "Display Modifier Data"
@@ -7581,76 +7445,8 @@ msgid "ID-block that the specific property used can be found from (id_type prope
 msgstr "Blok ID dla użytej własności (wcześniej trzeba ustawić id_type)"
 
 
-msgid "ID Type"
-msgstr "Typ ID"
-
-
 msgid "Type of ID-block that can be used"
 msgstr "Rodzaj bloku ID który może być użyty"
-
-
-msgid "Brush"
-msgstr "Pędzel"
-
-
-msgid "Font"
-msgstr "Czcionka"
-
-
-msgid "Group"
-msgstr "Grupa"
-
-
-msgid "Key"
-msgstr "Klucz"
-
-
-msgid "Lamp"
-msgstr "Lampa"
-
-
-msgid "Library"
-msgstr "Biblioteka"
-
-
-msgid "Line Style"
-msgstr "Styl linii"
-
-
-msgid "Lattice"
-msgstr "Kratownica"
-
-
-msgid "Mask"
-msgstr "Maska"
-
-
-msgid "Paint Curve"
-msgstr "Krzywa graficzna"
-
-
-msgid "Palette"
-msgstr "Paleta"
-
-
-msgid "Particle"
-msgstr "Cząstka"
-
-
-msgid "Speaker"
-msgstr "Głośnik"
-
-
-msgid "Texture"
-msgstr "Tekstura"
-
-
-msgid "Window Manager"
-msgstr "Zarządca okien"
-
-
-msgid "World"
-msgstr "Świat"
 
 
 msgid "Transform Space"
@@ -7803,6 +7599,10 @@ msgstr "Ściany"
 
 msgid "Duplicate child objects on all faces"
 msgstr "Duplikuj obiekty potomne na wszystkich ścianach"
+
+
+msgid "Group"
+msgstr "Grupa"
 
 
 msgid "Enable group instancing"
@@ -8007,6 +7807,10 @@ msgstr "Przeszkoda"
 
 msgid "Reflect Only"
 msgstr "Tylko odbicie"
+
+
+msgid "Texture"
+msgstr "Tekstura"
 
 
 msgid "Edit Bone"
@@ -8577,20 +8381,12 @@ msgid "DNxHD"
 msgstr "DNxHD"
 
 
-msgid "Output file format"
-msgstr "Format pliku wynikowego"
-
-
 msgid "MPEG-4"
 msgstr "MPEG-4"
 
 
 msgid "Quicktime"
 msgstr "Quicktime"
-
-
-msgid "Xvid"
-msgstr "Xvid"
 
 
 msgid "Ogg"
@@ -8603,14 +8399,6 @@ msgstr "Matroska"
 
 msgid "Flash"
 msgstr "Flash"
-
-
-msgid "GOP Size"
-msgstr "Rozmiar GOP (Długość grupy obrazów w klatkach)"
-
-
-msgid "Distance between key frames"
-msgstr "Odległość pomiędzy klatkami kluczowymi"
 
 
 msgid "Max Rate"
@@ -9045,16 +8833,117 @@ msgid "Scaling (in time) of the noise"
 msgstr "Skalowanie (w czasie) szumu"
 
 
+msgid "Shading"
+msgstr "Cieniowanie"
+
+
+msgid "Particle"
+msgstr "Cząstka"
+
+
+msgid "Line Style"
+msgstr "Styl linii"
+
+
+msgid "Brush"
+msgstr "Pędzel"
+
+
+msgid "Library"
+msgstr "Biblioteka"
+
+
+msgid "Mask"
+msgstr "Maska"
+
+
+msgid "Paint Curve"
+msgstr "Krzywa graficzna"
+
+
+msgid "Rotate"
+msgstr "Obróć"
+
+
+msgid "Font"
+msgstr "Czcionka"
+
+
+msgid "Flat"
+msgstr "Płaskie"
+
+
+msgid "Lattice"
+msgstr "Kratownica"
+
+
+msgid "Lamp"
+msgstr "Lampa"
+
+
+msgid "Speaker"
+msgstr "Głośnik"
+
+
+msgid "World"
+msgstr "Świat"
+
+
+msgid "Window Manager"
+msgstr "Zarządca okien"
+
+
+msgid "ID Type"
+msgstr "Typ ID"
+
+
+msgid "Delete"
+msgstr "Usuń"
+
+
+msgid "Key"
+msgstr "Klucz"
+
+
+msgid "Edit"
+msgstr "Edytuj"
+
+
 msgid "GPencil"
 msgstr "Szkicownik"
+
+
+msgid "Smooth Shading"
+msgstr "Gładkie Cieniowanie"
 
 
 msgid "Active Track"
 msgstr "Aktywna Ścieżka"
 
 
+msgid "Translate"
+msgstr "Przesuń"
+
+
+msgctxt "Operator"
+msgid "Duplicate"
+msgstr "Duplikuj"
+
+
+msgid "Translate (move) selected items"
+msgstr "Przesuń zaznaczone obiekty"
+
+
+msgid "History"
+msgstr "Historia"
+
+
 msgid "Null"
 msgstr "Żaden"
+
+
+msgid "Flat/Smooth"
+msgstr "Płaskie/Gładkie"
 
 
 msgid "Add a constraint to the active object"
@@ -9063,6 +8952,26 @@ msgstr "Dodaj ogranicznik do aktywnego obiektu"
 
 msgid "Clear all the constraints for the active Object only"
 msgstr "Usuń ograniczniki tylko z aktywnego obiektu"
+
+
+msgid "Delete selected objects"
+msgstr "Usuń zaznaczone obiekty"
+
+
+msgid "Duplicate selected objects and move them"
+msgstr "Duplikuj zaznaczone obiekty i przesuń je"
+
+
+msgid "Rotate selected items"
+msgstr "Obróć zaznaczone obiekty"
+
+
+msgid "Palette"
+msgstr "Paleta"
+
+
+msgid "Shading:"
+msgstr "Cieniowanie:"
 
 
 msgid "Speed:"
@@ -9691,10 +9600,6 @@ msgstr "Kanały są widoczne w Edytorze Krzywych-F dla edycji"
 
 msgid "Make channels grouped under this channel visible"
 msgstr "Uwidocznij kanału zgrupowane pod tym kanałem"
-
-
-msgid "NLA Track is the only one evaluated in this Animation Data block, with all others muted"
-msgstr "Ścieżka NLA jest jedyną ewaluowaną w tym Bloku Danych Animacji, we wszystkich innych jest wyciszona"
 
 
 msgid "Editability of keyframes for this channel"
@@ -10337,6 +10242,14 @@ msgid "No active frame to delete"
 msgstr "Brak aktywnej klatki do usunięcia"
 
 
+msgid "Failed to find Grease Pencil data to draw into"
+msgstr "Nie udało się odnaleźć danych szkicownika w których można zapisać"
+
+
+msgid "Active region not set"
+msgstr "Nie ustawiony aktywny region"
+
+
 msgid "Grease Pencil: Drawing/erasing stroke... Release to end stroke"
 msgstr "Szkicownik: Rysowanie/wymazywanie kreski... Puść by zakończyć kreskę"
 
@@ -10347,14 +10260,6 @@ msgstr "Nie mogę narysować kreski"
 
 msgid "Grease Pencil operator is already active"
 msgstr "Operator Szkicownik jest już aktywny"
-
-
-msgid "Failed to find Grease Pencil data to draw into"
-msgstr "Nie udało się odnaleźć danych szkicownika w których można zapisać"
-
-
-msgid "Active region not set"
-msgstr "Nie ustawiony aktywny region"
 
 
 msgid "No active area"
@@ -10476,10 +10381,6 @@ msgstr "Instrukcja Obsługi online"
 msgctxt "Operator"
 msgid "Online Python Reference"
 msgstr "Referencja Python online"
-
-
-msgid "DoButton pointer error: %s"
-msgstr "DoButton pointer error: %s"
 
 
 msgid "* Redo Unsupported *"
@@ -10702,24 +10603,12 @@ msgid "Anim Player"
 msgstr "Odtwarzacz Animacji"
 
 
-msgid "Indirect library datablock, cannot change"
-msgstr "Pośredni blok danych biblioteki, nie mogę zmieniać"
-
-
-msgid "Direct linked library datablock, click to make local"
-msgstr "Bezpośrednio powiązany blok danych, kliknij by zmienić na lokalny"
-
-
 msgid "Display number of users of this data (click to make a single-user copy)"
 msgstr "Wyświetl liczbę użytkowników tych danych (kliknij by utworzyć unikalną kopię)"
 
 
 msgid "Packed File, click to unpack"
 msgstr "Plik spakowany, kliknij by rozpakować"
-
-
-msgid "Unlink datablock (Shift + Click to set users to zero, data will then not be saved)"
-msgstr "Odwiąż blok danych (Shift + klik by ustawić liczbę użytkowników na zero, dane nie zostaną zachowane)"
 
 
 msgid "Convert virtual modifier to a real modifier"
@@ -11570,10 +11459,6 @@ msgid "No active image found in material \"%s\" (%d) for object \"%s\""
 msgstr "Nie odnaleziono aktywnego obrazu w materiale \"%s\" (%d) dla obiektu \"%s\""
 
 
-msgid "No active image found in material (%d) for object \"%s\""
-msgstr "Nie odnaleziono aktywnego obrazu w materiale (%d) dla obiektu \"%s\""
-
-
 msgid "Object \"%s\" is not a mesh or can't be converted to a mesh (Curve, Text, Surface or Metaball)"
 msgstr "Obiekt \"%s\" nie jest siatką lub nie może być przekształcony na siatkę (Krzywa, Tekst, Powierzchnia lub Metaball)"
 
@@ -12302,20 +12187,12 @@ msgid "Failed to create OpenGL off-screen buffer, %s"
 msgstr "Utworzenie OpenGL off-screen buffer nie powiodło się, %s"
 
 
-msgid "Skipping existing frame \"%s\""
-msgstr "Pomijam istniejącą klatkę \"%s\""
-
-
-msgid "Appended frame: %d"
-msgstr "Dołączona klatka: %d"
-
-
-msgid "Saved file: %s"
-msgstr "Zapisany plik: %s"
-
-
 msgid "Write error: cannot save %s"
 msgstr "Błąd zapisu: Nie można zapisać %s"
+
+
+msgid "Skipping existing frame \"%s\""
+msgstr "Pomijam istniejącą klatkę \"%s\""
 
 
 msgid "Unable to remove material slot in edit mode"
@@ -12424,6 +12301,14 @@ msgstr "Spodziewany region view3d oraz editcurve"
 
 msgid "Screencast job stopped"
 msgstr "Wstrzymano zadanie nagrywania ekranu"
+
+
+msgid "Appended frame: %d"
+msgstr "Dołączona klatka: %d"
+
+
+msgid "Saved file: %s"
+msgstr "Zapisany plik: %s"
 
 
 msgid "Image requires 4 color channels to paint: %s"
@@ -12552,10 +12437,6 @@ msgstr "Nie wprowadzone"
 
 msgid "Not implemented for Masks"
 msgstr "Nie wprowadzone dla Masek"
-
-
-msgid "Follow context or keep fixed datablock displayed"
-msgstr "Podążaj za kontekstem lub zachowaj wyświetlany blok danych"
 
 
 msgid "Cannot activate a file selector, one already open"
@@ -13279,10 +13160,6 @@ msgid "Evaluation"
 msgstr "Ewaluacja"
 
 
-msgid "No active AnimData block to use (select a datablock expander first or set the appropriate flags on an AnimData block)"
-msgstr "Brak aktywnego AnimData block możliwego do użycia (zaznacz najpierw blok danych lub ustaw odpowiednie flagi na AnimData block)"
-
-
 msgid "Internal Error - AnimData block is not valid"
 msgstr "Błąd wewnętrzny - AnimData block jest nieprawidłowy"
 
@@ -13333,10 +13210,6 @@ msgstr "Potrzebna przynajmniej para sąsiadujących pasków z przerwą między n
 
 msgid "Cannot swap selected strips as they will not be able to fit in their new places"
 msgstr "Nie można zamienić zaznaczonych pasków ponieważ nie będą pasowały w swoich nowych miejscach"
-
-
-msgid "Action '%s' does not specify what datablocks it can be used on (try setting the 'ID Root Type' setting from the Datablocks Editor for this action to avoid future problems)"
-msgstr "Akcja '%s' nie określa w jakim bloku danych może być użyta (spróbuj ustawić opcje 'ID Root Type' z Datablocks Editor na tę akcję aby uniknąć problemów w przyszłości)"
 
 
 msgid "Could not add action '%s' as it cannot be used relative to ID-blocks of type '%s'"
@@ -13565,22 +13438,6 @@ msgstr "Wyłącz ten pass z Combined"
 
 msgid "Restrict/Allow editing of strokes and keyframes in this layer"
 msgstr "Ogranicz/Pozwól edytować kreski i klatki kluczowe w tej warstwie"
-
-
-msgid "Datablock will be retained using a fake user"
-msgstr "Blok danych będzie zachowany przy użyciu sztucznego użytkownika"
-
-
-msgid "Datablock has no users and will be deleted"
-msgstr "Blok danych nie posiada użytkowników i zostanie usunięty"
-
-
-msgid "Number of users of this datablock"
-msgstr "Liczba użytkowników tego bloku danych"
-
-
-msgid "Datablock has a 'fake' user which will keep it in the file even if nothing else uses it"
-msgstr "Blok danych ma 'sztucznego' użytkownika, co spowoduje zachowanie go, nawet przy braku innych użytkowników"
 
 
 msgid "Library path '%s' does not exist, correct this before saving"
@@ -13901,14 +13758,6 @@ msgid "Edge weight used by Bevel modifier"
 msgstr "Waga krawędzi użyta przez modyfikator Skos"
 
 
-msgid "Weight used by SubSurf modifier"
-msgstr "Waga użyta przez modyfikator SubSurf"
-
-
-msgid "Weight used for SoftBody Goal"
-msgstr "Waga użyta dla Celu SoftBody"
-
-
 msgid "Radius of curve control points"
 msgstr "Promień punktów kontrolnych krzywej"
 
@@ -14011,10 +13860,6 @@ msgstr "klatkaż: %.2f"
 
 msgid "fps: %i"
 msgstr "klatkaż: %i"
-
-
-msgid "View offset is locked"
-msgstr "Przesunięcie widoku zablokowane"
 
 
 msgid "Depth too large"
@@ -14528,10 +14373,6 @@ msgstr "Obiekt ma niejednolitą skalę, odwijanie (unwrap) będzie używało nie
 
 msgid "Object has negative scale, unwrap will operate on a non-flipped version of the mesh"
 msgstr "Obiekt posiada ujemną skalę, odwijanie (unwrap) będzie używało nie odwróconej wersji siatki"
-
-
-msgid "Subsurf modifier needs to be first to work with unwrap"
-msgstr "Modyfikator subsurf musi być pierwszy by działał z odwijaniem (unwrap)"
 
 
 msgid "Cannot open file: %s"
@@ -15240,6 +15081,10 @@ msgid "Cannot execute boolean operation"
 msgstr "Operacja boolean nie powiodła się"
 
 
+msgid "Enable 'Auto Smooth' option in mesh settings"
+msgstr "Aktywuj opcję 'Auto Smooth' w ustawieniach siatki"
+
+
 msgid "You are using a rather high poly as source or destination, computation might be slow"
 msgstr "Używasz źródła lub celu o dość dużej gęstości, spodziewany długi czas kalkulacji"
 
@@ -15294,10 +15139,6 @@ msgstr "Brak danych bindowania"
 
 msgid "Invalid target settings"
 msgstr "Nieprawidłowe ustawienia celu"
-
-
-msgid "Enable 'Auto Smooth' option in mesh settings"
-msgstr "Aktywuj opcję 'Auto Smooth' w ustawieniach siatki"
 
 
 msgid "Hull error"
@@ -15360,22 +15201,6 @@ msgid "ID value"
 msgstr "Wartość ID"
 
 
-msgid "Reflect"
-msgstr "Odbicia"
-
-
-msgid "Refract"
-msgstr "Refrakcja"
-
-
-msgid "IndexOB"
-msgstr "IndexOB"
-
-
-msgid "IndexMA"
-msgstr "IndexMA"
-
-
 msgid "Dispersion"
 msgstr "dyspersja"
 
@@ -15426,10 +15251,6 @@ msgstr "Cr"
 
 msgid "Val"
 msgstr "Val"
-
-
-msgid "Missing Datablock"
-msgstr "Brakujący blok danych"
 
 
 msgid "Temperature"

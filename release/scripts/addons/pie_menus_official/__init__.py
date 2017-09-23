@@ -28,15 +28,16 @@ from bpy.types import (
 
 
 bl_info = {
-    'name': 'UI Pie Menu Official',
-    'author': 'Antony Riakiotakis, Sebastian Koenig',
-    'version': (1, 1, 4),
-    'blender': (2, 7, 7),
-    'description': 'Individual Pie Menu Activation List',
-    'location': 'Addons Preferences',
-    'warning': '',
-    'wiki_url': 'https://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/3D_interaction/Pie_Menu',
-    'category': 'Pie Menu'
+    "name": "UI Pie Menu Official",
+    "author": "Antony Riakiotakis, Sebastian Koenig",
+    "version": (1, 1, 5),
+    "blender": (2, 7, 7),
+    "description": "Individual Pie Menu Activation List",
+    "location": "Addons Preferences",
+    "warning": "",
+    "wiki_url": "https://wiki.blender.org/index.php/Extensions:2.6/Py/"
+                "Scripts/3D_interaction/Pie_Menu",
+    "category": "Pie Menu"
     }
 
 
@@ -105,6 +106,7 @@ def unregister_submodule(mod):
                 if name in prefs:
                     del prefs[name]
 
+
 class UIToolsPreferences(AddonPreferences):
     bl_idname = __name__
 
@@ -124,7 +126,6 @@ class UIToolsPreferences(AddonPreferences):
             row = col.row()
             sub = row.row()
             sub.context_pointer_set('addon_prefs', self)
-            sub.alignment = 'LEFT'
             op = sub.operator('wm.context_toggle', text='', icon=icon,
                               emboss=False)
             op.data_path = 'addon_prefs.show_expanded_' + mod_name
@@ -145,10 +146,12 @@ class UIToolsPreferences(AddonPreferences):
                     split = col.row().split(percentage=0.15)
                     split.label('Location:')
                     split.label(info['location'])
-                if info.get('author') and info.get('author') != 'chromoly':
+                """
+                if info.get('author'):
                     split = col.row().split(percentage=0.15)
                     split.label('Author:')
                     split.label(info['author'])
+                """
                 if info.get('version'):
                     split = col.row().split(percentage=0.15)
                     split.label('Version:')
@@ -180,12 +183,13 @@ class UIToolsPreferences(AddonPreferences):
                         try:
                             prefs.draw(context)
                         except:
+                            import traceback
                             traceback.print_exc()
                             box.label(text='Error (see console)', icon='ERROR')
                         del prefs.layout
 
         row = layout.row()
-        row.label("End of Pie Menu Activations")
+        row.label(text="End of Pie Menu Activations", icon="FILE_PARENT")
 
 
 for mod in sub_modules:
@@ -194,20 +198,20 @@ for mod in sub_modules:
 
     def gen_update(mod):
         def update(self, context):
-            enabled =  getattr(self, 'use_' + mod.__name__.split('.')[-1])
+            enabled = getattr(self, 'use_' + mod.__name__.split('.')[-1])
             if enabled:
                 register_submodule(mod)
             else:
                 unregister_submodule(mod)
-            mod.__addon_enabled__  = enabled
+            mod.__addon_enabled__ = enabled
         return update
 
     prop = BoolProperty(
-        name=info['name'],
-        description=info.get('description', ''),
-        update=gen_update(mod),
-        default=True,
-    )
+            name=info['name'],
+            description=info.get('description', ''),
+            update=gen_update(mod),
+            default=True,
+            )
 
     setattr(UIToolsPreferences, 'use_' + mod_name, prop)
     prop = BoolProperty()
@@ -238,6 +242,7 @@ def unregister():
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
 
 if __name__ == "__main__":
     register()
