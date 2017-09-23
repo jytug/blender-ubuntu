@@ -21,7 +21,7 @@
 bl_info = {
     "name": "Copy Settings",
     "author": "Bastien Montagne",
-    "version": (0, 1, 5),
+    "version": (0, 1, 6),
     "blender": (2, 65, 9),
     "location": "Render buttons (Properties window)",
     "description": "Allows to copy a selection of render settings "
@@ -59,19 +59,19 @@ from bpy.props import (
 # Global properties for the script, for UI (as there’s no way to let them in the operator…).
 ########################################################################################################################
 
-class RenderCopySettingsScene(bpy.types.PropertyGroup):
+class RenderCopySettingsDataScene(bpy.types.PropertyGroup):
     allowed = BoolProperty(default=True)
 
 
-class RenderCopySettingsSetting(bpy.types.PropertyGroup):
+class RenderCopySettingsDataSetting(bpy.types.PropertyGroup):
     strid = StringProperty(default="")
     copy = BoolProperty(default=False)
 
 
-class RenderCopySettings(bpy.types.PropertyGroup):
+class RenderCopySettingsData(bpy.types.PropertyGroup):
     # XXX: The consistency of this collection is delegated to the UI code.
     #      It should only contain one element for each render setting.
-    affected_settings = CollectionProperty(type=RenderCopySettingsSetting,
+    affected_settings = CollectionProperty(type=RenderCopySettingsDataSetting,
                                            name="Affected Settings",
                                            description="The list of all available render settings")
     # XXX Unused, but needed for template_list…
@@ -79,7 +79,7 @@ class RenderCopySettings(bpy.types.PropertyGroup):
 
     # XXX: The consistency of this collection is delegated to the UI code.
     #      It should only contain one element for each scene.
-    allowed_scenes = CollectionProperty(type=RenderCopySettingsScene,
+    allowed_scenes = CollectionProperty(type=RenderCopySettingsDataScene,
                                         name="Allowed Scenes",
                                         description="The list all scenes in the file")
     # XXX Unused, but needed for template_list…
@@ -90,26 +90,27 @@ class RenderCopySettings(bpy.types.PropertyGroup):
                                   default="")
 
 
-def register():
-    # Register properties.
-    bpy.utils.register_class(RenderCopySettingsScene)
-    bpy.utils.register_class(RenderCopySettingsSetting)
-    bpy.utils.register_class(RenderCopySettings)
-    bpy.types.Scene.render_copy_settings = PointerProperty(type=RenderCopySettings)
+classes = (
+    RenderCopySettingsDataScene,
+    RenderCopySettingsDataSetting,
+    RenderCopySettingsData,
+) + operator.classes + panel.classes
 
-    bpy.utils.register_module(__name__)
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+    bpy.types.Scene.render_copy_settings = PointerProperty(type=RenderCopySettingsData)
+
     bpy.app.translations.register(__name__, translations.translations_dict)
 
 
 def unregister():
-    # Unregister properties.
-    bpy.utils.unregister_class(RenderCopySettingsScene)
-    bpy.utils.unregister_class(RenderCopySettingsSetting)
-    bpy.utils.unregister_class(RenderCopySettings)
-    del bpy.types.Scene.render_copy_settings
-
-    bpy.utils.unregister_module(__name__)
     bpy.app.translations.unregister(__name__)
+
+    del bpy.types.Scene.render_copy_settings
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 2.78 (sub 0) (b'2c19ddf')\n"
+"Project-Id-Version: Blender 2.79 (sub 0) (b'6e7d9621180')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-26 12:09:58\n"
+"POT-Creation-Date: 2017-08-17 15:17:11\n"
 "PO-Revision-Date: 2012-10-31 17:00-0800\n"
 "Last-Translator: Amin Babaeipanah <translate@leomoon.com>\n"
 "Language-Team: LeoMoon Studios <blender@leomoon.com>\n"
@@ -1322,12 +1322,12 @@ msgid "Movie Clip Editor"
 msgstr "ﻢﻠﯿﻓ ﭗﯿﻠﮐ ﺮﮕﺸﯾﺍﺮﯾﻭ"
 
 
-msgid "Text Editor"
-msgstr "ﻦﺘﻣ ﺮﮕﺸﯾﺍﺮﯾﻭ"
-
-
 msgid "Node Editor"
 msgstr "ﻩﺮﮔ ﺮﮕﺸﯾﺍﺮﯾﻭ"
+
+
+msgid "Text Editor"
+msgstr "ﻦﺘﻣ ﺮﮕﺸﯾﺍﺮﯾﻭ"
 
 
 msgid "Logic Editor"
@@ -2907,64 +2907,8 @@ msgid "ID"
 msgstr "ID"
 
 
-msgid "ID Type"
-msgstr "ID ﻉﻮﻧ"
-
-
 msgid "Type of ID-block that can be used"
 msgstr "ﺩﺮﯿﮔ ﺭﺍﺮﻗ ﻩﺩﺎﻔﺘﺳﺍ ﺩﺭﻮﻣ ﺪﻧﺍﻮﺗ ﯽﻣ ﻪﮐ ID ﮎﻮﻠﺑ ﻉﻮﻧ"
-
-
-msgid "Brush"
-msgstr "ﻮﻣ ﻢﻠﻗ"
-
-
-msgid "Font"
-msgstr "ﺖﻧﻮﻓ"
-
-
-msgid "Group"
-msgstr "ﻩﻭﺮﮔ"
-
-
-msgid "Key"
-msgstr "ﺪﯿﻠﮐ"
-
-
-msgid "Lamp"
-msgstr "ﭗﻣﻻ﻿"
-
-
-msgid "Library"
-msgstr "ﻪﻧﺎﺨﺑﺎﺘﮐ"
-
-
-msgid "Lattice"
-msgstr "ﻪﮑﺒﺷ"
-
-
-msgid "Paint Curve"
-msgstr "ﮓﻧﺭ ﯽﻨﺤﻨﻣ"
-
-
-msgid "Particle"
-msgstr "ﻩﺭﺫ"
-
-
-msgid "Speaker"
-msgstr "ﻮﮔﺪﻨﻠﺑ"
-
-
-msgid "Texture"
-msgstr "ﺖﻓﺎﺑ"
-
-
-msgid "Window Manager"
-msgstr "ﻩﺮﺠﻨﭘ ﺖﯾﺮﯾﺪﻣ"
-
-
-msgid "World"
-msgstr "ﻥﺎﻬﺟ"
 
 
 msgid "Driver variable type"
@@ -3013,6 +2957,10 @@ msgstr "ﺎﻫ‌ﻢﯾﺮﻓ"
 
 msgid "Verts"
 msgstr "ﺱﻮﺋﺭ"
+
+
+msgid "Group"
+msgstr "ﻩﻭﺮﮔ"
 
 
 msgid "Brush Settings"
@@ -3171,6 +3119,10 @@ msgid "Vertex Color"
 msgstr "ﺱﺃﺭ ﯼﺎﻫ‌ﻩﻭﺮﮔ"
 
 
+msgid "Texture"
+msgstr "ﺖﻓﺎﺑ"
+
+
 msgid "Is Active"
 msgstr "ﻝﺎﻌﻓ ﯼﺯﺎﺳ ﻪﻨﯾﺮﻗ"
 
@@ -3281,6 +3233,18 @@ msgstr "ﯼﺯﺎﺑ ﺕﺎﻤﯿﻈﻨﺗ"
 
 msgid "MPEG-2"
 msgstr "MPEG-2"
+
+
+msgid "High quality"
+msgstr "ﻻ﻿ﺎﺑ ﺖﯿﻔﯿﮐ ﺎﺑ"
+
+
+msgid "Medium quality"
+msgstr "ﻂﺳﻮﺘﻣ ﺖﯿﻔﯿﮐ ﺎﺑ"
+
+
+msgid "Low quality"
+msgstr "ﻦﯿﯾﺎﭘ ﺖﯿﻔﯿﮐ ﺎﺑ"
 
 
 msgid "Lossless Output"
@@ -3419,6 +3383,10 @@ msgid "Filter BlenderBackup files"
 msgstr "ﺭﺪﻨﻠﺑ ﻞﯾﺎﻓ ﺶﯾﺎﻤﻧ"
 
 
+msgid "Particle"
+msgstr "ﻩﺭﺫ"
+
+
 msgid "Attraction Strength"
 msgstr "ﺕﺭﺪﻗ ﻥﺩﺮﮐ‌ﯽﮑﯾ"
 
@@ -3555,6 +3523,10 @@ msgid "Type of parent relation"
 msgstr "ﺖﯾﺩﻭﺪﺤﻣ ﻉﻮﻧ"
 
 
+msgid "Brush"
+msgstr "ﻮﻣ ﻢﻠﻗ"
+
+
 msgid "Draw Mode"
 msgstr "ﯽﺷﺎﻘﻧ ﺖﻟﺎﺣ"
 
@@ -3631,16 +3603,16 @@ msgid "Is Indirect"
 msgstr "ﺕﻭﺎﻔﺗ"
 
 
+msgid "Library"
+msgstr "ﻪﻧﺎﺨﺑﺎﺘﮐ"
+
+
 msgid "Frame Range"
 msgstr "ﻪﻧﻮﻤﻧ ﺖﻋﺮﺳ"
 
 
 msgid "Convenient groupings of F-Curves"
 msgstr "ﻩﺪﺷ ﺩﻭﺪﺤﻣ ﻥﺍﻮﺨﺘﺳﺍ"
-
-
-msgid "ID Root Type"
-msgstr "ﺮﯿﺴﻣ ﻉﻮﻧ"
 
 
 msgid "Pose Markers"
@@ -3757,6 +3729,10 @@ msgstr "ﺎﺘﻣ ﯼﺎﻫﺭﺍﺰﺑﺍ"
 
 msgid "Normal Weight"
 msgstr "ﻪﻘﻄﻨﻣ ﻉﺎﻔﺗﺭﺍ"
+
+
+msgid "Paint Curve"
+msgstr "ﮓﻧﺭ ﯽﻨﺤﻨﻣ"
 
 
 msgid "Plane Offset"
@@ -4061,6 +4037,10 @@ msgstr "ءﺎﯿﺷﺍ ﯼﺎﻫ‌ﺖﯾﺩﻭﺪﺤﻣ"
 
 msgid "Text on Curve"
 msgstr "ﯽﻨﺤﻨﻣ ﯼﻭﺭ ﺮﺑ ﻦﺘﻣ"
+
+
+msgid "Font"
+msgstr "ﺖﻧﻮﻓ"
 
 
 msgid "Font size"
@@ -4623,18 +4603,6 @@ msgid "Edit Quality"
 msgstr "ﻂﺳﻮﺘﻣ ﺖﯿﻔﯿﮐ ﺎﺑ"
 
 
-msgid "High quality"
-msgstr "ﻻ﻿ﺎﺑ ﺖﯿﻔﯿﮐ ﺎﺑ"
-
-
-msgid "Medium quality"
-msgstr "ﻂﺳﻮﺘﻣ ﺖﯿﻔﯿﮐ ﺎﺑ"
-
-
-msgid "Low quality"
-msgstr "ﻦﯿﯾﺎﭘ ﺖﯿﻔﯿﮐ ﺎﺑ"
-
-
 msgid "Render Quality"
 msgstr "ﻥﺍﺪﯿﻣ ﯼﻭﺮﯿﻧ ﺕﺎﻤﯿﻈﻨﺗ"
 
@@ -4855,6 +4823,10 @@ msgid "Motion Path"
 msgstr "ﺖﮐﺮﺣ ﺮﯿﺴﻣ"
 
 
+msgid "Lattice"
+msgstr "ﻪﮑﺒﺷ"
+
+
 msgid "3 Vertices"
 msgstr "ﺱﻮﺋﺭ ﻂﻘﻓ"
 
@@ -4913,6 +4885,14 @@ msgstr "ﺖﮐﺮﺣ ﻢﺴﺠﺗ ﯼﺍﺮﺑ ﺕﺎﻤﯿﻈﻨﺗ"
 
 msgid "Type of Object"
 msgstr "ﯽﺷ ﮏﯾ"
+
+
+msgid "Lamp"
+msgstr "ﭗﻣﻻ﻿"
+
+
+msgid "Speaker"
+msgstr "ﻮﮔﺪﻨﻠﺑ"
 
 
 msgid "Dupli Verts Rotation"
@@ -5203,10 +5183,6 @@ msgid "Start/End"
 msgstr "ﻥﺎﯾﺎﭘ/ﻉﻭﺮﺷ"
 
 
-msgid "Adaptive render"
-msgstr "ﻝﺎﻌﻓ ﻦﯿﺑﺭﻭﺩ"
-
-
 msgid "Rotations"
 msgstr "ﻥﺍﺭﻭﺩ"
 
@@ -5275,12 +5251,12 @@ msgid "Display Settings"
 msgstr "ﯼﺯﺎﺑ ﺕﺎﻤﯿﻈﻨﺗ"
 
 
-msgid "Preview Range Start Frame"
-msgstr "ﻢﯾﺮﻓ ﻉﻭﺮﺷ"
-
-
 msgid "Current Sub-Frame"
 msgstr "ﯽﻠﻌﻓ ﻢﯾﺮﻓ ﻑﺍﺮﻃﺍ ﺭﺩ"
+
+
+msgid "Preview Range Start Frame"
+msgstr "ﻢﯾﺮﻓ ﻉﻭﺮﺷ"
 
 
 msgid "NLA TweakMode"
@@ -5345,6 +5321,10 @@ msgstr "ﺶﯾﺎﻤﻨﺸﯿﭘ"
 
 msgid "View Settings"
 msgstr "ﺕﺎﻤﯿﻈﻨﺗ ﺶﯾﺎﻤﻧ"
+
+
+msgid "World"
+msgstr "ﻥﺎﻬﺟ"
 
 
 msgid "Areas"
@@ -5635,6 +5615,10 @@ msgid "Vector Font"
 msgstr "ﯽﻄﺧ"
 
 
+msgid "Window Manager"
+msgstr "ﻩﺮﺠﻨﭘ ﺖﯾﺮﯾﺪﻣ"
+
+
 msgid "Category"
 msgstr "ﺎﻫ ﻪﺘﺳﺩ"
 
@@ -5755,10 +5739,6 @@ msgid "10 bit color channels"
 msgstr "ﯽﺑﺁ ﻝﺎﻧﺎﮐ"
 
 
-msgid "Codec settings for Jpek2000"
-msgstr "ﺖﮐﺮﺣ ﻢﺴﺠﺗ ﯼﺍﺮﺑ ﺕﺎﻤﯿﻈﻨﺗ"
-
-
 msgid "Z Buffer"
 msgstr "ﺲﮑﯿﻣ ﺮﻓﺎﺑ"
 
@@ -5875,6 +5855,10 @@ msgid "Mask Parent"
 msgstr "ﻊﺒﻨﻣ"
 
 
+msgid "ID Type"
+msgstr "ID ﻉﻮﻧ"
+
+
 msgid "Sub Parent"
 msgstr "ﻊﺒﻨﻣ"
 
@@ -5950,6 +5934,10 @@ msgstr "ﻡﺎﻏﺩﺍ"
 
 msgid "Delete"
 msgstr "ﻑﺬﺣ"
+
+
+msgid "Key"
+msgstr "ﺪﯿﻠﮐ"
 
 
 msgid "Marker"
@@ -9362,6 +9350,11 @@ msgstr "ﻞﯾﺎﻓ ﻡﺎﻧ ﻩﺭﺎﻤﺷ ﺶﯾﺍﺰﻓﺍ"
 
 
 msgctxt "Operator"
+msgid "Toggle Hide Dot Files"
+msgstr "ﻩﺮﮔ ﯼﺎﻫ ﻪﻨﯾﺰﮔ ﭻﯾﻮﺳ"
+
+
+msgctxt "Operator"
 msgid "Next Folder"
 msgstr "ﻦﺘﻣ ﮓﻧﺭ"
 
@@ -11046,10 +11039,6 @@ msgstr "ﺖﺷﺎﮕﻧ"
 
 msgid "Bake object transformations"
 msgstr "ﺖﺷﺎﮕﻧ"
-
-
-msgid "Only key selected object/bones"
-msgstr "ﺐﺨﺘﻨﻣ ﯼﺎﻫ‌ﻥﺍﻮﺨﺘﺳﺍ ﺮﺑ ﻂﻘﻓ"
 
 
 msgctxt "Operator"
@@ -14058,11 +14047,6 @@ msgstr "ﯽﻠﺤﻣ ﻦﯿﺑﺭﻭﺩ:"
 
 
 msgctxt "Operator"
-msgid "Install from File..."
-msgstr "ﻪﻧﻭﺰﻓﺍ ﻥﺩﺮﮐ‌ﻝﺎﻌﻓ ﺮﯿﻏ"
-
-
-msgctxt "Operator"
 msgid "Refresh"
 msgstr "ﺎﻫ ﻢﺗ"
 
@@ -14114,16 +14098,8 @@ msgid "Include Children"
 msgstr "ﻪﺤﻔﺻ ﯼﺭﺍﺰﮔﺭﺎﺑ"
 
 
-msgid "Include Material Textures"
-msgstr "ﺮﭽﯿﻣﺭﺁ ﯼﺍﺮﺟﺍ"
-
-
 msgid "Include Shape Keys"
 msgstr "ﯽﻠﮑﺷ ﺪﯿﻠﮐ ﻥﺍﻮﻨﻋ ﻪﺑ ﻝﺎﻤﻋﺍ"
-
-
-msgid "Include UV Textures"
-msgstr "UV ﺖﻓﺎﺑ"
 
 
 msgid "Sort by Object name"
@@ -14511,10 +14487,6 @@ msgid "Tracking Settings"
 msgstr "ﺏﺎﯾﺩﺭ ﺕﺎﻤﯿﻈﻨﺗ"
 
 
-msgid "Cycles Hair Rendering"
-msgstr "ﻥﺍﺪﯿﻣ ﯼﻭﺮﯿﻧ ﺕﺎﻤﯿﻈﻨﺗ"
-
-
 msgid "Light Paths"
 msgstr "ﻥﺯﻭ ﯽﺷﺎﻘﻧ"
 
@@ -14597,10 +14569,6 @@ msgstr "ﺪﻠﯿﻓ ﯼﺎﻫ‌ﻥﺯﻭ"
 
 msgid "Force Field Settings"
 msgstr "ﻥﺍﺪﯿﻣ ﯼﻭﺮﯿﻧ ﺕﺎﻤﯿﻈﻨﺗ"
-
-
-msgid "Hair dynamics"
-msgstr "ﻮﻣ ﯼﺯﺎﺳ ﺎﯾﻮﭘ"
 
 
 msgid "Cloth Cache"
@@ -14773,6 +14741,26 @@ msgstr "ﯼﺰﯿﺗ ﻥﺩﺮﮐ‌ﮎﺎﭘ"
 
 msgid "Strand shape parameter"
 msgstr "ﻩﺭﺫ/ﻪﺘﺷﺭ"
+
+
+msgid "Diffuse Direct"
+msgstr "ﺕﻭﺎﻔﺗ"
+
+
+msgid "Diffuse Indirect"
+msgstr "ﺕﻭﺎﻔﺗ"
+
+
+msgid "Glossy Direct"
+msgstr "ﺖﻬﺟ ﯼﺯﺎﺳ ﻪﻨﯾﺮﻗ"
+
+
+msgid "Transmission Direct"
+msgstr "ﻞﮑﺷ ﺮﯿﯿﻐﺗ ﺖﻬﺟ"
+
+
+msgid "Transmission Indirect"
+msgstr "ﻞﮑﺷ ﺮﯿﯿﻐﺗ ﺖﻬﺟ"
 
 
 msgid "AA Samples"
@@ -14991,31 +14979,11 @@ msgid "Exclude Layers"
 msgstr "ﻪﯾﻻ﻿"
 
 
-msgid "Diffuse Direct"
-msgstr "ﺕﻭﺎﻔﺗ"
-
-
-msgid "Diffuse Indirect"
-msgstr "ﺕﻭﺎﻔﺗ"
-
-
 msgid "Glossy Color"
 msgstr "ﮓﻧﺭ ﯽﭙﮐ"
 
 
-msgid "Glossy Direct"
-msgstr "ﺖﻬﺟ ﯼﺯﺎﺳ ﻪﻨﯾﺮﻗ"
-
-
 msgid "Deliver transmission color pass"
-msgstr "ﻞﮑﺷ ﺮﯿﯿﻐﺗ ﺖﻬﺟ"
-
-
-msgid "Transmission Direct"
-msgstr "ﻞﮑﺷ ﺮﯿﯿﻐﺗ ﺖﻬﺟ"
-
-
-msgid "Transmission Indirect"
 msgstr "ﻞﮑﺷ ﺮﯿﯿﻐﺗ ﺖﻬﺟ"
 
 
@@ -15671,10 +15639,6 @@ msgid "Shader Type"
 msgstr "ﻥﺯ ﻪﯾﺎﺳ ﻉﻮﻧ"
 
 
-msgid "Highlight"
-msgstr "ﺖﺳﺍﺭ ﺖﻔﯿﺷ ﺪﯿﻠﮐ"
-
-
 msgid "Blender File"
 msgstr "ﺭﺪﻨﻠﺑ ﻞﯾﺎﻓ ﺶﯾﺎﻤﻧ"
 
@@ -15887,16 +15851,8 @@ msgid "Active Action"
 msgstr "ﻞﻤﻋ"
 
 
-msgid "Animation data block has active action"
-msgstr "ﻦﺸﯿﻤﯿﻧﺍ ﺶﺨﭘ ﻒﻗﻮﺗ"
-
-
 msgid "No Active Action"
 msgstr "ﻞﻤﻋ"
-
-
-msgid "Animation data block doesn't have active action"
-msgstr "ﻦﺸﯿﻤﯿﻧﺍ ﺶﺨﭘ ﻒﻗﻮﺗ"
 
 
 msgid "Meta Strips"
@@ -16175,18 +16131,6 @@ msgid "OpenAL"
 msgstr "OpenAL"
 
 
-msgid "Jack"
-msgstr "ﮏﺟ"
-
-
-msgid "Compute Device"
-msgstr "ﻪﺒﺳﺎﺤﻣ ﻩﺎﮕﺘﺳﺩ"
-
-
-msgid "Don't use compute device"
-msgstr "ﻦﮑﻧ ﻩﺩﺎﻔﺘﺳﺍ ﻪﺒﺳﺎﺤﻣ ﻩﺎﮕﺘﺳﺩ ﺯﺍ"
-
-
 msgid "DPI"
 msgstr "DPI"
 
@@ -16285,10 +16229,6 @@ msgstr "ﻞﮑﺷ ﺮﯿﯿﻐﺗ ﺖﻬﺟ"
 
 msgid "Aperture:"
 msgstr "ﻢﮔﺍﺮﻓﺎﯾﺩ ﻩﺯﺍﺪﻧﺍ"
-
-
-msgid "Render:"
-msgstr "ﺭﺪﻧﺭ"
 
 
 msgid "Samples:"
@@ -16538,6 +16478,10 @@ msgstr "X ﺭﻮﺤﻣ"
 msgctxt "Operator"
 msgid "Recenter"
 msgstr "ﺮﯿﺧﺍ"
+
+
+msgid "Render:"
+msgstr "ﺭﺪﻧﺭ"
 
 
 msgctxt "Operator"
@@ -17373,14 +17317,6 @@ msgid "Video:"
 msgstr "ﻮﺋﺪﯾﻭ:"
 
 
-msgid "Flip:"
-msgstr "ﯼﺯﺎﺳ ﻪﻨﯾﺮﻗ:"
-
-
-msgid "Colors:"
-msgstr "ﺎﻫ ﮓﻧﺭ:"
-
-
 msgctxt "Operator"
 msgid "Left Handle"
 msgstr "ﺭﻮﺘﮐﻭ ﻪٔﺘﺳﺩ"
@@ -17398,11 +17334,6 @@ msgstr "ﻪﻨﺤﺻ"
 
 msgctxt "Operator"
 msgid "Masks..."
-msgstr "ﺎﻫﺪﻧﻮﯿﭘ ﺩﺎﺠﯾﺍ..."
-
-
-msgctxt "Operator"
-msgid "Mask..."
 msgstr "ﺎﻫﺪﻧﻮﯿﭘ ﺩﺎﺠﯾﺍ..."
 
 
@@ -17590,6 +17521,10 @@ msgid "Time Out"
 msgstr "ﺝﻭﺮﺧ ﻥﺎﻣﺯ"
 
 
+msgid "Colors:"
+msgstr "ﺎﻫ ﮓﻧﺭ:"
+
+
 msgid "Kerning Style:"
 msgstr "ﺭﺍﺪﻣ ﻩﻮﯿﺷ:"
 
@@ -17756,14 +17691,6 @@ msgstr "ﺭﺍﺪﻣ ﯼﺎﻫ‌ﻪﻨﯾﺰﮔ"
 
 msgid "NDOF Device:"
 msgstr "NDOF ﻩﺎﮕﺘﺳﺩ:"
-
-
-msgid "NDOF Sensitivity"
-msgstr "NDOF ﺖﯿﺳﺎﺴﺣ"
-
-
-msgid "NDOF Orbit Sensitivity"
-msgstr "NDOF ﺖﯿﺳﺎﺴﺣ"
 
 
 msgctxt "Operator"
@@ -17969,6 +17896,11 @@ msgstr "ﻥﺍﻮﺨﺘﺳﺍ ﮏﺗ"
 
 
 msgctxt "Operator"
+msgid "Camera"
+msgstr "ﻦﯿﺑﺭﻭﺩ"
+
+
+msgctxt "Operator"
 msgid "Empty"
 msgstr "ﯽﻟﺎﺧ"
 
@@ -17976,11 +17908,6 @@ msgstr "ﯽﻟﺎﺧ"
 msgctxt "Operator"
 msgid "Speaker"
 msgstr "ﻮﮔﺪﻨﻠﺑ"
-
-
-msgctxt "Operator"
-msgid "Camera"
-msgstr "ﻦﯿﺑﺭﻭﺩ"
 
 
 msgctxt "Operator"
@@ -18020,16 +17947,6 @@ msgstr "ﻢﯾﺮﻓ ﯼﺪﯿﻠﮐ ﻪﻋﻮﻤﺠﻣ ﺮﯿﯿﻐﺗ..."
 msgctxt "Operator"
 msgid "Bake Action..."
 msgstr "ﻞﺤﻣ ﺖﺨﭘ"
-
-
-msgctxt "Operator"
-msgid "Location"
-msgstr "ﯽﯾﺎﺠﺑﺎﺟ:"
-
-
-msgctxt "Operator"
-msgid "Rotation"
-msgstr "ﻥﺍﺭﻭﺩ"
 
 
 msgctxt "Operator"
@@ -18144,6 +18061,16 @@ msgstr "1 ﻪﺘﺳﺩ ﻉﻮﻧ"
 
 msgid "Bone Settings"
 msgstr "ﻥﺍﻮﺨﺘﺳﺍ ﺕﺎﻤﯿﻈﻨﺗ"
+
+
+msgctxt "Operator"
+msgid "Location"
+msgstr "ﯽﯾﺎﺠﺑﺎﺟ:"
+
+
+msgctxt "Operator"
+msgid "Rotation"
+msgstr "ﻥﺍﺭﻭﺩ"
 
 
 msgctxt "Operator"
@@ -19129,10 +19056,6 @@ msgid "Online Python Reference"
 msgstr "ﻥﻮﺘﯾﺎﭘ API ﻊﺟﺮﻣ"
 
 
-msgid "DoButton pointer error: %s"
-msgstr "‪%s‬ :‪DoButton ﺮﮔ ﻩﺭﺎﺷﺍ ﯼﺎﻄﺧ"
-
-
 msgid "* Redo Unsupported *"
 msgstr "ﻦﺸﯿﻤﯿﻧﺍ ﯼﺭﺍﺰﮔﺭﺎﺑ"
 
@@ -19253,20 +19176,8 @@ msgid "Anim Player"
 msgstr "ﻦﺸﯿﻤﯿﻧﺍ ﺮﯿﻠﭘ"
 
 
-msgid "Indirect library datablock, cannot change"
-msgstr "ﺪﻨﮐ ﺮﯿﯿﻐﺗ ﺪﻧﺍﻮﺗ ﯽﻤﻧ ،ﺎﻫ‌ﻩﺩﺍﺩ ﮎﻮﻠﺑ ﻢﯿﻘﺘﺴﻣ ﺮﯿﻏ ﻪﻧﺎﺨﺑﺎﺘﮐ"
-
-
-msgid "Direct linked library datablock, click to make local"
-msgstr "ﺩﻮﺷ ﯽﻠﺤﻣ ﺎﻫ‌ﻩﺩﺍﺩ ﮎﻮﻠﺑ ﻢﯿﻘﺘﺴﻣ ﻪﻧﺎﺨﺑﺎﺘﮐ ﺎﺗ ﺪﯿﻨﮐ ﮏﯿﻠﮐ"
-
-
 msgid "Display number of users of this data (click to make a single-user copy)"
 msgstr "(ﺪﯿﻨﮐ ﮏﯿﻠﮐ ﻩﺮﺑﺭﺎﮐ-ﮏﺗ ﻦﺘﺧﺎﺳ ﯼﺍﺮﺑ) ﻩﺪﺑ ﺶﯾﺎﻤﻧ ﺍﺭ ﻩﺩﺍﺩ ﻦﯾﺍ ﻥﺍﺮﺑﺭﺎﮐ ﺩﺍﺪﻌﺗ"
-
-
-msgid "Unlink datablock (Shift + Click to set users to zero, data will then not be saved)"
-msgstr "ﺪﺷ ﺪﻫﺍﻮﺨﻧ ﻩﺮﯿﺧﺫ ﺕﺎﻋﻼ﻿ﻃﺍ .ﺮﻔﺻ ﻪﺑ ﻥﺩﺮﮐ ﻢﯿﻈﻨﺗ ﯼﺍﺮﺑ ﮏﯿﻠﮐ + ﺖﻔﯿﺷ .ﻦﮐ ﺍﺪﺟ ﺍﺭ ﻩﺩﺍﺩ ﮎﻮﻠﺑ"
 
 
 msgid "Convert virtual modifier to a real modifier"
@@ -19792,10 +19703,6 @@ msgid "Scene has no camera"
 msgstr "ﻝﺎﻌﻓ ﻪﯾﻻ﻿ ﻢﯿﻈﻨﺗ"
 
 
-msgid "Saved file: %s"
-msgstr "‬%s‪‪ :ﺭﺍﺪﻘﻣ"
-
-
 msgid "Flip to Bottom"
 msgstr "ﻦﯿﯾﺎﭘ"
 
@@ -19810,6 +19717,10 @@ msgstr "ﯼﺭﺎﺠﺣ ﺖﻟﺎﺣ"
 
 msgid "Maximize Area"
 msgstr "ﺢﻄﺳ ﯼﺎﯾﺍﻭﺯ"
+
+
+msgid "Saved file: %s"
+msgstr "‬%s‪‪ :ﺭﺍﺪﻘﻣ"
 
 
 msgid "No active mesh object"
@@ -20498,10 +20409,6 @@ msgstr "ﺮﯾﻮﺼﺗ"
 
 msgid "ID value"
 msgstr "ﺭﺍﺪﻘﻣ"
-
-
-msgid "Reflect"
-msgstr "ﺏﺎﺨﺘﻧﺍ"
 
 
 msgid "Dispersion"

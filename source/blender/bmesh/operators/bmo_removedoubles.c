@@ -153,19 +153,19 @@ static BMFace *remdoubles_createface(BMesh *bm, BMFace *f, BMOpSlot *slot_target
 
 finally:
 	{
-		unsigned int i;
+		uint i;
 		for (i = 0; i < STACK_SIZE(verts); i++) {
 			BMO_vert_flag_disable(bm, verts[i], VERT_IN_FACE);
 		}
 	}
 
 	if (STACK_SIZE(edges) >= 3) {
-		if (!BM_face_exists(verts, STACK_SIZE(edges), NULL)) {
+		if (!BM_face_exists(verts, STACK_SIZE(edges))) {
 			BMFace *f_new = BM_face_create(bm, verts, edges, STACK_SIZE(edges), f, BM_CREATE_NOP);
 			BLI_assert(f_new != f);
 
 			if (f_new) {
-				unsigned int i = 0;
+				uint i = 0;
 				BMLoop *l_iter, *l_first;
 				l_iter = l_first = BM_FACE_FIRST_LOOP(f_new);
 				do {
@@ -285,6 +285,13 @@ static int vergaverco(const void *e1, const void *e2)
 
 	if      (x1 > x2) return  1;
 	else if (x1 < x2) return -1;
+
+	const int i1 = BM_elem_index_get(v1);
+	const int i2 = BM_elem_index_get(v2);
+
+	if      (i1 > i2) return  1;
+	else if (i1 < i2) return -1;
+
 	else return 0;
 }
 
@@ -440,20 +447,24 @@ void bmo_collapse_exec(BMesh *bm, BMOperator *op)
 	edge_stack = BLI_stack_new(sizeof(BMEdge *), __func__);
 
 	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
-		float min[3], max[3], center[3];
+		float center[3];
+		int count = 0;
 		BMVert *v_tar;
+
+		zero_v3(center);
 
 		if (!BMO_edge_flag_test(bm, e, EDGE_MARK))
 			continue;
 
 		BLI_assert(BLI_stack_is_empty(edge_stack));
 
-		INIT_MINMAX(min, max);
 		for (e = BMW_begin(&walker, e->v1); e; e = BMW_step(&walker)) {
 			BLI_stack_push(edge_stack, &e);
 
-			minmax_v3v3_v3(min, max, e->v1->co);
-			minmax_v3v3_v3(min, max, e->v2->co);
+			add_v3_v3(center, e->v1->co);
+			add_v3_v3(center, e->v2->co);
+
+			count += 2;
 
 			/* prevent adding to slot_targetmap multiple times */
 			BM_elem_flag_disable(e->v1, BM_ELEM_TAG);
@@ -461,15 +472,14 @@ void bmo_collapse_exec(BMesh *bm, BMOperator *op)
 		}
 
 		if (!BLI_stack_is_empty(edge_stack)) {
-
-			mid_v3_v3v3(center, min, max);
+			mul_v3_fl(center, 1.0f / count);
 
 			/* snap edges to a point.  for initial testing purposes anyway */
 			e = *(BMEdge **)BLI_stack_peek(edge_stack);
 			v_tar = e->v1;
 
 			while (!BLI_stack_is_empty(edge_stack)) {
-				unsigned int j;
+				uint j;
 				BLI_stack_pop(edge_stack, &e);
 
 				for (j = 0; j < 2; j++) {
@@ -598,6 +608,12 @@ static void bmesh_find_doubles_common(
 
 	/* get the verts as an array we can sort */
 	verts = BMO_slot_as_arrayN(op->slots_in, "verts", &verts_len);
+
+	/* Ensure indices are different so we have a predictable order when values match. */
+	for (i = 0; i < verts_len; i++) {
+		BM_elem_index_set(verts[i], i);  /* set_dirty! */
+	}
+	bm->elem_index_dirty |= BM_VERT;
 
 	/* sort by vertex coordinates added together */
 	qsort(verts, verts_len, sizeof(BMVert *), vergaverco);

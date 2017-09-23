@@ -1,10 +1,10 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 2.78 (sub 0) (b'2c19ddf')\n"
+"Project-Id-Version: Blender 2.79 (sub 0) (b'6e7d9621180')\n"
 "(b'0000000000000000000000000000000000000000')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-26 12:09:58\n"
+"POT-Creation-Date: 2017-08-17 15:17:11\n"
 "PO-Revision-Date: 2013-11-05 13:47+0600\n"
 "Last-Translator: Chyngyz Dzhumaliev <kyrgyzl10n@gmail.com>\n"
 "Language-Team: Kirghiz <kyrgyzl10n@gmail.com>\n"
@@ -439,12 +439,12 @@ msgid "NLA Editor"
 msgstr "NLA редактору"
 
 
-msgid "Text Editor"
-msgstr "Текст редактору"
-
-
 msgid "Node Editor"
 msgstr "Түйүн редактору"
+
+
+msgid "Text Editor"
+msgstr "Текст редактору"
 
 
 msgid "Logic Editor"
@@ -808,48 +808,8 @@ msgid "Bone Name"
 msgstr "Сөөк аты"
 
 
-msgid "Brush"
-msgstr "Чачы"
-
-
-msgid "Font"
-msgstr "Арип"
-
-
 msgid "Group"
 msgstr "Топ"
-
-
-msgid "Key"
-msgstr "Ачкыч"
-
-
-msgid "Lamp"
-msgstr "Лампа"
-
-
-msgid "Mask"
-msgstr "Маска"
-
-
-msgid "Particle"
-msgstr "Бөлүкчө"
-
-
-msgid "Speaker"
-msgstr "Үн булагы"
-
-
-msgid "Texture"
-msgstr "Текстура"
-
-
-msgid "Window Manager"
-msgstr "Терезе менеджери"
-
-
-msgid "World"
-msgstr "Дүйнө"
 
 
 msgid "Brush Settings"
@@ -894,6 +854,10 @@ msgstr "UV-текстура"
 
 msgid "Vertex Color"
 msgstr "Чоку түсү"
+
+
+msgid "Texture"
+msgstr "Текстура"
 
 
 msgid "Vertex"
@@ -1012,16 +976,20 @@ msgid "DNxHD"
 msgstr "DNxHD"
 
 
+msgid "Fast"
+msgstr "Тез"
+
+
+msgid "Container"
+msgstr "Контейнер"
+
+
 msgid "MPEG-4"
 msgstr "MPEG-4"
 
 
 msgid "Quicktime"
 msgstr "Quicktime"
-
-
-msgid "Xvid"
-msgstr "Xvid"
 
 
 msgid "Ogg"
@@ -1064,6 +1032,10 @@ msgid "Fluid"
 msgstr "Суюктук"
 
 
+msgid "Particle"
+msgstr "Бөлүкчө"
+
+
 msgid "End"
 msgstr "Соңу"
 
@@ -1082,6 +1054,10 @@ msgstr "Фокус аралыгы"
 
 msgid "Angle"
 msgstr "Бурч"
+
+
+msgid "Brush"
+msgstr "Чачы"
 
 
 msgid "Tool"
@@ -1106,6 +1082,10 @@ msgstr "Колдонуучулар"
 
 msgid "Draw"
 msgstr "Тартуу"
+
+
+msgid "Mask"
+msgstr "Маска"
 
 
 msgid "Mask Tool"
@@ -1188,6 +1168,10 @@ msgid "Text Curve"
 msgstr "Текст ийриси"
 
 
+msgid "Font"
+msgstr "Арип"
+
+
 msgid "Font size"
 msgstr "Арип өлчөмү"
 
@@ -1226,14 +1210,6 @@ msgstr "AVI JPEG"
 
 msgid "AVI Raw"
 msgstr "AVI Raw"
-
-
-msgid "MPEG"
-msgstr "MPEG"
-
-
-msgid "Ogg Theora"
-msgstr "Ogg Theora"
 
 
 msgid "Movie"
@@ -1442,10 +1418,6 @@ msgid "Update"
 msgstr "Жаңылоо"
 
 
-msgid "Fast"
-msgstr "Тез"
-
-
 msgid "Movie File"
 msgstr "Видеофайл"
 
@@ -1534,6 +1506,14 @@ msgid "Meta"
 msgstr "Мета"
 
 
+msgid "Lamp"
+msgstr "Лампа"
+
+
+msgid "Speaker"
+msgstr "Үн булагы"
+
+
 msgid "Animate"
 msgstr "Анимация"
 
@@ -1580,6 +1560,10 @@ msgstr "Ченөө бирдиктеринин ырастоолору"
 
 msgid "View Settings"
 msgstr "Көрсөтүү ырастоолору"
+
+
+msgid "World"
+msgstr "Дүйнө"
 
 
 msgid "Clouds"
@@ -1672,6 +1656,10 @@ msgstr "sqrt(x*x+y*y+z*z)"
 
 msgid "(x*x+y*y+z*z)"
 msgstr "(x*x+y*y+z*z)"
+
+
+msgid "Window Manager"
+msgstr "Терезе менеджери"
 
 
 msgid "Category"
@@ -1850,6 +1838,10 @@ msgstr "Канал"
 
 msgid "Delete"
 msgstr "Өчүрүү"
+
+
+msgid "Key"
+msgstr "Ачкыч"
 
 
 msgid "Marker"
@@ -3106,10 +3098,6 @@ msgid "MPEG-2 Audio Layer III"
 msgstr "MPEG-2 Audio Layer III"
 
 
-msgid "Container"
-msgstr "Контейнер"
-
-
 msgid "File format"
 msgstr "Файл форматы"
 
@@ -3313,11 +3301,6 @@ msgstr "3D-манипулятор"
 
 
 msgctxt "Operator"
-msgid "Install from File..."
-msgstr "Файлдан орнотуу..."
-
-
-msgctxt "Operator"
 msgid "Refresh"
 msgstr "Жаңылоо"
 
@@ -3387,10 +3370,6 @@ msgstr "Ачылыш экраны"
 msgctxt "Operator"
 msgid "New World"
 msgstr "Жаңы дүйнө"
-
-
-msgid "Add a new world"
-msgstr "Жаңы дүйнөнү кошуу"
 
 
 msgid "Solve"
@@ -3467,10 +3446,6 @@ msgstr "Табуу"
 
 msgid "Themes"
 msgstr "Темалар"
-
-
-msgid "Obstacle simulation"
-msgstr "Тоскоолдорду моделдөө"
 
 
 msgid "Language Name"
@@ -3623,6 +3598,10 @@ msgstr "Балык көз"
 
 msgid "Letterbox"
 msgstr "Леттербоксинг"
+
+
+msgid "Obstacle simulation"
+msgstr "Тоскоолдорду моделдөө"
 
 
 msgid "Physics Engine"
@@ -4032,10 +4011,6 @@ msgid "OpenAL"
 msgstr "OpenAL"
 
 
-msgid "Jack"
-msgstr "Jack"
-
-
 msgid "44.1 kHz"
 msgstr "44.1 кГц"
 
@@ -4054,10 +4029,6 @@ msgstr "192 кГц"
 
 msgid "Author"
 msgstr "Автор"
-
-
-msgid "Compute Device"
-msgstr "Эсептөө түзмөгү"
 
 
 msgid "Default (Default)"
@@ -4431,12 +4402,12 @@ msgid "Animation"
 msgstr "Анимация"
 
 
-msgid "Video Codec"
-msgstr "Видеокодек"
-
-
 msgid "Sequencer:"
 msgstr "Секвенсор:"
+
+
+msgid "Video Codec"
+msgstr "Видеокодек"
 
 
 msgid "Doppler"
@@ -4652,18 +4623,8 @@ msgstr "Видеофрагменттер..."
 
 
 msgctxt "Operator"
-msgid "Clip..."
-msgstr "Видеофрагмент..."
-
-
-msgctxt "Operator"
 msgid "Masks..."
 msgstr "Маскалар..."
-
-
-msgctxt "Operator"
-msgid "Mask..."
-msgstr "Маска..."
 
 
 msgctxt "Operator"
@@ -4862,6 +4823,11 @@ msgstr "Бир сөөк"
 
 
 msgctxt "Operator"
+msgid "Camera"
+msgstr "Камера"
+
+
+msgctxt "Operator"
 msgid "Empty"
 msgstr "Боштук"
 
@@ -4869,11 +4835,6 @@ msgstr "Боштук"
 msgctxt "Operator"
 msgid "Speaker"
 msgstr "Үн булагы"
-
-
-msgctxt "Operator"
-msgid "Camera"
-msgstr "Камера"
 
 
 msgctxt "Operator"

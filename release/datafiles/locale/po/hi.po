@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 2.78 (sub 0) (b'2c19ddf')\n"
+"Project-Id-Version: Blender 2.79 (sub 0) (b'6e7d9621180')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-26 12:09:58\n"
+"POT-Creation-Date: 2017-08-17 15:17:11\n"
 "PO-Revision-Date: 2015-03-03 16:21+0530\n"
 "Last-Translator: Roshan Lal Gumasta <roshan@anisecrets.com>\n"
 "Language-Team: Hindi <www.anisecrets.com>\n"
@@ -848,20 +848,20 @@ msgid "UV/Image Editor"
 msgstr "यूवी/छवि संपादक"
 
 
-msgid "Video Sequence Editor"
-msgstr "वीडियो अनुक्रम संपादक"
-
-
 msgid "Movie Clip Editor"
 msgstr "चलचित्र छांटन संपादक"
 
 
-msgid "Text Editor"
-msgstr "पाठ संपादक"
+msgid "Video Sequence Editor"
+msgstr "वीडियो अनुक्रम संपादक"
 
 
 msgid "Node Editor"
 msgstr "ग्रन्थि संपादक"
+
+
+msgid "Text Editor"
+msgstr "पाठ संपादक"
 
 
 msgid "Logic Editor"
@@ -1032,32 +1032,8 @@ msgid "Blendfile Data"
 msgstr "Blendfile डेटा"
 
 
-msgid "Main data structure representing a .blend file and all its datablocks"
-msgstr "मुख्य डेटा संरचना का प्रतिनिधित्व एक .blend संचिका और इसकी सभी datablocks"
-
-
-msgid "Action datablocks"
-msgstr "कार्रवाई datablocks"
-
-
 msgid "Brushes"
 msgstr "तूलिका"
-
-
-msgid "Brush datablocks"
-msgstr "तूलिका datablocks"
-
-
-msgid "Camera datablocks"
-msgstr "प्रतिबिंबक datablocks"
-
-
-msgid "Curve datablocks"
-msgstr "वक्र datablocks"
-
-
-msgid "Vector font datablocks"
-msgstr "वेक्टर फ़ॉन्ट datablocks"
 
 
 msgid "Grease Pencil"
@@ -1088,108 +1064,40 @@ msgid "Lamps"
 msgstr "प्रकाश श्रोत"
 
 
-msgid "Lamp datablocks"
-msgstr "दीपक datablocks"
-
-
-msgid "Lattice datablocks"
-msgstr "जाली datablocks"
-
-
 msgid "Libraries"
 msgstr "लायब्रेरीज़"
-
-
-msgid "Library datablocks"
-msgstr "पुस्तकालय datablocks"
 
 
 msgid "Masks"
 msgstr "आवरण"
 
 
-msgid "Masks datablocks"
-msgstr "मास्क datablocks"
-
-
 msgid "Materials"
 msgstr "पदार्थ"
-
-
-msgid "Mesh datablocks"
-msgstr "जाल datablocks"
-
-
-msgid "Metaball datablocks"
-msgstr "Metaball datablocks"
-
-
-msgid "Movie Clip datablocks"
-msgstr "चलचित्र क्लिप datablocks"
-
-
-msgid "Node group datablocks"
-msgstr "नोड समूह datablocks"
 
 
 msgid "Objects"
 msgstr "वस्तु्ए"
 
 
-msgid "Particle datablocks"
-msgstr "कण datablocks"
-
-
 msgid "Scenes"
 msgstr "दृश्य"
-
-
-msgid "Scene datablocks"
-msgstr "दृश्य datablocks"
 
 
 msgid "Screens"
 msgstr "चित्रपट"
 
 
-msgid "Screen datablocks"
-msgstr "चित्रपट datablocks"
-
-
 msgid "Sounds"
 msgstr "ध्वनि"
-
-
-msgid "Sound datablocks"
-msgstr "ध्वनि datablocks"
-
-
-msgid "Speaker datablocks"
-msgstr "अध्यक्ष datablocks"
 
 
 msgid "Texts"
 msgstr "पाठ"
 
 
-msgid "Text datablocks"
-msgstr "पाठ datablocks"
-
-
-msgid "Texture datablocks"
-msgstr "बनावट datablocks"
-
-
 msgid "Window Managers"
 msgstr "खिडकी प्रबंधक"
-
-
-msgid "Window manager datablocks"
-msgstr "खिडकी प्रबंधक datablocks"
-
-
-msgid "World datablocks"
-msgstr "विश्व datablocks"
 
 
 msgid "Goal"
@@ -1661,42 +1569,6 @@ msgid "ID"
 msgstr "आईडी"
 
 
-msgid "Brush"
-msgstr "तूलिका"
-
-
-msgid "Font"
-msgstr "मुद्र"
-
-
-msgid "Group"
-msgstr "समूह"
-
-
-msgid "Key"
-msgstr "कुंजी"
-
-
-msgid "Lamp"
-msgstr "प्रकाश श्रोत"
-
-
-msgid "Mask"
-msgstr "आवरण"
-
-
-msgid "Texture"
-msgstr "बनावट"
-
-
-msgid "Window Manager"
-msgstr "खिडकी प्रबंधक"
-
-
-msgid "World"
-msgstr "जगत"
-
-
 msgid "Index"
 msgstr "सूचकांक"
 
@@ -1711,6 +1583,10 @@ msgstr "शिरोबिन्दु"
 
 msgid "Faces"
 msgstr "सतह"
+
+
+msgid "Group"
+msgstr "समूह"
 
 
 msgid "Inner Proximity"
@@ -1837,6 +1713,10 @@ msgid "Data Layer"
 msgstr "सामग्री परत"
 
 
+msgid "Texture"
+msgstr "बनावट"
+
+
 msgid "Point Cache"
 msgstr "बिंदु द्रुतिका"
 
@@ -1945,8 +1825,8 @@ msgid "Codec"
 msgstr "कोडेक"
 
 
-msgid "Xvid"
-msgstr "एक्सविड"
+msgid "Fast"
+msgstr "तेजी से"
 
 
 msgid "Ogg"
@@ -2209,6 +2089,10 @@ msgid "Grease Pencil Frame"
 msgstr "तैलीय पेंसिल गठन"
 
 
+msgid "Cubic"
+msgstr "घन"
+
+
 msgid "Grease Pencil Layer"
 msgstr "तैलीय पेंसिल परत"
 
@@ -2219,6 +2103,10 @@ msgstr "एक्स रे"
 
 msgid "Radius"
 msgstr "त्रिज्या"
+
+
+msgid "Brush"
+msgstr "तूलिका"
 
 
 msgid "Tool"
@@ -2449,6 +2337,10 @@ msgid "Fill"
 msgstr "भरण"
 
 
+msgid "Mask"
+msgstr "आवरण"
+
+
 msgid "Mask Tool"
 msgstr "आवरण यंत्र"
 
@@ -2641,6 +2533,10 @@ msgid "Text on Curve"
 msgstr "वक्र पर पाठ"
 
 
+msgid "Font"
+msgstr "मुद्र"
+
+
 msgid "Font Bold"
 msgstr "मोटा(सुस्पष्ट) मुद्र"
 
@@ -2715,10 +2611,6 @@ msgstr "निचला क्षेत्र पहले"
 
 msgid "Iris"
 msgstr "आईरिस"
-
-
-msgid "MPEG"
-msgstr "एमपीईजी"
 
 
 msgid "Duration"
@@ -3095,10 +2987,6 @@ msgid "Vertices"
 msgstr "शिरोबिन्दु"
 
 
-msgid "Fast"
-msgstr "तेजी से"
-
-
 msgid "Never"
 msgstr "कभी नहीं"
 
@@ -3225,6 +3113,10 @@ msgstr "एक्स-रे"
 
 msgid "Meta"
 msgstr "मेटा"
+
+
+msgid "Lamp"
+msgstr "प्रकाश श्रोत"
 
 
 msgid "Pixel"
@@ -3367,10 +3259,6 @@ msgid "Multi React"
 msgstr "बहु प्रतिक्रिया"
 
 
-msgid "Adaptive render"
-msgstr "अनुकूली  प्रतिपादन"
-
-
 msgid "Whole Group"
 msgstr "पूरे समूह"
 
@@ -3405,6 +3293,10 @@ msgstr "कोई संकालन नहीँ"
 
 msgid "View Settings"
 msgstr "दृश्य विन्यास"
+
+
+msgid "World"
+msgstr "जगत"
 
 
 msgid "Areas"
@@ -3540,6 +3432,10 @@ msgid "Rings"
 msgstr "छल्ले"
 
 
+msgid "Window Manager"
+msgstr "खिडकी प्रबंधक"
+
+
 msgid "Category"
 msgstr "श्रेणी"
 
@@ -3666,10 +3562,6 @@ msgstr "पश्चिम"
 
 msgid "Automatic"
 msgstr "स्वत:"
-
-
-msgid "Cubic"
-msgstr "घन"
 
 
 msgid "Paths"
@@ -3899,6 +3791,10 @@ msgstr "सरणि"
 
 msgid "Delete"
 msgstr "मिटाएँ"
+
+
+msgid "Key"
+msgstr "कुंजी"
 
 
 msgid "Marker"
@@ -5147,6 +5043,10 @@ msgid "Sides"
 msgstr "किनारा"
 
 
+msgid "Cut"
+msgstr "कट"
+
+
 msgid "Swap"
 msgstr "अदला-बदली"
 
@@ -5877,6 +5777,10 @@ msgid "View Persp/Ortho"
 msgstr "दृश्य परिपेक्ष्य/Ortho"
 
 
+msgid "Export Polygons (Quads & NGons) as Triangles"
+msgstr "बहुभुज (Quads एवं NGons) त्रिकोण के रूप में निर्यात करें"
+
+
 msgid "Call (draw) a pre-defined menu"
 msgstr "कॉल (आकर्षित) एक पूर्व-निर्धारित मेनू"
 
@@ -5895,14 +5799,6 @@ msgstr "TransRotLoc"
 
 msgid "Use <translate>, <rotate>, <scale> to specify transformations"
 msgstr "का प्रयोग करें <translate>, <rotate>, <scale>परिवर्तनों को निर्दिष्ट करने के लिए"
-
-
-msgid "Use <matrix> AND <translate>, <rotate>, <scale> to specify transformations"
-msgstr "<matrix>का उपयोग करें और <translate>, <rotate>, <scale>परिवर्तनों को निर्दिष्ट करने के लिए"
-
-
-msgid "Export Polygons (Quads & NGons) as Triangles"
-msgstr "बहुभुज (Quads एवं NGons) त्रिकोण के रूप में निर्यात करें"
 
 
 msgctxt "Operator"
@@ -6186,10 +6082,6 @@ msgstr "युक्ति"
 
 msgid "Puff"
 msgstr "कश"
-
-
-msgid "Cut"
-msgstr "कट"
 
 
 msgid "Enemy"
@@ -6655,6 +6547,10 @@ msgid "Heat"
 msgstr "गर्मी"
 
 
+msgid "Flame"
+msgstr "लौ"
+
+
 msgid "Add fire"
 msgstr "अग्नि में जोड़ें"
 
@@ -7014,20 +6910,12 @@ msgid "Dolly"
 msgstr "डॉली"
 
 
-msgid "Jack"
-msgstr "जैक"
-
-
 msgid "Author"
 msgstr "लेखक"
 
 
 msgid "DPI"
 msgstr "बिन्दु प्रति इंच"
-
-
-msgid "Flame"
-msgstr "लौ"
 
 
 msgctxt "WindowManager"
@@ -7176,16 +7064,16 @@ msgid "Projection:"
 msgstr "प्रक्षेपण:"
 
 
-msgid "Render:"
-msgstr " प्रतिपादन:"
-
-
 msgid "Samples:"
 msgstr "नमूने:"
 
 
 msgid "AA Samples:"
 msgstr "ए. ए. के नमूने:"
+
+
+msgid "Curve subdivisions"
+msgstr "वक्र उप विभाजन"
 
 
 msgctxt "Operator"
@@ -7195,10 +7083,6 @@ msgstr "निर्दिष्ट"
 
 msgid "Type:"
 msgstr "प्रकार:"
-
-
-msgid "Curve subdivisions"
-msgstr "वक्र उप विभाजन"
 
 
 msgid "Cameras & Markers (.py)"
@@ -7722,6 +7606,10 @@ msgstr "समरूपता अक्ष:"
 
 msgid "Bone:"
 msgstr "हड्डी:"
+
+
+msgid "Render:"
+msgstr " प्रतिपादन:"
 
 
 msgctxt "Operator"
@@ -8507,10 +8395,6 @@ msgid "Name:"
 msgstr "नाम:"
 
 
-msgid "Flip:"
-msgstr "पलटें:"
-
-
 msgctxt "Operator"
 msgid "Scene..."
 msgstr "दृश्य..."
@@ -8733,6 +8617,11 @@ msgstr "युक्तियाँ"
 
 
 msgctxt "Operator"
+msgid "Camera"
+msgstr "प्रतिबिंबक"
+
+
+msgctxt "Operator"
 msgid "Empty"
 msgstr "खाली"
 
@@ -8743,23 +8632,8 @@ msgstr "वक्ता"
 
 
 msgctxt "Operator"
-msgid "Camera"
-msgstr "प्रतिबिंबक"
-
-
-msgctxt "Operator"
 msgid "Delete Keyframes..."
 msgstr "अनुबोधक चिन्हों मिटाएँ..."
-
-
-msgctxt "Operator"
-msgid "Location"
-msgstr "स्थिति"
-
-
-msgctxt "Operator"
-msgid "Rotation"
-msgstr "घूर्णन"
 
 
 msgctxt "Operator"
@@ -8788,6 +8662,16 @@ msgstr "साफ"
 msgctxt "Operator"
 msgid "All"
 msgstr "सभी"
+
+
+msgctxt "Operator"
+msgid "Location"
+msgstr "स्थिति"
+
+
+msgctxt "Operator"
+msgid "Rotation"
+msgstr "घूर्णन"
 
 
 msgctxt "Operator"

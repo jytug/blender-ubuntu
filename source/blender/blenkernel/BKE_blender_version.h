@@ -27,7 +27,7 @@
 /* these lines are grep'd, watch out for our not-so-awesome regex
  * and keep comment above the defines.
  * Use STRINGIFY() rather than defining with quotes */
-#define BLENDER_VERSION         278
+#define BLENDER_VERSION         279
 #define BLENDER_SUBVERSION      0
 /* Several breakages with 270, e.g. constraint deg vs rad */
 #define BLENDER_MINVERSION      270
@@ -35,7 +35,7 @@
 
 /* used by packaging tools */
 /* can be left blank, otherwise a,b,c... etc with no quotes */
-#define BLENDER_VERSION_CHAR    c
+#define BLENDER_VERSION_CHAR
 /* alpha/beta/rc/release, docs use this */
 #define BLENDER_VERSION_CYCLE   release
 

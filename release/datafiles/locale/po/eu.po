@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 2.78 (sub 0) (b'2c19ddf')\n"
+"Project-Id-Version: Blender 2.79 (sub 0) (b'6e7d9621180')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-09-26 12:09:58\n"
+"POT-Creation-Date: 2017-08-17 15:17:11\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Ainhize & Miriam <agoenaga006@ikasle.ehu.eus>\n"
 "Language-Team: Euskara <agoenaga006@ikasle.ehu.eus>\n"
@@ -585,20 +585,20 @@ msgid "NLA Editor"
 msgstr "AEL (Animazio Ez-Lineala) Editorea"
 
 
-msgid "Video Sequence Editor"
-msgstr "Bideo Sekuentzia Editorea"
-
-
 msgid "Movie Clip Editor"
 msgstr "Film Sekuentzia Editorea"
 
 
-msgid "Text Editor"
-msgstr "Testu Editorea"
+msgid "Video Sequence Editor"
+msgstr "Bideo Sekuentzia Editorea"
 
 
 msgid "Node Editor"
 msgstr "Nodo Editorea"
+
+
+msgid "Text Editor"
+msgstr "Testu Editorea"
 
 
 msgid "Logic Editor"
@@ -663,18 +663,6 @@ msgstr "Metodoak"
 
 msgid "Plane"
 msgstr "Planoa"
-
-
-msgid "Lamp"
-msgstr "Lanpara"
-
-
-msgid "Speaker"
-msgstr "Bozgorailua"
-
-
-msgid "World"
-msgstr "Mundua"
 
 
 msgid "Cube"
@@ -760,8 +748,20 @@ msgid "Circle"
 msgstr "Zirkulua"
 
 
+msgid "Lamp"
+msgstr "Lanpara"
+
+
+msgid "Speaker"
+msgstr "Bozgorailua"
+
+
 msgid "Grid"
 msgstr "Sarea"
+
+
+msgid "World"
+msgstr "Mundua"
 
 
 msgid "Filter Size"
@@ -2498,6 +2498,11 @@ msgstr "Fitxategia: %r"
 
 
 msgctxt "Operator"
+msgid "Camera"
+msgstr "Kamera"
+
+
+msgctxt "Operator"
 msgid "Empty"
 msgstr "Hutsa"
 
@@ -2505,11 +2510,6 @@ msgstr "Hutsa"
 msgctxt "Operator"
 msgid "Speaker"
 msgstr "Bozgorailua"
-
-
-msgctxt "Operator"
-msgid "Camera"
-msgstr "Kamera"
 
 
 msgctxt "Operator"
@@ -2833,14 +2833,6 @@ msgid "ID value"
 msgstr "ID balioa"
 
 
-msgid "Reflect"
-msgstr "Islatu"
-
-
-msgid "Refract"
-msgstr "Errefrakzioa"
-
-
 msgid "Dispersion"
 msgstr "Sakabanatu"
 
@@ -2875,10 +2867,6 @@ msgstr "Graduak"
 
 msgid "Val"
 msgstr "Balioa"
-
-
-msgid "Missing Datablock"
-msgstr "Datu-blokea galduta"
 
 
 msgid "Temperature"

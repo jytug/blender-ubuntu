@@ -26,12 +26,13 @@
 # ----------------------------------------------------------
 # noinspection PyUnresolvedReferences
 import bpy
+import bmesh
 from bmesh import from_edit_mesh
 # noinspection PyUnresolvedReferences
 import bgl
 from bpy.types import PropertyGroup, Panel, Object, Operator, SpaceView3D
-from bpy.props import IntProperty, CollectionProperty, FloatVectorProperty, BoolProperty, StringProperty, FloatProperty, \
-    EnumProperty
+from bpy.props import IntProperty, CollectionProperty, FloatVectorProperty, BoolProperty, StringProperty, \
+                      FloatProperty, EnumProperty
 from bpy.app.handlers import persistent
 # noinspection PyUnresolvedReferences
 from .measureit_geometry import *
@@ -78,6 +79,7 @@ def save_handler(dummy):
     except:
         pass
 
+
 bpy.app.handlers.load_post.append(load_handler)
 bpy.app.handlers.save_pre.append(save_handler)
 
@@ -87,7 +89,8 @@ bpy.app.handlers.save_pre.append(save_handler)
 # ------------------------------------------------------------------
 class MeasureitIndex(PropertyGroup):
     glidx = IntProperty(name="index",
-                                  description="vertex index")
+                        description="vertex index")
+
 
 # Register
 bpy.utils.register_class(MeasureitIndex)
@@ -98,9 +101,10 @@ bpy.utils.register_class(MeasureitIndex)
 # ------------------------------------------------------------------
 class MeasureitFaces(PropertyGroup):
     glface = IntProperty(name="glface",
-                                   description="Face number")
+                         description="Face number")
     # Array of index
     measureit_index = CollectionProperty(type=MeasureitIndex)
+
 
 # Register
 bpy.utils.register_class(MeasureitFaces)
@@ -111,183 +115,191 @@ bpy.utils.register_class(MeasureitFaces)
 # ------------------------------------------------------------------
 class MeasureitProperties(PropertyGroup):
     gltype = IntProperty(name="gltype",
-                                   description="Measure type (1-Segment, 2-Label, etc..)", default=1)
+                         description="Measure type (1-Segment, 2-Label, etc..)", default=1)
     glpointa = IntProperty(name="glpointa",
-                                     description="Hidden property for opengl")
+                           description="Hidden property for opengl")
     glpointb = IntProperty(name="glpointb",
-                                     description="Hidden property for opengl")
+                           description="Hidden property for opengl")
     glpointc = IntProperty(name="glpointc",
-                                     description="Hidden property for opengl")
+                           description="Hidden property for opengl")
     glcolor = FloatVectorProperty(name="glcolor",
-                                            description="Color for the measure",
-                                            default=(0.173, 0.545, 1.0, 1.0),
-                                            min=0.1,
-                                            max=1,
-                                            subtype='COLOR',
-                                            size=4)
+                                  description="Color for the measure",
+                                  default=(0.173, 0.545, 1.0, 1.0),
+                                  min=0.1,
+                                  max=1,
+                                  subtype='COLOR',
+                                  size=4)
     glview = BoolProperty(name="glview",
-                                    description="Measure visible/hide",
-                                    default=True)
+                          description="Measure visible/hide",
+                          default=True)
     glspace = FloatProperty(name='glspace', min=-100, max=100, default=0.1,
-                                      precision=3,
-                                      description='Distance to display measure')
+                            precision=3,
+                            description='Distance to display measure')
     glwidth = IntProperty(name='glwidth', min=1, max=10, default=1,
-                                    description='line width')
+                          description='line width')
     glfree = BoolProperty(name="glfree",
-                                    description="This measure is free and can be deleted",
-                                    default=False)
+                          description="This measure is free and can be deleted",
+                          default=False)
     gltxt = StringProperty(name="gltxt", maxlen=256,
-                                     description="Short description (use | for line break)")
+                           description="Short description (use | for line break)")
     gladvance = BoolProperty(name="gladvance",
-                                       description="Advanced options as line width or position",
-                                       default=False)
+                             description="Advanced options as line width or position",
+                             default=False)
     gldefault = BoolProperty(name="gldefault",
-                                       description="Display measure in position calculated by default",
-                                       default=True)
+                             description="Display measure in position calculated by default",
+                             default=True)
     glnormalx = FloatProperty(name="glnormalx",
-                                        description="Change orientation in X axis",
-                                        default=1, min=-1, max=1, precision=2)
+                              description="Change orientation in X axis",
+                              default=1, min=-1, max=1, precision=2)
     glnormaly = FloatProperty(name="glnormaly",
-                                        description="Change orientation in Y axis",
-                                        default=0, min=-1, max=1, precision=2)
+                              description="Change orientation in Y axis",
+                              default=0, min=-1, max=1, precision=2)
     glnormalz = FloatProperty(name="glnormalz",
-                                        description="Change orientation in Z axis",
-                                        default=0, min=-1, max=1, precision=2)
+                              description="Change orientation in Z axis",
+                              default=0, min=-1, max=1, precision=2)
     glfont_size = IntProperty(name="Text Size",
-                                        description="Text size",
-                                        default=14, min=6, max=150)
+                              description="Text size",
+                              default=14, min=6, max=150)
+    glfont_align = EnumProperty(items=(('L', "Left Align", ""),
+                                       ('C', "Center Align", ""),
+                                       ('R', "Right Align", "")),
+                                name="Align Font",
+                                description="Set Font Alignment")
+    glfont_rotat = IntProperty(name='Rotate', min=0, max=360, default=0,
+                                description="Text rotation in degrees")
     gllink = StringProperty(name="gllink",
-                                      description="linked object for linked measures")
+                            description="linked object for linked measures")
     glocwarning = BoolProperty(name="glocwarning",
-                                         description="Display a warning if some axis is not used in distance",
-                                         default=True)
+                               description="Display a warning if some axis is not used in distance",
+                               default=True)
     glocx = BoolProperty(name="glocx",
-                                   description="Include changes in X axis for calculating the distance",
-                                   default=True)
+                         description="Include changes in X axis for calculating the distance",
+                         default=True)
     glocy = BoolProperty(name="glocy",
-                                   description="Include changes in Y axis for calculating the distance",
-                                   default=True)
+                         description="Include changes in Y axis for calculating the distance",
+                         default=True)
     glocz = BoolProperty(name="glocz",
-                                   description="Include changes in Z axis for calculating the distance",
-                                   default=True)
+                         description="Include changes in Z axis for calculating the distance",
+                         default=True)
     glfontx = IntProperty(name="glfontx",
-                                    description="Change font position in X axis",
-                                    default=0, min=-3000, max=3000)
+                          description="Change font position in X axis",
+                          default=0, min=-3000, max=3000)
     glfonty = IntProperty(name="glfonty",
-                                    description="Change font position in Y axis",
-                                    default=0, min=-3000, max=3000)
+                          description="Change font position in Y axis",
+                          default=0, min=-3000, max=3000)
     gldist = BoolProperty(name="gldist",
-                                    description="Display distance for this measure",
-                                    default=True)
+                          description="Display distance for this measure",
+                          default=True)
     glnames = BoolProperty(name="glnames",
-                                     description="Display text for this measure",
-                                     default=True)
+                           description="Display text for this measure",
+                           default=True)
     gltot = EnumProperty(items=(('99', "-", "Select a group for sum"),
-                                          ('0', "A", ""),
-                                          ('1', "B", ""),
-                                          ('2', "C", ""),
-                                          ('3', "D", ""),
-                                          ('4', "E", ""),
-                                          ('5', "F", ""),
-                                          ('6', "G", ""),
-                                          ('7', "H", ""),
-                                          ('8', "I", ""),
-                                          ('9', "J", ""),
-                                          ('10', "K", ""),
-                                          ('11', "L", ""),
-                                          ('12', "M", ""),
-                                          ('13', "N", ""),
-                                          ('14', "O", ""),
-                                          ('15', "P", ""),
-                                          ('16', "Q", ""),
-                                          ('17', "R", ""),
-                                          ('18', "S", ""),
-                                          ('19', "T", ""),
-                                          ('20', "U", ""),
-                                          ('21', "V", ""),
-                                          ('22', "W", ""),
-                                          ('23', "X", ""),
-                                          ('24', "Y", ""),
-                                          ('25', "Z", "")),
-                                   name="Sum in Group",
-                                   description="Add segment length in selected group")
+                                ('0', "A", ""),
+                                ('1', "B", ""),
+                                ('2', "C", ""),
+                                ('3', "D", ""),
+                                ('4', "E", ""),
+                                ('5', "F", ""),
+                                ('6', "G", ""),
+                                ('7', "H", ""),
+                                ('8', "I", ""),
+                                ('9', "J", ""),
+                                ('10', "K", ""),
+                                ('11', "L", ""),
+                                ('12', "M", ""),
+                                ('13', "N", ""),
+                                ('14', "O", ""),
+                                ('15', "P", ""),
+                                ('16', "Q", ""),
+                                ('17', "R", ""),
+                                ('18', "S", ""),
+                                ('19', "T", ""),
+                                ('20', "U", ""),
+                                ('21', "V", ""),
+                                ('22', "W", ""),
+                                ('23', "X", ""),
+                                ('24', "Y", ""),
+                                ('25', "Z", "")),
+                         name="Sum in Group",
+                         description="Add segment length in selected group")
     glorto = EnumProperty(items=(('99', "None", ""),
-                                           ('0', "A", "Point A must use selected point B location"),
-                                           ('1', "B", "Point B must use selected point A location")),
-                                    name="Orthogonal",
-                                    description="Display point selected as orthogonal (select axis to copy)")
+                                 ('0', "A", "Point A must use selected point B location"),
+                                 ('1', "B", "Point B must use selected point A location")),
+                          name="Orthogonal",
+                          description="Display point selected as orthogonal (select axis to copy)")
     glorto_x = BoolProperty(name="ox",
-                                      description="Copy X location",
-                                      default=False)
+                            description="Copy X location",
+                            default=False)
     glorto_y = BoolProperty(name="oy",
-                                      description="Copy Y location",
-                                      default=False)
+                            description="Copy Y location",
+                            default=False)
     glorto_z = BoolProperty(name="oz",
-                                      description="Copy Z location",
-                                      default=False)
+                            description="Copy Z location",
+                            default=False)
     glarrow_a = EnumProperty(items=(('99', "--", "No arrow"),
-                                              ('1', "Line", "The point of the arrow are lines"),
-                                              ('2', "Triangle", "The point of the arrow is triangle"),
-                                              ('3', "TShape", "The point of the arrow is a T")),
-                                       name="A end",
-                                       description="Add arrows to point A")
+                                    ('1', "Line", "The point of the arrow are lines"),
+                                    ('2', "Triangle", "The point of the arrow is triangle"),
+                                    ('3', "TShape", "The point of the arrow is a T")),
+                             name="A end",
+                             description="Add arrows to point A")
     glarrow_b = EnumProperty(items=(('99', "--", "No arrow"),
-                                              ('1', "Line", "The point of the arrow are lines"),
-                                              ('2', "Triangle", "The point of the arrow is triangle"),
-                                              ('3', "TShape", "The point of the arrow is a T")),
-                                       name="B end",
-                                       description="Add arrows to point B")
+                                    ('1', "Line", "The point of the arrow are lines"),
+                                    ('2', "Triangle", "The point of the arrow is triangle"),
+                                    ('3', "TShape", "The point of the arrow is a T")),
+                             name="B end",
+                             description="Add arrows to point B")
     glarrow_s = IntProperty(name="Size",
-                                      description="Arrow size",
-                                      default=15, min=6, max=500)
+                            description="Arrow size",
+                            default=15, min=6, max=500)
 
     glarc_full = BoolProperty(name="arcfull",
-                                        description="Create full circunference",
-                                        default=False)
+                              description="Create full circunference",
+                              default=False)
     glarc_extrad = BoolProperty(name="arcextrad",
-                                          description="Adapt radio lengh to arc line",
-                                          default=True)
+                                description="Adapt radio lengh to arc line",
+                                default=True)
     glarc_rad = BoolProperty(name="arc rad",
-                                       description="Show arc radius",
-                                       default=True)
+                             description="Show arc radius",
+                             default=True)
     glarc_len = BoolProperty(name="arc len",
-                                       description="Show arc length",
-                                       default=True)
+                             description="Show arc length",
+                             default=True)
     glarc_ang = BoolProperty(name="arc ang",
-                                       description="Show arc angle",
-                                       default=True)
+                             description="Show arc angle",
+                             default=True)
 
     glarc_a = EnumProperty(items=(('99', "--", "No arrow"),
-                                            ('1', "Line", "The point of the arrow are lines"),
-                                            ('2', "Triangle", "The point of the arrow is triangle"),
-                                            ('3', "TShape", "The point of the arrow is a T")),
-                                     name="Ar end",
-                                     description="Add arrows to point A")
+                                  ('1', "Line", "The point of the arrow are lines"),
+                                  ('2', "Triangle", "The point of the arrow is triangle"),
+                                  ('3', "TShape", "The point of the arrow is a T")),
+                           name="Ar end",
+                           description="Add arrows to point A")
     glarc_b = EnumProperty(items=(('99', "--", "No arrow"),
-                                            ('1', "Line", "The point of the arrow are lines"),
-                                            ('2', "Triangle", "The point of the arrow is triangle"),
-                                            ('3', "TShape", "The point of the arrow is a T")),
-                                     name="Br end",
-                                     description="Add arrows to point B")
+                                  ('1', "Line", "The point of the arrow are lines"),
+                                  ('2', "Triangle", "The point of the arrow is triangle"),
+                                  ('3', "TShape", "The point of the arrow is a T")),
+                           name="Br end",
+                           description="Add arrows to point B")
     glarc_s = IntProperty(name="Size",
-                                    description="Arrow size",
-                                    default=15, min=6, max=500)
+                          description="Arrow size",
+                          default=15, min=6, max=500)
     glarc_txradio = StringProperty(name="txradio",
-                                             description="Text for radius", default="r=")
+                                   description="Text for radius", default="r=")
     glarc_txlen = StringProperty(name="txlen",
-                                           description="Text for length", default="L=")
+                                 description="Text for length", default="L=")
     glarc_txang = StringProperty(name="txang",
-                                           description="Text for angle", default="A=")
+                                 description="Text for angle", default="A=")
     glcolorarea = FloatVectorProperty(name="glcolorarea",
-                                                description="Color for the measure of area",
-                                                default=(0.1, 0.1, 0.1, 1.0),
-                                                min=0.1,
-                                                max=1,
-                                                subtype='COLOR',
-                                                size=4)
+                                      description="Color for the measure of area",
+                                      default=(0.1, 0.1, 0.1, 1.0),
+                                      min=0.1,
+                                      max=1,
+                                      subtype='COLOR',
+                                      size=4)
 
     # Array of faces
     measureit_faces = CollectionProperty(type=MeasureitFaces)
+
 
 # Register
 bpy.utils.register_class(MeasureitProperties)
@@ -299,7 +311,7 @@ bpy.utils.register_class(MeasureitProperties)
 # ------------------------------------------------------------------
 class MeasureContainer(PropertyGroup):
     measureit_num = IntProperty(name='Number of measures', min=0, max=1000, default=0,
-                                          description='Number total of measureit elements')
+                                description='Number total of measureit elements')
     # Array of segments
     measureit_segments = CollectionProperty(type=MeasureitProperties)
 
@@ -317,7 +329,7 @@ class MeasureitEditPanel(Panel):
     bl_label = "Measureit"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'MesureIt'
+    bl_category = 'MeasureIt'
 
     # -----------------------------------------------------
     # Verify if visible
@@ -354,18 +366,22 @@ class MeasureitEditPanel(Panel):
                 row = box.row()
                 row.prop(scene, 'measureit_gl_show_d', text="Distances", toggle=True, icon="ALIGN")
                 row.prop(scene, 'measureit_gl_show_n', text="Texts", toggle=True, icon="FONT_DATA")
-
+                row = box.row()
+                row.prop(scene, 'measureit_hide_units', text="Hide measurement unit")
                 # Scale factor
                 row = box.row()
                 row.prop(scene, 'measureit_scale', text="Scale")
                 if scene.measureit_scale is True:
-                    row.prop(scene, 'measureit_scale_factor', text="1")
-                    row.prop(scene, 'measureit_scale_precision', text="")
+                    split = row.split(percentage=0.25, align=False)
+                    split.prop(scene, 'measureit_scale_color', text="")
+                    split.prop(scene, 'measureit_scale_factor', text="1")
+                    row = box.row()
+                    row.separator()
                     row.prop(scene, 'measureit_gl_scaletxt', text="")
-                    row = box.row()
-                    row.prop(scene, 'measureit_scale_color')
                     row.prop(scene, 'measureit_scale_font')
+                    row.prop(scene, 'measureit_scale_precision', text="")
                     row = box.row()
+                    row.separator()
                     row.prop(scene, 'measureit_scale_pos_x')
                     row.prop(scene, 'measureit_scale_pos_y')
 
@@ -373,9 +389,15 @@ class MeasureitEditPanel(Panel):
                 row = box.row()
                 row.prop(scene, 'measureit_ovr', text="Override")
                 if scene.measureit_ovr is True:
-                    row.prop(scene, 'measureit_ovr_color', text="")
+                    split = row.split(percentage=0.25, align=False)
+                    split.prop(scene, 'measureit_ovr_color', text="")
+                    split.prop(scene, 'measureit_ovr_width', text="Width")
+                    row = box.row()
+                    row.separator()
                     row.prop(scene, 'measureit_ovr_font', text="Font")
-                    row.prop(scene, 'measureit_ovr_width', text="Width")
+                    row.prop(scene, 'measureit_ovr_font_align', text="")
+                    if scene.measureit_ovr_font_align == 'L':
+                        row.prop(scene, 'measureit_ovr_font_rotation', text="Rotate")
 
                 mp = context.object.MeasureGenerator[0]
                 # -----------------
@@ -383,6 +405,9 @@ class MeasureitEditPanel(Panel):
                 # -----------------
                 if mp.measureit_num > 0:
                     box = layout.box()
+                    row = box.row(True)
+                    row.operator("measureit.expandallsegmentbutton", text="Expand all", icon="ZOOMIN")
+                    row.operator("measureit.collapseallsegmentbutton", text="Collapse all", icon="ZOOMOUT")
                     for idx in range(0, mp.measureit_num):
                         if mp.measureit_segments[idx].glfree is False:
                             add_item(box, idx, mp.measureit_segments[idx])
@@ -406,6 +431,10 @@ class MeasureitEditPanel(Panel):
                         if (ms.gltype == 1 or ms.gltype == 12
                             or ms.gltype == 13 or ms.gltype == 14) and ms.gltot != '99' \
                                 and ms.glfree is False:  # only segments
+                            if bpy.context.mode == "EDIT_MESH":
+                                bm = bmesh.from_edit_mesh(bpy.context.edit_object.data)
+                                if hasattr(bm.verts, "ensure_lookup_table"):
+                                    bm.verts.ensure_lookup_table()
                             if ms.glpointa <= len(obverts) and ms.glpointb <= len(obverts):
                                 p1 = get_point(obverts[ms.glpointa].co, myobj)
                                 if ms.gltype == 1:
@@ -469,9 +498,10 @@ class MeasureitEditPanel(Panel):
 
 
 # -----------------------------------------------------
-# Add segment to the panel.
+# Add segment options to the panel.
 # -----------------------------------------------------
 def add_item(box, idx, segment):
+    scene = bpy.context.scene
     row = box.row(True)
     if segment.glview is True:
         icon = "VISIBLE_IPO_ON"
@@ -479,17 +509,27 @@ def add_item(box, idx, segment):
         icon = "VISIBLE_IPO_OFF"
 
     row.prop(segment, 'glview', text="", toggle=True, icon=icon)
-    row.prop(segment, 'gladvance', text="", toggle=True, icon="MANIPUL")
-    row.prop(segment, 'gltxt', text="")
-    row.prop(segment, 'glcolor', text="")
+    row.prop(segment, 'gladvance', text="", toggle=True, icon="SCRIPTWIN")
+    if segment.gltype == 20:  # Area special
+        split = row.split(percentage=0.15, align=True)
+        split.prop(segment, 'glcolorarea', text="")
+        split = split.split(percentage=0.20, align=True)
+        split.prop(segment, 'glcolor', text="")
+    else:
+        split = row.split(percentage=0.25, align=True)
+        split.prop(segment, 'glcolor', text="")
+    split.prop(segment, 'gltxt', text="")
     op = row.operator("measureit.deletesegmentbutton", text="", icon="X")
     op.tag = idx  # saves internal data
     if segment.gladvance is True:
         row = box.row(True)
-        if segment.gltype != 10 and segment.gltype != 20:
-            row.prop(segment, 'glspace', text="Distance")
-
         row.prop(segment, 'glfont_size', text="Font")
+        row.prop(segment, 'glfont_align', text="")
+        if segment.glfont_align == 'L':
+            row.prop(segment, 'glfont_rotat', text="Rotate")
+        row = box.row(True)
+        if segment.gltype != 9 and segment.gltype != 10 and segment.gltype != 20:
+            row.prop(segment, 'glspace', text="Distance")
         row.prop(segment, 'glfontx', text="X")
         row.prop(segment, 'glfonty', text="Y")
 
@@ -498,17 +538,20 @@ def add_item(box, idx, segment):
             row = box.row(True)
             row.prop(segment, 'glarrow_a', text="")
             row.prop(segment, 'glarrow_b', text="")
-            row.prop(segment, 'glarrow_s', text="Size")
+            if segment.glarrow_a != '99' or segment.glarrow_b != '99': 
+                row.prop(segment, 'glarrow_s', text="Size")
 
         if segment.gltype != 2 and segment.gltype != 10:
             row = box.row(True)
-            row.prop(segment, 'gldist', text="Distance", toggle=True, icon="ALIGN")
-            row.prop(segment, 'glnames', text="Text", toggle=True, icon="FONT_DATA")
+            if scene.measureit_gl_show_d is True and segment.gltype != 9:
+                row.prop(segment, 'gldist', text="Distance", toggle=True, icon="ALIGN")
+            if scene.measureit_gl_show_n is True:
+                row.prop(segment, 'glnames', text="Text", toggle=True, icon="FONT_DATA")
             # sum distances
             if segment.gltype == 1 or segment.gltype == 12 or segment.gltype == 13 or segment.gltype == 14:
                 row.prop(segment, 'gltot', text="Sum")
 
-        if segment.gltype != 10 and segment.gltype != 20:
+        if segment.gltype != 9 and segment.gltype != 10 and segment.gltype != 20:
             row = box.row(True)
             row.prop(segment, 'glwidth', text="Line")
             row.prop(segment, 'gldefault', text="Automatic position")
@@ -519,8 +562,9 @@ def add_item(box, idx, segment):
                 row.prop(segment, 'glnormalz', text="Z")
 
         # Loc axis
-        if segment.gltype != 2 and segment.gltype != 10 \
-                and segment.gltype != 12 and segment.gltype != 13 and segment.gltype != 14 and segment.gltype != 20:
+        if segment.gltype != 2 and segment.gltype != 9 and segment.gltype != 10 \
+                and segment.gltype != 11 and segment.gltype != 12 and segment.gltype != 13 \
+                and segment.gltype != 14 and segment.gltype != 20:
             row = box.row(True)
             row.prop(segment, 'glocx', text="X", toggle=True)
             row.prop(segment, 'glocy', text="Y", toggle=True)
@@ -557,12 +601,8 @@ def add_item(box, idx, segment):
             row = box.row(True)
             row.prop(segment, 'glarc_a', text="")
             row.prop(segment, 'glarc_b', text="")
-            row.prop(segment, 'glarc_s', text="Size")
-
-        # Area special
-        if segment.gltype == 20:
-            row = box.row(True)
-            row.prop(segment, 'glcolorarea', text="")
+            if segment.glarc_a != '99' or segment.glarc_b != '99':
+                row.prop(segment, 'glarc_s', text="Size")
 
 
 # ------------------------------------------------------------------
@@ -570,7 +610,7 @@ def add_item(box, idx, segment):
 # ------------------------------------------------------------------
 class MeasureitMainPanel(Panel):
     bl_idname = "measureit_main_panel"
-    bl_label = "Tools"
+    bl_label = "MeasureIt Tools"
     bl_space_type = 'VIEW_3D'
     bl_region_type = "TOOLS"
     bl_category = 'Measureit'
@@ -644,22 +684,50 @@ class MeasureitMainPanel(Panel):
                      text="Mesh Debug", emboss=False)
 
             row = box.row()
-            row.prop(scene, "measureit_debug_vertices", icon="LOOPSEL")
-            row.prop(scene, "measureit_debug_location", icon="EMPTY_DATA")
-            row.prop(scene, "measureit_debug_faces", icon="FACESEL")
+            split = row.split(percentage=0.10, align=True)
+            split.prop(scene, 'measureit_debug_obj_color', text="")
+            split.prop(scene, "measureit_debug_objects", icon="OBJECT_DATA")
+            split.prop(scene, "measureit_debug_object_loc", icon="EMPTY_DATA")
+
             row = box.row()
+            split = row.split(percentage=0.10, align=True)
+            split.prop(scene, 'measureit_debug_vert_color', text="")
+            split.prop(scene, "measureit_debug_vertices", icon="LOOPSEL")
+            split.prop(scene, "measureit_debug_vert_loc", icon="EMPTY_DATA")
+            if scene.measureit_debug_vert_loc is True:
+                split.prop(scene, 'measureit_debug_vert_loc_toggle', text="")
+
+            row = box.row()
+            split = row.split(percentage=0.10, align=True)
+            split.prop(scene, 'measureit_debug_edge_color', text="")
+            split = split.split(percentage=0.5, align=True)
+            split.prop(scene, "measureit_debug_edges", icon="EDGESEL")
+
+            row = box.row()
+            split = row.split(percentage=0.10, align=True)
+            split.prop(scene, 'measureit_debug_face_color', text="")
+            split = split.split(percentage=0.5, align=True)
+            split.prop(scene, "measureit_debug_faces", icon="FACESEL")
+
+            row = box.row()
+            split = row.split(percentage=0.10, align=True)
+            split.prop(scene, 'measureit_debug_norm_color', text="")
+            if scene.measureit_debug_normals is False:
+                split = split.split(percentage=0.50, align=True)
+                split.prop(scene, "measureit_debug_normals", icon="MAN_TRANS")
+            else:
+                split = split.split(percentage=0.5, align=True)
+                split.prop(scene, "measureit_debug_normals", icon="MAN_TRANS")
+                split.prop(scene, "measureit_debug_normal_size")
+                row = box.row()
+                split = row.split(percentage=0.10, align=True)
+                split.separator()
+                split.prop(scene, "measureit_debug_normal_details")
+                split.prop(scene, 'measureit_debug_width', text="Thickness")
+
+            row = box.row(align=True)
             row.prop(scene, "measureit_debug_select", icon="GHOST_ENABLED")
-            row.prop(scene, "measureit_debug_normals", icon="MAN_TRANS")
-            if scene.measureit_debug_normals is True:
-                row.prop(scene, "measureit_debug_normal_size")
-                row.prop(scene, "measureit_debug_normal_details")
-            row = box.row()
-            row.prop(scene, 'measureit_debug_color', text="")
-            row.prop(scene, 'measureit_debug_color2', text="")
-            row.prop(scene, 'measureit_debug_color3', text="")
-            row = box.row()
             row.prop(scene, 'measureit_debug_font', text="Font")
-            row.prop(scene, 'measureit_debug_width', text="Thickness")
             row.prop(scene, 'measureit_debug_precision', text="Precision")
 
 
@@ -668,10 +736,11 @@ class MeasureitMainPanel(Panel):
 # ------------------------------------------------------------------
 class MeasureitConfPanel(Panel):
     bl_idname = "measureit_conf_panel"
-    bl_label = "Configuration"
+    bl_label = "MeasureIt Configuration"
     bl_space_type = 'VIEW_3D'
     bl_region_type = "TOOLS"
     bl_category = 'Measureit'
+    bl_options = {'DEFAULT_CLOSED'}
 
     # ------------------------------
     # Draw UI
@@ -683,18 +752,24 @@ class MeasureitConfPanel(Panel):
         # Configuration data
         box = layout.box()
         row = box.row()
-        row.prop(scene, "measureit_gl_txt", text="Text")
-        row = box.row()
-        row.prop(scene, "measureit_default_color", text="")
+        split = row.split(percentage=0.2, align=True)
+        split.label("Text")
+        split = split.split(percentage=0.2, align=True)
+        split.prop(scene, "measureit_default_color", text="")
+        split.prop(scene, "measureit_gl_txt", text="")
+        row = box.row(True)
         row.prop(scene, "measureit_hint_space")
+        row.prop(scene, "measureit_font_align", text="")
         # Arrow
         row = box.row(True)
         row.prop(scene, "measureit_glarrow_a", text="")
         row.prop(scene, "measureit_glarrow_b", text="")
-        row.prop(scene, "measureit_glarrow_s", text="Size")
-
-        row = box.row()
+        if scene.measureit_glarrow_a != '99' or scene.measureit_glarrow_b != '99':
+            row.prop(scene, "measureit_glarrow_s", text="Size")
+        row = box.row(True)
         row.prop(scene, "measureit_font_size")
+        if scene.measureit_font_align == 'L':
+            row.prop(scene, "measureit_font_rotation", text="Rotate")
 
 
 # ------------------------------------------------------------------
@@ -702,10 +777,11 @@ class MeasureitConfPanel(Panel):
 # ------------------------------------------------------------------
 class MeasureitRenderPanel(Panel):
     bl_idname = "measureit_render_panel"
-    bl_label = "Render"
+    bl_label = "MeasureIt Render"
     bl_space_type = 'VIEW_3D'
     bl_region_type = "TOOLS"
     bl_category = 'Measureit'
+    bl_options = {'DEFAULT_CLOSED'}
 
     # ------------------------------
     # Draw UI
@@ -732,7 +808,7 @@ class MeasureitRenderPanel(Panel):
 
 
 # -------------------------------------------------------------
-# Defines button for add a measure segment
+# Defines button that adds a measure segment
 #
 # -------------------------------------------------------------
 class AddSegmentButton(Operator):
@@ -799,6 +875,8 @@ class AddSegmentButton(Operator):
                         # text
                         ms.gltxt = scene.measureit_gl_txt
                         ms.glfont_size = scene.measureit_font_size
+                        ms.glfont_align = scene.measureit_font_align
+                        ms.glfont_rotat = scene.measureit_font_rotation
                         # Sum group
                         ms.gltot = scene.measureit_sum
                         # Add index
@@ -819,7 +897,7 @@ class AddSegmentButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for add area measure
+# Defines button that adds an area measure
 #
 # -------------------------------------------------------------
 class AddAreaButton(Operator):
@@ -886,6 +964,8 @@ class AddAreaButton(Operator):
                 # text
                 ms.gltxt = scene.measureit_gl_txt
                 ms.glfont_size = scene.measureit_font_size
+                ms.glfont_align = scene.measureit_font_align
+                ms.glfont_rotat = scene.measureit_font_rotation
                 # Sum group
                 ms.gltot = scene.measureit_sum
                 # Add index
@@ -905,7 +985,7 @@ class AddAreaButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for add a measure segment to x/y/z origin
+# Defines button that adds a measure segment to x/y/z origin
 #
 # -------------------------------------------------------------
 class AddSegmentOrtoButton(Operator):
@@ -974,6 +1054,8 @@ class AddSegmentOrtoButton(Operator):
                         # text
                         ms.gltxt = scene.measureit_gl_txt
                         ms.glfont_size = scene.measureit_font_size
+                        ms.glfont_align = scene.measureit_font_align
+                        ms.glfont_rotat = scene.measureit_font_rotation
                         # Sum group
                         ms.gltot = scene.measureit_sum
                         # Add index
@@ -994,7 +1076,7 @@ class AddSegmentOrtoButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for add a angle
+# Defines button that adds an angle measure
 #
 # -------------------------------------------------------------
 class AddAngleButton(Operator):
@@ -1055,6 +1137,8 @@ class AddAngleButton(Operator):
                     # text
                     ms.gltxt = scene.measureit_gl_txt
                     ms.glfont_size = scene.measureit_font_size
+                    ms.glfont_align = scene.measureit_font_align
+                    ms.glfont_rotat = scene.measureit_font_rotation
                     # Add index
                     mp.measureit_num += 1
 
@@ -1073,7 +1157,7 @@ class AddAngleButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for add a arc
+# Defines button that adds an arc measure
 #
 # -------------------------------------------------------------
 class AddArcButton(Operator):
@@ -1138,6 +1222,8 @@ class AddArcButton(Operator):
                     # text
                     ms.gltxt = scene.measureit_gl_txt
                     ms.glfont_size = scene.measureit_font_size
+                    ms.glfont_align = scene.measureit_font_align
+                    ms.glfont_rotat = scene.measureit_font_rotation
                     # Add index
                     mp.measureit_num += 1
 
@@ -1156,7 +1242,7 @@ class AddArcButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for add a label segment
+# Defines button that adds a label segment
 #
 # -------------------------------------------------------------
 class AddLabelButton(Operator):
@@ -1219,6 +1305,8 @@ class AddLabelButton(Operator):
                     # text
                     ms.gltxt = scene.measureit_gl_txt
                     ms.glfont_size = scene.measureit_font_size
+                    ms.glfont_align = scene.measureit_font_align
+                    ms.glfont_rotat = scene.measureit_font_rotation
                     # Add index
                     mp.measureit_num += 1
 
@@ -1237,7 +1325,7 @@ class AddLabelButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for add a link
+# Defines button that adds a link
 #
 # -------------------------------------------------------------
 class AddLinkButton(Operator):
@@ -1363,6 +1451,8 @@ class AddLinkButton(Operator):
                 # text
                 ms.gltxt = scene.measureit_gl_txt
                 ms.glfont_size = scene.measureit_font_size
+                ms.glfont_align = scene.measureit_font_align
+                ms.glfont_rotat = scene.measureit_font_rotation
                 # link
                 ms.gllink = linkobject
                 # Add index
@@ -1382,7 +1472,7 @@ class AddLinkButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for add a origin segment
+# Defines button that adds an origin segment
 #
 # -------------------------------------------------------------
 class AddOriginButton(Operator):
@@ -1464,6 +1554,8 @@ class AddOriginButton(Operator):
                 # text
                 ms.gltxt = scene.measureit_gl_txt
                 ms.glfont_size = scene.measureit_font_size
+                ms.glfont_align = scene.measureit_font_align
+                ms.glfont_rotat = scene.measureit_font_rotation
                 # Add index
                 mp.measureit_num += 1
 
@@ -1479,7 +1571,7 @@ class AddOriginButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for delete a measure segment
+# Defines button that deletes a measure segment
 #
 # -------------------------------------------------------------
 class DeleteSegmentButton(Operator):
@@ -1513,7 +1605,7 @@ class DeleteSegmentButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for delete all measure segment
+# Defines button that deletes all measure segments
 #
 # -------------------------------------------------------------
 class DeleteAllSegmentButton(Operator):
@@ -1548,7 +1640,7 @@ class DeleteAllSegmentButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for delete all measure segment
+# Defines button that deletes all measure segment sums
 #
 # -------------------------------------------------------------
 class DeleteAllSumButton(Operator):
@@ -1574,7 +1666,69 @@ class DeleteAllSumButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for render
+# Defines button that expands all measure segments
+#
+# -------------------------------------------------------------
+class ExpandAllSegmentButton(Operator):
+    bl_idname = "measureit.expandallsegmentbutton"
+    bl_label = "Expand"
+    bl_description = "Expand all measure properties"
+    bl_category = 'Measureit'
+    tag = IntProperty()
+
+    # ------------------------------
+    # Execute button action
+    # ------------------------------
+    def execute(self, context):
+        if context.area.type == 'VIEW_3D':
+            # Add properties
+            mainobject = context.object
+            mp = mainobject.MeasureGenerator[0]
+
+            for i in mp.measureit_segments:
+                i.gladvance = True
+
+            return {'FINISHED'}
+        else:
+            self.report({'WARNING'},
+                        "View3D not found, cannot run operator")
+
+        return {'CANCELLED'}
+
+
+# -------------------------------------------------------------
+# Defines button that collapses all measure segments
+#
+# -------------------------------------------------------------
+class CollapseAllSegmentButton(Operator):
+    bl_idname = "measureit.collapseallsegmentbutton"
+    bl_label = "Collapse"
+    bl_description = "Collapses all measure properties"
+    bl_category = 'Measureit'
+    tag = IntProperty()
+
+    # ------------------------------
+    # Execute button action
+    # ------------------------------
+    def execute(self, context):
+        if context.area.type == 'VIEW_3D':
+            # Add properties
+            mainobject = context.object
+            mp = mainobject.MeasureGenerator[0]
+
+            for i in mp.measureit_segments:
+                i.gladvance = False
+
+            return {'FINISHED'}
+        else:
+            self.report({'WARNING'},
+                        "View3D not found, cannot run operator")
+
+        return {'CANCELLED'}
+
+
+# -------------------------------------------------------------
+# Defines button for render option
 #
 # -------------------------------------------------------------
 class RenderSegmentButton(Operator):
@@ -1605,8 +1759,7 @@ class RenderSegmentButton(Operator):
             # noinspection PyBroadException
             try:
                 result = bpy.data.images['Render Result']
-                if result.has_data is False:
-                    bpy.ops.render.render()
+                bpy.ops.render.render()
             except:
                 bpy.ops.render.render()
             print("MeasureIt: Using current render image on buffer")
@@ -1764,6 +1917,8 @@ class AddNoteButton(Operator):
             # text
             ms.gltxt = scene.measureit_gl_txt
             ms.glfont_size = scene.measureit_font_size
+            ms.glfont_align = scene.measureit_font_align
+            ms.glfont_rotat = scene.measureit_font_rotation
             # Add index
             mp.measureit_num += 1
 
@@ -1778,7 +1933,7 @@ class AddNoteButton(Operator):
 
 
 # -------------------------------------------------------------
-# Defines button for enable/disable the tip display
+# Defines button that enables/disables the tip display
 #
 # -------------------------------------------------------------
 class RunHintDisplayButton(Operator):
@@ -1796,8 +1951,8 @@ class RunHintDisplayButton(Operator):
     def handle_add(self, context):
         if RunHintDisplayButton._handle is None:
             RunHintDisplayButton._handle = SpaceView3D.draw_handler_add(draw_callback_px, (self, context),
-                                                                                  'WINDOW',
-                                                                                  'POST_PIXEL')
+                                                                        'WINDOW',
+                                                                        'POST_PIXEL')
             context.window_manager.measureit_run_opengl = True
 
     # ------------------------------------
@@ -1889,8 +2044,16 @@ def draw_main(context):
     if scene.measureit_debug is True:
         selobj = bpy.context.selected_objects
         for myobj in selobj:
+            if scene.measureit_debug_objects is True:
+                draw_object(context, myobj, region, rv3d)
+            elif scene.measureit_debug_object_loc is True:
+                draw_object(context, myobj, region, rv3d)
             if scene.measureit_debug_vertices is True:
                 draw_vertices(context, myobj, region, rv3d)
+            elif scene.measureit_debug_vert_loc is True:
+                draw_vertices(context, myobj, region, rv3d)
+            if scene.measureit_debug_edges is True:
+                draw_edges(context, myobj, region, rv3d)
             if scene.measureit_debug_faces is True or scene.measureit_debug_normals is True:
                 draw_faces(context, myobj, region, rv3d)
 
