@@ -3,8 +3,7 @@ Section: graphics
 Priority: optional
 Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
 Uploaders: Matteo F. Vescovi <mfv@debian.org>
-Build-Depends: autotools-dev,
-               cmake,
+Build-Depends: cmake,
                debhelper (>= 10),
                gettext,
                libalut-dev,
