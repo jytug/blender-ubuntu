@@ -1,4 +1,4 @@
-blender (2.79+dfsg0-1) UNRELEASED; urgency=medium
+blender (2.79+dfsg0-1) unstable; urgency=medium
 
   * New upstream release
     - debian/patches/: patchset updated
@@ -9,7 +9,7 @@ blender (2.79+dfsg0-1) UNRELEASED; urgency=medium
     - drop autotools-dev from b-deps
     - S-V bump 4.0.0 -> 4.1.0 (no changes needed)
 
- -- Matteo F. Vescovi <mfv@debian.org>  Sat, 23 Sep 2017 15:31:48 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Sat, 23 Sep 2017 15:33:13 +0200
 
 blender (2.78.c+dfsg0-2) unstable; urgency=medium
 
