@@ -14,7 +14,7 @@ Contributions by:
  2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/intern/ghost/intern/GHOST_SystemPathsUnix.cpp b/intern/ghost/intern/GHOST_SystemPathsUnix.cpp
-index 8738b8dd0..91d336cd2 100644
+index 8738b8d..91d336c 100644
 --- a/intern/ghost/intern/GHOST_SystemPathsUnix.cpp
 +++ b/intern/ghost/intern/GHOST_SystemPathsUnix.cpp
 @@ -61,6 +61,9 @@ GHOST_SystemPathsUnix::~GHOST_SystemPathsUnix()
@@ -28,10 +28,10 @@ index 8738b8dd0..91d336cd2 100644
  	if (static_path) {
  		static string system_path = string(static_path) + "/blender/" + versionstr;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 10ce80a37..69e53b3af 100644
+index 72cd654..22bf933 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -306,7 +306,7 @@ if(UNIX AND NOT APPLE)
+@@ -295,7 +295,7 @@ if(UNIX AND NOT APPLE)
  		if(WITH_INSTALL_PORTABLE)
  			set(TARGETDIR_VER ${BLENDER_VERSION})
  		else()

@@ -9,10 +9,10 @@ Subject: install_in_usr_share
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 2f5741753..c3140c999 100644
+index 6763208..aff1670 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -353,8 +353,8 @@ if(WITH_PYTHON)
+@@ -342,8 +342,8 @@ if(WITH_PYTHON)
  	endif()
  
  	install(

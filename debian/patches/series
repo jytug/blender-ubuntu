@@ -5,6 +5,3 @@
 0005-do_not_use_version_number_in_system_path.patch
 0006-look_for_dejavu_ttf_with_fontconfig.patch
 0007-fix_OpenJPEG2_build.patch
-0008-fix_ppc64el_FTBFS.patch
-0009-fix_Hurd_FTBFS.patch
-0010-fix_AMD_UI_glitches.patch

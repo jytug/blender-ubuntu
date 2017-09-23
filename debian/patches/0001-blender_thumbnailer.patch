@@ -12,7 +12,7 @@ Subject: blender_thumbnailer
 
 diff --git a/blender.thumbnailer b/blender.thumbnailer
 new file mode 100644
-index 000000000..05d4faeb9
+index 0000000..05d4fae
 --- /dev/null
 +++ b/blender.thumbnailer
 @@ -0,0 +1,4 @@
@@ -21,10 +21,10 @@ index 000000000..05d4faeb9
 +Exec=/usr/share/blender/scripts/blender-thumbnailer.py %i %o
 +MimeType=application/x-blender;
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index f65688e13..2f5741753 100644
+index 8f26e24..6763208 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -486,7 +486,7 @@ if(UNIX AND NOT APPLE)
+@@ -475,7 +475,7 @@ if(UNIX AND NOT APPLE)
  		install(
  			PROGRAMS
  			${CMAKE_SOURCE_DIR}/release/bin/blender-thumbnailer.py
