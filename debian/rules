@@ -20,7 +20,6 @@ endif
 
 get-orig-source:
 	uscan --force-download --repack --compression xz
-	$(REPACK_SH) --upstream-version $(SRC_VER) ../blender_$(SRC_VER).orig.tar.xz
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
