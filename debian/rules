@@ -63,7 +63,7 @@ override_dh_install:
 	dh_install --fail-missing --list-missing
 
 override_dh_strip:
-	dh_strip --dbg-package=blender-dbg
+	dh_strip --dbgsym-migration='blender-dbg (<< 2.79+dfsg0-3~)'
 
 override_dh_auto_test:
 

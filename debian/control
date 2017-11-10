@@ -90,15 +90,3 @@ Description: Very fast and versatile 3D modeller/renderer - data package
  a standalone binary are common products of Blender use.
  .
  This package contains documentation, libraries and images for blender.
-
-Package: blender-dbg
-Architecture: any
-Section: debug
-Priority: extra
-Depends: blender (= ${binary:Version}),
-         ${misc:Depends}
-Description: Very fast and versatile 3D modeller/renderer - debug package
- Blender is an integrated 3d suite for modelling, animation, rendering,
- post-production, interactive creation and playback (games).
- .
- This package contains debug symbols to produce useful backtraces.
