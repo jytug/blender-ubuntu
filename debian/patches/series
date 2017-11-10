@@ -6,3 +6,4 @@
 0006-look_for_dejavu_ttf_with_fontconfig.patch
 0007-fix_OpenJPEG2_build.patch
 0008-fix_FTBFS_with_OpenVDB4.patch
+0009-fix_FTBFS_due_to_pugi_ambiguous_naming.patch
