@@ -1,11 +1,13 @@
 blender (2.79+dfsg0-3) UNRELEASED; urgency=medium
 
-  * debian/: enable repacking as uscan instance
+  * debian/:
+    - enable repacking as uscan instance
+    - -dbg -> -dbgsym package migration
   * debian/patches/: patchset updated
     - 0008-fix_FTBFS_with_OpenVDB4.patch refreshed
     - 0009-fix_FTBFS_due_to_pugi_ambiguous_naming.patch added
 
- -- Matteo F. Vescovi <mfv@debian.org>  Fri, 10 Nov 2017 10:25:54 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 10 Nov 2017 20:59:13 +0100
 
 blender (2.79+dfsg0-2) unstable; urgency=medium
 
