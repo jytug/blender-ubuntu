@@ -1,3 +1,3 @@
 version=3
 opts="dversionmangle=s/\+dfsg.*//" \
-http://download.blender.org/source/blender-(.+)\.tar\.gz debian sh debian/repack.stub
+https://download.blender.org/source/blender-(.+)\.tar\.gz debian sh debian/repack.stub
