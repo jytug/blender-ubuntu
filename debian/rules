@@ -68,4 +68,4 @@ override_dh_strip:
 override_dh_auto_test:
 
 %:
-	dh $@ --buildsystem=cmake --parallel --with python3
+	dh $@ --buildsystem=cmake --with python3
