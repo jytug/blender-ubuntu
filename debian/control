@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
 Uploaders: Matteo F. Vescovi <mfv@debian.org>
 Build-Depends: cmake,
-               debhelper (>= 10),
+               debhelper (>= 11~),
                gettext,
                libalut-dev,
                libavcodec-dev (>> 6:10),
