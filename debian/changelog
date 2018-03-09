@@ -1,4 +1,4 @@
-blender (2.79.a+dfsg0-1) UNRELEASED; urgency=medium
+blender (2.79.a+dfsg0-1) unstable; urgency=medium
 
   [ Ondřej Nový ]
   * d/copyright: Use https protocol in Format field
@@ -15,7 +15,7 @@ blender (2.79.a+dfsg0-1) UNRELEASED; urgency=medium
   * debian/rules: drop '--parallel' parameter
   * debian/watch: http:// -> https:// for upstream repository
 
- -- Matteo F. Vescovi <mfv@debian.org>  Fri, 09 Mar 2018 22:49:00 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 09 Mar 2018 22:50:24 +0100
 
 blender (2.79+dfsg0-3) unstable; urgency=medium
 
