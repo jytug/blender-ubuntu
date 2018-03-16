@@ -18,6 +18,12 @@ else
 	SETVDB = OFF
 endif
 
+ifeq ($(DEB_HOST_ARCH),mipsel)
+	SETCOLLADA = OFF
+else
+	SETCOLLADA = ON
+endif
+
 get-orig-source:
 	uscan --force-download --repack --compression xz
 
@@ -41,7 +47,7 @@ override_dh_auto_configure:
 		-DWITH_INSTALL_PORTABLE=OFF \
 		-DWITH_JACK=ON \
 		-DWITH_MOD_OCEANSIM=ON \
-		-DWITH_OPENCOLLADA=ON \
+		-DWITH_OPENCOLLADA=$(SETCOLLADA) \
 		-DWITH_OPENCOLORIO=ON \
 		-DWITH_OPENVDB=$(SETVDB) \
 		-DWITH_PLAYER=ON \
