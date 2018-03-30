@@ -1,3 +1,9 @@
+blender (2.79.b+dfsg0-1) UNRELEASED; urgency=medium
+
+  * New upstream bugfix release
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 30 Mar 2018 22:52:27 +0200
+
 blender (2.79.a+dfsg0-2) unstable; urgency=medium
 
   * debian/rules: drop OpenCOLLADA support on mipsel
