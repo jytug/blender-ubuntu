@@ -1,4 +1,4 @@
-blender (2.79.b+dfsg0-2) UNRELEASED; urgency=medium
+blender (2.79.b+dfsg0-2) unstable; urgency=medium
 
   [ Felipe Sateler ]
   * Change maintainer address to debian-multimedia@lists.debian.org
@@ -7,7 +7,7 @@ blender (2.79.b+dfsg0-2) UNRELEASED; urgency=medium
   * debian/patches/: patchset updated (Closes: #888350)
     - 0008-fix_building_with_latest_versions_of_FFmpeg.patch added
 
- -- Matteo F. Vescovi <mfv@debian.org>  Fri, 15 Jun 2018 22:33:15 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 15 Jun 2018 22:34:18 +0200
 
 blender (2.79.b+dfsg0-1) unstable; urgency=medium
 
