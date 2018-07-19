@@ -1,11 +1,11 @@
-blender (2.79.b+dfsg0-3) UNRELEASED; urgency=medium
+blender (2.79.b+dfsg0-3) unstable; urgency=medium
 
   * debian/patches/: patchset updated
     - #0001 -> #0006 refreshed
     - 0009-fix_gcc-8_ftbfs.patch added (Closes: #897713)
   * debian/control: S-V bump 4.1.3 -> 4.1.5 (no changes needed)
 
- -- Matteo F. Vescovi <mfv@debian.org>  Thu, 19 Jul 2018 14:24:38 +0200
+ -- Matteo F. Vescovi <mfv@debian.org>  Thu, 19 Jul 2018 14:25:31 +0200
 
 blender (2.79.b+dfsg0-2) unstable; urgency=medium
 
