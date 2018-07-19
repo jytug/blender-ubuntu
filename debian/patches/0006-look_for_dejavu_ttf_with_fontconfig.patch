@@ -19,7 +19,7 @@ Subject: look_for_dejavu_ttf_with_fontconfig
  create mode 100644 build_files/cmake/Modules/FindFontconfig.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0423781..83122b7 100644
+index bfea2dd..4ac5eca 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -204,6 +204,9 @@ option(WITH_BLENDER "Build blender (disable to build only the blender player)" O
@@ -32,7 +32,7 @@ index 0423781..83122b7 100644
  
  option(WITH_PYTHON        "Enable Embedded Python API  (only disable for development)" ON)
  option(WITH_PYTHON_SECURITY "Disables execution of scripts within blend files by default" ON) 
-@@ -1751,6 +1754,9 @@ if(FIRST_RUN)
+@@ -1762,6 +1765,9 @@ if(FIRST_RUN)
  		info_cfg_option(WITH_GL_ANGLE)
  	endif()
  
@@ -245,10 +245,10 @@ index b6ff7ed..e343c73 100644
  
  	*r_unifont_size = unifont_mono_size;
 diff --git a/source/blender/blenlib/BLI_fileops.h b/source/blender/blenlib/BLI_fileops.h
-index 5c1fa57..b90ac2d 100644
+index bb23c63..48b47b7 100644
 --- a/source/blender/blenlib/BLI_fileops.h
 +++ b/source/blender/blenlib/BLI_fileops.h
-@@ -88,6 +88,7 @@ bool   BLI_is_file(const char *path) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+@@ -89,6 +89,7 @@ bool   BLI_is_file(const char *path) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
  bool   BLI_dir_create_recursive(const char *dir) ATTR_NONNULL();
  double BLI_dir_free_space(const char *dir) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
  char  *BLI_current_working_dir(char *dir, const size_t maxlen) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
@@ -311,7 +311,7 @@ index 1df7f6f..e6d3b19 100644
   * Returns true if the file with the specified name can be written.
   * This implementation uses access(2), which makes the check according
 diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
-index 22bf933..d3e6686 100644
+index 76da65d..1073b76 100644
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -358,12 +358,6 @@ endif()
