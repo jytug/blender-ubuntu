@@ -1,4 +1,4 @@
-blender (2.79.b+dfsg0-5) UNRELEASED; urgency=medium
+blender (2.79.b+dfsg0-5) unstable; urgency=medium
 
   [ Ondřej Nový ]
   * d/control: Remove ancient X-Python3-Version field
@@ -9,7 +9,7 @@ blender (2.79.b+dfsg0-5) UNRELEASED; urgency=medium
   * debian/control: S-V bump 4.1.5 -> 4.2.1 (no changes needed)
   * debian/rules: drop useless get-orig-source target
 
- -- Matteo F. Vescovi <mfv@debian.org>  Sun, 02 Dec 2018 22:32:48 +0100
+ -- Matteo F. Vescovi <mfv@debian.org>  Sun, 02 Dec 2018 22:33:26 +0100
 
 blender (2.79.b+dfsg0-4) unstable; urgency=medium
 
