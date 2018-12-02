@@ -1,3 +1,16 @@
+blender (2.79.b+dfsg0-5) UNRELEASED; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/control: Remove ancient X-Python3-Version field
+
+  [ Matteo F. Vescovi ]
+  * debian/patches/: patchset updated
+    - 0010-fix_PyRNA_with_Python3.7.patch added (Closes: #915143)
+  * debian/control: S-V bump 4.1.5 -> 4.2.1 (no changes needed)
+  * debian/rules: drop useless get-orig-source target
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Sun, 02 Dec 2018 22:32:48 +0100
+
 blender (2.79.b+dfsg0-4) unstable; urgency=medium
 
   * debian/patches/: patchset updated
