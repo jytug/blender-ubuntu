@@ -7,3 +7,4 @@
 0007-fix_OpenJPEG2_build.patch
 0008-fix_building_with_latest_versions_of_FFmpeg.patch
 0009-fix_gcc-8_ftbfs.patch
+0010-fix_PyRNA_with_Python3.7.patch
