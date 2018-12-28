@@ -1,3 +1,13 @@
+blender (2.79.b+dfsg0-6) UNRELEASED; urgency=medium
+
+  * debian/patches/: patchset updated
+    - 0011-adapt_build_against_OIIO2.patch added
+  * debian/control:
+    - force OIIO b-dep to at least v2.0.0
+    - S-V bump 4.2.1 -> 4.3.0 (no changes needed)
+
+ -- Matteo F. Vescovi <mfv@debian.org>  Fri, 28 Dec 2018 11:28:06 +0100
+
 blender (2.79.b+dfsg0-5) unstable; urgency=medium
 
   [ Ondřej Nový ]
