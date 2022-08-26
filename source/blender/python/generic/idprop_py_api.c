@@ -248,7 +248,7 @@ static int BPy_IDGroup_SetName(BPy_IDProperty *self, PyObject *value, void *UNUS
 		return -1;
 	}
 
-	name = _PyUnicode_AsStringAndSize(value, &name_size);
+	name = PyUnicode_AsUTF8AndSize(value, &name_size);
 
 	if (name_size > MAX_IDPROP_NAME) {
 		PyErr_SetString(PyExc_TypeError, "string length cannot exceed 63 characters!");
@@ -349,7 +349,7 @@ static const char *idp_try_read_name(PyObject *name_obj)
 	const char *name = NULL;
 	if (name_obj) {
 		Py_ssize_t name_size;
-		name = _PyUnicode_AsStringAndSize(name_obj, &name_size);
+		name = PyUnicode_AsUTF8AndSize(name_obj, &name_size);
 
 		if (name == NULL) {
 			PyErr_Format(PyExc_KeyError,
@@ -1792,7 +1792,7 @@ PyObject *BPyInit_idprop(void)
 {
 	PyObject *mod;
 	PyObject *submodule;
-	PyObject *sys_modules = PyThreadState_GET()->interp->modules;
+	PyObject *sys_modules = PyImport_GetModuleDict();
 
 	mod = PyModule_Create(&IDProp_module_def);
 

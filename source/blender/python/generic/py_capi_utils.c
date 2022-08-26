@@ -551,7 +551,7 @@ const char *PyC_UnicodeAsByteAndSize(PyObject *py_str, Py_ssize_t *size, PyObjec
 {
 	const char *result;
 
-	result = _PyUnicode_AsStringAndSize(py_str, size);
+	result = PyUnicode_AsUTF8AndSize(py_str, size);
 
 	if (result) {
 		/* 99% of the time this is enough but we better support non unicode
@@ -638,33 +638,34 @@ PyObject *PyC_UnicodeFromByte(const char *str)
  ****************************************************************************/
 PyObject *PyC_DefaultNameSpace(const char *filename)
 {
-	PyInterpreterState *interp = PyThreadState_GET()->interp;
+	PyObject *modules = PyImport_GetModuleDict();
+	PyObject *builtins = PyEval_GetBuiltins();
 	PyObject *mod_main = PyModule_New("__main__");
-	PyDict_SetItemString(interp->modules, "__main__", mod_main);
+	PyDict_SetItemString(modules, "__main__", mod_main);
 	Py_DECREF(mod_main); /* sys.modules owns now */
 	PyModule_AddStringConstant(mod_main, "__name__", "__main__");
 	if (filename) {
 		/* __file__ mainly for nice UI'ness
-		 * note: this wont map to a real file when executing text-blocks and buttons. */
+		 *      * NOTE: this won't map to a real file when executing text-blocks and buttons. */
 		PyModule_AddObject(mod_main, "__file__", PyC_UnicodeFromByte(filename));
 	}
-	PyModule_AddObject(mod_main, "__builtins__", interp->builtins);
-	Py_INCREF(interp->builtins); /* AddObject steals a reference */
+	PyModule_AddObject(mod_main, "__builtins__", builtins);
+	Py_INCREF(builtins); /* AddObject steals a reference */
 	return PyModule_GetDict(mod_main);
 }
 
 /* restore MUST be called after this */
 void PyC_MainModule_Backup(PyObject **main_mod)
 {
-	PyInterpreterState *interp = PyThreadState_GET()->interp;
-	*main_mod = PyDict_GetItemString(interp->modules, "__main__");
+	PyObject *modules = PyImport_GetModuleDict();
+	*main_mod = PyDict_GetItemString(modules, "__main__");
 	Py_XINCREF(*main_mod); /* don't free */
 }
 
 void PyC_MainModule_Restore(PyObject *main_mod)
 {
-	PyInterpreterState *interp = PyThreadState_GET()->interp;
-	PyDict_SetItemString(interp->modules, "__main__", main_mod);
+	PyObject *modules = PyImport_GetModuleDict();
+	PyDict_SetItemString(modules, "__main__", main_mod);
 	Py_XDECREF(main_mod);
 }
 
@@ -1096,7 +1097,7 @@ bool PyC_RunString_AsString(const char *expr, const char *filename, char **r_val
 		const char *val;
 		Py_ssize_t val_len;
 
-		val = _PyUnicode_AsStringAndSize(retval, &val_len);
+		val = PyUnicode_AsUTF8AndSize(retval, &val_len);
 		if (val == NULL && PyErr_Occurred()) {
 			ok = false;
 		}

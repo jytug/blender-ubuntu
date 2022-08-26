@@ -1072,7 +1072,7 @@ static void bpy_prop_string_get_cb(struct PointerRNA *ptr, struct PropertyRNA *p
 	}
 	else {
 		Py_ssize_t length;
-		const char *buffer = _PyUnicode_AsStringAndSize(ret, &length);
+		const char *buffer = PyUnicode_AsUTF8AndSize(ret, &length);
 		memcpy(value, buffer, length + 1);
 		Py_DECREF(ret);
 	}
@@ -1132,7 +1132,7 @@ static int bpy_prop_string_length_cb(struct PointerRNA *ptr, struct PropertyRNA 
 	}
 	else {
 		Py_ssize_t length_ssize_t = 0;
-		_PyUnicode_AsStringAndSize(ret, &length_ssize_t);
+		PyUnicode_AsUTF8AndSize(ret, &length_ssize_t);
 		length = length_ssize_t;
 		Py_DECREF(ret);
 	}
@@ -1419,9 +1419,9 @@ static EnumPropertyItem *enum_items_from_py(PyObject *seq_fast, PyObject *def, i
 		if ((PyTuple_CheckExact(item)) &&
 		    (item_size = PyTuple_GET_SIZE(item)) &&
 		    (item_size >= 3 && item_size <= 5) &&
-		    (tmp.identifier =  _PyUnicode_AsStringAndSize(PyTuple_GET_ITEM(item, 0), &id_str_size)) &&
-		    (tmp.name =        _PyUnicode_AsStringAndSize(PyTuple_GET_ITEM(item, 1), &name_str_size)) &&
-		    (tmp.description = _PyUnicode_AsStringAndSize(PyTuple_GET_ITEM(item, 2), &desc_str_size)) &&
+		    (tmp.identifier =  PyUnicode_AsUTF8AndSize(PyTuple_GET_ITEM(item, 0), &id_str_size)) &&
+		    (tmp.name =        PyUnicode_AsUTF8AndSize(PyTuple_GET_ITEM(item, 1), &name_str_size)) &&
+		    (tmp.description = PyUnicode_AsUTF8AndSize(PyTuple_GET_ITEM(item, 2), &desc_str_size)) &&
 		    /* TODO, number isn't ensured to be unique from the script author */
 		    (item_size != 4 || py_long_as_int(PyTuple_GET_ITEM(item, 3), &tmp.value) != -1) &&
 		    (item_size != 5 || ((py_long_as_int(PyTuple_GET_ITEM(item, 3), &tmp.icon) != -1 ||

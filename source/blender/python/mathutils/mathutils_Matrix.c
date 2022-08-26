@@ -48,7 +48,7 @@ static PyObject *Matrix_copy_notest(MatrixObject *self, const float *matrix);
 static PyObject *Matrix_copy(MatrixObject *self);
 static PyObject *Matrix_deepcopy(MatrixObject *self, PyObject *args);
 static int Matrix_ass_slice(MatrixObject *self, int begin, int end, PyObject *value);
-static PyObject *matrix__apply_to_copy(PyNoArgsFunction matrix_func, MatrixObject *self);
+static PyObject *matrix__apply_to_copy(PyObject *(*matrix_func)(MatrixObject *), MatrixObject *self);
 static PyObject *MatrixAccess_CreatePyObject(MatrixObject *matrix, const eMatrixAccess_t type);
 
 static int matrix_row_vector_check(MatrixObject *mat, VectorObject *vec, int row)
@@ -385,7 +385,7 @@ static PyObject *Matrix_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return NULL;
 }
 
-static PyObject *matrix__apply_to_copy(PyNoArgsFunction matrix_func, MatrixObject *self)
+static PyObject *matrix__apply_to_copy(PyObject *(*matrix_func)(MatrixObject *), MatrixObject *self)
 {
 	PyObject *ret = Matrix_copy(self);
 	if (ret) {
@@ -693,7 +693,7 @@ static PyObject *C_Matrix_OrthoProjection(PyObject *cls, PyObject *args)
 
 	if (PyUnicode_Check(axis)) {  /* ortho projection onto cardinal plane */
 		Py_ssize_t plane_len;
-		const char *plane = _PyUnicode_AsStringAndSize(axis, &plane_len);
+		const char *plane = PyUnicode_AsUTF8AndSize(axis, &plane_len);
 		if (matSize == 2) {
 			if (plane_len == 1 && plane[0] == 'X') {
 				mat[0] = 1.0f;
@@ -1598,7 +1598,7 @@ PyDoc_STRVAR(Matrix_adjugated_doc,
 );
 static PyObject *Matrix_adjugated(MatrixObject *self)
 {
-	return matrix__apply_to_copy((PyNoArgsFunction)Matrix_adjugate, self);
+	return matrix__apply_to_copy(Matrix_adjugate, self);
 }
 
 PyDoc_STRVAR(Matrix_rotate_doc,
@@ -1795,7 +1795,7 @@ PyDoc_STRVAR(Matrix_transposed_doc,
 );
 static PyObject *Matrix_transposed(MatrixObject *self)
 {
-	return matrix__apply_to_copy((PyNoArgsFunction)Matrix_transpose, self);
+	return matrix__apply_to_copy(Matrix_transpose, self);
 }
 
 /*---------------------------matrix.normalize() ------------------*/
@@ -1842,7 +1842,7 @@ PyDoc_STRVAR(Matrix_normalized_doc,
 );
 static PyObject *Matrix_normalized(MatrixObject *self)
 {
-	return matrix__apply_to_copy((PyNoArgsFunction)Matrix_normalize, self);
+	return matrix__apply_to_copy(Matrix_normalize, self);
 }
 
 /*---------------------------matrix.zero() -----------------------*/

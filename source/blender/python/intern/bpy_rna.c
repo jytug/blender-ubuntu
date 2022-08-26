@@ -4608,7 +4608,7 @@ PyDoc_STRVAR(pyrna_prop_collection_find_doc,
 static PyObject *pyrna_prop_collection_find(BPy_PropertyRNA *self, PyObject *key_ob)
 {
 	Py_ssize_t key_len_ssize_t;
-	const char *key = _PyUnicode_AsStringAndSize(key_ob, &key_len_ssize_t);
+	const char *key = PyUnicode_AsUTF8AndSize(key_ob, &key_len_ssize_t);
 	const int key_len = (int)key_len_ssize_t; /* comare with same type */
 
 	char name[256], *nameptr;

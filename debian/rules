@@ -11,7 +11,7 @@ else
 endif
 
 ifneq (,$(filter $(DEB_HOST_ARCH),amd64 i386))
-	SETVDB = ON
+	SETVDB = OFF
 else
 	SETVDB = OFF
 endif
